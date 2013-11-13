@@ -1,88 +1,100 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 20 Nov 2013 08:30:39 +0000
-Subject: [PATCH 1/4] mmc: tmio: use -EPROBE_DEFER if driver can't find regulator
-Message-Id: <87hab78ogj.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 13:52:12 +0000
+Subject: [PATCH 2/5] drm/rcar-du: Update plane pitch in .mode_set_base() operation
+Message-Id: <1384350735-4419-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+References: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Current tmio driver tries to use default ocr_avail
-if 1) it couldn't find regulator and 2) if platform data
-doesn't have ocr_mask.
-But, there is no guarantee that regulator driver probe
-is faster than TMIO driver probe.
-TMIO driver will not use regulator in such case.
-By this patch, TMIO driver returns -EPROBE_DEFER if it
-couldn't find regulator and if platform doesn't have ocr_mask.
-Because, there is possibility that regulator
-has not been probed, but the user is expecting it.
+When setting a new frame buffer with the mode set base operation the
+pitch value might change. Set the hardware plane pitch register at the
+same time as the plane base address in the rcar_du_plane_update_base()
+function to make sure the pitch value always matches the frame buffer.
 
-This patch changes tmio_mmc_host_probe() behavior,
-but there is no user who has conflict.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   21 ++++++++++++++++-----
- 1 file changed, 16 insertions(+), 5 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  1 -
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 21 +++++++++++----------
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b380225..7b25d0e 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -944,17 +944,25 @@ static const struct mmc_host_ops tmio_mmc_ops = {
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
- };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index d2af2bc..fbf4be3 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -371,7 +371,6 @@ static int rcar_du_crtc_mode_set(struct drm_crtc *crtc,
+ 		goto error;
  
--static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
-+static int tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+ 	rcrtc->plane->format = format;
+-	rcrtc->plane->pitch = crtc->fb->pitches[0];
+ 
+ 	rcrtc->plane->src_x = x;
+ 	rcrtc->plane->src_y = y;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 5300064..3fb69d9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -104,6 +104,15 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
  {
- 	struct tmio_mmc_data *pdata = host->pdata;
- 	struct mmc_host *mmc = host->mmc;
- 
- 	mmc_regulator_get_supply(mmc);
- 
-+	/* use ocr_mask if no regulator */
- 	if (!mmc->ocr_avail)
--		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
--	else if (pdata->ocr_mask)
--		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
-+		mmc->ocr_avail =  pdata->ocr_mask;
+ 	struct rcar_du_group *rgrp = plane->group;
+ 	unsigned int index = plane->hwindex;
++	u32 mwr;
 +
-+	/*
-+	 * try again.
-+	 * There is possibility that regulator has not been probed
-+	 */
-+	if (!mmc->ocr_avail)
-+		return -EPROBE_DEFER;
++	/* Memory pitch (expressed in pixels) */
++	if (plane->format->planes = 2)
++		mwr = plane->pitch;
++	else
++		mwr = plane->pitch * 8 / plane->format->bpp;
 +
-+	return 0;
- }
++	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
  
- static void tmio_mmc_of_parse(struct platform_device *pdev,
-@@ -1008,6 +1016,10 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
- 	_host->bus_shift = resource_size(res_ctl) >> 10;
+ 	/* The Y position is expressed in raster line units and must be doubled
+ 	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
+@@ -133,6 +142,8 @@ void rcar_du_plane_compute_base(struct rcar_du_plane *plane,
+ {
+ 	struct drm_gem_cma_object *gem;
  
-+	ret = tmio_mmc_init_ocr(_host);
-+	if (ret < 0)
-+		goto host_free;
++	plane->pitch = fb->pitches[0];
 +
- 	_host->ctl = ioremap(res_ctl->start, resource_size(res_ctl));
- 	if (!_host->ctl) {
- 		ret = -ENOMEM;
-@@ -1023,7 +1035,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 		mmc->max_segs;
- 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
- 	mmc->max_seg_size = mmc->max_req_size;
--	tmio_mmc_init_ocr(_host);
+ 	gem = drm_fb_cma_get_gem_obj(fb, 0);
+ 	plane->dma[0] = gem->paddr + fb->offsets[0];
  
- 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
- 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+@@ -209,7 +220,6 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
+ 	struct rcar_du_group *rgrp = plane->group;
+ 	u32 ddcr2 = PnDDCR2_CODE;
+ 	u32 ddcr4;
+-	u32 mwr;
+ 
+ 	/* Data format
+ 	 *
+@@ -240,14 +250,6 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
+ 	rcar_du_plane_write(rgrp, index, PnDDCR2, ddcr2);
+ 	rcar_du_plane_write(rgrp, index, PnDDCR4, ddcr4);
+ 
+-	/* Memory pitch (expressed in pixels) */
+-	if (plane->format->planes = 2)
+-		mwr = plane->pitch;
+-	else
+-		mwr = plane->pitch * 8 / plane->format->bpp;
+-
+-	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
+-
+ 	/* Destination position and size */
+ 	rcar_du_plane_write(rgrp, index, PnDSXR, plane->width);
+ 	rcar_du_plane_write(rgrp, index, PnDSYR, plane->height);
+@@ -309,7 +311,6 @@ rcar_du_plane_update(struct drm_plane *plane, struct drm_crtc *crtc,
+ 
+ 	rplane->crtc = crtc;
+ 	rplane->format = format;
+-	rplane->pitch = fb->pitches[0];
+ 
+ 	rplane->src_x = src_x >> 16;
+ 	rplane->src_y = src_y >> 16;
 -- 
-1.7.9.5
+1.8.3.2
 
