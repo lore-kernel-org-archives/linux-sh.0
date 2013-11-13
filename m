@@ -1,21 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Nov 2013 09:00:58 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: mark GPIO keys as wake-up sources
-Message-Id: <20131118090056.GG1506@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 23:42:30 +0000
+Subject: [PATCH] ARM: shmobile: Enable GPIO LEDs on Genmai
+Message-Id: <20131113234230.1579.9739.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113224026.20904.35898.sendpatchset@w520>
-In-Reply-To: <20131113224026.20904.35898.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 14, 2013 at 07:40:26AM +0900, Magnus Damm wrote:
-> From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> 
-> Enable wakeup for the GPIO keys on the Lager board.
-> 
-> Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I will queue this up.
+Enable led1 and led2 on the Genmai board using
+the r7s72100 SoC and the GPIO RZ driver.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-13 22:39:40.000000000 +0900
+@@ -9,7 +9,8 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r7s72100.dtsi"
++#include "r7s72100.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Genmai";
+@@ -28,4 +29,14 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&p4 10 GPIO_ACTIVE_LOW>;
++		};
++		led2 {
++			gpios = <&p4 11 GPIO_ACTIVE_LOW>;
++		};
++	};
+ };
