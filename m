@@ -1,55 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Nov 2013 00:34:45 +0000
-Subject: Re: [RFC 08/17] ARM: shmobile: r8a7779: Add helper to read mode pins
-Message-Id: <20131126003445.GI15227@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 22:40:26 +0000
+Subject: [PATCH] ARM: shmobile: lager: mark GPIO keys as wake-up sources
+Message-Id: <20131113224026.20904.35898.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385342312-1967-1-git-send-email-horms+renesas@verge.net.au>
- <1385342312-1967-9-git-send-email-horms+renesas@verge.net.au>
- <52933A35.7070206@cogentembedded.com>
-In-Reply-To: <52933A35.7070206@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 25, 2013 at 03:53:25PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 25-11-2013 5:18, Simon Horman wrote:
-> 
-> >Add and use helper to read mode pins.
-> >This will be re-used when moving marzen-reference to
-> >the common clock framework.
-> 
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
-> >  arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
-> >  arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
-> >  3 files changed, 17 insertions(+), 9 deletions(-)
-> 
-> >diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-> >index b7ce0e7..decf122 100644
-> >--- a/arch/arm/mach-shmobile/clock-r8a7779.c
-> >+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-> [...]
-> >diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> >index 8f94531..4e3fbfb 100644
-> >--- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> >+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> >@@ -874,6 +874,20 @@ void __init r8a7779_add_standard_devices_dt(void)
-> >  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-> >  }
-> >
-> >+#define MODEMR		0xffcc0020
-> >+
-> >+u32 __init r8a7779_read_mode_pins(void)
-> >+{
-> >+	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-> 
->    Why waste 2 4K pages if you're only interested in 4 bytes (i.e. 1
-> page)? I remember I've already asked that question...
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-I don't recall if there was a conclusion to that discussion.
+Enable wakeup for the GPIO keys on the Lager board.
 
-In any case, this patch just shuffles code around.
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-lager.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0002/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-11-13 17:22:08.000000000 +0900
+@@ -121,7 +121,7 @@ static const struct gpio_led_platform_da
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
+-	  .debounce_interval = 20 }
++	  .wakeup = 1, .debounce_interval = 20 }
+ 
+ static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
