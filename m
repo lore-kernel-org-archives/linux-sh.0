@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Nov 2013 13:52:12 +0000
-Subject: [PATCH 2/5] drm/rcar-du: Update plane pitch in .mode_set_base() operation
-Message-Id: <1384350735-4419-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 13:52:14 +0000
+Subject: [PATCH 4/5] drm/rcar-du: Add LVDS_LANES quirk
+Message-Id: <1384350735-4419-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,90 +11,79 @@ Content-Transfer-Encoding: 7bit
 To: dri-devel@lists.freedesktop.org
 Cc: linux-sh@vger.kernel.org
 
-When setting a new frame buffer with the mode set base operation the
-pitch value might change. Set the hardware plane pitch register at the
-same time as the plane base address in the rcar_du_plane_update_base()
-function to make sure the pitch value always matches the frame buffer.
+LVDS lanes 1 and 3 are switched in ES1 hardware (R8A7790). The problem
+has been fixed in newer revisions, add a quirk to make the workaround
+selectable.
 
-Cc: stable@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  1 -
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 21 +++++++++++----------
- 2 files changed, 11 insertions(+), 11 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c     |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h     |  1 +
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 15 ++++++++++-----
+ 3 files changed, 12 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index d2af2bc..fbf4be3 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -371,7 +371,6 @@ static int rcar_du_crtc_mode_set(struct drm_crtc *crtc,
- 		goto error;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index a0ffacb..4eee02f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -250,7 +250,7 @@ static const struct rcar_du_device_info rcar_du_r8a7779_info = {
  
- 	rcrtc->plane->format = format;
--	rcrtc->plane->pitch = crtc->fb->pitches[0];
+ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+ 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_DEFR8,
+-	.quirks = RCAR_DU_QUIRK_ALIGN_128B,
++	.quirks = RCAR_DU_QUIRK_ALIGN_128B | RCAR_DU_QUIRK_LVDS_LANES,
+ 	.num_crtcs = 3,
+ 	.routes = {
+ 		/* R8A7790 has one RGB output, two LVDS outputs and one
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+index 7ca98f3..e31b735 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
+@@ -31,6 +31,7 @@ struct rcar_du_lvdsenc;
+ #define RCAR_DU_FEATURE_DEFR8		(1 << 1)	/* Has DEFR8 register */
  
- 	rcrtc->plane->src_x = x;
- 	rcrtc->plane->src_y = y;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 5300064..3fb69d9 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -104,6 +104,15 @@ void rcar_du_plane_update_base(struct rcar_du_plane *plane)
- {
- 	struct rcar_du_group *rgrp = plane->group;
- 	unsigned int index = plane->hwindex;
-+	u32 mwr;
+ #define RCAR_DU_QUIRK_ALIGN_128B	(1 << 0)	/* Align pitches to 128 bytes */
++#define RCAR_DU_QUIRK_LVDS_LANES	(1 << 1)	/* LVDS lanes 1 and 3 inverted */
+ 
+ /*
+  * struct rcar_du_output_routing - Output routing specification
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+index a0f6a17..3dc1331 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+@@ -44,6 +44,7 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
+ 	const struct drm_display_mode *mode = &rcrtc->crtc.mode;
+ 	unsigned int freq = mode->clock;
+ 	u32 lvdcr0;
++	u32 lvdhcr;
+ 	u32 pllcr;
+ 	int ret;
+ 
+@@ -72,15 +73,19 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
+ 	 * VSYNC -> CTRL1
+ 	 * DISP  -> CTRL2
+ 	 * 0     -> CTRL3
+-	 *
+-	 * Channels 1 and 3 are switched on ES1.
+ 	 */
+ 	rcar_lvds_write(lvds, LVDCTRCR, LVDCTRCR_CTR3SEL_ZERO |
+ 			LVDCTRCR_CTR2SEL_DISP | LVDCTRCR_CTR1SEL_VSYNC |
+ 			LVDCTRCR_CTR0SEL_HSYNC);
+-	rcar_lvds_write(lvds, LVDCHCR,
+-			LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 3) |
+-			LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 1));
 +
-+	/* Memory pitch (expressed in pixels) */
-+	if (plane->format->planes = 2)
-+		mwr = plane->pitch;
++	if (rcar_du_needs(lvds->dev, RCAR_DU_QUIRK_LVDS_LANES))
++		lvdhcr = LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 3)
++		       | LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 1);
 +	else
-+		mwr = plane->pitch * 8 / plane->format->bpp;
++		lvdhcr = LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 1)
++		       | LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 3);
 +
-+	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
++	rcar_lvds_write(lvds, LVDCHCR, lvdhcr);
  
- 	/* The Y position is expressed in raster line units and must be doubled
- 	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
-@@ -133,6 +142,8 @@ void rcar_du_plane_compute_base(struct rcar_du_plane *plane,
- {
- 	struct drm_gem_cma_object *gem;
- 
-+	plane->pitch = fb->pitches[0];
-+
- 	gem = drm_fb_cma_get_gem_obj(fb, 0);
- 	plane->dma[0] = gem->paddr + fb->offsets[0];
- 
-@@ -209,7 +220,6 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
- 	struct rcar_du_group *rgrp = plane->group;
- 	u32 ddcr2 = PnDDCR2_CODE;
- 	u32 ddcr4;
--	u32 mwr;
- 
- 	/* Data format
- 	 *
-@@ -240,14 +250,6 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
- 	rcar_du_plane_write(rgrp, index, PnDDCR2, ddcr2);
- 	rcar_du_plane_write(rgrp, index, PnDDCR4, ddcr4);
- 
--	/* Memory pitch (expressed in pixels) */
--	if (plane->format->planes = 2)
--		mwr = plane->pitch;
--	else
--		mwr = plane->pitch * 8 / plane->format->bpp;
--
--	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
--
- 	/* Destination position and size */
- 	rcar_du_plane_write(rgrp, index, PnDSXR, plane->width);
- 	rcar_du_plane_write(rgrp, index, PnDSYR, plane->height);
-@@ -309,7 +311,6 @@ rcar_du_plane_update(struct drm_plane *plane, struct drm_crtc *crtc,
- 
- 	rplane->crtc = crtc;
- 	rplane->format = format;
--	rplane->pitch = fb->pitches[0];
- 
- 	rplane->src_x = src_x >> 16;
- 	rplane->src_y = src_y >> 16;
+ 	/* Select the input, hardcode mode 0, enable LVDS operation and turn
+ 	 * bias circuitry on.
 -- 
 1.8.3.2
 
