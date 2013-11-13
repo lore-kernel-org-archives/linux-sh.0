@@ -1,49 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:36:51 +0000
-Subject: Re: [PATCH 04/15] iommu: shmobile: Enable driver compilation with COMPILE_TEST
-Message-Id: <20131128073651.GE24146@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 23:03:45 +0000
+Subject: [PATCH] ARM: shmobile: Enable DSW2 with gpio-keys on KZM9D
+Message-Id: <20131113230345.21482.36997.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 27, 2013 at 02:18:26AM +0100, Laurent Pinchart wrote:
-> This helps increasing build testing coverage.
-> 
-> The driver doesn't compile on non-ARM platforms due to usage of the ARM
-> DMA IOMMU API, restrict compilation to ARM.
-> 
-> Cc: Joerg Roedel <joro@8bytes.org>
-> Cc: iommu@lists.linux-foundation.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Use the gpio-keys driver to support the 4 pins on the
+dip switch DSW2 which is mounted on the KZM9D board.
 
-> ---
->  drivers/iommu/Kconfig | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
-> index 3e7fdbb..79bbc21 100644
-> --- a/drivers/iommu/Kconfig
-> +++ b/drivers/iommu/Kconfig
-> @@ -207,6 +207,7 @@ config SHMOBILE_IOMMU
->  	bool "IOMMU for Renesas IPMMU/IPMMUI"
->  	default n
->  	depends on ARM
-> +	depends on SH_MOBILE || COMPILE_TEST
->  	select IOMMU_API
->  	select ARM_DMA_USE_IOMMU
->  	select SHMOBILE_IPMMU
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/emev2-kzm9d.dts |   39 ++++++++++++++++++++++++++++++++++++-
+ arch/arm/boot/dts/emev2.dtsi      |    2 -
+ 2 files changed, 39 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/boot/dts/emev2-kzm9d.dts
++++ work/arch/arm/boot/dts/emev2-kzm9d.dts	2013-11-13 20:21:27.000000000 +0900
+@@ -9,7 +9,9 @@
+  */
+ /dts-v1/;
+ 
+-/include/ "emev2.dtsi"
++#include "emev2.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	model = "EMEV2 KZM9D Board";
+@@ -54,4 +56,39 @@
+ 		vddvario-supply = <&reg_1p8v>;
+ 		vdd33a-supply = <&reg_3p3v>;
+ 	};
++
++	gpio_keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		button@1 {
++			debounce_interval = <50>;
++			wakeup = <1>;
++			label = "DSW2-1";
++			linux,code = <KEY_1>;
++			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
++		};
++		button@2 {
++			debounce_interval = <50>;
++			wakeup = <1>;
++			label = "DSW2-2";
++			linux,code = <KEY_2>;
++			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
++		};
++		button@3 {
++			debounce_interval = <50>;
++			wakeup = <1>;
++			label = "DSW2-3";
++			linux,code = <KEY_3>;
++			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
++		};
++		button@4 {
++			debounce_interval = <50>;
++			wakeup = <1>;
++			label = "DSW2-4";
++			linux,code = <KEY_4>;
++			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+--- 0001/arch/arm/boot/dts/emev2.dtsi
++++ work/arch/arm/boot/dts/emev2.dtsi	2013-11-13 20:20:03.000000000 +0900
+@@ -8,7 +8,7 @@
+  * kind, whether express or implied.
+  */
+ 
+-/include/ "skeleton.dtsi"
++#include "skeleton.dtsi"
+ 
+ / {
+ 	compatible = "renesas,emev2";
