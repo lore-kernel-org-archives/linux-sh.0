@@ -1,62 +1,118 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 26 Nov 2013 02:09:50 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: marzen: enable HSPI0 in DTS
-Message-Id: <7829758.zdhJHbHjWn@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 12:46:17 +0000
+Subject: [PATCH] sh-pfc: r8a7791: Fix DU pin groups organisation
+Message-Id: <1384346777-888-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385341216-27101-1-git-send-email-horms+renesas@verge.net.au>
- <1385341216-27101-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385341216-27101-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Rename the sync_1 group to sync as the device has a single sync pin
+group for the DU, move the cde_disp mux array right after the
+corresponding pins array, and split the clk_in pins in three separate
+groups as the pins can be used independently.
 
-Thank you for the patch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 36 +++++++++++++++++++++++++++---------
+ 1 file changed, 27 insertions(+), 9 deletions(-)
 
-On Monday 25 November 2013 10:00:16 Simon Horman wrote:
-> Based on work for the bockw board by Kuninori Morimoto.
-> 
-> Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/boot/dts/r8a7779-marzen-reference.dts | 11 +++++++++++
->  1 file changed, 11 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> b/arch/arm/boot/dts/r8a7779-marzen-reference.dts index 918085c..76f5eef
-> 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> @@ -97,6 +97,11 @@
->  		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
->  		renesas,function = "sdhi0";
->  	};
-> +
-> +	hspi0_pins: hspi0 {
-> +		renesas,groups = "hspi0";
-> +		renesas,function = "hspi0";
-> +	};
+The patch is based on top of the latest pinctrl for-next branch and is a
+candidate for v3.14. I've tested it with the DU driver on a Koelsch board.
 
-What about keeping the nodes in alphabetical order ?
-
->  };
-> 
->  &sdhi0 {
-> @@ -107,3 +112,9 @@
->  	bus-width = <4>;
->  	status = "okay";
->  };
-> +
-> +&hspi0 {
-> +	pinctrl-0 = <&hspi0_pins>;
-> +	pinctrl-names = "default";
-> +	status = "okay";
-> +};
-
-And here too ?
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index bf76a65..d26c163 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -1730,11 +1730,11 @@ static const unsigned int du_clk_out_1_pins[] = {
+ static const unsigned int du_clk_out_1_mux[] = {
+ 	DU1_DOTCLKOUT1_MARK
+ };
+-static const unsigned int du_sync_1_pins[] = {
++static const unsigned int du_sync_pins[] = {
+ 	/* EXVSYNC/VSYNC, EXHSYNC/HSYNC, EXDISP/EXODDF/EXCDE */
+ 	RCAR_GP_PIN(3, 29), RCAR_GP_PIN(3, 28), RCAR_GP_PIN(3, 27),
+ };
+-static const unsigned int du_sync_1_mux[] = {
++static const unsigned int du_sync_mux[] = {
+ 	DU1_EXODDF_DU1_ODDF_DISP_CDE_MARK,
+ 	DU1_EXVSYNC_DU1_VSYNC_MARK, DU1_EXHSYNC_DU1_HSYNC_MARK
+ };
+@@ -1742,6 +1742,9 @@ static const unsigned int du_cde_disp_pins[] = {
+ 	/* CDE DISP */
+ 	RCAR_GP_PIN(3, 31), RCAR_GP_PIN(3, 30),
+ };
++static const unsigned int du_cde_disp_mux[] = {
++	DU1_CDE_MARK, DU1_DISP_MARK
++};
+ static const unsigned int du0_clk_in_pins[] = {
+ 	/* CLKIN */
+ 	RCAR_GP_PIN(6, 31),
+@@ -1749,15 +1752,26 @@ static const unsigned int du0_clk_in_pins[] = {
+ static const unsigned int du0_clk_in_mux[] = {
+ 	DU0_DOTCLKIN_MARK
+ };
+-static const unsigned int du_cde_disp_mux[] = {
+-	DU1_CDE_MARK, DU1_DISP_MARK
+-};
+ static const unsigned int du1_clk_in_pins[] = {
+ 	/* CLKIN */
+-	RCAR_GP_PIN(7, 20), RCAR_GP_PIN(7, 19), RCAR_GP_PIN(3, 24),
++	RCAR_GP_PIN(3, 24),
+ };
+ static const unsigned int du1_clk_in_mux[] = {
+-	DU1_DOTCLKIN_C_MARK, DU1_DOTCLKIN_B_MARK, DU1_DOTCLKIN_MARK
++	DU1_DOTCLKIN_MARK
++};
++static const unsigned int du1_clk_in_b_pins[] = {
++	/* CLKIN */
++	RCAR_GP_PIN(7, 19),
++};
++static const unsigned int du1_clk_in_b_mux[] = {
++	DU1_DOTCLKIN_B_MARK,
++};
++static const unsigned int du1_clk_in_c_pins[] = {
++	/* CLKIN */
++	RCAR_GP_PIN(7, 20),
++};
++static const unsigned int du1_clk_in_c_mux[] = {
++	DU1_DOTCLKIN_C_MARK,
+ };
+ /* - ETH -------------------------------------------------------------------- */
+ static const unsigned int eth_link_pins[] = {
+@@ -2670,10 +2684,12 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du_rgb888),
+ 	SH_PFC_PIN_GROUP(du_clk_out_0),
+ 	SH_PFC_PIN_GROUP(du_clk_out_1),
+-	SH_PFC_PIN_GROUP(du_sync_1),
++	SH_PFC_PIN_GROUP(du_sync),
+ 	SH_PFC_PIN_GROUP(du_cde_disp),
+ 	SH_PFC_PIN_GROUP(du0_clk_in),
+ 	SH_PFC_PIN_GROUP(du1_clk_in),
++	SH_PFC_PIN_GROUP(du1_clk_in_b),
++	SH_PFC_PIN_GROUP(du1_clk_in_c),
+ 	SH_PFC_PIN_GROUP(eth_link),
+ 	SH_PFC_PIN_GROUP(eth_magic),
+ 	SH_PFC_PIN_GROUP(eth_mdio),
+@@ -2805,7 +2821,7 @@ static const char * const du_groups[] = {
+ 	"du_rgb888",
+ 	"du_clk_out_0",
+ 	"du_clk_out_1",
+-	"du_sync_1",
++	"du_sync",
+ 	"du_cde_disp",
+ };
+ 
+@@ -2815,6 +2831,8 @@ static const char * const du0_groups[] = {
+ 
+ static const char * const du1_groups[] = {
+ 	"du1_clk_in",
++	"du1_clk_in_b",
++	"du1_clk_in_c",
+ };
+ 
+ static const char * const eth_groups[] = {
 -- 
 Regards,
 
