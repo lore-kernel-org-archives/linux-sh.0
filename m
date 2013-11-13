@@ -1,41 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:16 +0000
-Subject: [PATCH v4 06/29] serial: sh-sci: Don't check IRQ in verify port operation
-Message-Id: <1385594319-5758-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 22:59:55 +0000
+Subject: [PATCH 03/03] gpio: em: Use lazy disable and mask on suspend
+Message-Id: <20131113225955.21449.34737.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20131113225927.21449.78044.sendpatchset@w520>
+In-Reply-To: <20131113225927.21449.78044.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-The IRQ number can't be modified by the user as the port is fixed.
-There's no need to check the new IRQ number as it will be ignored by the
-core.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Set the ->irq_enable() and ->irq_disable() methods to NULL
+to enable lazy disable of interrupts. Also extend the code
+to set IRQCHIP_MASK_ON_SUSPEND which tells the core that
+only IRQs marked as wakeups need to stay enabled during
+Suspend-to-RAM.
+
+Tested on the KZM9D board with GPIO-keys.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/tty/serial/sh-sci.c | 4 ----
- 1 file changed, 4 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5edba3f..783625f 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2113,10 +2113,6 @@ static void sci_config_port(struct uart_port *port, int flags)
+ drivers/gpio/gpio-em.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- 0006/drivers/gpio/gpio-em.c
++++ work/drivers/gpio/gpio-em.c	2013-11-13 22:18:21.000000000 +0900
+@@ -336,10 +336,8 @@ static int em_gio_probe(struct platform_
+ 	irq_chip->name = name;
+ 	irq_chip->irq_mask = em_gio_irq_disable;
+ 	irq_chip->irq_unmask = em_gio_irq_enable;
+-	irq_chip->irq_enable = em_gio_irq_enable;
+-	irq_chip->irq_disable = em_gio_irq_disable;
+ 	irq_chip->irq_set_type = em_gio_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
++	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
  
- static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
- {
--	struct sci_port *s = to_sci_port(port);
--
--	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
--		return -EINVAL;
- 	if (ser->baud_base < 2400)
- 		/* No paper tape reader for Mitch.. */
- 		return -EINVAL;
--- 
-1.8.3.2
-
+ 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+ 					      pdata->number_of_pins,
