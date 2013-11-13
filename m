@@ -1,45 +1,49 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 29 Nov 2013 20:15:31 +0000
-Subject: Re: [PATCH RESEND] gpio: rcar: Support both edge trigger with DT
-Message-Id: <1417900.1xZ6mx4xL8@avalon>
+Date: Wed, 13 Nov 2013 15:15:16 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
+Message-Id: <6611276.atjdFHQudq@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1811469.aLo43mdTt2@avalon> <CACRpkdbkKR=ZpYe9K21daLGZr7+mM5suAWKpoSPjUOZqQc272w@mail.gmail.com>
-In-Reply-To: <CACRpkdbkKR=ZpYe9K21daLGZr7+mM5suAWKpoSPjUOZqQc272w@mail.gmail.com>
+References: <1383066834-25956-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383066834-25956-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+Hi Simon,
 
-On Friday 29 November 2013 21:06:17 Linus Walleij wrote:
-> On Fri, Nov 29, 2013 at 2:48 PM, Laurent Pinchart wrote:
-> > Some versions of the R-Car GPIO controller support triggering on both
-> > edges of the input signal. Whether this capability is supported is
-> > currently specified in platform data. R-Car GPIO devices instantiated
-> > from the device tree have the capability turned off even when the
-> > hardware supports it.
+On Thursday 31 October 2013 13:35:07 Laurent Pinchart wrote:
+> On Thursday 31 October 2013 14:36:06 Simon Horman wrote:
+> > On Tue, Oct 29, 2013 at 06:13:54PM +0100, Laurent Pinchart wrote:
+> > > From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+> > > 
+> > > When enabling a module clock by clearing its bit in the MSTP control
+> > > register, the CPG requires waiting for the status register to signal
+> > > that the clock has started. Failure to do so will result in returning
+> > > from the clk_enable() call with the clock potientially still disabled,
+> > > leading to various race conditions and difficult to debug errors.
+> > > 
+> > > Enable status wait for all MSTP clocks on the r8a7790.
 > > 
-> > To fix this, add DT match data support to the driver, initialize both
-> > edge trigger support from match data and enable both edge trigger in
-> > r8a7790 and r8a7791 match data.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > Acked-by: Magnus Damm <damm@opensource.se>
+> > Is this patch independent of patch 1 of this series?
 > 
-> Patch applied, but shouldn't there be some change to add these
-> new compatible strings to Documentation/devicetree/bindings/*
-> somewhere?
+> Yes it is. The SH_CLK_MSTP32_STS macro is defined in patch 1/2.
 
-You're right.
+I had obviously read "Is this patch dependent".
 
-> Accepted as follow-on patch or something to be squashed into
-> this later if I'm right.
+I'll submit a v2 with support for the r8a7779.
 
-Sent.
+Have you had a chance to chat with Paul about this ? Patch 1/2 introduces a 
+feature that is disabled by default so it should have no influence at all on 
+arch/sh.
 
+> > > Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > ---
+> > > 
+> > >  arch/arm/mach-shmobile/clock-r8a7790.c | 86 ++++++++++++++-------------
+> > >  1 file changed, 47 insertions(+), 39 deletions(-)
 -- 
 Regards,
 
