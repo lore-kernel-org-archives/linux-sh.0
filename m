@@ -1,61 +1,74 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Nov 2013 05:13:54 +0000
-Subject: Re: [PATCH RFC v2 02/17] clk: shmobile: r8a7779: Add MSTP clock support
-Message-Id: <20131127051353.GF27704@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 15:52:52 +0000
+Subject: [PATCH v2 2/3] ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
+Message-Id: <1384357973-27365-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
- <1385451139-29686-3-git-send-email-horms+renesas@verge.net.au>
- <4636149.Zfz60YsUpd@avalon>
-In-Reply-To: <4636149.Zfz60YsUpd@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Nov 26, 2013 at 03:36:02PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 26 November 2013 16:32:04 Simon Horman wrote:
-> > Add MSTP clock support for the r8a7779 SoC
-> > 
-> > The only change required appears to be to note a new
-> > compatibility string in the bindings.
-> > 
-> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git
-> > a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt index
-> > 126b17e..f0a4b83 100644
-> > --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > @@ -12,6 +12,7 @@ Required Properties:
-> >    - compatible: Must be one of the following
-> >      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-> >      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-> > +    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-> 
-> Alphabetical order ? :-)
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Sure, I'll fix that up.
+When enabling some of the module clocks by clearing stop bits in the
+MSTP control registers, the CPG requires waiting for the status
+registers to signal that the clocks have started. Failure to do so will
+result in returning from the clk_enable() call with the clock
+potentially still disabled, leading to various race conditions and
+difficult to debug errors.
 
-> 
-> >      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-> >    - reg: Base address and length of the memory resource used by the MSTP
-> >      clocks
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Enable status wait for all the r8a7779 MSTP clocks that report their
+status.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 26 ++++++++++----------------
+ 1 file changed, 10 insertions(+), 16 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index b7ce0e7..1955738 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -52,12 +52,6 @@
+ #define MSTPCR1		IOMEM(0xffc80034)
+ #define MSTPCR3		IOMEM(0xffc8003c)
+ #define MSTPSR1		IOMEM(0xffc80044)
+-#define MSTPSR4		IOMEM(0xffc80048)
+-#define MSTPSR6		IOMEM(0xffc8004c)
+-#define MSTPCR4		IOMEM(0xffc80050)
+-#define MSTPCR5		IOMEM(0xffc80054)
+-#define MSTPCR6		IOMEM(0xffc80058)
+-#define MSTPCR7		IOMEM(0xffc80040)
+ 
+ #define MODEMR		0xffcc0020
+ 
+@@ -127,16 +121,16 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
+-	[MSTP120] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 20, 0), /* VIN3 */
+-	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
+-	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
+-	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
+-	[MSTP110] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 10, 0), /* VIN0 */
+-	[MSTP109] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  9, 0), /* VIN1 */
+-	[MSTP108] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  8, 0), /* VIN2 */
+-	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
+-	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
+-	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
++	[MSTP120] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1, 20, MSTPSR1, 0), /* VIN3 */
++	[MSTP116] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 16, MSTPSR1, 0), /* PCIe */
++	[MSTP115] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 15, MSTPSR1, 0), /* SATA */
++	[MSTP114] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 14, MSTPSR1, 0), /* Ether */
++	[MSTP110] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1, 10, MSTPSR1, 0), /* VIN0 */
++	[MSTP109] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  9, MSTPSR1, 0), /* VIN1 */
++	[MSTP108] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  8, MSTPSR1, 0), /* VIN2 */
++	[MSTP103] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  3, MSTPSR1, 0), /* DU */
++	[MSTP101] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1,  1, MSTPSR1, 0), /* USB2 */
++	[MSTP100] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1,  0, MSTPSR1, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 30, 0), /* I2C0 */
+ 	[MSTP029] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 29, 0), /* I2C1 */
+ 	[MSTP028] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 28, 0), /* I2C2 */
+-- 
+1.8.3.2
+
