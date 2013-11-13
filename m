@@ -1,135 +1,120 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:45:44 +0000
-Subject: [PATCH v3 5/8] ARM: shmobile: r8a7791: Add clock index macros for DT sources
-Message-Id: <1384872347-11724-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 13:59:39 +0000
+Subject: [PATCH] ARM: Kconfig: Mention R-Mobile and R-Car in addition to SH-Mobile
+Message-Id: <1384351179-4593-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add macros usable by device tree sources to reference r8a7791 clocks by
-index.
+External engineers working on R-Car platforms sometimes can't find
+upstream platform support as the combination of the SH-Mobile name and
+using the product number proved an effective method of concealment. Make
+sure to mention R-Mobile and R-Car in the Kconfig comments and help
+texts.
 
+Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- include/dt-bindings/clock/r8a7791-clock.h | 105 ++++++++++++++++++++++++++++++
- 1 file changed, 105 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
+ arch/arm/Kconfig               |  4 ++--
+ arch/arm/mach-shmobile/Kconfig | 21 +++++++++++----------
+ 2 files changed, 13 insertions(+), 12 deletions(-)
 
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-new file mode 100644
-index 0000000..df1715b
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -0,0 +1,105 @@
-+/*
-+ * Copyright 2013 Ideas On Board SPRL
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
-+#define __DT_BINDINGS_CLOCK_R8A7791_H__
-+
-+/* CPG */
-+#define R8A7791_CLK_MAIN		0
-+#define R8A7791_CLK_PLL0		1
-+#define R8A7791_CLK_PLL1		2
-+#define R8A7791_CLK_PLL3		3
-+#define R8A7791_CLK_LB			4
-+#define R8A7791_CLK_QSPI		5
-+#define R8A7791_CLK_SDH			6
-+#define R8A7791_CLK_SD0			7
-+#define R8A7791_CLK_Z			8
-+
-+/* MSTP1 */
-+#define R8A7791_CLK_TMU1		11
-+#define R8A7791_CLK_TMU3		21
-+#define R8A7791_CLK_TMU2		22
-+#define R8A7791_CLK_CMT0		24
-+#define R8A7791_CLK_TMU0		25
-+#define R8A7791_CLK_VSP1_DU1		27
-+#define R8A7791_CLK_VSP1_DU0		28
-+#define R8A7791_CLK_VSP1_SY		31
-+
-+/* MSTP2 */
-+#define R8A7791_CLK_SCIFA2		2
-+#define R8A7791_CLK_SCIFA1		3
-+#define R8A7791_CLK_SCIFA0		4
-+#define R8A7791_CLK_SCIFB0		6
-+#define R8A7791_CLK_SCIFB1		7
-+#define R8A7791_CLK_SCIFB2		16
-+#define R8A7791_CLK_DMAC		18
-+
-+/* MSTP3 */
-+#define R8A7791_CLK_TPU0		4
-+#define R8A7791_CLK_SDHI2		11
-+#define R8A7791_CLK_SDHI1		12
-+#define R8A7791_CLK_SDHI0		14
-+#define R8A7791_CLK_MMCIF0		15
-+#define R8A7791_CLK_SSUSB		28
-+#define R8A7791_CLK_CMT1		29
-+#define R8A7791_CLK_USBDMAC0		30
-+#define R8A7791_CLK_USBDMAC1		31
-+
-+/* MSTP5 */
-+#define R8A7791_CLK_THERMAL		22
-+#define R8A7791_CLK_PWM			23
-+
-+/* MSTP7 */
-+#define R8A7791_CLK_HSUSB		4
-+#define R8A7791_CLK_HSCIF2		13
-+#define R8A7791_CLK_SCIF5		14
-+#define R8A7791_CLK_SCIF4		15
-+#define R8A7791_CLK_HSCIF1		16
-+#define R8A7791_CLK_HSCIF0		17
-+#define R8A7791_CLK_SCIF3		18
-+#define R8A7791_CLK_SCIF2		19
-+#define R8A7791_CLK_SCIF1		20
-+#define R8A7791_CLK_SCIF0		21
-+#define R8A7791_CLK_DU1			23
-+#define R8A7791_CLK_DU0			24
-+#define R8A7791_CLK_LVDS0		26
-+
-+/* MSTP8 */
-+#define R8A7791_CLK_VIN2		9
-+#define R8A7791_CLK_VIN1		10
-+#define R8A7791_CLK_VIN0		11
-+#define R8A7791_CLK_ETHER		13
-+#define R8A7791_CLK_SATA1		14
-+#define R8A7791_CLK_SATA0		15
-+
-+/* MSTP9 */
-+#define R8A7791_CLK_GPIO7		4
-+#define R8A7791_CLK_GPIO6		5
-+#define R8A7791_CLK_GPIO5		7
-+#define R8A7791_CLK_GPIO4		8
-+#define R8A7791_CLK_GPIO3		9
-+#define R8A7791_CLK_GPIO2		10
-+#define R8A7791_CLK_GPIO1		11
-+#define R8A7791_CLK_GPIO0		12
-+#define R8A7791_CLK_RCAN1		15
-+#define R8A7791_CLK_RCAN0		16
-+#define R8A7791_CLK_I2C5		25
-+#define R8A7791_CLK_IICDVFS		26
-+#define R8A7791_CLK_I2C4		27
-+#define R8A7791_CLK_I2C3		28
-+#define R8A7791_CLK_I2C2		29
-+#define R8A7791_CLK_I2C1		30
-+#define R8A7791_CLK_I2C0		31
-+
-+/* MSTP11 */
-+#define R8A7791_CLK_SCIFA3		6
-+#define R8A7791_CLK_SCIFA4		7
-+#define R8A7791_CLK_SCIFA5		8
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 1ad6fb6..970e65e 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -643,7 +643,7 @@ config ARCH_MSM
+ 	  (clock and power control, etc).
+ 
+ config ARCH_SHMOBILE
+-	bool "Renesas SH-Mobile / R-Mobile"
++	bool "Renesas SH-/R-Mobile and R-Car"
+ 	select ARM_PATCH_PHYS_VIRT
+ 	select CLKDEV_LOOKUP
+ 	select GENERIC_CLOCKEVENTS
+@@ -659,7 +659,7 @@ config ARCH_SHMOBILE
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
+-	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms.
++	  Support for Renesas's SH-/R-Mobile and R-Car ARM platforms.
+ 
+ config ARCH_RPC
+ 	bool "RiscPC"
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4bb548f..4cb15b4 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,5 +1,5 @@
+ config ARCH_SHMOBILE_MULTI
+-	bool "SH-Mobile Series" if ARCH_MULTI_V7
++	bool "SH-/R-Mobile and R-Car Series" if ARCH_MULTI_V7
+ 	depends on MMU
+ 	select CPU_V7
+ 	select GENERIC_CLOCKEVENTS
+@@ -15,24 +15,24 @@ config ARCH_SHMOBILE_MULTI
+ 
+ if ARCH_SHMOBILE_MULTI
+ 
+-comment "SH-Mobile System Type"
++comment "SH-/R-Mobile and R-Car System Type"
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 
+-comment "SH-Mobile Board Type"
++comment "SH-/R-Mobile and R-Car Board Type"
+ 
+ config MACH_KZM9D
+ 	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+-comment "SH-Mobile System Configuration"
++comment "SH-/R-Mobile and R-Car System Configuration"
+ endif
+ 
+ if ARCH_SHMOBILE
+ 
+-comment "SH-Mobile System Type"
++comment "SH-/R-Mobile and R-Car System Type"
+ 
+ config ARCH_SH7372
+ 	bool "SH-Mobile AP4 (SH7372)"
+@@ -116,7 +116,7 @@ config ARCH_R7S72100
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 
+-comment "SH-Mobile Board Type"
++comment "SH-/R-Mobile and R-Car Board Type"
+ 
+ config MACH_APE6EVM
+ 	bool "APE6EVM board"
+@@ -275,7 +275,7 @@ config MACH_KZM9G_REFERENCE
+ 
+ 	   This is intended to aid developers
+ 
+-comment "SH-Mobile System Configuration"
++comment "SH-/R-Mobile and R-Car System Configuration"
+ 
+ config CPU_HAS_INTEVT
+         bool
+@@ -300,9 +300,10 @@ config SHMOBILE_TIMER_HZ
+ 	  Allows the configuration of the timer frequency. It is customary
+ 	  to have the timer interrupt run at 1000 Hz or 100 Hz, but in the
+ 	  case of low timer frequencies other values may be more suitable.
+-	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
+-	  to select a HZ value such as 128 that can evenly divide RCLK.
+-	  A HZ value that does not divide evenly may cause timer drift.
++	  SH-/R-Mobile and R-Car systems using a 32768 Hz RCLK for clock
++	  events may want to select a HZ value such as 128 that can evenly
++	  divide RCLK. A HZ value that does not divide evenly may cause timer
++	  drift.
+ 
+ config SH_TIMER_CMT
+ 	bool "CMT timer driver"
 -- 
 1.8.3.2
 
