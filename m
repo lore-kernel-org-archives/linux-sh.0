@@ -1,66 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Nov 2013 00:35:08 +0000
-Subject: Re: [RFC 13/17] ARM: shmobile: marzen-reference: Initialize CPG device
-Message-Id: <20131126003508.GJ15227@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 13:52:10 +0000
+Subject: [PATCH 0/5] R-Car DU fixes and support for R8A7791
+Message-Id: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385342312-1967-1-git-send-email-horms+renesas@verge.net.au>
- <1385342312-1967-14-git-send-email-horms+renesas@verge.net.au>
- <52933F60.8090208@cogentembedded.com>
-In-Reply-To: <52933F60.8090208@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-On Mon, Nov 25, 2013 at 04:15:28PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 25-11-2013 5:18, Simon Horman wrote:
-> 
-> >On multiplatform kernels clocks are handled by the CCF CPG driver. It
-> >must be explicitly initialized by a call to rcar_gen2_clocks_init() with
-> 
->    You meant r8a7779_clocks_init() instead?
+Hello,
 
-Yes, thanks. I will fix that.
+This patch series adds support for the DU found in the R8A7791 SoC. It starts
+by a cleanup patch (1/5), a bug fix (2/5), two preparation patches (3/5 and
+4/5) and finally adds support for the R8A7791 DU (5/5).
 
-> 
-> >the value of the boot mode pins.
-> 
-> >Based on similar work for the Koelsch board by Laurent Pinchart.
-> 
-> >Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
-> >  1 file changed, 12 insertions(+), 4 deletions(-)
-> 
-> >diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-> >index 782907f..3a7c0fc 100644
-> >--- a/arch/arm/mach-shmobile/board-marzen-reference.c
-> >+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-> [...]
-> >@@ -28,11 +29,17 @@
-> >  #include <asm/mach/arch.h>
-> >
-> >
-> >-static void __init marzen_init(void)
-> >+static void __init marzen_init_timer(void)
-> >  {
-> >  #ifdef CONFIG_COMMON_CLK
-> >-	of_clk_init(NULL);
-> >-#else
-> >+	r8a7779_clocks_init(r8a7779_read_mode_pins());
-> >+#endif
-> >+	clocksource_of_init();
-> >+}
-> >+
-> >+static void __init marzen_init(void)
-> >+{
-> >+#ifndef CONFIG_COMMON_CLK
-> >  	r8a7779_clock_init();
-> >  #endif
-> >  	r8a7779_add_standard_devices_dt();
-> 
-> WBR, Sergei
-> 
+Patch 2/5 is a candidate for stable kernels. There's no rush to get this
+upstreamed in v3.13, v3.14 is fine.
+
+The series is based on top of the latest drm-next branch.
+
+Laurent Pinchart (5):
+  drm/rcar-du: Don't cast crtc to rcrtc twice in the same function
+  drm/rcar-du: Update plane pitch in .mode_set_base() operation
+  drm/rcar-du: Split features and quirks
+  drm/rcar-du: Add LVDS_LANES quirk
+  drm/rcar-du: Add support for the r8a7791 DU
+
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c    |  3 +--
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 24 ++++++++++++++++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h     | 14 ++++++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c     |  4 ++--
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 15 ++++++++++-----
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c   | 21 +++++++++++----------
+ 6 files changed, 58 insertions(+), 23 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
