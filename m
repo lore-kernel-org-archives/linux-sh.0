@@ -1,101 +1,371 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Nov 2013 06:19:29 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 13 Nov 2013 12:03:35 +0000
 Subject: Re: [PATCH] gpio: Renesas RZ GPIO driver
-Message-Id: <CANqRtoQA0dXPs8+sNS-8WBPLpzvbSuwj0J3967He0rm=QwNCMQ@mail.gmail.com>
+Message-Id: <1777251.JReTVdX0Pd@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131106234737.8971.37405.sendpatchset@w520>
-	<CACRpkdZC+hvChpDMasj0avRTTbprVn8ro7NxywNUPw+SOr10bw@mail.gmail.com>
-In-Reply-To: <CACRpkdZC+hvChpDMasj0avRTTbprVn8ro7NxywNUPw+SOr10bw@mail.gmail.com>
+In-Reply-To: <20131106234737.8971.37405.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Alexandre Courbot <acourbot@nvidia.com>, Arnd Bergmann <arnd@arndb.de>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au
 
-Hi Linus,
+Hi Magnus,
 
-On Wed, Nov 13, 2013 at 4:59 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Thu, Nov 7, 2013 at 12:47 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->
->> From: Magnus Damm <damm@opensource.se>
->>
->> This patch adds a GPIO driver for the RZ series of SoCs from
->> Renesas. The driver can be used as platform device with dynamic
->> or static GPIO assignment or via DT using dynamic GPIOs.
->
-> So given that this is for a new system which should only ever
-> be booted using device tree, why are we bothering with supporting
-> platform data passing at all?
+Thank you for the patch.
 
-Mainly to support the same interfaces as our other GPIO drivers. But I
-can easily remove the platform data init method if that is the
-preferred way, no problem.
+Please read below for a couple of comments in addition to Linus' review.
 
-> Is it so that arch/sh is more soft on this for example...?
-> Can some arch maintainer like SH/Paul ACK this approach?
->
-> Read: SH is not moving to device tree...?
+On Thursday 07 November 2013 08:47:37 Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> This patch adds a GPIO driver for the RZ series of SoCs from
+> Renesas. The driver can be used as platform device with dynamic
+> or static GPIO assignment or via DT using dynamic GPIOs.
+> 
+> The hardware allows control of GPIOs in blocks of up to 16 pins,
+> and once device may span multiple blocks. Interrupts are not
+> included in this hardware block, if interrupts are needed then
+> the PFC needs to be configured to a IRQ pin function which is
+> handled by the GIC hardware.
+> 
+> Tested with yet-to-be-posted platform device and DT devices on
+> r7s72100 and Genmai using LEDs, DIP switches and I2C bitbang.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  drivers/gpio/Kconfig                  |    6
+>  drivers/gpio/Makefile                 |    1
+>  drivers/gpio/gpio-rz.c                |  241 ++++++++++++++++++++++++++++++
+>  include/linux/platform_data/gpio-rz.h |   13 +
+>  4 files changed, 261 insertions(+)
+> 
+> --- 0001/drivers/gpio/Kconfig
+> +++ work/drivers/gpio/Kconfig	2013-11-06 12:07:13.000000000 +0900
+> @@ -230,6 +230,12 @@ config GPIO_RCAR
+>  	help
+>  	  Say yes here to support GPIO on Renesas R-Car SoCs.
+> 
+> +config GPIO_RZ
+> +	tristate "Renesas RZ GPIO"
+> +	depends on ARM
+> +	help
+> +	  Say yes here to support GPIO on Renesas RZ SoCs.
+> +
+>  config GPIO_SAMSUNG
+>  	bool
+>  	depends on PLAT_SAMSUNG
+> --- 0001/drivers/gpio/Makefile
+> +++ work/drivers/gpio/Makefile	2013-11-06 12:07:13.000000000 +0900
+> @@ -62,6 +62,7 @@ obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
+>  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o
+>  obj-$(CONFIG_GPIO_RDC321X)	+= gpio-rdc321x.o
+>  obj-$(CONFIG_GPIO_RCAR)		+= gpio-rcar.o
+> +obj-$(CONFIG_GPIO_RZ)		+= gpio-rz.o
+>  obj-$(CONFIG_GPIO_SAMSUNG)	+= gpio-samsung.o
+>  obj-$(CONFIG_ARCH_SA1100)	+= gpio-sa1100.o
+>  obj-$(CONFIG_GPIO_SCH)		+= gpio-sch.o
+> --- /dev/null
+> +++ work/drivers/gpio/gpio-rz.c	2013-11-06 14:20:02.000000000 +0900
+> @@ -0,0 +1,241 @@
+> +/*
+> + * RZ GPIO Support - Ports
+> + *
+> + *  Copyright (C) 2013 Magnus Damm
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; either version 2 of the License
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> + * GNU General Public License for more details.
+> + *
+> + * You should have received a copy of the GNU General Public License
+> + * along with this program; if not, write to the Free Software
+> + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 
+> USA
+> + */
 
-From what I can tell this GPIO block is not used with SH, so I don't
-think SH is related, but regarding DT on SH, do you know when it was
-decided that other architectures also were supposed to move DT?
+You can ditch the last two paragraphs.
 
-> (...)
->> Tested with yet-to-be-posted platform device and DT devices on
->> r7s72100 and Genmai using LEDs, DIP switches and I2C bitbang.
->
-> Do you think the maintainers will merge the platform
-> device approach?
+> +
+> +#include <linux/init.h>
+> +#include <linux/platform_device.h>
+> +#include <linux/spinlock.h>
+> +#include <linux/interrupt.h>
+> +#include <linux/ioport.h>
+> +#include <linux/io.h>
+> +#include <linux/bitops.h>
+> +#include <linux/err.h>
+> +#include <linux/gpio.h>
+> +#include <linux/slab.h>
+> +#include <linux/module.h>
+> +#include <linux/pinctrl/consumer.h>
+> +#include <linux/platform_data/gpio-rz.h>
 
-I would not assume so. But the goal with these patches is  not
-upstream, instead they basically serve as a stop-gap solution between
-now and when I get OK that the DT bits in this GPIO driver looks fine.
-If they are going to be merged or not is a different question IMO.
+Could you please sort the headers alphabetically ?
 
->> --- /dev/null
->> +++ work/include/linux/platform_data/gpio-rz.h  2013-11-06 14:18:46.000000000 +0900
->> @@ -0,0 +1,13 @@
->> +#ifndef __GPIO_RZ_H__
->> +#define __GPIO_RZ_H__
->> +
->> +struct gpio_rz_config {
->> +       int gpio_base;
->
-> Passing these static base offsets around is not good for the
-> kernel and we're trying to get rid of it :-(
+> +
+> +enum { REG_PSR, REG_PPR, REG_PMSR, REG_NR };
+> +
+> +struct rz_gpio_priv {
+> +	void __iomem *io[REG_NR];
+> +	struct gpio_chip gpio_chip;
+> +};
+> +
+> +static inline unsigned long rz_gpio_read_ppr(struct rz_gpio_priv *p, int
+> offs)
+> +{
+> +	unsigned long msk = BIT(offs % RZ_GPIOS_PER_PORT);
+> +	int offset = (offs / RZ_GPIOS_PER_PORT) * 4;
 
-Sure.
+offs and offset are unsigned, you can make them unsigned int.
 
->> +       const char *pctl_name;
->
-> Ho hum... This needs some kerneldoc describing that this is
-> used to map the GPIO range to the right pin controller.
+> +	return ioread32(p->io[REG_PPR] + offset) & msk;
 
-Ok, but it will just go away when the platform data init method is removed
+I believe you should return !!(...) here, or in the caller, to make sure the 
+gpio_get_value() operation returns either 0 or 1. I would do it here and 
+return a u32 instead of unsigned long.
 
->> +#define RZ_GPIOS_PER_PORT 16
->
-> This is only used in the driver so move it into the driver.
+> +}
+> +
+> +static inline void rz_gpio_write(struct rz_gpio_priv *p, int reg, int offs,
+> +				 bool value)
+> +{
+> +	unsigned long msk = BIT(offs % RZ_GPIOS_PER_PORT);
+> +	int offset = (offs / RZ_GPIOS_PER_PORT) * 4;
 
-It is also used by the macro below. =)
+offs and offset are unsigned here too.
 
->> +#define RZ_PORT_PIN(bank, pin) (((bank) * RZ_GPIOS_PER_PORT) + (pin))
->
-> This is not used anywhere so delete it.
->
-> If it is to be kept I'd like "pin" replaced with "line" to avoid
-> confusion with the pin control business.
+> +
+> +	/* upper 16 bits contain mask and lower 16 actual value */
+> +	iowrite32(value ? (msk | (msk << 16)) : (msk << 16),
 
-The idea with that macro is to allow board code to select which pin
-from which bank, but I realize it may clash with pinctrl terminology.
-Also, since the only reason for this header file is to provide a
-platform data init interface for the driver all these things will go
-away if we go DT-only.
+I would have written it has
 
-I'll ditch the platform data interface and post a V2.
+(value ? msk : 0) | (msk << 16)
 
-Thanks for your feedback!
+but I suppose gcc is smart enough to optimize this.
 
-Cheers,
+> +		  p->io[reg] + offset);
+> +}
+> +
+> +static inline struct rz_gpio_priv *gpio_to_priv(struct gpio_chip *chip)
+> +{
+> +	return container_of(chip, struct rz_gpio_priv, gpio_chip);
+> +}
+> +
+> +static int rz_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
+> +{
+> +	/* Set bit in PM register via PMSR to disable output */
+> +	rz_gpio_write(gpio_to_priv(chip), REG_PMSR, offset, true);
+> +	return 0;
+> +}
+> +
+> +static int rz_gpio_get(struct gpio_chip *chip, unsigned offset)
+> +{
+> +	/* Get bit from PPR register to determine pin state */
+> +	return (int)(rz_gpio_read_ppr(gpio_to_priv(chip), offset));
+> +}
+> +
+> +static void rz_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+> +{
+> +	/* Set bit in P register via PSR to control output */
+> +	rz_gpio_write(gpio_to_priv(chip), REG_PSR, offset, !!value);
+> +}
+> +
+> +static int rz_gpio_direction_output(struct gpio_chip *chip, unsigned
+> offset,
+> +				   int value)
+> +{
+> +	/* Write GPIO value to output before selecting output mode of pin */
+> +	rz_gpio_set(chip, offset, value);
+> +
+> +	/* Clear bit in PM register via PMSR to enable output */
+> +	rz_gpio_write(gpio_to_priv(chip), REG_PMSR, offset, false);
+> +	return 0;
+> +}
+> +
+> +static int rz_gpio_request(struct gpio_chip *chip, unsigned offset)
+> +{
+> +	return pinctrl_request_gpio(chip->base + offset);
+> +}
+> +
+> +static void rz_gpio_free(struct gpio_chip *chip, unsigned offset)
+> +{
+> +	pinctrl_free_gpio(chip->base + offset);
+> +
+> +	/* Set the GPIO as an input to ensure that the next GPIO request won't
+> +	* drive the GPIO pin as an output.
+> +	*/
+> +	rz_gpio_direction_input(chip, offset);
+> +}
+> +
+> +static int rz_gpio_probe(struct platform_device *pdev)
+> +{
+> +	struct gpio_rz_config *pdata = dev_get_platdata(&pdev->dev);
+> +	struct rz_gpio_priv *p;
+> +	struct resource *io[3];
+> +	struct gpio_chip *gpio_chip;
+> +	struct device_node *np = pdev->dev.of_node;
+> +	struct of_phandle_args args;
+> +	int number_of_pins, gpio_base;
+> +	int k, nr;
 
-/ magnus
+unsigned ?
+
+By the way, what's wrong with i as a loop index ? :-)
+
+> +	int ret;
+> +
+> +	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
+> +	if (!p) {
+> +		dev_err(&pdev->dev, "failed to allocate driver data\n");
+> +		return -ENOMEM;
+> +	}
+> +
+> +	for (k = 0; k < REG_NR; k++)
+> +		io[k] = platform_get_resource(pdev, IORESOURCE_MEM, k);
+> +
+> +	/* In case of 3 resources PSR, PPR and PMSR order is expected */
+> +	if (io[REG_PSR] && io[REG_PPR] && io[REG_PMSR]) {
+> +		nr = REG_NR;
+> +	} else {
+> +		/* A single resource is also acceptable (PPR only) */
+> +		if (io[0] && !io[1] && !io[2]) {
+> +			nr = 1;
+> +		} else {
+> +			dev_err(&pdev->dev, "missing IOMEM\n");
+> +			return -EINVAL;
+> +		}
+> +	}
+> +
+> +	for (k = 0; k < nr; k++) {
+> +		p->io[k] = devm_ioremap_nocache(&pdev->dev, io[k]->start,
+> +						resource_size(io[k]));
+
+You can use devm_ioremap_resource. The function prints an error on failure so 
+you can remove the dev_err() call below. Make sure to check the return value 
+with IS_ERR() and return PTR_ERR() insted of the fixed -ENXIO error.
+
+> +		if (!p->io[k]) {
+> +			dev_err(&pdev->dev, "failed to remap low I/O memory\n");
+> +			return -ENXIO;
+> +		}
+> +	}
+> +
+> +	/* If only 1 resource is available it must be PPR */
+> +	if (nr = 1) {
+> +		io[REG_PPR] = io[0];
+> +		p->io[REG_PPR] = p->io[0];
+> +		io[0] = NULL;
+> +		p->io[0] = NULL;
+> +	}
+> +
+> +	/* Support one device spanning several ports */
+> +	number_of_pins = RZ_GPIOS_PER_PORT;
+> +	if (io[REG_PSR])
+> +		number_of_pins *= resource_size(io[REG_PSR]) / 4;
+> +
+> +	gpio_base = pdata ? pdata->gpio_base : -1;
+> +
+> +	if (IS_ENABLED(CONFIG_OF) && np) {
+> +		ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0,
+> +						       &args);
+> +		number_of_pins = ret = 0 ? args.args[2] : RZ_GPIOS_PER_PORT;
+> +	}
+> +
+> +	gpio_chip = &p->gpio_chip;
+> +	gpio_chip->direction_input = rz_gpio_direction_input;
+> +	gpio_chip->get = rz_gpio_get;
+> +	gpio_chip->direction_output = rz_gpio_direction_output;
+> +	gpio_chip->set = rz_gpio_set;
+> +	gpio_chip->request = rz_gpio_request;
+> +	gpio_chip->free = rz_gpio_free;
+> +	gpio_chip->label = dev_name(&pdev->dev);
+> +	gpio_chip->dev = &pdev->dev;
+> +	gpio_chip->owner = THIS_MODULE;
+> +	gpio_chip->base = gpio_base;
+> +	gpio_chip->ngpio = number_of_pins;
+> +
+> +	ret = gpiochip_add(gpio_chip);
+> +	if (ret) {
+> +		dev_err(&pdev->dev, "failed to add GPIO controller\n");
+> +		return ret;
+> +	}
+> +
+> +	dev_info(&pdev->dev, "driving %d GPIOs\n", number_of_pins);
+> +
+> +	if (pdata && pdata->pctl_name) {
+> +		ret = gpiochip_add_pin_range(gpio_chip, pdata->pctl_name, 0,
+> +					     gpio_chip->base, gpio_chip->ngpio);
+> +		if (ret < 0)
+> +			dev_warn(&pdev->dev, "failed to add pin range\n");
+> +	}
+> +	return 0;
+> +}
+> +
+> +static int rz_gpio_remove(struct platform_device *pdev)
+> +{
+> +	struct rz_gpio_priv *p = platform_get_drvdata(pdev);
+> +
+> +	return gpiochip_remove(&p->gpio_chip);
+> +}
+> +
+> +static const struct of_device_id rz_gpio_dt_ids[] = {
+> +	{ .compatible = "renesas,gpio-rz", },
+> +	{},
+> +};
+> +MODULE_DEVICE_TABLE(of, rz_gpio_dt_ids);
+> +
+> +static struct platform_driver rz_gpio_device_driver = {
+> +	.probe		= rz_gpio_probe,
+> +	.remove		= rz_gpio_remove,
+> +	.driver		= {
+> +		.name	= "gpio_rz",
+> +		.of_match_table = rz_gpio_dt_ids,
+> +		.owner		= THIS_MODULE,
+> +	}
+> +};
+> +
+> +static int __init rz_gpio_init(void)
+> +{
+> +	return platform_driver_register(&rz_gpio_device_driver);
+> +}
+> +postcore_initcall(rz_gpio_init);
+> +
+> +static void __exit rz_gpio_exit(void)
+> +{
+> +	platform_driver_unregister(&rz_gpio_device_driver);
+> +}
+> +module_exit(rz_gpio_exit);
+> +
+> +MODULE_AUTHOR("Magnus Damm");
+> +MODULE_DESCRIPTION("Renesas RZ Port GPIO Driver");
+> +MODULE_LICENSE("GPL v2");
+> --- /dev/null
+> +++ work/include/linux/platform_data/gpio-rz.h	2013-11-06 
+14:18:46.000000000
+> +0900 @@ -0,0 +1,13 @@
+> +#ifndef __GPIO_RZ_H__
+> +#define __GPIO_RZ_H__
+> +
+> +struct gpio_rz_config {
+> +	int gpio_base;
+> +	const char *pctl_name;
+> +};
+> +
+> +#define RZ_GPIOS_PER_PORT 16
+> +
+> +#define RZ_PORT_PIN(bank, pin)	(((bank) * RZ_GPIOS_PER_PORT) + (pin))
+> +
+> +#endif /* __GPIO_RZ_H__ */
+-- 
+Regards,
+
+Laurent Pinchart
+
