@@ -1,85 +1,45 @@
-From: Wolfgang Grandegger <wg@grandegger.com>
-Date: Tue, 12 Nov 2013 22:17:43 +0000
-Subject: Re: [PATCH] can: add Renesas R-Car CAN driver
-Message-Id: <5282A907.6090404@grandegger.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 22:34:06 +0000
+Subject: [PATCH] ARM: shmobile: Use ->init_late() on Lager
+Message-Id: <20131113223406.20634.52693.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309280211.39068.sergei.shtylyov@cogentembedded.com> <524BB883.2040400@grandegger.com> <526061BE.7060204@cogentembedded.com> <52657CA1.2040708@grandegger.com> <527D89A3.1070403@cogentembedded.com> <5282A17C.1030309@cogentembedded.com>
-In-Reply-To: <5282A17C.1030309@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, mkl@pengutronix.de, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+From: Magnus Damm <damm@opensource.se>
 
-On 11/12/2013 10:45 PM, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/09/2013 04:02 AM, Sergei Shtylyov wrote:
-> 
->>>>> 2. ... with short-circuited CAN high and low and doing some time later
->>>>>          a manual recovery with "ip link set can0 type can restart"
-> 
->>>>     Now we have auto recovery only. Manual recovery was tested with the
->>>> first driver version and worked.
-> 
->>> What do you mean with "auto recovery"? Auto recovery by the hardware or
->>> via "restart-ms <ms>"? How do you choose between "manual" and "auto"
->>> recovery?
-> 
->>     This exact test was done with hardware auto-recovery only. No
->> "restart-ms"
->> was programmed.
-> 
->>>> Terminal 1:
-> 
->>>> root@10.0.0.104:/opt/can-utils# ./cangen -n 1 -g 1 can0
->>>> root@10.0.0.104:/opt/can-utils# ./cangen -n 1 -g 1 can0
->>>> root@10.0.0.104:/opt/can-utils# ./cangen -n 1 -g 1 can0
->>>> root@10.0.0.104:/opt/can-utils#
-> 
->>>> Terminal 2:
-> 
->>>> root@10.0.0.104:/opt/can-utils# ./candump -td -e any,0:0,#FFFFFFFF
->>>> (000.000000) can0 2000008C [8] 00 00 08 00 00 00 00 00 ERRORFRAME
->>>> controller-problem{}
->>>> protocol-violation{{tx-dominant-bit-error}{}}
->>>> bus-error
->>>> (000.021147) can0 20000144 [8] 00 00 00 00 00 00 00 00 ERRORFRAME
->>>> controller-problem{}
->>>> bus-off
->>>> restarted-after-bus-off
-> 
->>> Why does it get "restarted" directly after the bus-off?
-> 
->>     Because we have hardware auto-recovery enabled.
-> 
->>>> (011.738522) can0 2000008C [8] 00 00 08 00 00 00 00 00 ERRORFRAME
->>>> controller-problem{}
-> 
->>> What controller problem? data[1] is not set for some reasom.
-> 
->>     Not comments. Looking into it.
-> 
->    Sorry, this has been fixed a while ago. Now the log looks like:
-> 
-> root@10.0.0.104:/opt/can-utils#  ./candump -td -e any,0:0,#FFFFFFFF
->  (000.000000)  can0  2000008C   [8]  00 28 08 00 00 00 88 00 ERRORFRAME
->         controller-problem{tx-error-warning,tx-error-passive}
+Hook in shmobile_init_late() on Lager. This enables some PM
+related things like CPUIdle and Suspend-to-RAM.
 
-Only the highest level should be reported.
+With this patch applied it is possible to use Suspend-to-RAM:
+# echo enabled > /sys/class/tty/ttySC6/power/wakeup
+# echo mem > /sys/power/state 
+(wake by sending a character on the serial console)
 
->         protocol-violation{{tx-dominant-bit-error}{}}
->         bus-error
->         error-counter-tx-rx{{136}{0}}
->  (000.007578)  can0  20000040   [8]  00 00 00 00 00 00 00 00 ERRORFRAME
->         bus-off
->  (000.091847)  can0  20000100   [8]  00 00 00 00 00 00 00 00 ERRORFRAME
->         restarted-after-bus-off
->  (056.136722)  can0  2000008C   [8]  00 28 08 00 00 00 88 00 ERRORFRAME
->         controller-problem{tx-error-warning,tx-error-passive}
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Ditto.
+ arch/arm/mach-shmobile/board-lager-reference.c |    1 +
+ arch/arm/mach-shmobile/board-lager.c           |    1 +
+ 2 files changed, 2 insertions(+)
 
-Wolfgang.
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2013-11-13 16:55:46.000000000 +0900
+@@ -41,5 +41,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-11-13 16:55:38.000000000 +0900
+@@ -259,5 +259,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
