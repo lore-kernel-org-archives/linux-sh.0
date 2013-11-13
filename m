@@ -1,88 +1,165 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 15 Nov 2013 00:42:05 +0000
-Subject: Re: [PATCH 17/17] ARM: shmobile: lager: use gpio/fixed regulator for SDHI
-Message-Id: <87eh6io5r9.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 23:39:27 +0000
+Subject: [PATCH] ARM: shmobile: r7s72100 GPIO DT nodes for GPIO RZ
+Message-Id: <20131113233927.1559.99212.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<87txffxofc.wl%kuninori.morimoto.gx@renesas.com>
-	<87r4ajxodj.wl%kuninori.morimoto.gx@renesas.com>
-	<6658395.y4IG39SdVx@avalon>
-In-Reply-To: <6658395.y4IG39SdVx@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Laurent
+Add a total of 13 GPIO DT device nodes for r7s72100.
 
-Thank you for your feedback
-
-> > +/* SDHI regulator macro */
-> > +#define SDHI_REGULATOR(idx, vdd_pin, vccq_pin)				\
-> > +static struct regulator_consumer_supply vcc_sdhi##idx##_consumer =	\
-> > +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi." #idx);		\
-> > +									\
-> > +static struct regulator_init_data vcc_sdhi##idx##_init_data = {		\
-> > +	.constraints = {						\
-> > +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,		\
-> > +	},								\
-> > +	.consumer_supplies	= &vcc_sdhi##idx##_consumer,		\
-> > +	.num_consumer_supplies	= 1,					\
-> > +};									\
-> > +									\
-> > +static struct fixed_voltage_config vcc_sdhi##idx##_info = {		\
-> > +	.supply_name	= "SDHI" #idx "Vcc",				\
-> > +	.microvolts	= 3300000,					\
-> > +	.gpio		= vdd_pin,					\
-> > +	.enable_high	= 1,						\
-> > +	.init_data	= &vcc_sdhi##idx##_init_data,			\
-> > +};									\
-> > +									\
-> > +static struct regulator_consumer_supply vccq_sdhi##idx##_consumer=	\
-> > +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi." #idx);		\
-> > +									\
-> > +static struct regulator_init_data vccq_sdhi##idx##_init_data = {	\
-> > +	.constraints = {						\
-> > +		.input_uV	= 3300000,				\
-> > +		.min_uV		= 1800000,				\
-> > +		.max_uV		= 3300000,				\
-> > +		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |		\
-> > +				  REGULATOR_CHANGE_STATUS,		\
-> > +	},								\
-> > +	.consumer_supplies	= &vccq_sdhi##idx##_consumer,		\
-> > +	.num_consumer_supplies	= 1,					\
-> > +};									\
-> > +									\
-> > +static struct gpio vccq_sdhi##idx##_gpio =				\
-> > +	{ vccq_pin, GPIOF_OUT_INIT_HIGH, "vccq-sdhi" #idx };		\
-> > +									\
-> > +static struct gpio_regulator_state vccq_sdhi##idx##_states[] = {	\
-> > +	{ .value = 1800000, .gpios = 0 },				\
-> > +	{ .value = 3300000, .gpios = 1 },				\
-> > +};									\
-> > +									\
-> > +static struct gpio_regulator_config vccq_sdhi##idx##_info = {		\
-> > +	.supply_name	= "vqmmc",					\
-> > +	.gpios		= &vccq_sdhi##idx##_gpio,			\
-> > +	.nr_gpios	= 1,						\
-> > +	.states		= vccq_sdhi##idx##_states,			\
-> > +	.nr_states	= ARRAY_SIZE(vccq_sdhi##idx##_states),		\
-> > +	.type		= REGULATOR_VOLTAGE,				\
-> > +	.init_data	= &vccq_sdhi##idx##_init_data,			\
-> > +};
-> 
-> The vmmc regulator looks fine to me at first sight, but I'm less sure about 
-> the vqmmc regulator. The vqmmc supplies are provided by the PMIC, we should 
-> ideally use the existing da9063 mfd driver. As this might require a 
-> significant amount of work I'm fine with this approach as a quick fix, but I'd 
-> like a comment in the source code stating that vqmmc should be handled by the 
-> da9063 driver.
-
-Nice catch.
-I agree. will do in v2 patch
-
-Best regards
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Kuninori Morimoto
+
+ arch/arm/boot/dts/r7s72100.dtsi |  131 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 131 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r7s72100.dtsi
++++ work/arch/arm/boot/dts/r7s72100.dtsi	2013-11-13 22:33:56.000000000 +0900
+@@ -14,6 +14,22 @@
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 
++	aliases {
++		gpio0 = &p0;
++		gpio1 = &p1;
++		gpio2 = &p2;
++		gpio3 = &p3;
++		gpio4 = &p4;
++		gpio5 = &p5;
++		gpio6 = &p6;
++		gpio7 = &p7;
++		gpio8 = &p8;
++		gpio9 = &p9;
++		gpio10 = &p10;
++		gpio11 = &p11;
++		gpio12 = &jp0;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -33,4 +49,119 @@
+ 		reg = <0xe8201000 0x1000>,
+ 			<0xe8202000 0x1000>;
+ 	};
++
++	p0: gpio@fcfe3100 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3100 0x4>, /* PSR */
++		  	  <0xfcfe3200 0x2>, /* PPR */
++			  <0xfcfe3800 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p1: gpio@fcfe3104 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3104 0x4>, /* PSR */
++		  	  <0xfcfe3204 0x2>, /* PPR */
++			  <0xfcfe3804 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p2: gpio@fcfe3108 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3108 0x4>, /* PSR */
++		  	  <0xfcfe3208 0x2>, /* PPR */
++			  <0xfcfe3808 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p3: gpio@fcfe310c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe310c 0x4>, /* PSR */
++		  	  <0xfcfe320c 0x2>, /* PPR */
++			  <0xfcfe380c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p4: gpio@fcfe3110 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3110 0x4>, /* PSR */
++		  	  <0xfcfe3210 0x2>, /* PPR */
++			  <0xfcfe3810 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p5: gpio@fcfe3114 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3114 0x4>, /* PSR */
++		  	  <0xfcfe3214 0x2>, /* PPR */
++			  <0xfcfe3814 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p6: gpio@fcfe3118 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3118 0x4>, /* PSR */
++		  	  <0xfcfe3218 0x2>, /* PPR */
++			  <0xfcfe3818 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p7: gpio@fcfe311c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe311c 0x4>, /* PSR */
++		  	  <0xfcfe321c 0x2>, /* PPR */
++			  <0xfcfe381c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p8: gpio@fcfe3120 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3120 0x4>, /* PSR */
++		  	  <0xfcfe3220 0x2>, /* PPR */
++			  <0xfcfe3820 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p9: gpio@fcfe3124 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3124 0x4>, /* PSR */
++		  	  <0xfcfe3224 0x2>, /* PPR */
++			  <0xfcfe3824 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p10: gpio@fcfe3128 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3128 0x4>, /* PSR */
++		  	  <0xfcfe3228 0x2>, /* PPR */
++			  <0xfcfe3828 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	p11: gpio@fcfe312c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe312c 0x4>, /* PSR */
++		  	  <0xfcfe322c 0x2>, /* PPR */
++			  <0xfcfe382c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
++
++	jp0: gpio@fcfe7b20 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe7b20 0x2>; /* JPPR */
++		#gpio-cells = <2>;
++		gpio-controller;
++	};
+ };
