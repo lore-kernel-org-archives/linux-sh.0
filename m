@@ -1,56 +1,58 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 10:15:27 +0000
-Subject: [PATCH v2] v4l: sh_vou: Fix warnings due to improper casts and printk formats
-Message-Id: <1385547327-13657-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Nov 2013 13:52:15 +0000
+Subject: [PATCH 5/5] drm/rcar-du: Add support for the r8a7791 DU
+Message-Id: <1384350735-4419-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-media@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Use the %zu printk specifier to print size_t variables, and cast
-pointers to uintptr_t instead of unsigned int where applicable. This
-fixes warnings on platforms where pointers and/or dma_addr_t have a
-different size than int.
+The r8a7791 DU is a stripped-down version of the r8a7790 DU with two
+CRTCs and a single LVDS output.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
-Cc: linux-media@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/sh_vou.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-Changes compared to v1:
-
-- Cast to uintptr_t instead of unsigned long
-
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 4f30341..69e2125 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
- 	vb->size = vb->height * bytes_per_line;
- 	if (vb->baddr && vb->bsize < vb->size) {
- 		/* User buffer too small */
--		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
-+		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
- 			 vb->bsize, vb->baddr);
- 		return -EINVAL;
- 	}
-@@ -302,9 +302,9 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
- 	}
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 4eee02f..5536811 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -272,9 +272,29 @@ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+ 	.num_lvds = 2,
+ };
  
- 	dev_dbg(vou_dev->v4l2_dev.dev,
--		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
-+		"%s(): fmt #%d, %u bytes per line, phys 0x%lx, type %d, state %d\n",
- 		__func__, vou_dev->pix_idx, bytes_per_line,
--		videobuf_to_dma_contig(vb), vb->memory, vb->state);
-+		(uintptr_t)videobuf_to_dma_contig(vb), vb->memory, vb->state);
++static const struct rcar_du_device_info rcar_du_r8a7791_info = {
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_DEFR8,
++	.num_crtcs = 2,
++	.routes = {
++		/* R8A7791 has one RGB output, one LVDS output and one
++		 * (currently unsupported) TCON output.
++		 */
++		[RCAR_DU_OUTPUT_DPAD0] = {
++			.possible_crtcs = BIT(1),
++			.encoder_type = DRM_MODE_ENCODER_NONE,
++		},
++		[RCAR_DU_OUTPUT_LVDS0] = {
++			.possible_crtcs = BIT(0),
++			.encoder_type = DRM_MODE_ENCODER_LVDS,
++		},
++	},
++	.num_lvds = 1,
++};
++
+ static const struct platform_device_id rcar_du_id_table[] = {
+ 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
+ 	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
++	{ "rcar-du-r8a7791", (kernel_ulong_t)&rcar_du_r8a7791_info },
+ 	{ }
+ };
  
- 	return 0;
- }
 -- 
 1.8.3.2
 
