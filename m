@@ -1,46 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:56:02 +0000
-Subject: Re: [PATCH] ARM: shmobile: Include all 2 GiB of memory on APE6EVM
-Message-Id: <20131128075600.GN24146@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Nov 2013 22:59:27 +0000
+Subject: [PATCH 00/03] gpio: R-Car and EM GPIO update
+Message-Id: <20131113225927.21449.78044.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131031031549.15985.23547.sendpatchset@w520>
-In-Reply-To: <20131031031549.15985.23547.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, Oct 31, 2013 at 12:15:49PM +0900, Magnus Damm wrote:
-> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-> 
-> Add 1GiB of DRAM at 0x2_0000_0000 to support the full 2GiB
-> of APE6EVM system memory.
-> 
-> Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
+gpio: R-Car and EM GPIO update
 
-Thanks, I have queued this up.
+[PATCH 01/03] gpio: rcar: Use lazy disable and mask on suspend
+[PATCH 02/03] gpio: em: Setup gpiochip->dev
+[PATCH 03/03] gpio: em: Use lazy disable and mask on suspend
 
-> 
->  For correct run time operation regardless of kernel configuration
->  ARM patches 7863/1 and 7864/1 are needed.
-> 
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts |    5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> --- 0001/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-10-31 11:44:53.000000000 +0900
-> @@ -24,6 +24,11 @@
->  		reg = <0 0x40000000 0 0x40000000>;
->  	};
->  
-> +	memory@200000000 {
-> +		device_type = "memory";
-> +		reg = <2 0x00000000 0 0x40000000>;
-> +	};
-> +
->  	ape6evm_fixed_3v3: fixedregulator@0 {
->  		compatible = "regulator-fixed";
->  		regulator-name = "3V3";
-> 
+Update the R-Car GPIO driver and the GPIO driver used on EMEV2 to use lazy
+disable and mask on suspend. This fixes the Suspend-to-RAM behavior to make
+sure wakeup sources are left enabled while suspending. Also include a small
+fix for gpio-em that fixes the DT use case.
+ 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git tag renesas-devel-v3.12-20131112
+
+ drivers/gpio/gpio-em.c   |    5 ++---
+ drivers/gpio/gpio-rcar.c |    3 +--
+ 2 files changed, 3 insertions(+), 5 deletions(-)
