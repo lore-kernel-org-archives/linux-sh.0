@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Nov 2013 04:14:37 +0000
+Date: Wed, 13 Nov 2013 05:32:03 +0000
 Subject: Re: [PATCH] irqchip: renesas-intc-irqpin: Fix register bitfield shift calculation
-Message-Id: <CANqRtoQYL6thS0npjqkcBjDKyzb2_7hh1=LurWw_mzJq95Yj-Q@mail.gmail.com>
+Message-Id: <CANqRtoQ1ip--Yorp=VYRzT7No36oQN26buYF2MqSRGdLkSNQXQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383999481-2742-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1383999481-2742-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,38 +10,37 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hi Laurent,
 
-On Wed, Nov 13, 2013 at 9:54 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Nov 12, 2013 at 02:24:34PM +0100, Laurent Pinchart wrote:
->> Hi Simon,
->>
->> On Tuesday 12 November 2013 14:08:40 Simon Horman wrote:
->> > On Sat, Nov 09, 2013 at 01:18:01PM +0100, Laurent Pinchart wrote:
->> > > The SENSE register bitfield position is incorrectly computed for SoCs
->> > > that use 2-bit IRQ sense fields. Fix it.
->> > >
->> > > Signed-off-by: Laurent Pinchart
->> > > <laurent.pinchart+renesas@ideasonboard.com>
->> >
->> > Hi Laurent,
->> >
->> > your change seems correct to me but I am wondering if it should
->> > be considered as a bug-fix?
->>
->> It's a bug fix, but given that the bug hasn't had any consequence so far, I'm
->> not sure whether we really need to backport it to -stable.
+On Tue, Nov 12, 2013 at 10:22 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
 >
-> Thanks. I think the best thing would be to
-> try and get it into v3.13 as a fix but not worry about -stable.
+> On Tuesday 12 November 2013 14:44:13 Magnus Damm wrote:
+>> On Sat, Nov 9, 2013 at 9:18 PM, Laurent Pinchart wrote:
+>> > The SENSE register bitfield position is incorrectly computed for SoCs
+>> > that use 2-bit IRQ sense fields. Fix it.
+>> >
+>> > Signed-off-by: Laurent Pinchart
+>> > <laurent.pinchart+renesas@ideasonboard.com>
+>>
+>> I checked this against the sh73a0 data sheet which is using 4-bit IRQ
+>> sense and it looks correct to me.
+>>
+>> It would nice nice if someone could test this on r8a7778 or r8a7779
+>> which I believe use 2-bit IRQ sense.
 >
-> I will see about making it so.
+> I've tested it on Lager. This is what prompted me to write the patch.
 
-Thanks. Can you work with Laurent to briefly extend the commit message
-with information about which SoCs this has been tested on and such? I
-don't have any R-Car Gen1 boards myself so you guys will have to fix
-that.
+Lager is using R-Car H2 which in turn uses IRQC, not INTC.
 
-Cheers,
+So I guess this is a typo. You probably mean a R-Car Gen 1 board or SH-Mobile.
+
+>> Also, in the future, since the INTC hardware is kind of diverse,
+>> please consider including SoC information in the commit message.
+>
+> OK I will.
+
+Thanks,
 
 / magnus
