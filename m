@@ -1,45 +1,24 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 09:08:33 +0000
-Subject: [PATCH 03/16] ARM: shmobile: bockw: Do not set command line in defconfig
-Message-Id: <851f0cda469fdba6371ab2e268462aeb8393f08e.1385629477.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 14 Nov 2013 22:17:16 +0000
+Subject: [PATCH v2 0/3] Add Ether support for R8A7791/Koelsch board
+Message-Id: <201311150217.23563.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As a set towards moving shmobile towards multi-platform
-the kernel command line should be set in the DTB rather than
-in the kernel config.
+Hello.
 
-bockw already has the command line present in its DTS file
-but it was being overrirden by the kernel config.
+   Resending with correct subject...
 
-A side effect of this change is that "rw" is now present
-on the command line which allows a boot using nfs root to
-succeed in the case where userspace expects to be able
-to write to the root filesystem.
+   Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.12-20131112' tag. Here we add the Ether support to the
+R8A7791/Koelsch board. The patchset requires the 'sh_eth' driver R8A7791
+support patch posted earlier in order to work.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/configs/bockw_defconfig | 2 --
- 1 file changed, 2 deletions(-)
+[1/3] ARM: shmobile: r8a7791: add Ether clock
+[2/3] ARM: shmobile: Koelsch: add Ether support
+[3/3] ARM: shmobile: Koelsch: enable Ether in defconfig
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 6583683..b35301f 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -27,8 +27,6 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
--CONFIG_CMDLINE_FORCE=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- # CONFIG_SUSPEND is not set
- CONFIG_PM_RUNTIME=y
--- 
-1.8.4
-
+WBR, Sergei
