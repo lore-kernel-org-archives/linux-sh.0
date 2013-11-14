@@ -1,78 +1,75 @@
-From: Wanlong Gao <gaowanlong@cn.fujitsu.com>
-Date: Thu, 14 Nov 2013 00:26:25 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 14 Nov 2013 12:31:53 +0000
 Subject: Re: [PATCH] sh: fix kernel build error
-Message-Id: <528418B1.6090507@cn.fujitsu.com>
+Message-Id: <5284C2B9.2020805@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384353504-21886-1-git-send-email-gaowanlong@cn.fujitsu.com> <5283C19D.4050601@cogentembedded.com>
-In-Reply-To: <5283C19D.4050601@cogentembedded.com>
+References: <1384353504-21886-1-git-send-email-gaowanlong@cn.fujitsu.com> <5283C19D.4050601@cogentembedded.com> <528418B1.6090507@cn.fujitsu.com>
+In-Reply-To: <528418B1.6090507@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-sh@vger.kernel.org, lethal@linux-sh.org
-Cc: linux-kernel@vger.kernel.org, fengguang.wu@intel.com, kbuild-all@01.org, Wanlong Gao <gaowanlong@cn.fujitsu.com>
+To: gaowanlong@cn.fujitsu.com, linux-sh@vger.kernel.org, lethal@linux-sh.org
+Cc: linux-kernel@vger.kernel.org, fengguang.wu@intel.com, kbuild-all@01.org
 
-On 11/14/2013 02:14 AM, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/13/2013 05:38 PM, Wanlong Gao wrote:
-> 
->>     arch/sh/kernel/kgdb.c: In function 'sleeping_thread_to_gdb_regs':
->>>> arch/sh/kernel/kgdb.c:225:32: error: implicit declaration of function 'task_stack_page' [-Werror=implicit-function-declaration]
->>>> arch/sh/kernel/kgdb.c:242:23: error: dereferencing pointer to incomplete type
->>>> arch/sh/kernel/kgdb.c:243:22: error: dereferencing pointer to incomplete type
->>     arch/sh/kernel/kgdb.c: In function 'singlestep_trap_handler':
->>>> arch/sh/kernel/kgdb.c:310:27: error: 'SIGTRAP' undeclared (first use in this function)
->>     arch/sh/kernel/kgdb.c:310:27: note: each undeclared identifier is reported only once for each function it appears in
->>     cc1: all warnings being treated as errors
-> 
->    Strange quoting...
+Hello.
 
-Strange? It's the build error log.
+On 14-11-2013 4:26, Wanlong Gao wrote:
 
-> 
->> This is introduced by commit 16559ae.
-> 
->    Please also specify that commit's summary line in parens.
+>>>      arch/sh/kernel/kgdb.c: In function 'sleeping_thread_to_gdb_regs':
+>>>>> arch/sh/kernel/kgdb.c:225:32: error: implicit declaration of function 'task_stack_page' [-Werror=implicit-function-declaration]
+>>>>> arch/sh/kernel/kgdb.c:242:23: error: dereferencing pointer to incomplete type
+>>>>> arch/sh/kernel/kgdb.c:243:22: error: dereferencing pointer to incomplete type
+>>>      arch/sh/kernel/kgdb.c: In function 'singlestep_trap_handler':
+>>>>> arch/sh/kernel/kgdb.c:310:27: error: 'SIGTRAP' undeclared (first use in this function)
+>>>      arch/sh/kernel/kgdb.c:310:27: note: each undeclared identifier is reported only once for each function it appears in
+>>>      cc1: all warnings being treated as errors
 
-commit 16559ae48c76f1ceb970b9719dea62b77eb5d06b
-Author: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date:   Mon Feb 4 15:35:26 2013 -0800
+>>     Strange quoting...
 
-    kgdb: remove #include <linux/serial_8250.h> from kgdb.h
-    
-    There's no reason kgdb.h itself needs to include the 8250 serial port
-    header file.  So push it down to the _very_ limited number of individual
-    drivers that need the values in that file, and fix up the places where
-    people really wanted serial_core.h and platform_device.h.
-    
-    Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Strange? It's the build error log.
 
+    I've never seen the leading > characters in gcc's error output.
 
-And the line caused this build error is:
+>>> This is introduced by commit 16559ae.
 
-diff --git a/include/linux/kgdb.h b/include/linux/kgdb.h
-index 4dff0c6..c6e091b 100644
---- a/include/linux/kgdb.h
-+++ b/include/linux/kgdb.h
-@@ -13,7 +13,6 @@
- #ifndef _KGDB_H_
- #define _KGDB_H_
- 
--#include <linux/serial_8250.h>
- #include <linux/linkage.h>
- #include <linux/init.h>
- #include <linux/atomic.h>
+>>     Please also specify that commit's summary line in parens.
+
+> commit 16559ae48c76f1ceb970b9719dea62b77eb5d06b
+> Author: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Date:   Mon Feb 4 15:35:26 2013 -0800
+
+>      kgdb: remove #include <linux/serial_8250.h> from kgdb.h
+>
+>      There's no reason kgdb.h itself needs to include the 8250 serial port
+>      header file.  So push it down to the _very_ limited number of individual
+>      drivers that need the values in that file, and fix up the places where
+>      people really wanted serial_core.h and platform_device.h.
+
+>      Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 
-Thanks,
-Wanlong Gao
+> And the line caused this build error is:
 
-> 
->> CC: kbuild-all@01.org
->> Reported-by: Fengguang Wu <fengguang.wu@intel.com>
->> Signed-off-by: Wanlong Gao <gaowanlong@cn.fujitsu.com>
-> 
-> WBR, Sergei
-> 
-> 
+> diff --git a/include/linux/kgdb.h b/include/linux/kgdb.h
+> index 4dff0c6..c6e091b 100644
+> --- a/include/linux/kgdb.h
+> +++ b/include/linux/kgdb.h
+> @@ -13,7 +13,6 @@
+>   #ifndef _KGDB_H_
+>   #define _KGDB_H_
+>
+> -#include <linux/serial_8250.h>
+>   #include <linux/linkage.h>
+>   #include <linux/init.h>
+>   #include <linux/atomic.h>
+
+    That's all interesting but what I asked you to do is add the summary line 
+("kgdb: remove #include <linux/serial_8250.h> from kgdb.h" in this case) 
+enclosed into parentheses to your commit log. There was no need to tell me all 
+the gory details of your fix. :-)
+
+> Thanks,
+> Wanlong Gao
+
+WBR, Sergei
 
