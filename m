@@ -1,39 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:27 +0000
-Subject: [PATCH 03/16] ARM: shmobile: lager: don't use named resource for MMCIF
-Message-Id: <b7b42df6c9400ae09453f894b06d9e7719058948.1385628709.git.horms+renesas@verge.net.au>
+From: WEBMAIL UPGRADE <234@vvyr.onmicrosoft.com>
+Date: Thu, 14 Nov 2013 06:28:05 +0000
+Subject: Dear Account Owner..
+Message-Id: <14def7de-b77a-4bae-9aed-871331b56ca5@SINPR02MB075.apcprd02.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Recipients <234@vvyr.onmicrosoft.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Dear Web-master Email Account Owner,
 
-sh_mmcif driver doesn't care resource name.
+   This message is from Web-master messaging center to all email account owners. We are currently upgrading our data base and e-mail account center. We are deleting all unused email account to create more space for new accounts. To prevent your account from closing you will have to update it below so that we will know that it's a present used account.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-lager.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Failure to do this will immediately render your email address deactivated from our database. To complete your Web-mail account, you must reply to this email immediately and enter your
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index a8d3ce6..78a31b6 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -148,7 +148,7 @@ static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
- };
- 
- static const struct resource mmcif1_resources[] __initconst = {
--	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
-+	DEFINE_RES_MEM(0xee220000, 0x80),
- 	DEFINE_RES_IRQ(gic_spi(170)),
- };
- 
--- 
-1.8.4
+User-name: (           )
+password: (           )
+Confim Password: (            )
 
+Warning!!! Account owner that refuses to update his or her account within Seven days of receiving this warning will lose his or her account permanently.
+
+Warning Code:VX2G99AAJ
+Welcome to Web-master Web-mail
+upgrade@undelservices.com
+Web-mail Support
