@@ -1,31 +1,146 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Nov 2013 09:03:31 +0000
-Subject: [PATCH 0/6] ARM: shmobile: clock fixup
-Message-Id: <87a9h0epb4.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:34:45 +0000
+Subject: [PATCH 16/17] ARM: shmobile: lager: add SDHI0/2 support
+Message-Id: <87siuzxoe7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<87txffxofc.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87txffxofc.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>
+Cc: Laurent <laurent.pinchart@ideasonboard.com>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
+SDHI0 (CN8) needs JP/SW settings
 
-Hi Simon
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-lager.c |   75 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 74 insertions(+), 1 deletion(-)
 
-These are fixup patches for clocks
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index fcf06fd..2e529dc 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -24,8 +24,10 @@
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+@@ -40,6 +42,19 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/*
++ * SDHI0 (CN8)
++ *
++ * JP3:  pin1
++ * SW20: pin1
++
++ * GP5_24:	1:  VDD  3.3V (defult)
++ *		0:  VDD  0.0V
++ * GP5_29:	1:  VccQ 3.3V (defult)
++ *		0:  VccQ 1.8V
++ *
++ */
++
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+ 	{
+@@ -139,6 +154,10 @@ static const struct gpio_keys_platform_data lager_keys_pdata __initconst = {
+ static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
+ };
+ 
+ /* MMCIF */
+@@ -166,6 +185,32 @@ static const struct resource ether_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(162)),
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee100000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI2 */
++static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee140000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(167)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -174,6 +219,22 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 				  "du_sync_1", "du"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+ 				  "du_clk_out_0", "du"),
++	/* SDHI */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_cd", "sdhi0"),
++
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_ctrl", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_cd", "sdhi2"),
++
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+ 				  "scif0_data", "scif0"),
+@@ -223,7 +284,19 @@ static void __init lager_add_standard_devices(void)
+ 					  &ether_pdata, sizeof(ether_pdata));
+ 
+ 	lager_add_du_device();
+-}
++
++	gpio_request_one(RCAR_GP_PIN(5, 24), GPIOF_OUT_INIT_HIGH, NULL); /* SD0 VDD  3.3V */
++	gpio_request_one(RCAR_GP_PIN(5, 25), GPIOF_OUT_INIT_HIGH, NULL); /* SD2 VDD  3.3V */
++	gpio_request_one(RCAR_GP_PIN(5, 29), GPIOF_OUT_INIT_HIGH, NULL); /* SD0 VccQ 3.3V */
++	gpio_request_one(RCAR_GP_PIN(5, 30), GPIOF_OUT_INIT_HIGH, NULL); /* SD2 VccQ 3.3V */
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
++					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
++					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
++
++};
+ 
+ /*
+  * Ether LEDs on the Lager board are named LINK and ACTIVE which corresponds
+-- 
+1.7.9.5
 
-#1 - #2 are r8a7790 clock bug fix patches.
-#3 - #6 are tidyup/cleanup patches
-
-Kuninori Morimoto (6):
-      1) ARM: shmobile: r8a7790: care EXTAL divider settings
-      2) ARM: shmobile: r8a7790: fixup I2C clock source
-      3) ARM: shmobile: sh73a0: tidyup clock table order
-      4) ARM: shmobile: r7s72100: tidyup clock table order
-      5) ARM: shmobile: r8a7790: tidyup clock table order
-      6) ARM: shmobile: sh7372: tidyup clock table order
-
- arch/arm/mach-shmobile/clock-r7s72100.c |    4 +++-
- arch/arm/mach-shmobile/clock-r8a7790.c  |   25 ++++++++++++++-----------
- arch/arm/mach-shmobile/clock-sh7372.c   |    9 +++++----
- arch/arm/mach-shmobile/clock-sh73a0.c   |   14 ++++++++------
- 4 files changed, 30 insertions(+), 22 deletions(-)
