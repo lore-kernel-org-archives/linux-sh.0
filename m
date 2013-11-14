@@ -1,34 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Nov 2013 02:08:03 +0000
-Subject: Re: [PATCH] ARM: shmobile: Enable GPIO LEDs on Genmai
-Message-Id: <20131119020802.GI17628@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 14 Nov 2013 22:19:18 +0000
+Subject: [PATCH v2 1/3] ARM: shmobile: r8a7791: add Ether clock
+Message-Id: <201311150219.25520.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113234230.1579.9739.sendpatchset@w520>
- <20131119020424.GH17628@verge.net.au>
-In-Reply-To: <20131119020424.GH17628@verge.net.au>
+References: <201311150217.23563.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201311150217.23563.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 19, 2013 at 11:04:25AM +0900, Simon Horman wrote:
-> On Thu, Nov 14, 2013 at 08:42:30AM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > Enable led1 and led2 on the Genmai board using
-> > the r7s72100 SoC and the GPIO RZ driver.
-> 
-> Thanks, I have queued this up.
+Add support for R8A7791 Ether clock.
 
-I was a little to hasty. I have unqueued this patch
-as it depends on "ARM: shmobile: r7s72100 GPIO DT nodes for GPIO RZ"
-which appears to still be under discussion.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> 
-> I think there should be an accompanying defconfig update.
-> Would you like me to prepare something?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+Changes in version 2:
+- changed Ether device name to "r8a779x-ether".
+
+ arch/arm/mach-shmobile/clock-r8a7791.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7791.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7791.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -120,6 +120,7 @@ static struct clk *main_clks[] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP216, MSTP207, MSTP206,
+@@ -129,6 +130,7 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP719] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 19, 0), /* SCIF2 */
+@@ -180,6 +182,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("r8a779x-ether", &mstp_clks[MSTP813]), /* Ether */
+ };
+ 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
