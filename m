@@ -1,52 +1,82 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:02:18 +0000
-Subject: [PATCH v3 17/29] ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
-Message-Id: <1384869751-9786-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:32:38 +0000
+Subject: [PATCH 14/17] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
+Message-Id: <87wqkbxohp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+This patch updates r8a7779 DT data to have SoC specific settings.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch disables it as default,
+but we can use wp-gpios property to enable it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi    |    8 --------
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ 2 files changed, 1 insertion(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 77627dd..798f8ac 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -90,16 +90,21 @@ void __init sh7372_pinmux_init(void)
- #define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF,			\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
- 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
- 	.scscr		= SCSCR_RE | SCSCR_TE,			\
- };								\
- 								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
-+};								\
-+								\
- static struct platform_device scif##index##_device = {		\
- 	.name		= "sh-sci",				\
- 	.id		= index,				\
-+	.resource	= scif##index##_resources,		\
-+	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
- 	.dev		= {					\
- 		.platform_data	= &scif##index##_platform_data,	\
- 	},							\
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 05fd41c..084132e 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -212,8 +212,6 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -222,8 +220,6 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 105 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -232,8 +228,6 @@
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 107 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -242,8 +236,6 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 106 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ };
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index dc97027..9cffca1 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+ };
 -- 
-1.8.3.2
+1.7.9.5
 
