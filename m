@@ -1,102 +1,47 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 14 Nov 2013 10:16:05 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 14 Nov 2013 15:23:05 +0000
 Subject: Re: [PATCH v2 0/7] Renesas R8A7790 Common Clock Framework support
-Message-Id: <CANqRtoRfBb_mZ3erk_iSmmjuFJAWetN3THjGQcBhEjVE__2wWg@mail.gmail.com>
+Message-Id: <9051092.bb2GyTMq0G@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <CANqRtoRfBb_mZ3erk_iSmmjuFJAWetN3THjGQcBhEjVE__2wWg@mail.gmail.com>
+In-Reply-To: <CANqRtoRfBb_mZ3erk_iSmmjuFJAWetN3THjGQcBhEjVE__2wWg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Magnus,
 
-Thanks for V2, it is looking better and better. Great that r8a7791 and
-r8a7790 can share the CPG code. I have now finally got my r8a7791
-board replaced so I intend to try your code out on Lager and then see
-if I can cook something up on Koelsch.
+On Thursday 14 November 2013 19:16:05 Magnus Damm wrote:
+> Hi Laurent,
+> 
+> Thanks for V2, it is looking better and better. Great that r8a7791 and
+> r8a7790 can share the CPG code. I have now finally got my r8a7791 board
+> replaced so I intend to try your code out on Lager and then see if I can
+> cook something up on Koelsch.
 
-I have one question related to the CPG. What is your plan regarding
-CPU Frequency scaling? I'd like to see "z_clk" and "z2_clk"
-implemented together with some way to let CPUFreq scale "z_clk". Can
-you please spend some time on that?
+I was actually planning to test the code on the Koelsch board. I don't want to 
+step on anyone's toes, so please let me know if someone is already working on 
+CCF patches for M2, otherwise I'll send them.
 
-Cheers,
+> I have one question related to the CPG. What is your plan regarding CPU
+> Frequency scaling? I'd like to see "z_clk" and "z2_clk" implemented together
+> with some way to let CPUFreq scale "z_clk". Can you please spend some time
+> on that?
 
-/ magnus
+Z2 is a fixed factor clock, I'll just add it to DT.
 
-On Sun, Nov 10, 2013 at 12:09 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Hello,
->
-> This is the second version of the CCF clock drivers for the Renesas R-Car
-> R8A7790 (H2) SoC.
->
-> The patches are pretty self-explanatory and described in their respective
-> commit message. The R8A7790 datasheet is unfortunately not publicly available.
->
-> The code is available in my git tree at
->
->         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/r8a7790
->
-> The branch is based on a merge of renesas-devel-v3.12-rc7-20131101, v3.12, and
-> clk-prepare patches I've posted earlier on the list (see "[PATCH 00/12] Prepare
-> various SH/R Mobile/Car drivers for CCF migration").
->
-> Changes compared to v1:
->
-> - The core CPG clocks driver now supports the r8a7791 SoC in addition to the
-> r8a7790. They are collectively refered to as 'R-Car Gen2'. The driver has thus
-> been renamed to clk-rcar-gen2.c. The DT bindings have been updated accordingly.
->
-> - Several MSTP clocks have been added to the r8a7790-clock.h header and a new
-> header has been added for the r8a7791
->
-> - The r8a7790 dtsi patches that add and reference clocks have been added to
-> this series.
->
-> Cc: devicetree@vger.kernel.org
->
-> Laurent Pinchart (7):
->   clk: shmobile: Add R-Car Gen2 clocks support
->   clk: shmobile: Add DIV6 clock support
->   clk: shmobile: Add MSTP clock support
->   ARM: shmobile: r8a7790: Add clock index macros for DT sources
->   ARM: shmobile: r8a7791: Add clock index macros for DT sources
->   ARM: shmobile: r8a7790: Add clocks
->   ARM: shmobile: r8a7790: Reference clocks
->
->  .../bindings/clock/renesas,cpg-div6-clocks.txt     |  27 ++
->  .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  47 ++++
->  .../clock/renesas,rcar-gen2-cpg-clocks.txt         |  32 +++
->  arch/arm/boot/dts/r8a7790-lager-reference.dts      |   2 +-
->  arch/arm/boot/dts/r8a7790-lager.dts                |   2 +-
->  arch/arm/boot/dts/r8a7790.dtsi                     | 310 +++++++++++++++++++++
->  drivers/clk/shmobile/Makefile                      |   7 +-
->  drivers/clk/shmobile/clk-div6.c                    | 185 ++++++++++++
->  drivers/clk/shmobile/clk-mstp.c                    | 229 +++++++++++++++
->  drivers/clk/shmobile/clk-rcar-gen2.c               | 187 +++++++++++++
->  include/dt-bindings/clock/r8a7790-clock.h          |  99 +++++++
->  include/dt-bindings/clock/r8a7791-clock.h          | 104 +++++++
->  include/linux/clk/shmobile.h                       |  19 ++
->  13 files changed, 1247 insertions(+), 3 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
->  create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
->  create mode 100644 Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
->  create mode 100644 drivers/clk/shmobile/clk-div6.c
->  create mode 100644 drivers/clk/shmobile/clk-mstp.c
->  create mode 100644 drivers/clk/shmobile/clk-rcar-gen2.c
->  create mode 100644 include/dt-bindings/clock/r8a7790-clock.h
->  create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
->  create mode 100644 include/linux/clk/shmobile.h
->
-> --
-> Regards,
->
-> Laurent Pinchart
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Z is a bit more tricky. It's the output of a pure multiplier (PLL0) followed 
+by a pure divisor (SYS-CPU divider 1). I can easily model the two as separate 
+clock devices, but I'm unsure about what should be done at runtime when 
+setting the Z clock frequency. Would it be enough to have a fixed PLL0 
+frequency and configure the SYS-CPU divider 1 only (from 1/1 to 1/32), or 
+would we need to configure the PLL0 multiplier as well for a more fine-grained 
+Z frequency configuration ?
+
+-- 
+Regards,
+
+Laurent Pinchart
+
