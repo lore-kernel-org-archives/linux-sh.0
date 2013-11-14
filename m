@@ -1,37 +1,128 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:17 +0000
-Subject: [PATCH v2 05/29] serial: sh-sci: Set the UPF_FIXED_PORT flag
-Message-Id: <1384054421-13357-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:32:25 +0000
+Subject: [PATCH 13/17] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7778
+Message-Id: <87y54rxoi3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-The base address, IRQ and baud rate generator parent clock rate can't be
-changed by userspace. Mark the port as fixed.
+This patch updates r8a7778 DT data to have SoC specific settings.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch disables it as default,
+but we can use wp-gpios property to enable it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
+ arch/arm/boot/dts/r8a7778.dtsi                |    6 ------
+ drivers/mmc/host/sh_mobile_sdhi.c             |    9 ++++++++-
+ 3 files changed, 11 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 73b329380..47b0ee6 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2243,7 +2243,7 @@ static int sci_init_single(struct platform_device *dev,
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 9c8bd37..6e58077 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -16,6 +16,7 @@
  
- 	port->mapbase		= p->mapbase;
- 	port->type		= p->type;
--	port->flags		= p->flags;
-+	port->flags		= UPF_FIXED_PORT | p->flags;
- 	port->regshift		= p->regshift;
+ /dts-v1/;
+ /include/ "r8a7778.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
- 	/*
+ / {
+ 	model = "bockw";
+@@ -83,7 +84,7 @@
+ 
+ 	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd", "sdhi0_wp";
++				  "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ };
+@@ -95,4 +96,5 @@
+ 	vmmc-supply = <&fixedregulator3v3>;
+ 	bus-width = <4>;
+ 	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
+ };
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 698809f..bfb7030 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -170,8 +170,6 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 87 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -180,8 +178,6 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 88 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -190,8 +186,6 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 86 4>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 1a3bd0b..dc97027 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -37,6 +37,7 @@
+ 
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
++	unsigned long capabilities;
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+@@ -45,13 +46,18 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ 	},
+ };
+ 
++static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++};
++
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-shmobile" },
+ 	{ .compatible = "renesas,sdhi-sh7372" },
+ 	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+@@ -212,6 +218,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
++		mmc_data->capabilities |= of_data->capabilities;
+ 	}
+ 
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
 -- 
-1.8.1.5
+1.7.9.5
 
