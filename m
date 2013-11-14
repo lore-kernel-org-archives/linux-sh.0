@@ -1,44 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Nov 2013 08:06:40 +0000
-Subject: [PATCH 03/03] pinctrl: sh-pfc: r7s72100 SCIF2 port4, 6 and 8 support
-Message-Id: <20131127080640.18384.21957.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:19:54 +0000
+Subject: [PATCH 01/16] gpio: rcar: use postcore_init()
+Message-Id: <87iovvz3nd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127080606.18384.45103.sendpatchset@w520>
-In-Reply-To: <20131127080606.18384.45103.sendpatchset@w520>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<87k3gbz3pe.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k3gbz3pe.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, wsa@the-dreams.de, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Laurent <laurent.pinchart@ideasonboard.com>
+Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Renesas GPIO is being interlocked with PFC, and GPIO is
+very basic system for R-Car.
+GPIO should be initialised in same timing as PFC.
+The GPIO based system doesn't work correctly without this patch.
 
-Add the remaining SCIF2 pins using the recently introduced macro.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-
- drivers/pinctrl/sh-pfc/pfc-r7s72100.c |   12 +++++++++++-
+ drivers/gpio/gpio-rcar.c |   12 +++++++++++-
  1 file changed, 11 insertions(+), 1 deletion(-)
 
---- 0008/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-+++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c	2013-11-27 14:33:17.000000000 +0900
-@@ -127,7 +127,17 @@ static const unsigned int __RZ_STR(pfx,
- 	fn(scif2, txd, 3, 0, 6)		\
- 	fn(scif2, txd, 3, 1, 4)		\
- 	fn(scif2, rxd, 3, 2, 4)		\
--	fn(scif2, clk, 3, 0, 4)
-+	fn(scif2, clk, 3, 0, 4)		\
-+	fn(scif2, clk, 4, 1, 5)		\
-+	fn(scif2, txd, 4, 2, 5)		\
-+	fn(scif2, rxd, 4, 3, 5)		\
-+	fn(scif2, txd, 4, 14, 7)	\
-+	fn(scif2, rxd, 4, 15, 7)	\
-+	fn(scif2, txd, 6, 2, 7)		\
-+	fn(scif2, rxd, 6, 3, 7)		\
-+	fn(scif2, clk, 8, 3, 7)		\
-+	fn(scif2, txd, 8, 6, 7)		\
-+	fn(scif2, rxd, 8, 4, 7)
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 6038966..0a10325 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -454,7 +454,17 @@ static struct platform_driver gpio_rcar_device_driver = {
+ 	}
+ };
  
- SCIF2(RZ_PIN_AND_MUX)
+-module_platform_driver(gpio_rcar_device_driver);
++static int __init gpio_rcar_init(void)
++{
++	return platform_driver_register(&gpio_rcar_device_driver);
++}
++postcore_initcall(gpio_rcar_init);
++
++static void __exit gpio_rcar_exit(void)
++{
++	platform_driver_unregister(&gpio_rcar_device_driver);
++}
++module_exit(gpio_rcar_exit);
  
+ MODULE_AUTHOR("Magnus Damm");
+ MODULE_DESCRIPTION("Renesas R-Car GPIO Driver");
+-- 
+1.7.9.5
+
