@@ -1,67 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:13 +0000
-Subject: [PATCH v4 03/29] serial: sh-sci: Simplify baud rate calculation algorithms
-Message-Id: <1385594319-5758-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:32:53 +0000
+Subject: [PATCH 15/17] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7790
+Message-Id: <87vbzvxoha.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Rewrite the baud rate register value calculations in easier to read
-forms. The computed value isn't modified.
+This patch updates r8a7790 DT data to have SoC specific settings.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch disables it as default,
+but we can use wp-gpios property to enable it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/tty/serial/sh-sci.c | 8 ++++----
- include/linux/serial_sci.h  | 8 ++++----
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 277b669..feb1a6a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1813,13 +1813,13 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
- {
- 	switch (algo_id) {
- 	case SCBRR_ALGO_1:
--		return ((freq + 16 * bps) / (16 * bps) - 1);
-+		return freq / (16 * bps);
- 	case SCBRR_ALGO_2:
--		return ((freq + 16 * bps) / (32 * bps) - 1);
-+		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
- 	case SCBRR_ALGO_3:
--		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
-+		return freq / (8 * bps);
- 	case SCBRR_ALGO_4:
--		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
-+		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
- 	}
- 
- 	/* Warn, but use a safe default */
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index babc5fe..12cf50c 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -11,10 +11,10 @@
- #define SCIx_NOT_SUPPORTED	(-1)
- 
- enum {
--	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
--	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
--	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
--	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
-+	SCBRR_ALGO_1,		/* clk / (16 * bps) */
-+	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
-+	SCBRR_ALGO_3,		/* clk / (8 * bps) */
-+	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
- 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 9cffca1..62dcb54 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -38,6 +38,7 @@
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ 	unsigned long capabilities;
++	unsigned long capabilities2;
  };
  
+ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+@@ -51,6 +52,12 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
++static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
++};
++
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-shmobile" },
+ 	{ .compatible = "renesas,sdhi-sh7372" },
+@@ -59,7 +66,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+@@ -219,6 +226,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 		mmc_data->capabilities |= of_data->capabilities;
++		mmc_data->capabilities2 |= of_data->capabilities2;
+ 	}
+ 
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
 -- 
-1.8.3.2
+1.7.9.5
 
