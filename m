@@ -1,45 +1,64 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 27 Nov 2013 16:35:32 +0000
-Subject: Re: [PATCH 14/15] spi: sh-msiof: Enable driver compilation with COMPILE_TEST
-Message-Id: <20131127163532.GH14725@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="SOtBRHVUTiB0e0Vw"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 14 Nov 2013 22:23:33 +0000
+Subject: [PATCH v2 3/3] ARM: shmobile: Koelsch: enable Ether in defconfig
+Message-Id: <201311150223.40632.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201311150217.23563.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201311150217.23563.sergei.shtylyov@cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Enable the Ether driver in 'koelsch_defconfig' along with DHCP autoconfiguration
+and NFS root.
 
---SOtBRHVUTiB0e0Vw
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Wed, Nov 27, 2013 at 02:18:36AM +0100, Laurent Pinchart wrote:
-> This helps increasing build testing coverage.
+---
+Changes in version 2:
+- new patch in the series.
 
-Applied, thanks.
+ arch/arm/configs/koelsch_defconfig |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
---SOtBRHVUTiB0e0Vw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSlh9RAAoJELSic+t+oim9qB8P/j9xH+T/bnf5Q22kjfcylfX9
-O/q7xWS3qgorrpUVgDXyx3QWFo024FK0JrMm44LEqXFjIYaEL8so2Wo9YnVS0+LE
-1wdWPmZrhXhUlOAjK+pVR68+hUlzpNU3aXdyKNNoRJWslh/2pX971M/+EiNdowhG
-NZX9hVT48RJIGEcVHK/wvLZ49yCL/Ro0Xt+NiXyolZ7E0cji55vNVVAhwrkNRO5X
-UyXQQl8rMxtm4gs1LxbX6qAXzPyTeWJMa+o8gwTO08pkjIz6ArJUmr6r3/Clqo/P
-NmNYWUdDVu1sD5ATP2TmYfdXWKOrg8a3q/zZBLGar/sSVY+M91md4rTq/apzixeD
-ZzQr2aU86lRYSJa2HHBvRSPQ+jsJidJNx8XmEjJfYL5SwM6IGUOsRJDdV8P8D6mo
-59S5Ipk45YX+hDreeQLP+mwaBG74TRiPjsd7SH3FhWu8AtuRZzOm1MHlHor+zr7X
-0ei7E0g8uNLt+5mcJDWk1Gukexv7T+oq4iWLiHxOVNvVFjdIhCvblnTjNfmDNtqM
-uWJJk6lO+WZFs3MjF6GbOIjpaS9Emv76xj8C2Yk6kz7GcZKnq8FeSx59BJhVbb/f
-LXO05rN2wBUbS2RZNANuXYcVfEZUe0HxjgU+LElvUp5Qx9j2+WtPeYBgvavk40sJ
-+LzMstRCrg543p1OS5DT
-=nuYL
------END PGP SIGNATURE-----
-
---SOtBRHVUTiB0e0Vw--
+Index: renesas/arch/arm/configs/koelsch_defconfig
+=================================--- renesas.orig/arch/arm/configs/koelsch_defconfig
++++ renesas/arch/arm/configs/koelsch_defconfig
+@@ -29,7 +29,27 @@ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM_RUNTIME=y
++CONFIG_NET=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_NETDEVICES=y
++# CONFIG_NET_VENDOR_ARC is not set
++# CONFIG_NET_CADENCE is not set
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CIRRUS is not set
++# CONFIG_NET_VENDOR_FARADAY is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++CONFIG_SH_ETH=y
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_SMSC is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_VIA is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ # CONFIG_INPUT_MOUSE is not set
+ # CONFIG_LEGACY_PTYS is not set
+@@ -49,6 +69,8 @@ CONFIG_LEDS_CLASS=y
+ CONFIG_TMPFS=y
+ CONFIG_CONFIGFS_FS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_ROOT_NFS=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
