@@ -1,51 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 12 Nov 2013 23:20:21 +0000
-Subject: Re: [PATCH v2 10/19] mtd: sh_flctl: Enable the driver on all ARM platforms
-Message-Id: <3733738.K29aNVltiz@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 14 Nov 2013 22:12:08 +0000
+Subject: [PATCH] sh_eth: add R8A7791 support
+Message-Id: <201311150211.36049.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1701001.ctJ1xUAsnV@avalon> <20131112231719.GB9468@ld-irv-0074.broadcom.com>
-In-Reply-To: <20131112231719.GB9468@ld-irv-0074.broadcom.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Brian,
+Add support for yet another ARM member of the R-Car family, R-Car M2, also known
+as R8A7791 -- it will share the code and data with previously added R8A7790.
+Since  the Ether devices in these SoCs are indistinguishable at least from the
+driver's point of view,  do not introduce  a new platform device ID but modify
+device name "r8a7790-ether" to "r8a779x-ether" throughout the files (and also
+'r8a7790_data' to 'r8a779x_data' in the driver), just like the names used for
+R8A7778/9 SoCs.
 
-On Tuesday 12 November 2013 15:17:19 Brian Norris wrote:
-> On Wed, Nov 13, 2013 at 12:14:37AM +0100, Laurent Pinchart wrote:
-> > On Tuesday 12 November 2013 15:10:20 Brian Norris wrote:
-> > > On Tue, Oct 29, 2013 at 11:37:45PM +0100, Laurent Pinchart wrote:
-> > > > Renesas ARM platforms are transitioning from single-platform to
-> > > > multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-> > > > driver available on all ARM platforms to enable it on both
-> > > > ARCH_SHMOBILE
-> > > > and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-> > > > COMPILE_TEST.
-> > > > 
-> > > > Cc: David Woodhouse <dwmw2@infradead.org>
-> > > > Cc: linux-mtd@lists.infradead.org
-> > > > Signed-off-by: Laurent Pinchart
-> > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > 
-> > > Applied to l2-mtd.git, branch 'next' (for 3.14). Thanks.
-> > 
-> > Thank you, but if it's not too late, can you drop the patch ? :-) We've
-> > settled for a different approach that renames Kconfig symbols and doesn't
-> > require changes to individual drivers.
-> 
-> No problem. It's dropped.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thank you.
+---
+This patch is atop of 'renesas-devel-v3.12-20131112' tag of Simon Horman's
+'renesas.git' repo and I intend to push it thru this tree in order to satisfy
+runtime dependencies of the R8A7791/Koelsch Ether support patches to follow.
+Not posting this to netdev@vger.kernel.org since Dave has closed 'net-next.git'
+for now; Dave, I hope you'll ACK this patch...
 
-> I was only paying attention to the cover letter, where that decision
-> apparently didn't show up :)
+ arch/arm/mach-shmobile/board-lager.c   |   12 ++++++------
+ arch/arm/mach-shmobile/clock-r8a7790.c |    2 +-
+ drivers/net/ethernet/renesas/Kconfig   |    2 +-
+ drivers/net/ethernet/renesas/sh_eth.c  |    6 +++---
+ 4 files changed, 11 insertions(+), 11 deletions(-)
 
-I'll reply to the cover letter. Sorry about that.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: renesas/arch/arm/mach-shmobile/board-lager.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-lager.c
++++ renesas/arch/arm/mach-shmobile/board-lager.c
+@@ -186,13 +186,13 @@ static const struct pinctrl_map lager_pi
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.1", "pfc-r8a7790",
+ 				  "mmc1_ctrl", "mmc1"),
+ 	/* Ether */
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a779x-ether", "pfc-r8a7790",
+ 				  "eth_link", "eth"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a779x-ether", "pfc-r8a7790",
+ 				  "eth_mdio", "eth"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a779x-ether", "pfc-r8a7790",
+ 				  "eth_rmii", "eth"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a779x-ether", "pfc-r8a7790",
+ 				  "intc_irq0", "intc"),
+ };
+ 
+@@ -217,7 +217,7 @@ static void __init lager_add_standard_de
+ 					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
+ 					  &mmcif1_pdata, sizeof(mmcif1_pdata));
+ 
+-	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
++	platform_device_register_resndata(&platform_bus, "r8a779x-ether", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
+ 					  &ether_pdata, sizeof(ether_pdata));
+@@ -246,7 +246,7 @@ static void __init lager_init(void)
+ {
+ 	lager_add_standard_devices();
+ 
+-	phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
++	phy_register_fixup_for_id("r8a779x-ether-ff:01", lager_ksz8041_fixup);
+ }
+ 
+ static const char * const lager_boards_compat_dt[] __initconst = {
+Index: renesas/arch/arm/mach-shmobile/clock-r8a7790.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7790.c
++++ renesas/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -285,7 +285,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+-	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
++	CLKDEV_DEV_ID("r8a779x-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+Index: renesas/drivers/net/ethernet/renesas/Kconfig
+=================================--- renesas.orig/drivers/net/ethernet/renesas/Kconfig
++++ renesas/drivers/net/ethernet/renesas/Kconfig
+@@ -13,4 +13,4 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
+-		  R8A7740, R8A777x and R8A7790.
++		  R8A7740, R8A777x and R8A779x.
+Index: renesas/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- renesas.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ renesas/drivers/net/ethernet/renesas/sh_eth.c
+@@ -395,8 +395,8 @@ static struct sh_eth_cpu_data r8a777x_da
+ 	.hw_swap	= 1,
+ };
+ 
+-/* R8A7790 */
+-static struct sh_eth_cpu_data r8a7790_data = {
++/* R8A7790/1 */
++static struct sh_eth_cpu_data r8a779x_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+ 	.set_rate	= sh_eth_set_rate_r8a777x,
+ 
+@@ -2807,7 +2807,7 @@ static struct platform_device_id sh_eth_
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+-	{ "r8a7790-ether", (kernel_ulong_t)&r8a7790_data },
++	{ "r8a779x-ether", (kernel_ulong_t)&r8a779x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
