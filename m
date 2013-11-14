@@ -1,213 +1,189 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 25 Nov 2013 08:55:34 +0000
-Subject: [PATCH 24/24] asm-generic: Rename int-ll64.h to types.h
-Message-Id: <1385369734-24893-25-git-send-email-geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:30:32 +0000
+Subject: [PATCH 09/17] mmc: tmio: bus_shift become tmio_mmc_data member
+Message-Id: <874n7fz35n.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385369734-24893-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1385369734-24893-1-git-send-email-geert@linux-m68k.org>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Since kernelspace always uses "(unsigned) long long" for 64-bit integer
-values ("u64" and "s64"), rename include/asm-generic/int-ll64.h to
-include/asm-generic/types.h, as suggested by Arnd Bergmann.
+.bus_shift is used to 16/32bit register access
+offset calculation on tmio driver.
+tmio_mmc_xxx is used from Toshiba/Renesas now,
+but this bus_shift value depends on HW IP.
+This patch moves .bus_shift to tmio_mmc_data member
+and set it on each driver.
 
-Userspace still has both include/uapi/asm-generic/int-l64.h and
-include/uapi/asm-generic/int-ll64.h, as int-l64.h may still be used for
-userspace on existing 64-bit platforms (alpha, ia64, mips, and powerpc).
-
-Note: While arch/alpha/include/asm/types.h just includes
-asm-generic/types.h, don't be tempted to use Kbuild logic to provide it!
-arch/*/include/asm/Kbuild applies to both arch/*/include/asm and
-arch/*/include/uapi/asm, while alpha has its own <uapi/asm/types.h>.
-
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-mips@linux-mips.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: linux-kbuild@vger.kernel.org
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Question: Is the arch/*/include/asm/Kbuild behavior intentional?
+ drivers/mmc/host/sh_mobile_sdhi.c |    8 ++++++++
+ drivers/mmc/host/tmio_mmc.c       |    8 ++++++++
+ drivers/mmc/host/tmio_mmc.h       |   17 ++++++++---------
+ drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
+ drivers/mmc/host/tmio_mmc_pio.c   |    3 ---
+ include/linux/mfd/tmio.h          |    1 +
+ 6 files changed, 26 insertions(+), 13 deletions(-)
 
- arch/alpha/include/asm/types.h              |    2 +-
- arch/arm/include/asm/types.h                |    2 +-
- arch/ia64/include/asm/types.h               |    2 +-
- arch/mips/include/asm/types.h               |    2 +-
- arch/powerpc/include/asm/types.h            |    2 +-
- arch/s390/include/asm/types.h               |    2 +-
- arch/sh/include/asm/types.h                 |    2 +-
- arch/xtensa/include/asm/types.h             |    2 +-
- include/asm-generic/io-64-nonatomic-hi-lo.h |    2 +-
- include/asm-generic/io-64-nonatomic-lo-hi.h |    2 +-
- include/asm-generic/{int-ll64.h => types.h} |    8 ++++----
- 11 files changed, 14 insertions(+), 14 deletions(-)
- rename include/asm-generic/{int-ll64.h => types.h} (85%)
-
-diff --git a/arch/alpha/include/asm/types.h b/arch/alpha/include/asm/types.h
-index 4cb4b6d3452c..b86fb65c5b10 100644
---- a/arch/alpha/include/asm/types.h
-+++ b/arch/alpha/include/asm/types.h
-@@ -1,6 +1,6 @@
- #ifndef _ALPHA_TYPES_H
- #define _ALPHA_TYPES_H
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index f344659..f1e35a7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -133,10 +133,15 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct tmio_mmc_data *mmc_data;
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	struct tmio_mmc_host *host;
++	struct resource *res;
+ 	int irq, ret, i = 0;
+ 	bool multiplexed_isr = true;
+ 	struct tmio_mmc_dma *dma_priv;
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EINVAL;
++
+ 	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
+ 	if (priv = NULL) {
+ 		dev_err(&pdev->dev, "kzalloc failed\n");
+@@ -206,6 +211,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 	}
  
- #endif /* _ALPHA_TYPES_H */
-diff --git a/arch/arm/include/asm/types.h b/arch/arm/include/asm/types.h
-index a53cdb8f068c..09e15a8a40b1 100644
---- a/arch/arm/include/asm/types.h
-+++ b/arch/arm/include/asm/types.h
-@@ -1,7 +1,7 @@
- #ifndef _ASM_TYPES_H
- #define _ASM_TYPES_H
++	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
++	mmc_data->bus_shift = resource_size(res) >> 9;
++
+ 	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
+ 	if (ret < 0)
+ 		goto eprobe;
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 8860d4d..6cfb2d5 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -62,6 +62,7 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 	const struct mfd_cell *cell = mfd_get_cell(pdev);
+ 	struct tmio_mmc_data *pdata;
+ 	struct tmio_mmc_host *host;
++	struct resource *res;
+ 	int ret = -EINVAL, irq;
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
+ 	if (pdev->num_resources != 2)
+@@ -84,6 +85,13 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 			goto out;
+ 	}
  
- /*
-  * The C99 types uintXX_t that are usually defined in 'stdint.h' are not as
-diff --git a/arch/ia64/include/asm/types.h b/arch/ia64/include/asm/types.h
-index 4c351b169da2..6bc2e8acadd7 100644
---- a/arch/ia64/include/asm/types.h
-+++ b/arch/ia64/include/asm/types.h
-@@ -13,7 +13,7 @@
- #ifndef _ASM_IA64_TYPES_H
- #define _ASM_IA64_TYPES_H
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EINVAL;
++
++	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
++	pdata->bus_shift = resource_size(res_ctl) >> 10;
++
+ 	ret = tmio_mmc_host_probe(&host, pdev, pdata);
+ 	if (ret)
+ 		goto cell_disable;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 86fd21e..aaa9c7e 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -58,7 +58,6 @@ enum tmio_mmc_power {
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
- #include <uapi/asm/types.h>
+ struct tmio_mmc_host {
+ 	void __iomem *ctl;
+-	unsigned long bus_shift;
+ 	struct mmc_command      *cmd;
+ 	struct mmc_request      *mrq;
+ 	struct mmc_data         *data;
+@@ -176,19 +175,19 @@ int tmio_mmc_host_runtime_resume(struct device *dev);
  
- #ifdef __ASSEMBLY__
-diff --git a/arch/mips/include/asm/types.h b/arch/mips/include/asm/types.h
-index 4d5ce4c9c924..0d6729329a6a 100644
---- a/arch/mips/include/asm/types.h
-+++ b/arch/mips/include/asm/types.h
-@@ -11,7 +11,7 @@
- #ifndef _ASM_TYPES_H
- #define _ASM_TYPES_H
+ static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->bus_shift));
++	return readw(host->ctl + (addr << host->pdata->bus_shift));
+ }
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
+ static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	readsw(host->ctl + (addr << host->bus_shift), buf, count);
++	readsw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
+ }
  
- /*
-  * These aren't exported outside the kernel to avoid name space clashes
-diff --git a/arch/powerpc/include/asm/types.h b/arch/powerpc/include/asm/types.h
-index 4b9c3530bb12..69d42a918e0e 100644
---- a/arch/powerpc/include/asm/types.h
-+++ b/arch/powerpc/include/asm/types.h
-@@ -13,7 +13,7 @@
- #ifndef _ASM_POWERPC_TYPES_H
- #define _ASM_POWERPC_TYPES_H
+ static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->bus_shift)) |
+-	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
++	return readw(host->ctl + (addr << host->pdata->bus_shift)) |
++	       readw(host->ctl + ((addr + 2) << host->pdata->bus_shift)) << 16;
+ }
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
- #include <uapi/asm/types.h>
+ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
+@@ -198,19 +197,19 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
+ 	 */
+ 	if (host->pdata->write16_hook && host->pdata->write16_hook(host, addr))
+ 		return;
+-	writew(val, host->ctl + (addr << host->bus_shift));
++	writew(val, host->ctl + (addr << host->pdata->bus_shift));
+ }
  
- #ifndef __ASSEMBLY__
-diff --git a/arch/s390/include/asm/types.h b/arch/s390/include/asm/types.h
-index a5c7e829dbc3..abb93c7f0125 100644
---- a/arch/s390/include/asm/types.h
-+++ b/arch/s390/include/asm/types.h
-@@ -6,7 +6,7 @@
- #ifndef _S390_TYPES_H
- #define _S390_TYPES_H
+ static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	writesw(host->ctl + (addr << host->bus_shift), buf, count);
++	writesw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
+ }
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
- #include <uapi/asm/types.h>
+ static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int addr, u32 val)
+ {
+-	writew(val, host->ctl + (addr << host->bus_shift));
+-	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
++	writew(val, host->ctl + (addr << host->pdata->bus_shift));
++	writew(val >> 16, host->ctl + ((addr + 2) << host->pdata->bus_shift));
+ }
  
- /*
-diff --git a/arch/sh/include/asm/types.h b/arch/sh/include/asm/types.h
-index 062324be5cd6..ef745dcfd926 100644
---- a/arch/sh/include/asm/types.h
-+++ b/arch/sh/include/asm/types.h
-@@ -1,7 +1,7 @@
- #ifndef __ASM_SH_TYPES_H
- #define __ASM_SH_TYPES_H
  
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 65edb4a..03e7b28 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -293,7 +293,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (pdata->dma->chan_priv_tx)
+ 			cfg.slave_id = pdata->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+-		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
++		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
+ 		cfg.src_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
+ 		if (ret < 0)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 1f5f2ba..ed8fd5a 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1010,9 +1010,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	_host->set_pwr = pdata->set_pwr;
+ 	_host->set_clk_div = pdata->set_clk_div;
  
- /*
-  * These aren't exported outside the kernel to avoid name space clashes
-diff --git a/arch/xtensa/include/asm/types.h b/arch/xtensa/include/asm/types.h
-index d873cb17d944..20ffdf440e4f 100644
---- a/arch/xtensa/include/asm/types.h
-+++ b/arch/xtensa/include/asm/types.h
-@@ -10,7 +10,7 @@
- #ifndef _XTENSA_TYPES_H
- #define _XTENSA_TYPES_H
- 
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
- #include <uapi/asm/types.h>
- 
- #endif	/* _XTENSA_TYPES_H */
-diff --git a/include/asm-generic/io-64-nonatomic-hi-lo.h b/include/asm-generic/io-64-nonatomic-hi-lo.h
-index a6806a94250d..414d2c49d53c 100644
---- a/include/asm-generic/io-64-nonatomic-hi-lo.h
-+++ b/include/asm-generic/io-64-nonatomic-hi-lo.h
-@@ -2,7 +2,7 @@
- #define _ASM_IO_64_NONATOMIC_HI_LO_H_
- 
- #include <linux/io.h>
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
- 
- #ifndef readq
- static inline __u64 readq(const volatile void __iomem *addr)
-diff --git a/include/asm-generic/io-64-nonatomic-lo-hi.h b/include/asm-generic/io-64-nonatomic-lo-hi.h
-index ca546b1ff8b5..9bc5a3393ca1 100644
---- a/include/asm-generic/io-64-nonatomic-lo-hi.h
-+++ b/include/asm-generic/io-64-nonatomic-lo-hi.h
-@@ -2,7 +2,7 @@
- #define _ASM_IO_64_NONATOMIC_LO_HI_H_
- 
- #include <linux/io.h>
--#include <asm-generic/int-ll64.h>
-+#include <asm-generic/types.h>
- 
- #ifndef readq
- static inline __u64 readq(const volatile void __iomem *addr)
-diff --git a/include/asm-generic/int-ll64.h b/include/asm-generic/types.h
-similarity index 85%
-rename from include/asm-generic/int-ll64.h
-rename to include/asm-generic/types.h
-index 4cd84855cb46..b9542bb3d991 100644
---- a/include/asm-generic/int-ll64.h
-+++ b/include/asm-generic/types.h
-@@ -1,11 +1,11 @@
- /*
-- * asm-generic/int-ll64.h
-+ * asm-generic/types.h
-  *
-  * Integer declarations for architectures which use "long long"
-  * for 64-bit types.
-  */
--#ifndef _ASM_GENERIC_INT_LL64_H
--#define _ASM_GENERIC_INT_LL64_H
-+#ifndef _ASM_GENERIC_TYPES_H
-+#define _ASM_GENERIC_TYPES_H
- 
- #include <uapi/asm-generic/int-ll64.h>
- 
-@@ -46,4 +46,4 @@ typedef unsigned long long u64;
- 
- #endif /* __ASSEMBLY__ */
- 
--#endif /* _ASM_GENERIC_INT_LL64_H */
-+#endif /* _ASM_GENERIC_TYPES_H */
+-	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+-	_host->bus_shift = resource_size(res_ctl) >> 10;
+-
+ 	_host->ctl = ioremap(res_ctl->start, resource_size(res_ctl));
+ 	if (!_host->ctl) {
+ 		ret = -ENOMEM;
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index b22883d..92f72cf 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -102,6 +102,7 @@ struct tmio_mmc_data {
+ 	unsigned long			capabilities;
+ 	unsigned long			capabilities2;
+ 	unsigned long			flags;
++	unsigned long			bus_shift;
+ 	u32				ocr_mask;	/* available voltages */
+ 	struct tmio_mmc_dma		*dma;
+ 	struct device			*dev;
 -- 
 1.7.9.5
 
