@@ -1,24 +1,40 @@
-From: Alan Stern <stern@rowland.harvard.edu>
-Date: Thu, 07 Nov 2013 15:18:20 +0000
-Subject: Re: [RFC V2 PATCH 1/2] usb: hcd: Remove USB phy if needed
-Message-Id: <Pine.LNX.4.44L0.1311071017250.1401-100000@iolanthe.rowland.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:24:58 +0000
+Subject: [PATCH 05/17] mmc: tmio: don't overwrite caps2
+Message-Id: <87d2m3z3ex.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383822869-20283-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1383822869-20283-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<87habfz3kd.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87habfz3kd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-On Thu, 7 Nov 2013, Valentine Barshak wrote:
+02cb3221d5bb351ad9f7469453dcca7594a0fabf
+(mmc: tmio: support caps2 flags) added caps2 support
+on tmio, but it overwrites mmc_of_parse() settings.
+This patch fixes it up
 
-> This adds remove_phy flag to the HCD structure. If the flag is
-> set and if hcd->phy is valid, the phy is shutdown and released
-> whenever usb_add_hcd fails or usb_hcd_remove is called.
-> This can be used by the HCD drivers to auto-remove
-> the external USB phy when it is no longer needed.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 99f6d29..1f5f2ba 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1021,7 +1021,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 
+ 	mmc->ops = &tmio_mmc_ops;
+ 	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
+-	mmc->caps2 = pdata->capabilities2;
++	mmc->caps2 |= pdata->capabilities2;
+ 	mmc->max_segs = 32;
+ 	mmc->max_blk_size = 512;
+ 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
+-- 
+1.7.9.5
 
