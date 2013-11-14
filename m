@@ -1,46 +1,46 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 09 Nov 2013 15:07:04 +0000
-Subject: Re: [PATCH] regulator: gpio-regulator: Don't oops on missing regulator-type property
-Message-Id: <20131109150704.GS2493@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="fRTiclqxXzPSgD3k"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:23:23 +0000
+Subject: [PATCH 03/17] mmc: tmio: Fix odd size access
+Message-Id: <87fvqzz3hk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383999148-2516-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383999148-2516-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<87habfz3kd.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87habfz3kd.wl%kuninori.morimoto.gx@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
---fRTiclqxXzPSgD3k
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Current sd_ctrl_read/write16_rep() doesn't care odd size
 
-On Sat, Nov 09, 2013 at 01:12:28PM +0100, Laurent Pinchart wrote:
-> Catch missing regulator-type property in DT and return an error
-> gracefully instead of deferencing a NULL pointer and crashing.
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Applied, thanks.
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b380225..05ae15c 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -386,9 +386,11 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+ 
+ 	/* Transfer the data */
+ 	if (data->flags & MMC_DATA_READ)
+-		sd_ctrl_read16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++		sd_ctrl_read16_rep(host,
++			CTL_SD_DATA_PORT, buf, (count + 1) >> 1);
+ 	else
+-		sd_ctrl_write16_rep(host, CTL_SD_DATA_PORT, buf, count >> 1);
++		sd_ctrl_write16_rep(host,
++			CTL_SD_DATA_PORT, buf, (count + 1) >> 1);
+ 
+ 	host->sg_off += count;
+ 
+-- 
+1.7.9.5
 
---fRTiclqxXzPSgD3k
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSfk+QAAoJELSic+t+oim9jn0P/iQATpoUh5HNvuQ5fXYsSf+f
-Q8xW0O2QsFVqiv4YQ7W/aip7Xc8KAH3wQb18PWZL+9flP6imPI5HsO3t08kDW1x1
-jQ0JEyoqXA0C7RKUAhDLYNC1oi+JHLvgYnjTWCr5uPb4YZeo3m0MMuT3r9DiI5yZ
-PGkzMS31dyAJH1w/mbHdihM5CfcDefe4qGJafkIHl4Mxw6t+kETAjnxGeZ/9FRh5
-faTeFA8ninBFLXMODhbw9wR4v9+iPiuvxNsWH/WjQbj4ceRiC+ndHkhKZ2tnncRx
-rxmYd/488aG9BhN+DKYRJ46nVOszABI0llGAAPUL7LqtL06rhPczZAWNgczb/Qks
-KDApbWEysPQ4+7jwCPkh2L6YoR5nhTsMXUM5L90d3R+33P3F50ykijLGsoSlaq9Q
-F+LcJc4SKocHk9RKYZpRo+f/INyuZeVh0YuagIh+4l6Ngkmr5yTXeFk1iELg2z0T
-A6Ng7RHSnn+F+byvGYaxZWGexjkstOKXmuX1+/fQwVKS8fX6MUqNANMSpksMBxR0
-BkeCvgfEbS3WIdFcSbvpYM63ooxUcJoE9SyWCmklQzZrHPmgveSYbMmHDRFekJiG
-PsJoRrfQwjrFDYZTDH/2mYiTC9y6PXTq8E1Z2K0FpwhVJ6VpeVgGTn9Sb9un8duL
-gvKU8ThdhPTXSMzrZCh3
-=08uP
------END PGP SIGNATURE-----
-
---fRTiclqxXzPSgD3k--
