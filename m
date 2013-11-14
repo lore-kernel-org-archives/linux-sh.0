@@ -1,35 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 15:44:53 +0000
-Subject: [PATCH 2/2] ARM: shmobile: armadillo: Set vccq_sdhi0 regulator type in DT
-Message-Id: <1385653493-9952-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Nov 2013 10:08:59 +0000
+Subject: [PATCH] sh: sh7757lcr: fixup SDHI register size
+Message-Id: <87mwl7z45k.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-kernel@vger.kernel.org
 
-The mandatory regulator-type property is missing, add it.
+sh7757lcr SDHI register size is 0x100
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 ++
- 1 file changed, 2 insertions(+)
+Hi Simon, and Linux ML
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 7b80f19..013a7cd 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -53,6 +53,8 @@
- 		regulator-name = "SDHI0 VccQ";
- 		regulator-min-microvolt = <1800000>;
- 		regulator-max-microvolt = <3300000>;
-+		regulator-type = "voltage";
-+
- 		vin-supply = <&vcc_sdhi0>;
- 
- 		enable-gpio = <&pfc 74 GPIO_ACTIVE_HIGH>;
+This patch is bug fix for arch/sh,
+but, there is no SH maintainer today.
+So, I don't know who can care this.
+
+ arch/sh/boards/board-sh7757lcr.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index 25c5a93..669df51 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -252,7 +252,7 @@ static struct sh_mobile_sdhi_info sdhi_info = {
+ static struct resource sdhi_resources[] = {
+ 	[0] = {
+ 		.start  = 0xffe50000,
+-		.end    = 0xffe501ff,
++		.end    = 0xffe500ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
 -- 
-1.8.3.2
+1.7.9.5
 
