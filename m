@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 13 Nov 2013 10:24:51 +0000
+Date: Thu, 14 Nov 2013 12:52:06 +0000
 Subject: Re: rcar-h2 du issue between du0 and du2
-Message-Id: <52835373.8000907@codethink.co.uk>
+Message-Id: <5284C776.2050001@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <52825196.1090102@codethink.co.uk>
 In-Reply-To: <52825196.1090102@codethink.co.uk>
@@ -27,21 +27,9 @@ On 13/11/13 02:44, Laurent Pinchart wrote:
 > Ouch. Thank you for the report. I'll test and debug that. What's the urgency
 > level ?
 
-Medium, there's other stuff that I can be getting on with.
-
-I've been looking through the H2 manual but there's nothing specifically
-saying the DU0 and DU2 planes should be linked. I know DU0_0 and DU0_1
-are basically linked.
-
-We are using the Lager board as following:
-
-We have DU0 outputting LVDS to the ADV7511 to provide DVI
-DU2 is connected to the DPAD0 to the VGA
-
-DU0 is configured for 1920x1080-60, 32bpp
-DU2 is configured for 800x600-60, 32bpp
-
-DU2 has been verified as outputting 800x600-60 display timings.
+I've found the issue, it was with a change we did to the kernel to split
+the displays and accidentally sent the same block of memory to both du 
+units. Sorry for the inconvenience, it is working now.
 
 
 -- 
