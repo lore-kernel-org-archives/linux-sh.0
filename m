@@ -1,61 +1,136 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:34 +0000
-Subject: [PATCH v2 22/29] ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as resources
-Message-Id: <1384054421-13357-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 15 Nov 2013 01:56:00 +0000
+Subject: [PATCH 2/2 v2] ARM: shmobile: lager: add SDHI0/2 support
+Message-Id: <877gcao2c3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<87txffxofc.wl%kuninori.morimoto.gx@renesas.com>
+	<87a9h6o2gi.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a9h6o2gi.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: Simon <horms@verge.net.au>
+Cc: Laurent <laurent.pinchart@ideasonboard.com>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+SDHI0 (CN8) needs JP/SW settings
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 37ce2df..d492c2c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -46,12 +46,15 @@
- /* SCIF */
- #define R8A7778_SCIF(index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {	\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
- 	.type		= PORT_SCIF,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+};								\
-+								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
+ - 1/2 patch become 2/2
+
+ arch/arm/mach-shmobile/board-lager.c |   66 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 3d1640f..f32679a 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -24,8 +24,10 @@
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+@@ -42,6 +44,19 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/*
++ * SDHI0 (CN8)
++ *
++ * JP3:  pin1
++ * SW20: pin1
++
++ * GP5_24:	1:  VDD  3.3V (defult)
++ *		0:  VDD  0.0V
++ * GP5_29:	1:  VccQ 3.3V (defult)
++ *		0:  VccQ 1.8V
++ *
++ */
++
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+ 	{
+@@ -233,6 +248,34 @@ static const struct resource ether_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(162)),
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee100000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI2 */
++static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee140000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(167)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -241,6 +284,22 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 				  "du_sync_1", "du"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+ 				  "du_clk_out_0", "du"),
++	/* SDHI */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_cd", "sdhi0"),
++
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_ctrl", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_cd", "sdhi2"),
++
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+ 				  "scif0_data", "scif0"),
+@@ -304,6 +363,13 @@ static void __init lager_add_standard_devices(void)
+ 				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
+ 	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
+ 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
++					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
++					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
  }
  
- R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
-@@ -62,9 +65,11 @@ R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
- R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
- 
- #define r8a7778_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- /* TMU */
- static struct resource sh_tmu0_resources[] __initdata = {
+ /*
 -- 
-1.8.1.5
+1.7.9.5
 
