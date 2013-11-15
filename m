@@ -1,58 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Nov 2013 13:42:35 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 15 Nov 2013 00:26:53 +0000
 Subject: Re: [PATCH 01/16] gpio: rcar: use postcore_init()
-Message-Id: <2397666.YV2gHto7Bb@avalon>
+Message-Id: <87fvqyo6gl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com> <87k3gbz3pe.wl%kuninori.morimoto.gx@renesas.com> <87iovvz3nd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iovvz3nd.wl%kuninori.morimoto.gx@renesas.com>
+References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
+	<87k3gbz3pe.wl%kuninori.morimoto.gx@renesas.com>
+	<87iovvz3nd.wl%kuninori.morimoto.gx@renesas.com>
+	<2397666.YV2gHto7Bb@avalon>
+In-Reply-To: <2397666.YV2gHto7Bb@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Hi Morimoto-san,
 
-Thank you for the patch.
+Hi Laurent
 
-On Thursday 14 November 2013 02:19:54 Kuninori Morimoto wrote:
-> Renesas GPIO is being interlocked with PFC, and GPIO is
-> very basic system for R-Car.
-> GPIO should be initialised in same timing as PFC.
-> The GPIO based system doesn't work correctly without this patch.
-
-Could you please describe the failure in a bit more details ?
-
+> > Renesas GPIO is being interlocked with PFC, and GPIO is
+> > very basic system for R-Car.
+> > GPIO should be initialised in same timing as PFC.
+> > The GPIO based system doesn't work correctly without this patch.
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  drivers/gpio/gpio-rcar.c |   12 +++++++++++-
->  1 file changed, 11 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-> index 6038966..0a10325 100644
-> --- a/drivers/gpio/gpio-rcar.c
-> +++ b/drivers/gpio/gpio-rcar.c
-> @@ -454,7 +454,17 @@ static struct platform_driver gpio_rcar_device_driver > { }
->  };
-> 
-> -module_platform_driver(gpio_rcar_device_driver);
-> +static int __init gpio_rcar_init(void)
-> +{
-> +	return platform_driver_register(&gpio_rcar_device_driver);
-> +}
-> +postcore_initcall(gpio_rcar_init);
-> +
-> +static void __exit gpio_rcar_exit(void)
-> +{
-> +	platform_driver_unregister(&gpio_rcar_device_driver);
-> +}
-> +module_exit(gpio_rcar_exit);
-> 
->  MODULE_AUTHOR("Magnus Damm");
->  MODULE_DESCRIPTION("Renesas R-Car GPIO Driver");
--- 
-Regards,
+> Could you please describe the failure in a bit more details ?
 
-Laurent Pinchart
+Real kernel log is better than my explain :P
+These series needs gpio-regulator.
+*before* case, sh_mobile_sdhi can't use gpio-regulator because of timing issue.
 
+----------------- before ---------------------
+...
+sh-pfc pfc-r8a7790: r8a77900_pfc support registered
+...
+SDHI0Vcc: Failed to request enable GPIO184: -517
+reg-fixed-voltage reg-fixed-voltage.1: Failed to register regulator: -517
+platform reg-fixed-voltage.1: Driver reg-fixed-voltage requests probe deferral
+SDHI2Vcc: Failed to request enable GPIO185: -517
+reg-fixed-voltage reg-fixed-voltage.2: Failed to register regulator: -517
+platform reg-fixed-voltage.2: Driver reg-fixed-voltage requests probe deferral
+gpio-regulator gpio-regulator.0: Could not obtain regulator setting GPIOs: -517
+platform gpio-regulator.0: Driver gpio-regulator requests probe deferral
+gpio-regulator gpio-regulator.1: Could not obtain regulator setting GPIOs: -517
+platform gpio-regulator.1: Driver gpio-regulator requests probe deferral
+...
+gpio_rcar gpio_rcar.0: driving 32 GPIOs
+gpio_rcar gpio_rcar.1: driving 32 GPIOs
+gpio_rcar gpio_rcar.2: driving 32 GPIOs
+gpio_rcar gpio_rcar.3: driving 32 GPIOs
+gpio_rcar gpio_rcar.4: driving 32 GPIOs
+gpio_rcar gpio_rcar.5: driving 32 GPIOs
+...
+sh_mobile_sdhi sh_mobile_sdhi.0: mmc0 base at 0xee100000 clock rate 97 MHz
+sh_mobile_sdhi sh_mobile_sdhi.2: mmc1 base at 0xee140000 clock rate 48 MHz
+...
+SDHI0Vcc: 3300 mV 
+SDHI2Vcc: 3300 mV 
+vqmmc: 1800 <--> 3300 mV at 3300 mV 
+vqmmc: 1800 <--> 3300 mV at 3300 mV 
+...
+
+---------------- after ------------------
+...
+sh-pfc pfc-r8a7790: r8a77900_pfc support registered
+gpio_rcar gpio_rcar.0: driving 32 GPIOs
+gpio_rcar gpio_rcar.1: driving 32 GPIOs
+gpio_rcar gpio_rcar.2: driving 32 GPIOs
+gpio_rcar gpio_rcar.3: driving 32 GPIOs
+gpio_rcar gpio_rcar.4: driving 32 GPIOs
+gpio_rcar gpio_rcar.5: driving 32 GPIOs
+...
+SDHI0Vcc: 3300 mV 
+SDHI2Vcc: 3300 mV 
+vqmmc: 1800 <--> 3300 mV at 3300 mV 
+vqmmc: 1800 <--> 3300 mV at 3300 mV 
+...
+sh_mobile_sdhi sh_mobile_sdhi.0: mmc0 base at 0xee100000 clock rate 97 MHz
+sh_mobile_sdhi sh_mobile_sdhi.2: mmc1 base at 0xee140000 clock rate 48 MHz
+
+
+Best regards
+---
+Kuninori Morimoto
