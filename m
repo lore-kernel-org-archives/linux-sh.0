@@ -1,65 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 21:43:26 +0000
-Subject: [PATCH 12/16] ARM: shmobile: r8a7790: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <1385675010-26904-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 18 Nov 2013 02:52:11 +0000
+Subject: [PATCH 3/3] ARM: shmobile: bockw: DMAEngine support for sound
+Message-Id: <87eh6e776w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c |   22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 70bb553..bb805a4 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -78,11 +78,10 @@ void __init r8a7790_pinmux_init(void)
- 	r8a7790_register_gpio(5);
- }
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index ffca67c..51eb295 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -307,16 +307,24 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_UNUSED, /* SSI 0 */
+ 	RSND_SSI_UNUSED, /* SSI 1 */
+ 	RSND_SSI_UNUSED, /* SSI 2 */
+-	RSND_SSI_SET(1, 0, gic_iid(0x85), RSND_SSI_PLAY),
+-	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
+-	RSND_SSI_SET(0, 0, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, 0, gic_iid(0x86), 0),
+-	RSND_SSI_SET(3, 0, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
++	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_TX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
++	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_TX, gic_iid(0x86), 0),
++	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
++	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_TX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
+ };
  
--#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
-+#define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scbrr_algo_id	= algo,						\
- 	.scscr		= _scscr,					\
- };									\
- 									\
-@@ -93,19 +92,19 @@ static struct resource scif##index##_resources[] = {			\
+ static struct rsnd_scu_platform_info rsnd_scu[9] = {
+-	/* no member at this point */
++	{ .flags = 0, }, /* SRU 0 */
++	{ .flags = 0, }, /* SRU 1 */
++	{ .flags = 0, }, /* SRU 2 */
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
+ };
  
- #define R8A7790_SCIF(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_2, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_SCIFA(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
--		       SCBRR_ALGO_4, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_SCIFB(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_4, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_HSCIF(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_6, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
- R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
+ enum {
 -- 
-1.8.3.2
+1.7.9.5
 
