@@ -1,28 +1,36 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 20 Nov 2013 13:38:18 +0000
-Subject: Re: [PATCH 03/05] gpio: em: Setup gpiochip->dev
-Message-Id: <CACRpkdayj-4w-X0YQYZP_-Mib18bB7Tc-U+xwD9-09KwVdZdbg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 18 Nov 2013 02:45:16 +0000
+Subject: [PATCH] ASoC: rcar: fixup dma_async_issue_pending() timing
+Message-Id: <87k3g677if.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120002259.27342.35575.sendpatchset@w520>
-	<20131120002326.27342.83787.sendpatchset@w520>
-In-Reply-To: <20131120002326.27342.83787.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+DMAEngine will stall without this patch
 
-> From: Magnus Damm <damm@opensource.se>
->
-> Make sure gpio_chip->dev is setup so of_gpiochip_add()
-> will work as expected.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ sound/soc/sh/rcar/core.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-Patch applied.
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 78c35b4..f57e519 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -200,9 +200,8 @@ static void rsnd_dma_do_work(struct work_struct *work)
+ 			return;
+ 		}
+ 
++		dma_async_issue_pending(dma->chan);
+ 	}
+-
+-	dma_async_issue_pending(dma->chan);
+ }
+ 
+ int rsnd_dma_available(struct rsnd_dma *dma)
+-- 
+1.7.9.5
 
-Yours,
-Linus Walleij
