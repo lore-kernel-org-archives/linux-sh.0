@@ -1,49 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Nov 2013 02:56:29 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 19 Nov 2013 12:52:27 +0000
 Subject: Re: [PATCH 7/7] ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
-Message-Id: <20131119025629.GA14794@verge.net.au>
+Message-Id: <4182325.G3k8SsHnK4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1383999839-3339-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383999839-3339-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131119025629.GA14794@verge.net.au>
+In-Reply-To: <20131119025629.GA14794@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Nov 09, 2013 at 01:23:59PM +0100, Laurent Pinchart wrote:
-> The device is configured to generate an active-low interrupt signal that
-> needs to be acknowledged by the host. Configure the IRQ to trigger on
-> low level.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> index aef425f..04e9d49 100644
-> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> @@ -95,7 +95,7 @@
->  		compatible = "sitronix,st1232";
->  		reg = <0x55>;
->  		interrupt-parent = <&irqpin1>;
-> -		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
-> +		interrupts = <2 IRQ_TYPE_LOW_LEVEL>;
+Hi Simon,
 
-I believe this should be IRQ_TYPE_LEVEL_LOW.
-
-I have dequeued this patch for now.
-
->  		pinctrl-0 = <&st1232_pins>;
->  		pinctrl-names = "default";
->  		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
-> -- 
-> 1.8.1.5
+On Tuesday 19 November 2013 11:56:29 Simon Horman wrote:
+> On Sat, Nov 09, 2013 at 01:23:59PM +0100, Laurent Pinchart wrote:
+> > The device is configured to generate an active-low interrupt signal that
+> > needs to be acknowledged by the host. Configure the IRQ to trigger on
+> > low level.
+> > 
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> > 
+> >  arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> > b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts index
+> > aef425f..04e9d49 100644
+> > --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> > +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> > @@ -95,7 +95,7 @@
+> >  		compatible = "sitronix,st1232";
+> >  		reg = <0x55>;
+> >  		interrupt-parent = <&irqpin1>;
+> > -		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
+> > +		interrupts = <2 IRQ_TYPE_LOW_LEVEL>;
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I believe this should be IRQ_TYPE_LEVEL_LOW.
 > 
+> I have dequeued this patch for now.
+
+My bad, I've tested level low trigger first, then falling edge trigger, and 
+switched back to low level without recompiling the patch. Sorry about that, 
+I'll resend now.
+
+> >  		pinctrl-0 = <&st1232_pins>;
+> >  		pinctrl-names = "default";
+> >  		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+-- 
+Regards,
+
+Laurent Pinchart
+
