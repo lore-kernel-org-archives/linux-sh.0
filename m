@@ -1,61 +1,52 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:29:51 +0000
-Subject: [PATCH 2/3] DMA: shdma: Fix warnings due to declared but unused symbols
-Message-Id: <1385512192-10303-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:19 +0000
+Subject: [PATCH v3 18/29] ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
+Message-Id: <1384869751-9786-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Several functions and variables are use on SH_CPU4 or ARM only. Guard
-their declaration with conditional compilation directives to avoid
-warnings.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/shdmac.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 0d765c0..2150987 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -443,6 +443,7 @@ static bool sh_dmae_reset(struct sh_dmae_device *shdev)
- 	return ret;
- }
- 
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
- static irqreturn_t sh_dmae_err(int irq, void *data)
- {
- 	struct sh_dmae_device *shdev = data;
-@@ -453,6 +454,7 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
- 	sh_dmae_reset(shdev);
- 	return IRQ_HANDLED;
- }
-+#endif
- 
- static bool sh_dmae_desc_completed(struct shdma_chan *schan,
- 				   struct shdma_desc *sdesc)
-@@ -685,9 +687,12 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
- static int sh_dmae_probe(struct platform_device *pdev)
- {
- 	const struct sh_dmae_pdata *pdata;
--	unsigned long irqflags = 0,
--		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
--	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
-+	unsigned long chan_flag[SH_DMAE_MAX_CHANNELS] = {};
-+	int chan_irq[SH_DMAE_MAX_CHANNELS];
-+#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
-+	unsigned long irqflags = 0;
-+	int errirq;
-+#endif
- 	int err, i, irq_cnt = 0, irqres = 0, irq_cap = 0;
- 	struct sh_dmae_device *shdev;
- 	struct dma_device *dma_dev;
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 9c94f34..55ed98f 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -75,16 +75,21 @@ void __init sh73a0_pinmux_init(void)
+ #define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,			\
+ };								\
+ 								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
++};								\
++								\
+ static struct platform_device scif##index##_device = {		\
+ 	.name		= "sh-sci",				\
+ 	.id		= index,				\
++	.resource	= scif##index##_resources,		\
++	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+ 	.dev		= {					\
+ 		.platform_data	= &scif##index##_platform_data,	\
+ 	},							\
 -- 
 1.8.3.2
 
