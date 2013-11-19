@@ -1,204 +1,160 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 29 Nov 2013 22:50:49 +0000
-Subject: [PATCH 3/6] v4l: Add media format codes for AHSV8888 on 32-bit busses
-Message-Id: <1385765452-25754-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:12 +0000
+Subject: [PATCH v3 11/29] ARM: shmobile: r8a7779: Use macros to declare SCIF devices
+Message-Id: <1384869751-9786-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385765452-25754-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385765452-25754-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- Documentation/DocBook/media/v4l/subdev-formats.xml | 157 +++++++++++++++++++++
- include/uapi/linux/v4l2-mediabus.h                 |   3 +
- 2 files changed, 160 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 124 +++++++--------------------------
+ 1 file changed, 24 insertions(+), 100 deletions(-)
 
-diff --git a/Documentation/DocBook/media/v4l/subdev-formats.xml b/Documentation/DocBook/media/v4l/subdev-formats.xml
-index f72c1cc..bfaef50 100644
---- a/Documentation/DocBook/media/v4l/subdev-formats.xml
-+++ b/Documentation/DocBook/media/v4l/subdev-formats.xml
-@@ -2492,6 +2492,163 @@
-     </section>
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8f94531..df418f1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -188,107 +188,31 @@ void __init r8a7779_pinmux_init(void)
+ 			    ARRAY_SIZE(r8a7779_pinctrl_devices));
+ }
  
-     <section>
-+      <title>HSV/HSL Formats</title>
-+
-+      <para>Those formats transfer pixel data as RGB values in a cylindrical-coordinate
-+      system using Hue-Saturation-Value or Hue-Saturation-Lightness components. The
-+      format code is made of the following information.
-+      <itemizedlist>
-+	<listitem><para>The hue, saturation, value or lightness and optional alpha
-+	components order code, as encoded in a pixel sample. The only currently
-+	supported value is AHSV.
-+	</para></listitem>
-+	<listitem><para>The number of bits per component, for each component. The values
-+	can be different for all components. The only currently supported value is 8888.
-+	</para></listitem>
-+	<listitem><para>The number of bus samples per pixel. Pixels that are wider than
-+	the bus width must be transferred in multiple samples. The only currently
-+	supported value is 1.</para></listitem>
-+	<listitem><para>The bus width.</para></listitem>
-+	<listitem><para>For formats where the total number of bits per pixel is smaller
-+	than the number of bus samples per pixel times the bus width, a padding
-+	value stating if the bytes are padded in their most high order bits
-+	(PADHI) or low order bits (PADLO).</para></listitem>
-+	<listitem><para>For formats where the number of bus samples per pixel is larger
-+	than 1, an endianness value stating if the pixel is transferred MSB first
-+	(BE) or LSB first (LE).</para></listitem>
-+      </itemizedlist>
-+      </para>
-+
-+      <para>The following table lists existing HSV/HSL formats.</para>
-+
-+      <table pgwide="0" frame="none" id="v4l2-mbus-pixelcode-hsv">
-+	<title>HSV/HSL formats</title>
-+	<tgroup cols="27">
-+	  <colspec colname="id" align="left" />
-+	  <colspec colname="code" align="center"/>
-+	  <colspec colname="bit" />
-+	  <colspec colnum="4" colname="b31" align="center" />
-+	  <colspec colnum="5" colname="b20" align="center" />
-+	  <colspec colnum="6" colname="b29" align="center" />
-+	  <colspec colnum="7" colname="b28" align="center" />
-+	  <colspec colnum="8" colname="b27" align="center" />
-+	  <colspec colnum="9" colname="b26" align="center" />
-+	  <colspec colnum="10" colname="b25" align="center" />
-+	  <colspec colnum="11" colname="b24" align="center" />
-+	  <colspec colnum="12" colname="b23" align="center" />
-+	  <colspec colnum="13" colname="b22" align="center" />
-+	  <colspec colnum="14" colname="b21" align="center" />
-+	  <colspec colnum="15" colname="b20" align="center" />
-+	  <colspec colnum="16" colname="b19" align="center" />
-+	  <colspec colnum="17" colname="b18" align="center" />
-+	  <colspec colnum="18" colname="b17" align="center" />
-+	  <colspec colnum="19" colname="b16" align="center" />
-+	  <colspec colnum="20" colname="b15" align="center" />
-+	  <colspec colnum="21" colname="b14" align="center" />
-+	  <colspec colnum="22" colname="b13" align="center" />
-+	  <colspec colnum="23" colname="b12" align="center" />
-+	  <colspec colnum="24" colname="b11" align="center" />
-+	  <colspec colnum="25" colname="b10" align="center" />
-+	  <colspec colnum="26" colname="b09" align="center" />
-+	  <colspec colnum="27" colname="b08" align="center" />
-+	  <colspec colnum="28" colname="b07" align="center" />
-+	  <colspec colnum="29" colname="b06" align="center" />
-+	  <colspec colnum="30" colname="b05" align="center" />
-+	  <colspec colnum="31" colname="b04" align="center" />
-+	  <colspec colnum="32" colname="b03" align="center" />
-+	  <colspec colnum="33" colname="b02" align="center" />
-+	  <colspec colnum="34" colname="b01" align="center" />
-+	  <colspec colnum="35" colname="b00" align="center" />
-+	  <spanspec namest="b31" nameend="b00" spanname="b0" />
-+	  <thead>
-+	    <row>
-+	      <entry>Identifier</entry>
-+	      <entry>Code</entry>
-+	      <entry></entry>
-+	      <entry spanname="b0">Data organization</entry>
-+	    </row>
-+	    <row>
-+	      <entry></entry>
-+	      <entry></entry>
-+	      <entry>Bit</entry>
-+	      <entry>31</entry>
-+	      <entry>30</entry>
-+	      <entry>29</entry>
-+	      <entry>28</entry>
-+	      <entry>27</entry>
-+	      <entry>26</entry>
-+	      <entry>25</entry>
-+	      <entry>24</entry>
-+	      <entry>23</entry>
-+	      <entry>22</entry>
-+	      <entry>21</entry>
-+	      <entry>20</entry>
-+	      <entry>19</entry>
-+	      <entry>18</entry>
-+	      <entry>17</entry>
-+	      <entry>16</entry>
-+	      <entry>15</entry>
-+	      <entry>14</entry>
-+	      <entry>13</entry>
-+	      <entry>12</entry>
-+	      <entry>11</entry>
-+	      <entry>10</entry>
-+	      <entry>9</entry>
-+	      <entry>8</entry>
-+	      <entry>7</entry>
-+	      <entry>6</entry>
-+	      <entry>5</entry>
-+	      <entry>4</entry>
-+	      <entry>3</entry>
-+	      <entry>2</entry>
-+	      <entry>1</entry>
-+	      <entry>0</entry>
-+	    </row>
-+	  </thead>
-+	  <tbody valign="top">
-+	    <row id="V4L2-MBUS-FMT-AHSV8888-1X32">
-+	      <entry>V4L2_MBUS_FMT_AHSV8888_1X32</entry>
-+	      <entry>0x6001</entry>
-+	      <entry></entry>
-+	      <entry>a<subscript>7</subscript></entry>
-+	      <entry>a<subscript>6</subscript></entry>
-+	      <entry>a<subscript>5</subscript></entry>
-+	      <entry>a<subscript>4</subscript></entry>
-+	      <entry>a<subscript>3</subscript></entry>
-+	      <entry>a<subscript>2</subscript></entry>
-+	      <entry>a<subscript>1</subscript></entry>
-+	      <entry>a<subscript>0</subscript></entry>
-+	      <entry>h<subscript>7</subscript></entry>
-+	      <entry>h<subscript>6</subscript></entry>
-+	      <entry>h<subscript>5</subscript></entry>
-+	      <entry>h<subscript>4</subscript></entry>
-+	      <entry>h<subscript>3</subscript></entry>
-+	      <entry>h<subscript>2</subscript></entry>
-+	      <entry>h<subscript>1</subscript></entry>
-+	      <entry>h<subscript>0</subscript></entry>
-+	      <entry>s<subscript>7</subscript></entry>
-+	      <entry>s<subscript>6</subscript></entry>
-+	      <entry>s<subscript>5</subscript></entry>
-+	      <entry>s<subscript>4</subscript></entry>
-+	      <entry>s<subscript>3</subscript></entry>
-+	      <entry>s<subscript>2</subscript></entry>
-+	      <entry>s<subscript>1</subscript></entry>
-+	      <entry>s<subscript>0</subscript></entry>
-+	      <entry>v<subscript>7</subscript></entry>
-+	      <entry>v<subscript>6</subscript></entry>
-+	      <entry>v<subscript>5</subscript></entry>
-+	      <entry>v<subscript>4</subscript></entry>
-+	      <entry>v<subscript>3</subscript></entry>
-+	      <entry>v<subscript>2</subscript></entry>
-+	      <entry>v<subscript>1</subscript></entry>
-+	      <entry>v<subscript>0</subscript></entry>
-+	    </row>
-+	  </tbody>
-+	</tgroup>
-+      </table>
-+    </section>
-+
-+    <section>
-       <title>JPEG Compressed Formats</title>
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xffe40000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xffe41000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xffe42000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xffe43000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xffe44000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xffe45000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
+-};
++/* SCIF */
++#define R8A7779_SCIF(index, baseaddr, irq)			\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= PORT_SCIF,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_2,				\
++	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
++}
  
-       <para>Those data formats consist of an ordered sequence of 8-bit bytes
-diff --git a/include/uapi/linux/v4l2-mediabus.h b/include/uapi/linux/v4l2-mediabus.h
-index a960125..b5c3aab 100644
---- a/include/uapi/linux/v4l2-mediabus.h
-+++ b/include/uapi/linux/v4l2-mediabus.h
-@@ -110,6 +110,9 @@ enum v4l2_mbus_pixelcode {
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
++R8A7779_SCIF(0, 0xffe40000, gic_iid(0x78));
++R8A7779_SCIF(1, 0xffe41000, gic_iid(0x79));
++R8A7779_SCIF(2, 0xffe42000, gic_iid(0x7a));
++R8A7779_SCIF(3, 0xffe43000, gic_iid(0x7b));
++R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
++R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
  
- 	/* S5C73M3 sensor specific interleaved UYVY and JPEG */
- 	V4L2_MBUS_FMT_S5C_UYVY_JPEG_1X8 = 0x5001,
-+
-+	/* HSV - next is 0x6002 */
-+	V4L2_MBUS_FMT_AHSV8888_1X32 = 0x6001,
- };
- 
- /**
+ /* TMU */
+ static struct sh_timer_config tmu00_platform_data = {
 -- 
 1.8.3.2
 
