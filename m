@@ -1,36 +1,157 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 09:08:37 +0000
-Subject: [PATCH 07/16] ARM: shmobile: bockw: Enable CONFIG_VFP in defconfig
-Message-Id: <5a14cbb732a6a4eff2a0be59deba6fdb890253b8.1385629477.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:28 +0000
+Subject: [PATCH v3 27/29] serial: sh-sci: Remove platform data mapbase and irqs fields
+Message-Id: <1384869751-9786-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-CONFIG_VFP is required to boot into a Debian armhf user-space.
-This change brings the bockw defconfig into line with
-other shmobile defconfigs.
+The fields are not used anymore by board files, remove them.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/bockw_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/tty/serial/sh-sci.c | 60 +++++++++++++++++++++++++--------------------
+ include/linux/serial_sci.h  | 26 --------------------
+ 2 files changed, 34 insertions(+), 52 deletions(-)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 63e8bcd..8b5866e 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -27,6 +27,7 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_VFP=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- # CONFIG_SUSPEND is not set
- CONFIG_PM_RUNTIME=y
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index c5abe5c..6bb1e8f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -59,6 +59,23 @@
+ 
+ #include "sh-sci.h"
+ 
++/* Offsets into the sci_port->irqs array */
++enum {
++	SCIx_ERI_IRQ,
++	SCIx_RXI_IRQ,
++	SCIx_TXI_IRQ,
++	SCIx_BRI_IRQ,
++	SCIx_NR_IRQS,
++
++	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
++};
++
++#define SCIx_IRQ_IS_MUXED(port)			\
++	((port)->irqs[SCIx_ERI_IRQ] =	\
++	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
++	((port)->irqs[SCIx_ERI_IRQ] &&	\
++	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
++
+ struct sci_port {
+ 	struct uart_port	port;
+ 
+@@ -2160,36 +2177,27 @@ static int sci_init_single(struct platform_device *dev,
+ 	port->iotype	= UPIO_MEM;
+ 	port->line	= index;
+ 
+-	if (dev->num_resources) {
+-		/* Device has resources, use them. */
+-		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
+-		if (res = NULL)
+-			return -ENOMEM;
++	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
++	if (res = NULL)
++		return -ENOMEM;
+ 
+-		port->mapbase = res->start;
++	port->mapbase = res->start;
+ 
+-		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
+-			sci_port->irqs[i] = platform_get_irq(dev, i);
++	for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
++		sci_port->irqs[i] = platform_get_irq(dev, i);
+ 
+-		/* The SCI generates several interrupts. They can be muxed
+-		 * together or connected to different interrupt lines. In the
+-		 * muxed case only one interrupt resource is specified. In the
+-		 * non-muxed case three or four interrupt resources are
+-		 * specified, as the BRI interrupt is optional.
+-		 */
+-		if (sci_port->irqs[0] < 0)
+-			return -ENXIO;
++	/* The SCI generates several interrupts. They can be muxed together or
++	 * connected to different interrupt lines. In the muxed case only one
++	 * interrupt resource is specified. In the non-muxed case three or four
++	 * interrupt resources are specified, as the BRI interrupt is optional.
++	 */
++	if (sci_port->irqs[0] < 0)
++		return -ENXIO;
+ 
+-		if (sci_port->irqs[1] < 0) {
+-			sci_port->irqs[1] = sci_port->irqs[0];
+-			sci_port->irqs[2] = sci_port->irqs[0];
+-			sci_port->irqs[3] = sci_port->irqs[0];
+-		}
+-	} else {
+-		/* No resources, use old-style platform data. */
+-		port->mapbase = p->mapbase;
+-		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
+-			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
++	if (sci_port->irqs[1] < 0) {
++		sci_port->irqs[1] = sci_port->irqs[0];
++		sci_port->irqs[2] = sci_port->irqs[0];
++		sci_port->irqs[3] = sci_port->irqs[0];
+ 	}
+ 
+ 	switch (p->type) {
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 68cf0bf..620cb57 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -58,17 +58,6 @@ enum {
+ /* HSSRR HSCIF */
+ #define HSCIF_SRE	0x8000
+ 
+-/* Offsets into the sci_port->irqs array */
+-enum {
+-	SCIx_ERI_IRQ,
+-	SCIx_RXI_IRQ,
+-	SCIx_TXI_IRQ,
+-	SCIx_BRI_IRQ,
+-	SCIx_NR_IRQS,
+-
+-	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
+-};
+-
+ /* Offsets into the sci_port->gpios array */
+ enum {
+ 	SCIx_SCK,
+@@ -98,19 +87,6 @@ enum {
+ 	SCIx_NR_REGTYPES,
+ };
+ 
+-#define SCIx_IRQ_MUXED(irq)		\
+-{					\
+-	[SCIx_ERI_IRQ]	= (irq),	\
+-	[SCIx_RXI_IRQ]	= (irq),	\
+-	[SCIx_TXI_IRQ]	= (irq),	\
+-	[SCIx_BRI_IRQ]	= (irq),	\
+-}
+-
+-#define SCIx_IRQ_IS_MUXED(port)			\
+-	((port)->irqs[SCIx_ERI_IRQ] =	\
+-	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
+-	((port)->irqs[SCIx_ERI_IRQ] &&	\
+-	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
+ /*
+  * SCI register subset common for all port types.
+  * Not all registers will exist on all parts.
+@@ -139,8 +115,6 @@ struct plat_sci_port_ops {
+  * Platform device specific platform_data struct
+  */
+ struct plat_sci_port {
+-	unsigned long	mapbase;		/* resource base */
+-	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
+ 	unsigned int	gpios[SCIx_NR_FNS];	/* SCK, RXD, TXD, CTS, RTS */
+ 	unsigned int	type;			/* SCI / SCIF / IRDA / HSCIF */
+ 	upf_t		flags;			/* UPF_* flags */
 -- 
-1.8.4
+1.8.3.2
 
