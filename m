@@ -1,119 +1,197 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Tue, 19 Nov 2013 16:28:21 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 19 Nov 2013 17:00:40 +0000
 Subject: Re: [PATCH v3 3/8] clk: shmobile: Add MSTP clock support
-Message-Id: <20131119162821.GQ5914@e106331-lin.cambridge.arm.com>
+Message-Id: <22339309.IPGV28414M@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1384872347-11724-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384872347-11724-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131119162821.GQ5914@e106331-lin.cambridge.arm.com>
+In-Reply-To: <20131119162821.GQ5914@e106331-lin.cambridge.arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 19, 2013 at 02:45:42PM +0000, Laurent Pinchart wrote:
-> MSTP clocks are gate clocks controlled through a register that handles
-> up to 32 clocks. The register is often sparsely populated.
+Hi Mark,
 
-Does that mean some clocks aren't wired up, or that some clocks don't
-exist at all?
+Thank you for the quick review, much appreciated.
 
-What is the behaviour of the unpopulated bits?
-
+On Tuesday 19 November 2013 16:28:21 Mark Rutland wrote:
+> On Tue, Nov 19, 2013 at 02:45:42PM +0000, Laurent Pinchart wrote:
+> > MSTP clocks are gate clocks controlled through a register that handles
+> > up to 32 clocks. The register is often sparsely populated.
 > 
-> Those clocks are found on Renesas ARM SoCs.
+> Does that mean some clocks aren't wired up, or that some clocks don't
+> exist at all?
+
+It means that some of the bits don't control anything.
+
+> What is the behaviour of the unpopulated bits?
+
+According to the datasheet they're reserved, read-only, and read an 
+unspecified value that is to be written back without modification when writing 
+the register.
+
+> > Those clocks are found on Renesas ARM SoCs.
+> > 
+> > Cc: devicetree@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> > 
+> >  .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  48 +++++
+> >  drivers/clk/shmobile/Makefile                      |   1 +
+> >  drivers/clk/shmobile/clk-mstp.c                    | 229 ++++++++++++++++
+> >  3 files changed, 278 insertions(+)
+> >  create mode 100644
+> >  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> >  create mode 100644 drivers/clk/shmobile/clk-mstp.c
+> > 
+> > diff --git
+> > a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> > b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt new
+> > file mode 100644
+> > index 0000000..126b17e
+> > --- /dev/null
+> > +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> > @@ -0,0 +1,48 @@
+> > +* Renesas CPG Module Stop (MSTP) Clocks
+> > +
+> > +The CPG can gate SoC device clocks. The gates are organized in groups of
+> > up to
+> > +32 gates.
+> > +
+> > +This device tree binding describes a single 32 gate clocks group per
+> > node.
+> > +Clocks are referenced by user nodes by the MSTP node phandle and the
+> > clock
+> > +index in the group, from 0 to 31.
+> > +
+> > +Required Properties:
+> > +
+> > +  - compatible: Must be one of the following
+> > +    - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate
+> > clocks
+> > +    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate
+> > clocks
+> > +    - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+> > +  - reg: Base address and length of the memory resource used by the MSTP
+> > +    clocks
 > 
-> Cc: devicetree@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  48 +++++
->  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-mstp.c                    | 229 +++++++++++++++++++++
->  3 files changed, 278 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
->  create mode 100644 drivers/clk/shmobile/clk-mstp.c
+> There are two entries in the example, the code seems to assume they are
+> particular registers, but this implies one.
+
+There can be one or two registers, depending on the hardware. The first 
+register is always required and controls the clocks, the second register is 
+optional (in the sense that it's not implemented for some of the MSTP 
+instances) and reports the clock status.
+
+> Are these not part of a larger bank of registers?
+
+They are. Here's the memory map for the r8a7791 for instance.
+
+MSTPSR0		H'E615 0030
+MSTPSR1		H'E615 0038
+MSTPSR2		H'E615 0040
+MSTPSR3		H'E615 0048
+MSTPSR4		H'E615 004C
+MSTPSR5		H'E615 003C
+MSTPSR6		H'E615 01C0
+MSTPSR7		H'E615 01C4
+MSTPSR8		H'E615 09A0
+MSTPSR9		H'E615 09A4
+MSTPSR10		H'E615 09A8
+MSTPSR11		H'E615 09AC
+
+SMSTPCR0		H'E615 0130
+SMSTPCR1		H'E615 0134
+SMSTPCR2		H'E615 0138
+SMSTPCR3		H'E615 013C
+SMSTPCR4		H'E615 0140
+SMSTPCR5		H'E615 0144
+SMSTPCR6		H'E615 0148
+SMSTPCR7		H'E615 014C
+SMSTPCR8		H'E615 0990
+SMSTPCR9		H'E615 0994
+SMSTPCR10		H'E615 0998
+SMSTPCR11		H'E615 099C
+
+I've pondered whether we should use a single device node for all the MSTP 
+clocks, but I don't think it would be very practical. Not only would we need 
+to encode all bit positions, we also would have to encode register offsets in 
+DT. This would become pretty messy in a single node.
+
+> > +  - clocks: Reference to the parent clocks
 > 
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> new file mode 100644
-> index 0000000..126b17e
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> @@ -0,0 +1,48 @@
-> +* Renesas CPG Module Stop (MSTP) Clocks
-> +
-> +The CPG can gate SoC device clocks. The gates are organized in groups of up to
-> +32 gates.
-> +
-> +This device tree binding describes a single 32 gate clocks group per node.
-> +Clocks are referenced by user nodes by the MSTP node phandle and the clock
-> +index in the group, from 0 to 31.
-> +
-> +Required Properties:
-> +
-> +  - compatible: Must be one of the following
-> +    - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-> +    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-> +    - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-> +  - reg: Base address and length of the memory resource used by the MSTP
-> +    clocks
+> How many, and what do they correspond to?
 
-There are two entries in the example, the code seems to assume they are
-particular registers, but this implies one.
+What about
 
-Are these not part of a larger bank of registers?
+- clocks: Reference to the parent clocks, one per output clock. The parents 
+must appear in the same order as the output clocks.
 
-> +  - clocks: Reference to the parent clocks
+> > +  - #clock-cells: Must be 1
+> > +  - clock-output-names: The name of the clocks as free-form strings
+> > +  - renesas,indices: Indices of the gate clocks into the group (0 to 31)
+> 
+> The description of this property doesn't describe half of what it means.
+> I believe something like the below does:
+> 
+> - renesas,indices: A list of clock IDs (single cells), one for each
+>   clock present. Each entry may correspond to a clock-output-names entry
+>   at the same index, and its location in the list defines the
+>   corresponding clock-specifier for the entry.
 
-How many, and what do they correspond to?
+I might be mistaken, but doesn't "its location in the list defines the 
+corresponding clock-specifier for the entry" imply that clock specifiers use 
+the location in the list as the clock ID instead of the numerical value of the 
+indices entry ? Each entry in the renesas,indices list corresponds to one 
+clocks entry and one clock-output-names entry, and clock users reference an 
+MSTP clock using the value of its indices entry, not the position of the 
+entry.
 
-> +  - #clock-cells: Must be 1
-> +  - clock-output-names: The name of the clocks as free-form strings
-> +  - renesas,indices: Indices of the gate clocks into the group (0 to 31)
+> I'd imagine we have a few sparse clocks by now, and we might be able to
+> make this more uniform. But I may be mistaken.
+> 
+> [...]
+> 
+> > +static int cpg_mstp_clock_endisable(struct clk_hw *hw, bool enable)
+> > +{
+> > +	struct mstp_clock *clock = to_mstp_clock(hw);
+> > +	struct mstp_clock_group *group = clock->group;
+> > +	u32 bitmask = BIT(clock->bit_index);
+> > +	unsigned long flags;
+> > +	unsigned int i;
+> > +	u32 value;
+> > +
+> > +	spin_lock_irqsave(&group->lock, flags);
+> > +
+> > +	value = clk_readl(group->smstpcr);
+> > +	if (enable)
+> > +		value &= ~bitmask;
+> > +	else
+> > +		value |= bitmask;
+> > +	clk_writel(value, group->smstpcr);
+> > +
+> > +	spin_unlock_irqrestore(&group->lock, flags);
+> > +
+> > +	if (!enable || !group->mstpsr)
+> > +		return 0;
+> > +
+> > +	for (i = 1000; i > 0; --i) {
+> > +		if (!(clk_readl(group->mstpsr) & bitmask))
+> > +			break;
+> > +		cpu_relax();
+> > +	}
+> 
+> Any particular reason for 1000 times? Is there a known minimum time to
+> switch a clock between disabled and enabled? A comment would be nice.
 
-The description of this property doesn't describe half of what it means.
-I believe something like the below does:
+There's no particular reason, the datasheet doesn't provide any useful 
+information. I've just copied that value from existing C code.
 
-- renesas,indices: A list of clock IDs (single cells), one for each
-  clock present. Each entry may correspond to a clock-output-names entry
-  at the same index, and its location in the list defines the
-  corresponding clock-specifier for the entry.
+-- 
+Regards,
 
-I'd imagine we have a few sparse clocks by now, and we might be able to
-make this more uniform. But I may be mistaken.
+Laurent Pinchart
 
-[...]
-
-> +static int cpg_mstp_clock_endisable(struct clk_hw *hw, bool enable)
-> +{
-> +	struct mstp_clock *clock = to_mstp_clock(hw);
-> +	struct mstp_clock_group *group = clock->group;
-> +	u32 bitmask = BIT(clock->bit_index);
-> +	unsigned long flags;
-> +	unsigned int i;
-> +	u32 value;
-> +
-> +	spin_lock_irqsave(&group->lock, flags);
-> +
-> +	value = clk_readl(group->smstpcr);
-> +	if (enable)
-> +		value &= ~bitmask;
-> +	else
-> +		value |= bitmask;
-> +	clk_writel(value, group->smstpcr);
-> +
-> +	spin_unlock_irqrestore(&group->lock, flags);
-> +
-> +	if (!enable || !group->mstpsr)
-> +		return 0;
-> +
-> +	for (i = 1000; i > 0; --i) {
-> +		if (!(clk_readl(group->mstpsr) & bitmask))
-> +			break;
-> +		cpu_relax();
-> +	}
-
-Any particular reason for 1000 times? Is there a known minimum time to
-switch a clock between disabled and enabled? A comment would be nice.
-
-Cheers,
-Mark.
