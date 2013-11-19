@@ -1,74 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 18 Nov 2013 11:18:43 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 19 Nov 2013 01:35:19 +0000
 Subject: Re: [PATCH 0/7] ARM: shmobile: Use interrupt macros in DT files
-Message-Id: <1950158.tI28CZ2mbU@avalon>
+Message-Id: <20131119013518.GD17628@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131118084204.GD1506@verge.net.au>
-In-Reply-To: <20131118084204.GD1506@verge.net.au>
+ <20131118084204.GD1506@verge.net.au> <1950158.tI28CZ2mbU@avalon>
+In-Reply-To: <1950158.tI28CZ2mbU@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
-
-On Monday 18 November 2013 17:42:04 Simon Horman wrote:
-> On Sat, Nov 09, 2013 at 01:23:52PM +0100, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > This patch series replaces all numerical IRQ types by the corresponding
-> > IRQ_TYPE_* macros in device tree sources. It starts by switching from
-> > /include/ to #include (1/7), replacing numerical types by macros in SoC DT
-> > files (2/7) and board DT files (3/7), and fixing several boards that use a
-> > defined IRQ type instead of IRQ_TYPE_NONE.
-> > 
-> > The changes have been tested on the armadillo and marzen boards.
+On Mon, Nov 18, 2013 at 12:18:43PM +0100, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> Hi Laurent,
+> On Monday 18 November 2013 17:42:04 Simon Horman wrote:
+> > On Sat, Nov 09, 2013 at 01:23:52PM +0100, Laurent Pinchart wrote:
+> > > Hello,
+> > > 
+> > > This patch series replaces all numerical IRQ types by the corresponding
+> > > IRQ_TYPE_* macros in device tree sources. It starts by switching from
+> > > /include/ to #include (1/7), replacing numerical types by macros in SoC DT
+> > > files (2/7) and board DT files (3/7), and fixing several boards that use a
+> > > defined IRQ type instead of IRQ_TYPE_NONE.
+> > > 
+> > > The changes have been tested on the armadillo and marzen boards.
+> > 
+> > Hi Laurent,
+> > 
+> > could you let me know what the status of these patches is.
 > 
-> could you let me know what the status of these patches is.
+> Given the lack of review comments I assume the patches are perfect :-)
 
-Given the lack of review comments I assume the patches are perfect :-) I'd 
-like to get them applied. Would you like me to split 2/7 and/or 3/7 ? The 
-changes are pretty small, I don't think not splitting them would make 
-backporting much more difficult.
+Excellent!
 
-> > Laurent Pinchart (7):
-> >   ARM: shmobile: Use #include in device tree sources
-> >   ARM: shmobile: Use interrupt macros in SoC DT files
-> >   ARM: shmobile: Use interrupt macros in board DT files
-> >   ARM: shmobile: marzen-reference: Use falling edge IRQ for LAN9221
-> >   ARM: shmobile: bockw-reference: Use falling edge IRQ for LAN9221
-> >   ARM: shmobile: kzm9g-reference: Use falling edge IRQ for LAN9221
-> >   ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
-> >  
-> >  arch/arm/boot/dts/r7s72100-genmai.dts              |   2 +-
-> >  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   2 +-
-> >  arch/arm/boot/dts/r8a73a4-ape6evm.dts              |   5 +-
-> >  arch/arm/boot/dts/r8a73a4.dtsi                     | 108 +++++++++++-----
-> >  .../boot/dts/r8a7740-armadillo800eva-reference.dts |   5 +-
-> >  arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |   2 +-
-> >  arch/arm/boot/dts/r8a7740.dtsi                     | 106   ++++++--------
-> >  arch/arm/boot/dts/r8a7778-bockw-reference.dts      |   5 +-
-> >  arch/arm/boot/dts/r8a7778-bockw.dts                |   2 +-
-> >  arch/arm/boot/dts/r8a7778.dtsi                     |  44 +++----
-> >  arch/arm/boot/dts/r8a7779-marzen-reference.dts     |   5 +-
-> >  arch/arm/boot/dts/r8a7779-marzen.dts               |   2 +-
-> >  arch/arm/boot/dts/r8a7779.dtsi                     |  42 +++----
-> >  arch/arm/boot/dts/r8a7790-lager-reference.dts      |   2 +-
-> >  arch/arm/boot/dts/r8a7790-lager.dts                |   2 +-
-> >  arch/arm/boot/dts/r8a7790.dtsi                     |  58 +++++-----
-> >  arch/arm/boot/dts/r8a7791-koelsch-reference.dts    |   2 +-
-> >  arch/arm/boot/dts/r8a7791-koelsch.dts              |   2 +-
-> >  arch/arm/boot/dts/r8a7791.dtsi                     |  49 ++++----
-> >  arch/arm/boot/dts/sh7372-mackerel.dts              |   2 +-
-> >  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   5 +-
-> >  arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   2 +-
-> >  arch/arm/boot/dts/sh73a0.dtsi                      | 128  ++++++++-------
-> >  23 files changed, 325 insertions(+), 257 deletions(-)
--- 
-Regards,
+> I'd 
+> like to get them applied. Would you like me to split 2/7 and/or 3/7 ? The 
+> changes are pretty small, I don't think not splitting them would make 
+> backporting much more difficult.
 
-Laurent Pinchart
+Thanks, I'll take them as is.
 
+> 
+> > > Laurent Pinchart (7):
+> > >   ARM: shmobile: Use #include in device tree sources
+> > >   ARM: shmobile: Use interrupt macros in SoC DT files
+> > >   ARM: shmobile: Use interrupt macros in board DT files
+> > >   ARM: shmobile: marzen-reference: Use falling edge IRQ for LAN9221
+> > >   ARM: shmobile: bockw-reference: Use falling edge IRQ for LAN9221
+> > >   ARM: shmobile: kzm9g-reference: Use falling edge IRQ for LAN9221
+> > >   ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
+> > >  
+> > >  arch/arm/boot/dts/r7s72100-genmai.dts              |   2 +-
+> > >  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts    |   2 +-
+> > >  arch/arm/boot/dts/r8a73a4-ape6evm.dts              |   5 +-
+> > >  arch/arm/boot/dts/r8a73a4.dtsi                     | 108 +++++++++++-----
+> > >  .../boot/dts/r8a7740-armadillo800eva-reference.dts |   5 +-
+> > >  arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |   2 +-
+> > >  arch/arm/boot/dts/r8a7740.dtsi                     | 106   ++++++--------
+> > >  arch/arm/boot/dts/r8a7778-bockw-reference.dts      |   5 +-
+> > >  arch/arm/boot/dts/r8a7778-bockw.dts                |   2 +-
+> > >  arch/arm/boot/dts/r8a7778.dtsi                     |  44 +++----
+> > >  arch/arm/boot/dts/r8a7779-marzen-reference.dts     |   5 +-
+> > >  arch/arm/boot/dts/r8a7779-marzen.dts               |   2 +-
+> > >  arch/arm/boot/dts/r8a7779.dtsi                     |  42 +++----
+> > >  arch/arm/boot/dts/r8a7790-lager-reference.dts      |   2 +-
+> > >  arch/arm/boot/dts/r8a7790-lager.dts                |   2 +-
+> > >  arch/arm/boot/dts/r8a7790.dtsi                     |  58 +++++-----
+> > >  arch/arm/boot/dts/r8a7791-koelsch-reference.dts    |   2 +-
+> > >  arch/arm/boot/dts/r8a7791-koelsch.dts              |   2 +-
+> > >  arch/arm/boot/dts/r8a7791.dtsi                     |  49 ++++----
+> > >  arch/arm/boot/dts/sh7372-mackerel.dts              |   2 +-
+> > >  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   5 +-
+> > >  arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   2 +-
+> > >  arch/arm/boot/dts/sh73a0.dtsi                      | 128  ++++++++-------
+> > >  23 files changed, 325 insertions(+), 257 deletions(-)
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
