@@ -1,123 +1,351 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Nov 2013 15:52:51 +0000
-Subject: [PATCH v2 1/3] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
-Message-Id: <1384357973-27365-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:45:45 +0000
+Subject: [PATCH v3 6/8] ARM: shmobile: r8a7790: Add clocks
+Message-Id: <1384872347-11724-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Declare all core clocks and DIV6 clocks, as well as all MSTP clocks
+currently used by r8a7790 boards.
 
-On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
-enable and disable peripheral clocks. To make sure the clock has really
-started we have to read back its status register until it confirms success.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/sh/clk/cpg.c   | 38 ++++++++++++++++++++++++++++++++++++++
- include/linux/sh_clk.h | 19 ++++++++++++-------
- 2 files changed, 50 insertions(+), 7 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 316 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 316 insertions(+)
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index 1ebe67c..7442bc1 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
- 		iowrite32(value, clk->mapped_reg);
- }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3800952..e3c6072 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -8,6 +8,7 @@
+  * kind, whether express or implied.
+  */
  
-+static unsigned int r8(const void __iomem *addr)
-+{
-+	return ioread8(addr);
-+}
++#include <dt-bindings/clock/r8a7790-clock.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+@@ -280,4 +281,319 @@
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
 +
-+static unsigned int r16(const void __iomem *addr)
-+{
-+	return ioread16(addr);
-+}
++	clocks {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
 +
-+static unsigned int r32(const void __iomem *addr)
-+{
-+	return ioread32(addr);
-+}
++		/* External root clock */
++		extal_clk: extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overriden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
 +
- static int sh_clk_mstp_enable(struct clk *clk)
- {
- 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
-+	if (clk->status_reg) {
-+		unsigned int (*read)(const void __iomem *addr);
-+		int i;
-+		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
-+			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a7790-cpg-clocks",
++				     "renesas,rcar-gen2-cpg-clocks";
++			reg = <0 0xe6150000 0 0x1000>;
++			clocks = <&extal_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "main", "pll0", "pll1", "pll3",
++					     "lb", "qspi", "sdh", "sd0", "sd1",
++					     "z";
++		};
 +
-+		if (clk->flags & CLK_ENABLE_REG_8BIT)
-+			read = r8;
-+		else if (clk->flags & CLK_ENABLE_REG_16BIT)
-+			read = r16;
-+		else
-+			read = r32;
++		/* Variable factor clocks */
++		sd2_clk: sd2_clk@e6150078 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd2";
++		};
++		sd3_clk: sd3_clk@e615007c {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd3";
++		};
++		mmc0_clk: mmc0_clk@e6150240 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150240 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc0";
++		};
++		mmc1_clk: mmc1_clk@e6150244 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150244 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc1";
++		};
++		ssp_clk: ssp_clk@e6150248 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150248 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "ssp";
++		};
++		ssprs_clk: ssprs_clk@e615024c {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615024c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "ssprs";
++		};
 +
-+		for (i = 1000;
-+		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
-+		     i--)
-+			cpu_relax();
-+		if (!i) {
-+			pr_err("cpg: failed to enable %p[%d]\n",
-+			       clk->enable_reg, clk->enable_bit);
-+			return -ETIMEDOUT;
-+		}
-+	}
- 	return 0;
- }
- 
-diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
-index 60c7239..1f208b2 100644
---- a/include/linux/sh_clk.h
-+++ b/include/linux/sh_clk.h
-@@ -52,6 +52,7 @@ struct clk {
- 	unsigned long		flags;
- 
- 	void __iomem		*enable_reg;
-+	void __iomem		*status_reg;
- 	unsigned int		enable_bit;
- 	void __iomem		*mapped_reg;
- 
-@@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long target,
- 		      unsigned long *best_freq, unsigned long *parent_freq,
- 		      unsigned int div_min, unsigned int div_max);
- 
--#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
-+#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg, _flags) \
- {									\
- 	.parent		= _parent,					\
- 	.enable_reg	= (void __iomem *)_enable_reg,			\
- 	.enable_bit	= _enable_bit,					\
-+	.status_reg	= _status_reg,					\
- 	.flags		= _flags,					\
- }
- 
--#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
-+#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
- 
--#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
-+#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
-+	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
- 
--#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
-+#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
++		/* Fixed factor clocks */
++		pll1_div2_clk: pll1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div2";
++		};
++		z2_clk: z2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "z2";
++		};
++		zg_clk: zg_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <3>;
++			clock-mult = <1>;
++			clock-output-names = "zg";
++		};
++		zx_clk: zx_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <3>;
++			clock-mult = <1>;
++			clock-output-names = "zx";
++		};
++		zs_clk: zs_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <6>;
++			clock-mult = <1>;
++			clock-output-names = "zs";
++		};
++		hp_clk: hp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "hp";
++		};
++		i_clk: i_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "i";
++		};
++		b_clk: b_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "b";
++		};
++		p_clk: p_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <24>;
++			clock-mult = <1>;
++			clock-output-names = "p";
++		};
++		cl_clk: cl_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <48>;
++			clock-mult = <1>;
++			clock-output-names = "cl";
++		};
++		m2_clk: m2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "m2";
++		};
++		imp_clk: imp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "imp";
++		};
++		rclk_clk: rclk_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <(48 * 1024)>;
++			clock-mult = <1>;
++			clock-output-names = "rclk";
++		};
++		oscclk_clk: oscclk_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <(12 * 1024)>;
++			clock-mult = <1>;
++			clock-output-names = "oscclk";
++		};
++		zb3_clk: zb3_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "zb3";
++		};
++		zb3d2_clk: zb3d2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "zb3d2";
++		};
++		ddr_clk: ddr_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "ddr";
++		};
++		mp_clk: mp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-div = <15>;
++			clock-mult = <1>;
++			clock-output-names = "mp";
++		};
++		cp_clk: cp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "cp";
++		};
 +
-+#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
- 
- int sh_clk_mstp_register(struct clk *clks, int nr);
- 
++		/* Gate clocks */
++		mstp1_clks: mstp1_clks@e6150134 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
++			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
++				 <&zs_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
++				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
++				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_RT R8A7790_CLK_VSP1_SY
++			>;
++			clock-output-names +				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
++				"vsp1-du0", "vsp1-rt", "vsp1-sy";
++		};
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
++			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&mp_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
++				R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1 R8A7790_CLK_SCIFB2
++			>;
++			clock-output-names +				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
++				"scifb2";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
++				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
++				 <&mmc0_clk>, <&rclk_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
++				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
++				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
++			>;
++			clock-output-names +				"tpu0", "mmcif1", "sdhi3", "sdhi2",
++				"sdhi1", "sdhi0", "mmcif0", "cmt1";
++		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
++			clocks = <&extal_clk>, <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
++			clock-output-names = "thermal", "pwm";
++		};
++		mstp7_clks: mstp7_clks@e615014c {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
++			clocks = <&zs_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zx_clk>,
++				 <&zx_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_HSCIF1 R8A7790_CLK_HSCIF0 R8A7790_CLK_SCIF1
++				R8A7790_CLK_SCIF0 R8A7790_CLK_DU2 R8A7790_CLK_DU1
++				R8A7790_CLK_DU0 R8A7790_CLK_LVDS1 R8A7790_CLK_LVDS0
++			>;
++			clock-output-names +				"hscif1", "hscif0", "scif1", "scif0", "du2", "du1",
++				"du0", "lvds1", "lvds0";
++		};
++		mstp8_clks: mstp8_clks@e6150990 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
++			clocks = <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R8A7790_CLK_ETHER>;
++			clock-output-names = "ether";
++		};
++		mstp9_clks: mstp9_clks@e6150994 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
++			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_I2C3
++				R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
++			>;
++			clock-output-names = "rcan1", "rcan0", "i2c3", "i2c2", "i2c1", "i2c0";
++		};
++	};
+ };
 -- 
 1.8.3.2
 
