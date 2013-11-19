@@ -1,210 +1,177 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Nov 2013 23:21:38 +0000
-Subject: [PATCH 04/04] ARM: shmobile: Remove legacy platform devices from EMEV2 SoC code
-Message-Id: <20131106232138.8081.51260.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:30 +0000
+Subject: [PATCH v3 29/29] serial: sh-sci: Add OF support
+Message-Id: <1384869751-9786-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106232102.8081.20523.sendpatchset@w520>
-In-Reply-To: <20131106232102.8081.20523.sendpatchset@w520>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+From: Bastian Hecht <hechtb@gmail.com>
 
-Now when KZM9D legacy C board support code is
-gone then remove emev2_add_standard_devices()
-and all the platform devices from setup-emev2.c.
+Extend the driver to with support for SCIx device tree bindings. A
+minimal set of features is supported, additional properties can be added
+later should the need to describe more device features arise.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/tty/serial/sh-sci.c | 107 ++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 104 insertions(+), 3 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/emev2.h |    5 
- arch/arm/mach-shmobile/setup-emev2.c        |  148 ---------------------------
- 2 files changed, 153 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-11-05 16:02:39.000000000 +0900
-@@ -3,12 +3,7 @@
- 
- extern void emev2_map_io(void);
- extern void emev2_init_delay(void);
--extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
--
--#define EMEV2_GPIO_BASE 200
--#define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
--
- extern struct smp_operations emev2_smp_ops;
- 
- #endif /* __ASM_EMEV2_H__ */
---- 0003/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-11-06 19:04:20.000000000 +0900
-@@ -19,22 +19,12 @@
- #include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
--#include <linux/interrupt.h>
--#include <linux/irq.h>
--#include <linux/platform_device.h>
--#include <linux/platform_data/gpio-em.h>
- #include <linux/of_platform.h>
--#include <linux/delay.h>
--#include <linux/input.h>
--#include <linux/io.h>
--#include <linux/irqchip/arm-gic.h>
- #include <mach/common.h>
- #include <mach/emev2.h>
--#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
--#include <asm/mach/time.h>
- 
- static struct map_desc emev2_io_desc[] __initdata = {
- #ifdef CONFIG_SMP
-@@ -53,144 +43,6 @@ void __init emev2_map_io(void)
- 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 6bb1e8f..a3b7266 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -40,6 +40,7 @@
+ #include <linux/module.h>
+ #include <linux/mm.h>
+ #include <linux/notifier.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/scatterlist.h>
+@@ -2472,6 +2473,89 @@ static int sci_remove(struct platform_device *dev)
+ 	return 0;
  }
  
--/* UART */
--static struct resource uart0_resources[] = {
--	DEFINE_RES_MEM(0xe1020000, 0x38),
--	DEFINE_RES_IRQ(40),
--};
--
--static struct resource uart1_resources[] = {
--	DEFINE_RES_MEM(0xe1030000, 0x38),
--	DEFINE_RES_IRQ(41),
--};
--
--static struct resource uart2_resources[] = {
--	DEFINE_RES_MEM(0xe1040000, 0x38),
--	DEFINE_RES_IRQ(42),
--};
--
--static struct resource uart3_resources[] = {
--	DEFINE_RES_MEM(0xe1050000, 0x38),
--	DEFINE_RES_IRQ(43),
--};
--
--#define emev2_register_uart(idx)					\
--	platform_device_register_simple("serial8250-em", idx,		\
--					uart##idx##_resources,		\
--					ARRAY_SIZE(uart##idx##_resources))
--
--/* STI */
--static struct resource sti_resources[] = {
--	DEFINE_RES_MEM(0xe0180000, 0x54),
--	DEFINE_RES_IRQ(157),
--};
--
--#define emev2_register_sti()					\
--	platform_device_register_simple("em_sti", 0,		\
--					sti_resources,		\
--					ARRAY_SIZE(sti_resources))
--
--/* GIO */
--static struct gpio_em_config gio0_config = {
--	.gpio_base = 0,
--	.irq_base = EMEV2_GPIO_IRQ(0),
--	.number_of_pins = 32,
--};
--
--static struct resource gio0_resources[] = {
--	DEFINE_RES_MEM(0xe0050000, 0x2c),
--	DEFINE_RES_MEM(0xe0050040, 0x20),
--	DEFINE_RES_IRQ(99),
--	DEFINE_RES_IRQ(100),
--};
--
--static struct gpio_em_config gio1_config = {
--	.gpio_base = 32,
--	.irq_base = EMEV2_GPIO_IRQ(32),
--	.number_of_pins = 32,
--};
--
--static struct resource gio1_resources[] = {
--	DEFINE_RES_MEM(0xe0050080, 0x2c),
--	DEFINE_RES_MEM(0xe00500c0, 0x20),
--	DEFINE_RES_IRQ(101),
--	DEFINE_RES_IRQ(102),
--};
--
--static struct gpio_em_config gio2_config = {
--	.gpio_base = 64,
--	.irq_base = EMEV2_GPIO_IRQ(64),
--	.number_of_pins = 32,
--};
--
--static struct resource gio2_resources[] = {
--	DEFINE_RES_MEM(0xe0050100, 0x2c),
--	DEFINE_RES_MEM(0xe0050140, 0x20),
--	DEFINE_RES_IRQ(103),
--	DEFINE_RES_IRQ(104),
--};
--
--static struct gpio_em_config gio3_config = {
--	.gpio_base = 96,
--	.irq_base = EMEV2_GPIO_IRQ(96),
--	.number_of_pins = 32,
--};
--
--static struct resource gio3_resources[] = {
--	DEFINE_RES_MEM(0xe0050180, 0x2c),
--	DEFINE_RES_MEM(0xe00501c0, 0x20),
--	DEFINE_RES_IRQ(105),
--	DEFINE_RES_IRQ(106),
--};
--
--static struct gpio_em_config gio4_config = {
--	.gpio_base = 128,
--	.irq_base = EMEV2_GPIO_IRQ(128),
--	.number_of_pins = 31,
--};
--
--static struct resource gio4_resources[] = {
--	DEFINE_RES_MEM(0xe0050200, 0x2c),
--	DEFINE_RES_MEM(0xe0050240, 0x20),
--	DEFINE_RES_IRQ(107),
--	DEFINE_RES_IRQ(108),
--};
--
--#define emev2_register_gio(idx)						\
--	platform_device_register_resndata(&platform_bus, "em_gio",	\
--					  idx, gio##idx##_resources,	\
--					  ARRAY_SIZE(gio##idx##_resources), \
--					  &gio##idx##_config,		\
--					  sizeof(struct gpio_em_config))
--
--static struct resource pmu_resources[] = {
--	DEFINE_RES_IRQ(152),
--	DEFINE_RES_IRQ(153),
--};
--
--#define emev2_register_pmu()					\
--	platform_device_register_simple("arm-pmu", -1,		\
--					pmu_resources,		\
--					ARRAY_SIZE(pmu_resources))
--
--void __init emev2_add_standard_devices(void)
--{
--	if (!IS_ENABLED(CONFIG_COMMON_CLK))
--		emev2_clock_init();
--
--	emev2_register_uart(0);
--	emev2_register_uart(1);
--	emev2_register_uart(2);
--	emev2_register_uart(3);
--	emev2_register_sti();
--	emev2_register_gio(0);
--	emev2_register_gio(1);
--	emev2_register_gio(2);
--	emev2_register_gio(3);
--	emev2_register_gio(4);
--	emev2_register_pmu();
--}
--
- void __init emev2_init_delay(void)
++struct sci_port_info {
++	unsigned int type;
++	unsigned int regtype;
++	unsigned int brr_algo;
++};
++
++static const struct of_device_id of_sci_match[] = {
++	{
++		.compatible = "renesas,scif",
++		.data = (void *)&(const struct sci_port_info) {
++			.type = PORT_SCIF,
++			.regtype = SCIx_SH4_SCIF_REGTYPE,
++			.brr_algo = SCBRR_ALGO_2,
++		},
++	}, {
++		.compatible = "renesas,scifa",
++		.data = (void *)&(const struct sci_port_info) {
++			.type = PORT_SCIFA,
++			.regtype = SCIx_SCIFA_REGTYPE,
++			.brr_algo = SCBRR_ALGO_4,
++		},
++	}, {
++		.compatible = "renesas,scifb",
++		.data = (void *)&(const struct sci_port_info) {
++			.type = PORT_SCIFB,
++			.regtype = SCIx_SCIFB_REGTYPE,
++			.brr_algo = SCBRR_ALGO_4,
++		},
++	}, {
++		.compatible = "renesas,hscif",
++		.data = (void *)&(const struct sci_port_info) {
++			.type = PORT_HSCIF,
++			.regtype = SCIx_HSCIF_REGTYPE,
++			.brr_algo = SCBRR_ALGO_6,
++		},
++	}, {
++		/* Terminator */
++	},
++};
++MODULE_DEVICE_TABLE(of, of_sci_match);
++
++static struct plat_sci_port *
++sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
++{
++	struct device_node *np = pdev->dev.of_node;
++	const struct of_device_id *match;
++	const struct sci_port_info *info;
++	struct plat_sci_port *p;
++	int id;
++
++	if (!IS_ENABLED(CONFIG_OF) || !np)
++		return NULL;
++
++	match = of_match_node(of_sci_match, pdev->dev.of_node);
++	if (!match)
++		return NULL;
++
++	info = match->data;
++
++	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
++	if (!p) {
++		dev_err(&pdev->dev, "failed to allocate DT config data\n");
++		return NULL;
++	}
++
++	/* Get the line number for the aliases node. */
++	id = of_alias_get_id(np, "serial");
++	if (id < 0) {
++		dev_err(&pdev->dev, "failed to get alias id (%d)\n", id);
++		return NULL;
++	}
++
++	*dev_id = id;
++
++	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
++	p->type = info->type;
++	p->regtype = info->regtype;
++	p->scscr = SCSCR_RE | SCSCR_TE;
++	p->scbrr_algo_id = info->brr_algo;
++
++	return p;
++}
++
+ static int sci_probe_single(struct platform_device *dev,
+ 				      unsigned int index,
+ 				      struct plat_sci_port *p,
+@@ -2504,8 +2588,9 @@ static int sci_probe_single(struct platform_device *dev,
+ 
+ static int sci_probe(struct platform_device *dev)
  {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+-	struct plat_sci_port *p = dev_get_platdata(&dev->dev);
+-	struct sci_port *sp = &sci_ports[dev->id];
++	struct plat_sci_port *p;
++	struct sci_port *sp;
++	unsigned int dev_id;
+ 	int ret;
+ 
+ 	/*
+@@ -2516,9 +2601,24 @@ static int sci_probe(struct platform_device *dev)
+ 	if (is_early_platform_device(dev))
+ 		return sci_probe_earlyprintk(dev);
+ 
++	if (dev->dev.of_node) {
++		p = sci_parse_dt(dev, &dev_id);
++		if (p = NULL)
++			return -EINVAL;
++	} else {
++		p = dev->dev.platform_data;
++		if (p = NULL) {
++			dev_err(&dev->dev, "no platform data supplied\n");
++			return -EINVAL;
++		}
++
++		dev_id = dev->id;
++	}
++
++	sp = &sci_ports[dev_id];
+ 	platform_set_drvdata(dev, sp);
+ 
+-	ret = sci_probe_single(dev, dev->id, p, sp);
++	ret = sci_probe_single(dev, dev_id, p, sp);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -2570,6 +2670,7 @@ static struct platform_driver sci_driver = {
+ 		.name	= "sh-sci",
+ 		.owner	= THIS_MODULE,
+ 		.pm	= &sci_dev_pm_ops,
++		.of_match_table = of_match_ptr(of_sci_match),
+ 	},
+ };
+ 
+-- 
+1.8.3.2
+
