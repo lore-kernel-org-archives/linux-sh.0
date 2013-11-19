@@ -1,78 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 09:09:48 +0000
-Subject: Re: [GIT PULL 00/16] Renesas ARM based SoC defconfig updates for v3.14
-Message-Id: <20131128090948.GA19464@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:06 +0000
+Subject: [PATCH v3 05/29] serial: sh-sci: Set the UPF_FIXED_PORT flag
+Message-Id: <1384869751-9786-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-[ Corrected subject prefix to be "GIT PULL" instead of "PATCH" ]
+The base address, IRQ and baud rate generator parent clock rate can't be
+changed by userspace. Mark the port as fixed.
 
-On Thu, Nov 28, 2013 at 06:08:05PM +0900, Simon Horman wrote:
-> Hi Kevin, Olof, and Arnd,
-> 
-> please consider these Renesas ARM based SoC defconfig updates for v3.14.
-> 
-> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
-> 
->   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.14
-> 
-> for you to fetch changes up to 577092b3d11530acd8467074f6ea7e2dd36b5028:
-> 
->   ARM: shmobile: kzm9d: Enable AUTO_ZRELADDR in defconfig (2013-11-24 15:13:43 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM based SoC defconfig updates for v3.14
-> 
-> * Add Genmai defconfig
->   - The board was added in v3.13 but the defconfig missed the cut
-> * Enable AUTO_ZRELADDR for kzm9d board
-> * Enable HPB-DMAC, PACKET, VFP on bockw and marzen boards
-> * Do not disable INOTIFY_USER on bockw or marzen boards
-> * Do not enable CONFIG_DEVTMPFS on bockw or marzen boards
-> * Do not enable CONFIG_SMC911X on marzen
->   - That hardware does not exist on the marzen board
-> * Do not set command line on bockw or marzen boards
->   - This is handled in the DTS
-> * Enable REGULATOR on bockw board
-> 
-> ----------------------------------------------------------------
-> Kuninori Morimoto (1):
->       ARM: shmobile: bockw: enable CONFIG_REGULATOR
-> 
-> Magnus Damm (1):
->       ARM: shmobile: Genmai defconfig
-> 
-> Sergei Shtylyov (2):
->       ARM: shmobile: marzen: enable HPB-DMAC in defconfig
->       ARM: shmobile: bockw: enable HPB-DMAC in defconfig
-> 
-> Simon Horman (12):
->       ARM: shmobile: bockw: Do not set command line in defconfig
->       ARM: shmobile: marzen: Do not set command line in defconfig
->       ARM: shmobile: bockw: Do not disable CONFIG_INOTIFY_USER in defconfig
->       ARM: shmobile: marzen: Do not disable CONFIG_INOTIFY_USER in defconfig
->       ARM: shmobile: bockw: Enable CONFIG_VFP in defconfig
->       ARM: shmobile: marzen: Enable CONFIG_VFP in defconfig
->       ARM: shmobile: bockw: Do not enable CONFIG_DEVTMPFS defconfig
->       ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig
->       ARM: shmobile: bockw: Enable CONFIG_PACKET in defconfig
->       ARM: shmobile: marzen: Enable CONFIG_PACKET in defconfig
->       ARM: shmobile: marzen: Do not enable CONFIG_SMC911X in defconfig
->       ARM: shmobile: kzm9d: Enable AUTO_ZRELADDR in defconfig
-> 
->  arch/arm/configs/bockw_defconfig  |  10 ++--
->  arch/arm/configs/genmai_defconfig | 116 ++++++++++++++++++++++++++++++++++++++
->  arch/arm/configs/kzm9d_defconfig  |   1 +
->  arch/arm/configs/marzen_defconfig |  10 ++--
->  4 files changed, 126 insertions(+), 11 deletions(-)
->  create mode 100644 arch/arm/configs/genmai_defconfig
-> 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 73b329380..47b0ee6 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2243,7 +2243,7 @@ static int sci_init_single(struct platform_device *dev,
+ 
+ 	port->mapbase		= p->mapbase;
+ 	port->type		= p->type;
+-	port->flags		= p->flags;
++	port->flags		= UPF_FIXED_PORT | p->flags;
+ 	port->regshift		= p->regshift;
+ 
+ 	/*
+-- 
+1.8.3.2
+
