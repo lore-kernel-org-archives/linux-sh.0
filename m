@@ -1,52 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Nov 2013 00:26:04 +0000
-Subject: Re: [PATCH v2 2/3] ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
-Message-Id: <20131126002603.GF15227@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 12:59:49 +0000
+Subject: [PATCH v2 7/7] ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
+Message-Id: <1384865989-12875-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384357973-27365-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384357973-27365-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1383999839-3339-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383999839-3339-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 25, 2013 at 03:19:23PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Monday 25 November 2013 12:36:31 Simon Horman wrote:
-> > On Sun, Nov 24, 2013 at 04:23:50PM -0800, Kuninori Morimoto wrote:
-> > > Hi Laurent, Simon
-> > > 
-> > > > > > I've removed them as they're unused. This could be split to a
-> > > > > > separate patch if preferred, I've just thought it would be overkill.
-> > > > > 
-> > > > > Yes, they are not used, but it doesn't have relationship to this
-> > > > > patch.
-> > > > 
-> > > > I've considered the change to be related, at this patch fixes the MSTP
-> > > > clock definitions. Of course if you disagree I'm fine with removing
-> > > > this change.
-> > > > >
-> > > > > (and, do we really need to remove these ?)
-> > > > 
-> > > > They're not used, so I thought it would be good to remove them.
-> > > > 
-> > > > > This is not super big deal,
-> > > > > but I was ordered many times not to do such things at other ML.
-> > > > > 
-> > > > > Let's follow the opinion of Simon.
-> > > > 
-> > > > Sounds good to me :-)
-> > > 
-> > > Thank you :)
-> > > Sorry for my picky comment :P
-> > > 
-> > > Simon, we need your opinion.
-> > 
-> > I would prefer separate patches.
-> 
-> OK, I'll resubmit this patch without the removal of the unused macros. As 
-> you've originally submitted a patch to remove the macros, would you like to 
-> rebase it on top of this, or should I include one in the repost ?
+The device is configured to generate an active-low interrupt signal that
+needs to be acknowledged by the host. Configure the IRQ to trigger on
+low level.
 
-I can rebase that patch, seeing as its mine.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Changes since v1:
+
+- Fixed typo (IRQ_TYPE_LOW_LEVEL -> IRQ_TYPE_LEVEL_LOW)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index aef425f..7b80f19 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -95,7 +95,7 @@
+ 		compatible = "sitronix,st1232";
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+-		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
++		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
+ 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+-- 
+1.8.3.2
+
