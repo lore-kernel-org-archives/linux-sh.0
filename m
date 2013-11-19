@@ -1,76 +1,241 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 20 Nov 2013 08:31:13 +0000
-Subject: [PATCH 4/4] mmc: SDHI: add SoC specific workaround via HW version
-Message-Id: <87d2lv8ofl.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:11 +0000
+Subject: [PATCH v3 10/29] ARM: shmobile: r8a7740: Use macros to declare SCIF devices
+Message-Id: <1384869751-9786-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-One of Renesas SDHI chip needs workaround to use it,
-and, we can judge it based on chip version.
-This patch adds very quick-hack workaround method,
-since we still don't know how many chips
-need workaround in the future.
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   11 +++++++++++
- include/linux/mmc/tmio.h          |    1 +
- 2 files changed, 12 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 191 +++++----------------------------
+ 1 file changed, 29 insertions(+), 162 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f1e35a7..d241d86 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -33,6 +33,8 @@
- 
- #include "tmio_mmc.h"
- 
-+#define EXT_ACC           0xe4
-+
- struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index b7d4b2c..8778b57 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -203,167 +203,34 @@ static struct platform_device irqpin3_device = {
+ 	},
  };
-@@ -137,6 +139,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	int irq, ret, i = 0;
- 	bool multiplexed_isr = true;
- 	struct tmio_mmc_dma *dma_priv;
-+	u16 ver;
  
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res)
-@@ -219,6 +222,14 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eprobe;
+-/* SCIFA0 */
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xe6c40000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(100)),
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-/* SCIFA1 */
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xe6c50000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(101)),
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-/* SCIFA2 */
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xe6c60000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(102)),
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-/* SCIFA3 */
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xe6c70000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(103)),
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-/* SCIFA4 */
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xe6c80000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(104)),
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-/* SCIFA5 */
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xe6cb0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(105)),
+-};
+-
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
+-
+-/* SCIFA6 */
+-static struct plat_sci_port scif6_platform_data = {
+-	.mapbase	= 0xe6cc0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(106)),
+-};
+-
+-static struct platform_device scif6_device = {
+-	.name		= "sh-sci",
+-	.id		= 6,
+-	.dev		= {
+-		.platform_data	= &scif6_platform_data,
+-	},
+-};
+-
+-/* SCIFA7 */
+-static struct plat_sci_port scif7_platform_data = {
+-	.mapbase	= 0xe6cd0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(107)),
+-};
+-
+-static struct platform_device scif7_device = {
+-	.name		= "sh-sci",
+-	.id		= 7,
+-	.dev		= {
+-		.platform_data	= &scif7_platform_data,
+-	},
+-};
+-
+-/* SCIFB */
+-static struct plat_sci_port scifb_platform_data = {
+-	.mapbase	= 0xe6c30000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFB,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(108)),
+-};
++/* SCIF */
++#define R8A7740_SCIF(scif_type, index, baseaddr, irq)		\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= scif_type,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF,			\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_4,				\
++	.scscr		= SCSCR_RE | SCSCR_TE,			\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
++}
  
- 	/*
-+	 * FIXME:
-+	 * this Workaround can be more clever method
-+	 */
-+	ver = sd_ctrl_read16(host, CTL_VERSION);
-+	if (ver = 0xCB0D)
-+		sd_ctrl_write16(host, EXT_ACC, 1);
-+
-+	/*
- 	 * Allow one or more specific (named) ISRs or
- 	 * one or more multiplexed (un-named) ISRs.
- 	 */
-diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
-index a1c1f32..84d9053 100644
---- a/include/linux/mmc/tmio.h
-+++ b/include/linux/mmc/tmio.h
-@@ -33,6 +33,7 @@
- #define CTL_SDIO_IRQ_MASK 0x38
- #define CTL_DMA_ENABLE 0xd8
- #define CTL_RESET_SD 0xe0
-+#define CTL_VERSION 0xe2
- #define CTL_SDIO_REGS 0x100
- #define CTL_CLK_AND_WAIT_CTL 0x138
- #define CTL_RESET_SDIO 0x1e0
+-static struct platform_device scifb_device = {
+-	.name		= "sh-sci",
+-	.id		= 8,
+-	.dev		= {
+-		.platform_data	= &scifb_platform_data,
+-	},
+-};
++R8A7740_SCIF(PORT_SCIFA, 0, 0xe6c40000, gic_spi(100));
++R8A7740_SCIF(PORT_SCIFA, 1, 0xe6c50000, gic_spi(101));
++R8A7740_SCIF(PORT_SCIFA, 2, 0xe6c60000, gic_spi(102));
++R8A7740_SCIF(PORT_SCIFA, 3, 0xe6c70000, gic_spi(103));
++R8A7740_SCIF(PORT_SCIFA, 4, 0xe6c80000, gic_spi(104));
++R8A7740_SCIF(PORT_SCIFA, 5, 0xe6cb0000, gic_spi(105));
++R8A7740_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(106));
++R8A7740_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(107));
++R8A7740_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(108));
+ 
+ /* CMT */
+ static struct sh_timer_config cmt10_platform_data = {
+@@ -528,7 +395,7 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ 	&scif5_device,
+ 	&scif6_device,
+ 	&scif7_device,
+-	&scifb_device,
++	&scif8_device,
+ 	&cmt10_device,
+ };
+ 
+@@ -981,7 +848,7 @@ void __init r8a7740_add_standard_devices(void)
+ 	rmobile_add_device_to_domain("A3SP",	&scif5_device);
+ 	rmobile_add_device_to_domain("A3SP",	&scif6_device);
+ 	rmobile_add_device_to_domain("A3SP",	&scif7_device);
+-	rmobile_add_device_to_domain("A3SP",	&scifb_device);
++	rmobile_add_device_to_domain("A3SP",	&scif8_device);
+ 	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
+ }
+ 
 -- 
-1.7.9.5
+1.8.3.2
 
