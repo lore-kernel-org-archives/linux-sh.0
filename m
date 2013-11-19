@@ -1,42 +1,77 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 01 Nov 2013 01:21:36 +0000
-Subject: [PATCH 0/3] ARM: shmobile: r8a7778: HSPI support on DT
-Message-Id: <8738ngzzky.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:29 +0000
+Subject: [PATCH v3 28/29] serial: sh-sci: Add device tree bindings documentation
+Message-Id: <1384869751-9786-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
+Document the device tree bindings for the sci serial port devices.
 
-Hi Simon
-
-These are HSPI support for r8a7778 on DT.
-HSPI driver DT support exist on this branch
-
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git :: topic/hspi
-
-But there is no boot issue without it.
-I'm using renesas-devel-v3.12-rc7-20131030.
-
-# BTW, renesas-devel-v3.12-rc7-20131030 has double I2C support
-# on ${LINUX}/arch/arm/boot/dts/r8a7778.dtsi
-# the commits are
-# 3c13daa1ef375122c327b1e959187da0dd4d6a7b
-# 7cab820da7a496fba63d5355152c781344465408
-
-Kuninori Morimoto (3):
-      ARM: shmobile: r8a7778: add HSPI suppport on DTSI
-      ARM: shmobile: r8a7778: add HSPI clock support for DT
-      ARM: shmobile: bockw: enable HSPI0 on DTS
-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |   11 +++++++++
- arch/arm/boot/dts/r8a7778.dtsi                |   30 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7778.c        |    3 +++
- 3 files changed, 44 insertions(+)
-
-
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ .../bindings/serial/renesas,sci-serial.txt         | 46 ++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+new file mode 100644
+index 0000000..f372cf2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -0,0 +1,46 @@
++* Renesas SH-Mobile Serial Communication Interface
++
++Required properties:
++
++  - compatible: Must contain one of the following:
++
++    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
++    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
++    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
++    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
++    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2) SCIF compatible UART.
++    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
++    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
++    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif" for generic SCIF compatible UART.
++    - "renesas,scifa" for generic SCIFA compatible UART.
++    - "renesas,scifb" for generic SCIFB compatible UART.
++    - "renesas,hscif" for generic HSCIF compatible UART.
++
++    When compatible with the generic version, nodes must list the
++    SoC-specific version corresponding to the platform first followed by the
++    generic version.
++
++  - reg: Base address and length of the I/O registers used by the UART.
++  - interrupts: Must contain an interrupt-specifier for the SCIx interrupt.
++
++  - clocks: Must contain a phandle and clock-specifier pair for each entry
++    in clock-names.
++  - clock-names: Must contain "sci_ick" for the SCIx UART interface clock.
++
++Note: Each enabled SCIx UART should have an alias correctly numbered in the
++"aliases" node.
++
++Example:
++	aliases {
++		serial0 = &scifa0;
++	};
++
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		reg = <0 0xe6c40000 0 64>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
++		clock-names = "sci_ick";
++	};
+-- 
+1.8.3.2
+
