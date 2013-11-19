@@ -1,16 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 09 Nov 2013 12:23:54 +0000
-Subject: [PATCH 2/7] ARM: shmobile: Use interrupt macros in SoC DT files
-Message-Id: <1383999839-3339-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 19 Nov 2013 01:38:52 +0000
+Subject: Re: [PATCH 2/7] ARM: shmobile: Use interrupt macros in SoC DT files
+Message-Id: <20131119013852.GE17628@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1383999839-3339-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383999839-3339-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Sat, Nov 09, 2013 at 01:23:54PM +0100, Laurent Pinchart wrote:
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/boot/dts/r8a73a4.dtsi | 108 ++++++++++++++++++++++++----------
+>  arch/arm/boot/dts/r8a7740.dtsi | 106 +++++++++++++++++-----------------
+>  arch/arm/boot/dts/r8a7778.dtsi |  44 +++++++-------
+>  arch/arm/boot/dts/r8a7779.dtsi |  42 +++++++-------
+>  arch/arm/boot/dts/r8a7790.dtsi |  58 ++++++++++---------
+>  arch/arm/boot/dts/r8a7791.dtsi |  49 ++++++++--------
+>  arch/arm/boot/dts/sh73a0.dtsi  | 128 +++++++++++++++++++++--------------------
+>  7 files changed, 299 insertions(+), 236 deletions(-)
+
+There was some fuzz when applying the arch/arm/boot/dts/r8a7778.dtsi hunks
+of this patch. The result that I have queued up is as follows. Please
+double-check it.
+
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+[PATCH] ARM: shmobile: Use interrupt macros in SoC DT files
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r8a73a4.dtsi | 108 ++++++++++++++++++++++++----------
  arch/arm/boot/dts/r8a7740.dtsi | 106 +++++++++++++++++-----------------
@@ -437,7 +460,7 @@ index 4cc945a..b1c2ed9 100644
  		cap-sdio-irq;
  		status = "disabled";
 diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 698809f..e3c8fd2 100644
+index 819b194..3314e0a 100644
 --- a/arch/arm/boot/dts/r8a7778.dtsi
 +++ b/arch/arm/boot/dts/r8a7778.dtsi
 @@ -16,6 +16,8 @@
@@ -449,7 +472,7 @@ index 698809f..e3c8fd2 100644
  / {
  	compatible = "renesas,r8a7778";
  
-@@ -45,10 +47,10 @@
+@@ -51,10 +53,10 @@
  			<0xfe780044 4>,
  			<0xfe780064 4>;
  		interrupt-parent = <&gic>;
@@ -464,7 +487,7 @@ index 698809f..e3c8fd2 100644
  		sense-bitfield-width = <2>;
  	};
  
-@@ -56,7 +58,7 @@
+@@ -62,7 +64,7 @@
  		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
  		reg = <0xffc40000 0x2c>;
  		interrupt-parent = <&gic>;
@@ -473,7 +496,7 @@ index 698809f..e3c8fd2 100644
  		#gpio-cells = <2>;
  		gpio-controller;
  		gpio-ranges = <&pfc 0 0 32>;
-@@ -68,7 +70,7 @@
+@@ -74,7 +76,7 @@
  		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
  		reg = <0xffc41000 0x2c>;
  		interrupt-parent = <&gic>;
@@ -482,7 +505,7 @@ index 698809f..e3c8fd2 100644
  		#gpio-cells = <2>;
  		gpio-controller;
  		gpio-ranges = <&pfc 0 32 32>;
-@@ -80,7 +82,7 @@
+@@ -86,7 +88,7 @@
  		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
  		reg = <0xffc42000 0x2c>;
  		interrupt-parent = <&gic>;
@@ -491,7 +514,7 @@ index 698809f..e3c8fd2 100644
  		#gpio-cells = <2>;
  		gpio-controller;
  		gpio-ranges = <&pfc 0 64 32>;
-@@ -92,7 +94,7 @@
+@@ -98,7 +100,7 @@
  		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
  		reg = <0xffc43000 0x2c>;
  		interrupt-parent = <&gic>;
@@ -500,7 +523,7 @@ index 698809f..e3c8fd2 100644
  		#gpio-cells = <2>;
  		gpio-controller;
  		gpio-ranges = <&pfc 0 96 32>;
-@@ -104,7 +106,7 @@
+@@ -110,7 +112,7 @@
  		compatible = "renesas,gpio-r8a7778", "renesas,gpio-rcar";
  		reg = <0xffc44000 0x2c>;
  		interrupt-parent = <&gic>;
@@ -509,7 +532,7 @@ index 698809f..e3c8fd2 100644
  		#gpio-cells = <2>;
  		gpio-controller;
  		gpio-ranges = <&pfc 0 128 27>;
-@@ -123,7 +125,7 @@
+@@ -129,7 +131,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc70000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -518,7 +541,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -133,7 +135,7 @@
+@@ -139,7 +141,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc71000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -527,7 +550,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -143,7 +145,7 @@
+@@ -149,7 +151,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc72000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -536,7 +559,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -153,7 +155,7 @@
+@@ -159,7 +161,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc73000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -545,7 +568,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -161,7 +163,7 @@
+@@ -167,7 +169,7 @@
  		compatible = "renesas,sh-mmcif";
  		reg = <0xffe4e000 0x100>;
  		interrupt-parent = <&gic>;
@@ -554,7 +577,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -169,7 +171,7 @@
+@@ -175,7 +177,7 @@
  		compatible = "renesas,sdhi-r8a7778";
  		reg = <0xffe4c000 0x100>;
  		interrupt-parent = <&gic>;
@@ -563,7 +586,7 @@ index 698809f..e3c8fd2 100644
  		cap-sd-highspeed;
  		cap-sdio-irq;
  		status = "disabled";
-@@ -179,7 +181,7 @@
+@@ -185,7 +187,7 @@
  		compatible = "renesas,sdhi-r8a7778";
  		reg = <0xffe4d000 0x100>;
  		interrupt-parent = <&gic>;
@@ -572,7 +595,7 @@ index 698809f..e3c8fd2 100644
  		cap-sd-highspeed;
  		cap-sdio-irq;
  		status = "disabled";
-@@ -189,7 +191,7 @@
+@@ -195,7 +197,7 @@
  		compatible = "renesas,sdhi-r8a7778";
  		reg = <0xffe4f000 0x100>;
  		interrupt-parent = <&gic>;
@@ -581,7 +604,7 @@ index 698809f..e3c8fd2 100644
  		cap-sd-highspeed;
  		cap-sdio-irq;
  		status = "disabled";
-@@ -201,7 +203,7 @@
+@@ -207,7 +209,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc70000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -590,7 +613,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -211,7 +213,7 @@
+@@ -217,7 +219,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc71000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -599,7 +622,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -221,7 +223,7 @@
+@@ -227,7 +229,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc72000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -608,7 +631,7 @@ index 698809f..e3c8fd2 100644
  		status = "disabled";
  	};
  
-@@ -231,7 +233,7 @@
+@@ -237,7 +239,7 @@
  		compatible = "renesas,i2c-r8a7778";
  		reg = <0xffc73000 0x1000>;
  		interrupt-parent = <&gic>;
@@ -616,7 +639,7 @@ index 698809f..e3c8fd2 100644
 +		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
  		status = "disabled";
  	};
- };
+ 
 diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
 index 05fd41c..b2b418a 100644
 --- a/arch/arm/boot/dts/r8a7779.dtsi
@@ -1366,5 +1389,5 @@ index 78f7201a..aef8a61 100644
  		cap-sd-highspeed;
  		status = "disabled";
 -- 
-1.8.1.5
+1.8.4
 
