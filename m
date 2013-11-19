@@ -1,59 +1,107 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 01:18:35 +0000
-Subject: [PATCH 13/15] fbdev: sh-mobile-lcdcfb: Enable driver compilation with COMPILE_TEST
-Message-Id: <1385515117-23664-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:45:46 +0000
+Subject: [PATCH v3 7/8] ARM: shmobile: r8a7790: Reference clocks
+Message-Id: <1384872347-11724-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This helps increasing build testing coverage.
+Reference clocks using a "clocks" property in all nodes corresponding to
+devices that require a clock.
 
-Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
-Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
-Cc: linux-fbdev@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/video/Kconfig | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index 4f2e1b3..2aceb08 100644
---- a/drivers/video/Kconfig
-+++ b/drivers/video/Kconfig
-@@ -10,7 +10,8 @@ config HAVE_FB_ATMEL
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e3c6072..fe65a68 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -190,6 +190,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
  
- config SH_MIPI_DSI
- 	tristate
--	depends on (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
-+	depends on HAVE_CLK
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+@@ -200,6 +201,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
  
- config SH_LCD_MIPI_DSI
- 	bool
-@@ -1997,7 +1998,8 @@ config FB_W100
+@@ -210,6 +212,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
  
- config FB_SH_MOBILE_LCDC
- 	tristate "SuperH Mobile LCDC framebuffer support"
--	depends on FB && (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
-+	depends on FB && HAVE_CLK
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
- 	select FB_SYS_FILLRECT
- 	select FB_SYS_COPYAREA
- 	select FB_SYS_IMAGEBLIT
-@@ -2484,7 +2486,7 @@ endif
+@@ -220,6 +223,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
  
- config FB_SH_MOBILE_MERAM
- 	tristate "SuperH Mobile MERAM read ahead support"
--	depends on (SUPERH || ARCH_SHMOBILE)
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
- 	select GENERIC_ALLOCATOR
- 	---help---
- 	  Enable MERAM support for the SuperH controller.
+@@ -228,6 +232,7 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -237,6 +242,7 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -251,6 +257,7 @@
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -260,6 +267,7 @@
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -269,6 +277,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -278,6 +287,7 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
 -- 
 1.8.3.2
 
