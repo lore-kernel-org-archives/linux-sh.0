@@ -1,42 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Nov 2013 08:06:06 +0000
-Subject: [PATCH 00/03] pinctrl: sh-pfc: r7s72100 SCIF2 support
-Message-Id: <20131127080606.18384.45103.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Nov 2013 09:04:57 +0000
+Subject: [PATCH 3/6] ARM: shmobile: sh73a0: tidyup clock table order
+Message-Id: <8761roep8q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: wsa@the-dreams.de, linus.walleij@linaro.org, linux-sh@vger.kernel.org, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-pinctrl: sh-pfc: r7s72100 SCIF2 support
+SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
+for a long term.
+But in these days, the ICK clock is defined in random place.
+This patch arranges it.
 
-[PATCH 01/03] pinctrl: sh-pfc: r7s72100 SCIF2 port3 support
-[PATCH 02/03] pinctrl: sh-pfc: r7s72100 SCIF2 macro conversion
-[PATCH 03/03] pinctrl: sh-pfc: r7s72100 SCIF2 port4, 6 and 8 support
-
-Add PINCTL support for one channel of on-chip UART included in the r7s72100
-SoC. This UART is called SCIF2 and happens to be the console port on the
-Genmai board.
-
-These patches are written in a broken out way to show how the r7s72100
-hardware allows fine grained control of the pins, and proposes code that
- a) allows individual assignment of TxD and RxD signals.
- b) introduces macros to allow less verbose tables
- c) lists single-pin functions with one pin per line
-
-Basically, just using "clk", "data" and "ctrl" to describe groups is not
-fine grained enough for this SoC. For such fine grained on-chip devices
-there will be single-pin groups, and in the case of the Genmai board the
-groups to enable SCIF2 will be "scif2_txd_p3_0" and "scif2_rxd_p3_2".
-
-If you prefer me to adjust this code somehow then please let me know.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/clock-sh73a0.c |   14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
- Written against renesas.git tag renesas-devel-v3.13-rc1-20131125 and
- [PATCH] pinctrl: sh-pfc: Initial r7s72100 support
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 96cc7da..30d8868 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -625,12 +625,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("sdhi0_clk", &div6_clks[DIV6_SDHI0]),
+ 	CLKDEV_CON_ID("sdhi1_clk", &div6_clks[DIV6_SDHI1]),
+ 	CLKDEV_CON_ID("sdhi2_clk", &div6_clks[DIV6_SDHI2]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+-	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+-	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* I2C2 */
+@@ -680,6 +674,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
+ 	CLKDEV_DEV_ID("e6828000.i2c", &mstp_clks[MSTP410]), /* I2C4 */
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
++
++	/* ICK */
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
++	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
++	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
++	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+ };
+ 
+ void __init sh73a0_clock_init(void)
+-- 
+1.7.9.5
 
- drivers/pinctrl/sh-pfc/pfc-r7s72100.c |  117 ++++++++++++++++++++++-----------
- 1 file changed, 80 insertions(+), 37 deletions(-)
