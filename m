@@ -1,76 +1,192 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 24 Nov 2013 07:16:15 +0000
-Subject: Re: [GIT PULL] Renesas ARM based SoC clock updates for v3.13
-Message-Id: <20131124071615.GA15677@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:09 +0000
+Subject: [PATCH v3 08/29] ARM: shmobile: sh7372: Use macros to declare SCIF devices
+Message-Id: <1384869751-9786-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1381301313-5938-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1381301313-5938-1-git-send-email-horms+renesas@verge.net.au>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-On Wed, Oct 09, 2013 at 03:48:32PM +0900, Simon Horman wrote:
-> Hi Mike,
-> 
-> please consider these Renesas ARM based SoC clock updates for v3.13.
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
-Hi Mike,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/setup-sh7372.c | 156 ++++++----------------------------
+ 1 file changed, 25 insertions(+), 131 deletions(-)
 
-for some reason I thought you had taken this change but I now
-realise that is not the case. I apologise for not being more attentive.
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 3118783..77627dd 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -86,138 +86,32 @@ void __init sh7372_pinmux_init(void)
+ 	platform_device_register(&sh7372_pfc_device);
+ }
+ 
+-/* SCIFA0 */
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xe6c40000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c00), evt2irq(0x0c00),
+-			    evt2irq(0x0c00), evt2irq(0x0c00) },
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-/* SCIFA1 */
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xe6c50000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c20), evt2irq(0x0c20),
+-			    evt2irq(0x0c20), evt2irq(0x0c20) },
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-/* SCIFA2 */
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xe6c60000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c40), evt2irq(0x0c40),
+-			    evt2irq(0x0c40), evt2irq(0x0c40) },
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-/* SCIFA3 */
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xe6c70000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0c60), evt2irq(0x0c60),
+-			    evt2irq(0x0c60), evt2irq(0x0c60) },
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-/* SCIFA4 */
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xe6c80000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0d20), evt2irq(0x0d20),
+-			    evt2irq(0x0d20), evt2irq(0x0d20) },
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-/* SCIFA5 */
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xe6cb0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { evt2irq(0x0d40), evt2irq(0x0d40),
+-			    evt2irq(0x0d40), evt2irq(0x0d40) },
+-};
+-
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
+-
+-/* SCIFB */
+-static struct plat_sci_port scif6_platform_data = {
+-	.mapbase	= 0xe6c30000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFB,
+-	.irqs		= { evt2irq(0x0d60), evt2irq(0x0d60),
+-			    evt2irq(0x0d60), evt2irq(0x0d60) },
+-};
++/* SCIF */
++#define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= scif_type,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF,			\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_4,				\
++	.scscr		= SCSCR_RE | SCSCR_TE,			\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
++}
+ 
+-static struct platform_device scif6_device = {
+-	.name		= "sh-sci",
+-	.id		= 6,
+-	.dev		= {
+-		.platform_data	= &scif6_platform_data,
+-	},
+-};
++SH7372_SCIF(PORT_SCIFA, 0, 0xe6c40000, evt2irq(0x0c00));
++SH7372_SCIF(PORT_SCIFA, 1, 0xe6c50000, evt2irq(0x0c20));
++SH7372_SCIF(PORT_SCIFA, 2, 0xe6c60000, evt2irq(0x0c40));
++SH7372_SCIF(PORT_SCIFA, 3, 0xe6c70000, evt2irq(0x0c60));
++SH7372_SCIF(PORT_SCIFA, 4, 0xe6c80000, evt2irq(0x0d20));
++SH7372_SCIF(PORT_SCIFA, 5, 0xe6cb0000, evt2irq(0x0d40));
++SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
+ 
+ /* CMT */
+ static struct sh_timer_config cmt2_platform_data = {
+-- 
+1.8.3.2
 
-I am wondering if you could consider taking it as I have some SoC-side
-changes that depend on it which I would like to queue up for v3.14.
-Actually, I have them queued up and was preparing some branches based on
-v3.13-rc1 for the ARM-SoC maintainers when I noticed this patch
-had not been accepted.
-
-I think that any of the following would work well for me:
-I'm sure there are also other options.
-
-1. You could take this into a branch which won't subsequently
-   be rebased and I can use that as a base for a branch
-   for the SoC-side changes which I intend to have merged into
-   the ARM-SoC tree.
-
-2. You could take this for v3.13. But it is probably far to late for that.
-
-3. I could take this change with the SoC-side changes which I
-   intend to have merged into the ARM-SoC tree.
-
-Another option is for me to drop the SoC-side changes for now.
-But that is not my preferred option.
-
-> 
-> 
-> The following changes since commit 272b98c6455f00884f0350f775c5342358ebb73f:
-> 
->   Linux 3.12-rc1 (2013-09-16 16:17:51 -0400)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.13
-> 
-> for you to fetch changes up to f00578d0f860ba63bf28e0261ef489cc9e01ab47:
-> 
->   clk: emev2: Add support for emev2 SMU clocks with DT (2013-10-09 15:39:08 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM based SoC clock updates for v3.13
-> 
-> * Add support for emev2 SMU clocks with DT
-> 
-> ----------------------------------------------------------------
-> Takashi Yoshii (1):
->       clk: emev2: Add support for emev2 SMU clocks with DT
-> 
->  .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
->  drivers/clk/Makefile                               |   1 +
->  drivers/clk/shmobile/Makefile                      |   3 +
->  drivers/clk/shmobile/clk-emev2.c                   | 104 +++++++++++++++++++++
->  4 files changed, 206 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/clock/emev2-clock.txt
->  create mode 100644 drivers/clk/shmobile/Makefile
->  create mode 100644 drivers/clk/shmobile/clk-emev2.c
-> 
