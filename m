@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Nov 2013 01:42:14 +0000
+Date: Tue, 19 Nov 2013 02:56:29 +0000
 Subject: Re: [PATCH 7/7] ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
-Message-Id: <20131119014214.GF17628@verge.net.au>
+Message-Id: <20131119025629.GA14794@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1383999839-3339-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -17,5 +17,33 @@ On Sat, Nov 09, 2013 at 01:23:59PM +0100, Laurent Pinchart wrote:
 > low level.
 > 
 > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> index aef425f..04e9d49 100644
+> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> @@ -95,7 +95,7 @@
+>  		compatible = "sitronix,st1232";
+>  		reg = <0x55>;
+>  		interrupt-parent = <&irqpin1>;
+> -		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
+> +		interrupts = <2 IRQ_TYPE_LOW_LEVEL>;
 
-Thanks, I have queued this up.
+I believe this should be IRQ_TYPE_LEVEL_LOW.
+
+I have dequeued this patch for now.
+
+>  		pinctrl-0 = <&st1232_pins>;
+>  		pinctrl-names = "default";
+>  		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+> -- 
+> 1.8.1.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
