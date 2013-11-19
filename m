@@ -1,51 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:41 +0000
-Subject: [PATCH 11/16] ARM: shmobile: r8a7779: camera-rcar header cleanup
-Message-Id: <2f3927e815e82874af76db51f8d2c2a596bc6cee.1385628709.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:26 +0000
+Subject: [PATCH v3 25/29] ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as resources
+Message-Id: <1384869751-9786-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-<linux/platform_data/camera-rcar.h> is needed on Marzen,
-not setup-r8a7779.c
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c         | 1 +
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 1 -
- 2 files changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7791.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index fa102f7..4f9e3ec 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -29,6 +29,7 @@
- #include <linux/leds.h>
- #include <linux/dma-mapping.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
- #include <linux/platform_data/usb-rcar-phy.h>
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 905420a..1cab247 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -4,7 +4,6 @@
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <linux/sh_eth.h>
--#include <linux/platform_data/camera-rcar.h>
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 8eb9373..557db8f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -87,11 +87,14 @@ void __init r8a7791_pinmux_init(void)
+ #define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+-	.mapbase	= baseaddr,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+ 	.scbrr_algo_id	= algo,						\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq),				\
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq),						\
+ }
  
- /* HPB-DMA slave IDs */
- enum {
+ #define R8A7791_SCIF(index, baseaddr, irq)				\
+@@ -120,9 +123,11 @@ R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
+ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+ 
+ #define r8a7791_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
+ 
+ static const struct sh_timer_config cmt00_platform_data __initconst = {
+ 	.name = "CMT00",
 -- 
-1.8.4
+1.8.3.2
 
