@@ -1,67 +1,135 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 29 Nov 2013 13:51:25 +0000
-Subject: Re: [PATCH 11/15] pwm: pwm-renesas-tpu: Enable driver compilation with COMPILE_TEST
-Message-Id: <7787436.L49ODt45in@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2988912.cL2yqq4KJ2"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:45:44 +0000
+Subject: [PATCH v3 5/8] ARM: shmobile: r8a7791: Add clock index macros for DT sources
+Message-Id: <1384872347-11724-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131129105353.GI22771@ulmo.nvidia.com>
-In-Reply-To: <20131129105353.GI22771@ulmo.nvidia.com>
+References: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Add macros usable by device tree sources to reference r8a7791 clocks by
+index.
 
---nextPart2988912.cL2yqq4KJ2
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ include/dt-bindings/clock/r8a7791-clock.h | 105 ++++++++++++++++++++++++++++++
+ 1 file changed, 105 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
 
-Hi Thierry,
-
-On Friday 29 November 2013 11:53:54 Thierry Reding wrote:
-> On Wed, Nov 27, 2013 at 02:18:33AM +0100, Laurent Pinchart wrote:
-> > This helps increasing build testing coverage.
-> > 
-> > Cc: Thierry Reding <thierry.reding@gmail.com>
-> > Cc: linux-pwm@vger.kernel.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > Acked-by: Simon Horman <horms@verge.net.au>
-> > ---
-> > 
-> >  drivers/pwm/Kconfig | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> I'm not sure if this has been answered in any of the various subthreads
-> before. I've tried to read through them, but I may have missed some. It
-> was mentioned that iowrite16() wasn't supported on all architectures;
-> won't this possibly cause randconfig autobuilders to break?
-
-That's possible (although it has been reported to me that the situation got 
-fixed on arch/cris in v3.12), but the only way to find out is to try it. That 
-would be a bug in the architecture, and it should then get fixed.
-
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+new file mode 100644
+index 0000000..df1715b
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -0,0 +1,105 @@
++/*
++ * Copyright 2013 Ideas On Board SPRL
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
++#define __DT_BINDINGS_CLOCK_R8A7791_H__
++
++/* CPG */
++#define R8A7791_CLK_MAIN		0
++#define R8A7791_CLK_PLL0		1
++#define R8A7791_CLK_PLL1		2
++#define R8A7791_CLK_PLL3		3
++#define R8A7791_CLK_LB			4
++#define R8A7791_CLK_QSPI		5
++#define R8A7791_CLK_SDH			6
++#define R8A7791_CLK_SD0			7
++#define R8A7791_CLK_Z			8
++
++/* MSTP1 */
++#define R8A7791_CLK_TMU1		11
++#define R8A7791_CLK_TMU3		21
++#define R8A7791_CLK_TMU2		22
++#define R8A7791_CLK_CMT0		24
++#define R8A7791_CLK_TMU0		25
++#define R8A7791_CLK_VSP1_DU1		27
++#define R8A7791_CLK_VSP1_DU0		28
++#define R8A7791_CLK_VSP1_SY		31
++
++/* MSTP2 */
++#define R8A7791_CLK_SCIFA2		2
++#define R8A7791_CLK_SCIFA1		3
++#define R8A7791_CLK_SCIFA0		4
++#define R8A7791_CLK_SCIFB0		6
++#define R8A7791_CLK_SCIFB1		7
++#define R8A7791_CLK_SCIFB2		16
++#define R8A7791_CLK_DMAC		18
++
++/* MSTP3 */
++#define R8A7791_CLK_TPU0		4
++#define R8A7791_CLK_SDHI2		11
++#define R8A7791_CLK_SDHI1		12
++#define R8A7791_CLK_SDHI0		14
++#define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_SSUSB		28
++#define R8A7791_CLK_CMT1		29
++#define R8A7791_CLK_USBDMAC0		30
++#define R8A7791_CLK_USBDMAC1		31
++
++/* MSTP5 */
++#define R8A7791_CLK_THERMAL		22
++#define R8A7791_CLK_PWM			23
++
++/* MSTP7 */
++#define R8A7791_CLK_HSUSB		4
++#define R8A7791_CLK_HSCIF2		13
++#define R8A7791_CLK_SCIF5		14
++#define R8A7791_CLK_SCIF4		15
++#define R8A7791_CLK_HSCIF1		16
++#define R8A7791_CLK_HSCIF0		17
++#define R8A7791_CLK_SCIF3		18
++#define R8A7791_CLK_SCIF2		19
++#define R8A7791_CLK_SCIF1		20
++#define R8A7791_CLK_SCIF0		21
++#define R8A7791_CLK_DU1			23
++#define R8A7791_CLK_DU0			24
++#define R8A7791_CLK_LVDS0		26
++
++/* MSTP8 */
++#define R8A7791_CLK_VIN2		9
++#define R8A7791_CLK_VIN1		10
++#define R8A7791_CLK_VIN0		11
++#define R8A7791_CLK_ETHER		13
++#define R8A7791_CLK_SATA1		14
++#define R8A7791_CLK_SATA0		15
++
++/* MSTP9 */
++#define R8A7791_CLK_GPIO7		4
++#define R8A7791_CLK_GPIO6		5
++#define R8A7791_CLK_GPIO5		7
++#define R8A7791_CLK_GPIO4		8
++#define R8A7791_CLK_GPIO3		9
++#define R8A7791_CLK_GPIO2		10
++#define R8A7791_CLK_GPIO1		11
++#define R8A7791_CLK_GPIO0		12
++#define R8A7791_CLK_RCAN1		15
++#define R8A7791_CLK_RCAN0		16
++#define R8A7791_CLK_I2C5		25
++#define R8A7791_CLK_IICDVFS		26
++#define R8A7791_CLK_I2C4		27
++#define R8A7791_CLK_I2C3		28
++#define R8A7791_CLK_I2C2		29
++#define R8A7791_CLK_I2C1		30
++#define R8A7791_CLK_I2C0		31
++
++/* MSTP11 */
++#define R8A7791_CLK_SCIFA3		6
++#define R8A7791_CLK_SCIFA4		7
++#define R8A7791_CLK_SCIFA5		8
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
-
---nextPart2988912.cL2yqq4KJ2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJSmJvpAAoJEIkPb2GL7hl1b5wH/3eczIp+Y0dVN8xsHSIdJgtu
-mMnceSeMKFtkNmf6IzSAjuKFGSAL7jJ0Vdikdf9LwkX6DAaWs4BzWruP4m79evrm
-sYizEhdaB4BTfjAepwioawTTDU0VYWUT8jOfTERcKu/Kg9Qpbk4F4hKOwr5HApqm
-pm33JHvjbRaZP/ccwZ7FriYkfd5+kGm5Fy72Lygw3BbDBemeMhF7NfV01Lyj8w9i
-YyONtYZ/PQDkYzdUgg3SzTtxUt/VZ0oZbGK3cHW5NwDUaX/s2ox4WpBTjWtTvCMj
-k414oQn6t2QfL1CKrNOISfNNctvBk/X5lLbsbzVTO1OLCBFo9qd+ZkXm5T5DXgc=
-=f+vB
------END PGP SIGNATURE-----
-
---nextPart2988912.cL2yqq4KJ2--
+1.8.3.2
 
