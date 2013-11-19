@@ -1,22 +1,34 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Nov 2013 02:04:25 +0000
+Date: Tue, 19 Nov 2013 02:08:03 +0000
 Subject: Re: [PATCH] ARM: shmobile: Enable GPIO LEDs on Genmai
-Message-Id: <20131119020424.GH17628@verge.net.au>
+Message-Id: <20131119020802.GI17628@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131113234230.1579.9739.sendpatchset@w520>
-In-Reply-To: <20131113234230.1579.9739.sendpatchset@w520>
+ <20131119020424.GH17628@verge.net.au>
+In-Reply-To: <20131119020424.GH17628@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 14, 2013 at 08:42:30AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Tue, Nov 19, 2013 at 11:04:25AM +0900, Simon Horman wrote:
+> On Thu, Nov 14, 2013 at 08:42:30AM +0900, Magnus Damm wrote:
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > Enable led1 and led2 on the Genmai board using
+> > the r7s72100 SoC and the GPIO RZ driver.
 > 
-> Enable led1 and led2 on the Genmai board using
-> the r7s72100 SoC and the GPIO RZ driver.
+> Thanks, I have queued this up.
 
-Thanks, I have queued this up.
+I was a little to hasty. I have unqueued this patch
+as it depends on "ARM: shmobile: r7s72100 GPIO DT nodes for GPIO RZ"
+which appears to still be under discussion.
 
-I think there should be an accompanying defconfig update.
-Would you like me to prepare something?
+> 
+> I think there should be an accompanying defconfig update.
+> Would you like me to prepare something?
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
