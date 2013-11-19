@@ -1,74 +1,218 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:03:37 +0000
-Subject: [PATCH v3 00/15] Lager and Koelsch multiplatform support
-Message-Id: <1385600632-5181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:08 +0000
+Subject: [PATCH v3 07/29] serial: sh-sci: Support resources passed through platform resources
+Message-Id: <1384869751-9786-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Hello,
+Memory and IRQ resources are currently passed to the driver through
+platform data. Support passing them through the standard platform
+resources mechanism instead. This deprecates platform data resources.
 
-This is the third version of the patch set that moves the lager-reference and
-koelsch-reference boards to multiplatform kernel. It starts by syncing the
-non-reference DTSes with the reference DTSes (01/15 and 02/15), setting the
-external clock frequency in DT (03/15 and 04/15), adding CCF support to the
--reference boards (05/15 to 08/15), and cleaning up unneeded leftovers (09/15
-to 15/15).
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/tty/serial/sh-sci.c | 65 ++++++++++++++++++++++++++++++++++-----------
+ include/linux/serial_sci.h  |  8 +++---
+ 2 files changed, 53 insertions(+), 20 deletions(-)
 
-The net result are multiplatform-only lager-reference and koelsch-reference
-boards with a DTSes shared by the reference and non-reference boards.
-
-The code is available in my git tree at
-
-        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/rcar-gen2-boards
-
-It has been tested on both the Lager and Koelsch boards.
-
-Changes compared to v2:
-
-- Rebase on top of the third version of the R-Car Gen2 CCF patches
-- Add Koelsch board multiplatform support
-
-Changes compared to v1:
-
-- Rebase on top of the second version of the r8a7790 CCF patches
-
-Laurent Pinchart (15):
-  ARM: shmobile: Sync Lager DTS with Lager reference DTS
-  ARM: shmobile: Sync Koelsch DTS with Koelsch reference DTS
-  ARM: shmobile: lager: Specify external clock frequency in DT
-  ARM: shmobile: koelsch: Specify external clock frequency in DT
-  ARM: shmobile: lager-reference: Switch to multiplaform
-  ARM: shmobile: koelsch-reference: Initialize CPG device
-  ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
-  ARM: shmobile: koelsch-reference: Instantiate clkdevs for SCIF and CMT
-  ARM: shmobile: Remove non-multiplatform Lager reference support
-  ARM: shmobile: Remove non-multiplatform Koelsch reference support
-  ARM: shmobile: Let Lager multiplatform boot with Lager DTB
-  ARM: shmobile: Let Koelsch multiplatform boot with Koelsch DTB
-  ARM: shmobile: Remove Lager reference DTS
-  ARM: shmobile: Remove Koelsch reference DTS
-  ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
-
- arch/arm/boot/dts/Makefile                       |  5 +-
- arch/arm/boot/dts/r8a7790-lager-reference.dts    | 84 ------------------------
- arch/arm/boot/dts/r8a7790-lager.dts              | 57 ++++++++++++++++
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts  | 61 -----------------
- arch/arm/boot/dts/r8a7791-koelsch.dts            | 33 ++++++++++
- arch/arm/mach-shmobile/Kconfig                   | 30 +++------
- arch/arm/mach-shmobile/Makefile                  |  3 +-
- arch/arm/mach-shmobile/Makefile.boot             |  2 -
- arch/arm/mach-shmobile/board-koelsch-reference.c | 41 +++++++++++-
- arch/arm/mach-shmobile/board-lager-reference.c   | 40 ++++++++++-
- arch/arm/mach-shmobile/clock-r8a7790.c           | 10 ---
- 11 files changed, 177 insertions(+), 189 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
- delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b0c9d24..c5abe5c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -74,6 +74,7 @@ struct sci_port {
+ 	/* Function clock */
+ 	struct clk		*fclk;
+ 
++	int			irqs[SCIx_NR_IRQS];
+ 	char			*irqstr[SCIx_NR_IRQS];
+ 	char			*gpiostr[SCIx_NR_FNS];
+ 
+@@ -1075,19 +1076,19 @@ static int sci_request_irq(struct sci_port *port)
+ 
+ 	for (i = j = 0; i < SCIx_NR_IRQS; i++, j++) {
+ 		struct sci_irq_desc *desc;
+-		unsigned int irq;
++		int irq;
+ 
+ 		if (SCIx_IRQ_IS_MUXED(port)) {
+ 			i = SCIx_MUX_IRQ;
+ 			irq = up->irq;
+ 		} else {
+-			irq = port->cfg->irqs[i];
++			irq = port->irqs[i];
+ 
+ 			/*
+ 			 * Certain port types won't support all of the
+ 			 * available interrupt sources.
+ 			 */
+-			if (unlikely(!irq))
++			if (unlikely(irq < 0))
+ 				continue;
+ 		}
+ 
+@@ -1112,7 +1113,7 @@ static int sci_request_irq(struct sci_port *port)
+ 
+ out_noirq:
+ 	while (--i >= 0)
+-		free_irq(port->cfg->irqs[i], port);
++		free_irq(port->irqs[i], port);
+ 
+ out_nomem:
+ 	while (--j >= 0)
+@@ -1130,16 +1131,16 @@ static void sci_free_irq(struct sci_port *port)
+ 	 * IRQ first.
+ 	 */
+ 	for (i = 0; i < SCIx_NR_IRQS; i++) {
+-		unsigned int irq = port->cfg->irqs[i];
++		int irq = port->irqs[i];
+ 
+ 		/*
+ 		 * Certain port types won't support all of the available
+ 		 * interrupt sources.
+ 		 */
+-		if (unlikely(!irq))
++		if (unlikely(irq < 0))
+ 			continue;
+ 
+-		free_irq(port->cfg->irqs[i], port);
++		free_irq(port->irqs[i], port);
+ 		kfree(port->irqstr[i]);
+ 
+ 		if (SCIx_IRQ_IS_MUXED(port)) {
+@@ -1655,7 +1656,7 @@ static void rx_timer_fn(unsigned long arg)
+ 
+ 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		scr &= ~0x4000;
+-		enable_irq(s->cfg->irqs[1]);
++		enable_irq(s->irqs[SCIx_RXI_IRQ]);
+ 	}
+ 	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
+ 	dev_dbg(port->dev, "DMA Rx timed out\n");
+@@ -2145,11 +2146,12 @@ static struct uart_ops sci_uart_ops = {
+ };
+ 
+ static int sci_init_single(struct platform_device *dev,
+-				     struct sci_port *sci_port,
+-				     unsigned int index,
+-				     struct plat_sci_port *p)
++			   struct sci_port *sci_port, unsigned int index,
++			   struct plat_sci_port *p, bool early)
+ {
+ 	struct uart_port *port = &sci_port->port;
++	const struct resource *res;
++	unsigned int i;
+ 	int ret;
+ 
+ 	sci_port->cfg	= p;
+@@ -2158,6 +2160,38 @@ static int sci_init_single(struct platform_device *dev,
+ 	port->iotype	= UPIO_MEM;
+ 	port->line	= index;
+ 
++	if (dev->num_resources) {
++		/* Device has resources, use them. */
++		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
++		if (res = NULL)
++			return -ENOMEM;
++
++		port->mapbase = res->start;
++
++		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
++			sci_port->irqs[i] = platform_get_irq(dev, i);
++
++		/* The SCI generates several interrupts. They can be muxed
++		 * together or connected to different interrupt lines. In the
++		 * muxed case only one interrupt resource is specified. In the
++		 * non-muxed case three or four interrupt resources are
++		 * specified, as the BRI interrupt is optional.
++		 */
++		if (sci_port->irqs[0] < 0)
++			return -ENXIO;
++
++		if (sci_port->irqs[1] < 0) {
++			sci_port->irqs[1] = sci_port->irqs[0];
++			sci_port->irqs[2] = sci_port->irqs[0];
++			sci_port->irqs[3] = sci_port->irqs[0];
++		}
++	} else {
++		/* No resources, use old-style platform data. */
++		port->mapbase = p->mapbase;
++		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
++			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
++	}
++
+ 	switch (p->type) {
+ 	case PORT_SCIFB:
+ 		port->fifosize = 256;
+@@ -2182,7 +2216,7 @@ static int sci_init_single(struct platform_device *dev,
+ 			return ret;
+ 	}
+ 
+-	if (dev) {
++	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ 		if (IS_ERR(sci_port->iclk)) {
+ 			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
+@@ -2237,7 +2271,6 @@ static int sci_init_single(struct platform_device *dev,
+ 		p->error_mask |= (1 << p->overrun_bit);
+ 	}
+ 
+-	port->mapbase		= p->mapbase;
+ 	port->type		= p->type;
+ 	port->flags		= UPF_FIXED_PORT | p->flags;
+ 	port->regshift		= p->regshift;
+@@ -2249,7 +2282,7 @@ static int sci_init_single(struct platform_device *dev,
+ 	 *
+ 	 * For the muxed case there's nothing more to do.
+ 	 */
+-	port->irq		= p->irqs[SCIx_RXI_IRQ];
++	port->irq		= sci_port->irqs[SCIx_RXI_IRQ];
+ 	port->irqflags		= 0;
+ 
+ 	port->serial_in		= sci_serial_in;
+@@ -2381,7 +2414,7 @@ static int sci_probe_earlyprintk(struct platform_device *pdev)
+ 
+ 	early_serial_console.index = pdev->id;
+ 
+-	sci_init_single(NULL, &sci_ports[pdev->id], pdev->id, cfg);
++	sci_init_single(pdev, &sci_ports[pdev->id], pdev->id, cfg, true);
+ 
+ 	serial_console_setup(&early_serial_console, early_serial_buf);
+ 
+@@ -2448,7 +2481,7 @@ static int sci_probe_single(struct platform_device *dev,
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = sci_init_single(dev, sciport, index, p);
++	ret = sci_init_single(dev, sciport, index, p, false);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index eb787d4..68cf0bf 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -107,10 +107,10 @@ enum {
+ }
+ 
+ #define SCIx_IRQ_IS_MUXED(port)			\
+-	((port)->cfg->irqs[SCIx_ERI_IRQ] =	\
+-	 (port)->cfg->irqs[SCIx_RXI_IRQ]) ||	\
+-	((port)->cfg->irqs[SCIx_ERI_IRQ] &&	\
+-	 !(port)->cfg->irqs[SCIx_RXI_IRQ])
++	((port)->irqs[SCIx_ERI_IRQ] =	\
++	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
++	((port)->irqs[SCIx_ERI_IRQ] &&	\
++	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
+ /*
+  * SCI register subset common for all port types.
+  * Not all registers will exist on all parts.
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
