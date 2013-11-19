@@ -1,192 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:20 +0000
-Subject: [PATCH v2 08/29] ARM: shmobile: sh7372: Use macros to declare SCIF devices
-Message-Id: <1384054421-13357-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Nov 2013 09:05:33 +0000
+Subject: [PATCH 6/6] ARM: shmobile: sh7372: tidyup clock table order
+Message-Id: <871u2cep7q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
+for a long term.
+But in these days, the ICK clock is defined in random place.
+This patch arranges it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 156 ++++++----------------------------
- 1 file changed, 25 insertions(+), 131 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |    9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 3118783..77627dd 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -86,138 +86,32 @@ void __init sh7372_pinmux_init(void)
- 	platform_device_register(&sh7372_pfc_device);
- }
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 5390c6b..2848997 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -504,10 +504,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
+ 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
+ 	CLKDEV_CON_ID("hdmi_clk", &div6_reparent_clks[DIV6_HDMI]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
  
--/* SCIFA0 */
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xe6c40000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c00), evt2irq(0x0c00),
--			    evt2irq(0x0c00), evt2irq(0x0c00) },
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--/* SCIFA1 */
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xe6c50000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c20), evt2irq(0x0c20),
--			    evt2irq(0x0c20), evt2irq(0x0c20) },
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--/* SCIFA2 */
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xe6c60000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c40), evt2irq(0x0c40),
--			    evt2irq(0x0c40), evt2irq(0x0c40) },
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--/* SCIFA3 */
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xe6c70000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c60), evt2irq(0x0c60),
--			    evt2irq(0x0c60), evt2irq(0x0c60) },
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--/* SCIFA4 */
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xe6c80000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0d20), evt2irq(0x0d20),
--			    evt2irq(0x0d20), evt2irq(0x0d20) },
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--/* SCIFA5 */
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xe6cb0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0d40), evt2irq(0x0d40),
--			    evt2irq(0x0d40), evt2irq(0x0d40) },
--};
--
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
--
--/* SCIFB */
--static struct plat_sci_port scif6_platform_data = {
--	.mapbase	= 0xe6c30000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFB,
--	.irqs		= { evt2irq(0x0d60), evt2irq(0x0d60),
--			    evt2irq(0x0d60), evt2irq(0x0d60) },
--};
-+/* SCIF */
-+#define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF,			\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE,			\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
+@@ -574,6 +570,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+ 	CLKDEV_DEV_ID("sh_cmt.2", &mstp_clks[MSTP400]), /* CMT2 */
  
--static struct platform_device scif6_device = {
--	.name		= "sh-sci",
--	.id		= 6,
--	.dev		= {
--		.platform_data	= &scif6_platform_data,
--	},
--};
-+SH7372_SCIF(PORT_SCIFA, 0, 0xe6c40000, evt2irq(0x0c00));
-+SH7372_SCIF(PORT_SCIFA, 1, 0xe6c50000, evt2irq(0x0c20));
-+SH7372_SCIF(PORT_SCIFA, 2, 0xe6c60000, evt2irq(0x0c40));
-+SH7372_SCIF(PORT_SCIFA, 3, 0xe6c70000, evt2irq(0x0c60));
-+SH7372_SCIF(PORT_SCIFA, 4, 0xe6c80000, evt2irq(0x0d20));
-+SH7372_SCIF(PORT_SCIFA, 5, 0xe6cb0000, evt2irq(0x0d40));
-+SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
- 
- /* CMT */
- static struct sh_timer_config cmt2_platform_data = {
++	/* ICK */
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
++	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 	CLKDEV_ICK_ID("hdmi", "sh_mobile_lcdc_fb.1",
+ 		      &div6_reparent_clks[DIV6_HDMI]),
+ 	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
 -- 
-1.8.1.5
+1.7.9.5
 
