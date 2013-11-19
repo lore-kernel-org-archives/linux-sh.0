@@ -1,64 +1,149 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 21 Nov 2013 04:49:18 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: bockw: DMAEngine support for sound
-Message-Id: <87pppuxsu1.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 19 Nov 2013 14:02:01 +0000
+Subject: [PATCH v3 00/29] Add OF support to the sh-sci serial port driver
+Message-Id: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iovq77a0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iovq77a0.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
+Hello,
 
-Hi Simon
+This is the third version of the patch set adds device tree bindings for the
+sh sci serial port devices and adds OF parsing to the sh-sci driver.
 
-> > These patches add DMAEngine support for sound
-> > These need...
-> > 
-> >  - linus/master branch merge (sound driver update)
-> 
-> I assume this means I should wait for v3.12-rc1?
+The bindings are based on Bastian Hecht's proposal (see
+http://www.spinics.net/lists/arm-kernel/msg228129.html). The approach taken
+here is more minimalistic: instead of describing all hardware characteristics
+that vary between the SCI device revisions in DT (such as registers layout),
+that information is stored in the driver and selected based on the compatible
+property value. Only SCI revisions used on ARM devices are supported through
+DT, as DT support for SuperH is nowhere down the line.
 
-Thank you
-I think so.
+Patches 01/29 to 06/29 clean up the sh-sci driver. Patches 07/29 to 27/29
+replace memory and interrupt resources passed through platform data with
+platform resources. Beside replacing a custom mechanism with a standard one,
+it will also make the DT parsing code simpler as resource allocation will be
+shared between DT and non-DT code paths. Finally, patches 28/29 to 29/29 add
+OF parsing to the sh-sci driver and create DT bindings documentation.
 
-> >  - HPB-DMAC fixup patches (remove noise issue)
-> 
-> Are these also going to be in v3.12-rc1?
+The patches have been test on a Lager board (r8a7790-based) and a Koelsch board
+(r8a7791-based). Support for other SoCs will be added as needed. Note that all
+current Renesas ARM SoCs seem to be compatible with the generic (H)SCI(F)(AB)
+devices, but the plan is for their DT bindings to list the SoC-specific version
+in case incompatibilities are found later.
 
-I'm asking it to DMA maintainer (= Vinod)
-(He said "applied, thanks", but I couldn't find it)
-I will let you know the answer when I got.
-And I noticed that this HPB-DMAC fixup patch is not only
-for noise, it solve kernel hungup issue.
+The series will need to be split in three parts to go to mainline. Patches
+01/29 to 07/29 should go through Greg's tree, patches 08/29 to 26/29 through
+Simon's tree, and patches 27/29 to 29/29 through Greg's tree again. Greg, when
+applying the first seven patches, could you please provide a stable branch for
+Simon to base his branch on (I can send you a pull request rebased on top of
+v3.13-rc1 if that can help) ? Simon will in turn provide a stable branch to
+base the last three patches on.
 
-> >  - my previous patch (DMAEngile stall issue)
-> 
-> What is the status of that patch?
+Changes compared to v2:
 
-It is accepted
+- Fix indentation in 12/29
+- Remove interrupt-parent property from the DT bindings documentation
+- Remove -generic suffix from DT compatible values
+- Reword the DT bindings documentation based on comments received on v2
+- Added r8a7791 support to the DT bindings
 
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: fix/rcar
+Changes compared to v1:
 
-> > I guess #1 patch needs Mark's Acked-by
-> 
-> We now have the ACK :)
+- Patches 04/29 to 27/29 have been added
+- Multi-interrupt support has been removed from the DT bindings as they don't
+  support any SoC requiring multi-interrupt yet
 
-Yes :)
+Cc: devicetree@vger.kernel.org
 
-Now, this DMA-Engine support needs HPB-DMA fixup patch.
-The kernel will be hungup without it.
-But, I don't know where I can find it
-(no response from Vinod now)
+Bastian Hecht (1):
+  serial: sh-sci: Add OF support
 
-I will let you know if all necessary patches are
-included to linus/master, or other maintainer's branch.
-Is it OK for you ?
+Laurent Pinchart (28):
+  serial: sh-sci: Sort headers alphabetically
+  serial: sh-sci: Remove baud rate calculation algorithm 5
+  serial: sh-sci: Simplify baud rate calculation algorithms
+  serial: sh-sci: Remove duplicate interrupt check in verify port op
+  serial: sh-sci: Set the UPF_FIXED_PORT flag
+  serial: sh-sci: Don't check IRQ in verify port operation
+  serial: sh-sci: Support resources passed through platform resources
+  ARM: shmobile: sh7372: Use macros to declare SCIF devices
+  ARM: shmobile: sh73a0: Use macros to declare SCIF devices
+  ARM: shmobile: r8a7740: Use macros to declare SCIF devices
+  ARM: shmobile: r8a7779: Use macros to declare SCIF devices
+  ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7778: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7791: Don't define SCIF platform data in an array
+  ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
+  ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
+  ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a73a4: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7740: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7779: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as
+    resources
+  sh: Declare SCIF register base and IRQ as resources
+  serial: sh-sci: Remove platform data mapbase and irqs fields
+  serial: sh-sci: Add device tree bindings documentation
 
-For now, we can pick-up last patch only which we got Ack from Mark.
-But it is based on linus/master branch.
+ .../bindings/serial/renesas,sci-serial.txt         |  46 ++++
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  63 +++---
+ arch/arm/mach-shmobile/setup-r8a73a4.c             |  65 +++---
+ arch/arm/mach-shmobile/setup-r8a7740.c             | 196 +++--------------
+ arch/arm/mach-shmobile/setup-r8a7778.c             |  45 ++--
+ arch/arm/mach-shmobile/setup-r8a7779.c             | 129 +++--------
+ arch/arm/mach-shmobile/setup-r8a7790.c             | 117 +++++-----
+ arch/arm/mach-shmobile/setup-r8a7791.c             | 130 +++++------
+ arch/arm/mach-shmobile/setup-sh7372.c              | 161 +++-----------
+ arch/arm/mach-shmobile/setup-sh73a0.c              | 192 +++--------------
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c              |  27 ++-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c                |   9 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c             |  72 +++++--
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  36 +++-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  36 +++-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c             |  96 +++++++--
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c             |  96 +++++++--
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c              |  18 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c              |  27 ++-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c              |  18 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c              |  18 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c             |  15 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c              |  18 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c              |  58 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c             |  36 +++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c             |   9 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c             |  27 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c             |  54 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  54 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  66 ++++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c             |  27 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c             |  27 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c             |  90 ++++++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c             |  18 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c             |  54 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c             |  82 +++++--
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c               |  45 ++--
+ arch/sh/kernel/cpu/sh5/setup-sh5.c                 |  11 +-
+ drivers/tty/serial/sh-sci.c                        | 238 ++++++++++++++++-----
+ include/linux/serial_sci.h                         |  35 +--
+ 40 files changed, 1447 insertions(+), 1114 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
 
-Best regards
----
-Kuninori Morimoto
+-- 
+Regards,
+
+Laurent Pinchart
+
