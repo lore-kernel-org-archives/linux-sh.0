@@ -1,36 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:38:43 +0000
-Subject: [PATCH] fbdev: sh_mobile_lcdcfb: Don't use plain 0 as NULL pointer
-Message-Id: <1385512723-11722-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 03:56:38 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: mark GPIO keys as wake-up sources
+Message-Id: <20131120035638.30046.96506.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This fixes a sparse warning.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
-Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
-Cc: linux-fbdev@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Enable wakeup for the GPIO keys on the Koelsch board.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/video/sh_mobile_lcdcfb.c | 2 +-
+
+ arch/arm/mach-shmobile/board-koelsch.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index ab85ad6..2bcc84a 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1227,7 +1227,7 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- 		/* Free the MERAM cache. */
- 		if (ch->cache) {
- 			sh_mobile_meram_cache_free(priv->meram_dev, ch->cache);
--			ch->cache = 0;
-+			ch->cache = NULL;
- 		}
+--- 0015/arch/arm/mach-shmobile/board-koelsch.c
++++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-11-20 12:40:24.000000000 +0900
+@@ -57,7 +57,7 @@ static const struct gpio_led_platform_da
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
+-	  .debounce_interval = 20 }
++	  .wakeup = 1, .debounce_interval = 20 }
  
- 	}
--- 
-1.8.3.2
-
+ static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(5, 3),	"SW2-pin4"),
