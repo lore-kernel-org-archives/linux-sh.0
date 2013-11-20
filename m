@@ -1,47 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Nov 2013 00:08:14 +0000
-Subject: Re: [PATCH 02/03] gpio: em: Setup gpiochip->dev
-Message-Id: <6382126.xmUMBJLTFI@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 00:23:35 +0000
+Subject: [PATCH 04/05 v2] gpio: em: Use lazy disable
+Message-Id: <20131120002335.27342.16796.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113225927.21449.78044.sendpatchset@w520> <20131113225946.21449.68990.sendpatchset@w520>
-In-Reply-To: <20131113225946.21449.68990.sendpatchset@w520>
+References: <20131120002259.27342.35575.sendpatchset@w520>
+In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Magnus,
+From: Magnus Damm <damm@opensource.se>
 
-Thank you for the patch.
+Set the ->irq_enable() and ->irq_disable() methods to NULL
+to enable lazy disable of interrupts. This by itself provides
+some level of optimization, but is mainly enabled as ground
+work for future Suspend-to-RAM wake up support.
 
-On Thursday 14 November 2013 07:59:46 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Make sure gpio_chip->dev is setup so of_gpiochip_add()
-> will work as expected.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ drivers/gpio/gpio-em.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-> ---
-> 
->  drivers/gpio/gpio-em.c |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> --- 0001/drivers/gpio/gpio-em.c
-> +++ work/drivers/gpio/gpio-em.c	2013-11-13 20:47:40.000000000 +0900
-> @@ -327,6 +327,7 @@ static int em_gio_probe(struct platform_
->  	gpio_chip->request = em_gio_request;
->  	gpio_chip->free = em_gio_free;
->  	gpio_chip->label = name;
-> +	gpio_chip->dev = &pdev->dev;
->  	gpio_chip->owner = THIS_MODULE;
->  	gpio_chip->base = pdata->gpio_base;
->  	gpio_chip->ngpio = pdata->number_of_pins;
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0010/drivers/gpio/gpio-em.c
++++ work/drivers/gpio/gpio-em.c	2013-11-20 08:32:49.000000000 +0900
+@@ -336,8 +336,6 @@ static int em_gio_probe(struct platform_
+ 	irq_chip->name = name;
+ 	irq_chip->irq_mask = em_gio_irq_disable;
+ 	irq_chip->irq_unmask = em_gio_irq_enable;
+-	irq_chip->irq_enable = em_gio_irq_enable;
+-	irq_chip->irq_disable = em_gio_irq_disable;
+ 	irq_chip->irq_set_type = em_gio_irq_set_type;
+ 	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
+ 
