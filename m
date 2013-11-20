@@ -1,47 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 04:10:04 +0000
-Subject: Re: [PATCH 03/05] ARM: shmobile: Add r8a7791 thermal device node to DTS
-Message-Id: <20131121041002.GL31130@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Wed, 20 Nov 2013 17:38:00 +0000
+Subject: [PATCH 3/9] usb: hcd: Initialize USB phy if needed
+Message-Id: <1384969086-8920-4-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120075921.23557.23231.sendpatchset@w520>
- <20131120075948.23557.47715.sendpatchset@w520>
-In-Reply-To: <20131120075948.23557.47715.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Nov 20, 2013 at 04:59:48PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Hook up the r8a7791 thermal sensor to the DTS.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
->  1 file changed, 7 insertions(+)
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Thanks, I will queue this up.
-Assuming all goes will I plan to push this and other updates
-today or tomorrow.
+This adds external USB phy support to USB HCD driver that
+allows to find and initialize external USB phy, bound to
+the HCD, when the HCD is added.
+The usb_add_hcd function returns -EPROBE_DEFER if the USB
+phy, bound to the HCD, is not ready.
+If no USB phy is bound, the HCD is initialized as usual.
 
-> 
-> --- 0001/arch/arm/boot/dts/r8a7791.dtsi
-> +++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-11-20 16:00:29.000000000 +0900
-> @@ -145,6 +145,13 @@
->  		interrupt-controller;
->  	};
->  
-> +	thermal@e61f0000 {
-> +		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
-> +		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-> +	};
-> +
->  	timer {
->  		compatible = "arm,armv7-timer";
->  		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
-> 
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+---
+ drivers/usb/core/hcd.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index d939521..fd09ec6 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -2597,6 +2597,26 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
++#ifdef CONFIG_USB_PHY
++	if (!hcd->phy) {
++		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				return retval;
++		} else {
++			retval = usb_phy_init(phy);
++			if (retval) {
++				usb_put_phy(phy);
++				return retval;
++			}
++			hcd->phy = phy;
++			hcd->remove_phy = 1;
++		}
++	}
++#endif
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+-- 
+1.8.4
+
