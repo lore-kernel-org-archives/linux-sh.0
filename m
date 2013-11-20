@@ -1,35 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Nov 2013 00:23:26 +0000
-Subject: [PATCH 03/05] gpio: em: Setup gpiochip->dev
-Message-Id: <20131120002326.27342.83787.sendpatchset@w520>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 20 Nov 2013 13:38:18 +0000
+Subject: Re: [PATCH 03/05] gpio: em: Setup gpiochip->dev
+Message-Id: <CACRpkdayj-4w-X0YQYZP_-Mib18bB7Tc-U+xwD9-09KwVdZdbg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131120002259.27342.35575.sendpatchset@w520>
-In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
+	<20131120002326.27342.83787.sendpatchset@w520>
+In-Reply-To: <20131120002326.27342.83787.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Make sure gpio_chip->dev is setup so of_gpiochip_add()
-will work as expected.
+> From: Magnus Damm <damm@opensource.se>
+>
+> Make sure gpio_chip->dev is setup so of_gpiochip_add()
+> will work as expected.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
+Patch applied.
 
- drivers/gpio/gpio-em.c |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/drivers/gpio/gpio-em.c
-+++ work/drivers/gpio/gpio-em.c	2013-11-13 20:47:40.000000000 +0900
-@@ -327,6 +327,7 @@ static int em_gio_probe(struct platform_
- 	gpio_chip->request = em_gio_request;
- 	gpio_chip->free = em_gio_free;
- 	gpio_chip->label = name;
-+	gpio_chip->dev = &pdev->dev;
- 	gpio_chip->owner = THIS_MODULE;
- 	gpio_chip->base = pdata->gpio_base;
- 	gpio_chip->ngpio = pdata->number_of_pins;
+Yours,
+Linus Walleij
