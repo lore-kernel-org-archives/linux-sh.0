@@ -1,30 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Nov 2013 00:17:42 +0000
-Subject: Re: [PATCH 5/6] ARM: shmobile: r8a7790: tidyup clock table order
-Message-Id: <87siulnxlo.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 07:59:48 +0000
+Subject: [PATCH 03/05] ARM: shmobile: Add r8a7791 thermal device node to DTS
+Message-Id: <20131120075948.23557.47715.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8738msep7z.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8738msep7z.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131120075921.23557.23231.sendpatchset@w520>
+In-Reply-To: <20131120075921.23557.23231.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, horms@verge.net.au, linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Sergei
+Hook up the r8a7791 thermal sensor to the DTS.
 
-> >>      I disagree because the clocks declared via CLKDEV_ICK_ID() are by nature
-> >> the same MSTP clocks as the others. This patch looks dangerously close to the
-> >> needless churn IMHO.
-> 
-> >  From MSTP grouping point of view, you are correct.
-> >  From PM-Runtime/Clock API point of view, this patch is sane.
-> 
->     Please explain what it adds from this PoV. And if this patch is going to 
-> be accepted, I at least would like the dubious "ICK" comment to be removed.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Your opinion which is focusing about MSTP grouping is only for r8a7790.
-This patch-set is focusing whole SH-ARM SoC.
-We don't need minor rule which breaks source code uniformity.
-I don't know what is the best comment instead of "ICK",
-but, kernal hacker can understand without full explanation ?
+ arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-11-20 16:00:29.000000000 +0900
+@@ -145,6 +145,13 @@
+ 		interrupt-controller;
+ 	};
+ 
++	thermal@e61f0000 {
++		compatible = "renesas,thermal-r8a7791", "renesas,rcar-thermal";
++		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
