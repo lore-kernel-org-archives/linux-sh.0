@@ -1,38 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 08:24:41 +0000
-Subject: Re: [PATCH] ARM: Kconfig: Mention R-Mobile and R-Car in addition to SH-Mobile
-Message-Id: <20131128082440.GV24146@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 01:31:23 +0000
+Subject: [PATCH 1/3][resend] ARM: shmobile: bockw: remove unused RSND_SSI_CLK_FROM_ADG
+Message-Id: <87fvqramfr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384351179-4593-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CANqRtoTXdcjoTVDShoA_071YoNznx88YgLTumdYTviLBaK76=g@mail.gmail.com>
- <276890521.bvcs6YPeDX@avalon>
-In-Reply-To: <276890521.bvcs6YPeDX@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Nov 14, 2013 at 03:46:07PM +0100, Laurent Pinchart wrote:
-> Hi Magnus,
-> 
-> On Thursday 14 November 2013 19:07:12 Magnus Damm wrote:
-> > On Wed, Nov 13, 2013 at 10:59 PM, Laurent Pinchart wrote:
-> > > External engineers working on R-Car platforms sometimes can't find
-> > > upstream platform support as the combination of the SH-Mobile name and
-> > > using the product number proved an effective method of concealment. Make
-> > > sure to mention R-Mobile and R-Car in the Kconfig comments and help
-> > > texts.
-> > > 
-> > > Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Thanks for your efforts on this. I think this is a good idea, but to
-> > make things a bit more complex I think you should know that r7s72100
-> > is part of the "RZ Family". Also EMEV2 is part of the "Emma" series.
-> > 
-> > May I propose "Renesas SoC" as a generic description?
-> 
-> What about "Renesas ARM SoC" ?
+92eba04e4bcd469518cc759ac1bf1a49acaa5cc1
+(ASoC: rcar: remove RSND_SSI_CLK_FROM_ADG) removed
+RSND_SSI_CLK_FROM_ADG, it is no longer needed
 
-Sounds good to me.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+resend 
+ - fixup Mark's main address
+
+>> Mark
+
+Could you please give your Ack ?
+And we need your opinion for below opinion
+which came from Simon (= SH-ARM maintainer)
+
+  Yes. Or perhaps the patch could be split somehow.
+  A rcar_snd.h portion for Mark to take.
+  And then a follow-up mach-shmobile portion for me to take
+  (possibly much later).
+
+ arch/arm/mach-shmobile/board-bockw.c |    4 ++--
+ include/sound/rcar_snd.h             |    1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 1b1dae3..ffca67c 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -308,11 +308,11 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_UNUSED, /* SSI 1 */
+ 	RSND_SSI_UNUSED, /* SSI 2 */
+ 	RSND_SSI_SET(1, 0, gic_iid(0x85), RSND_SSI_PLAY),
+-	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
++	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
+ 	RSND_SSI_SET(0, 0, gic_iid(0x86), RSND_SSI_PLAY),
+ 	RSND_SSI_SET(0, 0, gic_iid(0x86), 0),
+ 	RSND_SSI_SET(3, 0, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
++	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
+ };
+ 
+ static struct rsnd_scu_platform_info rsnd_scu[9] = {
+diff --git a/include/sound/rcar_snd.h b/include/sound/rcar_snd.h
+index 12afab1..6ce506b 100644
+--- a/include/sound/rcar_snd.h
++++ b/include/sound/rcar_snd.h
+@@ -34,7 +34,6 @@
+  * B : SSI direction
+  */
+ #define RSND_SSI_CLK_PIN_SHARE		(1 << 31)
+-#define RSND_SSI_CLK_FROM_ADG		(1 << 30) /* clock parent is master */
+ #define RSND_SSI_SYNC			(1 << 29) /* SSI34_sync etc */
+ 
+ #define RSND_SSI_PLAY			(1 << 24)
+-- 
+1.7.9.5
+
