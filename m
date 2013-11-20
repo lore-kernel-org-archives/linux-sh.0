@@ -1,25 +1,86 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 Nov 2013 10:18:41 +0000
-Subject: [PATCH 0/16]: gpio-rcar fixup
-Message-Id: <87k3gbz3pe.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Wed, 20 Nov 2013 17:37:59 +0000
+Subject: [PATCH 2/9] usb: hcd: Remove USB phy if needed
+Message-Id: <1384969086-8920-3-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Hi Laurent
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This can be used by the HCD drivers to auto-remove
+the external USB phy when it is no longer needed.
 
-This is fixup patch for R-Car GPIO driver
-
-Kuninori Morimoto:
-      gpio: rcar: use postcore_init()
-
-
-Best regards
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
 ---
-Kuninori Morimoto
+ drivers/usb/core/hcd.c  | 14 +++++++++++++-
+ include/linux/usb/hcd.h |  1 +
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index d6a8d23..d939521 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -43,6 +43,7 @@
+ 
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
++#include <linux/usb/phy.h>
+ 
+ #include "usb.h"
+ 
+@@ -2611,7 +2612,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		return retval;
++		goto err_remove_phy;
+ 	}
+ 
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2742,6 +2743,12 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
++err_remove_phy:
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ 	return retval;
+ } 
+ EXPORT_SYMBOL_GPL(usb_add_hcd);
+@@ -2814,6 +2821,11 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 	usb_put_dev(hcd->self.root_hub);
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ }
+ EXPORT_SYMBOL_GPL(usb_remove_hcd);
+ 
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index 75efc45..9c2907b 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -133,6 +133,7 @@ struct usb_hcd {
+ 	unsigned		rh_registered:1;/* is root hub registered? */
+ 	unsigned		rh_pollable:1;	/* may we poll the root hub? */
+ 	unsigned		msix_enabled:1;	/* driver has MSI-X enabled? */
++	unsigned		remove_phy:1;	/* auto-remove USB phy */
+ 
+ 	/* The next flag is a stopgap, to be removed when all the HCDs
+ 	 * support the new root-hub polling mechanism. */
+-- 
+1.8.4
+
