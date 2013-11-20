@@ -1,30 +1,88 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 26 Nov 2013 01:21:17 +0000
-Subject: [PATCH 0/2] KZM9G gpio-keys support in DT
-Message-Id: <1385428879-26849-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 08:30:39 +0000
+Subject: [PATCH 1/4] mmc: tmio: use -EPROBE_DEFER if driver can't find regulator
+Message-Id: <87hab78ogj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Hello,
+Current tmio driver tries to use default ocr_avail
+if 1) it couldn't find regulator and 2) if platform data
+doesn't have ocr_mask.
+But, there is no guarantee that regulator driver probe
+is faster than TMIO driver probe.
+TMIO driver will not use regulator in such case.
+By this patch, TMIO driver returns -EPROBE_DEFER if it
+couldn't find regulator and if platform doesn't have ocr_mask.
+Because, there is possibility that regulator
+has not been probed, but the user is expecting it.
 
-These two patches add support for GPIO keys support to the KZM9G DT. The
-first patch adds the I2C GPIO extender to the board DT, and the second patch
-the GPIO keys support.
+This patch changes tmio_mmc_host_probe() behavior,
+but there is no user who has conflict.
 
-The patches are based on top of renesas-devel-v3.13-rc1-20131125.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |   21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-Laurent Pinchart (2):
-  ARM: shmobile: kzm9g-reference: Add PCF8575 GPIO extender to DT
-  ARM: shmobile: kzm9g-reference: Add GPIO keys to DT
-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 57 ++++++++++++++++++++++++++++
- 1 file changed, 57 insertions(+)
-
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b380225..7b25d0e 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -944,17 +944,25 @@ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+ };
+ 
+-static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
++static int tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+ {
+ 	struct tmio_mmc_data *pdata = host->pdata;
+ 	struct mmc_host *mmc = host->mmc;
+ 
+ 	mmc_regulator_get_supply(mmc);
+ 
++	/* use ocr_mask if no regulator */
+ 	if (!mmc->ocr_avail)
+-		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
+-	else if (pdata->ocr_mask)
+-		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
++		mmc->ocr_avail =  pdata->ocr_mask;
++
++	/*
++	 * try again.
++	 * There is possibility that regulator has not been probed
++	 */
++	if (!mmc->ocr_avail)
++		return -EPROBE_DEFER;
++
++	return 0;
+ }
+ 
+ static void tmio_mmc_of_parse(struct platform_device *pdev,
+@@ -1008,6 +1016,10 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+ 	_host->bus_shift = resource_size(res_ctl) >> 10;
+ 
++	ret = tmio_mmc_init_ocr(_host);
++	if (ret < 0)
++		goto host_free;
++
+ 	_host->ctl = ioremap(res_ctl->start, resource_size(res_ctl));
+ 	if (!_host->ctl) {
+ 		ret = -ENOMEM;
+@@ -1023,7 +1035,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 		mmc->max_segs;
+ 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+ 	mmc->max_seg_size = mmc->max_req_size;
+-	tmio_mmc_init_ocr(_host);
+ 
+ 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
