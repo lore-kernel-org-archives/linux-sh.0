@@ -1,57 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 20 Nov 2013 01:49:48 +0000
-Subject: Re: [PATCH] sh: sh7757lcr: fixup SDHI register size
-Message-Id: <87bo1falkz.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 07:59:39 +0000
+Subject: [PATCH 02/05] ARM: shmobile: Add r8a7790 clocks for thermal devices
+Message-Id: <20131120075939.23557.49793.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwl7z45k.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mwl7z45k.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131120075921.23557.23231.sendpatchset@w520>
+In-Reply-To: <20131120075921.23557.23231.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, linux-kernel@vger.kernel.org
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, horms@verge.net.au, linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Simon, Linux ML
+Add the r8a7790 DT thermal device to the legacy clocks.
 
-This patch is bug fix for arch/sh,
-but, there is no SH maintainer today.
-What should I do for this ?
-
-At Thu, 14 Nov 2013 02:08:59 -0800 (PST),
-【RSO】森本 wrote:
-> 
-> sh7757lcr SDHI register size is 0x100
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> Hi Simon, and Linux ML
-> 
-> This patch is bug fix for arch/sh,
-> but, there is no SH maintainer today.
-> So, I don't know who can care this.
-> 
->  arch/sh/boards/board-sh7757lcr.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-> index 25c5a93..669df51 100644
-> --- a/arch/sh/boards/board-sh7757lcr.c
-> +++ b/arch/sh/boards/board-sh7757lcr.c
-> @@ -252,7 +252,7 @@ static struct sh_mobile_sdhi_info sdhi_info = {
->  static struct resource sdhi_resources[] = {
->  	[0] = {
->  		.start  = 0xffe50000,
-> -		.end    = 0xffe501ff,
-> +		.end    = 0xffe500ff,
->  		.flags  = IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -- 
-> 1.7.9.5
-> 
-
-
-Best regards
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Kuninori Morimoto
+
+ arch/arm/mach-shmobile/clock-r8a7790.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2013-11-20 08:22:32.000000000 +0900
+@@ -286,6 +286,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
++	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
