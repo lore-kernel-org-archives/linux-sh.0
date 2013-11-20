@@ -1,98 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Nov 2013 02:33:08 +0000
-Subject: Re: [PATCH] ARM: shmobile: Enable DSW2 with gpio-keys on KZM9D
-Message-Id: <20131119023302.GJ17628@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 00:22:59 +0000
+Subject: [PATCH 00/05] gpio: R-Car and EM GPIO update V2
+Message-Id: <20131120002259.27342.35575.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113230345.21482.36997.sendpatchset@w520>
- <20131114052204.GD22870@verge.net.au>
- <20131114062735.GF22870@verge.net.au>
- <CANqRtoTb-93b8UPyRLOBS11eXVuoqSB0A5CkGFYMhw42DGsKaQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTb-93b8UPyRLOBS11eXVuoqSB0A5CkGFYMhw42DGsKaQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, Nov 14, 2013 at 05:45:22PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Thu, Nov 14, 2013 at 3:27 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Nov 14, 2013 at 02:22:06PM +0900, Simon Horman wrote:
-> >> On Thu, Nov 14, 2013 at 08:03:45AM +0900, Magnus Damm wrote:
-> >> > From: Magnus Damm <damm@opensource.se>
-> >> >
-> >> > Use the gpio-keys driver to support the 4 pins on the
-> >> > dip switch DSW2 which is mounted on the KZM9D board.
-> >> >
-> >> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> >>
-> >> Hi Magnus,
-> >>
-> >> I have tried enabling the following on a config produced
-> >> using the kzm9d_defconfig:
-> >>
-> >> CONFIG_INPUT_KEYBOARD
-> >> CONFIG_INPUT_EVDEV
-> >> CONFIG_KEYBOARD_GPIO
-> >>
-> >> But all I see so far in dmsg is:
-> >>
-> >> # dmesg | grep gpio
-> >> platform gpio_keys.3: Driver gpio-keys requests probe deferral
-> >>
-> >> I was expecting something more along the lines of:
-> >> input: gpio-keys as /devices/platform/gpio-keys/input/input0
-> >>
-> >> Could you give me some guidance on how to test this?
-> >
-> > I now notice that I also need
-> > "[PATCH 00/03] gpio: R-Car and EM GPIO update"
-> >
-> > But with that applied I now see:
-> >
-> > # dmesg  | grep gpio
-> > gpio-keys gpio_keys.3: Failed to request GPIO 14, error -517
-> > platform gpio_keys.3: Driver gpio-keys requests probe deferral
-> 
-> Thanks for testing. In case of EMEV2 we don't have any PFC support, so
-> because of that you probably need to deselect PINCTRL. The patch below
-> does the trick, but for proper operation you probably have to split
-> this up per-SoC. And these days KZM9D is MULTIPLATFORM only where
-> PINCTRL probably wants to be set as a global default, so I suppose the
-> proper way to support this is to add PFC support for EMEV2.
+gpio: R-Car and EM GPIO update V2
 
-Thanks. This hack worked. Although curiously while I see keyboard
-events for pins 1 - 3 I don't get any for pin 4. Perhaps there is
-a hardware fault on my board.
+[PATCH 01/05 v2] gpio: rcar: Use lazy disable
+[PATCH 02/05 v2] gpio: rcar: Enable mask on suspend
+[PATCH 03/05] gpio: em: Setup gpiochip->dev
+[PATCH 04/05 v2] gpio: em: Use lazy disable
+[PATCH 05/05 v2] gpio: em: Enable mask on suspend
 
-> Another option would be to make these two cases behave the same:
-> - PINCTRL=y but no pinctrl support for the SoC
-> - PINCTRL=n
+Update the R-Car GPIO driver and the GPIO driver used on EMEV2 to use lazy
+disable and mask on suspend. This fixes the Suspend-to-RAM behavior to make
+sure wakeup sources are left enabled while suspending. Also include a small
+fix for gpio-em that fixes the DT use case.
 
-I'm unsure of what the best way forward is. It seems that
-the nicest option would be to add PFC support for KZM9D.
-But is that likely to happen?
+Thanks to Laurent and Linus for feedback.
 
-If not, I think your last suggestion would be best.
-Though I'm not quite sure that I understand the implementation implications.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> --- 0001/arch/arm/Kconfig
-> +++ work/arch/arm/Kconfig    2013-11-14 17:42:36.000000000 +0900
-> @@ -655,7 +655,7 @@ config ARCH_SHMOBILE
->      select MIGHT_HAVE_CACHE_L2X0
->      select MULTI_IRQ_HANDLER
->      select NO_IOPORT
-> -    select PINCTRL
-> +#    select PINCTRL
->      select PM_GENERIC_DOMAINS if PM
->      select SPARSE_IRQ
->      help
-> 
-> Cheers,
-> 
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ Written against renesas.git tag renesas-devel-v3.12-20131119
+
+ Changes since V1:
+ - Split lazy disable and mask on suspend patches
+ - Improved commit messages
+
+ drivers/gpio/gpio-em.c   |    5 ++---
+ drivers/gpio/gpio-rcar.c |    5 ++---
+ 2 files changed, 4 insertions(+), 6 deletions(-)
+
