@@ -1,83 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:45:39 +0000
-Subject: [PATCH v3 0/8] Renesas R-Car Gen2 Common Clock Framework support
-Message-Id: <1384872347-11724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 08:31:13 +0000
+Subject: [PATCH 4/4] mmc: SDHI: add SoC specific workaround via HW version
+Message-Id: <87d2lv8ofl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Hello,
+One of Renesas SDHI chip needs workaround to use it,
+and, we can judge it based on chip version.
+This patch adds very quick-hack workaround method,
+since we still don't know how many chips
+need workaround in the future.
 
-This is the third version of the CCF clock drivers for the Renesas R-Car
-R8A7790 (H2) and R8A7791 (M2) SoCs.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   11 +++++++++++
+ include/linux/mmc/tmio.h          |    1 +
+ 2 files changed, 12 insertions(+)
 
-The patches are pretty self-explanatory and described in their respective
-commit message. The R8A7790 and R8A7791 datasheets are unfortunately not
-publicly available.
-
-The code is available in my git tree at
-
-        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/rcar-gen2
-
-The branch is based on the clk-prepare patches I've posted earlier on the list
-("[PATCH 00/12] Prepare various SH/R Mobile/Car drivers for CCF migration"),
-themselves rebased on top of renesas-devel-v3.12-20131119.
-
-Changes compared to v2:
-
-- Fixed I2C MSTP clocks parents (hp -> p)
-- Added Z and Z2 clocks
-- Added r8a7791 clocks to DT
-
-Changes compared to v1:
-
-- The core CPG clocks driver now supports the r8a7791 SoC in addition to the
-r8a7790. They are collectively refered to as 'R-Car Gen2'. The driver has thus
-been renamed to clk-rcar-gen2.c. The DT bindings have been updated accordingly.
-- Several MSTP clocks have been added to the r8a7790-clock.h header and a new
-header has been added for the r8a7791
-- The r8a7790 dtsi patches that add and reference clocks have been added to
-this series.
-
-Cc: devicetree@vger.kernel.org
-
-Laurent Pinchart (8):
-  clk: shmobile: Add R-Car Gen2 clocks support
-  clk: shmobile: Add DIV6 clock support
-  clk: shmobile: Add MSTP clock support
-  ARM: shmobile: r8a7790: Add clock index macros for DT sources
-  ARM: shmobile: r8a7791: Add clock index macros for DT sources
-  ARM: shmobile: r8a7790: Add clocks
-  ARM: shmobile: r8a7790: Reference clocks
-  ARM: shmobile: r8a7791: Add clocks
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |  28 ++
- .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  48 +++
- .../clock/renesas,rcar-gen2-cpg-clocks.txt         |  32 ++
- arch/arm/boot/dts/r8a7790.dtsi                     | 326 +++++++++++++++++++++
- arch/arm/boot/dts/r8a7791.dtsi                     | 312 ++++++++++++++++++++
- drivers/clk/shmobile/Makefile                      |   7 +-
- drivers/clk/shmobile/clk-div6.c                    | 185 ++++++++++++
- drivers/clk/shmobile/clk-mstp.c                    | 229 +++++++++++++++
- drivers/clk/shmobile/clk-rcar-gen2.c               | 298 +++++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h          | 100 +++++++
- include/dt-bindings/clock/r8a7791-clock.h          | 105 +++++++
- include/linux/clk/shmobile.h                       |  19 ++
- 12 files changed, 1688 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-div6.c
- create mode 100644 drivers/clk/shmobile/clk-mstp.c
- create mode 100644 drivers/clk/shmobile/clk-rcar-gen2.c
- create mode 100644 include/dt-bindings/clock/r8a7790-clock.h
- create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
- create mode 100644 include/linux/clk/shmobile.h
-
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index f1e35a7..d241d86 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -33,6 +33,8 @@
+ 
+ #include "tmio_mmc.h"
+ 
++#define EXT_ACC           0xe4
++
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ };
+@@ -137,6 +139,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	int irq, ret, i = 0;
+ 	bool multiplexed_isr = true;
+ 	struct tmio_mmc_dma *dma_priv;
++	u16 ver;
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res)
+@@ -219,6 +222,14 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 
+ 	/*
++	 * FIXME:
++	 * this Workaround can be more clever method
++	 */
++	ver = sd_ctrl_read16(host, CTL_VERSION);
++	if (ver = 0xCB0D)
++		sd_ctrl_write16(host, EXT_ACC, 1);
++
++	/*
+ 	 * Allow one or more specific (named) ISRs or
+ 	 * one or more multiplexed (un-named) ISRs.
+ 	 */
+diff --git a/include/linux/mmc/tmio.h b/include/linux/mmc/tmio.h
+index a1c1f32..84d9053 100644
+--- a/include/linux/mmc/tmio.h
++++ b/include/linux/mmc/tmio.h
+@@ -33,6 +33,7 @@
+ #define CTL_SDIO_IRQ_MASK 0x38
+ #define CTL_DMA_ENABLE 0xd8
+ #define CTL_RESET_SD 0xe0
++#define CTL_VERSION 0xe2
+ #define CTL_SDIO_REGS 0x100
+ #define CTL_CLK_AND_WAIT_CTL 0x138
+ #define CTL_RESET_SDIO 0x1e0
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
