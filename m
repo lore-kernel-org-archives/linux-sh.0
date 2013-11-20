@@ -1,45 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 21 Nov 2013 02:02:01 +0000
-Subject: Re: [PATCH 01/16] gpio: rcar: use postcore_init()
-Message-Id: <87vbzmy0kq.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 00:23:17 +0000
+Subject: [PATCH 02/05 v2] gpio: rcar: Enable mask on suspend
+Message-Id: <20131120002317.27342.34257.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<1556705.9JOUK7Uj8L@avalon>
-	<CACRpkdZ9vGV+=m0kjxu4Apgy1+q5X2NfZ8SKJQZ=dUr3A997+g@mail.gmail.com>
-	<2135069.aoIAqI8vgH@avalon>
-In-Reply-To: <2135069.aoIAqI8vgH@avalon>
+References: <20131120002259.27342.35575.sendpatchset@w520>
+In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Laurent, Linus,
+Now when lazy interrupt disable has been enabled in the driver
+then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
+the core that only IRQs marked as wakeups need to stay enabled
+during Suspend-to-RAM.
 
-> > The general guideline, as everybody should be aware ;-) is that we
-> > should always use module_init(), i.e. device_initcall() and let deferred
-> > probe handle any dependencies.
-> 
-> Thought so, good :-)
-> 
-> > The only exception would be things like timers and interrupt controllers...
-> 
-> I wouldn't be against moving regulators and gpios one level up in the initcall 
-> order, given that they provide resources used by a very large number of 
-> drivers. That would be an optimization only though, and not a work around 
-> broken probe deferral paths.
-> 
-> > Usually not relying on deferred probe is a sign of bugs in the deferral
-> > probe path.
-> > 
-> > I know "my" drivers have this problem too, I would prefer that we try to fix
-> > the root issue instead of trying to shovel initcalls around.
+Tested on the Lager board with GPIO-keys and Suspend-to-RAM.
 
-I see.
-I will fixup driver side.
-Thank you
-
-Best regards
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Kuninori Morimoto
+
+ drivers/gpio/gpio-rcar.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- 0008/drivers/gpio/gpio-rcar.c
++++ work/drivers/gpio/gpio-rcar.c	2013-11-20 08:30:28.000000000 +0900
+@@ -369,7 +369,8 @@ static int gpio_rcar_probe(struct platfo
+ 	irq_chip->irq_mask = gpio_rcar_irq_disable;
+ 	irq_chip->irq_unmask = gpio_rcar_irq_enable;
+ 	irq_chip->irq_set_type = gpio_rcar_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_SET_TYPE_MASKED;
++	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_SET_TYPE_MASKED
++			 | IRQCHIP_MASK_ON_SUSPEND;
+ 
+ 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+ 					      p->config.number_of_pins,
