@@ -1,71 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Nov 2013 00:16:22 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: Lager reference serial port support
-Message-Id: <20131101001621.GC6818@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 00:23:44 +0000
+Subject: [PATCH 05/05 v2] gpio: em: Enable mask on suspend
+Message-Id: <20131120002344.27342.23018.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383060193-1505-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131031053144.GP1603@verge.net.au> <3965826.mx1T873Bg9@avalon>
-In-Reply-To: <3965826.mx1T873Bg9@avalon>
+References: <20131120002259.27342.35575.sendpatchset@w520>
+In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-[ CC Magnus ]
+From: Magnus Damm <damm@opensource.se>
 
-On Thu, Oct 31, 2013 at 01:21:23PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 31 October 2013 14:31:44 Simon Horman wrote:
-> > On Tue, Oct 29, 2013 at 04:23:10PM +0100, Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > This patch set implements serial port support for the Lager reference
-> > > board, and adds early debugging support for the r8a7790 SoC.
-> > > 
-> > > The code is available in my git tree at
-> > > 
-> > >         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial-lager
-> > > 
-> > > The branch is based on a merge of renesas-devel-20131016, v3.12-rc7 and
-> > > multiarch drivers, clk-prepare, r8a7790 CCF and sh-sci OF patches I've
-> > > posted earlier today.
-> > > 
-> > > Laurent Pinchart (3):
-> > >   ARM: shmobile: r8a7790: Add early debugging support
-> > 
-> > The patch above could be applied now, right?
-> 
-> That's correct. It will be useless though, as DEBUG_LL can only be used on 
-> multiarch.
+Now when lazy interrupt disable has been enabled in the driver
+then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
+the core that only IRQs marked as wakeups need to stay enabled
+during Suspend-to-RAM.
 
-I will wait, especially in the light of the point you raise below.
+Tested on the KZM9D board with GPIO-keys.
 
-> Given that the SCIF/SCIFA/SCIFB port operate similarly, I wonder whether it 
-> wouldn't make more sense to add a generic DEBUG_SHMOBILE_SCIF implementation 
-> instead. We could then have sub-options to select the exact SoC type and port 
-> number, and compute the base address from that.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-That makes a lot of sense to me.
-Perhaps Magnus has an opinion?
+ drivers/gpio/gpio-em.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> > If so, Magnus, could you review it?
-> > 
-> > >   ARM: shmobile: r8a7790: Add serial ports to the device tree
-> > >   ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
-> > 
-> > I would like to ask you to repost these patches once their
-> > pre-requisites have been merged.
-> 
-> Sure, no problem.
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--- 0011/drivers/gpio/gpio-em.c
++++ work/drivers/gpio/gpio-em.c	2013-11-20 08:33:47.000000000 +0900
+@@ -337,7 +337,7 @@ static int em_gio_probe(struct platform_
+ 	irq_chip->irq_mask = em_gio_irq_disable;
+ 	irq_chip->irq_unmask = em_gio_irq_enable;
+ 	irq_chip->irq_set_type = em_gio_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
++	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
+ 
+ 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+ 					      pdata->number_of_pins,
