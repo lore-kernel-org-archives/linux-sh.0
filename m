@@ -1,69 +1,35 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Fri, 08 Nov 2013 20:30:45 +0000
-Subject: Re: [PATCH V3 2/2] dt: Document sata_rcar bindings
-Message-Id: <527D49F5.9030704@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 03:17:41 +0000
+Subject: [PATCH 1/3] ARM: shmobile: marzen: remove SDHI0 WP pin setting from DTS
+Message-Id: <8738mrahim.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383912570-8393-1-git-send-email-valentine.barshak@cogentembedded.com> <1383912570-8393-3-git-send-email-valentine.barshak@cogentembedded.com> <E0BF568D-6856-4DDE-AEBA-7C21CB1CE1F3@codeaurora.org> <3353398.KxY2PdxubL@avalon>
-In-Reply-To: <3353398.KxY2PdxubL@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>
-Cc: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org
 
-On 11/08/2013 06:30 PM, Laurent Pinchart wrote:
-> Hi Kumar,
->
-> On Friday 08 November 2013 08:26:47 Kumar Gala wrote:
->> On Nov 8, 2013, at 6:09 AM, Valentine Barshak wrote:
->>> These bindings can be used to register SATA devices found on R-Car SoC.
->>>
->>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->>> ---
->>> Documentation/devicetree/bindings/ata/sata_rcar.txt | 18 +++++++++++++++++
->>> 1 file changed, 18 insertions(+)
->>> create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
->>>
->>> diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt
->>> b/Documentation/devicetree/bindings/ata/sata_rcar.txt new file mode
->>> 100644
->>> index 0000000..1e61113
->>> --- /dev/null
->>> +++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
->>> @@ -0,0 +1,18 @@
->>> +* Renesas R-Car SATA
->>> +
->>> +Required properties:
->>> +- compatible		: should contain one of the following:
->>> +			  - "renesas,sata-r8a7779" for R-Car H1
->>> +			  - "renesas,sata-r8a7790" for R-Car H2
->>> +			  - "renesas,sata-r8a7791" for R-Car M2
->>> +- reg			: address and length of the SATA registers;
->>> +- interrupts		: must consist of one interrupt specifier.
->>> +
->>> +Example:
->>> +
->>> +sata: sata@fc600000 {
->>> +	compatible = "renesas,sata-r8a7779";
->>> +	reg = <0xfc600000 0x2000>;
->>> +	interrupt-parent = <&gic>;
->>> +	interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
->>
->> Sorry, I missed the discussion on this, but I think it would be better in
->> the example to leave this as 4.  There is no reference in the binding at
->> all to figure out where IRQ_TYPE_LEVEL_HIGH is defined.
->
-> Then I'd rather reference the interrupts binding document, otherwise people
-> will blindly write device tree sources with 4 instead of IRQ_TYPE_LEVEL_HIGH,
-> which I don't want to encourage.
->
->>> +};
+WP pin is not implemented on Marzen
 
-Is it possible to get the functional SATA phy changes from the first patch applied
-and have a separate discussion regarding DT bindings?
-This DT discussion is not related to the SATA PHY changes.
-There were comments to keep both patches as a single series, but I don't see any reason
-for that anymore.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-Thanks,
-Val.
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 13fa8be..918085c 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -94,8 +94,7 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
+-				 "sdhi0_wp";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ };
+-- 
+1.7.9.5
+
