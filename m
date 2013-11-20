@@ -1,30 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Nov 2013 06:29:06 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7791: add Ether clock
-Message-Id: <20131101062906.GB22183@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Wed, 20 Nov 2013 17:38:04 +0000
+Subject: [PATCH 7/9] ARM: shmobile: r8a7790: add internal PCI clock
+Message-Id: <1384969086-8920-8-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>
- <201310310218.37578.sergei.shtylyov@cogentembedded.com>
- <20131031060649.GW1603@verge.net.au>
- <5272D0B6.3090604@cogentembedded.com>
-In-Reply-To: <5272D0B6.3090604@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Nov 01, 2013 at 12:50:46AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 10/31/2013 09:06 AM, Simon Horman wrote:
-> 
-> >>Add support for R8A7791 Ether clock.
-> 
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >Thanks, I have queued this up.
-> 
->    Perhaps you were too quick, taking into account Magnus' mail
-> about the device name...
+Adds clock for internal PCI host controllers.
 
-Yes I was. I will drop this patch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 6107571..5a84698 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -187,7 +187,7 @@ enum {
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+-	MSTP704,
++	MSTP704, MSTP703,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+@@ -212,6 +212,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ 	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
++	[MSTP703] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 3, 0), /* EHCI */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -303,6 +304,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbpci", "pci-rcar-gen2.1", &mstp_clks[MSTP703]),
++	CLKDEV_ICK_ID("usbpci", "pci-rcar-gen2.2", &mstp_clks[MSTP703]),
+ };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-- 
+1.8.4
+
