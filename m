@@ -1,160 +1,188 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:10 +0000
-Subject: [PATCH v4 00/29] Add OF support to the sh-sci serial port driver
-Message-Id: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 08:30:55 +0000
+Subject: [PATCH 2/4] mmc: tmio: bus_shift become tmio_mmc_data member
+Message-Id: <87fvqr8ogb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org, Greg KH <greg@kroah.com>, Simon Horman <horms@verge.net.au>
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Hello,
+.bus_shift is used to 16/32bit register access
+offset calculation om tmio driver.
+tmio_mmc_xxx is used from Toshiba/Renesas now,
+but this bus_shift value depends on HW IP.
+This patch moves .bus_shift to tmio_mmc_data member
+and set it on each driver.
 
-This is the fourth version of the patch set adds device tree bindings for the
-sh sci serial port devices and adds OF parsing to the sh-sci driver.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    8 ++++++++
+ drivers/mmc/host/tmio_mmc.c       |    8 ++++++++
+ drivers/mmc/host/tmio_mmc.h       |   17 ++++++++---------
+ drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
+ drivers/mmc/host/tmio_mmc_pio.c   |    3 ---
+ include/linux/mfd/tmio.h          |    1 +
+ 6 files changed, 26 insertions(+), 13 deletions(-)
 
-The bindings are based on Bastian Hecht's proposal (see
-http://www.spinics.net/lists/arm-kernel/msg228129.html). The approach taken
-here is more minimalistic: instead of describing all hardware characteristics
-that vary between the SCI device revisions in DT (such as registers layout),
-that information is stored in the driver and selected based on the compatible
-property value. Only SCI revisions used on ARM devices are supported through
-DT, as DT support for SuperH is nowhere down the line.
-
-Patches 01/29 to 06/29 clean up the sh-sci driver. Patches 07/29 to 27/29
-replace memory and interrupt resources passed through platform data with
-platform resources. Beside replacing a custom mechanism with a standard one,
-it will also make the DT parsing code simpler as resource allocation will be
-shared between DT and non-DT code paths. Finally, patches 28/29 to 29/29 add
-OF parsing to the sh-sci driver and create DT bindings documentation.
-
-The patches have been test on a Lager board (r8a7790-based) and a Koelsch board
-(r8a7791-based). Support for other SoCs will be added as needed. Note that all
-current Renesas ARM SoCs seem to be compatible with the generic (H)SCI(F)(AB)
-devices, but the plan is for their DT bindings to list the SoC-specific version
-in case incompatibilities are found later.
-
-The series will need to be split in three parts to go to mainline. Patches
-01/29 to 07/29 should go through Greg's tree, patches 08/29 to 26/29 through
-Simon's tree, and patches 27/29 to 29/29 through Greg's tree again. Simon will
-need a stable branch with the first seven patches, and should in turn provide
-a stable branch to base the last three patches on.
-
-Alternatively the whole series could go through Simon's tree. Greg, would that
-be fine with you ? The patches that would go through your tree touch
-drivers/tty/serial/sh-sci.c, include/linux/serial_sci.h and
-Documentation/devicetree/bindings/serial/renesas,sci-serial.txt only. There
-should be no risk of conflict if Simon takes all the sh-sci patches for the
-next kernel version.
-
-Changes compared to v3:
-
-- Rebased on top of renesas-devel-v3.13-rc1-20131125
-
-Changes compared to v2:
-
-- Fix indentation in 12/29
-- Remove interrupt-parent property from the DT bindings documentation
-- Remove -generic suffix from DT compatible values
-- Reword the DT bindings documentation based on comments received on v2
-- Added r8a7791 support to the DT bindings
-
-Changes compared to v1:
-
-- Patches 04/29 to 27/29 have been added
-- Multi-interrupt support has been removed from the DT bindings as they don't
-  support any SoC requiring multi-interrupt yet
-
-Cc: devicetree@vger.kernel.org
-Cc: Greg KH <greg@kroah.com>
-Cc: Simon Horman <horms@verge.net.au>
-
-Bastian Hecht (1):
-  serial: sh-sci: Add OF support
-
-Laurent Pinchart (28):
-  serial: sh-sci: Sort headers alphabetically
-  serial: sh-sci: Remove baud rate calculation algorithm 5
-  serial: sh-sci: Simplify baud rate calculation algorithms
-  serial: sh-sci: Remove duplicate interrupt check in verify port op
-  serial: sh-sci: Set the UPF_FIXED_PORT flag
-  serial: sh-sci: Don't check IRQ in verify port operation
-  serial: sh-sci: Support resources passed through platform resources
-  ARM: shmobile: sh7372: Use macros to declare SCIF devices
-  ARM: shmobile: sh73a0: Use macros to declare SCIF devices
-  ARM: shmobile: r8a7740: Use macros to declare SCIF devices
-  ARM: shmobile: r8a7779: Use macros to declare SCIF devices
-  ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
-  ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
-  ARM: shmobile: r8a7778: Don't define SCIF platform data in an array
-  ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
-  ARM: shmobile: r8a7791: Don't define SCIF platform data in an array
-  ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
-  ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
-  ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as
-    resources
-  ARM: shmobile: r8a73a4: Declare SCIF register base and IRQ as
-    resources
-  ARM: shmobile: r8a7740: Declare SCIF register base and IRQ as
-    resources
-  ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as
-    resources
-  ARM: shmobile: r8a7779: Declare SCIF register base and IRQ as
-    resources
-  ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as
-    resources
-  ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as
-    resources
-  sh: Declare SCIF register base and IRQ as resources
-  serial: sh-sci: Remove platform data mapbase and irqs fields
-  serial: sh-sci: Add device tree bindings documentation
-
- .../bindings/serial/renesas,sci-serial.txt         |  46 ++++
- arch/arm/mach-shmobile/setup-r7s72100.c            |  63 +++---
- arch/arm/mach-shmobile/setup-r8a73a4.c             |  65 +++---
- arch/arm/mach-shmobile/setup-r8a7740.c             | 196 +++--------------
- arch/arm/mach-shmobile/setup-r8a7778.c             |  45 ++--
- arch/arm/mach-shmobile/setup-r8a7779.c             | 129 +++--------
- arch/arm/mach-shmobile/setup-r8a7790.c             | 117 +++++-----
- arch/arm/mach-shmobile/setup-r8a7791.c             | 130 +++++------
- arch/arm/mach-shmobile/setup-sh7372.c              | 161 +++-----------
- arch/arm/mach-shmobile/setup-sh73a0.c              | 192 +++--------------
- arch/sh/kernel/cpu/sh2/setup-sh7619.c              |  27 ++-
- arch/sh/kernel/cpu/sh2a/setup-mxg.c                |   9 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c             |  72 +++++--
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  36 +++-
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  36 +++-
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c             |  96 +++++++--
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c             |  96 +++++++--
- arch/sh/kernel/cpu/sh3/setup-sh7705.c              |  18 +-
- arch/sh/kernel/cpu/sh3/setup-sh770x.c              |  27 ++-
- arch/sh/kernel/cpu/sh3/setup-sh7710.c              |  18 +-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c              |  18 +-
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c             |  15 +-
- arch/sh/kernel/cpu/sh4/setup-sh7750.c              |  18 +-
- arch/sh/kernel/cpu/sh4/setup-sh7760.c              |  58 +++--
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c             |  36 +++-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c             |   9 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c             |  27 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c             |  54 +++--
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  54 +++--
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  66 ++++--
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c             |  27 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c             |  27 ++-
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c             |  90 ++++++--
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c             |  18 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c             |  54 +++--
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c             |  82 +++++--
- arch/sh/kernel/cpu/sh4a/setup-shx3.c               |  45 ++--
- arch/sh/kernel/cpu/sh5/setup-sh5.c                 |  11 +-
- drivers/tty/serial/sh-sci.c                        | 238 ++++++++++++++++-----
- include/linux/serial_sci.h                         |  35 +--
- 40 files changed, 1447 insertions(+), 1114 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index f344659..f1e35a7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -133,10 +133,15 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct tmio_mmc_data *mmc_data;
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	struct tmio_mmc_host *host;
++	struct resource *res;
+ 	int irq, ret, i = 0;
+ 	bool multiplexed_isr = true;
+ 	struct tmio_mmc_dma *dma_priv;
+ 
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EINVAL;
++
+ 	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
+ 	if (priv = NULL) {
+ 		dev_err(&pdev->dev, "kzalloc failed\n");
+@@ -206,6 +211,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 	}
+ 
++	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
++	mmc_data->bus_shift = resource_size(res) >> 9;
++
+ 	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
+ 	if (ret < 0)
+ 		goto eprobe;
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 8860d4d..6cfb2d5 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -62,6 +62,7 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 	const struct mfd_cell *cell = mfd_get_cell(pdev);
+ 	struct tmio_mmc_data *pdata;
+ 	struct tmio_mmc_host *host;
++	struct resource *res;
+ 	int ret = -EINVAL, irq;
+ 
+ 	if (pdev->num_resources != 2)
+@@ -84,6 +85,13 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 			goto out;
+ 	}
+ 
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EINVAL;
++
++	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
++	pdata->bus_shift = resource_size(res_ctl) >> 10;
++
+ 	ret = tmio_mmc_host_probe(&host, pdev, pdata);
+ 	if (ret)
+ 		goto cell_disable;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 86fd21e..aaa9c7e 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -58,7 +58,6 @@ enum tmio_mmc_power {
+ 
+ struct tmio_mmc_host {
+ 	void __iomem *ctl;
+-	unsigned long bus_shift;
+ 	struct mmc_command      *cmd;
+ 	struct mmc_request      *mrq;
+ 	struct mmc_data         *data;
+@@ -176,19 +175,19 @@ int tmio_mmc_host_runtime_resume(struct device *dev);
+ 
+ static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->bus_shift));
++	return readw(host->ctl + (addr << host->pdata->bus_shift));
+ }
+ 
+ static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	readsw(host->ctl + (addr << host->bus_shift), buf, count);
++	readsw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
+ }
+ 
+ static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->bus_shift)) |
+-	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
++	return readw(host->ctl + (addr << host->pdata->bus_shift)) |
++	       readw(host->ctl + ((addr + 2) << host->pdata->bus_shift)) << 16;
+ }
+ 
+ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
+@@ -198,19 +197,19 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
+ 	 */
+ 	if (host->pdata->write16_hook && host->pdata->write16_hook(host, addr))
+ 		return;
+-	writew(val, host->ctl + (addr << host->bus_shift));
++	writew(val, host->ctl + (addr << host->pdata->bus_shift));
+ }
+ 
+ static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	writesw(host->ctl + (addr << host->bus_shift), buf, count);
++	writesw(host->ctl + (addr << host->pdata->bus_shift), buf, count);
+ }
+ 
+ static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int addr, u32 val)
+ {
+-	writew(val, host->ctl + (addr << host->bus_shift));
+-	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
++	writew(val, host->ctl + (addr << host->pdata->bus_shift));
++	writew(val >> 16, host->ctl + ((addr + 2) << host->pdata->bus_shift));
+ }
+ 
+ 
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 65edb4a..03e7b28 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -293,7 +293,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (pdata->dma->chan_priv_tx)
+ 			cfg.slave_id = pdata->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+-		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
++		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->pdata->bus_shift);
+ 		cfg.src_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_tx, &cfg);
+ 		if (ret < 0)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 7b25d0e..bb22314 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1013,9 +1013,6 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	_host->set_pwr = pdata->set_pwr;
+ 	_host->set_clk_div = pdata->set_clk_div;
+ 
+-	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+-	_host->bus_shift = resource_size(res_ctl) >> 10;
+-
+ 	ret = tmio_mmc_init_ocr(_host);
+ 	if (ret < 0)
+ 		goto host_free;
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index b22883d..92f72cf 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -102,6 +102,7 @@ struct tmio_mmc_data {
+ 	unsigned long			capabilities;
+ 	unsigned long			capabilities2;
+ 	unsigned long			flags;
++	unsigned long			bus_shift;
+ 	u32				ocr_mask;	/* available voltages */
+ 	struct tmio_mmc_dma		*dma;
+ 	struct device			*dev;
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
