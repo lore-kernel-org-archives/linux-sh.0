@@ -1,44 +1,56 @@
-From: Nguyen Viet Dung <nv-dung@jinso.co.jp>
-Date: Fri, 15 Nov 2013 05:52:53 +0000
-Subject: Re: LCDC failure of the stable v3.12 kernel for armadillo800-eva
-Message-Id: <5285B6B5.5030806@jinso.co.jp>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 07:41:48 +0000
+Subject: [PATCH] ARM: shmobile: Add pinctrl_register_mappings() for Koelsch
+Message-Id: <20131120074148.22744.70608.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52831925.8030903@jinso.co.jp>
-In-Reply-To: <52831925.8030903@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, horms@verge.net.au, linux-sh@vger.kernel.org
 
-Hi Laurent-san,
+From: Magnus Damm <damm@opensource.se>
 
-On 11/15/2013 11:35 AM, Laurent Pinchart wrote:
-> Hi Nguyen-san,
->
-> (I apologize in advance if this is the wrong way to address you, please let me
-> know if I should have written Dung-san instead).
-Please call me by Dung
->
-> On Wednesday 13 November 2013 15:16:05 Nguyen Viet Dung wrote:
->> Hi Laurent-san,
->>
->> I have tested the stable v3.12 kernel for armadillo800-eva board.
->> And it had a error relates LCDC.
->>
->> error detail:
->> -----------------
->> can not display a bitmap image on LCD screen.
->> when boot the board,boot log is can not display on LCD screen too.
->>
->> Cause:
->> ---------
->> kernel that had above error:up tream v3.12-rc1....stable v2.12.0
->> Error is generated in the following patch.
->> [d58226a ARM: shmobile: armadillo800eva: Add backlight support]
-> I will try to fix that. The LCDC hardware is supported by two drivers, an
-> FBDEV driver (drivers/video/sh_mobile_lcdcfb.c) and a DRM driver
-> (drivers/gpu/drm/shmobile). Could you please tell which driver you're using ?
-When test LCDC,I have used  the driver of drivers/video/sh_mobile_lcdcfb.c.
+Add code to setup the r8a7791 PFC for the Koelsch board.
 
-Best regards,
-Nguyen Viet Dung.
+At this point serial consoles are added, and in the near
+future other platform-device-only devices will be added
+here like for instance the r8a7791 DU.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-koelsch.c |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- 0014/arch/arm/mach-shmobile/board-koelsch.c
++++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-11-20 16:18:28.000000000 +0900
+@@ -24,6 +24,7 @@
+ #include <linux/input.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
+@@ -78,9 +79,20 @@ static const struct gpio_keys_platform_d
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ };
+ 
++static const struct pinctrl_map koelsch_pinctrl_map[] = {
++	/* SCIF0 (CN19: DEBUG SERIAL0) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
++				  "scif0_data_d", "scif0"),
++	/* SCIF1 (CN20: DEBUG SERIAL1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
++				  "scif1_data_d", "scif1"),
++};
++
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	r8a7791_clock_init();
++	pinctrl_register_mappings(koelsch_pinctrl_map,
++				  ARRAY_SIZE(koelsch_pinctrl_map));
+ 	r8a7791_pinmux_init();
+ 	r8a7791_add_standard_devices();
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
