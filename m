@@ -1,37 +1,29 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Nov 2013 00:23:35 +0000
-Subject: [PATCH 04/05 v2] gpio: em: Use lazy disable
-Message-Id: <20131120002335.27342.16796.sendpatchset@w520>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 20 Nov 2013 13:39:28 +0000
+Subject: Re: [PATCH 04/05 v2] gpio: em: Use lazy disable
+Message-Id: <CACRpkdaePTGShd+rt=Jecd6T+f1Cq_rp_hhL9AejgEh446Js-w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131120002259.27342.35575.sendpatchset@w520>
-In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
+	<20131120002335.27342.16796.sendpatchset@w520>
+In-Reply-To: <20131120002335.27342.16796.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Set the ->irq_enable() and ->irq_disable() methods to NULL
-to enable lazy disable of interrupts. This by itself provides
-some level of optimization, but is mainly enabled as ground
-work for future Suspend-to-RAM wake up support.
+> From: Magnus Damm <damm@opensource.se>
+>
+> Set the ->irq_enable() and ->irq_disable() methods to NULL
+> to enable lazy disable of interrupts. This by itself provides
+> some level of optimization, but is mainly enabled as ground
+> work for future Suspend-to-RAM wake up support.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Patch applied.
 
- drivers/gpio/gpio-em.c |    2 --
- 1 file changed, 2 deletions(-)
-
---- 0010/drivers/gpio/gpio-em.c
-+++ work/drivers/gpio/gpio-em.c	2013-11-20 08:32:49.000000000 +0900
-@@ -336,8 +336,6 @@ static int em_gio_probe(struct platform_
- 	irq_chip->name = name;
- 	irq_chip->irq_mask = em_gio_irq_disable;
- 	irq_chip->irq_unmask = em_gio_irq_enable;
--	irq_chip->irq_enable = em_gio_irq_enable;
--	irq_chip->irq_disable = em_gio_irq_disable;
- 	irq_chip->irq_set_type = em_gio_irq_set_type;
- 	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
- 
+Yours,
+Linus Walleij
