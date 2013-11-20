@@ -1,46 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 04:01:39 +0000
-Subject: Re: [PATCH] ARM: shmobile: Use r8a7791 suffix for IRQC compat string
-Message-Id: <20131121040137.GG31130@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 03:18:09 +0000
+Subject: [PATCH 3/3] ARM: shmobile: sh73a0: fixup sdhi compatible name
+Message-Id: <87zjoz92xd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120041805.30114.27761.sendpatchset@w520>
-In-Reply-To: <20131120041805.30114.27761.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Nov 20, 2013 at 01:18:05PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add "renesas,irqc-r8a7791" to the compatible string for IRQC
-> in case of r8a7791. This makes the IRQC follow the same style
-> as the other devices and also makes it more future proof.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+sh73a0 != r8a7740
 
-Thanks, I will queue this up.
-Assuming all goes will I plan to push this and other updates
-today or tomorrow.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/sh73a0.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-> ---
-> 
->  arch/arm/boot/dts/r8a7791.dtsi |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/boot/dts/r8a7791.dtsi
-> +++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-11-20 12:21:36.000000000 +0900
-> @@ -154,7 +154,7 @@
->  	};
->  
->  	irqc0: interrupt-controller@e61c0000 {
-> -		compatible = "renesas,irqc";
-> +		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
->  		reg = <0 0xe61c0000 0 0x200>;
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index aef8a61..29d2ee6 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -203,7 +203,7 @@
+ 	};
+ 
+ 	sdhi0: sd@ee100000 {
+-		compatible = "renesas,sdhi-r8a7740";
++		compatible = "renesas,sdhi-sh73a0";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH
+@@ -215,7 +215,7 @@
+ 
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+ 	sdhi1: sd@ee120000 {
+-		compatible = "renesas,sdhi-r8a7740";
++		compatible = "renesas,sdhi-sh73a0";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH
+@@ -226,7 +226,7 @@
+ 	};
+ 
+ 	sdhi2: sd@ee140000 {
+-		compatible = "renesas,sdhi-r8a7740";
++		compatible = "renesas,sdhi-sh73a0";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH
+-- 
+1.7.9.5
+
