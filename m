@@ -1,32 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 15:44:51 +0000
-Subject: [PATCH 0/2] Document GPIO regulator regulator-type property and use it
-Message-Id: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Nov 2013 08:31:06 +0000
+Subject: [PATCH 3/4] mmc: tmio: add new TMIO_MMC_HAVE_HIGH_REG flags
+Message-Id: <87eh6b8ofs.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Hello,
+The accessibility checking method to the
+higher register was added by
+69d1fe18e92afb4687605a1ab2ec73fbc3bae344
+(mmc: tmio: only access registers above 0xff, if available)
+But, it doesn't care 32bit register.
+it is impossible to calculate it from  resource size, since,
+there is 16/32 bit register IP
+(ex VERSION is located on 0xe2 if 16bit register,
+but it is located on  0x1c4 if 32bit register).
+This patch adds new TMIO_MMC_HAVE_HIGH_REG flags,
+tmio_mmc driver has it, and sh_mobile_sdhi doesn't has it today.
 
-This patch set documents the required regulator-type property for the GPIO
-regulator DT bindings and uses it in the Renesas Armadillo DT.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/tmio_mmc.c     |    1 +
+ drivers/mmc/host/tmio_mmc_pio.c |   14 ++++----------
+ include/linux/mfd/tmio.h        |    7 +++++++
+ 3 files changed, 12 insertions(+), 10 deletions(-)
 
-I've checked the DT files in mainline and all the GPIO regulator nodes but the
-one in r8a7740-armadillo800eva-reference.dts specify the regulator-type
-property.
-
-Laurent Pinchart (2):
-  regulator: gpio-regulator: Add required regulator-type property
-  ARM: shmobile: armadillo: Set vccq_sdhi0 regulator type in DT
-
- Documentation/devicetree/bindings/regulator/gpio-regulator.txt | 2 ++
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts        | 2 ++
- 2 files changed, 4 insertions(+)
-
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 6cfb2d5..8a781e2 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -91,6 +91,7 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 
+ 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+ 	pdata->bus_shift = resource_size(res_ctl) >> 10;
++	pdata->flags |= TMIO_MMC_HAVE_HIGH_REG;
+ 
+ 	ret = tmio_mmc_host_probe(&host, pdev, pdata);
+ 	if (ret)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index bb22314..8e5d54f0 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -161,10 +161,8 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ 
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ {
+-	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
+-
+ 	/* implicit BUG_ON(!res) */
+-	if (resource_size(res) > 0x100) {
++	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
+ 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
+ 		msleep(10);
+ 	}
+@@ -176,14 +174,12 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+ 
+ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ {
+-	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
+-
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
+ 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+ 	msleep(10);
+ 
+ 	/* implicit BUG_ON(!res) */
+-	if (resource_size(res) > 0x100) {
++	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
+ 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
+ 		msleep(10);
+ 	}
+@@ -191,16 +187,14 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
+ 
+ static void tmio_mmc_reset(struct tmio_mmc_host *host)
+ {
+-	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
+-
+ 	/* FIXME - should we set stop clock reg here */
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
+ 	/* implicit BUG_ON(!res) */
+-	if (resource_size(res) > 0x100)
++	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
+ 	msleep(10);
+ 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
+-	if (resource_size(res) > 0x100)
++	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
+ 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
+ 	msleep(10);
+ }
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 92f72cf..8f6f2e9 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -76,6 +76,13 @@
+  */
+ #define TMIO_MMC_USE_GPIO_CD		(1 << 5)
+ 
++/*
++ * Some controllers doesn't have over 0x100 register.
++ * it is used to checking accessibility of
++ * CTL_SD_CARD_CLK_CTL / CTL_CLK_AND_WAIT_CTL
++ */
++#define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
++
+ int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
+ int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
+ void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
