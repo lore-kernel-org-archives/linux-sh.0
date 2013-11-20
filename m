@@ -1,31 +1,58 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 20 Nov 2013 13:41:11 +0000
-Subject: Re: [PATCH 05/05 v2] gpio: em: Enable mask on suspend
-Message-Id: <CACRpkdZX=_9dp4DRHhDXTF+fyTH17iyYnGezbeHD3vBUXbNBww@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 00:02:31 +0000
+Subject: [PATCH v2] ARM: shmobile: Use ->init_late() on Lager
+Message-Id: <20131120000231.27016.39549.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120002259.27342.35575.sendpatchset@w520>
-	<20131120002344.27342.23018.sendpatchset@w520>
-In-Reply-To: <20131120002344.27342.23018.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> From: Magnus Damm <damm@opensource.se>
->
-> Now when lazy interrupt disable has been enabled in the driver
-> then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
-> the core that only IRQs marked as wakeups need to stay enabled
-> during Suspend-to-RAM.
->
-> Tested on the KZM9D board with GPIO-keys.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Hook in shmobile_init_late() on Lager V2. This enables some PM
+related things like CPUIdle and Suspend-to-RAM.
 
-Patch applied.
+With this patch applied it is possible to use Suspend-to-RAM:
+# echo enabled > /sys/class/tty/ttySC6/power/wakeup
+# echo mem > /sys/power/state 
+(wake by sending a character on the serial console)
 
-Yours,
-Linus Walleij
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Changes since V1:
+ - added missing include <mach/common.h> to DT reference code
+
+ Written on top of renesas.git renesas-devel-v3.12-20131119
+
+ arch/arm/mach-shmobile/board-lager-reference.c |    2 ++
+ arch/arm/mach-shmobile/board-lager.c           |    1 +
+ 2 files changed, 3 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2013-11-20 08:14:45.000000000 +0900
+@@ -20,6 +20,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <mach/common.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+@@ -41,5 +42,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2013-11-20 08:14:34.000000000 +0900
+@@ -259,5 +259,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
