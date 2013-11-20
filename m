@@ -1,44 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 04:00:09 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: mark GPIO keys as wake-up sources
-Message-Id: <20131121040007.GE31130@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 20 Nov 2013 07:36:59 +0000
+Subject: [PATCH] ARM: shmobile: Configure r8a7791 PFC on Koelsch via DTS
+Message-Id: <20131120073659.22718.79556.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120035638.30046.96506.sendpatchset@w520>
-In-Reply-To: <20131120035638.30046.96506.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 12:56:38PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Enable wakeup for the GPIO keys on the Koelsch board.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I will queue this up.
-Assuming all goes will I plan to push this and other updates
-today or tomorrow.
+Configure the "D" set of data signals for SCIF0 and SCIF1
+on the Koelsch board to setup pinctrl serial console bits.
 
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> --- 0015/arch/arm/mach-shmobile/board-koelsch.c
-> +++ work/arch/arm/mach-shmobile/board-koelsch.c	2013-11-20 12:40:24.000000000 +0900
-> @@ -57,7 +57,7 @@ static const struct gpio_led_platform_da
->  /* GPIO KEY */
->  #define GPIO_KEY(c, g, d, ...) \
->  	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
-> -	  .debounce_interval = 20 }
-> +	  .wakeup = 1, .debounce_interval = 20 }
->  
->  static struct gpio_keys_button gpio_buttons[] = {
->  	GPIO_KEY(KEY_4,		RCAR_GP_PIN(5, 3),	"SW2-pin4"),
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ work/arch/arm/boot/dts/r8a7791-koelsch-reference.dts	2013-11-20 16:23:06.000000000 +0900
+@@ -30,3 +30,19 @@
+ 		#size-cells = <1>;
+ 	};
+ };
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data_d";
++		renesas,function = "scif1";
++	};
++};
++
