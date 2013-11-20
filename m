@@ -1,39 +1,31 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Nov 2013 00:23:44 +0000
-Subject: [PATCH 05/05 v2] gpio: em: Enable mask on suspend
-Message-Id: <20131120002344.27342.23018.sendpatchset@w520>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 20 Nov 2013 13:41:11 +0000
+Subject: Re: [PATCH 05/05 v2] gpio: em: Enable mask on suspend
+Message-Id: <CACRpkdZX=_9dp4DRHhDXTF+fyTH17iyYnGezbeHD3vBUXbNBww@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131120002259.27342.35575.sendpatchset@w520>
-In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
+	<20131120002344.27342.23018.sendpatchset@w520>
+In-Reply-To: <20131120002344.27342.23018.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Now when lazy interrupt disable has been enabled in the driver
-then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
-the core that only IRQs marked as wakeups need to stay enabled
-during Suspend-to-RAM.
+> From: Magnus Damm <damm@opensource.se>
+>
+> Now when lazy interrupt disable has been enabled in the driver
+> then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
+> the core that only IRQs marked as wakeups need to stay enabled
+> during Suspend-to-RAM.
+>
+> Tested on the KZM9D board with GPIO-keys.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Tested on the KZM9D board with GPIO-keys.
+Patch applied.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- drivers/gpio/gpio-em.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0011/drivers/gpio/gpio-em.c
-+++ work/drivers/gpio/gpio-em.c	2013-11-20 08:33:47.000000000 +0900
-@@ -337,7 +337,7 @@ static int em_gio_probe(struct platform_
- 	irq_chip->irq_mask = em_gio_irq_disable;
- 	irq_chip->irq_unmask = em_gio_irq_enable;
- 	irq_chip->irq_set_type = em_gio_irq_set_type;
--	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
-+	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
- 
- 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
- 					      pdata->number_of_pins,
+Yours,
+Linus Walleij
