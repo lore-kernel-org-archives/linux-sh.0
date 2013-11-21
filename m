@@ -1,115 +1,145 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:15:50 +0000
-Subject: [PATCH v2 3/8] ARM: shmobile: lager-reference: Switch to multiplaform
-Message-Id: <1384053355-30703-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Nov 2013 07:21:07 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: add gpio/fixed regulator for SDHI
+Message-Id: <87hab6xlsw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Move the Lager reference board to multiplaform ARM architecture. As
-multiplatform requires usage of the common clock framework, switch from
-legacy clocks to CCF by replacing the legacy clock framework
-initialization code in the machine init handler with a common clock
-framework initialization call in the time init handler.
+Fixed regulator is used for SDHI0/2 Vcc.
+We should use da9063 driver for Vccq,
+but, it doesn't have regulator support at this point.
+This patch uses gpio-regulator for it as quick-hack.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/Makefile                     |  3 ++-
- arch/arm/mach-shmobile/Kconfig                 |  7 +++++++
- arch/arm/mach-shmobile/Makefile                |  1 +
- arch/arm/mach-shmobile/board-lager-reference.c | 11 +++++++++--
- 4 files changed, 19 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c |   83 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 82 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 7d98d3a..eea1304 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -214,7 +214,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r8a73a4-ape6evm.dtb \
- 	r8a73a4-ape6evm-reference.dtb \
- 	sh7372-mackerel.dtb
--dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb
-+dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
-+	r8a7790-lager-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
- 	socfpga_vt.dtb
- dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index b31ceda..3887f0e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -24,6 +24,9 @@ comment "SH-Mobile System Type"
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f5dab34..109b102 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -31,7 +31,9 @@
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <linux/phy.h>
++#include <linux/regulator/driver.h>
+ #include <linux/regulator/fixed.h>
++#include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+ #include <mach/common.h>
+@@ -141,6 +143,71 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
+ };
  
-+config ARCH_R8A7790
-+	bool "R-Car H2 (R8A77900)"
++/*
++ * SDHI regulator macro
++ *
++ ** FIXME**
++ * Lager board vqmmc is provided via DA9063 PMIC chip,
++ * and we should use ${LINK}/drivers/mfd/da9063-* driver for it.
++ * but, it doesn't have regulator support at this point.
++ * It uses gpio-regulator for vqmmc as quick-hack.
++ */
++#define SDHI_REGULATOR(idx, vdd_pin, vccq_pin)				\
++static struct regulator_consumer_supply vcc_sdhi##idx##_consumer =	\
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi." #idx);		\
++									\
++static struct regulator_init_data vcc_sdhi##idx##_init_data = {		\
++	.constraints = {						\
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,		\
++	},								\
++	.consumer_supplies	= &vcc_sdhi##idx##_consumer,		\
++	.num_consumer_supplies	= 1,					\
++};									\
++									\
++static const struct fixed_voltage_config vcc_sdhi##idx##_info __initconst= {\
++	.supply_name	= "SDHI" #idx "Vcc",				\
++	.microvolts	= 3300000,					\
++	.gpio		= vdd_pin,					\
++	.enable_high	= 1,						\
++	.init_data	= &vcc_sdhi##idx##_init_data,			\
++};									\
++									\
++static struct regulator_consumer_supply vccq_sdhi##idx##_consumer=	\
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi." #idx);		\
++									\
++static struct regulator_init_data vccq_sdhi##idx##_init_data = {	\
++	.constraints = {						\
++		.input_uV	= 3300000,				\
++		.min_uV		= 1800000,				\
++		.max_uV		= 3300000,				\
++		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |		\
++				  REGULATOR_CHANGE_STATUS,		\
++	},								\
++	.consumer_supplies	= &vccq_sdhi##idx##_consumer,		\
++	.num_consumer_supplies	= 1,					\
++};									\
++									\
++static struct gpio vccq_sdhi##idx##_gpio =				\
++	{ vccq_pin, GPIOF_OUT_INIT_HIGH, "vccq-sdhi" #idx };		\
++									\
++static struct gpio_regulator_state vccq_sdhi##idx##_states[] = {	\
++	{ .value = 1800000, .gpios = 0 },				\
++	{ .value = 3300000, .gpios = 1 },				\
++};									\
++									\
++static const struct gpio_regulator_config vccq_sdhi##idx##_info __initconst = {\
++	.supply_name	= "vqmmc",					\
++	.gpios		= &vccq_sdhi##idx##_gpio,			\
++	.nr_gpios	= 1,						\
++	.states		= vccq_sdhi##idx##_states,			\
++	.nr_states	= ARRAY_SIZE(vccq_sdhi##idx##_states),		\
++	.type		= REGULATOR_VOLTAGE,				\
++	.init_data	= &vccq_sdhi##idx##_init_data,			\
++};
 +
- comment "SH-Mobile Board Type"
- 
- config MACH_KZM9D
-@@ -31,6 +34,10 @@ config MACH_KZM9D
- 	depends on ARCH_EMEV2
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 
-+config MACH_LAGER
-+	bool "Lager board"
-+	depends on ARCH_R8A7790
++SDHI_REGULATOR(0, RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 29));
++SDHI_REGULATOR(2, RCAR_GP_PIN(5, 25), RCAR_GP_PIN(5, 30));
 +
- comment "SH-Mobile System Configuration"
- endif
+ /* MMCIF */
+ static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
+@@ -198,6 +265,9 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
  
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index cc48f14..32f3975 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -57,6 +57,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
-+obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 7df9ea0..dfb7437 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,15 +18,22 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk/shmobile.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <mach/rcar-gen2.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
- 
-+static void __init lager_init_time(void)
-+{
-+	rcar_gen2_clocks_init(rcar_gen2_read_mode_pins());
-+
-+	rcar_gen2_timer_init();
-+}
-+
  static void __init lager_add_standard_devices(void)
  {
--	r8a7790_clock_init();
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	int fixed_regulator_idx = 0;
++	int gpio_regulator_idx = 0;
++
+ 	r8a7790_clock_init();
+ 
+ 	pinctrl_register_mappings(lager_pinctrl_map,
+@@ -211,7 +281,8 @@ static void __init lager_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &lager_keys_pdata,
+ 				      sizeof(lager_keys_pdata));
+-	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++	regulator_register_always_on(fixed_regulator_idx++,
++				     "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	platform_device_register_resndata(&platform_bus, "sh_mmcif", 1,
+ 					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
+@@ -223,6 +294,16 @@ static void __init lager_add_standard_devices(void)
+ 					  &ether_pdata, sizeof(ether_pdata));
+ 
+ 	lager_add_du_device();
++
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
++				      &vcc_sdhi0_info, sizeof(struct fixed_voltage_config));
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
++				      &vcc_sdhi2_info, sizeof(struct fixed_voltage_config));
++
++	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
++				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
++	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
++				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
  }
-@@ -39,7 +46,7 @@ static const char *lager_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(LAGER_DT, "lager")
- 	.smp		= smp_ops(r8a7790_smp_ops),
- 	.init_early	= r8a7790_init_early,
--	.init_time	= rcar_gen2_timer_init,
-+	.init_time	= lager_init_time,
- 	.init_machine	= lager_add_standard_devices,
- 	.dt_compat	= lager_boards_compat_dt,
- MACHINE_END
+ 
+ /*
 -- 
-1.8.1.5
+1.7.9.5
 
