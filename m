@@ -1,7 +1,7 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 19 Nov 2013 08:16:02 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Nov 2013 05:34:41 +0000
 Subject: Re: [PATCH] sh-pfc: r8a7791: Fix DU pin groups organisation
-Message-Id: <CACRpkda_o4-k83KaX445=mwH2ZKLTzpm7=AwOsth5FeKiS-sLg@mail.gmail.com>
+Message-Id: <CANqRtoRHck3Aha6iwn=HBtsH-xfOR5E3nM9_i9Vfv57DkOOsHw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1384346777-888-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1384346777-888-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,23 +10,39 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 13, 2013 at 1:46 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Hi Linus,
 
-> Rename the sync_1 group to sync as the device has a single sync pin
-> group for the DU, move the cde_disp mux array right after the
-> corresponding pins array, and split the clk_in pins in three separate
-> groups as the pins can be used independently.
+On Tue, Nov 19, 2013 at 5:16 PM, Linus Walleij <linus.walleij@linaro.org> w=
+rote:
+> On Wed, Nov 13, 2013 at 1:46 PM, Laurent Pinchart
+> <laurent.pinchart+renesas@ideasonboard.com> wrote:
 >
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
+>> Rename the sync_1 group to sync as the device has a single sync pin
+>> group for the DU, move the cde_disp mux array right after the
+>> corresponding pins array, and split the clk_in pins in three separate
+>> groups as the pins can be used independently.
+>>
+>> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.c=
+om>
+>
+> Patch applied for v3.14.
 
-Patch applied for v3.14.
+Thanks for your help!
 
-> The patch is based on top of the latest pinctrl for-next branch and is a
-> candidate for v3.14. I've tested it with the DU driver on a Koelsch board.
+I realize that this patch depends on "[PATCH] sh-pfc: r8a7791 PFC
+support V2" which I assumed was targeted for v3.13, or do you plan to
+push that for v3.14?
 
-K=F6lsch! Who names a board after the sweetest dialect in Germany??
+>> The patch is based on top of the latest pinctrl for-next branch and is a
+>> candidate for v3.14. I've tested it with the DU driver on a Koelsch boar=
+d.
+>
+> K=F6lsch! Who names a board after the sweetest dialect in Germany??
 
-Yours,
-Linus Walleij
+Actually, I've heard that the R-Car series of boards are named after
+different types of beer. At least I am aware of Lager, but Koelsch and
+Marzen?
+
+Thanks,
+
+/ magnus
