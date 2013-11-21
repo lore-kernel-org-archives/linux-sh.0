@@ -1,95 +1,121 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 01 Nov 2013 12:24:29 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7779: cleanup registration of sh_eth
-Message-Id: <52739D7D.40409@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Nov 2013 00:42:29 +0000
+Subject: [PATCH] ARM: shmobile: Fix r8a7791 GPIO resources in DTS
+Message-Id: <20131121004229.16464.59215.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874n7xylzz.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874n7xylzz.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm@opensource.se>
 
-On 01-11-2013 5:00, Kuninori Morimoto wrote:
+The r8a7791 GPIO resources are currently incorrect. Fix that
+by making them match the information in the data sheet.
 
-> sh_eth driver which needs platform data at the time of
-> registration is not used.
-> Now, ARM/shmobile aims to support DT,
-> and the C code base board support will be removed
-> if DT support is completed.
-> Current driver registration method which needs platform data
-> and which is not shared complicates codes.
-> This means legacy C code cleanup after DT supporting
-> will be more complicated
-> This patch registers it on board code as cleanup C code
+Tested with GPIO LED using Koelsch DT reference.
 
-    What? Where are you doing that?
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 --
->   arch/arm/mach-shmobile/setup-r8a7779.c        |   20 --------------------
->   2 files changed, 22 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi |   32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
 
-> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> index 1cab247..5014145 100644
-> --- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> +++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> @@ -3,7 +3,6 @@
->
->   #include <linux/sh_clk.h>
->   #include <linux/pm_domain.h>
-> -#include <linux/sh_eth.h>
->
->   /* HPB-DMA slave IDs */
->   enum {
-> @@ -39,7 +38,6 @@ extern void r8a7779_earlytimer_init(void);
->   extern void r8a7779_add_early_devices(void);
->   extern void r8a7779_add_standard_devices(void);
->   extern void r8a7779_add_standard_devices_dt(void);
-> -extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
->   extern void r8a7779_init_late(void);
->   extern void r8a7779_clock_init(void);
->   extern void r8a7779_pinmux_init(void);
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> index 51a43c5..8f94531 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> @@ -598,18 +598,6 @@ static struct platform_device ohci1_device = {
->   	.resource	= ohci1_resources,
->   };
->
-> -/* Ether */
-> -static struct resource ether_resources[] __initdata = {
-> -	{
-> -		.start	= 0xfde00000,
-> -		.end	= 0xfde003ff,
-> -		.flags	= IORESOURCE_MEM,
-> -	}, {
-> -		.start	= gic_iid(0xb4),
-> -		.flags	= IORESOURCE_IRQ,
-> -	},
-> -};
-> -
->   /* HPB-DMA */
->
->   /* Asynchronous mode register bits */
-> @@ -798,14 +786,6 @@ void __init r8a7779_add_standard_devices(void)
->   	r8a7779_register_hpb_dmae();
->   }
->
-> -void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
-> -{
-> -	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
-> -					  ether_resources,
-> -					  ARRAY_SIZE(ether_resources),
-> -					  pdata, sizeof(*pdata));
-> -}
-> -
->   /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
->   void __init __weak r8a7779_register_twd(void) { }
-
-WBR, Sergei
-
+--- 0021/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-11-20 17:28:26.000000000 +0900
+@@ -49,9 +49,9 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
+-	gpio0: gpio@ffc40000 {
++	gpio0: gpio@e6050000 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc40000 0 0x50>;
++		reg = <0 0xe6050000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -61,9 +61,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio1: gpio@ffc41000 {
++	gpio1: gpio@e6051000 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc41000 0 0x50>;
++		reg = <0 0xe6051000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -73,9 +73,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio2: gpio@ffc42000 {
++	gpio2: gpio@e6052000 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc42000 0 0x50>;
++		reg = <0 0xe6052000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -85,9 +85,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio3: gpio@ffc43000 {
++	gpio3: gpio@e6053000 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc43000 0 0x50>;
++		reg = <0 0xe6053000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -97,9 +97,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio4: gpio@ffc44000 {
++	gpio4: gpio@e6054000 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc44000 0 0x50>;
++		reg = <0 0xe6054000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -109,9 +109,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio5: gpio@ffc45000 {
++	gpio5: gpio@e6055000 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc45000 0 0x50>;
++		reg = <0 0xe6055000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -121,9 +121,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio6: gpio@ffc45400 {
++	gpio6: gpio@e6055400 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc45400 0 0x50>;
++		reg = <0 0xe6055400 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -133,9 +133,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio7: gpio@ffc45800 {
++	gpio7: gpio@e6055800 {
+ 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
+-		reg = <0 0xffc45800 0 0x50>;
++		reg = <0 0xe6055800 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
