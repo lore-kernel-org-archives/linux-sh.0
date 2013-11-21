@@ -1,137 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Nov 2013 15:52:53 +0000
-Subject: [PATCH v2 3/3] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-Message-Id: <1384357973-27365-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Nov 2013 02:11:52 +0000
+Subject: Re: [PATCH v2 3/3] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
+Message-Id: <87siuqy04a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1384357973-27365-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384357973-27365-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-When enabling a module clock by clearing its bit in the MSTP control
-register, the CPG requires waiting for the status register to signal
-that the clock has started. Failure to do so will result in returning
-from the clk_enable() call with the clock potentially still disabled,
-leading to various race conditions and difficult to debug errors.
+Hi Laurent
 
-Enable status wait for all MSTP clocks on the r8a7790.
+> From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+> 
+> When enabling a module clock by clearing its bit in the MSTP control
+> register, the CPG requires waiting for the status register to signal
+> that the clock has started. Failure to do so will result in returning
+> from the clk_enable() call with the clock potentially still disabled,
+> leading to various race conditions and difficult to debug errors.
+> 
+> Enable status wait for all MSTP clocks on the r8a7790.
+> 
+> Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/mach-shmobile/clock-r8a7790.c | 90 ++++++++++++++++++----------------
+>  1 file changed, 49 insertions(+), 41 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+> index 9fa39d1..6c65b70 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+> @@ -43,16 +43,24 @@
+>   *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
+>   */
+>  
+> -#define CPG_BASE 0xe6150000
+> -#define CPG_LEN 0x1000
+> -
+> -#define SMSTPCR1 0xe6150134
+> -#define SMSTPCR2 0xe6150138
+> -#define SMSTPCR3 0xe615013c
+> -#define SMSTPCR5 0xe6150144
+> -#define SMSTPCR7 0xe615014c
+> -#define SMSTPCR8 0xe6150990
+> -#define SMSTPCR9 0xe6150994
+> +#define CPG_BASE	0xe6150000
+> +#define CPG_LEN		0x1000
+> +
+> +#define SMSTPCR1	0xe6150134
+> +#define SMSTPCR2	0xe6150138
+> +#define SMSTPCR3	0xe615013c
+> +#define SMSTPCR5	0xe6150144
+> +#define SMSTPCR7	0xe615014c
+> +#define SMSTPCR8	0xe6150990
+> +#define SMSTPCR9	0xe6150994
+> +
+> +#define MSTPSR1		IOMEM(0xe6150038)
+> +#define MSTPSR2		IOMEM(0xe6150040)
+> +#define MSTPSR3		IOMEM(0xe6150048)
+> +#define MSTPSR5		IOMEM(0xe615003c)
+> +#define MSTPSR7		IOMEM(0xe61501c4)
+> +#define MSTPSR8		IOMEM(0xe61509a0)
+> +#define MSTPSR9		IOMEM(0xe61509a4)
 
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 90 ++++++++++++++++++----------------
- 1 file changed, 49 insertions(+), 41 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 9fa39d1..6c65b70 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -43,16 +43,24 @@
-  *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
-  */
- 
--#define CPG_BASE 0xe6150000
--#define CPG_LEN 0x1000
--
--#define SMSTPCR1 0xe6150134
--#define SMSTPCR2 0xe6150138
--#define SMSTPCR3 0xe615013c
--#define SMSTPCR5 0xe6150144
--#define SMSTPCR7 0xe615014c
--#define SMSTPCR8 0xe6150990
--#define SMSTPCR9 0xe6150994
-+#define CPG_BASE	0xe6150000
-+#define CPG_LEN		0x1000
-+
-+#define SMSTPCR1	0xe6150134
-+#define SMSTPCR2	0xe6150138
-+#define SMSTPCR3	0xe615013c
-+#define SMSTPCR5	0xe6150144
-+#define SMSTPCR7	0xe615014c
-+#define SMSTPCR8	0xe6150990
-+#define SMSTPCR9	0xe6150994
-+
-+#define MSTPSR1		IOMEM(0xe6150038)
-+#define MSTPSR2		IOMEM(0xe6150040)
-+#define MSTPSR3		IOMEM(0xe6150048)
-+#define MSTPSR5		IOMEM(0xe615003c)
-+#define MSTPSR7		IOMEM(0xe61501c4)
-+#define MSTPSR8		IOMEM(0xe61509a0)
-+#define MSTPSR9		IOMEM(0xe61509a4)
- 
- #define SDCKCR		0xE6150074
- #define SD2CKCR		0xE6150078
-@@ -196,37 +204,37 @@ enum {
- };
- 
- static struct clk mstp_clks[MSTP_NR] = {
--	[MSTP931] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 31, 0), /* I2C0 */
--	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
--	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
--	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
--	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
--	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
--	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
--	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
--	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
--	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
--	[MSTP722] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 22, 0), /* DU2 */
--	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
--	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
--	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
--	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
--	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
--	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
--	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
--	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
--	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
--	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SD2], SMSTPCR3, 12, 0), /* SDHI2 */
--	[MSTP311] = SH_CLK_MSTP32(&div6_clks[DIV6_SD3], SMSTPCR3, 11, 0), /* SDHI3 */
--	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1], SMSTPCR3, 5, 0), /* MMC1 */
--	[MSTP304] = SH_CLK_MSTP32(&cp_clk, SMSTPCR3, 4, 0), /* TPU0 */
--	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
--	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
--	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
--	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
--	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
--	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
--	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
-+	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
-+	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
-+	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
-+	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
-+	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
-+	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
-+	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
-+	[MSTP725] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 25, MSTPSR7, 0), /* LVDS1 */
-+	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
-+	[MSTP723] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 23, MSTPSR7, 0), /* DU1 */
-+	[MSTP722] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 22, MSTPSR7, 0), /* DU2 */
-+	[MSTP721] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 21, MSTPSR7, 0), /* SCIF0 */
-+	[MSTP720] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 20, MSTPSR7, 0), /* SCIF1 */
-+	[MSTP717] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 17, MSTPSR7, 0), /* HSCIF0 */
-+	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
-+	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
-+	[MSTP315] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, MSTPSR3, 0), /* MMC0 */
-+	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
-+	[MSTP313] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD1], SMSTPCR3, 13, MSTPSR3, 0), /* SDHI1 */
-+	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI2 */
-+	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD3], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI3 */
-+	[MSTP305] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC1], SMSTPCR3, 5, MSTPSR3, 0), /* MMC1 */
-+	[MSTP304] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR3, 4, MSTPSR3, 0), /* TPU0 */
-+	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
-+	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
-+	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
-+	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
-+	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
-+	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
- };
- 
- static struct clk_lookup lookups[] = {
--- 
-1.8.3.2
+Similar comment here.
+cleanup (?) CPG_xxx / SMSTPCRx are out of this purpose ?
 
