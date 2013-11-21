@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Nov 2013 07:09:23 +0000
+Date: Thu, 21 Nov 2013 04:20:09 +0000
 Subject: Re: [PATCH 0/3] ARM: shmobile: bockw: DMAEngine support for sound
-Message-Id: <20131118070921.GF27935@verge.net.au>
+Message-Id: <20131121042006.GO31130@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87iovq77a0.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87iovq77a0.wl%kuninori.morimoto.gx@renesas.com>
@@ -18,20 +18,21 @@ On Sun, Nov 17, 2013 at 06:50:19PM -0800, Kuninori Morimoto wrote:
 > These need...
 > 
 >  - linus/master branch merge (sound driver update)
+
+I assume this means I should wait for v3.12-rc1?
+
 >  - HPB-DMAC fixup patches (remove noise issue)
+
+Are these also going to be in v3.12-rc1?
+
 >  - my previous patch (DMAEngile stall issue)
 
-Thanks. At some stage I will need a branch to use as a base.
-Either something that Mark has deemed as not to be rebased.
-Or an -rc from Linus.
+What is the status of that patch?
 
 > 
 > I guess #1 patch needs Mark's Acked-by
 
-Yes. Or perhaps the patch could be split somehow.
-A rcar_snd.h portion for Mark to take.
-And then a follow-up mach-shmobile portion for me to take
-(possibly much later).
+We now have the ACK :)
 
 > 
 > Kuninori Morimoto (3):
