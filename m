@@ -1,47 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:51:41 +0000
-Subject: Re: [PATCH 2/2] sh-pfc: Fix PINMUX_GPIO macro
-Message-Id: <20131128075141.GJ24146@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Nov 2013 00:44:04 +0000
+Subject: [PATCH] ARM: shmobile: Koelsch DT reference GPIO LED support
+Message-Id: <20131121004404.16471.71617.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385430334-12141-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385430334-12141-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 26, 2013 at 02:45:34AM +0100, Laurent Pinchart wrote:
-> Commit 7cbb0e55e27e ("sh-pfc: Don't duplicate argument to PINMUX_GPIO
-> macro") erronesouly modified the PINMUX_GPIO macro in a way that
-> resulted in all pins being named "name". Fix the macro to name the pins
-> correctly.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Add led6, led7 and led8 to the Koelsch DT reference board support.
 
-> ---
->  drivers/pinctrl/sh-pfc/sh_pfc.h | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-> index 8a494e5..463ef21 100644
-> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-> @@ -254,7 +254,7 @@ struct sh_pfc_soc_info {
->  #define PINMUX_GPIO(_pin)						\
->  	[GPIO_##_pin] = {						\
->  		.pin = (u16)-1,						\
-> -		.name = __stringify(name),				\
-> +		.name = __stringify(GPIO_##_pin),			\
->  		.enum_id = _pin##_DATA,					\
->  	}
->  
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- 0024/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ work/arch/arm/boot/dts/r8a7791-koelsch-reference.dts	2013-11-20 17:15:02.000000000 +0900
+@@ -11,6 +11,7 @@
+ 
+ /dts-v1/;
+ #include "r8a7791.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Koelsch";
+@@ -29,6 +30,19 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
+ 
+ &pfc {
