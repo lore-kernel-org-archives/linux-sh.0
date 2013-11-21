@@ -1,39 +1,97 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 09:08:55 +0000
-Subject: [PATCH 16/16] ARM: shmobile: kzm9d: Enable AUTO_ZRELADDR in defconfig
-Message-Id: <577092b3d11530acd8467074f6ea7e2dd36b5028.1385629477.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 21 Nov 2013 00:41:55 +0000
+Subject: [PATCH] ARM: shmobile: Fix r8a7790 GPIO resources in DTS
+Message-Id: <20131121004155.16463.63939.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is required to allow the load address to be supplied
-as an environment variable when building a uImage.
+From: Magnus Damm <damm@opensource.se>
 
-LOADADDR=0x40008000 ARCH=arm make uImage
+The r8a7790 GPIO resources are currently incorrect. Fix that
+by making them match the information in the data sheet.
 
-This is necessary since "ARM: shmobile: Remove legacy KZM9D board code"
+Tested with GPIO LED using Lager DT reference.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/configs/kzm9d_defconfig | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index 6c37f4a..e6aed23 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -32,6 +32,7 @@ CONFIG_FORCE_MAX_ZONEORDER
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_AUTO_ZRELADDR=y
- CONFIG_VFP=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
--- 
-1.8.4
+ arch/arm/boot/dts/r8a7790.dtsi |   24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
 
+--- 0017/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2013-11-20 17:37:37.000000000 +0900
+@@ -90,9 +90,9 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
+-	gpio0: gpio@ffc40000 {
++	gpio0: gpio@e6050000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc40000 0 0x2c>;
++		reg = <0 0xe6050000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -102,9 +102,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio1: gpio@ffc41000 {
++	gpio1: gpio@e6051000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc41000 0 0x2c>;
++		reg = <0 0xe6051000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -114,9 +114,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio2: gpio@ffc42000 {
++	gpio2: gpio@e6052000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc42000 0 0x2c>;
++		reg = <0 0xe6052000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -126,9 +126,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio3: gpio@ffc43000 {
++	gpio3: gpio@e6053000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc43000 0 0x2c>;
++		reg = <0 0xe6053000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -138,9 +138,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio4: gpio@ffc44000 {
++	gpio4: gpio@e6054000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc44000 0 0x2c>;
++		reg = <0 0xe6054000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+@@ -150,9 +150,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio5: gpio@ffc45000 {
++	gpio5: gpio@e6055000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc45000 0 0x2c>;
++		reg = <0 0xe6055000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
