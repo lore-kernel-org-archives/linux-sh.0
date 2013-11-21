@@ -1,43 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Nov 2013 04:14:03 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-Message-Id: <20131114041356.GB22870@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Nov 2013 07:25:32 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: add HPBIFx DMAEngine support
+Message-Id: <87d2luxllj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383066834-25956-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383066834-25956-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 13, 2013 at 04:15:16PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 31 October 2013 13:35:07 Laurent Pinchart wrote:
-> > On Thursday 31 October 2013 14:36:06 Simon Horman wrote:
-> > > On Tue, Oct 29, 2013 at 06:13:54PM +0100, Laurent Pinchart wrote:
-> > > > From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> > > > 
-> > > > When enabling a module clock by clearing its bit in the MSTP control
-> > > > register, the CPG requires waiting for the status register to signal
-> > > > that the clock has started. Failure to do so will result in returning
-> > > > from the clk_enable() call with the clock potientially still disabled,
-> > > > leading to various race conditions and difficult to debug errors.
-> > > > 
-> > > > Enable status wait for all MSTP clocks on the r8a7790.
-> > > 
-> > > Is this patch independent of patch 1 of this series?
-> > 
-> > Yes it is. The SH_CLK_MSTP32_STS macro is defined in patch 1/2.
-> 
-> I had obviously read "Is this patch dependent".
-> 
-> I'll submit a v2 with support for the r8a7779.
-> 
-> Have you had a chance to chat with Paul about this ? Patch 1/2 introduces a 
-> feature that is disabled by default so it should have no influence at all on 
-> arch/sh.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |   18 +++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   51 +++++++++++++++++++++++++
+ 2 files changed, 69 insertions(+)
 
-No, I have not been successful in chatting to Paul.
-I agree that it should be harmless enough.
-I intend to queue up v2 once you post it.
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 441886c..b497f93 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -27,6 +27,24 @@ enum {
+ 	HPBDMA_SLAVE_DUMMY,
+ 	HPBDMA_SLAVE_SDHI0_TX,
+ 	HPBDMA_SLAVE_SDHI0_RX,
++	HPBDMA_SLAVE_HPBIF0_TX,
++	HPBDMA_SLAVE_HPBIF0_RX,
++	HPBDMA_SLAVE_HPBIF1_TX,
++	HPBDMA_SLAVE_HPBIF1_RX,
++	HPBDMA_SLAVE_HPBIF2_TX,
++	HPBDMA_SLAVE_HPBIF2_RX,
++	HPBDMA_SLAVE_HPBIF3_TX,
++	HPBDMA_SLAVE_HPBIF3_RX,
++	HPBDMA_SLAVE_HPBIF4_TX,
++	HPBDMA_SLAVE_HPBIF4_RX,
++	HPBDMA_SLAVE_HPBIF5_TX,
++	HPBDMA_SLAVE_HPBIF5_RX,
++	HPBDMA_SLAVE_HPBIF6_TX,
++	HPBDMA_SLAVE_HPBIF6_RX,
++	HPBDMA_SLAVE_HPBIF7_TX,
++	HPBDMA_SLAVE_HPBIF7_RX,
++	HPBDMA_SLAVE_HPBIF8_TX,
++	HPBDMA_SLAVE_HPBIF8_RX,
+ };
+ 
+ extern void r8a7778_add_standard_devices(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 03fcc59..81701cf 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -319,6 +319,29 @@ void __init r8a7778_add_dt_devices(void)
+ #define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
+ #define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
+ 
++#define HPBDMA_HPBIF(_id)				\
++{							\
++	.id	= HPBDMA_SLAVE_HPBIF## _id ##_TX,	\
++	.addr	= 0xffda0000 + (_id * 0x1000),		\
++	.dcr	= HPB_DMAE_DCR_CT |			\
++		  HPB_DMAE_DCR_DIP |			\
++		  HPB_DMAE_DCR_SPDS_32BIT |		\
++		  HPB_DMAE_DCR_DMDL |			\
++		  HPB_DMAE_DCR_DPDS_32BIT,		\
++	.port   = 0x1111,				\
++	.dma_ch = (28 + _id),				\
++}, {							\
++	.id	= HPBDMA_SLAVE_HPBIF## _id ##_RX,	\
++	.addr	= 0xffda0000 + (_id * 0x1000),		\
++	.dcr	= HPB_DMAE_DCR_CT |			\
++		  HPB_DMAE_DCR_DIP |			\
++		  HPB_DMAE_DCR_SMDL |			\
++		  HPB_DMAE_DCR_SPDS_32BIT |		\
++		  HPB_DMAE_DCR_DPDS_32BIT,		\
++	.port   = 0x1111,				\
++	.dma_ch = (28 + _id),				\
++}
++
+ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 	{
+ 		.id	= HPBDMA_SLAVE_SDHI0_TX,
+@@ -349,11 +372,39 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
+ 		.dma_ch	= 22,
+ 	},
++
++	HPBDMA_HPBIF(0),
++	HPBDMA_HPBIF(1),
++	HPBDMA_HPBIF(2),
++	HPBDMA_HPBIF(3),
++	HPBDMA_HPBIF(4),
++	HPBDMA_HPBIF(5),
++	HPBDMA_HPBIF(6),
++	HPBDMA_HPBIF(7),
++	HPBDMA_HPBIF(8),
+ };
+ 
+ static const struct hpb_dmae_channel hpb_dmae_channels[] = {
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_TX), /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_RX), /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_TX), /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_RX), /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_TX), /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_RX), /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_TX), /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_RX), /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_TX), /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_RX), /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_TX), /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_RX), /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_TX), /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_RX), /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_TX), /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_RX), /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_TX), /* ch. 36 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_RX), /* ch. 36 */
+ };
+ 
+ static struct hpb_dmae_pdata dma_platform_data __initdata = {
+-- 
+1.7.9.5
+
