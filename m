@@ -1,61 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 08:20:31 +0000
-Subject: Re: [PATCH 10/12] usb: r8a66597-hcd: Convert to clk_prepare/unprepare
-Message-Id: <20131128082030.GU24146@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 22 Nov 2013 01:02:55 +0000
+Subject: [PATCH] ARM: shmobile: lager: Constify lager_boards_compat_dt
+Message-Id: <1385082175-30521-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1900311.xc3BDUDvCy@avalon> <20131126023608.GA682@kroah.com>
- <10742564.mkbtL7U7WC@avalon>
-In-Reply-To: <10742564.mkbtL7U7WC@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 26, 2013 at 03:08:27PM +0100, Laurent Pinchart wrote:
-> Hi Greg,
-> 
-> On Monday 25 November 2013 18:36:08 Greg Kroah-Hartman wrote:
-> > On Tue, Nov 26, 2013 at 03:00:30AM +0100, Laurent Pinchart wrote:
-> > > On Saturday 09 November 2013 08:10:59 Greg Kroah-Hartman wrote:
-> > > > On Sat, Nov 09, 2013 at 03:12:05PM +0100, Laurent Pinchart wrote:
-> > > > > On Tuesday 29 October 2013 18:47:26 Shimoda, Yoshihiro wrote:
-> > > > > > Hi Laurent-san,
-> > > > > > 
-> > > > > > (2013/10/29 7:49), Laurent Pinchart wrote:
-> > > > > > > Turn clk_enable() and clk_disable() calls into
-> > > > > > > clk_prepare_enable() and clk_disable_unprepare() to get ready for
-> > > > > > > the migration to the common clock framework.
-> > > > > > > 
-> > > > > > > Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> > > > > > > Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > > > > > > Cc: linux-usb@vger.kernel.org
-> > > > > > > Signed-off-by: Laurent Pinchart
-> > > > > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > > 
-> > > > > > Thank you for the patch.
-> > > > > > 
-> > > > > > Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > > > > 
-> > > > > Could you please pick this patch up ?
-> > > > 
-> > > > I'll pick things up after 3.13-rc1 is out, I can't do anything until
-> > > > then.
-> > > 
-> > > Sure.
-> > > 
-> > > As this patch is a dependency for other series that will go through
-> > > different trees, could you please provide a stable branch in your tree
-> > > with this patch included that you will push to v3.14 ?
-> > 
-> > If you need this for other work, feel free to take it in your tree, I
-> > have no real need for it to go in mine.
-> > 
-> > Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> 
-> Sounds good to me, thanks.
-> 
-> Simon, could you please pick this patch then ?
+lager_boards_compat_dt is kmemdup()ed when the corresponding devices are
+registered and can thus be declared as const.  Do so.
 
-Sure. I have queued it up.
-But I may not push it for a day or two.
+This replicates a portion of 27113d63daac0aac ("ARM: shmobile: lager:
+Constify platform data and resources") which appears to have inadvertently
+been lost during merging.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-lager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index d47052e..04c5ca8 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -249,7 +249,7 @@ static void __init lager_init(void)
+ 	phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
+ }
+ 
+-static const char * const lager_boards_compat_dt[] __initconst = {
++static const char *lager_boards_compat_dt[] __initdata = {
+ 	"renesas,lager",
+ 	NULL,
+ };
+-- 
+1.8.4
+
