@@ -1,40 +1,34 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 19 Nov 2013 08:30:34 +0000
-Subject: Re: [PATCH v2] gpio: Renesas RZ GPIO driver V2
-Message-Id: <CACRpkdbK0HV5WCtah7aw4suz=CjaBVOZR0vv=YSkXQqmjr_U5g@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sat, 23 Nov 2013 08:54:39 +0000
+Subject: [PATCH] mmc: tmio: remove myself as a maintainer
+Message-Id: <Pine.LNX.4.64.1311230953420.9194@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113233411.565.32282.sendpatchset@w520>
-In-Reply-To: <20131113233411.565.32282.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, Nov 14, 2013 at 12:34 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+Since I'm currently unable to dedicate sufficient time to driver
+maintainership, remove myself from the maintainers list.
 
-> From: Magnus Damm <damm@opensource.se>
->
-> This patch adds a GPIO driver for the RZ series of SoCs from
-> Renesas. The V2 of the driver requires DT to be used.
->
-> The hardware allows control of GPIOs in blocks of up to 16 pins.
-> Interrupts are not included in this hardware block, if interrupts
-> are needed then the PFC needs to be configured to a IRQ pin function
-> which is handled by the GIC hardware.
->
-> Tested with yet-to-be-posted DT devices on r7s72100 and Genmai using
-> LEDs, DIP switches and I2C bitbang.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
->
->  Changes since V1:
->  - Drop platform data interface as suggested by Linus Walleij, thanks!
->  - Various changes suggested by Laurent Pinchart (except !!), thanks!
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ MAINTAINERS |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-This looks all right to me, but I'm waiting for you and Laurent
-to hash out the final details (v3?)
+diff --git a/MAINTAINERS b/MAINTAINERS
+index b5f4e68..e37e8c0 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8643,7 +8643,6 @@ F:	include/linux/toshiba.h
+ F:	include/uapi/linux/toshiba.h
+ 
+ TMIO MMC DRIVER
+-M:	Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ M:	Ian Molton <ian@mnementh.co.uk>
+ L:	linux-mmc@vger.kernel.org
+ S:	Maintained
+-- 
+1.7.2.5
 
-Yours,
-Linus Walleij
