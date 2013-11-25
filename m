@@ -1,122 +1,213 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:41:46 +0000
-Subject: [PATCH 3/3] spi: rcar: Use devm_* managed allocators
-Message-Id: <1385512906-13108-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 25 Nov 2013 08:55:34 +0000
+Subject: [PATCH 24/24] asm-generic: Rename int-ll64.h to types.h
+Message-Id: <1385369734-24893-25-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+References: <1385369734-24893-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1385369734-24893-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Arnd Bergmann <arnd@arndb.de>, linux-arch@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-kbuild@vger.kernel.org
 
-This simplies error and cleanup code paths.
+Since kernelspace always uses "(unsigned) long long" for 64-bit integer
+values ("u64" and "s64"), rename include/asm-generic/int-ll64.h to
+include/asm-generic/types.h, as suggested by Arnd Bergmann.
 
-Cc: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Userspace still has both include/uapi/asm-generic/int-l64.h and
+include/uapi/asm-generic/int-ll64.h, as int-l64.h may still be used for
+userspace on existing 64-bit platforms (alpha, ia64, mips, and powerpc).
+
+Note: While arch/alpha/include/asm/types.h just includes
+asm-generic/types.h, don't be tempted to use Kbuild logic to provide it!
+arch/*/include/asm/Kbuild applies to both arch/*/include/asm and
+arch/*/include/uapi/asm, while alpha has its own <uapi/asm/types.h>.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-mips@linux-mips.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linux-kbuild@vger.kernel.org
 ---
- drivers/spi/spi-rspi.c | 38 +++++++++++++-------------------------
- 1 file changed, 13 insertions(+), 25 deletions(-)
+Question: Is the arch/*/include/asm/Kbuild behavior intentional?
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 621be5d..19c65c4 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -889,9 +889,6 @@ static int rspi_remove(struct platform_device *pdev)
+ arch/alpha/include/asm/types.h              |    2 +-
+ arch/arm/include/asm/types.h                |    2 +-
+ arch/ia64/include/asm/types.h               |    2 +-
+ arch/mips/include/asm/types.h               |    2 +-
+ arch/powerpc/include/asm/types.h            |    2 +-
+ arch/s390/include/asm/types.h               |    2 +-
+ arch/sh/include/asm/types.h                 |    2 +-
+ arch/xtensa/include/asm/types.h             |    2 +-
+ include/asm-generic/io-64-nonatomic-hi-lo.h |    2 +-
+ include/asm-generic/io-64-nonatomic-lo-hi.h |    2 +-
+ include/asm-generic/{int-ll64.h => types.h} |    8 ++++----
+ 11 files changed, 14 insertions(+), 14 deletions(-)
+ rename include/asm-generic/{int-ll64.h => types.h} (85%)
+
+diff --git a/arch/alpha/include/asm/types.h b/arch/alpha/include/asm/types.h
+index 4cb4b6d3452c..b86fb65c5b10 100644
+--- a/arch/alpha/include/asm/types.h
++++ b/arch/alpha/include/asm/types.h
+@@ -1,6 +1,6 @@
+ #ifndef _ALPHA_TYPES_H
+ #define _ALPHA_TYPES_H
  
- 	spi_unregister_master(rspi->master);
- 	rspi_release_dma(rspi);
--	free_irq(platform_get_irq(pdev, 0), rspi);
--	clk_put(rspi->clk);
--	iounmap(rspi->addr);
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
  
- 	return 0;
- }
-@@ -913,12 +910,6 @@ static int rspi_probe(struct platform_device *pdev)
- 		dev_err(&pdev->dev, "there is no set_config_register\n");
- 		return -ENODEV;
- 	}
--	/* get base addr */
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (unlikely(res = NULL)) {
--		dev_err(&pdev->dev, "invalid resource\n");
--		return -EINVAL;
--	}
+ #endif /* _ALPHA_TYPES_H */
+diff --git a/arch/arm/include/asm/types.h b/arch/arm/include/asm/types.h
+index a53cdb8f068c..09e15a8a40b1 100644
+--- a/arch/arm/include/asm/types.h
++++ b/arch/arm/include/asm/types.h
+@@ -1,7 +1,7 @@
+ #ifndef _ASM_TYPES_H
+ #define _ASM_TYPES_H
  
- 	irq = platform_get_irq(pdev, 0);
- 	if (irq < 0) {
-@@ -936,19 +927,20 @@ static int rspi_probe(struct platform_device *pdev)
- 	platform_set_drvdata(pdev, rspi);
- 	rspi->ops = ops;
- 	rspi->master = master;
--	rspi->addr = ioremap(res->start, resource_size(res));
--	if (rspi->addr = NULL) {
--		dev_err(&pdev->dev, "ioremap error.\n");
--		ret = -ENOMEM;
-+
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	rspi->addr = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(rspi->addr)) {
-+		ret = PTR_ERR(rspi->addr);
- 		goto error1;
- 	}
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
  
- 	snprintf(clk_name, sizeof(clk_name), "%s%d", id_entry->name, pdev->id);
--	rspi->clk = clk_get(&pdev->dev, clk_name);
-+	rspi->clk = devm_clk_get(&pdev->dev, clk_name);
- 	if (IS_ERR(rspi->clk)) {
- 		dev_err(&pdev->dev, "cannot get clock\n");
- 		ret = PTR_ERR(rspi->clk);
--		goto error2;
-+		goto error1;
- 	}
- 	clk_enable(rspi->clk);
+ /*
+  * The C99 types uintXX_t that are usually defined in 'stdint.h' are not as
+diff --git a/arch/ia64/include/asm/types.h b/arch/ia64/include/asm/types.h
+index 4c351b169da2..6bc2e8acadd7 100644
+--- a/arch/ia64/include/asm/types.h
++++ b/arch/ia64/include/asm/types.h
+@@ -13,7 +13,7 @@
+ #ifndef _ASM_IA64_TYPES_H
+ #define _ASM_IA64_TYPES_H
  
-@@ -966,36 +958,32 @@ static int rspi_probe(struct platform_device *pdev)
- 	master->transfer = rspi_transfer;
- 	master->cleanup = rspi_cleanup;
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ #include <uapi/asm/types.h>
  
--	ret = request_irq(irq, rspi_irq, 0, dev_name(&pdev->dev), rspi);
-+	ret = devm_request_irq(&pdev->dev, irq, rspi_irq, 0,
-+			       dev_name(&pdev->dev), rspi);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "request_irq error\n");
--		goto error3;
-+		goto error1;
- 	}
+ #ifdef __ASSEMBLY__
+diff --git a/arch/mips/include/asm/types.h b/arch/mips/include/asm/types.h
+index 4d5ce4c9c924..0d6729329a6a 100644
+--- a/arch/mips/include/asm/types.h
++++ b/arch/mips/include/asm/types.h
+@@ -11,7 +11,7 @@
+ #ifndef _ASM_TYPES_H
+ #define _ASM_TYPES_H
  
- 	rspi->irq = irq;
- 	ret = rspi_request_dma(rspi, pdev);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
--		goto error4;
-+		goto error2;
- 	}
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
  
- 	ret = spi_register_master(master);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "spi_register_master error.\n");
--		goto error4;
-+		goto error2;
- 	}
+ /*
+  * These aren't exported outside the kernel to avoid name space clashes
+diff --git a/arch/powerpc/include/asm/types.h b/arch/powerpc/include/asm/types.h
+index 4b9c3530bb12..69d42a918e0e 100644
+--- a/arch/powerpc/include/asm/types.h
++++ b/arch/powerpc/include/asm/types.h
+@@ -13,7 +13,7 @@
+ #ifndef _ASM_POWERPC_TYPES_H
+ #define _ASM_POWERPC_TYPES_H
  
- 	dev_info(&pdev->dev, "probed\n");
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ #include <uapi/asm/types.h>
  
- 	return 0;
+ #ifndef __ASSEMBLY__
+diff --git a/arch/s390/include/asm/types.h b/arch/s390/include/asm/types.h
+index a5c7e829dbc3..abb93c7f0125 100644
+--- a/arch/s390/include/asm/types.h
++++ b/arch/s390/include/asm/types.h
+@@ -6,7 +6,7 @@
+ #ifndef _S390_TYPES_H
+ #define _S390_TYPES_H
  
--error4:
--	rspi_release_dma(rspi);
--	free_irq(irq, rspi);
--error3:
--	clk_put(rspi->clk);
- error2:
--	iounmap(rspi->addr);
-+	rspi_release_dma(rspi);
- error1:
- 	spi_master_put(master);
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ #include <uapi/asm/types.h>
  
+ /*
+diff --git a/arch/sh/include/asm/types.h b/arch/sh/include/asm/types.h
+index 062324be5cd6..ef745dcfd926 100644
+--- a/arch/sh/include/asm/types.h
++++ b/arch/sh/include/asm/types.h
+@@ -1,7 +1,7 @@
+ #ifndef __ASM_SH_TYPES_H
+ #define __ASM_SH_TYPES_H
+ 
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ 
+ /*
+  * These aren't exported outside the kernel to avoid name space clashes
+diff --git a/arch/xtensa/include/asm/types.h b/arch/xtensa/include/asm/types.h
+index d873cb17d944..20ffdf440e4f 100644
+--- a/arch/xtensa/include/asm/types.h
++++ b/arch/xtensa/include/asm/types.h
+@@ -10,7 +10,7 @@
+ #ifndef _XTENSA_TYPES_H
+ #define _XTENSA_TYPES_H
+ 
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ #include <uapi/asm/types.h>
+ 
+ #endif	/* _XTENSA_TYPES_H */
+diff --git a/include/asm-generic/io-64-nonatomic-hi-lo.h b/include/asm-generic/io-64-nonatomic-hi-lo.h
+index a6806a94250d..414d2c49d53c 100644
+--- a/include/asm-generic/io-64-nonatomic-hi-lo.h
++++ b/include/asm-generic/io-64-nonatomic-hi-lo.h
+@@ -2,7 +2,7 @@
+ #define _ASM_IO_64_NONATOMIC_HI_LO_H_
+ 
+ #include <linux/io.h>
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ 
+ #ifndef readq
+ static inline __u64 readq(const volatile void __iomem *addr)
+diff --git a/include/asm-generic/io-64-nonatomic-lo-hi.h b/include/asm-generic/io-64-nonatomic-lo-hi.h
+index ca546b1ff8b5..9bc5a3393ca1 100644
+--- a/include/asm-generic/io-64-nonatomic-lo-hi.h
++++ b/include/asm-generic/io-64-nonatomic-lo-hi.h
+@@ -2,7 +2,7 @@
+ #define _ASM_IO_64_NONATOMIC_LO_HI_H_
+ 
+ #include <linux/io.h>
+-#include <asm-generic/int-ll64.h>
++#include <asm-generic/types.h>
+ 
+ #ifndef readq
+ static inline __u64 readq(const volatile void __iomem *addr)
+diff --git a/include/asm-generic/int-ll64.h b/include/asm-generic/types.h
+similarity index 85%
+rename from include/asm-generic/int-ll64.h
+rename to include/asm-generic/types.h
+index 4cd84855cb46..b9542bb3d991 100644
+--- a/include/asm-generic/int-ll64.h
++++ b/include/asm-generic/types.h
+@@ -1,11 +1,11 @@
+ /*
+- * asm-generic/int-ll64.h
++ * asm-generic/types.h
+  *
+  * Integer declarations for architectures which use "long long"
+  * for 64-bit types.
+  */
+-#ifndef _ASM_GENERIC_INT_LL64_H
+-#define _ASM_GENERIC_INT_LL64_H
++#ifndef _ASM_GENERIC_TYPES_H
++#define _ASM_GENERIC_TYPES_H
+ 
+ #include <uapi/asm-generic/int-ll64.h>
+ 
+@@ -46,4 +46,4 @@ typedef unsigned long long u64;
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+-#endif /* _ASM_GENERIC_INT_LL64_H */
++#endif /* _ASM_GENERIC_TYPES_H */
 -- 
-1.8.3.2
+1.7.9.5
 
