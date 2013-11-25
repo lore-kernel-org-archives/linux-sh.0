@@ -1,365 +1,115 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:09:36 +0000
-Subject: [PATCH v2 6/7] ARM: shmobile: r8a7790: Add clocks
-Message-Id: <1384052977-30616-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:18:27 +0000
+Subject: [RFC 12/17] ARM: shmobile: r8a7779: Initial multiplatform support
+Message-Id: <1385342312-1967-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384052977-30616-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Declare all core clocks and DIV6 clocks, as well as all MSTP clocks
-currently used by r8a7790 boards.
+Add Marzen and r8a7779 to CONFIG_SHMOBILE_MULTI. At this
+point CCF is not yet supported so you cannot run this code
+yet. For CCF support to happen several different components
+are needed, and this is one simple portion that moves us
+forward. Other patches need to build on top of this one.
 
-Cc: devicetree@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Marzen board support exists in 3 flavours:
+1) SHMOBILE_MULTI, MACH_MARZEN - board-marzen-reference.c (CCF + DT)
+2) SHMOBILE, MACH_MARZEN_REFERENCE - board-marzen-reference.c (DT)
+3) SHMOBILE, MACH_MARZEN - board-marzen.c (legacy C code)
+
+When CCF is done then 2) will be removed. When 1) includes same features
+as 3) then 3) will be removed.
+
+Based on work for the Koelsch and r8a7791 by Magnus Damm.
+
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts |   2 +-
- arch/arm/boot/dts/r8a7790-lager.dts           |   2 +-
- arch/arm/boot/dts/r8a7790.dtsi                | 300 ++++++++++++++++++++++++++
- 3 files changed, 302 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile                      | 1 +
+ arch/arm/mach-shmobile/Kconfig                  | 8 ++++++++
+ arch/arm/mach-shmobile/Makefile                 | 1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c | 6 ++++++
+ 4 files changed, 16 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index ec82674..cce7dbf 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -9,7 +9,7 @@
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 609d27f..723fe71 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -217,6 +217,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
++	r8a7779-marzen-reference.dtb \
+ 	r8a7791-koelsch-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
+ 	socfpga_vt.dtb
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index bc8108b..4216baa 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -21,6 +21,9 @@ if ARCH_SHMOBILE_MULTI
+ 
+ comment "SH-Mobile System Type"
+ 
++config ARCH_R8A7779
++	bool "R-Car H1 (R8A77790)"
++
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 
+@@ -46,6 +49,11 @@ config MACH_KZM9D
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
++config MACH_MARZEN
++	bool "MARZEN board"
++	depends on ARCH_R8A7779
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++
+ comment "SH-Mobile System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 1c13104..6d75ae8 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
++obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index c22e5c2..782907f 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   */
  
- /dts-v1/;
--/include/ "r8a7790.dtsi"
-+#include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
++#include <linux/clk-provider.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -26,9 +27,14 @@
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
  
- / {
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 203bd08..8799dfb 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7790.dtsi"
-+#include "r8a7790.dtsi"
- 
- / {
- 	model = "Lager";
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 5ae7db6..5d8c8c7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -8,6 +8,8 @@
-  * kind, whether express or implied.
-  */
- 
-+#include <dt-bindings/clock/r8a7790-clock.h>
 +
- / {
- 	compatible = "renesas,r8a7790";
- 	interrupt-parent = <&gic>;
-@@ -274,4 +276,302 @@
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-+
-+	clocks {
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		/* External root clock */
-+		extal_clk: extal_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			/* This value must be overriden by the board. */
-+			clock-frequency = <0>;
-+			clock-output-names = "extal";
-+		};
-+
-+		/* Special CPG clocks */
-+		cpg_clocks: cpg_clocks@e6150000 {
-+			compatible = "renesas,r8a7790-cpg-clocks",
-+				     "renesas,rcar-gen2-cpg-clocks";
-+			reg = <0 0xe6150000 0 0x1000>;
-+			clocks = <&extal_clk>;
-+			#clock-cells = <1>;
-+			clock-output-names = "main", "pll0", "pll1", "pll3",
-+					     "lb", "qspi", "sdh", "sd0", "sd1";
-+		};
-+
-+		/* Variable factor clocks */
-+		sd2_clk: sd2_clk@e6150078 {
-+			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe6150078 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "sd2";
-+		};
-+		sd3_clk: sd3_clk@e615007c {
-+			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe615007c 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "sd3";
-+		};
-+		mmc0_clk: mmc0_clk@e6150240 {
-+			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe6150240 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "mmc0";
-+		};
-+		mmc1_clk: mmc1_clk@e6150244 {
-+			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe6150244 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "mmc1";
-+		};
-+		ssp_clk: ssp_clk@e6150248 {
-+			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe6150248 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "ssp";
-+		};
-+		ssprs_clk: ssprs_clk@e615024c {
-+			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
-+			reg = <0 0xe615024c 0 4>;
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-output-names = "ssprs";
-+		};
-+
-+		/* Fixed factor clocks */
-+		pll1_div2_clk: pll1_div2_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <2>;
-+			clock-mult = <1>;
-+			clock-output-names = "pll1_div2";
-+		};
-+		zg_clk: zg_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <3>;
-+			clock-mult = <1>;
-+			clock-output-names = "zg";
-+		};
-+		zx_clk: zx_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <3>;
-+			clock-mult = <1>;
-+			clock-output-names = "zx";
-+		};
-+		zs_clk: zs_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <6>;
-+			clock-mult = <1>;
-+			clock-output-names = "zs";
-+		};
-+		hp_clk: hp_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <12>;
-+			clock-mult = <1>;
-+			clock-output-names = "hp";
-+		};
-+		i_clk: i_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <2>;
-+			clock-mult = <1>;
-+			clock-output-names = "i";
-+		};
-+		b_clk: b_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <12>;
-+			clock-mult = <1>;
-+			clock-output-names = "b";
-+		};
-+		p_clk: p_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <24>;
-+			clock-mult = <1>;
-+			clock-output-names = "p";
-+		};
-+		cl_clk: cl_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <48>;
-+			clock-mult = <1>;
-+			clock-output-names = "cl";
-+		};
-+		m2_clk: m2_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <8>;
-+			clock-mult = <1>;
-+			clock-output-names = "m2";
-+		};
-+		imp_clk: imp_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <4>;
-+			clock-mult = <1>;
-+			clock-output-names = "imp";
-+		};
-+		rclk_clk: rclk_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <(48 * 1024)>;
-+			clock-mult = <1>;
-+			clock-output-names = "rclk";
-+		};
-+		oscclk_clk: oscclk_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
-+			#clock-cells = <0>;
-+			clock-div = <(12 * 1024)>;
-+			clock-mult = <1>;
-+			clock-output-names = "oscclk";
-+		};
-+		zb3_clk: zb3_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
-+			#clock-cells = <0>;
-+			clock-div = <4>;
-+			clock-mult = <1>;
-+			clock-output-names = "zb3";
-+		};
-+		zb3d2_clk: zb3d2_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
-+			#clock-cells = <0>;
-+			clock-div = <8>;
-+			clock-mult = <1>;
-+			clock-output-names = "zb3d2";
-+		};
-+		ddr_clk: ddr_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
-+			#clock-cells = <0>;
-+			clock-div = <8>;
-+			clock-mult = <1>;
-+			clock-output-names = "ddr";
-+		};
-+		mp_clk: mp_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&pll1_div2_clk>;
-+			#clock-cells = <0>;
-+			clock-div = <15>;
-+			clock-mult = <1>;
-+			clock-output-names = "mp";
-+		};
-+		cp_clk: cp_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&extal_clk>;
-+			#clock-cells = <0>;
-+			clock-div = <2>;
-+			clock-mult = <1>;
-+			clock-output-names = "cp";
-+		};
-+
-+		/* Gate clocks */
-+		mstp1_clks: mstp1_clks@e6150134 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-+			clocks = <&rclk_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <R8A7790_CLK_CMT0>;
-+			clock-output-names = "cmt0";
-+		};
-+		mstp2_clks: mstp2_clks@e6150138 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
-+			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
-+				 <&mp_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
-+				R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1 R8A7790_CLK_SCIFB2
-+			>;
-+			clock-output-names +				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
-+				"scifb2";
-+		};
-+		mstp3_clks: mstp3_clks@e615013c {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-+			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
-+				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
-+				 <&mmc0_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
-+				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
-+				R8A7790_CLK_MMCIF0
-+			>;
-+			clock-output-names +				"tpu0", "mmcif1", "sdhi3", "sdhi2",
-+				"sdhi1", "sdhi0", "mmcif0";
-+		};
-+		mstp5_clks: mstp5_clks@e6150144 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-+			clocks = <&extal_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <R8A7790_CLK_THERMAL>;
-+			clock-output-names = "thermal";
-+		};
-+		mstp7_clks: mstp7_clks@e615014c {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-+			clocks = <&zs_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zx_clk>,
-+				 <&zx_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7790_CLK_HSCIF1 R8A7790_CLK_HSCIF0 R8A7790_CLK_SCIF1
-+				R8A7790_CLK_SCIF0 R8A7790_CLK_DU2 R8A7790_CLK_DU1
-+				R8A7790_CLK_DU0 R8A7790_CLK_LVDS1 R8A7790_CLK_LVDS0
-+			>;
-+			clock-output-names +				"hscif1", "hscif0", "scif1", "scif0", "du2", "du1",
-+				"du0", "lvds1", "lvds0";
-+		};
-+		mstp8_clks: mstp8_clks@e6150990 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-+			clocks = <&p_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <R8A7790_CLK_ETHER>;
-+			clock-output-names = "ether";
-+		};
-+		mstp9_clks: mstp9_clks@e6150994 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
-+				R8A7790_CLK_I2C0
-+			>;
-+			clock-output-names = "i2c3", "i2c2", "i2c1", "i2c0";
-+		};
-+	};
- };
+ static void __init marzen_init(void)
+ {
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
+ 	r8a7779_clock_init();
++#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
 -- 
-1.8.1.5
+1.8.4
 
