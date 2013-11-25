@@ -1,60 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:37 +0000
-Subject: [PATCH v2 25/29] ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as resources
-Message-Id: <1384054421-13357-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:18:25 +0000
+Subject: [RFC 10/17] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board code
+Message-Id: <1385342312-1967-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+Move the clock initialisation and OF device population from
+SoC to board code. This is in keeping with the pattern used by Lager.
+And the clock portion is part of decoupling clock initialisation
+from SoC code in preparation for moving to the common clock framework.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 8eb9373..557db8f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -87,11 +87,14 @@ void __init r8a7791_pinmux_init(void)
- #define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
--	.mapbase	= baseaddr,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
- 	.scbrr_algo_id	= algo,						\
- 	.scscr		= SCSCR_RE | SCSCR_TE,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),				\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq),						\
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 2773936..c22e5c2 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -27,7 +28,9 @@
+ 
+ static void __init marzen_init(void)
+ {
++	r8a7779_clock_init();
+ 	r8a7779_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
  }
  
- #define R8A7791_SCIF(index, baseaddr, irq)				\
-@@ -120,9 +123,11 @@ R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
- R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 73bb67f..d98e863 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -856,12 +856,8 @@ void __init r8a7779_init_delay(void)
  
- #define r8a7791_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
+ void __init r8a7779_add_standard_devices_dt(void)
+ {
+-	/* clocks are setup late during boot in the case of DT */
+-	r8a7779_clock_init();
+-
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			     ARRAY_SIZE(r8a7779_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
- static const struct sh_timer_config cmt00_platform_data __initconst = {
- 	.name = "CMT00",
+ #define MODEMR		0xffcc0020
 -- 
-1.8.1.5
+1.8.4
 
