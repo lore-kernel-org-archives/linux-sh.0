@@ -1,218 +1,142 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:17 +0000
-Subject: [PATCH v4 07/29] serial: sh-sci: Support resources passed through platform resources
-Message-Id: <1385594319-5758-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:18:32 +0000
+Subject: [RFC 17/17] ARM: shmobile: Remove Marzen reference DTS
+Message-Id: <1385342312-1967-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Memory and IRQ resources are currently passed to the driver through
-platform data. Support passing them through the standard platform
-resources mechanism instead. This deprecates platform data resources.
+Now that the DTS file r8a7790-marzen.dts can be used with
+board-marzen.c and board-marzen-reference.c, proceed with removing
+r8a7790-marzen-reference.dts.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Based on work for the Koelsch board by Laurent Pinchart.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 65 ++++++++++++++++++++++++++++++++++-----------
- include/linux/serial_sci.h  |  8 +++---
- 2 files changed, 53 insertions(+), 20 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 110 -------------------------
+ 1 file changed, 110 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 783625f..aeb04e4 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -74,6 +74,7 @@ struct sci_port {
- 	/* Function clock */
- 	struct clk		*fclk;
- 
-+	int			irqs[SCIx_NR_IRQS];
- 	char			*irqstr[SCIx_NR_IRQS];
- 	char			*gpiostr[SCIx_NR_FNS];
- 
-@@ -1075,19 +1076,19 @@ static int sci_request_irq(struct sci_port *port)
- 
- 	for (i = j = 0; i < SCIx_NR_IRQS; i++, j++) {
- 		struct sci_irq_desc *desc;
--		unsigned int irq;
-+		int irq;
- 
- 		if (SCIx_IRQ_IS_MUXED(port)) {
- 			i = SCIx_MUX_IRQ;
- 			irq = up->irq;
- 		} else {
--			irq = port->cfg->irqs[i];
-+			irq = port->irqs[i];
- 
- 			/*
- 			 * Certain port types won't support all of the
- 			 * available interrupt sources.
- 			 */
--			if (unlikely(!irq))
-+			if (unlikely(irq < 0))
- 				continue;
- 		}
- 
-@@ -1112,7 +1113,7 @@ static int sci_request_irq(struct sci_port *port)
- 
- out_noirq:
- 	while (--i >= 0)
--		free_irq(port->cfg->irqs[i], port);
-+		free_irq(port->irqs[i], port);
- 
- out_nomem:
- 	while (--j >= 0)
-@@ -1130,16 +1131,16 @@ static void sci_free_irq(struct sci_port *port)
- 	 * IRQ first.
- 	 */
- 	for (i = 0; i < SCIx_NR_IRQS; i++) {
--		unsigned int irq = port->cfg->irqs[i];
-+		int irq = port->irqs[i];
- 
- 		/*
- 		 * Certain port types won't support all of the available
- 		 * interrupt sources.
- 		 */
--		if (unlikely(!irq))
-+		if (unlikely(irq < 0))
- 			continue;
- 
--		free_irq(port->cfg->irqs[i], port);
-+		free_irq(port->irqs[i], port);
- 		kfree(port->irqstr[i]);
- 
- 		if (SCIx_IRQ_IS_MUXED(port)) {
-@@ -1655,7 +1656,7 @@ static void rx_timer_fn(unsigned long arg)
- 
- 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
- 		scr &= ~0x4000;
--		enable_irq(s->cfg->irqs[1]);
-+		enable_irq(s->irqs[SCIx_RXI_IRQ]);
- 	}
- 	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
- 	dev_dbg(port->dev, "DMA Rx timed out\n");
-@@ -2145,11 +2146,12 @@ static struct uart_ops sci_uart_ops = {
- };
- 
- static int sci_init_single(struct platform_device *dev,
--				     struct sci_port *sci_port,
--				     unsigned int index,
--				     struct plat_sci_port *p)
-+			   struct sci_port *sci_port, unsigned int index,
-+			   struct plat_sci_port *p, bool early)
- {
- 	struct uart_port *port = &sci_port->port;
-+	const struct resource *res;
-+	unsigned int i;
- 	int ret;
- 
- 	sci_port->cfg	= p;
-@@ -2158,6 +2160,38 @@ static int sci_init_single(struct platform_device *dev,
- 	port->iotype	= UPIO_MEM;
- 	port->line	= index;
- 
-+	if (dev->num_resources) {
-+		/* Device has resources, use them. */
-+		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
-+		if (res = NULL)
-+			return -ENOMEM;
-+
-+		port->mapbase = res->start;
-+
-+		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
-+			sci_port->irqs[i] = platform_get_irq(dev, i);
-+
-+		/* The SCI generates several interrupts. They can be muxed
-+		 * together or connected to different interrupt lines. In the
-+		 * muxed case only one interrupt resource is specified. In the
-+		 * non-muxed case three or four interrupt resources are
-+		 * specified, as the BRI interrupt is optional.
-+		 */
-+		if (sci_port->irqs[0] < 0)
-+			return -ENXIO;
-+
-+		if (sci_port->irqs[1] < 0) {
-+			sci_port->irqs[1] = sci_port->irqs[0];
-+			sci_port->irqs[2] = sci_port->irqs[0];
-+			sci_port->irqs[3] = sci_port->irqs[0];
-+		}
-+	} else {
-+		/* No resources, use old-style platform data. */
-+		port->mapbase = p->mapbase;
-+		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
-+			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
-+	}
-+
- 	switch (p->type) {
- 	case PORT_SCIFB:
- 		port->fifosize = 256;
-@@ -2182,7 +2216,7 @@ static int sci_init_single(struct platform_device *dev,
- 			return ret;
- 	}
- 
--	if (dev) {
-+	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
- 		if (IS_ERR(sci_port->iclk)) {
- 			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
-@@ -2237,7 +2271,6 @@ static int sci_init_single(struct platform_device *dev,
- 		p->error_mask |= (1 << p->overrun_bit);
- 	}
- 
--	port->mapbase		= p->mapbase;
- 	port->type		= p->type;
- 	port->flags		= UPF_FIXED_PORT | p->flags;
- 	port->regshift		= p->regshift;
-@@ -2249,7 +2282,7 @@ static int sci_init_single(struct platform_device *dev,
- 	 *
- 	 * For the muxed case there's nothing more to do.
- 	 */
--	port->irq		= p->irqs[SCIx_RXI_IRQ];
-+	port->irq		= sci_port->irqs[SCIx_RXI_IRQ];
- 	port->irqflags		= 0;
- 
- 	port->serial_in		= sci_serial_in;
-@@ -2381,7 +2414,7 @@ static int sci_probe_earlyprintk(struct platform_device *pdev)
- 
- 	early_serial_console.index = pdev->id;
- 
--	sci_init_single(NULL, &sci_ports[pdev->id], pdev->id, cfg);
-+	sci_init_single(pdev, &sci_ports[pdev->id], pdev->id, cfg, true);
- 
- 	serial_console_setup(&early_serial_console, early_serial_buf);
- 
-@@ -2448,7 +2481,7 @@ static int sci_probe_single(struct platform_device *dev,
- 		return -EINVAL;
- 	}
- 
--	ret = sci_init_single(dev, sciport, index, p);
-+	ret = sci_init_single(dev, sciport, index, p, false);
- 	if (ret)
- 		return ret;
- 
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 12cf50c..42620f1 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -107,10 +107,10 @@ enum {
- }
- 
- #define SCIx_IRQ_IS_MUXED(port)			\
--	((port)->cfg->irqs[SCIx_ERI_IRQ] =	\
--	 (port)->cfg->irqs[SCIx_RXI_IRQ]) ||	\
--	((port)->cfg->irqs[SCIx_ERI_IRQ] &&	\
--	 !(port)->cfg->irqs[SCIx_RXI_IRQ])
-+	((port)->irqs[SCIx_ERI_IRQ] =	\
-+	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
-+	((port)->irqs[SCIx_ERI_IRQ] &&	\
-+	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
- /*
-  * SCI register subset common for all port types.
-  * Not all registers will exist on all parts.
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+deleted file mode 100644
+index 13fa8be..0000000
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ /dev/null
+@@ -1,110 +0,0 @@
+-/*
+- * Reference Device Tree Source for the Marzen board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- * Copyright (C) 2013 Simon Horman
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7779.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-#include <dt-bindings/interrupt-controller/irq.h>
+-
+-/ {
+-	model = "marzen";
+-	compatible = "renesas,marzen-reference", "renesas,r8a7779";
+-
+-	chosen {
+-		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
+-	};
+-
+-	memory {
+-		device_type = "memory";
+-		reg = <0x60000000 0x40000000>;
+-	};
+-
+-	fixedregulator3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-
+-	lan0@18000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x18000000 0x100>;
+-		pinctrl-0 = <&lan0_pins>;
+-		pinctrl-names = "default";
+-
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin0>;
+-		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
+-		reg-io-width = <4>;
+-		vddvario-supply = <&fixedregulator3v3>;
+-		vdd33a-supply = <&fixedregulator3v3>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led2 {
+-			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
+-		};
+-		led3 {
+-			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
+-		};
+-		led4 {
+-			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-};
+-
+-&irqpin0 {
+-	status = "okay";
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif2_pins &scif4_pins>;
+-	pinctrl-names = "default";
+-
+-	lan0_pins: lan0 {
+-		intc {
+-			renesas,groups = "intc_irq1_b";
+-			renesas,function = "intc";
+-		};
+-		lbsc {
+-			renesas,groups = "lbsc_ex_cs0";
+-			renesas,function = "lbsc";
+-		};
+-	};
+-
+-	scif2_pins: serial2 {
+-		renesas,groups = "scif2_data_c";
+-		renesas,function = "scif2";
+-	};
+-
+-	scif4_pins: serial4 {
+-		renesas,groups = "scif4_data";
+-		renesas,function = "scif4";
+-	};
+-
+-	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
+-				 "sdhi0_wp";
+-		renesas,function = "sdhi0";
+-	};
+-};
+-
+-&sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&fixedregulator3v3>;
+-	bus-width = <4>;
+-	status = "okay";
+-};
 -- 
-1.8.3.2
+1.8.4
 
