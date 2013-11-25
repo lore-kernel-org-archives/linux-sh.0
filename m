@@ -1,116 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 20 Nov 2013 08:31:06 +0000
-Subject: [PATCH 3/4] mmc: tmio: add new TMIO_MMC_HAVE_HIGH_REG flags
-Message-Id: <87eh6b8ofs.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:18:17 +0000
+Subject: [RFC 02/17] clk: shmobile: r8a7779: Add MSTP clock support
+Message-Id: <1385342312-1967-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The accessibility checking method to the
-higher register was added by
-69d1fe18e92afb4687605a1ab2ec73fbc3bae344
-(mmc: tmio: only access registers above 0xff, if available)
-But, it doesn't care 32bit register.
-it is impossible to calculate it from  resource size, since,
-there is 16/32 bit register IP
-(ex VERSION is located on 0xe2 if 16bit register,
-but it is located on  0x1c4 if 32bit register).
-This patch adds new TMIO_MMC_HAVE_HIGH_REG flags,
-tmio_mmc driver has it, and sh_mobile_sdhi doesn't has it today.
+Add MSTP clock support for the r8a7779 SoC
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The only change required appears to be to note a new
+compatibility string in the bindings.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/tmio_mmc.c     |    1 +
- drivers/mmc/host/tmio_mmc_pio.c |   14 ++++----------
- include/linux/mfd/tmio.h        |    7 +++++++
- 3 files changed, 12 insertions(+), 10 deletions(-)
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
-index 6cfb2d5..8a781e2 100644
---- a/drivers/mmc/host/tmio_mmc.c
-+++ b/drivers/mmc/host/tmio_mmc.c
-@@ -91,6 +91,7 @@ static int tmio_mmc_probe(struct platform_device *pdev)
- 
- 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
- 	pdata->bus_shift = resource_size(res_ctl) >> 10;
-+	pdata->flags |= TMIO_MMC_HAVE_HIGH_REG;
- 
- 	ret = tmio_mmc_host_probe(&host, pdev, pdata);
- 	if (ret)
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index bb22314..8e5d54f0 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -161,10 +161,8 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- {
--	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
--
- 	/* implicit BUG_ON(!res) */
--	if (resource_size(res) > 0x100) {
-+	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0000);
- 		msleep(10);
- 	}
-@@ -176,14 +174,12 @@ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
- 
- static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- {
--	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
--
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x0100 |
- 		sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
- 	msleep(10);
- 
- 	/* implicit BUG_ON(!res) */
--	if (resource_size(res) > 0x100) {
-+	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG) {
- 		sd_ctrl_write16(host, CTL_CLK_AND_WAIT_CTL, 0x0100);
- 		msleep(10);
- 	}
-@@ -191,16 +187,14 @@ static void tmio_mmc_clk_start(struct tmio_mmc_host *host)
- 
- static void tmio_mmc_reset(struct tmio_mmc_host *host)
- {
--	struct resource *res = platform_get_resource(host->pdev, IORESOURCE_MEM, 0);
--
- 	/* FIXME - should we set stop clock reg here */
- 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0000);
- 	/* implicit BUG_ON(!res) */
--	if (resource_size(res) > 0x100)
-+	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0000);
- 	msleep(10);
- 	sd_ctrl_write16(host, CTL_RESET_SD, 0x0001);
--	if (resource_size(res) > 0x100)
-+	if (host->pdata->flags & TMIO_MMC_HAVE_HIGH_REG)
- 		sd_ctrl_write16(host, CTL_RESET_SDIO, 0x0001);
- 	msleep(10);
- }
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 92f72cf..8f6f2e9 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -76,6 +76,13 @@
-  */
- #define TMIO_MMC_USE_GPIO_CD		(1 << 5)
- 
-+/*
-+ * Some controllers doesn't have over 0x100 register.
-+ * it is used to checking accessibility of
-+ * CTL_SD_CARD_CLK_CTL / CTL_CLK_AND_WAIT_CTL
-+ */
-+#define TMIO_MMC_HAVE_HIGH_REG		(1 << 6)
-+
- int tmio_core_mmc_enable(void __iomem *cnf, int shift, unsigned long base);
- int tmio_core_mmc_resume(void __iomem *cnf, int shift, unsigned long base);
- void tmio_core_mmc_pwr(void __iomem *cnf, int shift, int state);
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 126b17e..f0a4b83 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -12,6 +12,7 @@ Required Properties:
+   - compatible: Must be one of the following
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
++    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+   - reg: Base address and length of the memory resource used by the MSTP
+     clocks
 -- 
-1.7.9.5
+1.8.4
 
