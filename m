@@ -1,82 +1,80 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 Nov 2013 10:32:38 +0000
-Subject: [PATCH 14/17] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
-Message-Id: <87wqkbxohp.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:18:15 +0000
+Subject: [RFC 00/17] ARM: shmobile: r8a7779, marzen: multiplatform
+Message-Id: <1385342312-1967-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8761rvz37d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch updates r8a7779 DT data to have SoC specific settings.
-Latest Renesas Chip has some SDHI channels and the WP pin
-availability depends on its channel or HW implementation.
-Thus, this patch disables it as default,
-but we can use wp-gpios property to enable it.
+The aim of this series is to adding common clock framework and in turn
+multiplatform support to the r8a7779 SoC and marzen-reference.  It
+subsequently removes non-multiplatform support from marzen-reference.  This
+last step is provided to illustrate that it can be done, it may not be
+desirable to do so for some time.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7779.dtsi    |    8 --------
- drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
- 2 files changed, 1 insertion(+), 9 deletions(-)
+This is based on work for R-Car Gen2 by Laurent Pinchart and Magnus Damm.
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 05fd41c..084132e 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -212,8 +212,6 @@
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 4>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -222,8 +220,6 @@
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 105 4>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -232,8 +228,6 @@
- 		reg = <0xffe4e000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 107 4>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -242,8 +236,6 @@
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 106 4>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- };
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index dc97027..9cffca1 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
--	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
- };
+I expect the R-Car Gen2 work in this area to change and
+I intend to update this series as necessary.
+
+
+This series is based on the clocks/ccf/rcar-gen2 branch
+of Laurent's fbdev tree. I expect that branch to be rebased/changed,
+but it seems to be an adequate base for an RFC.
+
+I have made this series, including its base, available
+in the topic/clocks/ccf/r8a7779-marzen branch of my renesas tree.
+That branch is likely to be rebased/changed in the future.
+
+
+Simon Horman (17):
+  clk: shmobile: r8a7779: Add clocks support
+  clk: shmobile: r8a7779: Add MSTP clock support
+  ARM: shmobile: r8a7779: Add clock index macros for DT sources
+  ARM: shmobile: r8a7779: Add clocks
+  ARM: shmobile: r8a7779: Reference clocks
+  ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+  ARM: shmobile: r8a7779: Sort headers alphabetically
+  ARM: shmobile: r8a7779: Add helper to read mode pins
+  ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to
+    clock-r8a7779.c
+  ARM: shmobile: marzen-reference: Move clock and OF device
+    initialisation into board code
+  ARM: shmobile: r8a7779: Do not include sh_clk.h in r8a7779.h
+  ARM: shmobile: r8a7779: Initial multiplatform support
+  ARM: shmobile: marzen-reference: Initialize CPG device
+  ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and CMT
+  ARM: shmobile: Remove non-multiplatform Marzen reference support
+  ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
+  ARM: shmobile: Remove Marzen reference DTS
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  22 +++
+ arch/arm/boot/dts/Makefile                         |   2 +-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     | 110 --------------
+ arch/arm/boot/dts/r8a7779-marzen.dts               |  82 ++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                     | 132 ++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |  21 +--
+ arch/arm/mach-shmobile/Makefile                    |   4 +-
+ arch/arm/mach-shmobile/Makefile.boot               |   1 -
+ arch/arm/mach-shmobile/board-koelsch-reference.c   |   1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c    |  44 ++++++
+ arch/arm/mach-shmobile/board-marzen.c              |  28 ++--
+ arch/arm/mach-shmobile/clock-r8a7779.c             |  22 +--
+ arch/arm/mach-shmobile/include/mach/r8a7779.h      |   2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c             |  28 ++--
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7779.c                 | 166 +++++++++++++++++++++
+ include/dt-bindings/clock/r8a7779-clock.h          |  61 ++++++++
+ include/linux/clk/shmobile.h                       |   1 +
+ 19 files changed, 564 insertions(+), 165 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+ delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
+ create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
+ create mode 100644 include/dt-bindings/clock/r8a7779-clock.h
+
 -- 
-1.7.9.5
+1.8.4
 
