@@ -1,55 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 20 Nov 2013 10:58:32 +0000
-Subject: Re: [PATCH 00/05] gpio: R-Car and EM GPIO update V2
-Message-Id: <18469590.Iog5Xntpc3@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:00:14 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7779: add HSPI clock support for DT
+Message-Id: <1385341216-27101-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120002259.27342.35575.sendpatchset@w520>
-In-Reply-To: <20131120002259.27342.35575.sendpatchset@w520>
+References: <1385341216-27101-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385341216-27101-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Based on work for the r8a7778 SoC by Kuninori Morimoto.
 
-Thank you for the patch.
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-On Wednesday 20 November 2013 09:22:59 Magnus Damm wrote:
-> gpio: R-Car and EM GPIO update V2
-> 
-> [PATCH 01/05 v2] gpio: rcar: Use lazy disable
-> [PATCH 02/05 v2] gpio: rcar: Enable mask on suspend
-> [PATCH 03/05] gpio: em: Setup gpiochip->dev
-> [PATCH 04/05 v2] gpio: em: Use lazy disable
-> [PATCH 05/05 v2] gpio: em: Enable mask on suspend
-> 
-> Update the R-Car GPIO driver and the GPIO driver used on EMEV2 to use lazy
-> disable and mask on suspend. This fixes the Suspend-to-RAM behavior to make
-> sure wakeup sources are left enabled while suspending. Also include a small
-> fix for gpio-em that fixes the DT use case.
-> 
-> Thanks to Laurent and Linus for feedback.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-
-For the whole series,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> 
->  Written against renesas.git tag renesas-devel-v3.12-20131119
-> 
->  Changes since V1:
->  - Split lazy disable and mask on suspend patches
->  - Improved commit messages
-> 
->  drivers/gpio/gpio-em.c   |    5 ++---
->  drivers/gpio/gpio-rcar.c |    5 ++---
->  2 files changed, 4 insertions(+), 6 deletions(-)
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index b7ce0e7..09ca2ea 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -198,8 +198,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("fffc7000.sh-hspi", &mstp_clks[MSTP007]), /* HSPI0 */
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("fffc8000.sh-hspi", &mstp_clks[MSTP007]), /* HSPI1 */
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
++	CLKDEV_DEV_ID("fffc6000.sh-hspi", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("ffe4c000.sd", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
