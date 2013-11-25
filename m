@@ -1,35 +1,69 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Nov 2013 23:15:11 +0000
-Subject: [PATCH 03/04] ARM: shmobile: Use r8a7778 suffix for INTC compat string
-Message-Id: <20131127231511.29081.46719.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:00:15 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7779: add HSPI support to DTSI
+Message-Id: <1385341216-27101-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127231450.29081.98054.sendpatchset@w520>
-In-Reply-To: <20131127231450.29081.98054.sendpatchset@w520>
+References: <1385341216-27101-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385341216-27101-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Based on work for the r8a7778 SoC by Kuninori Morimoto.
 
-Add "renesas,intc-irqpin-r8a7778" to the compatible string for the
-IRQ pins in case of r8a7778 INTC. This makes the INTC irqpin follow
-the same style as the other devices and also makes it more future proof.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7779.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
- arch/arm/boot/dts/r8a7778.dtsi |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/arch/arm/boot/dts/r8a7778.dtsi
-+++ work/arch/arm/boot/dts/r8a7778.dtsi	2013-11-28 07:41:06.000000000 +0900
-@@ -43,7 +43,7 @@
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index b2b418a..7af0828 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -42,6 +42,12 @@
+ 		};
+ 	};
  
- 	/* irqpin: IRQ0 - IRQ3 */
- 	irqpin: irqpin@fe78001c {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-r8a7778", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		status = "disabled"; /* default off */
++	aliases {
++		spi0 = &hspi0;
++		spi1 = &hspi1;
++		spi2 = &hspi2;
++	};
++
+         gic: interrupt-controller@f0001000 {
+                 compatible = "arm,cortex-a9-gic";
+                 #interrupt-cells = <3>;
+@@ -248,4 +254,28 @@
+ 		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
++
++	hspi0: spi@fffc7000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc7000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	hspi1: spi@fffc8000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc8000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	hspi2: spi@fffc6000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc6000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
+ };
+-- 
+1.8.4
+
