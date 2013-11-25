@@ -1,84 +1,80 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 26 Nov 2013 22:45:28 +0000
-Subject: [PATCH 1/2] usb: hcd: Remove USB phy if needed
-Message-Id: <1385505929-30926-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Mark Salter <msalter@redhat.com>
+Date: Mon, 25 Nov 2013 16:14:03 +0000
+Subject: [PATCH v2 09/11] sh: use generic fixmap.h
+Message-Id: <1385396045-15852-10-git-send-email-msalter@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385396045-15852-1-git-send-email-msalter@redhat.com>
+In-Reply-To: <1385396045-15852-1-git-send-email-msalter@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Mark Salter <msalter@redhat.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-This adds remove_phy flag to the HCD structure. If the flag is
-set and if hcd->phy is valid, the phy is shutdown and released
-whenever usb_add_hcd fails or usb_hcd_remove is called.
-This can be used by the HCD drivers to auto-remove
-the external USB phy when it is no longer needed.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
+Signed-off-by: Mark Salter <msalter@redhat.com>
+CC: Paul Mundt <lethal@linux-sh.org>
+CC: linux-sh@vger.kernel.org
 ---
- drivers/usb/core/hcd.c  | 14 +++++++++++++-
- include/linux/usb/hcd.h |  1 +
- 2 files changed, 14 insertions(+), 1 deletion(-)
+ arch/sh/include/asm/fixmap.h | 39 ++-------------------------------------
+ 1 file changed, 2 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
-index 6bffb8c..7527c8e 100644
---- a/drivers/usb/core/hcd.c
-+++ b/drivers/usb/core/hcd.c
-@@ -44,6 +44,7 @@
+diff --git a/arch/sh/include/asm/fixmap.h b/arch/sh/include/asm/fixmap.h
+index cbe0186..4daf91c 100644
+--- a/arch/sh/include/asm/fixmap.h
++++ b/arch/sh/include/asm/fixmap.h
+@@ -79,13 +79,6 @@ extern void __set_fixmap(enum fixed_addresses idx,
+ 			 unsigned long phys, pgprot_t flags);
+ extern void __clear_fixmap(enum fixed_addresses idx, pgprot_t flags);
  
- #include <linux/usb.h>
- #include <linux/usb/hcd.h>
-+#include <linux/usb/phy.h>
+-#define set_fixmap(idx, phys) \
+-		__set_fixmap(idx, phys, PAGE_KERNEL)
+-/*
+- * Some hardware wants to get fixmapped without caching.
+- */
+-#define set_fixmap_nocache(idx, phys) \
+-		__set_fixmap(idx, phys, PAGE_KERNEL_NOCACHE)
+ /*
+  * used by vmalloc.c.
+  *
+@@ -101,36 +94,8 @@ extern void __clear_fixmap(enum fixed_addresses idx, pgprot_t flags);
+ #define FIXADDR_SIZE	(__end_of_fixed_addresses << PAGE_SHIFT)
+ #define FIXADDR_START	(FIXADDR_TOP - FIXADDR_SIZE)
  
- #include "usb.h"
+-#define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))
+-#define __virt_to_fix(x)	((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT)
+-
+-extern void __this_fixmap_does_not_exist(void);
+-
+-/*
+- * 'index to address' translation. If anyone tries to use the idx
+- * directly without tranlation, we catch the bug with a NULL-deference
+- * kernel oops. Illegal ranges of incoming indices are caught too.
+- */
+-static inline unsigned long fix_to_virt(const unsigned int idx)
+-{
+-	/*
+-	 * this branch gets completely eliminated after inlining,
+-	 * except when someone tries to use fixaddr indices in an
+-	 * illegal way. (such as mixing up address types or using
+-	 * out-of-range indices).
+-	 *
+-	 * If it doesn't get removed, the linker will complain
+-	 * loudly with a reasonably clear error message..
+-	 */
+-	if (idx >= __end_of_fixed_addresses)
+-		__this_fixmap_does_not_exist();
++#define FIXMAP_PAGE_NOCACHE PAGE_KERNEL_NOCACHE
  
-@@ -2603,7 +2604,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
- 	 */
- 	if ((retval = hcd_buffer_create(hcd)) != 0) {
- 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
--		return retval;
-+		goto err_remove_phy;
- 	}
+-        return __fix_to_virt(idx);
+-}
++#include <asm-generic/fixmap.h>
  
- 	if ((retval = usb_register_bus(&hcd->self)) < 0)
-@@ -2734,6 +2735,12 @@ err_allocate_root_hub:
- 	usb_deregister_bus(&hcd->self);
- err_register_bus:
- 	hcd_buffer_destroy(hcd);
-+err_remove_phy:
-+	if (hcd->remove_phy && hcd->phy) {
-+		usb_phy_shutdown(hcd->phy);
-+		usb_put_phy(hcd->phy);
-+		hcd->phy = NULL;
-+	}
- 	return retval;
- }
- EXPORT_SYMBOL_GPL(usb_add_hcd);
-@@ -2806,6 +2813,11 @@ void usb_remove_hcd(struct usb_hcd *hcd)
- 	usb_put_dev(hcd->self.root_hub);
- 	usb_deregister_bus(&hcd->self);
- 	hcd_buffer_destroy(hcd);
-+	if (hcd->remove_phy && hcd->phy) {
-+		usb_phy_shutdown(hcd->phy);
-+		usb_put_phy(hcd->phy);
-+		hcd->phy = NULL;
-+	}
- }
- EXPORT_SYMBOL_GPL(usb_remove_hcd);
- 
-diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
-index b8aba19..758ce80 100644
---- a/include/linux/usb/hcd.h
-+++ b/include/linux/usb/hcd.h
-@@ -134,6 +134,7 @@ struct usb_hcd {
- 	unsigned		rh_registered:1;/* is root hub registered? */
- 	unsigned		rh_pollable:1;	/* may we poll the root hub? */
- 	unsigned		msix_enabled:1;	/* driver has MSI-X enabled? */
-+	unsigned		remove_phy:1;	/* auto-remove USB phy */
- 
- 	/* The next flag is a stopgap, to be removed when all the HCDs
- 	 * support the new root-hub polling mechanism. */
+-static inline unsigned long virt_to_fix(const unsigned long vaddr)
+-{
+-	BUG_ON(vaddr >= FIXADDR_TOP || vaddr < FIXADDR_START);
+-	return __virt_to_fix(vaddr);
+-}
+ #endif
 -- 
 1.8.3.1
 
