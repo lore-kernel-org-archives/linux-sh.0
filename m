@@ -1,37 +1,77 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:42 +0000
-Subject: [PATCH 12/16] ARM: shmobile: r8a7790: Correct typo in clocks
-Message-Id: <7d947813d4dbb8cfee0ed2c75b27f65cb2c54434.1385628709.git.horms+renesas@verge.net.au>
+Date: Mon, 25 Nov 2013 01:18:24 +0000
+Subject: [RFC 09/17] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
+Message-Id: <1385342312-1967-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is the r8a7790 SoC not the r8a77a4 SoC and
-clocks are updated in r8a7790_clock_init not r8a73a4_clock_init.
+r8a7779_earlytimer_init() calls r8a7779_clock_init() and
+r8a7779_clock_init() is defined in clock-r8a7779.c.
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
+as will be the case when marzen-reference moves to use
+the common clock framework, then setup-r8a7779.c is compiled
+but clock-r8a7779.c is not.
+
+As r8a7779_earlytimer_init() is not used by marzen-reference
+simply move it to clock-r8a7779.c.
+
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
+ 2 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index a64f965..fa1b477 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -77,7 +77,7 @@ static struct sh_clk_ops followparent_clk_ops = {
- };
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index decf122..182a71a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -23,6 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <linux/sh_timer.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7779.h>
+@@ -267,3 +268,13 @@ void __init r8a7779_clock_init(void)
+ 	else
+ 		panic("failed to setup r8a7779 clocks\n");
+ }
++
++/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
++void __init __weak r8a7779_register_twd(void) { }
++
++void __init r8a7779_earlytimer_init(void)
++{
++	r8a7779_clock_init();
++	r8a7779_register_twd();
++	shmobile_earlytimer_init();
++}
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 4e3fbfb..73bb67f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -786,16 +786,6 @@ void __init r8a7779_add_standard_devices(void)
+ 	r8a7779_register_hpb_dmae();
+ }
  
- static struct clk main_clk = {
--	/* .parent will be set r8a73a4_clock_init */
-+	/* .parent will be set r8a7790_clock_init */
- 	.ops	= &followparent_clk_ops,
- };
- 
+-/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+-void __init __weak r8a7779_register_twd(void) { }
+-
+-void __init r8a7779_earlytimer_init(void)
+-{
+-	r8a7779_clock_init();
+-	r8a7779_register_twd();
+-	shmobile_earlytimer_init();
+-}
+-
+ void __init r8a7779_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7779_devices_dt,
 -- 
 1.8.4
 
