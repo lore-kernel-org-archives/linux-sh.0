@@ -1,83 +1,94 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 26 Nov 2013 02:16:47 +0000
+From: Felipe Balbi <balbi@ti.com>
+Date: Tue, 26 Nov 2013 19:54:22 +0000
 Subject: Re: [PATCH 09/12] usb: gadget: r8a66597-udc: Convert to clk_prepare/unprepare
-Message-Id: <2042860.IXZhL6v7c2@avalon>
+Message-Id: <20131126195422.GJ24310@saruman.home>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1447123.kM1UcnN8mD"
+Content-Type: multipart/mixed; boundary="1qrhXh8iFgyYHgLh"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <2503238.g4sCZxTpb5@avalon> <20131126021239.GA22213@saruman.home>
-In-Reply-To: <20131126021239.GA22213@saruman.home>
+ <2042860.IXZhL6v7c2@avalon>
+In-Reply-To: <2042860.IXZhL6v7c2@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
+--1qrhXh8iFgyYHgLh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
---nextPart1447123.kM1UcnN8mD
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+On Tue, Nov 26, 2013 at 03:16:47AM +0100, Laurent Pinchart wrote:
+> Hi Felipe,
+>=20
+> On Monday 25 November 2013 20:12:39 Felipe Balbi wrote:
+> > Hi,
+> >=20
+> > On Tue, Nov 26, 2013 at 02:59:51AM +0100, Laurent Pinchart wrote:
+> > > > > > (2013/10/29 7:49), Laurent Pinchart wrote:
+> > > > > > > Turn clk_enable() and clk_disable() calls into
+> > > > > > > clk_prepare_enable()
+> > > > > > > and clk_disable_unprepare() to get ready for the migration to=
+ the
+> > > > > > > common clock framework.
+> > > > > > >=20
+> > > > > > > Cc: Felipe Balbi <balbi@ti.com>
+> > > > > > > Cc: linux-usb@vger.kernel.org
+> > > > > > > Signed-off-by: Laurent Pinchart
+> > > > > > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > > > >=20
+> > > > > > Thank you for the patch.
+> > > > > >=20
+> > > > > > Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> > > > >=20
+> > > > > Could you please pick this patch up ?
+> > > >=20
+> > > > after -rc1 is out, I don't see why not.
+> > >=20
+> > > Great then :-)
+> > >=20
+> > > As this patch is a dependency for other series that will go through
+> > > different trees, could you please provide a stable branch in your tree
+> > > with this patch included that you will push to v3.14 ?
+> >=20
+> > You guys are always killing me with those "stable branch" requests :-)
+> >=20
+> > I'll get one up tomorrow. I guess I can avoid a topic branch altogether
+> > if I just make this the first patch in "next" branch. I could push only
+> > $subject for now until you merge then I'll push other stuff. Is that
+> > enough for you ? My 'next' is always immutable.
+>=20
+> That sounds good, thank you. You can already push the other patches witho=
+ut=20
+> waiting for me, I can dig the commit ID of the first patch in your next=
+=20
+> branch.
 
-Hi Felipe,
+pushed, btw. you should have received my automatic email. If you merge
+my next, you'll get only that commit. I believe tomorrow I'll be able to
+push more commits into next.
 
-On Monday 25 November 2013 20:12:39 Felipe Balbi wrote:
-> Hi,
-> 
-> On Tue, Nov 26, 2013 at 02:59:51AM +0100, Laurent Pinchart wrote:
-> > > > > (2013/10/29 7:49), Laurent Pinchart wrote:
-> > > > > > Turn clk_enable() and clk_disable() calls into
-> > > > > > clk_prepare_enable()
-> > > > > > and clk_disable_unprepare() to get ready for the migration to the
-> > > > > > common clock framework.
-> > > > > > 
-> > > > > > Cc: Felipe Balbi <balbi@ti.com>
-> > > > > > Cc: linux-usb@vger.kernel.org
-> > > > > > Signed-off-by: Laurent Pinchart
-> > > > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > 
-> > > > > Thank you for the patch.
-> > > > > 
-> > > > > Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > > > 
-> > > > Could you please pick this patch up ?
-> > > 
-> > > after -rc1 is out, I don't see why not.
-> > 
-> > Great then :-)
-> > 
-> > As this patch is a dependency for other series that will go through
-> > different trees, could you please provide a stable branch in your tree
-> > with this patch included that you will push to v3.14 ?
-> 
-> You guys are always killing me with those "stable branch" requests :-)
-> 
-> I'll get one up tomorrow. I guess I can avoid a topic branch altogether
-> if I just make this the first patch in "next" branch. I could push only
-> $subject for now until you merge then I'll push other stuff. Is that
-> enough for you ? My 'next' is always immutable.
+--=20
+balbi
 
-That sounds good, thank you. You can already push the other patches without 
-waiting for me, I can dig the commit ID of the first patch in your next 
-branch.
-
--- 
-Regards,
-
-Laurent Pinchart
-
---nextPart1447123.kM1UcnN8mD
+--1qrhXh8iFgyYHgLh
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1.4.15 (GNU/Linux)
 
-iQEcBAABAgAGBQJSlASPAAoJEIkPb2GL7hl1atYH/jYc7L7FqFYL0AvV5Ol51FRY
-Qbo9E0WtevryFxjnP5/aD4c4jBHJTHBmbXQ3+ORzE530rXhNWxbRlZGzijq3cyfa
-nX1/c9lCdX+2ynb/hm2TqmIo2WyXkMO/2Ab6ka7+sFCgkAhi9GlOtuEz4jBNB9oj
-2o+YHToyvm4euvhxao1g0ZwltvK7BEPHIAGBi8rjraCgaJnj2HqszVpYiPJDfrYG
-My/dlSfnidiG9/gtUG6J2soPjtRpvHsG1oc9dh/1gfCTOCeboDyaOhnAo/o7acNY
-KWQKy7M37eGEU3hZ0lOFo/O2uRfSo5vVpI2nQuC43yWbvefKmbZSlTFVvvTJI6k=
-=zwqq
+iQIcBAEBAgAGBQJSlPxuAAoJEIaOsuA1yqRE1GoP/jFcVwGHicdOSmZHESBPxNWc
+W0/RpCOR4UvnAxQPusIQszKAl1hxsdKQa2T8NTAgBOtpvI0lXpc1GLFmvKoXL8fd
+WEyB5NkECD8IsB8wYRPcaZyDXcAY14AuiODIDiVF3fMFl9wRgsjGZG/YPfH7GGE2
+tugkYgxOE/QnIqhUaFTHgGqFQYjNid5SVZu5AiXmNggKNU8RUB8JnsGI83X0OFZX
+fBnwMU4f/rqMLIoGY845ijcwf2atMVEpj45dyIZG+xAF89UMG826GOjwzpsVqmwo
+j6yFsHzR0jms6drdqCMYIg/PEp5tOtWxYsLWGR+LCpeB4UtJohGuRzNHBBEYJ6Jl
+MKz/Qtz9AQotZGCQ+YQnV7gfLd7dLEnc8o9QPmmgTs7JUzbeXYAUiJ+YrOIk4X1m
+8GG/AJCHt/J7p5m5pKrlZqwP/jTJMHhiFQyB7mc5DGMJp6IV4HNYqztgsRyfUnbV
+g1/KtHjTDGPpaFhoYIN1H3vj70eAUf/29Zh620sNvBcD0O4OxlXv5qFYjYjLStn6
+sIvWvyuUFE5t1KqhpTX2NwFmlO1xmkOgURXTG/q4aJoWz3wbpiPAHL3jjVxccqcZ
+i82dQQjYLopNrgpjffxVCYYgPdM9ySdW3ctlvDZGPwkd4CwU5JpncRa0+C7kAH6P
+kH7kYQFqzEoLmoejIgdW
+=1uPY
 -----END PGP SIGNATURE-----
 
---nextPart1447123.kM1UcnN8mD--
-
+--1qrhXh8iFgyYHgLh--
