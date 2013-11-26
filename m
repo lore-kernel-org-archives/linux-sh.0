@@ -1,112 +1,101 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:23 +0000
-Subject: [PATCH v4 13/29] ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
-Message-Id: <1385594319-5758-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Nov 2013 07:32:10 +0000
+Subject: [PATCH RFC v2 08/17] ARM: shmobile: r8a7779: Add helper to read mode pins
+Message-Id: <1385451139-29686-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
+Add and use helper to read mode pins.
+This will be re-used when moving marzen-reference to
+the common clock framework.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 58 +++++++++++++++-------------------
- 1 file changed, 26 insertions(+), 32 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
+ 3 files changed, 17 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index cc94b64..605298b 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -40,41 +40,35 @@ void __init r8a73a4_pinmux_init(void)
- 					ARRAY_SIZE(pfc_resources));
- }
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index b7ce0e7..decf122 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -25,6 +25,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/r8a7779.h>
  
--#define SCIF_COMMON(scif_type, baseaddr, irq)			\
-+#define R8A73A4_SCIF(scif_type, _scscr, index, baseaddr, irq)	\
-+static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
- 	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
--	.irqs		= SCIx_IRQ_MUXED(irq)
+ /*
+  *		MD1 = 1			MD1 = 0
+@@ -59,9 +60,6 @@
+ #define MSTPCR6		IOMEM(0xffc80058)
+ #define MSTPCR7		IOMEM(0xffc80040)
+ 
+-#define MODEMR		0xffcc0020
 -
--#define SCIFA_DATA(index, baseaddr, irq)		\
--[index] = {						\
--	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
--	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+	.scscr		= _scscr,				\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
- }
+-
+ /* ioremap() through clock mapping mandatory to avoid
+  * collision with ARM coherent DMA virtual memory range.
+  */
+@@ -213,14 +211,9 @@ static struct clk_lookup lookups[] = {
  
--#define SCIFB_DATA(index, baseaddr, irq)	\
--[index] = {					\
--	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
--	.scscr = SCSCR_RE | SCSCR_TE,		\
--}
-+#define R8A73A4_SCIFA(index, baseaddr, irq)	\
-+	R8A73A4_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0, \
-+		     index, baseaddr, irq)
- 
--enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
-+#define R8A73A4_SCIFB(index, baseaddr, irq)	\
-+	R8A73A4_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE, \
-+		     index, baseaddr, irq)
- 
--static const struct plat_sci_port scif[] = {
--	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
--	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
--	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
--	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
--	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
--	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
--};
-+R8A73A4_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
-+R8A73A4_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
-+R8A73A4_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
-+R8A73A4_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
-+R8A73A4_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
-+R8A73A4_SCIFB(5, 0xe6cf0000, gic_spi(151)); /* SCIFB3 */
- 
--static inline void r8a73a4_register_scif(int idx)
--{
--	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
--				      sizeof(struct plat_sci_port));
--}
-+#define r8a73a4_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
- 
- static const struct renesas_irqc_config irqc0_data = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ31 */
-@@ -192,12 +186,12 @@ static struct resource cmt10_resources[] = {
- 
- void __init r8a73a4_add_dt_devices(void)
+ void __init r8a7779_clock_init(void)
  {
--	r8a73a4_register_scif(SCIFA0);
--	r8a73a4_register_scif(SCIFA1);
--	r8a73a4_register_scif(SCIFB0);
--	r8a73a4_register_scif(SCIFB1);
--	r8a73a4_register_scif(SCIFB2);
--	r8a73a4_register_scif(SCIFB3);
-+	r8a73a4_register_scif(0);
-+	r8a73a4_register_scif(1);
-+	r8a73a4_register_scif(2);
-+	r8a73a4_register_scif(3);
-+	r8a73a4_register_scif(4);
-+	r8a73a4_register_scif(5);
- 	r8a7790_register_cmt(10);
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = r8a7779_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	if (mode & MD(1)) {
+ 		plla_clk.rate = 1500000000;
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 5014145..bd66cd82 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -39,6 +39,7 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_init_late(void);
++extern u32 r8a7779_read_mode_pins(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8f94531..4e3fbfb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -874,6 +874,20 @@ void __init r8a7779_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
++#define MODEMR		0xffcc0020
++
++u32 __init r8a7779_read_mode_pins(void)
++{
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
++
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	return mode;
++}
++
+ static const char *r8a7779_compat_dt[] __initdata = {
+ 	"renesas,r8a7779",
+ 	NULL,
 -- 
-1.8.3.2
+1.8.4
 
