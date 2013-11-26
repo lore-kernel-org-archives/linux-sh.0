@@ -1,41 +1,74 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Nov 2013 07:04:22 +0000
-Subject: Re: [PATCH v2 3/3] ARM: shmobile: Koelsch: enable Ether in defconfig
-Message-Id: <20131118070422.GD27935@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Nov 2013 07:32:09 +0000
+Subject: [PATCH RFC v2 07/17] ARM: shmobile: r8a7779: Sort headers alphabetically
+Message-Id: <1385451139-29686-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201311150217.23563.sergei.shtylyov@cogentembedded.com>
- <201311150223.40632.sergei.shtylyov@cogentembedded.com>
- <20131115052919.GA16854@verge.net.au>
- <52868C1B.2080505@cogentembedded.com>
-In-Reply-To: <52868C1B.2080505@cogentembedded.com>
+References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Nov 16, 2013 at 12:03:23AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 11/15/2013 08:29 AM, Simon Horman wrote:
-> 
-> >>Enable the Ether driver in 'koelsch_defconfig' along with DHCP autoconfiguration
-> >>and NFS root.
-> 
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >Thanks.
-> 
-> >I think it is also appropriate to remove these too.
-> >To be hones their inclusion appears to have been an error on my part.
-> >And if nfsroot is being enabled it seems to be a good opportunity
-> >to get rid of them.
-> 
-> >CONFIG_BLK_DEV_INITRD=y
-> >CONFIG_INITRAMFS_SOURCE="../../initramfs/out/rootfs.arm.cpio"
-> >CONFIG_INITRAMFS_COMPRESSION_GZIP=y
-> 
->    Hm, where are you seeing these? Tag renesas-devel-v3.12-20131112
-> doesn't contain anything similar...
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-Sorry, please ignore the noise.
-I must have been looking at a local version by mistake.
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 4f9e3ec..e202c64 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -19,35 +19,35 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/kernel.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/traps.h>
++#include <linux/delay.h>
++#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+-#include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/irq.h>
++#include <linux/kernel.h>
+ #include <linux/leds.h>
+-#include <linux/dma-mapping.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_data/usb-rcar-phy.h>
++#include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+-#include <linux/spi/spi.h>
+ #include <linux/spi/sh_hspi.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mobile_sdhi.h>
+-#include <linux/mfd/tmio.h>
+-#include <media/soc_camera.h>
+-#include <mach/r8a7779.h>
++#include <linux/spi/spi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-#include <asm/traps.h>
++#include <mach/r8a7779.h>
++#include <media/soc_camera.h>
+ 
+ /* Fixed 3.3V regulator to be used by SDHI0 */
+ static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+-- 
+1.8.4
+
