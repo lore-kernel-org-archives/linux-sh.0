@@ -1,93 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:43 +0000
-Subject: [PATCH 13/16] ARM: shmobile: r8a7779: cleanup registration of sh_eth
-Message-Id: <be15182068582bc38281329d86d106adaca63fda.1385628709.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 26 Nov 2013 22:45:28 +0000
+Subject: [PATCH 1/2] usb: hcd: Remove USB phy if needed
+Message-Id: <1385505929-30926-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This can be used by the HCD drivers to auto-remove
+the external USB phy when it is no longer needed.
 
-sh_eth driver which needs platform data at the time of
-registration is not used.
-Now, ARM/shmobile aims to support DT,
-and the C code base board support will be removed
-if DT support is completed.
-Current driver registration method which needs platform data
-and which is not shared complicates codes.
-This means legacy C code cleanup after DT supporting
-will be more complicated
-This patch removes r8a7779_add_ether_device()
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 --
- arch/arm/mach-shmobile/setup-r8a7779.c        | 20 --------------------
- 2 files changed, 22 deletions(-)
+ drivers/usb/core/hcd.c  | 14 +++++++++++++-
+ include/linux/usb/hcd.h |  1 +
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 1cab247..5014145 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -3,7 +3,6 @@
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index 6bffb8c..7527c8e 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -44,6 +44,7 @@
  
- #include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
--#include <linux/sh_eth.h>
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
++#include <linux/usb/phy.h>
  
- /* HPB-DMA slave IDs */
- enum {
-@@ -39,7 +38,6 @@ extern void r8a7779_earlytimer_init(void);
- extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
--extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
- extern void r8a7779_init_late(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 51a43c5..8f94531 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -598,18 +598,6 @@ static struct platform_device ohci1_device = {
- 	.resource	= ohci1_resources,
- };
+ #include "usb.h"
  
--/* Ether */
--static struct resource ether_resources[] __initdata = {
--	{
--		.start	= 0xfde00000,
--		.end	= 0xfde003ff,
--		.flags	= IORESOURCE_MEM,
--	}, {
--		.start	= gic_iid(0xb4),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
- /* HPB-DMA */
+@@ -2603,7 +2604,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		return retval;
++		goto err_remove_phy;
+ 	}
  
- /* Asynchronous mode register bits */
-@@ -798,14 +786,6 @@ void __init r8a7779_add_standard_devices(void)
- 	r8a7779_register_hpb_dmae();
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2734,6 +2735,12 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
++err_remove_phy:
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ 	return retval;
  }
+ EXPORT_SYMBOL_GPL(usb_add_hcd);
+@@ -2806,6 +2813,11 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 	usb_put_dev(hcd->self.root_hub);
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ }
+ EXPORT_SYMBOL_GPL(usb_remove_hcd);
  
--void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
--{
--	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
--					  ether_resources,
--					  ARRAY_SIZE(ether_resources),
--					  pdata, sizeof(*pdata));
--}
--
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
- void __init __weak r8a7779_register_twd(void) { }
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index b8aba19..758ce80 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -134,6 +134,7 @@ struct usb_hcd {
+ 	unsigned		rh_registered:1;/* is root hub registered? */
+ 	unsigned		rh_pollable:1;	/* may we poll the root hub? */
+ 	unsigned		msix_enabled:1;	/* driver has MSI-X enabled? */
++	unsigned		remove_phy:1;	/* auto-remove USB phy */
  
+ 	/* The next flag is a stopgap, to be removed when all the HCDs
+ 	 * support the new root-hub polling mechanism. */
 -- 
-1.8.4
+1.8.3.1
 
