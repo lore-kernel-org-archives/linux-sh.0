@@ -1,40 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Nov 2013 00:12:12 +0000
-Subject: Re: [PATCH v2] serial: sh-sci: Fix warnings due to improper casts and printk formats
-Message-Id: <20131129001208.GA6462@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 26 Nov 2013 22:45:29 +0000
+Subject: [PATCH 2/2] usb: hcd: Initialize USB phy if needed
+Message-Id: <1385505929-30926-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385547037-13422-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131128072731.GB24146@verge.net.au>
- <1772107.qNxlNP4NDS@avalon>
-In-Reply-To: <1772107.qNxlNP4NDS@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Nov 28, 2013 at 03:00:35PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 28 November 2013 16:27:31 Simon Horman wrote:
-> > On Wed, Nov 27, 2013 at 11:10:37AM +0100, Laurent Pinchart wrote:
-> > > Use the %zu printk specifier to print size_t variables, and cast
-> > > pointers to uintptr_t instead of unsigned int where applicable. This
-> > > fixes warnings on platforms where pointers and/or dma_addr_t have a
-> > > different size than int.
-> > > 
-> > > Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> > > Cc: linux-serial@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > Laurent, I am assuming that you would like Greg to take this one.
-> 
-> Actually, as we have quite a few pending sh-sci patches interleaved with 
-> arch/arm patches, it would be easier if all sh-sci patches went through your 
-> tree for this kernel version. That's if Greg agrees of course.
+This adds external USB phy support to USB HCD driver that
+allows to find and initialize external USB phy, bound to
+the HCD, when the HCD is added.
+The usb_add_hcd function returns -EPROBE_DEFER if the USB
+phy, bound to the HCD, is not ready.
+If no USB phy is bound, the HCD is initialized as usual.
 
-Thanks, that is fine by me so long as its fine by Greg and I get
-an Ack from him for each of the sh-sci that go into my tree.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+---
+ drivers/usb/core/hcd.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index 7527c8e..649506b 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -2589,6 +2589,26 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
++#ifdef CONFIG_USB_PHY
++	if (!hcd->phy) {
++		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				return retval;
++		} else {
++			retval = usb_phy_init(phy);
++			if (retval) {
++				usb_put_phy(phy);
++				return retval;
++			}
++			hcd->phy = phy;
++			hcd->remove_phy = 1;
++		}
++	}
++#endif
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+-- 
+1.8.3.1
+
