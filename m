@@ -1,29 +1,49 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 20 Nov 2013 13:34:34 +0000
-Subject: Re: [PATCH 01/05 v2] gpio: rcar: Use lazy disable
-Message-Id: <CACRpkda5=hmd7AXy-kFxBaMLktia41qwbYW-0hMATtao8uL3HA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Nov 2013 07:47:12 +0000
+Subject: [PATCH v2 3/3] ARM: shmobile: marzen: enable HSPI0 in DTS
+Message-Id: <1385452032-11544-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131120002259.27342.35575.sendpatchset@w520>
-	<20131120002308.27342.34176.sendpatchset@w520>
-In-Reply-To: <20131120002308.27342.34176.sendpatchset@w520>
+References: <1385452032-11544-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385452032-11544-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 20, 2013 at 1:23 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+Based on work for the bockw board by Kuninori Morimoto.
 
-> From: Magnus Damm <damm@opensource.se>
->
-> Set the ->irq_enable() and ->irq_disable() methods to NULL
-> to enable lazy disable of interrupts. This by itself provides
-> some level of optimization, but is mainly enabled as ground
-> work for future Suspend-to-RAM wake up support.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Patch applied w/Laurent's ACK.
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 918085c..76f5eef 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -97,6 +97,11 @@
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0";
++		renesas,function = "hspi0";
++	};
+ };
+ 
+ &sdhi0 {
+@@ -107,3 +112,9 @@
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
+-- 
+1.8.4
 
-Yours,
-Linus Walleij
