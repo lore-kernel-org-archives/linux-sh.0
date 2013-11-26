@@ -1,48 +1,34 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:41:45 +0000
-Subject: [PATCH 2/3] spi: rcar: Fix pointer cast in the remove function
-Message-Id: <1385512906-13108-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Nov 2013 07:32:13 +0000
+Subject: [PATCH RFC v2 11/17] ARM: shmobile: r8a7779: Do not include sh_clk.h in r8a7779.h
+Message-Id: <1385451139-29686-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-The platform driver data is set to point to the rspi_data structure at
-probe time. Calling spi_master_get() on the pointer is just plain wrong
-and only works by chance. Fix it by using the platform driver data
-directly.
+Do not include sh_clk.h in r8a7779.h as it is not necessary.
 
-Cc: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-rspi.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index a3dca1d..621be5d 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -885,14 +885,13 @@ static void rspi_release_dma(struct rspi_data *rspi)
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index bd66cd82..8284962 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -1,7 +1,6 @@
+ #ifndef __ASM_R8A7779_H__
+ #define __ASM_R8A7779_H__
  
- static int rspi_remove(struct platform_device *pdev)
- {
--	struct rspi_data *rspi = spi_master_get(platform_get_drvdata(pdev));
-+	struct rspi_data *rspi = platform_get_drvdata(pdev);
+-#include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
  
- 	spi_unregister_master(rspi->master);
- 	rspi_release_dma(rspi);
- 	free_irq(platform_get_irq(pdev, 0), rspi);
- 	clk_put(rspi->clk);
- 	iounmap(rspi->addr);
--	spi_master_put(rspi->master);
- 
- 	return 0;
- }
+ /* HPB-DMA slave IDs */
 -- 
-1.8.3.2
+1.8.4
 
