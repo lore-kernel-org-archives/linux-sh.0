@@ -1,69 +1,74 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Mon, 11 Nov 2013 19:53:31 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 26 Nov 2013 01:59:51 +0000
 Subject: Re: [PATCH 09/12] usb: gadget: r8a66597-udc: Convert to clk_prepare/unprepare
-Message-Id: <20131111195330.GE19212@saruman.home>
+Message-Id: <2503238.g4sCZxTpb5@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="MIdTMoZhcV1D07fI"
+Content-Type: multipart/mixed; boundary="nextPart1785511.lpaN2n2fn7"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383000569-8916-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <526F8427.8000209@renesas.com> <1930202.N3RGv6418i@avalon>
-In-Reply-To: <1930202.N3RGv6418i@avalon>
+ <1930202.N3RGv6418i@avalon> <20131111195330.GE19212@saruman.home>
+In-Reply-To: <20131111195330.GE19212@saruman.home>
 To: linux-arm-kernel@lists.infradead.org
 
---MIdTMoZhcV1D07fI
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Sat, Nov 09, 2013 at 03:09:33PM +0100, Laurent Pinchart wrote:
-> Hi Felipe,
->=20
-> On Tuesday 29 October 2013 18:47:19 Shimoda, Yoshihiro wrote:
-> > Hi Laurent-san,
-> >=20
-> > (2013/10/29 7:49), Laurent Pinchart wrote:
-> > > Turn clk_enable() and clk_disable() calls into clk_prepare_enable() a=
-nd
-> > > clk_disable_unprepare() to get ready for the migration to the common
-> > > clock framework.
-> > >=20
-> > > Cc: Felipe Balbi <balbi@ti.com>
-> > > Cc: linux-usb@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> >=20
-> > Thank you for the patch.
-> >=20
-> > Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->=20
-> Could you please pick this patch up ?
+--nextPart1785511.lpaN2n2fn7
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-after -rc1 is out, I don't see why not.
+Hi Felipe,
 
---=20
-balbi
+On Monday 11 November 2013 13:53:31 Felipe Balbi wrote:
+> On Sat, Nov 09, 2013 at 03:09:33PM +0100, Laurent Pinchart wrote:
+> > Hi Felipe,
+> > 
+> > On Tuesday 29 October 2013 18:47:19 Shimoda, Yoshihiro wrote:
+> > > Hi Laurent-san,
+> > > 
+> > > (2013/10/29 7:49), Laurent Pinchart wrote:
+> > > > Turn clk_enable() and clk_disable() calls into clk_prepare_enable()
+> > > > and clk_disable_unprepare() to get ready for the migration to the
+> > > > common clock framework.
+> > > > 
+> > > > Cc: Felipe Balbi <balbi@ti.com>
+> > > > Cc: linux-usb@vger.kernel.org
+> > > > Signed-off-by: Laurent Pinchart
+> > > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > 
+> > > Thank you for the patch.
+> > > 
+> > > Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> > 
+> > Could you please pick this patch up ?
+> 
+> after -rc1 is out, I don't see why not.
 
---MIdTMoZhcV1D07fI
+Great then :-)
+
+As this patch is a dependency for other series that will go through different 
+trees, could you please provide a stable branch in your tree with this patch 
+included that you will push to v3.14 ?
+
+-- 
+Regards,
+
+Laurent Pinchart
+
+--nextPart1785511.lpaN2n2fn7
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJSgTW6AAoJEIaOsuA1yqREDuEP/11VUo8Dl1aGHB/XDNwG1Z0J
-Erch6pGeRHYe0t6tArBUl9mQ6FXDScrpkg7V4KUzGFZwwflwsoWP3w/2Qlw8Lpc1
-ioQSgRDoQPQXINcfefvZC4Q3ofi4vW9NNHJWkC/4S263ilAFaGyU4xbdeekEH5ZH
-CG6Lm1cG/zfW3fISLvsFgss0x0XbvC88uZZXZbKcfeUKRuoPGhPHUgLY6pLEaPzT
-q8q7zUXHiNaUi3AGQk+/qHH8IXv8Ui9bF44gWX1k3phgr6VOZf+zFvtLdDOTp/YY
-46ZfP6GaKgS339dZHOFsgIauw+9ObjYGde9cL9o1wq2neJ4zrJcHp8D+tqIJGip4
-BbVaHslvoP9MXxHWECksoJ455tyhEsLnLq23AaZg9cxBLY07WRbOTy0bqU95JwD8
-Ap9ktj34Q26bN3GKnVkL/eaLZxfSUL9x00NmbayM3YQfBdtH5bCXFTF7Ja5xN/d0
-j5Iz7+og6ljQHKDjSEeL8ZqyfFfdNda1hCU5+s8xKn9cb/y3yf3F2hzUd92aNT2a
-tkQZMVGiuQs3a+xzA3WPh2DbnNjPN0AYCLYR3UJahggMxWxby1egD2B4ZtEfcXM8
-XPNaDIsU8XtwG8KcoJowYqSfktjP2gy9Xsxr9Atrx56dqvwTYvjkwYfrcvlycaVH
-jGunwPi9YrryYYA9nt9m
-=+0cu
+iQEcBAABAgAGBQJSlACcAAoJEIkPb2GL7hl1UMYH/1aK4Qy1rr5gx9wxs0c4+JDc
+sBzBezlS0pAPJH2ULI97YC5SnCj+VHFhBUO4n66FcAoCJpaK0JroEt8OYHZ7c80N
+AdUMKPlhkcW5Pdr+Vt2/WNXFKTiba6xkl2Dp0t3X1MkD8ekCH6WTMEgOVat455Zf
+MTsZxsB2+XVPvBqTjYsLwdWwMN+kpNR9DzLx28OqV8kLMZtxRj9MNRQQemvCgfKS
+NmXD/4BhvefBNL1ltbFwEhvf/Xf2YCNecEuubni0I2cOfRxwal7oAtdlna4TcXm5
+K1I2F7GVtM3J+pJR7oR7Hz/9KIIhvBFkWmUCiibI/07ESu8a7AFL6YWurmxKqF8=
+=9vgg
 -----END PGP SIGNATURE-----
 
---MIdTMoZhcV1D07fI--
+--nextPart1785511.lpaN2n2fn7--
+
