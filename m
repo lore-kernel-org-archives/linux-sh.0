@@ -1,60 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 06 Nov 2013 08:46:24 +0000
-Subject: Re: [PATCH v2 19/19] fbdev: sh-mobile-lcdcfb: Enable the driver on all ARM platforms
-Message-Id: <CAMuHMdWaprjsfyO548HCzou4W0yP1nqfw2rP66BudXWgY7uKww@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 26 Nov 2013 01:21:18 +0000
+Subject: [PATCH 1/2] ARM: shmobile: kzm9g-reference: Add PCF8575 GPIO extender to DT
+Message-Id: <1385428879-26849-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383086274-11049-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <alpine.DEB.2.02.1310312039330.13521@ayla.of.borg>
- <1671829.6znfm3IPYO@avalon>
-In-Reply-To: <1671829.6znfm3IPYO@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Nov 6, 2013 at 1:27 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> +#ifdef CONFIG_PM_SLEEP
->>  static int sh_mobile_meram_suspend(struct device *dev)
->>  {
->>       struct platform_device *pdev = to_platform_device(dev);
->> @@ -592,7 +593,9 @@ static int sh_mobile_meram_suspend(struct device *dev)
->>       }
->>       return 0;
->>  }
->> +#endif
->>
->> +#ifdef CONFIG_PM_RUNTIME
->>  static int sh_mobile_meram_resume(struct device *dev)
->>  {
->>       struct platform_device *pdev = to_platform_device(dev);
->> @@ -611,6 +614,7 @@ static int sh_mobile_meram_resume(struct device *dev)
->>               meram_write_reg(priv->base, common_regs[i], priv->regs[i]);
->>       return 0;
->>  }
->> +#endif
->>
->>  static UNIVERSAL_DEV_PM_OPS(sh_mobile_meram_dev_pm_ops,
->>                           sh_mobile_meram_suspend,
->
-> I'm a bit surprised, looking at the definition of UNIVERSAL_DEV_PM_OPS, I
-> would have thought that both functions would be used when either
-> CONFIG_PM_SLEEP or CONFIG_PM_RUNTIME is defined. I would thus have guarded
-> both functions with #if defined(CONFIG_PM_SLEEP) ||
-> defined(CONFIG_PM_RUNTIME).
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-You're right. I missed that both function pointers are passed to both macros.
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 12fdfaa..d58877d 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -186,6 +186,17 @@
+ 	pinctrl-0 = <&i2c3_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	pcf8575: gpio@20 {
++		compatible = "nxp,pcf8575";
++		reg = <0x20>;
++		interrupt-parent = <&irqpin2>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
+ };
+ 
+ &mmcif {
+-- 
+1.8.3.2
 
-Will send v2.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
