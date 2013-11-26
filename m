@@ -1,22 +1,74 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 14 Nov 2013 22:14:38 +0000
-Subject: [PATCH 0/2] Add Ether support for R8A7791/Koelsch board
-Message-Id: <201311150214.46245.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Nov 2013 07:32:15 +0000
+Subject: [PATCH RFC v2 13/17] ARM: shmobile: marzen-reference: Initialize CPG device
+Message-Id: <1385451139-29686-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On multiplatform kernels clocks are handled by the CCF CPG driver. It
+must be explicitly initialized by a call to r8a7779_clocks_init() with
+the value of the boot mode pins.
 
-   Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-v3.12-20131112' tag. Here we add the Ether support to the
-R8A7791/Koelsch board. The patchset requires the 'sh_eth' driver R8A7791
-support patch posted earlier in order to work.
+Based on similar work for the Koelsch board by Laurent Pinchart.
 
-[1/3] ARM: shmobile: r8a7791: add Ether clock
-[2/3] ARM: shmobile: Koelsch: add Ether support
-[3/3] ARM: shmobile: Koelsch: enable Ether in defconfig
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-WBR, Sergei
+---
+v2
+* Correct changelog to refer to r8a7779_clocks_init()
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index d3e8319..e261431 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,7 +19,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/clocksource.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -27,11 +28,17 @@
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ 
+-static void __init marzen_init(void)
++static void __init marzen_init_timer(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+-	of_clk_init(NULL);
+-#else
++	r8a7779_clocks_init(r8a7779_read_mode_pins());
++#endif
++	clocksource_of_init();
++}
++
++static void __init marzen_init(void)
++{
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7779_clock_init();
+ #endif
+ 	r8a7779_add_standard_devices_dt();
+@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_init_delay,
++	.init_time	= marzen_init_timer,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
+-- 
+1.8.4
+
