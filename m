@@ -1,80 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Nov 2013 07:32:16 +0000
-Subject: [PATCH RFC v2 14/17] ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and CMT
-Message-Id: <1385451139-29686-15-git-send-email-horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 26 Nov 2013 22:45:27 +0000
+Subject: [V2 PATCH 0/2] Defer HCD init until the external PHY, bound to the HCD is ready
+Message-Id: <1385505929-30926-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Now that the common clock framework is supported, the clock lookup
-entries in clock-r8a7779.c are not registered anymore. Devices must
-instead reference their clocks in the device tree. However, SCIF and CMT
-devices are still instantiated through platform code, and thus need a
-clock lookup entry.
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This also adds generic external phy support that allows
+the HCD driver to search for a USB phy, bound to the HCD,
+when the HC is being added.
 
-Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-the corresponding devices. This will be removed when the SCIF and CMT
-devices will be instantiated from the device tree.
+If the USB PHY is found, it is initialized and the remove_phy flag
+is set. In case PHY is not ready, the usb_add_hcd function returns
+the -EPROBE_DEFER error code which defers HCD probing till the PHY
+becomes ready.
+If no PHY is bound to the HCD, or it has been initialized by
+the glue-driver before calling usb_add_hcd(), the HCD is
+added as usual.
 
-Based on work for the Koelsch board by Laurent Pinchart.
+This approach can be used to initialize the external PHY for
+the R-Car PCI USB hosts, that share USB ports with USBHS/USBSS devices.
+All we need to do is to make R-Car Gen2 platform code bind the
+Gen2 USB phy device to the PCI HC devices, and make the phy-rcar-gen2-usb
+driver register USB phy with usb_add_phy_dev() AOT usb_add_phy() callback.
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 28 ++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
+Changes from previous version:
+* Used #ifdef CONFIG_USB_PHY instead of introducing new config option.
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index e261431..1a2fac1 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,7 +19,9 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk.h>
- #include <linux/clk/shmobile.h>
-+#include <linux/clkdev.h>
- #include <linux/clocksource.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
-@@ -38,7 +40,31 @@ static void __init marzen_init_timer(void)
- 
- static void __init marzen_init(void)
- {
--#ifndef CONFIG_COMMON_CLK
-+#ifdef CONFIG_COMMON_CLK
-+	/*
-+	 * This is a really crude hack to provide clkdev support to the SCIF
-+	 * and CMT devices until they get moved to DT.
-+	 */
-+	static const char * const scif_names[] = {
-+		"scif0", "scif1", "scif2", "scif3", "scif4", "scif5",
-+	};
-+	struct clk *clk;
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(scif_names); i++) {
-+		clk = clk_get(NULL, scif_names[i]);
-+		if (clk) {
-+			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
-+			clk_put(clk);
-+		}
-+	}
-+
-+	clk = clk_get(NULL, "cmt0");
-+	if (clk) {
-+		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_put(clk);
-+	}
-+#else
- 	r8a7779_clock_init();
- #endif
- 	r8a7779_add_standard_devices_dt();
+Valentine Barshak (2):
+  usb: hcd: Remove USB phy if needed
+  usb: hcd: Initialize USB phy if needed
+
+ drivers/usb/core/hcd.c  | 34 +++++++++++++++++++++++++++++++++-
+ include/linux/usb/hcd.h |  1 +
+ 2 files changed, 34 insertions(+), 1 deletion(-)
+
 -- 
-1.8.4
+1.8.3.1
 
