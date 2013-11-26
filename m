@@ -1,52 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:30 +0000
-Subject: [PATCH v2 18/29] ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
-Message-Id: <1384054421-13357-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 26 Nov 2013 07:32:11 +0000
+Subject: [PATCH RFC v2 09/17] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
+Message-Id: <1385451139-29686-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+r8a7779_earlytimer_init() calls r8a7779_clock_init() and
+r8a7779_clock_init() is defined in clock-r8a7779.c.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
+as will be the case when marzen-reference moves to use
+the common clock framework, then setup-r8a7779.c is compiled
+but clock-r8a7779.c is not.
+
+As r8a7779_earlytimer_init() is not used by marzen-reference
+simply move it to clock-r8a7779.c.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
+ 2 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 9c94f34..55ed98f 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -75,16 +75,21 @@ void __init sh73a0_pinmux_init(void)
- #define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF,			\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
- 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
- 	.scscr		= SCSCR_RE | SCSCR_TE,			\
- };								\
- 								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
-+};								\
-+								\
- static struct platform_device scif##index##_device = {		\
- 	.name		= "sh-sci",				\
- 	.id		= index,				\
-+	.resource	= scif##index##_resources,		\
-+	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
- 	.dev		= {					\
- 		.platform_data	= &scif##index##_platform_data,	\
- 	},							\
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index decf122..182a71a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -23,6 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <linux/sh_timer.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7779.h>
+@@ -267,3 +268,13 @@ void __init r8a7779_clock_init(void)
+ 	else
+ 		panic("failed to setup r8a7779 clocks\n");
+ }
++
++/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
++void __init __weak r8a7779_register_twd(void) { }
++
++void __init r8a7779_earlytimer_init(void)
++{
++	r8a7779_clock_init();
++	r8a7779_register_twd();
++	shmobile_earlytimer_init();
++}
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 4e3fbfb..73bb67f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -786,16 +786,6 @@ void __init r8a7779_add_standard_devices(void)
+ 	r8a7779_register_hpb_dmae();
+ }
+ 
+-/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+-void __init __weak r8a7779_register_twd(void) { }
+-
+-void __init r8a7779_earlytimer_init(void)
+-{
+-	r8a7779_clock_init();
+-	r8a7779_register_twd();
+-	shmobile_earlytimer_init();
+-}
+-
+ void __init r8a7779_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7779_devices_dt,
 -- 
-1.8.1.5
+1.8.4
 
