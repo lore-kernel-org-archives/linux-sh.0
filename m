@@ -1,35 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Nov 2013 05:17:47 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Nov 2013 08:51:16 +0000
 Subject: Re: [PATCH RFC v2 15/17] ARM: shmobile: Remove non-multiplatform Marzen reference support
-Message-Id: <20131127051746.GI27704@verge.net.au>
+Message-Id: <CANqRtoSNDC7+qnu5Nf-UTHXNDf680o8Ex9_XQJWAUqVfjKbi0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
  <1385451139-29686-16-git-send-email-horms+renesas@verge.net.au>
- <1902966.4sLBPLdrZF@avalon>
-In-Reply-To: <1902966.4sLBPLdrZF@avalon>
+In-Reply-To: <1385451139-29686-16-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 26, 2013 at 03:52:54PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 26 November 2013 16:32:17 Simon Horman wrote:
-> > Now that r8a7779 has CCF support remove the legacy Marzen reference
-> > Kconfig bits CONFIG_MACH_MARZEN_REFERENCE for the non-multiplatform
-> > case.
-> > 
-> > Starting from this commit Marzen board support is always enabled via
-> > CONFIG_MACH_MARZEN, and CONFIG_ARCH_MULTIPLATFORM is used to select
-> > between board-marzen.c and board-marzen-reference.c
-> > 
-> > The file board-marzen-reference.c can no longer be used together with
-> > the legacy sh-clk clock framework, instead CCF is used.
-> 
-> You should then modify it to remove the #ifdef CONFIG_COMMON_CLK conditional 
-> compilation.
+On Tue, Nov 26, 2013 at 4:32 PM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Now that r8a7779 has CCF support remove the legacy Marzen reference
+> Kconfig bits CONFIG_MACH_MARZEN_REFERENCE for the non-multiplatform
+> case.
+>
+> Starting from this commit Marzen board support is always enabled via
+> CONFIG_MACH_MARZEN, and CONFIG_ARCH_MULTIPLATFORM is used to select
+> between board-marzen.c and board-marzen-reference.c
+>
+> The file board-marzen-reference.c can no longer be used together with
+> the legacy sh-clk clock framework, instead CCF is used.
+>
+> Based on work for the Koelsch board by Laurent Pinchart.
+>
+> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>
+> ---
+> v2
+> * Correct changelog to refer to marzen instead of koelsch
+> * Do not add typo to Makefile
 
-Thanks, will do.
+I think we need to discuss _when_ to do this in more detail. I know
+this follows the same style as Laurent's patches, but I don't think
+we're ready to flip the switch yet. I propose that we let DT reference
+coexist with multiplatform and non-multiplatform cases for a while to
+make testing easier and give time to migrate.
+
+Cheers,
+
+/ magnus
