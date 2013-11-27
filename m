@@ -1,45 +1,39 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 28 Nov 2013 10:27:12 +0000
-Subject: Re: [PATCH 1/2] spi: sh-msiof: Use devm_* managed allocators
-Message-Id: <20131128102712.GH14725@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="RPn/zOJtKokylJL7"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 00:41:44 +0000
+Subject: [PATCH 1/3] spi: rcar: Fix uninitialized variable warning
+Message-Id: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org
 
+The transfer data length variable is set based on the desired access
+size, without a default case. This results in a compiler warning, even
+though the access size is always set to a supported value. Create a
+default case to silence the warning.
 
---RPn/zOJtKokylJL7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Cc: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/spi/spi-rspi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-On Thu, Nov 28, 2013 at 02:39:42AM +0100, Laurent Pinchart wrote:
-> This simplifies error and cleanup code paths.
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 58449ad..a3dca1d 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -268,7 +268,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 		spcmd = SPCMD_SPB_8BIT;
+ 	else if (access_size = 16)
+ 		spcmd = SPCMD_SPB_16BIT;
+-	else if (access_size = 32)
++	else
+ 		spcmd = SPCMD_SPB_32BIT;
+ 
+ 	spcmd |= SPCMD_SCKDEN | SPCMD_SLNDEN | SPCMD_SSLKP | SPCMD_SPNDEN;
+-- 
+1.8.3.2
 
-Applied, thanks.
-
---RPn/zOJtKokylJL7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSlxp9AAoJELSic+t+oim9ML0QAIlDRFUzHljjaYXlJAfntdOP
-LilMIK4ycxlcEnkqHdUoDRNfjHpiPKgo97wrqjwIOs/5rZ9tppFhJFt4rTzmQY8m
-CPJ6MVRzhsx8lSVdYvYHodLn8/lf4IlJIoBBqKfDzC6AOe93aTRfOgIkCdXGe8YK
-yjjtIpWvcq+J6cqiozqF/Ea50FZsz96p6TXXK7riNrSjxig2np4arM1b9OzogtH5
-aiqpai71vDVJ47wXOv+BTu/0o6daQsd6vbcoxzc8yzOhDDPZ54Xs20Lyr2T8ygQo
-V5jsTW3okvnm+FAsny9POH8PgeA3jCMoUXNB/KKCR+O/JSN+t4f0IxiPAgRevKdt
-DIGhfrDK/cmH5h6tq8ueBtOKBfE5Q7oj6B0VKsuC9zXOBOu3KBikUHz6Yuf1FoJu
-b1+AXv+3sPc7LhR7e8yrgI9Fs+pN9kSiBvytAC7jzLvzZhwirGrg+ctzU6bo0udy
-bwP8j5jJGl9fONWdvrq2LiZU1+n18DatUN25cdhqj6fqso6LRZf3+mn+OTnEzFvu
-Rjg0uhPbox+LZKiMIMBr5CF+CkUtvIvxO6lZiawhSLCpUgOV9tcRoYXro7rDti4d
-Z3SddeQaSchbKc+Pr6CcZBLvzofwnqGVTSeKMLOSEA2kzd9Ol7PB4EXf65hskxaN
-XeYqYj56TTnOOfFVMpgj
-=fP8L
------END PGP SIGNATURE-----
-
---RPn/zOJtKokylJL7--
