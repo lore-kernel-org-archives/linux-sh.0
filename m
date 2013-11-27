@@ -1,51 +1,38 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:15:55 +0000
-Subject: [PATCH v2 8/8] ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
-Message-Id: <1384053355-30703-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:15 +0000
+Subject: [PATCH v4 05/29] serial: sh-sci: Set the UPF_FIXED_PORT flag
+Message-Id: <1385594319-5758-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Now that the r8a7790 DT platforms use the common clock framework,
-there's no need to manually create clock aliases for devices
-instantiated through DT, as those devices will reference their clocks
-directly in the device tree. Remove those aliases.
+The base address, IRQ and baud rate generator parent clock rate can't be
+changed by userspace. Mark the port as fixed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 10 ----------
- 1 file changed, 10 deletions(-)
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 9fa39d1..12770cf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -281,23 +281,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
--	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
--	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
--	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
--	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
--	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d1d779f..5edba3f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2243,7 +2243,7 @@ static int sci_init_single(struct platform_device *dev,
+ 
+ 	port->mapbase		= p->mapbase;
+ 	port->type		= p->type;
+-	port->flags		= p->flags;
++	port->flags		= UPF_FIXED_PORT | p->flags;
+ 	port->regshift		= p->regshift;
+ 
+ 	/*
 -- 
-1.8.1.5
+1.8.3.2
 
