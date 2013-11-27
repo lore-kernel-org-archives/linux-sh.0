@@ -1,77 +1,61 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:02:29 +0000
-Subject: [PATCH v3 28/29] serial: sh-sci: Add device tree bindings documentation
-Message-Id: <1384869751-9786-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 00:29:51 +0000
+Subject: [PATCH 2/3] DMA: shdma: Fix warnings due to declared but unused symbols
+Message-Id: <1385512192-10303-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Document the device tree bindings for the sci serial port devices.
+Several functions and variables are use on SH_CPU4 or ARM only. Guard
+their declaration with conditional compilation directives to avoid
+warnings.
 
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Vinod Koul <vinod.koul@intel.com>
+Cc: dmaengine@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../bindings/serial/renesas,sci-serial.txt         | 46 ++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+ drivers/dma/sh/shdmac.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-new file mode 100644
-index 0000000..f372cf2
---- /dev/null
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -0,0 +1,46 @@
-+* Renesas SH-Mobile Serial Communication Interface
-+
-+Required properties:
-+
-+  - compatible: Must contain one of the following:
-+
-+    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
-+    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
-+    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
-+    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
-+    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2) SCIF compatible UART.
-+    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
-+    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
-+    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
-+    - "renesas,scif" for generic SCIF compatible UART.
-+    - "renesas,scifa" for generic SCIFA compatible UART.
-+    - "renesas,scifb" for generic SCIFB compatible UART.
-+    - "renesas,hscif" for generic HSCIF compatible UART.
-+
-+    When compatible with the generic version, nodes must list the
-+    SoC-specific version corresponding to the platform first followed by the
-+    generic version.
-+
-+  - reg: Base address and length of the I/O registers used by the UART.
-+  - interrupts: Must contain an interrupt-specifier for the SCIx interrupt.
-+
-+  - clocks: Must contain a phandle and clock-specifier pair for each entry
-+    in clock-names.
-+  - clock-names: Must contain "sci_ick" for the SCIx UART interface clock.
-+
-+Note: Each enabled SCIx UART should have an alias correctly numbered in the
-+"aliases" node.
-+
-+Example:
-+	aliases {
-+		serial0 = &scifa0;
-+	};
-+
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+	};
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 0d765c0..2150987 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -443,6 +443,7 @@ static bool sh_dmae_reset(struct sh_dmae_device *shdev)
+ 	return ret;
+ }
+ 
++#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
+ static irqreturn_t sh_dmae_err(int irq, void *data)
+ {
+ 	struct sh_dmae_device *shdev = data;
+@@ -453,6 +454,7 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
+ 	sh_dmae_reset(shdev);
+ 	return IRQ_HANDLED;
+ }
++#endif
+ 
+ static bool sh_dmae_desc_completed(struct shdma_chan *schan,
+ 				   struct shdma_desc *sdesc)
+@@ -685,9 +687,12 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ static int sh_dmae_probe(struct platform_device *pdev)
+ {
+ 	const struct sh_dmae_pdata *pdata;
+-	unsigned long irqflags = 0,
+-		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
+-	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
++	unsigned long chan_flag[SH_DMAE_MAX_CHANNELS] = {};
++	int chan_irq[SH_DMAE_MAX_CHANNELS];
++#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
++	unsigned long irqflags = 0;
++	int errirq;
++#endif
+ 	int err, i, irq_cnt = 0, irqres = 0, irq_cap = 0;
+ 	struct sh_dmae_device *shdev;
+ 	struct dma_device *dma_dev;
 -- 
 1.8.3.2
 
