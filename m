@@ -1,21 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Nov 2013 03:29:11 +0000
-Subject: Re: [PATCH] ARM: shmobile: Select USE_OF on EMEV2
-Message-Id: <20131113032909.GE22484@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 00:35:11 +0000
+Subject: [PATCH] mtd: sh_flctl: Fix warnings due to improper casts
+Message-Id: <1385512511-10477-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131108100934.24755.56317.sendpatchset@w520>
-In-Reply-To: <20131108100934.24755.56317.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mtd@lists.infradead.org, David Woodhouse <dwmw2@infradead.org>
 
-On Fri, Nov 08, 2013 at 07:09:34PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Now when the legacy KZM9D board code is gone, make sure
-> USE_OF is selected in case of the EMEV2 SoC.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Cast pointers to unsigned long instead of unsigned int. This fixes
+warnings on platforms where pointers have a different size than int.
 
-Thanks, I have queued this up.
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: linux-mtd@lists.infradead.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/mtd/nand/sh_flctl.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index a3c84eb..b1e2b13 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -151,7 +151,7 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+ 	flctl->chan_fifo0_tx = dma_request_channel(mask, shdma_chan_filter,
+-					    (void *)pdata->slave_id_fifo0_tx);
++			(void *)(unsigned long)pdata->slave_id_fifo0_tx);
+ 	dev_dbg(&pdev->dev, "%s: TX: got channel %p\n", __func__,
+ 		flctl->chan_fifo0_tx);
+ 
+@@ -168,7 +168,7 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
+ 		goto err;
+ 
+ 	flctl->chan_fifo0_rx = dma_request_channel(mask, shdma_chan_filter,
+-					    (void *)pdata->slave_id_fifo0_rx);
++			(void *)(unsigned long)pdata->slave_id_fifo0_rx);
+ 	dev_dbg(&pdev->dev, "%s: RX: got channel %p\n", __func__,
+ 		flctl->chan_fifo0_rx);
+ 
+-- 
+1.8.3.2
+
