@@ -1,79 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 26 Nov 2013 02:02:48 +0000
-Subject: Re: [PATCH 08/12] mmc: sh_mobile_sdhi: Convert to clk_prepare/unprepare
-Message-Id: <2163819.oJv92Ekf2I@avalon>
+From: Paul Walmsley <pwalmsley@nvidia.com>
+Date: Wed, 27 Nov 2013 00:49:38 +0000
+Subject: [PATCH] ARM: shmobile: mackerel: clk_round_rate() can return a zero to indicate an error
+Message-Id: <alpine.DEB.2.02.1311261647550.11450@tamien>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <Pine.LNX.4.64.1310290907520.8404@axis700.grange> <3901213.QOEV1AdNoe@avalon>
-In-Reply-To: <3901213.QOEV1AdNoe@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Chris,
 
-On Saturday 09 November 2013 13:56:40 Laurent Pinchart wrote:
-> Hi Chris,
-> 
-> Could you please pick this patch up ?
+Treat both negative and zero return values from clk_round_rate() as
+errors.  This is needed since subsequent patches will convert
+clk_round_rate()'s return value to be an unsigned type, rather than a
+signed type, since some clock sources can generate rates higher than
+(2^31)-1 Hz.
 
-Ping ?
+Eventually, when calling clk_round_rate(), only a return value of zero
+will be considered a error.  All other values will be considered valid
+rates.  The comparison against values less than 0 is kept to preserve
+the correct behavior in the meantime.
 
-As this patch is a dependency for other series that will go through different 
-trees, could you please provide a stable branch in your tree with this patch 
-included that you will push to v3.14 ?
+Signed-off-by: Paul Walmsley <pwalmsley@nvidia.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+---
+Applies on v3.13-rc1.  See also:
 
-> On Tuesday 29 October 2013 09:09:37 Guennadi Liakhovetski wrote:
-> > On Mon, 28 Oct 2013, Laurent Pinchart wrote:
-> > > Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
-> > > clk_disable_unprepare() to get ready for the migration to the common
-> > > clock framework.
-> > > 
-> > > Cc: Chris Ball <cjb@laptop.org>
-> > > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > Cc: linux-mmc@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > 
-> > Thanks
-> > Guennadi
-> > 
-> > > ---
-> > > 
-> > >  drivers/mmc/host/sh_mobile_sdhi.c | 4 ++--
-> > >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > > 
-> > > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c
-> > > b/drivers/mmc/host/sh_mobile_sdhi.c index f344659..ed1718a 100644
-> > > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > > @@ -54,7 +54,7 @@ static int sh_mobile_sdhi_clk_enable(struct
-> > > platform_device *pdev, unsigned int>
-> > >  	struct mmc_host *mmc = platform_get_drvdata(pdev);
-> > >  	struct tmio_mmc_host *host = mmc_priv(mmc);
-> > >  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct
-> > >  	sh_mobile_sdhi, mmc_data);
-> > > -	int ret = clk_enable(priv->clk);
-> > > +	int ret = clk_prepare_enable(priv->clk);
-> > >  	if (ret < 0)
-> > >  		return ret;
-> > > 
-> > > @@ -67,7 +67,7 @@ static void sh_mobile_sdhi_clk_disable(struct
-> > > platform_device *pdev)>
-> > >  	struct mmc_host *mmc = platform_get_drvdata(pdev);
-> > >  	struct tmio_mmc_host *host = mmc_priv(mmc);
-> > >  	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct
-> > >  	sh_mobile_sdhi, mmc_data);
-> > > -	clk_disable(priv->clk);
-> > > +	clk_disable_unprepare(priv->clk);
-> > >  }
-> > >  
-> > >  static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
--- 
-Regards,
+     http://marc.info/?l=linux-arm-kernel&m8542591313620&w=2
 
-Laurent Pinchart
+  arch/arm/mach-shmobile/board-mackerel.c |    4 ++--
+  1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index af06753eb809..d90d2f11071b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -548,9 +548,9 @@ static void __init hdmi_init_pm_clock(void)
+  		 clk_get_rate(&sh7372_pllc2_clk));
+
+  	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
+-	if (rate < 0) {
++	if (rate <= 0) {
+  		pr_err("Cannot get suitable rate: %ld\n", rate);
+-		ret = rate;
++		ret = -EINVAL;
+  		goto out;
+  	}
 
