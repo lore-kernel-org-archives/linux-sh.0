@@ -1,80 +1,44 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Thu, 28 Nov 2013 09:31:40 +0000
-Subject: Re: [PATCH] irqchip: renesas-intc: Document DT bindings
-Message-Id: <20131128093140.GA5929@e106331-lin.cambridge.arm.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Nov 2013 08:06:40 +0000
+Subject: [PATCH 03/03] pinctrl: sh-pfc: r7s72100 SCIF2 port4, 6 and 8 support
+Message-Id: <20131127080640.18384.21957.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385620847-18919-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385620847-18919-1-git-send-email-horms+renesas@verge.net.au>
+References: <20131127080606.18384.45103.sendpatchset@w520>
+In-Reply-To: <20131127080606.18384.45103.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, wsa@the-dreams.de, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, Nov 28, 2013 at 06:40:47AM +0000, Simon Horman wrote:
-> Cc: devicetree@vger.kernel.org
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  .../interrupt-controller/renesas,intc-irqc.txt     | 30 ++++++++++++++++++++++
->  1 file changed, 30 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt
-> 
-> diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt
-> new file mode 100644
-> index 0000000..305d4e7
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt
-> @@ -0,0 +1,30 @@
-> +DT bindings for the R-/SH-Mobile INTC controller
-> +
-> +Required properties:
-> +
-> +- compatible: Must be one of the following:
+From: Magnus Damm <damm@opensource.se>
 
-s/be/contain/
+Add the remaining SCIF2 pins using the recently introduced macro.
 
-> +    "renesas,intc"
-> +    "renesas,intc-r8a73a4"
-> +    "renesas,intc-r8a7790"
-> +    "renesas,intc-r8a7791"
-> +- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
-> +  interrupts.txt in this directory
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-I assume you also require a reg to be able to poke the MMIO registers.
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c |   12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-And an interrupt-controller annotation.
-
-The example has a series of interrupts. How many do you expect, and what
-do they logically correspond to (are they all equivalent, does one
-signal errrors, etc)? Are they required or optional?
-
-> +
-> +Optional properties:
-> +
-> +- any properties, listed in interrupts.txt, and any standard resource allocation
-> +  properties
-
-This is a useless description.
-
-What are "resource allocation properties"?
-
-> +
-> +Example:
-> +
-> +        irqc0: interrupt-controller@e61c0000 {
-> +                compatible = "renesas,irqc-r8a7790", "renesas,irqc";
-
-Do you always expect "renesas,irqc" to be in the list?
-
-> +                #interrupt-cells = <2>;
-> +                interrupt-controller;
-> +                reg = <0 0xe61c0000 0 0x200>;
-> +                interrupt-parent = <&gic>;
-> +                interrupts = <0 0 IRQ_TYPE_LEVEL_HIGH>,
-> +                             <0 1 IRQ_TYPE_LEVEL_HIGH>,
-> +                             <0 2 IRQ_TYPE_LEVEL_HIGH>,
-> +                             <0 3 IRQ_TYPE_LEVEL_HIGH>;
-
-As mentioned above, these were not described at all.
-
-Thanks,
-Mark.
+--- 0008/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
++++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c	2013-11-27 14:33:17.000000000 +0900
+@@ -127,7 +127,17 @@ static const unsigned int __RZ_STR(pfx,
+ 	fn(scif2, txd, 3, 0, 6)		\
+ 	fn(scif2, txd, 3, 1, 4)		\
+ 	fn(scif2, rxd, 3, 2, 4)		\
+-	fn(scif2, clk, 3, 0, 4)
++	fn(scif2, clk, 3, 0, 4)		\
++	fn(scif2, clk, 4, 1, 5)		\
++	fn(scif2, txd, 4, 2, 5)		\
++	fn(scif2, rxd, 4, 3, 5)		\
++	fn(scif2, txd, 4, 14, 7)	\
++	fn(scif2, rxd, 4, 15, 7)	\
++	fn(scif2, txd, 6, 2, 7)		\
++	fn(scif2, rxd, 6, 3, 7)		\
++	fn(scif2, clk, 8, 3, 7)		\
++	fn(scif2, txd, 8, 6, 7)		\
++	fn(scif2, rxd, 8, 4, 7)
+ 
+ SCIF2(RZ_PIN_AND_MUX)
+ 
