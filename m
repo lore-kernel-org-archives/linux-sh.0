@@ -1,49 +1,63 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Nov 2013 08:27:55 +0000
-Subject: [PATCH 02/04] ARM: shmobile: Genmai LED1 and LED2 support
-Message-Id: <20131127082755.20015.95975.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 27 Nov 2013 11:16:45 +0000
+Subject: Re: [PATCH 02/04] ARM: shmobile: Genmai LED1 and LED2 support
+Message-Id: <1698428.WpE2zkcoKU@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131127082736.20015.21303.sendpatchset@w520>
-In-Reply-To: <20131127082736.20015.21303.sendpatchset@w520>
+ <20131127082755.20015.95975.sendpatchset@w520>
+In-Reply-To: <20131127082755.20015.95975.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Magnus,
 
-Add support for Genmai board LED1 and LED2 via gpio-leds.
+Thank you for the patch.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+On Wednesday 27 November 2013 17:27:55 Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add support for Genmai board LED1 and LED2 via gpio-leds.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
- arch/arm/boot/dts/r7s72100-genmai-reference.dts |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
---- 0001/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27 15:49:27.000000000 +0900
-@@ -9,7 +9,8 @@
-  */
- 
- /dts-v1/;
--/include/ "r7s72100.dtsi"
-+#include "r7s72100.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Genmai";
-@@ -28,4 +29,14 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&port4 10 GPIO_ACTIVE_LOW>;
-+		};
-+		led2 {
-+			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
-+		};
-+	};
- };
+> ---
+> 
+>  arch/arm/boot/dts/r7s72100-genmai-reference.dts |   13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+> 
+> --- 0001/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27
+> 15:49:27.000000000 +0900 @@ -9,7 +9,8 @@
+>   */
+> 
+>  /dts-v1/;
+> -/include/ "r7s72100.dtsi"
+> +#include "r7s72100.dtsi"
+> +#include <dt-bindings/gpio/gpio.h>
+> 
+>  / {
+>  	model = "Genmai";
+> @@ -28,4 +29,14 @@
+>  		#address-cells = <1>;
+>  		#size-cells = <1>;
+>  	};
+> +
+> +	leds {
+> +		compatible = "gpio-leds";
+> +		led1 {
+> +			gpios = <&port4 10 GPIO_ACTIVE_LOW>;
+> +		};
+> +		led2 {
+> +			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
+> +		};
+> +	};
+>  };
+-- 
+Regards,
+
+Laurent Pinchart
+
