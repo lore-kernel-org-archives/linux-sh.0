@@ -1,140 +1,257 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 29 Nov 2013 17:30:40 +0000
-Subject: Re: [PATCH 2/4] sh-pfc: r8a7790: Add Audio pin support
-Message-Id: <2184696.xKNVBzokNQ@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Nov 2013 07:41:22 +0000
+Subject: [PATCH] pinctrl: sh-pfc: Initial r7s72100 support
+Message-Id: <20131127074122.18314.48522.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwkn52sx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mwkn52sx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: wsa@the-dreams.de, linus.walleij@linaro.org, linux-sh@vger.kernel.org, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Morimoto-san,
+From: Magnus Damm <damm@opensource.se>
 
-Thank you for the patch.
+Add r7s72100 PINCTRL support via sh-pfc. At this point this code
+provides enough support to allow use together with the gpio-rz
+driver. Incremental per-device patches will in the future be
+submitted on top of this base patch to allow PINCTRL enablement
+for each individual device.
 
-On Thursday 28 November 2013 19:01:37 Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ drivers/pinctrl/sh-pfc/Kconfig        |    5 
+ drivers/pinctrl/sh-pfc/Makefile       |    1 
+ drivers/pinctrl/sh-pfc/core.c         |    9 +
+ drivers/pinctrl/sh-pfc/core.h         |    1 
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c |  166 +++++++++++++++++++++++++++++++++
+ 5 files changed, 182 insertions(+)
 
-I've applied the patch to my tree and will send a pull request to Linus 
-Walleij for v3.14.
-
-Please see below for one small comment.
-
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   69 +++++++++++++++++++++++++++++++
->  1 file changed, 69 insertions(+)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index a7fa443..6d567d3 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> @@ -1739,6 +1739,57 @@ static struct sh_pfc_pin pinmux_pins[] = {
->  	SH_PFC_PIN_NAMED(ROW_GROUP_A('H'), 15, AH15),
->  };
-> 
-> +/* - AUDIO CLOCK ------------------------------------------------------- */
-> +static const unsigned int audio_clk_a_pins[] = {
-> +	/* CLK A */
-> +	RCAR_GP_PIN(4, 25),
-> +};
-> +static const unsigned int audio_clk_a_mux[] = {
-> +	AUDIO_CLKA_MARK,
-> +};
-> +static const unsigned int audio_clk_b_pins[] = {
-> +	/* CLK B */
-> +	RCAR_GP_PIN(4, 26),
-> +};
-> +static const unsigned int audio_clk_b_mux[] = {
-> +	AUDIO_CLKB_MARK,
-> +};
-> +static const unsigned int audio_clk_c_pins[] = {
-> +	/* CLK C */
-> +	RCAR_GP_PIN(5, 27),
-> +};
-> +static const unsigned int audio_clk_c_mux[] = {
-> +	AUDIO_CLKC_MARK,
-> +};
-> +static const unsigned int audio_clkout_pins[] = {
-> +	/* CLK OUT */
-> +	RCAR_GP_PIN(5, 16),
-> +};
-> +static const unsigned int audio_clkout_mux[] = {
-> +	AUDIO_CLKOUT_MARK,
-> +};
-> +static const unsigned int audio_clkout_b_pins[] = {
-> +	/* CLK OUT B */
-> +	RCAR_GP_PIN(0, 23),
-> +};
-> +static const unsigned int audio_clkout_b_mux[] = {
-> +	AUDIO_CLKOUT_B_MARK,
-> +};
-> +static const unsigned int audio_clkout_c_pins[] = {
-> +	/* CLK OUT C */
-> +	RCAR_GP_PIN(5, 27),
-> +};
-> +static const unsigned int audio_clkout_c_mux[] = {
-> +	AUDIO_CLKOUT_C_MARK,
-> +};
-> +static const unsigned int audio_clkout_d_pins[] = {
-> +	/* CLK OUT D */
-> +	RCAR_GP_PIN(5, 20),
-> +};
-> +static const unsigned int audio_clkout_d_mux[] = {
-> +	AUDIO_CLKOUT_D_MARK,
-> +};
-> +
-
-The file has no blank line after all the other groups, I've thus removed this 
-blank line. Please let me know if you're fine with that.
-
->  /* - DU RGB ------------------------------------------------------------ */
->  static const unsigned int du_rgb666_pins[] = {
->  	/* R[7:2], G[7:2], B[7:2] */
-> @@ -3278,6 +3329,13 @@ static const unsigned int vin1_clk_mux[] = {
->  };
-> 
->  static const struct sh_pfc_pin_group pinmux_groups[] = {
-> +	SH_PFC_PIN_GROUP(audio_clk_a),
-> +	SH_PFC_PIN_GROUP(audio_clk_b),
-> +	SH_PFC_PIN_GROUP(audio_clk_c),
-> +	SH_PFC_PIN_GROUP(audio_clkout),
-> +	SH_PFC_PIN_GROUP(audio_clkout_b),
-> +	SH_PFC_PIN_GROUP(audio_clkout_c),
-> +	SH_PFC_PIN_GROUP(audio_clkout_d),
->  	SH_PFC_PIN_GROUP(du_rgb666),
->  	SH_PFC_PIN_GROUP(du_rgb888),
->  	SH_PFC_PIN_GROUP(du_clk_out_0),
-> @@ -3488,6 +3546,16 @@ static const struct sh_pfc_pin_group pinmux_groups[]
-> = { SH_PFC_PIN_GROUP(vin1_clk),
->  };
-> 
-> +static const char * const audio_clk_groups[] = {
-> +	"audio_clk_a",
-> +	"audio_clk_b",
-> +	"audio_clk_c",
-> +	"audio_clkout",
-> +	"audio_clkout_b",
-> +	"audio_clkout_c",
-> +	"audio_clkout_d",
-> +};
-> +
->  static const char * const du_groups[] = {
->  	"du_rgb666",
->  	"du_rgb888",
-> @@ -3808,6 +3876,7 @@ static const char * const vin1_groups[] = {
->  };
-> 
->  static const struct sh_pfc_function pinmux_functions[] = {
-> +	SH_PFC_FUNCTION(audio_clk),
->  	SH_PFC_FUNCTION(du),
->  	SH_PFC_FUNCTION(du0),
->  	SH_PFC_FUNCTION(du1),
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0001/drivers/pinctrl/sh-pfc/Kconfig
++++ work/drivers/pinctrl/sh-pfc/Kconfig	2013-11-27 15:18:31.000000000 +0900
+@@ -20,6 +20,11 @@ config GPIO_SH_PFC
+ 	  This enables support for GPIOs within the SoC's pin function
+ 	  controller.
+ 
++config PINCTRL_PFC_R7S72100
++	def_bool y
++	depends on ARCH_R7S72100
++	select PINCTRL_SH_PFC
++
+ config PINCTRL_PFC_R8A73A4
+ 	def_bool y
+ 	depends on ARCH_R8A73A4
+--- 0001/drivers/pinctrl/sh-pfc/Makefile
++++ work/drivers/pinctrl/sh-pfc/Makefile	2013-11-27 15:18:31.000000000 +0900
+@@ -3,6 +3,7 @@ ifeq ($(CONFIG_GPIO_SH_PFC),y)
+ sh-pfc-objs			+= gpio.o
+ endif
+ obj-$(CONFIG_PINCTRL_SH_PFC)	+= sh-pfc.o
++obj-$(CONFIG_PINCTRL_PFC_R7S72100)	+= pfc-r7s72100.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A73A4)	+= pfc-r8a73a4.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7740)	+= pfc-r8a7740.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7778)	+= pfc-r8a7778.o
+--- 0001/drivers/pinctrl/sh-pfc/core.c
++++ work/drivers/pinctrl/sh-pfc/core.c	2013-11-27 15:18:31.000000000 +0900
+@@ -401,6 +401,12 @@ static int sh_pfc_init_ranges(struct sh_
+ 
+ #ifdef CONFIG_OF
+ static const struct of_device_id sh_pfc_of_table[] = {
++#ifdef CONFIG_PINCTRL_PFC_R7S72100
++	{
++		.compatible = "renesas,pfc-r7s72100",
++		.data = &r7s72100_pinmux_info,
++	},
++#endif
+ #ifdef CONFIG_PINCTRL_PFC_R8A73A4
+ 	{
+ 		.compatible = "renesas,pfc-r8a73a4",
+@@ -549,6 +555,9 @@ static int sh_pfc_remove(struct platform
+ }
+ 
+ static const struct platform_device_id sh_pfc_id_table[] = {
++#ifdef CONFIG_PINCTRL_PFC_R7S72100
++	{ "pfc-r7s72100", (kernel_ulong_t)&r7s72100_pinmux_info },
++#endif
+ #ifdef CONFIG_PINCTRL_PFC_R8A73A4
+ 	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
+ #endif
+--- 0001/drivers/pinctrl/sh-pfc/core.h
++++ work/drivers/pinctrl/sh-pfc/core.h	2013-11-27 15:18:31.000000000 +0900
+@@ -64,6 +64,7 @@ void sh_pfc_write_raw_reg(void __iomem *
+ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin);
+ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type);
+ 
++extern const struct sh_pfc_soc_info r7s72100_pinmux_info;
+ extern const struct sh_pfc_soc_info r8a73a4_pinmux_info;
+ extern const struct sh_pfc_soc_info r8a7740_pinmux_info;
+ extern const struct sh_pfc_soc_info r8a7778_pinmux_info;
+--- /dev/null
++++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c	2013-11-27 15:20:28.000000000 +0900
+@@ -0,0 +1,166 @@
++/*
++ * R7S72100 processor support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; version 2 of the
++ * License.
++ */
++
++#include <linux/kernel.h>
++
++#include "core.h"
++#include "sh_pfc.h"
++
++#define RZ_PORT_PIN(bank, pin) (((bank) * 16) + (pin))
++
++#define PORT_P_1(bank, pin, fn, sfx) fn(bank, pin, P_##bank##_##pin, sfx)
++
++#define PORT_P_16(bank, fn, sfx)					\
++	PORT_P_1(bank, 0,  fn, sfx), PORT_P_1(bank, 1,  fn, sfx),	\
++	PORT_P_1(bank, 2,  fn, sfx), PORT_P_1(bank, 3,  fn, sfx),	\
++	PORT_P_1(bank, 4,  fn, sfx), PORT_P_1(bank, 5,  fn, sfx),	\
++	PORT_P_1(bank, 6,  fn, sfx), PORT_P_1(bank, 7,  fn, sfx),	\
++	PORT_P_1(bank, 8,  fn, sfx), PORT_P_1(bank, 9,  fn, sfx),	\
++	PORT_P_1(bank, 10, fn, sfx), PORT_P_1(bank, 11, fn, sfx),	\
++	PORT_P_1(bank, 12, fn, sfx), PORT_P_1(bank, 13, fn, sfx),	\
++	PORT_P_1(bank, 14, fn, sfx), PORT_P_1(bank, 15, fn, sfx)
++
++#define CPU_ALL_PORT(fn, sfx)						\
++	PORT_P_16(0, fn, sfx), PORT_P_16(1, fn, sfx),			\
++	PORT_P_16(2, fn, sfx), PORT_P_16(3, fn, sfx),			\
++	PORT_P_16(4, fn, sfx), PORT_P_16(5, fn, sfx),			\
++	PORT_P_16(6, fn, sfx), PORT_P_16(7, fn, sfx),			\
++	PORT_P_16(8, fn, sfx), PORT_P_16(9, fn, sfx),			\
++	PORT_P_16(10, fn, sfx), PORT_P_16(11, fn, sfx),			\
++	PORT_P_16(12, fn, sfx)
++
++#define P_ALL(n) GP_ALL(n)
++
++enum {
++	PINMUX_RESERVED = 0,
++
++	PINMUX_DATA_BEGIN,
++	P_ALL(DATA),
++	PINMUX_DATA_END,
++
++	PINMUX_FUNCTION_BEGIN,
++	P_ALL(PMC_0), P_ALL(PMC_1),
++	P_ALL(PFC_0), P_ALL(PFC_1),
++	P_ALL(PFCE_0), P_ALL(PFCE_1),
++	P_ALL(PFCAE_0), P_ALL(PFCAE_1),
++	P_ALL(PIBC_0), P_ALL(PIBC_1),
++	P_ALL(PBDC_0), P_ALL(PBDC_1),
++	P_ALL(PIPC_0), P_ALL(PIPC_1),
++	PINMUX_FUNCTION_END,
++
++	PINMUX_MARK_BEGIN,
++	P_ALL(MARK_FN1), P_ALL(MARK_FN2), P_ALL(MARK_FN3), P_ALL(MARK_FN4),
++	P_ALL(MARK_FN5), P_ALL(MARK_FN6), P_ALL(MARK_FN7), P_ALL(MARK_FN8),
++	PINMUX_MARK_END,
++};
++
++#define _P_ALL(n) CPU_ALL_PORT(n, unused)
++
++#define _P_GPIO(bank, _pin, _name, sfx)					\
++	[(bank * 16) + _pin] = {					\
++		.pin = (bank * 16) + _pin,				\
++		.name = __stringify(_name),				\
++		.enum_id = _name##_DATA,				\
++	}
++
++#define _P_DATA(bank, pin, name, sfx)					\
++	PINMUX_DATA(name##_DATA, name##_PMC_0,				\
++		    name##_PIBC_1, name##_PBDC_1)
++
++#define _P_FN(n, fn, pfcae, pfce, pfc)					\
++	PINMUX_DATA(n##_MARK_FN##fn, n##_PMC_1,				\
++		    n##_PFCAE_##pfcae, n##_PFCE_##pfce, n##_PFC_##pfc)
++
++#define _P_MARK_FN1(bank, pin, name, sfx) _P_FN(name, 1, 0, 0, 0)
++#define _P_MARK_FN2(bank, pin, name, sfx) _P_FN(name, 2, 0, 0, 1)
++#define _P_MARK_FN3(bank, pin, name, sfx) _P_FN(name, 3, 0, 1, 0)
++#define _P_MARK_FN4(bank, pin, name, sfx) _P_FN(name, 4, 0, 1, 1)
++#define _P_MARK_FN5(bank, pin, name, sfx) _P_FN(name, 5, 1, 0, 0)
++#define _P_MARK_FN6(bank, pin, name, sfx) _P_FN(name, 6, 1, 0, 1)
++#define _P_MARK_FN7(bank, pin, name, sfx) _P_FN(name, 7, 1, 1, 0)
++#define _P_MARK_FN8(bank, pin, name, sfx) _P_FN(name, 8, 1, 1, 1)
++
++static const u16 pinmux_data[] = {
++	_P_ALL(_P_DATA), /* PINMUX_DATA(P_M_N_DATA, P_M_N_PMC_0), */
++	_P_ALL(_P_MARK_FN1), _P_ALL(_P_MARK_FN2),
++	_P_ALL(_P_MARK_FN3), _P_ALL(_P_MARK_FN4),
++	_P_ALL(_P_MARK_FN5), _P_ALL(_P_MARK_FN6),
++	_P_ALL(_P_MARK_FN7), _P_ALL(_P_MARK_FN8),
++};
++
++static struct sh_pfc_pin pinmux_pins[] = {
++	_P_ALL(_P_GPIO),
++};
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++};
++
++#define PFC_REG(idx, name, reg)						\
++	{ PINMUX_CFG_REG(__stringify(name), reg, 16, 1) {		\
++		P_##idx##_15_##name##_0, P_##idx##_15_##name##_1,	\
++		P_##idx##_14_##name##_0, P_##idx##_14_##name##_1,	\
++		P_##idx##_13_##name##_0, P_##idx##_13_##name##_1,	\
++		P_##idx##_12_##name##_0, P_##idx##_12_##name##_1,	\
++		P_##idx##_11_##name##_0, P_##idx##_11_##name##_1,	\
++		P_##idx##_10_##name##_0, P_##idx##_10_##name##_1,	\
++		P_##idx##_9_##name##_0, P_##idx##_9_##name##_1,		\
++		P_##idx##_8_##name##_0, P_##idx##_8_##name##_1,		\
++		P_##idx##_7_##name##_0, P_##idx##_7_##name##_1,		\
++		P_##idx##_6_##name##_0, P_##idx##_6_##name##_1,		\
++		P_##idx##_5_##name##_0, P_##idx##_5_##name##_1,		\
++		P_##idx##_4_##name##_0, P_##idx##_4_##name##_1,		\
++		P_##idx##_3_##name##_0, P_##idx##_3_##name##_1,		\
++		P_##idx##_2_##name##_0, P_##idx##_2_##name##_1,		\
++		P_##idx##_1_##name##_0, P_##idx##_1_##name##_1,		\
++		P_##idx##_0_##name##_0, P_##idx##_0_##name##_1 }	\
++	}
++
++#define PFC_REGS(idx)						\
++	PFC_REG(idx, PMC, (0xfcfe3400 + (idx * 4))),		\
++	PFC_REG(idx, PFC, (0xfcfe3500 + (idx * 4))),		\
++	PFC_REG(idx, PFCE, (0xfcfe3600 + (idx * 4))),		\
++	PFC_REG(idx, PFCAE, (0xfcfe3a00 + (idx * 4))),		\
++	PFC_REG(idx, PIBC, (0xfcfe7000 + (idx * 4))),		\
++	PFC_REG(idx, PBDC, (0xfcfe7100 + (idx * 4))),		\
++	PFC_REG(idx, PIPC, (0xfcfe7200 + (idx * 4)))
++
++static struct pinmux_cfg_reg pinmux_config_regs[] = {
++	PFC_REGS(0), PFC_REGS(1), PFC_REGS(2), PFC_REGS(3),
++	PFC_REGS(4), PFC_REGS(5), PFC_REGS(6), PFC_REGS(7),
++	PFC_REGS(8), PFC_REGS(9), PFC_REGS(10), PFC_REGS(11),
++	PFC_REG(12, PMC, 0xfcfe7b40),
++	PFC_REG(12, PIBC, 0xfcfe7f00),
++	{ },
++};
++
++const struct sh_pfc_soc_info r7s72100_pinmux_info = {
++	.name = "r7s72100_pfc",
++
++	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
++
++	.pins = pinmux_pins,
++	.nr_pins = ARRAY_SIZE(pinmux_pins),
++	.groups = pinmux_groups,
++	.nr_groups = ARRAY_SIZE(pinmux_groups),
++	.functions = pinmux_functions,
++	.nr_functions = ARRAY_SIZE(pinmux_functions),
++
++	.cfg_regs = pinmux_config_regs,
++
++	.gpio_data = pinmux_data,
++	.gpio_data_size = ARRAY_SIZE(pinmux_data),
++};
