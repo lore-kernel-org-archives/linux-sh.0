@@ -1,93 +1,191 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 Nov 2013 10:20:09 +0000
-Subject: Re: [PATCH RFC v2 07/17] ARM: shmobile: r8a7779: Sort headers alphabetically
-Message-Id: <1615505.ZFJ3Lvc46h@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Nov 2013 08:27:45 +0000
+Subject: [PATCH 01/04] ARM: shmobile: r7s72100 GPIO and PINCTRL device nodes
+Message-Id: <20131127082745.20015.57024.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
- <52946AEA.2010500@cogentembedded.com> <20131127050958.GE27704@verge.net.au>
-In-Reply-To: <20131127050958.GE27704@verge.net.au>
+References: <20131127082736.20015.21303.sendpatchset@w520>
+In-Reply-To: <20131127082736.20015.21303.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Magnus Damm <damm@opensource.se>
 
-On Wednesday 27 November 2013 14:09:58 Simon Horman wrote:
-> On Tue, Nov 26, 2013 at 01:33:30PM +0400, Sergei Shtylyov wrote:
-> > On 26-11-2013 11:32, Simon Horman wrote:
-> > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > >---
-> > >
-> > >  arch/arm/mach-shmobile/board-marzen.c | 28 ++++++++++++++--------------
-> > >  1 file changed, 14 insertions(+), 14 deletions(-)
-> > >
-> > >diff --git a/arch/arm/mach-shmobile/board-marzen.c
-> > >b/arch/arm/mach-shmobile/board-marzen.c index 4f9e3ec..e202c64 100644
-> > >--- a/arch/arm/mach-shmobile/board-marzen.c
-> > >+++ b/arch/arm/mach-shmobile/board-marzen.c
-> > >@@ -19,35 +19,35 @@
-> > >   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 
-> > >   02110-1301  USA */
-> > >
-> > >-#include <linux/kernel.h>
-> > >+#include <asm/mach-types.h>
-> > >+#include <asm/mach/arch.h>
-> > >+#include <asm/traps.h>
-> > >+#include <linux/delay.h>
-> > >+#include <linux/dma-mapping.h>
-> > > #include <linux/init.h>
-> > > #include <linux/interrupt.h>
-> > >-#include <linux/irq.h>
-> > >-#include <linux/platform_device.h>
-> > >-#include <linux/delay.h>
-> > > #include <linux/io.h>
-> > >+#include <linux/irq.h>
-> > >+#include <linux/kernel.h>
-> > > #include <linux/leds.h>
-> > >-#include <linux/dma-mapping.h>
-> > >+#include <linux/mfd/tmio.h>
-> > >+#include <linux/mmc/host.h>
-> > >+#include <linux/mmc/sh_mobile_sdhi.h>
-> > > #include <linux/pinctrl/machine.h>
-> > > #include <linux/platform_data/camera-rcar.h>
-> > > #include <linux/platform_data/gpio-rcar.h>
-> > > #include <linux/platform_data/rcar-du.h>
-> > > #include <linux/platform_data/usb-rcar-phy.h>
-> > >+#include <linux/platform_device.h>
-> > > #include <linux/regulator/fixed.h>
-> > > #include <linux/regulator/machine.h>
-> > > #include <linux/smsc911x.h>
-> > >-#include <linux/spi/spi.h>
-> > > #include <linux/spi/sh_hspi.h>
-> > >-#include <linux/mmc/host.h>
-> > >-#include <linux/mmc/sh_mobile_sdhi.h>
-> > >-#include <linux/mfd/tmio.h>
-> > >-#include <media/soc_camera.h>
-> > >-#include <mach/r8a7779.h>
-> > >+#include <linux/spi/spi.h>
-> > > #include <mach/common.h>
-> > > #include <mach/irqs.h>
-> > >-#include <asm/mach-types.h>
-> > >-#include <asm/mach/arch.h>
-> > >-#include <asm/traps.h>
-> > >+#include <mach/r8a7779.h>
-> > >+#include <media/soc_camera.h>
-> > >
-> >    I thought it was a good idea to keep the #include's in the order
-> > 
-> > of the most generic to most machine specific ones: <linux/*.h>
-> > first, then <asm/*.h>, then <mach/*.h>, only with empty lines
-> > between groups (which weren't used here) with each group kept
-> > sorted...
-> 
-> That sounds reasonable to me.
-> Laurent, do you have an opinion on this?
+Add support for r7s72100 PFC and GPIO device nodes port0 -> port11
+and jtagport0.
 
-That's fine with me.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Regards,
+ arch/arm/boot/dts/r7s72100.dtsi |  154 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 154 insertions(+)
 
-Laurent Pinchart
-
+--- 0001/arch/arm/boot/dts/r7s72100.dtsi
++++ work/arch/arm/boot/dts/r7s72100.dtsi	2013-11-27 16:06:36.000000000 +0900
+@@ -14,6 +14,22 @@
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 
++	aliases {
++		gpio0 = &port0;
++		gpio1 = &port1;
++		gpio2 = &port2;
++		gpio3 = &port3;
++		gpio4 = &port4;
++		gpio5 = &port5;
++		gpio6 = &port6;
++		gpio7 = &port7;
++		gpio8 = &port8;
++		gpio9 = &port9;
++		gpio10 = &port10;
++		gpio11 = &port11;
++		gpio12 = &jtagport0;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -33,4 +49,142 @@
+ 		reg = <0xe8201000 0x1000>,
+ 			<0xe8202000 0x1000>;
+ 	};
++
++	pfc: pfc@fcfe3300 {
++		compatible = "renesas,pfc-r7s72100";
++		reg = <0xfcfe3300 0x400>, /* PM, PMC, PFC, PFCE */
++		  	  <0xfcfe3a00 0x100>, /* PFCAE */
++			  <0xfcfe7000 0x300>, /* PIBC, PBDC, PIPC */
++			  <0xfcfe7b40 0x04>, /* JPMC */
++			  <0xfcfe7b90 0x04>, /* JPMCSR */
++			  <0xfcfe7f00 0x04>; /* JPIBC */
++	};
++
++	port0: gpio@fcfe3100 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3100 0x4>, /* PSR */
++		  	  <0xfcfe3200 0x2>, /* PPR */
++			  <0xfcfe3800 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 6>;
++	};
++
++	port1: gpio@fcfe3104 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3104 0x4>, /* PSR */
++		  	  <0xfcfe3204 0x2>, /* PPR */
++			  <0xfcfe3804 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 16 16>;
++	};
++
++	port2: gpio@fcfe3108 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3108 0x4>, /* PSR */
++		  	  <0xfcfe3208 0x2>, /* PPR */
++			  <0xfcfe3808 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 16>;
++	};
++
++	port3: gpio@fcfe310c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe310c 0x4>, /* PSR */
++		  	  <0xfcfe320c 0x2>, /* PPR */
++			  <0xfcfe380c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 48 16>;
++	};
++
++	port4: gpio@fcfe3110 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3110 0x4>, /* PSR */
++		  	  <0xfcfe3210 0x2>, /* PPR */
++			  <0xfcfe3810 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 16>;
++	};
++
++	port5: gpio@fcfe3114 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3114 0x4>, /* PSR */
++		  	  <0xfcfe3214 0x2>, /* PPR */
++			  <0xfcfe3814 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 80 11>;
++	};
++
++	port6: gpio@fcfe3118 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3118 0x4>, /* PSR */
++		  	  <0xfcfe3218 0x2>, /* PPR */
++			  <0xfcfe3818 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 16>;
++	};
++
++	port7: gpio@fcfe311c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe311c 0x4>, /* PSR */
++		  	  <0xfcfe321c 0x2>, /* PPR */
++			  <0xfcfe381c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 112 16>;
++	};
++
++	port8: gpio@fcfe3120 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3120 0x4>, /* PSR */
++		  	  <0xfcfe3220 0x2>, /* PPR */
++			  <0xfcfe3820 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 16>;
++	};
++
++	port9: gpio@fcfe3124 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3124 0x4>, /* PSR */
++		  	  <0xfcfe3224 0x2>, /* PPR */
++			  <0xfcfe3824 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 144 8>;
++	};
++
++	port10: gpio@fcfe3128 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3128 0x4>, /* PSR */
++		  	  <0xfcfe3228 0x2>, /* PPR */
++			  <0xfcfe3828 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 16>;
++	};
++
++	port11: gpio@fcfe312c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe312c 0x4>, /* PSR */
++		  	  <0xfcfe322c 0x2>, /* PPR */
++			  <0xfcfe382c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 176 16>;
++	};
++
++	jtagport0: gpio@fcfe7b20 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe7b20 0x2>; /* JPPR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 2>;
++	};
+ };
