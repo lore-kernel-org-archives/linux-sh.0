@@ -1,38 +1,56 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Nov 2013 09:04:20 +0000
-Subject: [PATCH 1/6] ARM: shmobile: r8a7790: care EXTAL divider settings
-Message-Id: <878uwkep9r.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 10:15:27 +0000
+Subject: [PATCH v2] v4l: sh_vou: Fix warnings due to improper casts and printk formats
+Message-Id: <1385547327-13657-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-media@vger.kernel.org
 
-EXTAL clock frequency needs 1/2 when
-(MD14, MD13, MD19) = (1, x, x).
+Use the %zu printk specifier to print size_t variables, and cast
+pointers to uintptr_t instead of unsigned int where applicable. This
+fixes warnings on platforms where pointers and/or dma_addr_t have a
+different size than int.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+Cc: linux-media@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/media/platform/sh_vou.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 6107571..be72032 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -328,10 +328,10 @@ void __init r8a7790_clock_init(void)
- 		R8A7790_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
- 		break;
- 	case MD(14):
--		R8A7790_CLOCK_ROOT(26, &extal_div2_clk, 200, 240, 122, 102);
-+		R8A7790_CLOCK_ROOT(26 / 2, &extal_div2_clk, 200, 240, 122, 102);
- 		break;
- 	case MD(13) | MD(14):
--		R8A7790_CLOCK_ROOT(30, &extal_div2_clk, 172, 208, 106, 88);
-+		R8A7790_CLOCK_ROOT(30 / 2, &extal_div2_clk, 172, 208, 106, 88);
- 		break;
+Changes compared to v1:
+
+- Cast to uintptr_t instead of unsigned long
+
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 4f30341..69e2125 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
+ 	vb->size = vb->height * bytes_per_line;
+ 	if (vb->baddr && vb->bsize < vb->size) {
+ 		/* User buffer too small */
+-		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
++		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
+ 			 vb->bsize, vb->baddr);
+ 		return -EINVAL;
+ 	}
+@@ -302,9 +302,9 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
  	}
  
+ 	dev_dbg(vou_dev->v4l2_dev.dev,
+-		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
++		"%s(): fmt #%d, %u bytes per line, phys 0x%lx, type %d, state %d\n",
+ 		__func__, vou_dev->pix_idx, bytes_per_line,
+-		videobuf_to_dma_contig(vb), vb->memory, vb->state);
++		(uintptr_t)videobuf_to_dma_contig(vb), vb->memory, vb->state);
+ 
+ 	return 0;
+ }
 -- 
-1.7.9.5
+1.8.3.2
 
