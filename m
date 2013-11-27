@@ -1,41 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 10:18:06 +0000
-Subject: [PATCH v2] spi: sh-msiof: Fix warnings due to improper casts
-Message-Id: <1385547486-13802-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 27 Nov 2013 15:49:25 +0000
+Subject: Re: [PATCH v2] spi: sh-msiof: Fix warnings due to improper casts
+Message-Id: <20131127154925.GA14725@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="NRg0qHkDgHfQnopc"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1385547486-13802-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385547486-13802-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
 
-Cast pointers to uintptr_t instead of unsigned int. This fixes warnings
-on platforms where pointers have a different size than int.
 
-Cc: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/spi/spi-sh-msiof.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--NRg0qHkDgHfQnopc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Changes compared to v1:
+On Wed, Nov 27, 2013 at 11:18:06AM +0100, Laurent Pinchart wrote:
+> Cast pointers to uintptr_t instead of unsigned int. This fixes warnings
+> on platforms where pointers have a different size than int.
 
-- Cast to uintptr_t instead of unsigned long
+Applied, thanks.
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index c74298c..86f822a 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -421,7 +421,7 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
- 	}
- 
- 	/* use spi->controller data for CS (same strategy as spi_gpio) */
--	gpio_set_value((unsigned)spi->controller_data, value);
-+	gpio_set_value((uintptr_t)spi->controller_data, value);
- 
- 	if (is_on = BITBANG_CS_INACTIVE) {
- 		if (test_and_clear_bit(0, &p->flags)) {
--- 
-1.8.3.2
+--NRg0qHkDgHfQnopc
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSlhSCAAoJELSic+t+oim9PzQP/jglt41bJnnNUUgfZe+WWAMf
+rDluLN2nH4IluqwDDS17aT20yxUmwCkVFAlC4ZyICh2FOXo571HEpiUiWa2SChTm
+a1d/FCAi66JPkN5cZHTSOLI2Mu1rBr3BXZEBuEpmMNMwDsfxKf0W9wO67NrJwDgX
+pC8IGF0FT3W0+wQElGtXCAO+cGHCevgAHHkDr7SD+5fUzEv5OhY0GhbUrUhR6ui0
+K8uWK2DbMtpnG1CTiJaGhPv8c4WMWVKu4voPSrrptXavwIMCGVR3axvuXG4DFKOR
+vIpNpr0RCGjN9G44oy/zVB4I7w0Lm+Xz/zcZ5iEkYeVBACxhWlTvkrBtC32156R3
+nq90MLeWFhlmKuHN0/5I0pv5vY1wS3v/PDP5I8gxnQrFdbcVA5r64BKNRnxVUU2c
+pmRAcg174VzXrzGSz+ofvhqUcktSscZ1DGNzkJ+5+41LPad09jKB9CYsbNjfiS5G
+xNEJqZlOsrGtQSn97KnLW9O86JvOe2Q1cT8uZoqNp7js6MAzgZRxiQun4BrbyI+G
+bS5rP4opzTh6XNncpIdoQOntqLru9mhPWTlMi1ufGtNXLiVmOB1Nji2QZEqaTvNB
+iFqB4bRB1R3RIHQwKhSsKzu769/wiP91kaniKwfpU3jPtl+HzIBBj7dQxSQ5JGb4
+V1xlqvW3dsVBM8iirwuv
+=t5Gu
+-----END PGP SIGNATURE-----
+
+--NRg0qHkDgHfQnopc--
