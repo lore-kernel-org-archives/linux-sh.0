@@ -1,42 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 06:45:56 +0000
-Subject: Re: [PATCH 00/04] ARM: shmobile: Use SoC suffix for INTC compat string
-Message-Id: <20131128064555.GA14878@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 01:18:33 +0000
+Subject: [PATCH 11/15] pwm: pwm-renesas-tpu: Enable driver compilation with COMPILE_TEST
+Message-Id: <1385515117-23664-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127231450.29081.98054.sendpatchset@w520>
-In-Reply-To: <20131127231450.29081.98054.sendpatchset@w520>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 28, 2013 at 08:14:50AM +0900, Magnus Damm wrote:
-> ARM: shmobile: Use SoC suffix for INTC compat string
-> 
-> [PATCH 01/04] ARM: shmobile: Use sh73a0 suffix for INTC compat string
-> [PATCH 02/04] ARM: shmobile: Use r8a7740 suffix for INTC compat string
-> [PATCH 03/04] ARM: shmobile: Use r8a7778 suffix for INTC compat string
-> [PATCH 04/04] ARM: shmobile: Use r8a7779 suffix for INTC compat string
-> 
-> Update the DTS for INTC irqpin devices to include the SoC in the compat string.
-> 
-> Both IRQC and INTC irqpin need documentation for the DT bindings, and this
-> will happen in incremental patches.
+This helps increasing build testing coverage.
 
-I have posted some patches for that a few moments ago :)
+Cc: Thierry Reding <thierry.reding@gmail.com>
+Cc: linux-pwm@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/pwm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
+index eece329..5de6fcf 100644
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -139,7 +139,7 @@ config PWM_PXA
+ 
+ config PWM_RENESAS_TPU
+ 	tristate "Renesas TPU PWM support"
+-	depends on ARCH_SHMOBILE
++	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	help
+ 	  This driver exposes the Timer Pulse Unit (TPU) PWM controller found
+ 	  in Renesas chips through the PWM API.
+-- 
+1.8.3.2
 
-I am curious to if it is intentional that this series replaces
-the use of less-specific compat strings with more specific ones
-while the recent update to the r8a7790 supplemented the
-less-specific renesas,irqc comat string with the more-specific
-renesas,irqc-r8a7790 compat string.
-
-i.e.
-	before: "renesas,intc-irqpin"
-	after:  "renesas,intc-irqpin-sh73a0"
-
-	as opposed to
-
-	before: "renesas,irqc"
-	after: "renesas,irqc-r8a7790", "renesas,irqc"
