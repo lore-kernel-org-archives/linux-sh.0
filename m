@@ -1,65 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Nov 2013 23:21:11 +0000
-Subject: [PATCH 01/04] ARM: shmobile: Add shared EMEV2 code for ->init_machine()
-Message-Id: <20131106232111.8081.53457.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:14 +0000
+Subject: [PATCH v4 04/29] serial: sh-sci: Remove duplicate interrupt check in verify port op
+Message-Id: <1385594319-5758-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106232102.8081.20523.sendpatchset@w520>
-In-Reply-To: <20131106232102.8081.20523.sendpatchset@w520>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+The driver checks if the interrupt number is greater than nr_irqs and
+returns an error in that case. The same check is already performed by
+the caller, remove it.
 
-Add a SoC specific function that initializes
-clocks and starts DT probing in case of EMEV2.
-
-This EMEV2 SoC support code may be built for
-either legacy SHMOBILE or SMOBILE_MULTI.
-
-The change allows us to support existing board
-specific KZM9D DTB with these SoC specific
-DT_MACHINE_START() callbacks.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/setup-emev2.c |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index feb1a6a..d1d779f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2115,7 +2115,7 @@ static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 
+-	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ] || ser->irq > nr_irqs)
++	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
+ 		return -EINVAL;
+ 	if (ser->baud_base < 2400)
+ 		/* No paper tape reader for Mitch.. */
+-- 
+1.8.3.2
 
---- 0001/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-11-05 15:21:42.000000000 +0900
-@@ -16,6 +16,7 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -197,6 +198,16 @@ void __init emev2_init_delay(void)
- 
- #ifdef CONFIG_USE_OF
- 
-+static void __init emev2_add_standard_devices_dt(void)
-+{
-+#ifdef CONFIG_COMMON_CLK
-+	of_clk_init(NULL);
-+#else
-+	emev2_clock_init();
-+#endif
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
-+
- static const char *emev2_boards_compat_dt[] __initdata = {
- 	"renesas,emev2",
- 	NULL,
-@@ -206,6 +217,7 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
-+	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
- 
