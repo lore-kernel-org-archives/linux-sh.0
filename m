@@ -1,97 +1,159 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 21:43:30 +0000
-Subject: [PATCH 16/16] serial: sh-sci: Remove platform data scbrr_algo_id field
-Message-Id: <1385675010-26904-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:25 +0000
+Subject: [PATCH v4 15/29] ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
+Message-Id: <1385594319-5758-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-The field isn't set by any board, remote it.
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 26 +++++---------------------
- include/linux/serial_sci.h  | 10 ----------
- 2 files changed, 5 insertions(+), 31 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 112 +++++++++++++++------------------
+ 1 file changed, 49 insertions(+), 63 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index c65d37b..0bdbde1 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1770,17 +1770,6 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 	if (s->sampling_rate)
- 		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 3543c3b..8344743 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -78,61 +78,47 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_gpio(5);
+ }
  
--	switch (s->cfg->scbrr_algo_id) {
--	case SCBRR_ALGO_1:
--		return freq / (16 * bps);
--	case SCBRR_ALGO_2:
--		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
--	case SCBRR_ALGO_3:
--		return freq / (8 * bps);
--	case SCBRR_ALGO_4:
--		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
--	}
+-#define SCIF_COMMON(scif_type, baseaddr, irq)			\
+-	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+-	.irqs		= SCIx_IRQ_MUXED(irq)
 -
- 	/* Warn, but use a safe default */
- 	WARN_ON(1);
+-#define SCIFA_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,			\
+-	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
++static struct plat_sci_port scif##index##_platform_data = {		\
++	.type		= scif_type,					\
++	.mapbase	= baseaddr,					\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
++	.scbrr_algo_id	= algo,						\
++	.scscr		= _scscr,					\
++	.irqs		= SCIx_IRQ_MUXED(irq),				\
+ }
  
-@@ -2180,17 +2169,12 @@ static int sci_init_single(struct platform_device *dev,
- 		break;
- 	}
- 
--	/* Set the sampling rate if the baud rate calculation algorithm isn't
--	 * specified.
-+	/* SCIFA on sh7723 and sh7724 need a custom sampling rate that doesn't
-+	 * match the SoC datasheet, this should be investigated. Let platform
-+	 * data override the sampling rate for now.
- 	 */
--	if (p->scbrr_algo_id = SCBRR_ALGO_NONE) {
--		/* SCIFA on sh7723 and sh7724 need a custom sampling rate that
--		 * doesn't match the SoC datasheet, this should be investigated.
--		 * Let platform data override the sampling rate for now.
--		 */
--		sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
--					: sampling_rate;
--	}
-+	sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
-+				: sampling_rate;
- 
- 	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 06dc806..22b3640 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -10,15 +10,6 @@
- 
- #define SCIx_NOT_SUPPORTED	(-1)
- 
--enum {
--	SCBRR_ALGO_NONE,	/* Compute sampling rate in the driver */
--	SCBRR_ALGO_1,		/* clk / (16 * bps) */
--	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
--	SCBRR_ALGO_3,		/* clk / (8 * bps) */
--	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
--	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+-#define SCIFB_DATA(index, baseaddr, irq)	\
+-[index] = {					\
+-	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,		\
+-	.scscr = SCSCR_RE | SCSCR_TE,		\
+-}
+-
+-#define SCIF_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
+-}
+-
+-#define HSCIF_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_6,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
+-}
+-
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
+-       HSCIF0, HSCIF1 };
+-
+-static const struct plat_sci_port scif[] __initconst = {
+-	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+-	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+-	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+-	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
+-	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
+-	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
+-	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
+-	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
+-	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
+-	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
 -};
 -
- #define SCSCR_TIE	(1 << 7)
- #define SCSCR_RIE	(1 << 6)
- #define SCSCR_TE	(1 << 5)
-@@ -110,7 +101,6 @@ struct plat_sci_port {
- 	unsigned long	capabilities;		/* Port features/capabilities */
+-static inline void r8a7790_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define R8A7790_SCIF(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
++		       SCBRR_ALGO_2, index, baseaddr, irq)
++
++#define R8A7790_SCIFA(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++		       SCBRR_ALGO_4, index, baseaddr, irq)
++
++#define R8A7790_SCIFB(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
++		       SCBRR_ALGO_4, index, baseaddr, irq)
++
++#define R8A7790_HSCIF(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
++		       SCBRR_ALGO_6, index, baseaddr, irq)
++
++R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
++R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
++R8A7790_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
++R8A7790_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
++R8A7790_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
++R8A7790_SCIFA(5, 0xe6c60000, gic_spi(151)); /* SCIFA2 */
++R8A7790_SCIF(6,  0xe6e60000, gic_spi(152)); /* SCIF0 */
++R8A7790_SCIF(7,  0xe6e68000, gic_spi(153)); /* SCIF1 */
++R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
++R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
++
++#define r8a7790_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
  
- 	unsigned int	sampling_rate;
--	unsigned int	scbrr_algo_id;		/* SCBRR calculation algo */
- 	unsigned int	scscr;			/* SCSCR initialization */
+ static const struct renesas_irqc_config irqc0_data __initconst = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+@@ -185,16 +171,16 @@ static const struct resource cmt00_resources[] __initconst = {
  
- 	/*
+ void __init r8a7790_add_dt_devices(void)
+ {
+-	r8a7790_register_scif(SCIFA0);
+-	r8a7790_register_scif(SCIFA1);
+-	r8a7790_register_scif(SCIFB0);
+-	r8a7790_register_scif(SCIFB1);
+-	r8a7790_register_scif(SCIFB2);
+-	r8a7790_register_scif(SCIFA2);
+-	r8a7790_register_scif(SCIF0);
+-	r8a7790_register_scif(SCIF1);
+-	r8a7790_register_scif(HSCIF0);
+-	r8a7790_register_scif(HSCIF1);
++	r8a7790_register_scif(0);
++	r8a7790_register_scif(1);
++	r8a7790_register_scif(2);
++	r8a7790_register_scif(3);
++	r8a7790_register_scif(4);
++	r8a7790_register_scif(5);
++	r8a7790_register_scif(6);
++	r8a7790_register_scif(7);
++	r8a7790_register_scif(8);
++	r8a7790_register_scif(9);
+ 	r8a7790_register_cmt(00);
+ }
+ 
 -- 
 1.8.3.2
 
