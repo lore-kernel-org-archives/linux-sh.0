@@ -1,60 +1,40 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:34 +0000
-Subject: [PATCH v4 24/29] ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as resources
-Message-Id: <1385594319-5758-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 01:18:28 +0000
+Subject: [PATCH 06/15] v4l: sh_vou: Enable driver compilation with COMPILE_TEST
+Message-Id: <1385515117-23664-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+This helps increasing build testing coverage.
 
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+Cc: linux-media@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ drivers/media/platform/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 8344743..70bb553 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -81,11 +81,14 @@ void __init r8a7790_pinmux_init(void)
- #define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
--	.mapbase	= baseaddr,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
- 	.scbrr_algo_id	= algo,						\
- 	.scscr		= _scscr,					\
--	.irqs		= SCIx_IRQ_MUXED(irq),				\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq),						\
- }
- 
- #define R8A7790_SCIF(index, baseaddr, irq)				\
-@@ -116,9 +119,11 @@ R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
- R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
- 
- #define r8a7790_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- static const struct renesas_irqc_config irqc0_data __initconst = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+index d7f0249..7f6ea65 100644
+--- a/drivers/media/platform/Kconfig
++++ b/drivers/media/platform/Kconfig
+@@ -36,7 +36,8 @@ source "drivers/media/platform/blackfin/Kconfig"
+ config VIDEO_SH_VOU
+ 	tristate "SuperH VOU video output driver"
+ 	depends on MEDIA_CAMERA_SUPPORT
+-	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
++	depends on VIDEO_DEV && I2C
++	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select VIDEOBUF_DMA_CONTIG
+ 	help
+ 	  Support for the Video Output Unit (VOU) on SuperH SoCs.
 -- 
 1.8.3.2
 
