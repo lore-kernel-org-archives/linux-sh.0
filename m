@@ -1,79 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Nov 2013 07:32:11 +0000
-Subject: [PATCH RFC v2 09/17] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
-Message-Id: <1385451139-29686-10-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 00:30:32 +0000
+Subject: [PATCH] v4l: sh_vou: Fix warnings due to improper casts and printk formats
+Message-Id: <1385512232-10361-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org
 
-r8a7779_earlytimer_init() calls r8a7779_clock_init() and
-r8a7779_clock_init() is defined in clock-r8a7779.c.
+Use the %zu printk specifier to print size_t variables, and cast
+pointers to unsigned long instead of unsigned int where applicable. This
+fixes warnings on platforms where pointers and/or dma_addr_t have a
+different size than int.
 
-If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
-as will be the case when marzen-reference moves to use
-the common clock framework, then setup-r8a7779.c is compiled
-but clock-r8a7779.c is not.
-
-As r8a7779_earlytimer_init() is not used by marzen-reference
-simply move it to clock-r8a7779.c.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
- 2 files changed, 11 insertions(+), 10 deletions(-)
+ drivers/media/platform/sh_vou.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index decf122..182a71a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <linux/sh_timer.h>
- #include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r8a7779.h>
-@@ -267,3 +268,13 @@ void __init r8a7779_clock_init(void)
- 	else
- 		panic("failed to setup r8a7779 clocks\n");
- }
-+
-+/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-+void __init __weak r8a7779_register_twd(void) { }
-+
-+void __init r8a7779_earlytimer_init(void)
-+{
-+	r8a7779_clock_init();
-+	r8a7779_register_twd();
-+	shmobile_earlytimer_init();
-+}
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 4e3fbfb..73bb67f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -786,16 +786,6 @@ void __init r8a7779_add_standard_devices(void)
- 	r8a7779_register_hpb_dmae();
- }
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 4f30341..853a5f8 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
+ 	vb->size = vb->height * bytes_per_line;
+ 	if (vb->baddr && vb->bsize < vb->size) {
+ 		/* User buffer too small */
+-		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
++		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
+ 			 vb->bsize, vb->baddr);
+ 		return -EINVAL;
+ 	}
+@@ -302,9 +302,10 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
+ 	}
  
--/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
--void __init __weak r8a7779_register_twd(void) { }
--
--void __init r8a7779_earlytimer_init(void)
--{
--	r8a7779_clock_init();
--	r8a7779_register_twd();
--	shmobile_earlytimer_init();
--}
--
- void __init r8a7779_add_early_devices(void)
- {
- 	early_platform_add_devices(r8a7779_devices_dt,
+ 	dev_dbg(vou_dev->v4l2_dev.dev,
+-		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
++		"%s(): fmt #%d, %u bytes per line, phys 0x%lx, type %d, state %d\n",
+ 		__func__, vou_dev->pix_idx, bytes_per_line,
+-		videobuf_to_dma_contig(vb), vb->memory, vb->state);
++		(unsigned long)videobuf_to_dma_contig(vb), vb->memory,
++		vb->state);
+ 
+ 	return 0;
+ }
 -- 
-1.8.4
+1.8.3.2
 
