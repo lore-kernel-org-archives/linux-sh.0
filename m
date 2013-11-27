@@ -1,55 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:46 +0000
-Subject: [PATCH 16/16] ARM: shmobile: sh7372: tidyup clock table order
-Message-Id: <8af3f18b7b42e32387b54d2e2f8300589b0198e9.1385628709.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 10:16:44 +0000
+Subject: [PATCH v2 2/2] mmc: sh_mmcif: Fix compilation warning on 64-bit platforms
+Message-Id: <1385547404-13703-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
+References: <1385512480-10432-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385512480-10432-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
-for a long term.
-But in these days, the ICK clock is defined in random place.
-This patch arranges it.
+Casting an integer to a void * generates a "cast to pointer from integer
+of different size" warning. Cast the integer to an uintptr_t first to
+fix it.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Chris Ball <cjb@laptop.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ drivers/mmc/host/sh_mmcif.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 5390c6b..2848997 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -504,10 +504,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
- 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
- 	CLKDEV_CON_ID("hdmi_clk", &div6_reparent_clks[DIV6_HDMI]),
--	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
--	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
--	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
--	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+Changes compared to v1:
+
+- Cast to uintptr_t instead of unsigned long
+
+Patch 1/2 hasn't been changed.
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index bebf2fe..dff55da 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -403,7 +403,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 		slave_id = 0;
  
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
-@@ -574,6 +570,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
- 	CLKDEV_DEV_ID("sh_cmt.2", &mstp_clks[MSTP400]), /* CMT2 */
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				(void *)slave_id, &host->pd->dev,
++				(void *)(uintptr_t)slave_id, &host->pd->dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
  
-+	/* ICK */
-+	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
-+	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
-+	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
-+	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
- 	CLKDEV_ICK_ID("hdmi", "sh_mobile_lcdc_fb.1",
- 		      &div6_reparent_clks[DIV6_HDMI]),
- 	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
+ 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
 -- 
-1.8.4
+1.8.3.2
 
