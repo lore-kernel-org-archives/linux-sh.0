@@ -1,36 +1,41 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 28 Nov 2013 18:13:06 +0000
-Subject: Re: [PATCH 03/04] ARM: shmobile: Genmai I2C-over-GPIO support
-Message-Id: <529787B2.7010208@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 10:18:06 +0000
+Subject: [PATCH v2] spi: sh-msiof: Fix warnings due to improper casts
+Message-Id: <1385547486-13802-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127082736.20015.21303.sendpatchset@w520>
- <20131127110413.GA2603@katana> <52977954.20006@cogentembedded.com>
- <4401360.Outsal0mcb@avalon>
-In-Reply-To: <4401360.Outsal0mcb@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello.
+Cast pointers to uintptr_t instead of unsigned int. This fixes warnings
+on platforms where pointers have a different size than int.
 
-On 28-11-2013 21:14, Laurent Pinchart wrote:
+Cc: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/spi/spi-sh-msiof.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->>>> +		#address-cells = <1>;
->>>> +		#size-cells = <0>;
->>>> +
->>>> +		eeprom: 24c128@50 {
->>>> +			compatible = "at,24c128";
+Changes compared to v1:
 
->>> Minor nit: Should be a vendor name, not the name of the driver
+- Cast to uintptr_t instead of unsigned long
 
->> Moreover, the node should be named generically, like "flash@50", not
->> "24c128@50".
-
-> Or, given that it's an eeprom, "eeprom@50" ? :-)
-
-    At least ePAPR spec. only has "flash".
-
-WBR, Sergei
-
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index c74298c..86f822a 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -421,7 +421,7 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
+ 	}
+ 
+ 	/* use spi->controller data for CS (same strategy as spi_gpio) */
+-	gpio_set_value((unsigned)spi->controller_data, value);
++	gpio_set_value((uintptr_t)spi->controller_data, value);
+ 
+ 	if (is_on = BITBANG_CS_INACTIVE) {
+ 		if (test_and_clear_bit(0, &p->flags)) {
+-- 
+1.8.3.2
 
