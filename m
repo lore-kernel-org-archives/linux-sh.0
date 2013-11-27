@@ -1,78 +1,160 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:12 +0000
-Subject: [GIT PULL 00/16] Renesas ARM based SoC cleanups for v3.14
-Message-Id: <cover.1385628709.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:10 +0000
+Subject: [PATCH v4 00/29] Add OF support to the sh-sci serial port driver
+Message-Id: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org, Greg KH <greg@kroah.com>, Simon Horman <horms@verge.net.au>
 
-Hi Kevin, Olof and Arnd,
+Hello,
 
-please consider these Renesas ARM based SoC cleanups for v3.14.
+This is the fourth version of the patch set adds device tree bindings for the
+sh sci serial port devices and adds OF parsing to the sh-sci driver.
 
-The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
+The bindings are based on Bastian Hecht's proposal (see
+http://www.spinics.net/lists/arm-kernel/msg228129.html). The approach taken
+here is more minimalistic: instead of describing all hardware characteristics
+that vary between the SCI device revisions in DT (such as registers layout),
+that information is stored in the driver and selected based on the compatible
+property value. Only SCI revisions used on ARM devices are supported through
+DT, as DT support for SuperH is nowhere down the line.
 
-  Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+Patches 01/29 to 06/29 clean up the sh-sci driver. Patches 07/29 to 27/29
+replace memory and interrupt resources passed through platform data with
+platform resources. Beside replacing a custom mechanism with a standard one,
+it will also make the DT parsing code simpler as resource allocation will be
+shared between DT and non-DT code paths. Finally, patches 28/29 to 29/29 add
+OF parsing to the sh-sci driver and create DT bindings documentation.
 
-are available in the git repository at:
+The patches have been test on a Lager board (r8a7790-based) and a Koelsch board
+(r8a7791-based). Support for other SoCs will be added as needed. Note that all
+current Renesas ARM SoCs seem to be compatible with the generic (H)SCI(F)(AB)
+devices, but the plan is for their DT bindings to list the SoC-specific version
+in case incompatibilities are found later.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.14
+The series will need to be split in three parts to go to mainline. Patches
+01/29 to 07/29 should go through Greg's tree, patches 08/29 to 26/29 through
+Simon's tree, and patches 27/29 to 29/29 through Greg's tree again. Simon will
+need a stable branch with the first seven patches, and should in turn provide
+a stable branch to base the last three patches on.
 
-for you to fetch changes up to 8af3f18b7b42e32387b54d2e2f8300589b0198e9:
+Alternatively the whole series could go through Simon's tree. Greg, would that
+be fine with you ? The patches that would go through your tree touch
+drivers/tty/serial/sh-sci.c, include/linux/serial_sci.h and
+Documentation/devicetree/bindings/serial/renesas,sci-serial.txt only. There
+should be no risk of conflict if Simon takes all the sh-sci patches for the
+next kernel version.
 
-  ARM: shmobile: sh7372: tidyup clock table order (2013-11-24 15:14:32 +0900)
+Changes compared to v3:
 
-----------------------------------------------------------------
-Renesas ARM based SoC cleanups for v3.14
+- Rebased on top of renesas-devel-v3.13-rc1-20131125
 
-* Tidy up clock table order for r7s72100, r8a7779, r8a7779, r8a7790,
-  sh7372 and sh73a0 SoCs.
-* Tidy up camera-rcar header for r8a7779 SoC
-* Tidy up registration of VIN on r8a7779 SoC
-* Tidy up PFC registration on r8a7790 SoC
-* Correct typo in clocks for r8a7790 SoC
-* Don't use named resources for IPMMU, I2C and TMU on sh73a0 SoC
-* Don't use named resources for MMCIF and SDHI on ape6evm board
-* Don't use named resources for MMCIF on lager board
-* Tidy up device registration on lager board
-* Tidy up headers for bockw board
+Changes compared to v2:
 
-----------------------------------------------------------------
-Kuninori Morimoto (13):
-      ARM: shmobile: ape6evm: don't use named resource for MMCIF
-      ARM: shmobile: ape6evm: don't use named resource for SDHI
-      ARM: shmobile: lager: don't use named resource for MMCIF
-      ARM: shmobile: sh73a0: don't use named resource for TMU
-      ARM: shmobile: sh73a0: don't use named resource for I2C
-      ARM: shmobile: sh73a0: don't use named resource for IPMMU
-      ARM: shmobile: bockw: header cleanup
-      ARM: shmobile: r8a7779: cleanup registration of VIN
-      ARM: shmobile: r8a7779: camera-rcar header cleanup
-      ARM: shmobile: r8a7779: cleanup registration of sh_eth
-      ARM: shmobile: sh73a0: tidyup clock table order
-      ARM: shmobile: r7s72100: tidyup clock table order
-      ARM: shmobile: sh7372: tidyup clock table order
+- Fix indentation in 12/29
+- Remove interrupt-parent property from the DT bindings documentation
+- Remove -generic suffix from DT compatible values
+- Reword the DT bindings documentation based on comments received on v2
+- Added r8a7791 support to the DT bindings
 
-Magnus Damm (2):
-      ARM: shmobile: Cosmetic update of Lager DT Reference
-      ARM: shmobile: Add r8a7790_register_pfc() function
+Changes compared to v1:
 
-Simon Horman (1):
-      ARM: shmobile: r8a7790: Correct typo in clocks
+- Patches 04/29 to 27/29 have been added
+- Multi-interrupt support has been removed from the DT bindings as they don't
+  support any SoC requiring multi-interrupt yet
 
- arch/arm/mach-shmobile/board-ape6evm.c         |  6 +--
- arch/arm/mach-shmobile/board-bockw-reference.c |  1 -
- arch/arm/mach-shmobile/board-lager-reference.c |  5 +--
- arch/arm/mach-shmobile/board-lager.c           |  2 +-
- arch/arm/mach-shmobile/board-marzen.c          | 25 ++++++++++-
- arch/arm/mach-shmobile/clock-r7s72100.c        |  3 ++
- arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
- arch/arm/mach-shmobile/clock-sh7372.c          |  9 ++--
- arch/arm/mach-shmobile/clock-sh73a0.c          | 14 ++++---
- arch/arm/mach-shmobile/include/mach/r8a7779.h  |  5 ---
- arch/arm/mach-shmobile/setup-r8a7779.c         | 57 --------------------------
- arch/arm/mach-shmobile/setup-r8a7790.c         |  7 +++-
- arch/arm/mach-shmobile/setup-sh73a0.c          | 16 ++++----
- 13 files changed, 59 insertions(+), 93 deletions(-)
+Cc: devicetree@vger.kernel.org
+Cc: Greg KH <greg@kroah.com>
+Cc: Simon Horman <horms@verge.net.au>
+
+Bastian Hecht (1):
+  serial: sh-sci: Add OF support
+
+Laurent Pinchart (28):
+  serial: sh-sci: Sort headers alphabetically
+  serial: sh-sci: Remove baud rate calculation algorithm 5
+  serial: sh-sci: Simplify baud rate calculation algorithms
+  serial: sh-sci: Remove duplicate interrupt check in verify port op
+  serial: sh-sci: Set the UPF_FIXED_PORT flag
+  serial: sh-sci: Don't check IRQ in verify port operation
+  serial: sh-sci: Support resources passed through platform resources
+  ARM: shmobile: sh7372: Use macros to declare SCIF devices
+  ARM: shmobile: sh73a0: Use macros to declare SCIF devices
+  ARM: shmobile: r8a7740: Use macros to declare SCIF devices
+  ARM: shmobile: r8a7779: Use macros to declare SCIF devices
+  ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7778: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7791: Don't define SCIF platform data in an array
+  ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
+  ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
+  ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a73a4: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7740: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7779: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as
+    resources
+  sh: Declare SCIF register base and IRQ as resources
+  serial: sh-sci: Remove platform data mapbase and irqs fields
+  serial: sh-sci: Add device tree bindings documentation
+
+ .../bindings/serial/renesas,sci-serial.txt         |  46 ++++
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  63 +++---
+ arch/arm/mach-shmobile/setup-r8a73a4.c             |  65 +++---
+ arch/arm/mach-shmobile/setup-r8a7740.c             | 196 +++--------------
+ arch/arm/mach-shmobile/setup-r8a7778.c             |  45 ++--
+ arch/arm/mach-shmobile/setup-r8a7779.c             | 129 +++--------
+ arch/arm/mach-shmobile/setup-r8a7790.c             | 117 +++++-----
+ arch/arm/mach-shmobile/setup-r8a7791.c             | 130 +++++------
+ arch/arm/mach-shmobile/setup-sh7372.c              | 161 +++-----------
+ arch/arm/mach-shmobile/setup-sh73a0.c              | 192 +++--------------
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c              |  27 ++-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c                |   9 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c             |  72 +++++--
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  36 +++-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  36 +++-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c             |  96 +++++++--
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c             |  96 +++++++--
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c              |  18 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c              |  27 ++-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c              |  18 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c              |  18 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c             |  15 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c              |  18 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c              |  58 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c             |  36 +++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c             |   9 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c             |  27 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c             |  54 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  54 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  66 ++++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c             |  27 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c             |  27 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c             |  90 ++++++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c             |  18 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c             |  54 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c             |  82 +++++--
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c               |  45 ++--
+ arch/sh/kernel/cpu/sh5/setup-sh5.c                 |  11 +-
+ drivers/tty/serial/sh-sci.c                        | 238 ++++++++++++++++-----
+ include/linux/serial_sci.h                         |  35 +--
+ 40 files changed, 1447 insertions(+), 1114 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+
+-- 
+Regards,
+
+Laurent Pinchart
+
