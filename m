@@ -1,39 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:41:44 +0000
-Subject: [PATCH 1/3] spi: rcar: Fix uninitialized variable warning
-Message-Id: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 27 Nov 2013 16:31:59 +0000
+Subject: Re: [PATCH 1/3] spi: rcar: Fix uninitialized variable warning
+Message-Id: <20131127163159.GG14725@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="D5hdKamO53XmQjsc"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org
+References: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
 
-The transfer data length variable is set based on the desired access
-size, without a default case. This results in a compiler warning, even
-though the access size is always set to a supported value. Create a
-default case to silence the warning.
 
-Cc: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/spi/spi-rspi.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--D5hdKamO53XmQjsc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 58449ad..a3dca1d 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -268,7 +268,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
- 		spcmd = SPCMD_SPB_8BIT;
- 	else if (access_size = 16)
- 		spcmd = SPCMD_SPB_16BIT;
--	else if (access_size = 32)
-+	else
- 		spcmd = SPCMD_SPB_32BIT;
- 
- 	spcmd |= SPCMD_SCKDEN | SPCMD_SLNDEN | SPCMD_SSLKP | SPCMD_SPNDEN;
--- 
-1.8.3.2
+On Wed, Nov 27, 2013 at 01:41:44AM +0100, Laurent Pinchart wrote:
+> The transfer data length variable is set based on the desired access
+> size, without a default case. This results in a compiler warning, even
+> though the access size is always set to a supported value. Create a
+> default case to silence the warning.
 
+Applied all, thanks.
+
+--D5hdKamO53XmQjsc
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSlh58AAoJELSic+t+oim90z8P/10fVcWIERKDhEgfrRcaTAqW
+IwpwSqY/A2bW36fB77i63rUiiQZDJ2haxtQuWbWGivkufHg3C2ACaUeBJIelCV9T
+velhw8jF3MWA8NaahFzdTpLDg/slBfZedXlsiGb2TTeltR9xbxsZ9TGAB9cZ/Z2+
+Gv+ggiryqeyc4Nkn6G3Ez74Aqu5YOutaTJIuptd3eyWnliJNsWjpTA0SDEfTHguH
+m+oI2/mVUS+SZlep6aVtTMw3sR/MDKwUWjw0bDLn5ToiBEYJhpDsvvlFRDJ+8fww
+Ceh45yetT0jhN97aCrlShOrTi2NGAVMekdKSAPqUA6ictX2J/9AAX2lJr3QFCBdV
+PKLK4omNgxKBGyHfMLCqAFaVWNRhKxRK61Of6uErpxNlZ2Wf5YqxgTDsx7aVtMPN
+JtRpsjmxEIDkfJJHg8s63uJhoPHUfcOrNxFe3am/6RgOfza04AO1iArhJ2vpQvP0
+QrTK2jr4MjXsCn2HBX1vncLmcs/rKI89X7ESoI870hnnWUq2zsk1XlCqOINRpS1q
+B07ZPjxB/ps5wjPQRV4jsMGYpJSW/bSs8+z55eiHc/8tY9DH8QKWzarKpLOE4B+F
+i+emDKc/JTxJCGYTIeQslCCW1EtXHQv/aH8bBFKjRdC/wEpeOn+EPZ2uRQkuhpSP
+lxmEwItnrPwKLR8Trc7l
+=xwn9
+-----END PGP SIGNATURE-----
+
+--D5hdKamO53XmQjsc--
