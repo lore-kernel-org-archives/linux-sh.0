@@ -1,131 +1,122 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 16:27:29 +0000
-Subject: [PATCH v2] ARM: Kconfig: Mention Renesas ARM SoCs instead of SH-Mobile
-Message-Id: <1385656049-17138-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 00:41:46 +0000
+Subject: [PATCH 3/3] spi: rcar: Use devm_* managed allocators
+Message-Id: <1385512906-13108-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385512906-13108-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Only the SH-Mobile product name is mentioned in the Kconfig descriptions
-and help texts. This makes it difficult for external engineers working
-on other Renesas platforms to find upstream platform support as the
-combination of the SH-Mobile name and using the product number proved an
-effective method of concealment.
+This simplies error and cleanup code paths.
 
-Replace the "SH-Mobile" name with "Renesas ARM SoCs" in all the related
-descriptions, help texts and comments.
-
-Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/Kconfig               |  7 ++++---
- arch/arm/mach-shmobile/Kconfig | 18 +++++++++---------
- 2 files changed, 13 insertions(+), 12 deletions(-)
+ drivers/spi/spi-rspi.c | 38 +++++++++++++-------------------------
+ 1 file changed, 13 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 483d316..341b67d 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -645,7 +645,7 @@ config ARCH_MSM
- 	  (clock and power control, etc).
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 621be5d..19c65c4 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -889,9 +889,6 @@ static int rspi_remove(struct platform_device *pdev)
  
- config ARCH_SHMOBILE_LEGACY
--	bool "Renesas SH-Mobile / R-Mobile (non-multiplatform)"
-+	bool "Renesas ARM SoCs (non-multiplatform)"
- 	select ARCH_SHMOBILE
- 	select ARM_PATCH_PHYS_VIRT
- 	select CLKDEV_LOOKUP
-@@ -661,8 +661,9 @@ config ARCH_SHMOBILE_LEGACY
- 	select PM_GENERIC_DOMAINS if PM
- 	select SPARSE_IRQ
- 	help
--	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms using
--	  a non-multiplatform kernel.
-+	  Support for Renesas ARM SoC platforms using a non-multiplatform
-+	  kernel. This includes the SH-Mobile, R-Mobile, EMMA-Mobile, R-Car
-+	  and RZ families.
+ 	spi_unregister_master(rspi->master);
+ 	rspi_release_dma(rspi);
+-	free_irq(platform_get_irq(pdev, 0), rspi);
+-	clk_put(rspi->clk);
+-	iounmap(rspi->addr);
  
- config ARCH_RPC
- 	bool "RiscPC"
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index bc8108b..039b5e0 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -2,7 +2,7 @@ config ARCH_SHMOBILE
- 	bool
+ 	return 0;
+ }
+@@ -913,12 +910,6 @@ static int rspi_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "there is no set_config_register\n");
+ 		return -ENODEV;
+ 	}
+-	/* get base addr */
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (unlikely(res = NULL)) {
+-		dev_err(&pdev->dev, "invalid resource\n");
+-		return -EINVAL;
+-	}
  
- config ARCH_SHMOBILE_MULTI
--	bool "SH-Mobile Series" if ARCH_MULTI_V7
-+	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
- 	depends on MMU
- 	select ARCH_SHMOBILE
- 	select CPU_V7
-@@ -19,7 +19,7 @@ config ARCH_SHMOBILE_MULTI
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0) {
+@@ -936,19 +927,20 @@ static int rspi_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, rspi);
+ 	rspi->ops = ops;
+ 	rspi->master = master;
+-	rspi->addr = ioremap(res->start, resource_size(res));
+-	if (rspi->addr = NULL) {
+-		dev_err(&pdev->dev, "ioremap error.\n");
+-		ret = -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	rspi->addr = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(rspi->addr)) {
++		ret = PTR_ERR(rspi->addr);
+ 		goto error1;
+ 	}
  
- if ARCH_SHMOBILE_MULTI
+ 	snprintf(clk_name, sizeof(clk_name), "%s%d", id_entry->name, pdev->id);
+-	rspi->clk = clk_get(&pdev->dev, clk_name);
++	rspi->clk = devm_clk_get(&pdev->dev, clk_name);
+ 	if (IS_ERR(rspi->clk)) {
+ 		dev_err(&pdev->dev, "cannot get clock\n");
+ 		ret = PTR_ERR(rspi->clk);
+-		goto error2;
++		goto error1;
+ 	}
+ 	clk_enable(rspi->clk);
  
--comment "SH-Mobile System Type"
-+comment "Renesas ARM SoCs System Type"
+@@ -966,36 +958,32 @@ static int rspi_probe(struct platform_device *pdev)
+ 	master->transfer = rspi_transfer;
+ 	master->cleanup = rspi_cleanup;
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-@@ -31,7 +31,7 @@ config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
+-	ret = request_irq(irq, rspi_irq, 0, dev_name(&pdev->dev), rspi);
++	ret = devm_request_irq(&pdev->dev, irq, rspi_irq, 0,
++			       dev_name(&pdev->dev), rspi);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "request_irq error\n");
+-		goto error3;
++		goto error1;
+ 	}
  
--comment "SH-Mobile Board Type"
-+comment "Renesas ARM SoCs Board Type"
+ 	rspi->irq = irq;
+ 	ret = rspi_request_dma(rspi, pdev);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
+-		goto error4;
++		goto error2;
+ 	}
  
- config MACH_GENMAI
- 	bool "Genmai board"
-@@ -46,12 +46,12 @@ config MACH_KZM9D
- 	depends on ARCH_EMEV2
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	ret = spi_register_master(master);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "spi_register_master error.\n");
+-		goto error4;
++		goto error2;
+ 	}
  
--comment "SH-Mobile System Configuration"
-+comment "Renesas ARM SoCs System Configuration"
- endif
+ 	dev_info(&pdev->dev, "probed\n");
  
- if ARCH_SHMOBILE_LEGACY
+ 	return 0;
  
--comment "SH-Mobile System Type"
-+comment "Renesas ARM SoCs System Type"
+-error4:
+-	rspi_release_dma(rspi);
+-	free_irq(irq, rspi);
+-error3:
+-	clk_put(rspi->clk);
+ error2:
+-	iounmap(rspi->addr);
++	rspi_release_dma(rspi);
+ error1:
+ 	spi_master_put(master);
  
- config ARCH_SH7372
- 	bool "SH-Mobile AP4 (SH7372)"
-@@ -136,7 +136,7 @@ config ARCH_R7S72100
- 	select CPU_V7
- 	select SH_CLK_CPG
- 
--comment "SH-Mobile Board Type"
-+comment "Renesas ARM SoCs Board Type"
- 
- config MACH_APE6EVM
- 	bool "APE6EVM board"
-@@ -300,7 +300,7 @@ config MACH_KZM9G_REFERENCE
- 
- 	   This is intended to aid developers
- 
--comment "SH-Mobile System Configuration"
-+comment "Renesas ARM SoCs System Configuration"
- 
- config CPU_HAS_INTEVT
-         bool
-@@ -325,8 +325,8 @@ config SHMOBILE_TIMER_HZ
- 	  Allows the configuration of the timer frequency. It is customary
- 	  to have the timer interrupt run at 1000 Hz or 100 Hz, but in the
- 	  case of low timer frequencies other values may be more suitable.
--	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
--	  to select a HZ value such as 128 that can evenly divide RCLK.
-+	  Renesas ARM SoC systems using a 32768 Hz RCLK for clock events may
-+	  want to select a HZ value such as 128 that can evenly divide RCLK.
- 	  A HZ value that does not divide evenly may cause timer drift.
- 
- config SH_TIMER_CMT
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
