@@ -1,142 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Nov 2013 01:18:32 +0000
-Subject: [RFC 17/17] ARM: shmobile: Remove Marzen reference DTS
-Message-Id: <1385342312-1967-18-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:13 +0000
+Subject: [PATCH v4 03/29] serial: sh-sci: Simplify baud rate calculation algorithms
+Message-Id: <1385594319-5758-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Now that the DTS file r8a7790-marzen.dts can be used with
-board-marzen.c and board-marzen-reference.c, proceed with removing
-r8a7790-marzen-reference.dts.
+Rewrite the baud rate register value calculations in easier to read
+forms. The computed value isn't modified.
 
-Based on work for the Koelsch board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 110 -------------------------
- 1 file changed, 110 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
+ drivers/tty/serial/sh-sci.c | 8 ++++----
+ include/linux/serial_sci.h  | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-deleted file mode 100644
-index 13fa8be..0000000
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ /dev/null
-@@ -1,110 +0,0 @@
--/*
-- * Reference Device Tree Source for the Marzen board
-- *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- * Copyright (C) 2013 Simon Horman
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7779.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--#include <dt-bindings/interrupt-controller/irq.h>
--
--/ {
--	model = "marzen";
--	compatible = "renesas,marzen-reference", "renesas,r8a7779";
--
--	chosen {
--		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
--	};
--
--	memory {
--		device_type = "memory";
--		reg = <0x60000000 0x40000000>;
--	};
--
--	fixedregulator3v3: fixedregulator@0 {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-3.3V";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--
--	lan0@18000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x18000000 0x100>;
--		pinctrl-0 = <&lan0_pins>;
--		pinctrl-names = "default";
--
--		phy-mode = "mii";
--		interrupt-parent = <&irqpin0>;
--		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
--		reg-io-width = <4>;
--		vddvario-supply = <&fixedregulator3v3>;
--		vdd33a-supply = <&fixedregulator3v3>;
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led2 {
--			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
--		};
--		led3 {
--			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
--		};
--		led4 {
--			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
--		};
--	};
--};
--
--&irqpin0 {
--	status = "okay";
--};
--
--&pfc {
--	pinctrl-0 = <&scif2_pins &scif4_pins>;
--	pinctrl-names = "default";
--
--	lan0_pins: lan0 {
--		intc {
--			renesas,groups = "intc_irq1_b";
--			renesas,function = "intc";
--		};
--		lbsc {
--			renesas,groups = "lbsc_ex_cs0";
--			renesas,function = "lbsc";
--		};
--	};
--
--	scif2_pins: serial2 {
--		renesas,groups = "scif2_data_c";
--		renesas,function = "scif2";
--	};
--
--	scif4_pins: serial4 {
--		renesas,groups = "scif4_data";
--		renesas,function = "scif4";
--	};
--
--	sdhi0_pins: sd0 {
--		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
--				 "sdhi0_wp";
--		renesas,function = "sdhi0";
--	};
--};
--
--&sdhi0 {
--	pinctrl-0 = <&sdhi0_pins>;
--	pinctrl-names = "default";
--
--	vmmc-supply = <&fixedregulator3v3>;
--	bus-width = <4>;
--	status = "okay";
--};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 277b669..feb1a6a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1813,13 +1813,13 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+ {
+ 	switch (algo_id) {
+ 	case SCBRR_ALGO_1:
+-		return ((freq + 16 * bps) / (16 * bps) - 1);
++		return freq / (16 * bps);
+ 	case SCBRR_ALGO_2:
+-		return ((freq + 16 * bps) / (32 * bps) - 1);
++		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
+ 	case SCBRR_ALGO_3:
+-		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
++		return freq / (8 * bps);
+ 	case SCBRR_ALGO_4:
+-		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
++		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
+ 	}
+ 
+ 	/* Warn, but use a safe default */
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index babc5fe..12cf50c 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -11,10 +11,10 @@
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+ enum {
+-	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
+-	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
+-	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
+-	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
++	SCBRR_ALGO_1,		/* clk / (16 * bps) */
++	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
++	SCBRR_ALGO_3,		/* clk / (8 * bps) */
++	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
+ 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+ };
+ 
 -- 
-1.8.4
+1.8.3.2
 
