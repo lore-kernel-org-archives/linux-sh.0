@@ -1,55 +1,63 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 27 Nov 2013 11:04:13 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 27 Nov 2013 11:15:52 +0000
 Subject: Re: [PATCH 03/04] ARM: shmobile: Genmai I2C-over-GPIO support
-Message-Id: <20131127110413.GA2603@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="1yeeQ81UyVL57Vl7"
+Message-Id: <2757102.StIMV2khe5@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131127082736.20015.21303.sendpatchset@w520>
  <20131127082805.20015.82680.sendpatchset@w520>
 In-Reply-To: <20131127082805.20015.82680.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Magnus,
 
---1yeeQ81UyVL57Vl7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thank you for the patch.
 
+On Wednesday 27 November 2013 17:28:05 Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add support for the Genmai I2C bus hooked up to P1_5 and P1_4 using
+> the i2c-gpio driver. On the bus sits a 24c128 EEPRROM.
 
+Is this a temporary workaround until we get a proper I2C controller driver, or 
+is the EEPROM really hooked up to pins that are not wired to a hardware I2C 
+controller ?
+
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  arch/arm/boot/dts/r7s72100-genmai-reference.dts |   18 ++++++++++++++++++
+>  1 file changed, 18 insertions(+)
+> 
+> --- 0008/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27
+> 15:51:31.000000000 +0900 @@ -39,4 +39,22 @@
+>  			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
+>  		};
+>  	};
+> +
+> +	i2c@0 {
+> +		compatible = "i2c-gpio";
+> +		gpios = <&port1 5 GPIO_ACTIVE_HIGH /* sda */
+> +			 &port1 4 GPIO_ACTIVE_HIGH /* scl */
+> +			>;
+> +		i2c-gpio,sda-open-drain;
+> +		i2c-gpio,scl-open-drain;
+> +		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
 > +		#address-cells = <1>;
 > +		#size-cells = <0>;
 > +
 > +		eeprom: 24c128@50 {
 > +			compatible = "at,24c128";
-
-Minor nit: Should be a vendor name, not the name of the driver
-
 > +			reg = <0x50>;
 > +		};
 > +	};
 > +
 >  };
+-- 
+Regards,
 
---1yeeQ81UyVL57Vl7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Laurent Pinchart
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSldGtAAoJEBQN5MwUoCm2f/8QAJZWYR5hvw08RKIrzEt/atIR
-DoW9k3O485XOP+SOT0Vq/B2+Gf0X7x/JvSjd4gqiSqyV2Cu/QD7po9dP8ULHj1iG
-aKz1D3Vo4SwqsnY/+eSP5Fehe1igqlDLC6nbJocP7EgxGtyl7QzZBdqaiH2Y0Kg0
-OA/bC1P/gdXCDdVZAflGue1A1A4D5j5xWSe0LLtM2AB8EIirnsbwL7U19RrkmYqW
-lczqNTnJRqx35MkGr5xuT6gBAgNLbBooJUtGiwzdxW3iNTKjZyyvnrBnryLsxN9N
-6mKX6Jpf8WgSf8dotbsnbUUv/Ku7G9mxlRTMU+55BcxWxmnWWKbFPIGxolVr/RWe
-4w25ci/8yTVKyDZlqDz10sYfur/meQ/b1u3/RbXXikPhgpRMJph2horfxrOCQNfk
-PS2nYtKLXBOkWMADOZWevTdBUEppgeibpYiRrX+/8JPVkKWBV44oJYLlnvg9rD+B
-t1kbdrmL35U6d6ksK4fUb5GxdE/e0i+8nHcsMZ9YeIczVgWJPbH8JsSk+Uz5T3sM
-G5NEZwUV8uHZpDTPNZvXMIhWC9MqRj2hc5OLkA7HGxF75BzvFJ/fwUPTtgOCZn+p
-5CKR2YrIPrEuLMjL6/xMnjYg5fFlZM2wYevOYKMRRUr0P+V4x9agEh/wq9NSBO39
-3b2ts1Wde0fYnJAd+0HA
-=LZVQ
------END PGP SIGNATURE-----
-
---1yeeQ81UyVL57Vl7--
