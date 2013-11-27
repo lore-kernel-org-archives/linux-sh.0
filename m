@@ -1,42 +1,39 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 07 Nov 2013 20:13:20 +0000
-Subject: Re: [PATCH V2 1/2] sata_rcar: Add R-Car Gen2 SATA PHY support
-Message-Id: <527BF460.1030503@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 01:18:36 +0000
+Subject: [PATCH 14/15] spi: sh-msiof: Enable driver compilation with COMPILE_TEST
+Message-Id: <1385515117-23664-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383854642-21660-1-git-send-email-valentine.barshak@cogentembedded.com> <1383854642-21660-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1383854642-21660-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tejun Heo <tj@kernel.org>
-Cc: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/08/2013 12:04 AM, Valentine Barshak wrote:
-> R-Car Gen2 SoCs have a different PHY which is not compatible
-> with the older R-Car H1 (R8A7779) version.
-> This adds OF/platform device id tables and PHY initialization
-> callbacks for the following Gen2 SoCs:
->    * R-Car H2: R8A7790;
->    * R-Car M2: R8A7791.
->
-> PHY initialization method is chosen based on the device id.
-> Default PHY settings are applied for Gen2 SoCs, which should
-> suit the Gen2 boards available.
->
-> While at it, this also adds "sata-r8a7779" compatibility string
-> for R8A7779 SATA, while keeping the old one for compatibility.
->
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+This helps increasing build testing coverage.
 
-Tejun,
-are you OK with applying this?
+Cc: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/spi/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-All the comments have been addressed in the previous version.
-I've just decided to give it a minor white-space clean-up here
-to make both array terminators look identical: "{ },".
-
-I wonder if it's not to late for the 3.13.
-
-Thanks,
-Val.
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index eb1f1ef..51ae940 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -407,7 +407,8 @@ config SPI_SC18IS602
+ 
+ config SPI_SH_MSIOF
+ 	tristate "SuperH MSIOF SPI controller"
+-	depends on (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
++	depends on HAVE_CLK
++	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+ 	select SPI_BITBANG
+ 	help
+ 	  SPI driver for SuperH and SH Mobile MSIOF blocks.
+-- 
+1.8.3.2
 
