@@ -1,80 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Nov 2013 02:41:33 +0000
-Subject: Re: [PATCH 03/14] ARM: shmobile: r8a7779: add HPB-DMAC support
-Message-Id: <20131113024133.GA22484@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 01:18:37 +0000
+Subject: [PATCH 15/15] sh: intc: Enable driver compilation with COMPILE_TEST
+Message-Id: <1385515117-23664-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381293239.git.horms+renesas@verge.net.au>
- <441f750236f3d3d435a1e89ad885ec896832b9c6.1381293239.git.horms+renesas@verge.net.au>
- <52814F8E.4090606@cogentembedded.com>
- <5281501A.9070009@cogentembedded.com>
- <20131112015853.GC9863@verge.net.au>
- <528253AE.4040708@cogentembedded.com>
-In-Reply-To: <528253AE.4040708@cogentembedded.com>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 12, 2013 at 08:13:34PM +0400, Sergei Shtylyov wrote:
-> Hello.
->=20
-> On 12-11-2013 5:58, Simon Horman wrote:
->=20
-> >>>>From: Max Filippov <max.filippov@cogentembedded.com>
->=20
-> >>>>Add HPB-DMAC platform device on R8A7779 SoC along with its slave and =
-channel
-> >>>>configurations (only for SDHI0 so far).
->=20
-> >>>>Signed-off-by: Max Filippov <max.filippov@cogentembedded.com>
-> >>>>[Sergei: moved *enum* declaring HPB-DMAC slave IDs from now removed
-> >>>><mach/dma.h>
-> >>>>to <mach/r8a7779.h>, removed #include <mach/dma.h> from setup-r8a7779=
-.c,
-> >>>>removed
-> >>>>SSI-related *enum* values and SSI-related data from hpb_dmae_slaves[]=
- and
-> >>>>hpb_dmae_channels[], added ASYNCMDR.ASBTMD{20|24|43} and
-> >>>>ASYNCMDR.ASMD{20|24|43}
-> >>>>fields/values, fixed comments to ASYNCMDR.ASBTMD2[123] and ASYNCMDR.A=
-SMD2[123]
-> >>>>fields/values, renamed all the bit/field/value #define's to include '=
-HBP_DMAE_'
-> >>>>prefix to match the driver, moved comments after the element initiali=
-zers of
-> >>>>hpb_dmae_channels[].]
-> >>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>>>Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >>>>---
-> >>>>  arch/arm/mach-shmobile/include/mach/r8a7779.h |   7 ++
-> >>>>  arch/arm/mach-shmobile/setup-r8a7779.c        | 154
-> >>>>++++++++++++++++++++++++++
-> >>>>  2 files changed, 161 insertions(+)
->=20
-> >>>    Hm, Simon, do you know how this patch and the next one ended up be=
-ing
-> >>>merged twice into Linus' tree?
->=20
-> >>    Sorry, I followed up to the wrong patch. So, the question was
-> >>about this patch and the previous one.
->=20
-> >>>https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit=
-/?id=1Eb6b5a0e55bfcfb0852b7d0f9442841ff807345
-> >>>https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit=
-/?id38c4991ed350abd7c5b3cb807fe022cb712a8ba
->=20
-> >>https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/=
-?id=A43e5bd76a4a3df58167d85e8020a1c9e566ad75
-> >>https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/=
-?idD1f750236f3d3d435a1e89ad885ec896832b9c6
->=20
-> >I assume that the reference to above git IDs implies that the answer
-> >to your question is yes.
->=20
->    And answer to the question "how" is? :-)
+This helps increasing build testing coverage.
 
-Due to a rebasing error on my part two versions of a branch containing
-these patches and several others were merged. I checked and it looks
-like the code-changes made by both versions of the branch are the same.
-So at this stage I think the only problem is that this causes some
-confusion as there are duplicates of some patches in git, permanently.
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/sh/intc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index a305731..f7d9061 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -6,7 +6,7 @@ comment "Interrupt controller options"
+ 
+ config INTC_USERIMASK
+ 	bool "Userspace interrupt masking support"
+-	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
++	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
+ 	help
+ 	  This enables support for hardware-assisted userspace hardirq
+ 	  masking.
+-- 
+1.8.3.2
+
