@@ -1,52 +1,89 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 00:30:32 +0000
-Subject: [PATCH] v4l: sh_vou: Fix warnings due to improper casts and printk formats
-Message-Id: <1385512232-10361-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 00:28:38 +0000
+Subject: [PATCH] serial: sh-sci: Fix warnings due to improper casts and printk formats
+Message-Id: <1385512118-10219-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org
 
 Use the %zu printk specifier to print size_t variables, and cast
 pointers to unsigned long instead of unsigned int where applicable. This
 fixes warnings on platforms where pointers and/or dma_addr_t have a
 different size than int.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-media@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-serial@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/sh_vou.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ drivers/tty/serial/sh-sci.c | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 4f30341..853a5f8 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
- 	vb->size = vb->height * bytes_per_line;
- 	if (vb->baddr && vb->bsize < vb->size) {
- 		/* User buffer too small */
--		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
-+		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
- 			 vb->bsize, vb->baddr);
- 		return -EINVAL;
- 	}
-@@ -302,9 +302,10 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
- 	}
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 7d8103c..25b7f67 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -557,7 +557,7 @@ static inline int sci_rxd_in(struct uart_port *port)
+ 		return 1;
  
- 	dev_dbg(vou_dev->v4l2_dev.dev,
--		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
-+		"%s(): fmt #%d, %u bytes per line, phys 0x%lx, type %d, state %d\n",
- 		__func__, vou_dev->pix_idx, bytes_per_line,
--		videobuf_to_dma_contig(vb), vb->memory, vb->state);
-+		(unsigned long)videobuf_to_dma_contig(vb), vb->memory,
-+		vb->state);
- 
- 	return 0;
+ 	/* Cast for ARM damage */
+-	return !!__raw_readb((void __iomem *)s->cfg->port_reg);
++	return !!__raw_readb((void __iomem *)(unsigned long)s->cfg->port_reg);
  }
+ 
+ /* ********************************************************************** *
+@@ -1309,7 +1309,7 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
+ 	}
+ 
+ 	if (room < count)
+-		dev_warn(port->dev, "Rx overrun: dropping %u bytes\n",
++		dev_warn(port->dev, "Rx overrun: dropping %zu bytes\n",
+ 			 count - room);
+ 	if (!room)
+ 		return room;
+@@ -1442,7 +1442,7 @@ static void work_fn_rx(struct work_struct *work)
+ 		int count;
+ 
+ 		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
+-		dev_dbg(port->dev, "Read %u bytes with cookie %d\n",
++		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
+ 			sh_desc->partial, sh_desc->cookie);
+ 
+ 		spin_lock_irqsave(&port->lock, flags);
+@@ -1691,16 +1691,17 @@ static void sci_request_dma(struct uart_port *port)
+ 		s->chan_tx = chan;
+ 		sg_init_table(&s->sg_tx, 1);
+ 		/* UART circular tx buffer is an aligned page. */
+-		BUG_ON((int)port->state->xmit.buf & ~PAGE_MASK);
++		BUG_ON((unsigned long)port->state->xmit.buf & ~PAGE_MASK);
+ 		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+-			    UART_XMIT_SIZE, (int)port->state->xmit.buf & ~PAGE_MASK);
++			    UART_XMIT_SIZE,
++			    (unsigned long)port->state->xmit.buf & ~PAGE_MASK);
+ 		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
+ 		if (!nent)
+ 			sci_tx_dma_release(s, false);
+ 		else
+-			dev_dbg(port->dev, "%s: mapped %d@%p to %x\n", __func__,
+-				sg_dma_len(&s->sg_tx),
+-				port->state->xmit.buf, sg_dma_address(&s->sg_tx));
++			dev_dbg(port->dev, "%s: mapped %d@%p to %lx\n", __func__,
++				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
++				(unsigned long)sg_dma_address(&s->sg_tx));
+ 
+ 		s->sg_len_tx = nent;
+ 
+@@ -1740,7 +1741,7 @@ static void sci_request_dma(struct uart_port *port)
+ 
+ 			sg_init_table(sg, 1);
+ 			sg_set_page(sg, virt_to_page(buf[i]), s->buf_len_rx,
+-				    (int)buf[i] & ~PAGE_MASK);
++				    (unsigned long)buf[i] & ~PAGE_MASK);
+ 			sg_dma_address(sg) = dma[i];
+ 		}
+ 
 -- 
 1.8.3.2
 
