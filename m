@@ -1,42 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 21 Nov 2013 01:53:10 +0000
-Subject: Re: [PATCH 1/2 v2] ARM: shmobile: lager: add gpio/fixed regulator for SDHI
-Message-Id: <87wqk2y0zh.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Nov 2013 08:27:36 +0000
+Subject: [PATCH 00/04] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL support
+Message-Id: <20131127082736.20015.21303.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0rz3to.wl%kuninori.morimoto.gx@renesas.com>
-	<9182336.4KdqZZkpGQ@avalon>
-	<87pppv8qx4.wl%kuninori.morimoto.gx@renesas.com>
-	<1745725.K7bPWgBA4v@avalon>
-In-Reply-To: <1745725.K7bPWgBA4v@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL support
 
-Hi Laurent
+[PATCH 01/04] ARM: shmobile: r7s72100 GPIO and PINCTRL device nodes
+[PATCH 02/04] ARM: shmobile: Genmai LED1 and LED2 support
+[PATCH 03/04] ARM: shmobile: Genmai I2C-over-GPIO support
+[PATCH 04/04] ARM: shmobile: Genmai SCIF2 PINCTRL configuration
 
-> > --- with regulator/machine.h --------
-> >   CC      arch/arm/mach-shmobile/board-lager.o
-> > In file included from
-> > /opt/usr/src/WORK/morimoto/gitlinux/linux/arch/arm/mach-shmobile/board-lage
-> > r.c:36:0:
-> > /opt/usr/src/WORK/morimoto/gitlinux/linux/include/linux/regulator/gpio-regu
-> > lator.h:83:22: error: field 'type' has incomplete type
-> > /opt/usr/src/WORK/morimoto/gitlinux/linux/arch/arm/mach-shmobile/board-lage
-> > r.c:208:1: error: 'REGULATOR_VOLTAGE' undeclared here (not in a function)
-> > 
-> > --- with regulator/driver.h ------
-> >   CC      arch/arm/mach-shmobile/board-lager.o
-> > (no error)
-> 
-> I believe the enum regulator_type definition should be moved out of 
-> regulator/driver.h, but that's out of scope of this patch set, so I'm fine 
-> with including regulator/driver.h for now.
+Add various device nodes to the r7s72100 SoC and the Genmai board,
+nothing special just basic support for LEDs and I2C-over-GPIO.
 
-Thank you
+Patch 4/4 depends on the r7s72100 PINCTRL pin grouping, but 1-3
+depends on the GPIO driver.
 
-Best regards
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Kuninori Morimoto
+
+ Written against renesas.git tag renesas-devel-v3.13-rc1-20131125 and
+ [PATCH] pinctrl: sh-pfc: Initial r7s72100 support
+ [PATCH v3] gpio: Renesas RZ GPIO driver V3 
+
+ The following patches are needed for 4/4:
+ [PATCH 00/03] pinctrl: sh-pfc: r7s72100 SCIF2 support
+ [PATCH 01/03] pinctrl: sh-pfc: r7s72100 SCIF2 port3 support
+ [PATCH 02/03] pinctrl: sh-pfc: r7s72100 SCIF2 macro conversion
+ [PATCH 03/03] pinctrl: sh-pfc: r7s72100 SCIF2 port4, 6 and 8 support
+
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   41 +++++-
+ arch/arm/boot/dts/r7s72100.dtsi                 |  154 +++++++++++++++++++++++
+ 2 files changed, 194 insertions(+), 1 deletion(-)
