@@ -1,56 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 01:18:29 +0000
-Subject: [PATCH 07/15] mmc: sdhi: Enable driver compilation with COMPILE_TEST
-Message-Id: <1385515117-23664-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 27 Nov 2013 08:28:14 +0000
+Subject: [PATCH 04/04] ARM: shmobile: Genmai SCIF2 PINCTRL configuration
+Message-Id: <20131127082814.20015.72207.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20131127082736.20015.21303.sendpatchset@w520>
+In-Reply-To: <20131127082736.20015.21303.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This helps increasing build testing coverage.
+From: Magnus Damm <damm@opensource.se>
 
-The driver doesn't compile on (at least) x86 due (possibly among others)
-to missing readsw/writesw I/O accessors, restrict compilation to SUPERH
-or ARM.
+Configure the r7s72100 PINCTRL hardware and select pin function
+for the SCIF2 serial console.
 
-Whether the CTL_DMA_ENABLE register is part of the standard TMIO
-controller or is Renesas-specific is unknown and impossible to test as
-we have no current or planned TMIO DMA users other than SUPERH and
-ARCH_SHMOBILE. Writing to the register is thus conditionally compiled
-for SUPERH and ARCH_SHMOBILE only. Adding ARCH_SHMOBILE_MULTI to the
-list would extend this to multiarch kernels, but would break the driver
-for non-shmobile platforms if the register is Renesas-specific. We can
-thus get rid of the conditional compilation completely without
-introducing any further issue, and let future non-Renesas users deal
-with the situation if it turns out to be a the problem.
-
-Cc: Chris Ball <cjb@laptop.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Ian Molton <ian@mnementh.co.uk>
-Cc: linux-mmc@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/Kconfig | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 7fc5099..ca1315e 100644
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -479,7 +479,8 @@ config MMC_TMIO
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- 0009/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27 17:13:43.000000000 +0900
+@@ -58,3 +58,13 @@
+ 	};
  
- config MMC_SDHI
- 	tristate "SH-Mobile SDHI SD/SDIO controller support"
--	depends on SUPERH || ARCH_SHMOBILE
-+	depends on SUPERH || ARM
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
- 	select MMC_TMIO_CORE
- 	help
- 	  This provides support for the SDHI SD/SDIO controller found in
--- 
-1.8.3.2
-
+ };
++
++&pfc {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_txd_p3_0", "scif2_rxd_p3_2";
++		renesas,function = "scif2";
++	};
++};
