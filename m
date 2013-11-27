@@ -1,123 +1,62 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 17:01:51 +0000
-Subject: [PATCH v3 1/3] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
-Message-Id: <1385571713-24353-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:29 +0000
+Subject: [PATCH v4 19/29] ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as resources
+Message-Id: <1385594319-5758-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
-enable and disable peripheral clocks. To make sure the clock has really
-started we have to read back its status register until it confirms success.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/sh/clk/cpg.c   | 38 ++++++++++++++++++++++++++++++++++++++
- include/linux/sh_clk.h | 19 ++++++++++++-------
- 2 files changed, 50 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/setup-r7s72100.c | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index 1ebe67c..7442bc1 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
- 		iowrite32(value, clk->mapped_reg);
- }
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 6ae7e32..81b995b 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -36,9 +36,15 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,					\
+ 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
+ 			  SCSCR_REIE,					\
+-	.mapbase	= baseaddr,					\
+-	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
+-}
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq + 1),					\
++	DEFINE_RES_IRQ(irq + 2),					\
++	DEFINE_RES_IRQ(irq + 3),					\
++	DEFINE_RES_IRQ(irq),						\
++}									\
  
-+static unsigned int r8(const void __iomem *addr)
-+{
-+	return ioread8(addr);
-+}
-+
-+static unsigned int r16(const void __iomem *addr)
-+{
-+	return ioread16(addr);
-+}
-+
-+static unsigned int r32(const void __iomem *addr)
-+{
-+	return ioread32(addr);
-+}
-+
- static int sh_clk_mstp_enable(struct clk *clk)
- {
- 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
-+	if (clk->status_reg) {
-+		unsigned int (*read)(const void __iomem *addr);
-+		int i;
-+		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
-+			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
-+
-+		if (clk->flags & CLK_ENABLE_REG_8BIT)
-+			read = r8;
-+		else if (clk->flags & CLK_ENABLE_REG_16BIT)
-+			read = r16;
-+		else
-+			read = r32;
-+
-+		for (i = 1000;
-+		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
-+		     i--)
-+			cpu_relax();
-+		if (!i) {
-+			pr_err("cpg: failed to enable %p[%d]\n",
-+			       clk->enable_reg, clk->enable_bit);
-+			return -ETIMEDOUT;
-+		}
-+	}
- 	return 0;
- }
+ R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
+ R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
+@@ -50,9 +56,11 @@ R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
+ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
  
-diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
-index 60c7239..1f208b2 100644
---- a/include/linux/sh_clk.h
-+++ b/include/linux/sh_clk.h
-@@ -52,6 +52,7 @@ struct clk {
- 	unsigned long		flags;
+ #define r7s72100_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
  
- 	void __iomem		*enable_reg;
-+	void __iomem		*status_reg;
- 	unsigned int		enable_bit;
- 	void __iomem		*mapped_reg;
  
-@@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long target,
- 		      unsigned long *best_freq, unsigned long *parent_freq,
- 		      unsigned int div_min, unsigned int div_max);
- 
--#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
-+#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg, _flags) \
- {									\
- 	.parent		= _parent,					\
- 	.enable_reg	= (void __iomem *)_enable_reg,			\
- 	.enable_bit	= _enable_bit,					\
-+	.status_reg	= _status_reg,					\
- 	.flags		= _flags,					\
- }
- 
--#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
-+#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
- 
--#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
-+#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
-+	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
- 
--#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
-+#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
-+
-+#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
- 
- int sh_clk_mstp_register(struct clk *clks, int nr);
- 
+ static struct sh_timer_config mtu2_0_platform_data __initdata = {
 -- 
 1.8.3.2
 
