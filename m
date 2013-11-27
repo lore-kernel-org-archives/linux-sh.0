@@ -1,37 +1,41 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 09 Nov 2013 12:23:57 +0000
-Subject: [PATCH 5/7] ARM: shmobile: bockw-reference: Use falling edge IRQ for LAN9221
-Message-Id: <1383999839-3339-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:16 +0000
+Subject: [PATCH v4 06/29] serial: sh-sci: Don't check IRQ in verify port operation
+Message-Id: <1385594319-5758-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383999839-3339-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-The device is configured to generate an active-low interrupt signal that
-is automatically deasserted without requiring any action from the host.
-Configure the IRQ to trigger on falling edge.
+The IRQ number can't be modified by the user as the port is fixed.
+There's no need to check the new IRQ number as it will be ignored by the
+core.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index f887dc1..4e2bcee 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -46,7 +46,7 @@
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5edba3f..783625f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2113,10 +2113,6 @@ static void sci_config_port(struct uart_port *port, int flags)
  
- 		phy-mode = "mii";
- 		interrupt-parent = <&irqpin>;
--		interrupts = <0 IRQ_TYPE_NONE>; /* IRQ0: hwirq 0 on irqpin */
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
+ static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
+ {
+-	struct sci_port *s = to_sci_port(port);
+-
+-	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
+-		return -EINVAL;
+ 	if (ser->baud_base < 2400)
+ 		/* No paper tape reader for Mitch.. */
+ 		return -EINVAL;
 -- 
-1.8.1.5
+1.8.3.2
 
