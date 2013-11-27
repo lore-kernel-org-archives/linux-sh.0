@@ -1,98 +1,108 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 10:14:35 +0000
-Subject: [PATCH v2 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <1385547275-13572-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 10:27:44 +0000
+Subject: [PATCH] mtd: sh_flctl: Use devm_* managed allocators
+Message-Id: <1385548064-27234-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mtd@lists.infradead.org, David Woodhouse <dwmw2@infradead.org>
 
-Use the %zu printk specifier to print size_t variables, and cast
-pointers to uintptr_t instead of unsigned int where applicable. This
-fixes warnings on platforms where pointers and/or dma_addr_t have a
-different size than int.
+This simplifies error and cleanup code paths.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
+Cc: David Woodhouse <dwmw2@infradead.org>
+Cc: linux-mtd@lists.infradead.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/shdma-base.c | 10 +++++-----
- drivers/dma/sh/shdma-of.c   |  3 ++-
- drivers/dma/sh/sudmac.c     |  4 ++--
- 3 files changed, 9 insertions(+), 8 deletions(-)
+ drivers/mtd/nand/sh_flctl.c | 36 ++++++++++--------------------------
+ 1 file changed, 10 insertions(+), 26 deletions(-)
 
-Changes compared to v1:
-
-- Cast to uintptr_t instead of unsigned long
-
-Patches 2/3 and 3/3 haven't been changed.
-
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 2e7b394..fec301e 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- 	struct shdma_chan *schan = to_shdma_chan(chan);
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
--	int match = (int)arg;
-+	int match = (long)arg;
- 	int ret;
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 0f135cb..50f1cb9 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -1094,38 +1094,32 @@ static int flctl_probe(struct platform_device *pdev)
+ 	struct mtd_info *flctl_mtd;
+ 	struct nand_chip *nand;
+ 	struct sh_flctl_platform_data *pdata;
+-	int ret = -ENXIO;
++	int ret;
+ 	int irq;
+ 	struct mtd_part_parser_data ppdata = {};
  
- 	if (match < 0)
-@@ -491,9 +491,9 @@ static struct shdma_desc *shdma_add_desc(struct shdma_chan *schan,
+-	flctl = kzalloc(sizeof(struct sh_flctl), GFP_KERNEL);
++	flctl = devm_kzalloc(&pdev->dev, sizeof(struct sh_flctl), GFP_KERNEL);
+ 	if (!flctl) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
  	}
  
- 	dev_dbg(schan->dev,
--		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
--		copy_size, *len, *src, *dst, &new->async_tx,
--		new->async_tx.cookie);
-+		"chaining (%zu/%zu)@%lx -> %lx with %p, cookie %d\n",
-+		copy_size, *len, (uintptr_t)*src, (uintptr_t)*dst,
-+		&new->async_tx, new->async_tx.cookie);
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!res) {
+-		dev_err(&pdev->dev, "failed to get I/O memory\n");
+-		goto err_iomap;
+-	}
+-
+-	flctl->reg = ioremap(res->start, resource_size(res));
+-	if (flctl->reg = NULL) {
+-		dev_err(&pdev->dev, "failed to remap I/O memory\n");
+-		goto err_iomap;
+-	}
++	flctl->reg = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(flctl->reg))
++		return PTR_ERR(flctl->reg);
  
- 	new->mark = DESC_PREPARED;
- 	new->async_tx.flags = flags;
-@@ -555,7 +555,7 @@ static struct dma_async_tx_descriptor *shdma_prep_sg(struct shdma_chan *schan,
- 			goto err_get_desc;
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0) {
+ 		dev_err(&pdev->dev, "failed to get flste irq data\n");
+-		goto err_flste;
++		return -ENXIO;
+ 	}
  
- 		do {
--			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
-+			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %llx\n",
- 				i, sg, len, (unsigned long long)sg_addr);
+-	ret = request_irq(irq, flctl_handle_flste, IRQF_SHARED, "flste", flctl);
++	ret = devm_request_irq(&pdev->dev, irq, flctl_handle_flste, IRQF_SHARED,
++			       "flste", flctl);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request interrupt failed.\n");
+-		goto err_flste;
++		return ret;
+ 	}
  
- 			if (direction = DMA_DEV_TO_MEM)
-diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-index 06473a0..b4ff9d3 100644
---- a/drivers/dma/sh/shdma-of.c
-+++ b/drivers/dma/sh/shdma-of.c
-@@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
- 	/* Only slave DMA channels can be allocated via DT */
- 	dma_cap_set(DMA_SLAVE, mask);
+ 	if (pdev->dev.of_node)
+@@ -1135,8 +1129,7 @@ static int flctl_probe(struct platform_device *pdev)
  
--	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
-+	chan = dma_request_channel(mask, shdma_chan_filter,
-+				   (void *)(uintptr_t)id);
- 	if (chan)
- 		to_shdma_chan(chan)->hw_req = id;
+ 	if (!pdata) {
+ 		dev_err(&pdev->dev, "no setup data defined\n");
+-		ret = -EINVAL;
+-		goto err_pdata;
++		return -EINVAL;
+ 	}
  
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-index c7e9cdf..66c5d66 100644
---- a/drivers/dma/sh/sudmac.c
-+++ b/drivers/dma/sh/sudmac.c
-@@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan *schan,
- 	struct sudmac_chan *sc = to_chan(schan);
- 	struct sudmac_desc *sd = to_desc(sdesc);
+ 	platform_set_drvdata(pdev, flctl);
+@@ -1190,12 +1183,6 @@ static int flctl_probe(struct platform_device *pdev)
+ err_chip:
+ 	flctl_release_dma(flctl);
+ 	pm_runtime_disable(&pdev->dev);
+-err_pdata:
+-	free_irq(irq, flctl);
+-err_flste:
+-	iounmap(flctl->reg);
+-err_iomap:
+-	kfree(flctl);
+ 	return ret;
+ }
  
--	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
--		__func__, src, dst, *len);
-+	dev_dbg(sc->shdma_chan.dev, "%s: src=%lx, dst=%lx, len=%zu\n",
-+		__func__, (uintptr_t)src, (uintptr_t)dst, *len);
+@@ -1206,9 +1193,6 @@ static int flctl_remove(struct platform_device *pdev)
+ 	flctl_release_dma(flctl);
+ 	nand_release(&flctl->mtd);
+ 	pm_runtime_disable(&pdev->dev);
+-	free_irq(platform_get_irq(pdev, 0), flctl);
+-	iounmap(flctl->reg);
+-	kfree(flctl);
  
- 	if (*len > schan->max_xfer_len)
- 		*len = schan->max_xfer_len;
+ 	return 0;
+ }
 -- 
 1.8.3.2
 
