@@ -1,90 +1,172 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:03:51 +0000
-Subject: [PATCH v3 14/15] ARM: shmobile: Remove Koelsch reference DTS
-Message-Id: <1385600632-5181-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:26 +0000
+Subject: [PATCH v4 16/29] ARM: shmobile: r8a7791: Don't define SCIF platform data in an array
+Message-Id: <1385594319-5758-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Now that the DTS file r8a7790-koelsch.dts can be used with
-board-koelsch.c and board-koelsch-reference.c, proceed with removing
-r8a7790-koelsch-reference.dts.
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 61 -------------------------
- 1 file changed, 61 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+ arch/arm/mach-shmobile/setup-r8a7791.c | 125 ++++++++++++++-------------------
+ 1 file changed, 52 insertions(+), 73 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-deleted file mode 100644
-index 1919273..0000000
---- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-+++ /dev/null
-@@ -1,61 +0,0 @@
--/*
-- * Device Tree Source for the Koelsch board
-- *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index cddca99..3fe0d7d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -84,66 +84,45 @@ void __init r8a7791_pinmux_init(void)
+ 	r8a7791_register_gpio(7);
+ }
+ 
+-#define SCIF_COMMON(scif_type, baseaddr, irq)			\
+-	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+-	.irqs		= SCIx_IRQ_MUXED(irq)
 -
--/dts-v1/;
--#include "r8a7791.dtsi"
--#include <dt-bindings/gpio/gpio.h>
+-#define SCIFA_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
++#define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
++static struct plat_sci_port scif##index##_platform_data = {		\
++	.type		= scif_type,					\
++	.mapbase	= baseaddr,					\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
++	.scbrr_algo_id	= algo,						\
++	.scscr		= SCSCR_RE | SCSCR_TE,				\
++	.irqs		= SCIx_IRQ_MUXED(irq),				\
+ }
+ 
+-#define SCIFB_DATA(index, baseaddr, irq)	\
+-[index] = {					\
+-	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,		\
+-	.scscr = SCSCR_RE | SCSCR_TE,		\
+-}
 -
--/ {
--	model = "Koelsch";
--	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
+-#define SCIF_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
+-}
 -
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
--	};
+-#define HSCIF_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_6,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
+-}
 -
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
+-	SCIF2, SCIF3, SCIF4, SCIF5, SCIFA3, SCIFA4, SCIFA5 };
 -
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
--		};
--	};
+-static const struct plat_sci_port scif[] __initconst = {
+-	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+-	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+-	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+-	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
+-	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
+-	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
+-	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
+-	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
+-	SCIF_DATA(SCIF2, 0xe6e58000, gic_spi(22)), /* SCIF2 */
+-	SCIF_DATA(SCIF3, 0xe6ea8000, gic_spi(23)), /* SCIF3 */
+-	SCIF_DATA(SCIF4, 0xe6ee0000, gic_spi(24)), /* SCIF4 */
+-	SCIF_DATA(SCIF5, 0xe6ee8000, gic_spi(25)), /* SCIF5 */
+-	SCIFA_DATA(SCIFA3, 0xe6c70000, gic_spi(29)), /* SCIFA3 */
+-	SCIFA_DATA(SCIFA4, 0xe6c78000, gic_spi(30)), /* SCIFA4 */
+-	SCIFA_DATA(SCIFA5, 0xe6c80000, gic_spi(31)), /* SCIFA5 */
 -};
 -
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data_d";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data_d";
--		renesas,function = "scif1";
--	};
--};
+-static inline void r8a7791_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define R8A7791_SCIF(index, baseaddr, irq)				\
++	__R8A7791_SCIF(PORT_SCIF, SCBRR_ALGO_2, index, baseaddr, irq)
++
++#define R8A7791_SCIFA(index, baseaddr, irq)				\
++	__R8A7791_SCIF(PORT_SCIFA, SCBRR_ALGO_4, index, baseaddr, irq)
++
++#define R8A7791_SCIFB(index, baseaddr, irq)				\
++	__R8A7791_SCIF(PORT_SCIFB, SCBRR_ALGO_4, index, baseaddr, irq)
++
++R8A7791_SCIFA(0,  0xe6c40000, gic_spi(144)); /* SCIFA0 */
++R8A7791_SCIFA(1,  0xe6c50000, gic_spi(145)); /* SCIFA1 */
++R8A7791_SCIFB(2,  0xe6c20000, gic_spi(148)); /* SCIFB0 */
++R8A7791_SCIFB(3,  0xe6c30000, gic_spi(149)); /* SCIFB1 */
++R8A7791_SCIFB(4,  0xe6ce0000, gic_spi(150)); /* SCIFB2 */
++R8A7791_SCIFA(5,  0xe6c60000, gic_spi(151)); /* SCIFA2 */
++R8A7791_SCIF(6,   0xe6e60000, gic_spi(152)); /* SCIF0 */
++R8A7791_SCIF(7,   0xe6e68000, gic_spi(153)); /* SCIF1 */
++R8A7791_SCIF(8,   0xe6e58000, gic_spi(22)); /* SCIF2 */
++R8A7791_SCIF(9,   0xe6ea8000, gic_spi(23)); /* SCIF3 */
++R8A7791_SCIF(10,  0xe6ee0000, gic_spi(24)); /* SCIF4 */
++R8A7791_SCIF(11,  0xe6ee8000, gic_spi(25)); /* SCIF5 */
++R8A7791_SCIFA(12, 0xe6c70000, gic_spi(29)); /* SCIFA3 */
++R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
++R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
++
++#define r8a7791_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
+ 
+ static const struct sh_timer_config cmt00_platform_data __initconst = {
+ 	.name = "CMT00",
+@@ -202,21 +181,21 @@ static const struct resource thermal_resources[] __initconst = {
+ 
+ void __init r8a7791_add_dt_devices(void)
+ {
+-	r8a7791_register_scif(SCIFA0);
+-	r8a7791_register_scif(SCIFA1);
+-	r8a7791_register_scif(SCIFB0);
+-	r8a7791_register_scif(SCIFB1);
+-	r8a7791_register_scif(SCIFB2);
+-	r8a7791_register_scif(SCIFA2);
+-	r8a7791_register_scif(SCIF0);
+-	r8a7791_register_scif(SCIF1);
+-	r8a7791_register_scif(SCIF2);
+-	r8a7791_register_scif(SCIF3);
+-	r8a7791_register_scif(SCIF4);
+-	r8a7791_register_scif(SCIF5);
+-	r8a7791_register_scif(SCIFA3);
+-	r8a7791_register_scif(SCIFA4);
+-	r8a7791_register_scif(SCIFA5);
++	r8a7791_register_scif(0);
++	r8a7791_register_scif(1);
++	r8a7791_register_scif(2);
++	r8a7791_register_scif(3);
++	r8a7791_register_scif(4);
++	r8a7791_register_scif(5);
++	r8a7791_register_scif(6);
++	r8a7791_register_scif(7);
++	r8a7791_register_scif(8);
++	r8a7791_register_scif(9);
++	r8a7791_register_scif(10);
++	r8a7791_register_scif(11);
++	r8a7791_register_scif(12);
++	r8a7791_register_scif(13);
++	r8a7791_register_scif(14);
+ 	r8a7791_register_cmt(00);
+ }
+ 
 -- 
 1.8.3.2
 
