@@ -1,27 +1,223 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 07 Nov 2013 20:04:00 +0000
-Subject: [PATCH V2 0/2] sata_rcar: Add Gen2 PHY support and document existing DT bindings
-Message-Id: <1383854642-21660-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 27 Nov 2013 23:18:19 +0000
+Subject: [PATCH v4 09/29] ARM: shmobile: sh73a0: Use macros to declare SCIF devices
+Message-Id: <1385594319-5758-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Tejun Heo <tj@kernel.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-This adds SATA R-Car Gen2 PHY support and documents existing DT bindings.
-Changes from the previous version:
-* Minor whitespace clean-up to make both array terminators "{ },".
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
-Valentine Barshak (2):
-  sata_rcar: Add R-Car Gen2 SATA PHY support
-  dt: Document sata_rcar bindings
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c | 187 +++++-----------------------------
+ 1 file changed, 27 insertions(+), 160 deletions(-)
 
- .../devicetree/bindings/ata/sata_rcar.txt          |  18 ++++
- drivers/ata/sata_rcar.c                            | 118 ++++++++++++++++++---
- 2 files changed, 120 insertions(+), 16 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/ata/sata_rcar.txt
-
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 65151c4..9c94f34 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -71,167 +71,34 @@ void __init sh73a0_pinmux_init(void)
+ 					ARRAY_SIZE(pfc_resources));
+ }
+ 
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xe6c40000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(72), gic_spi(72),
+-			    gic_spi(72), gic_spi(72) },
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xe6c50000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(73), gic_spi(73),
+-			    gic_spi(73), gic_spi(73) },
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xe6c60000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(74), gic_spi(74),
+-			    gic_spi(74), gic_spi(74) },
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xe6c70000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(75), gic_spi(75),
+-			    gic_spi(75), gic_spi(75) },
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xe6c80000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(78), gic_spi(78),
+-			    gic_spi(78), gic_spi(78) },
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xe6cb0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(79), gic_spi(79),
+-			    gic_spi(79), gic_spi(79) },
+-};
+-
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif6_platform_data = {
+-	.mapbase	= 0xe6cc0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(156), gic_spi(156),
+-			    gic_spi(156), gic_spi(156) },
+-};
+-
+-static struct platform_device scif6_device = {
+-	.name		= "sh-sci",
+-	.id		= 6,
+-	.dev		= {
+-		.platform_data	= &scif6_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif7_platform_data = {
+-	.mapbase	= 0xe6cd0000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFA,
+-	.irqs		= { gic_spi(143), gic_spi(143),
+-			    gic_spi(143), gic_spi(143) },
+-};
+-
+-static struct platform_device scif7_device = {
+-	.name		= "sh-sci",
+-	.id		= 7,
+-	.dev		= {
+-		.platform_data	= &scif7_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif8_platform_data = {
+-	.mapbase	= 0xe6c30000,
+-	.flags		= UPF_BOOT_AUTOCONF,
+-	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_4,
+-	.type		= PORT_SCIFB,
+-	.irqs		= { gic_spi(80), gic_spi(80),
+-			    gic_spi(80), gic_spi(80) },
+-};
++/* SCIF */
++#define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= scif_type,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF,			\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_4,				\
++	.scscr		= SCSCR_RE | SCSCR_TE,			\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
++}
+ 
+-static struct platform_device scif8_device = {
+-	.name		= "sh-sci",
+-	.id		= 8,
+-	.dev		= {
+-		.platform_data	= &scif8_platform_data,
+-	},
+-};
++SH73A0_SCIF(PORT_SCIFA, 0, 0xe6c40000, gic_spi(72));
++SH73A0_SCIF(PORT_SCIFA, 1, 0xe6c50000, gic_spi(73));
++SH73A0_SCIF(PORT_SCIFA, 2, 0xe6c60000, gic_spi(74));
++SH73A0_SCIF(PORT_SCIFA, 3, 0xe6c70000, gic_spi(75));
++SH73A0_SCIF(PORT_SCIFA, 4, 0xe6c80000, gic_spi(78));
++SH73A0_SCIF(PORT_SCIFA, 5, 0xe6cb0000, gic_spi(79));
++SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
++SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
++SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+ 
+ static struct sh_timer_config cmt10_platform_data = {
+ 	.name = "CMT10",
 -- 
-1.8.3.1
+1.8.3.2
 
