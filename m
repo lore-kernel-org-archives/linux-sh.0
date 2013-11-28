@@ -1,119 +1,199 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Nov 2013 07:32:08 +0000
-Subject: [PATCH RFC v2 06/17] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
-Message-Id: <1385451139-29686-7-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:18 +0000
+Subject: [PATCH 04/16] serial: sh-sci: Rework baud rate calculation
+Message-Id: <1385675010-26904-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
 
-Copy the device nodes from Marzen reference into the Marzen device tree
-file. This will allow us to use a single DTS file regarless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-are used.
+Computing the baud rate register value requires knowledge of the
+hardware sampling rate. This information is currently encoded in a baud
+rate calculation algorithm ID passed through platform data. However, it
+can be derived from the port type directly in most cases.
 
-Based on a similar change for the Lager board by Laurent Pinchart.
+Compute the sampling rate internally in the driver if the baud rate
+calculation algorithm ID isn't specified, and allow platforms to
+override the sampling rate through platform data in special cases (this
+is only required for SCIFA ports on sh7723 and sh7724, the reason needs
+to be investigated).
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 81 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 81 insertions(+)
+ drivers/tty/serial/sh-sci.c | 43 ++++++++++++++++++++++++++++++-------------
+ include/linux/serial_sci.h  |  2 ++
+ 2 files changed, 32 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index ee3fb60..4e1a871 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -25,4 +25,85 @@
- 		device_type = "memory";
- 		reg = <0x60000000 0x40000000>;
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d9b14d0..c65d37b 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -83,6 +83,7 @@ struct sci_port {
+ 	struct plat_sci_port	*cfg;
+ 	int			overrun_bit;
+ 	unsigned int		error_mask;
++	unsigned int		sampling_rate;
+ 
+ 
+ 	/* Break timer */
+@@ -1763,10 +1764,13 @@ static void sci_shutdown(struct uart_port *port)
+ 	sci_free_irq(s);
+ }
+ 
+-static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
++static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 				   unsigned long freq)
+ {
+-	switch (algo_id) {
++	if (s->sampling_rate)
++		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
 +
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
++	switch (s->cfg->scbrr_algo_id) {
+ 	case SCBRR_ALGO_1:
+ 		return freq / (16 * bps);
+ 	case SCBRR_ALGO_2:
+@@ -1856,12 +1860,11 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk)) {
+-		if (s->cfg->scbrr_algo_id = SCBRR_ALGO_6) {
++		if (s->cfg->type = PORT_HSCIF) {
+ 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
+ 					    &cks);
+ 		} else {
+-			t = sci_scbrr_calc(s->cfg->scbrr_algo_id, baud,
+-					   port->uartclk);
++			t = sci_scbrr_calc(s, baud, port->uartclk);
+ 			for (cks = 0; t >= 256 && cks <= 3; cks++)
+ 				t >>= 2;
+ 		}
+@@ -2105,6 +2108,7 @@ static int sci_init_single(struct platform_device *dev,
+ {
+ 	struct uart_port *port = &sci_port->port;
+ 	const struct resource *res;
++	unsigned int sampling_rate;
+ 	unsigned int i;
+ 	int ret;
+ 
+@@ -2147,28 +2151,47 @@ static int sci_init_single(struct platform_device *dev,
+ 	case PORT_SCIFB:
+ 		port->fifosize = 256;
+ 		sci_port->overrun_bit = 9;
++		sampling_rate = 16;
+ 		break;
+ 	case PORT_HSCIF:
+ 		port->fifosize = 128;
++		sampling_rate = 0;
+ 		sci_port->overrun_bit = 0;
+ 		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
+ 		sci_port->overrun_bit = 9;
++		sampling_rate = 16;
+ 		break;
+ 	case PORT_SCIF:
+ 		port->fifosize = 16;
+-		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
++		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
+ 			sci_port->overrun_bit = 9;
+-		else
++			sampling_rate = 16;
++		} else {
+ 			sci_port->overrun_bit = 0;
++			sampling_rate = 32;
++		}
+ 		break;
+ 	default:
+ 		port->fifosize = 1;
+ 		sci_port->overrun_bit = 5;
++		sampling_rate = 32;
+ 		break;
+ 	}
+ 
++	/* Set the sampling rate if the baud rate calculation algorithm isn't
++	 * specified.
++	 */
++	if (p->scbrr_algo_id = SCBRR_ALGO_NONE) {
++		/* SCIFA on sh7723 and sh7724 need a custom sampling rate that
++		 * doesn't match the SoC datasheet, this should be investigated.
++		 * Let platform data override the sampling rate for now.
++		 */
++		sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
++					: sampling_rate;
++	}
 +
-+	lan0@18000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+};
-+
-+&irqpin0 {
-+	status = "okay";
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: serial4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
-+				 "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
+ 	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ 		if (IS_ERR(sci_port->iclk)) {
+@@ -2407,7 +2430,6 @@ static int sci_remove(struct platform_device *dev)
+ struct sci_port_info {
+ 	unsigned int type;
+ 	unsigned int regtype;
+-	unsigned int brr_algo;
  };
+ 
+ static const struct of_device_id of_sci_match[] = {
+@@ -2416,28 +2438,24 @@ static const struct of_device_id of_sci_match[] = {
+ 		.data = (void *)&(const struct sci_port_info) {
+ 			.type = PORT_SCIF,
+ 			.regtype = SCIx_SH4_SCIF_REGTYPE,
+-			.brr_algo = SCBRR_ALGO_2,
+ 		},
+ 	}, {
+ 		.compatible = "renesas,scifa",
+ 		.data = (void *)&(const struct sci_port_info) {
+ 			.type = PORT_SCIFA,
+ 			.regtype = SCIx_SCIFA_REGTYPE,
+-			.brr_algo = SCBRR_ALGO_4,
+ 		},
+ 	}, {
+ 		.compatible = "renesas,scifb",
+ 		.data = (void *)&(const struct sci_port_info) {
+ 			.type = PORT_SCIFB,
+ 			.regtype = SCIx_SCIFB_REGTYPE,
+-			.brr_algo = SCBRR_ALGO_4,
+ 		},
+ 	}, {
+ 		.compatible = "renesas,hscif",
+ 		.data = (void *)&(const struct sci_port_info) {
+ 			.type = PORT_HSCIF,
+ 			.regtype = SCIx_HSCIF_REGTYPE,
+-			.brr_algo = SCBRR_ALGO_6,
+ 		},
+ 	}, {
+ 		/* Terminator */
+@@ -2482,7 +2500,6 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	p->type = info->type;
+ 	p->regtype = info->regtype;
+ 	p->scscr = SCSCR_RE | SCSCR_TE;
+-	p->scbrr_algo_id = info->brr_algo;
+ 
+ 	return p;
+ }
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 3d5d878..06dc806 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -11,6 +11,7 @@
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+ enum {
++	SCBRR_ALGO_NONE,	/* Compute sampling rate in the driver */
+ 	SCBRR_ALGO_1,		/* clk / (16 * bps) */
+ 	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
+ 	SCBRR_ALGO_3,		/* clk / (8 * bps) */
+@@ -108,6 +109,7 @@ struct plat_sci_port {
+ 	upf_t		flags;			/* UPF_* flags */
+ 	unsigned long	capabilities;		/* Port features/capabilities */
+ 
++	unsigned int	sampling_rate;
+ 	unsigned int	scbrr_algo_id;		/* SCBRR calculation algo */
+ 	unsigned int	scscr;			/* SCSCR initialization */
+ 
 -- 
-1.8.4
+1.8.3.2
 
