@@ -1,60 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:35 +0000
-Subject: [PATCH v4 25/29] ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as resources
-Message-Id: <1385594319-5758-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:40 +0000
+Subject: [PATCH 10/16] ARM: shmobile: Add r8a7790_register_pfc() function
+Message-Id: <8d0b3bf79bfa1dc7d3e2a9dc2b6f2ceea353687f.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Break out the r8a7790 PFC platform device creation code
+to increase readability and follow same style as r8a7791.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 3fe0d7d..f15b537 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -87,11 +87,14 @@ void __init r8a7791_pinmux_init(void)
- #define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
--	.mapbase	= baseaddr,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
- 	.scbrr_algo_id	= algo,						\
- 	.scscr		= SCSCR_RE | SCSCR_TE,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),				\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq),						\
- }
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index c47bceb..3543c3b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -34,6 +34,10 @@ static const struct resource pfc_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+ };
  
- #define R8A7791_SCIF(index, baseaddr, irq)				\
-@@ -120,9 +123,11 @@ R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
- R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
++#define r8a7790_register_pfc()						\
++	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources, \
++					ARRAY_SIZE(pfc_resources))
++
+ #define R8A7790_GPIO(idx)						\
+ static const struct resource r8a7790_gpio##idx##_resources[] __initconst = { \
+ 	DEFINE_RES_MEM(0xe6050000 + 0x1000 * (idx), 0x50),		\
+@@ -65,8 +69,7 @@ R8A7790_GPIO(5);
  
- #define r8a7791_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- static const struct sh_timer_config cmt00_platform_data __initconst = {
- 	.name = "CMT00",
+ void __init r8a7790_pinmux_init(void)
+ {
+-	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources,
+-					ARRAY_SIZE(pfc_resources));
++	r8a7790_register_pfc();
+ 	r8a7790_register_gpio(0);
+ 	r8a7790_register_gpio(1);
+ 	r8a7790_register_gpio(2);
 -- 
-1.8.3.2
+1.8.4
 
