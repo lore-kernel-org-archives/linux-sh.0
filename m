@@ -1,40 +1,55 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 09:08:34 +0000
-Subject: [PATCH 04/16] ARM: shmobile: marzen: Do not set command line in defconfig
-Message-Id: <7a14b78831d34b63032de1bb4d05221ed20cb0cf.1385629477.git.horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:46 +0000
+Subject: [PATCH 16/16] ARM: shmobile: sh7372: tidyup clock table order
+Message-Id: <8af3f18b7b42e32387b54d2e2f8300589b0198e9.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As a set towards moving shmobile towards multi-platform
-the kernel command line should be set in the DTB rather than
-in the kernel config.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-marzen already has the command line present in its DTS file
-but it was being overrirden by the kernel config.
+SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
+for a long term.
+But in these days, the ICK clock is defined in random place.
+This patch arranges it.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 5cc6360..103b875 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -30,8 +30,6 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
--CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 5390c6b..2848997 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -504,10 +504,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("spu_clk", &div6_clks[DIV6_SPU]),
+ 	CLKDEV_CON_ID("vou_clk", &div6_clks[DIV6_VOU]),
+ 	CLKDEV_CON_ID("hdmi_clk", &div6_reparent_clks[DIV6_HDMI]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
+@@ -574,6 +570,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+ 	CLKDEV_DEV_ID("sh_cmt.2", &mstp_clks[MSTP400]), /* CMT2 */
+ 
++	/* ICK */
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
++	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
++	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 	CLKDEV_ICK_ID("hdmi", "sh_mobile_lcdc_fb.1",
+ 		      &div6_reparent_clks[DIV6_HDMI]),
+ 	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
 -- 
 1.8.4
 
