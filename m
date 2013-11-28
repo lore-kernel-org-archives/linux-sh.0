@@ -1,56 +1,105 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 08 Nov 2013 07:59:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790: Correct typo in clocks
-Message-Id: <20131108075939.GK23477@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:39:42 +0000
+Subject: [PATCH 1/2] spi: sh-msiof: Use devm_* managed allocators
+Message-Id: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383714098-28770-1-git-send-email-horms+renesas@verge.net.au>
- <87zjpiysh4.wl%kuninori.morimoto.gx@renesas.com>
- <20131106083556.GC14694@verge.net.au>
-In-Reply-To: <20131106083556.GC14694@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-On Wed, Nov 06, 2013 at 05:35:58PM +0900, Simon Horman wrote:
-> On Tue, Nov 05, 2013 at 10:06:20PM -0800, Kuninori Morimoto wrote:
-> > 
-> > Hi Simon
-> > 
-> > > This is the r8a7790 SoC not the r8a77a4 SoC and
-> > > clocks are updated in r8a7790_clock_init.  not r8a73a4_clock_init.
-> 
-> Ironically there is a typo in the line above.
-> I'll fix that up before applying the patch.
+This simplifies error and cleanup code paths.
 
-I have queued-up the following:
-
-From: Simon Horman <horms+renesas@verge.net.au>
-
-ARM: shmobile: r8a7790: Correct typo in clocks
-
-This is the r8a7790 SoC not the r8a77a4 SoC and
-clocks are updated in r8a7790_clock_init not r8a73a4_clock_init.
-
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/spi/spi-sh-msiof.c | 37 ++++++++++++++-----------------------
+ 1 file changed, 14 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index a64f965..fa1b477 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -77,7 +77,7 @@ static struct sh_clk_ops followparent_clk_ops = {
- };
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index c74298c..541e1ec 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -635,8 +635,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	master = spi_alloc_master(&pdev->dev, sizeof(struct sh_msiof_spi_priv));
+ 	if (master = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate spi master\n");
+-		ret = -ENOMEM;
+-		goto err0;
++		return -ENOMEM;
+ 	}
  
- static struct clk main_clk = {
--	/* .parent will be set r8a73a4_clock_init */
-+	/* .parent will be set r8a7790_clock_init */
- 	.ops	= &followparent_clk_ops,
- };
+ 	p = spi_master_get_devdata(master);
+@@ -655,32 +654,32 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
  
+ 	init_completion(&p->done);
+ 
+-	p->clk = clk_get(&pdev->dev, NULL);
++	p->clk = devm_clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(p->clk)) {
+ 		dev_err(&pdev->dev, "cannot get clock\n");
+ 		ret = PTR_ERR(p->clk);
+ 		goto err1;
+ 	}
+ 
+-	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	i = platform_get_irq(pdev, 0);
+-	if (!r || i < 0) {
+-		dev_err(&pdev->dev, "cannot get platform resources\n");
++	if (i < 0) {
++		dev_err(&pdev->dev, "cannot get platform IRQ\n");
+ 		ret = -ENOENT;
+-		goto err2;
++		goto err1;
+ 	}
+-	p->mapbase = ioremap_nocache(r->start, resource_size(r));
+-	if (!p->mapbase) {
+-		dev_err(&pdev->dev, "unable to ioremap\n");
+-		ret = -ENXIO;
+-		goto err2;
++
++	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	p->mapbase = devm_ioremap_resource(&pdev->dev, r);
++	if (IS_ERR(p->mapbase)) {
++		ret = PTR_ERR(p->mapbase);
++		goto err1;
+ 	}
+ 
+-	ret = request_irq(i, sh_msiof_spi_irq, 0,
+-			  dev_name(&pdev->dev), p);
++	ret = devm_request_irq(&pdev->dev, i, sh_msiof_spi_irq, 0,
++			       dev_name(&pdev->dev), p);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "unable to request irq\n");
+-		goto err3;
++		goto err1;
+ 	}
+ 
+ 	p->pdev = pdev;
+@@ -719,13 +718,8 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 		return 0;
+ 
+ 	pm_runtime_disable(&pdev->dev);
+- err3:
+-	iounmap(p->mapbase);
+- err2:
+-	clk_put(p->clk);
+  err1:
+ 	spi_master_put(master);
+- err0:
+ 	return ret;
+ }
+ 
+@@ -737,9 +731,6 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
+ 	ret = spi_bitbang_stop(&p->bitbang);
+ 	if (!ret) {
+ 		pm_runtime_disable(&pdev->dev);
+-		free_irq(platform_get_irq(pdev, 0), p);
+-		iounmap(p->mapbase);
+-		clk_put(p->clk);
+ 		spi_master_put(p->bitbang.master);
+ 	}
+ 	return ret;
 -- 
-1.8.4
+1.8.3.2
 
