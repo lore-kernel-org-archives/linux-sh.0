@@ -1,62 +1,90 @@
-From: Cody P Schafer <cody@linux.vnet.ibm.com>
-Date: Thu, 07 Nov 2013 01:42:40 +0000
-Subject: [PATCH v2 11/11] sh/dwarf: use rbtree postorder iteration helper instead of solution using repeated
-Message-Id: <1383788572-25938-12-git-send-email-cody@linux.vnet.ibm.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:46 +0000
+Subject: [PATCH v3 09/15] ARM: shmobile: Remove non-multiplatform Lager reference support
+Message-Id: <1385600632-5181-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383788572-25938-1-git-send-email-cody@linux.vnet.ibm.com>
-In-Reply-To: <1383788572-25938-1-git-send-email-cody@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, EXT4 <linux-ext4@vger.kernel.org>, Jan Kara <jack@suse.cz>, rostedt@goodmis.org, Cody P Schafer <cody@linux.vnet.ibm.com>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-Use rbtree_postorder_for_each_entry_safe() to destroy the rbtree instead
-of using repeated rb_erase() calls
+Now that r8a7790 has CCF support remove the legacy Lager reference
+Kconfig bits CONFIG_MACH_LAGER_REFERENCE for the non-multiplatform
+case.
 
-Signed-off-by: Cody P Schafer <cody@linux.vnet.ibm.com>
+Starting from this commit Lager board support is always enabled via
+CONFIG_MACH_LAGER, and CONFIG_ARCH_MULTIPLATFORM is used to select
+between board-lager.c and board-lager-reference.c
+
+The file board-lager-reference.c can no longer be used together with
+the legacy sh-clk clock framework, instead CCF is used.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/dwarf.c | 18 ++++--------------
- 1 file changed, 4 insertions(+), 14 deletions(-)
+ arch/arm/boot/dts/Makefile           |  1 -
+ arch/arm/mach-shmobile/Kconfig       | 11 -----------
+ arch/arm/mach-shmobile/Makefile      |  1 -
+ arch/arm/mach-shmobile/Makefile.boot |  1 -
+ 4 files changed, 14 deletions(-)
 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
-index 49c09c7..67a049e 100644
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -995,29 +995,19 @@ static struct unwinder dwarf_unwinder = {
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 74e4186..0457edb 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -228,7 +228,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7791-koelsch-reference.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7790-lager-reference.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb \
+ 	r8a73a4-ape6evm.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 53bd009..82b75f5 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -257,17 +257,6 @@ config MACH_LAGER
+ 	depends on ARCH_R8A7790
+ 	select USE_OF
  
- static void dwarf_unwinder_cleanup(void)
- {
--	struct rb_node **fde_rb_node = &fde_root.rb_node;
--	struct rb_node **cie_rb_node = &cie_root.rb_node;
-+	struct dwarf_fde *fde, *next_fde;
-+	struct dwarf_cie *cie, *next_cie;
- 
- 	/*
- 	 * Deallocate all the memory allocated for the DWARF unwinder.
- 	 * Traverse all the FDE/CIE lists and remove and free all the
- 	 * memory associated with those data structures.
- 	 */
--	while (*fde_rb_node) {
--		struct dwarf_fde *fde;
+-config MACH_LAGER_REFERENCE
+-	bool "Lager board - Reference Device Tree Implementation"
+-	depends on ARCH_R8A7790
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of Lager board support
+-	   which makes use of device tree at the expense
+-	   of not supporting a number of devices.
 -
--		fde = rb_entry(*fde_rb_node, struct dwarf_fde, node);
--		rb_erase(*fde_rb_node, &fde_root);
-+	rbtree_postorder_for_each_entry_safe(fde, next_fde, &fde_root, node)
- 		kfree(fde);
--	}
- 
--	while (*cie_rb_node) {
--		struct dwarf_cie *cie;
+-	   This is intended to aid developers
 -
--		cie = rb_entry(*cie_rb_node, struct dwarf_cie, node);
--		rb_erase(*cie_rb_node, &cie_root);
-+	rbtree_postorder_for_each_entry_safe(cie, next_cie, &cie_root, node)
- 		kfree(cie);
--	}
- 
- 	kmem_cache_destroy(dwarf_reg_cachep);
- 	kmem_cache_destroy(dwarf_frame_cachep);
+ config MACH_KOELSCH
+ 	bool "Koelsch board"
+ 	depends on ARCH_R8A7791
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 9daa9c1..fad94ee 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+-obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 759e4f8f..f6d5119 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -13,7 +13,6 @@ loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+-loadaddr-$(CONFIG_MACH_LAGER_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
+ loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
 -- 
-1.8.4.2
+1.8.3.2
 
