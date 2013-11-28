@@ -1,58 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Nov 2013 13:52:15 +0000
-Subject: [PATCH 5/5] drm/rcar-du: Add support for the r8a7791 DU
-Message-Id: <1384350735-4419-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:26 +0000
+Subject: [PATCH 02/16] ARM: shmobile: ape6evm: don't use named resource for SDHI
+Message-Id: <e33e6968ccffc50e788a7a98613985410262332f.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The r8a7791 DU is a stripped-down version of the r8a7790 DU with two
-CRTCs and a single LVDS output.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+sh_mobile_sdhi driver doesn't care resource name.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ arch/arm/mach-shmobile/board-ape6evm.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 4eee02f..5536811 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -272,9 +272,29 @@ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
- 	.num_lvds = 2,
+diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
+index 94adf61..fe071a9 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm.c
++++ b/arch/arm/mach-shmobile/board-ape6evm.c
+@@ -179,7 +179,7 @@ static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
  };
  
-+static const struct rcar_du_device_info rcar_du_r8a7791_info = {
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK | RCAR_DU_FEATURE_DEFR8,
-+	.num_crtcs = 2,
-+	.routes = {
-+		/* R8A7791 has one RGB output, one LVDS output and one
-+		 * (currently unsupported) TCON output.
-+		 */
-+		[RCAR_DU_OUTPUT_DPAD0] = {
-+			.possible_crtcs = BIT(1),
-+			.encoder_type = DRM_MODE_ENCODER_NONE,
-+		},
-+		[RCAR_DU_OUTPUT_LVDS0] = {
-+			.possible_crtcs = BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_LVDS,
-+		},
-+	},
-+	.num_lvds = 1,
-+};
-+
- static const struct platform_device_id rcar_du_id_table[] = {
- 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
- 	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
-+	{ "rcar-du-r8a7791", (kernel_ulong_t)&rcar_du_r8a7791_info },
- 	{ }
+ static const struct resource sdhi0_resources[] __initconst = {
+-	DEFINE_RES_MEM_NAMED(0xee100000, 0x100, "SDHI0"),
++	DEFINE_RES_MEM(0xee100000, 0x100),
+ 	DEFINE_RES_IRQ(gic_spi(165)),
+ };
+ 
+@@ -191,7 +191,7 @@ static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
+ };
+ 
+ static const struct resource sdhi1_resources[] __initconst = {
+-	DEFINE_RES_MEM_NAMED(0xee120000, 0x100, "SDHI1"),
++	DEFINE_RES_MEM(0xee120000, 0x100),
+ 	DEFINE_RES_IRQ(gic_spi(166)),
  };
  
 -- 
-1.8.3.2
+1.8.4
 
