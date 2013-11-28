@@ -1,33 +1,45 @@
-From: David Cohen <david.a.cohen@linux.intel.com>
-Date: Sun, 17 Nov 2013 02:38:49 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 28 Nov 2013 15:31:59 +0000
 Subject: Re: [PATCH] gpio: rcar: Support both edge trigger with DT
-Message-Id: <52882C39.2050505@linux.intel.com>
+Message-Id: <2124422.xP76KsfKRo@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384359983-29178-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <5285A686.4000405@linux.intel.com> <1678796.qQvoAN1bBU@avalon>
-In-Reply-To: <1678796.qQvoAN1bBU@avalon>
+References: <1384359983-29178-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CANqRtoRhHhWp0zDcc8jN3eqV=O-=4uBG_a9Xb1-+Lk4eEiZoiw@mail.gmail.com>
+In-Reply-To: <CANqRtoRhHhWp0zDcc8jN3eqV=O-=4uBG_a9Xb1-+Lk4eEiZoiw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linus.walleij@linaro.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, SH-Linux <linux-sh@vger.kernel.org>, linux-gpio <linux-gpio@vger.kernel.org>, Simon Horman <horms@verge.net.au>
 
-Hi Laurent,
+Hi Linus,
 
->> According to ANSI C, you can't initialize struct with empty { }. You
->> would need at least one 0 inside.
->> Despite gcc accepts it, there are some ppl over there trying kernel
->> with different compilers :)
->>
->> (Hope I'm not being too nitpicky)
+On Thursday 14 November 2013 15:12:46 Magnus Damm wrote:
+> On Thu, Nov 14, 2013 at 1:26 AM, Laurent Pinchart wrote:
+> > Some versions of the R-Car GPIO controller support triggering on both
+> > edges of the input signal. Whether this capability is supported is
+> > currently specified in platform data. R-Car GPIO devices instantiated
+> > from the device tree have the capability turned off even when the
+> > hardware supports it.
+> > 
+> > To fix this, add DT match data support to the driver, initialize both
+> > edge trigger support from match data and enable both edge trigger in
+> > r8a7790 and r8a7791 match data.
+> > 
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> > 
+> >  drivers/gpio/gpio-rcar.c | 56 +++++++++++++++++++++++++++++++++----------
+> >  1 file changed, 43 insertions(+), 13 deletions(-)
 > 
-> You're certainly not worse than me in that regard ;-) However, given that most 
-> (if not all, I've stopped looking after 50) drivers seem to use an empty 
-> initializer at the end of their of_device_id array, I'm not sure whether we 
-> really need to care. I assume LLVM handles the empty initializer fine.
+> Looks fine to me, thanks!
+> 
+> Acked-by: Magnus Damm <damm@opensource.se>
 
-I looked some examples too. Looks like empty { } are more common in
-kernel than { 0 }. I guess either we add this warning to checkpatch or
-we keep accepting it waiting for ANSI C will to adopt this at some
-point :)
+Could you please pick this patch up for v3.14 ?
 
-Br, David
+-- 
+Regards,
+
+Laurent Pinchart
+
