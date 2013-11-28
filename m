@@ -1,45 +1,131 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Nov 2013 09:05:10 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r7s72100: tidyup clock table order
-Message-Id: <874n78ep8d.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 16:27:29 +0000
+Subject: [PATCH v2] ARM: Kconfig: Mention Renesas ARM SoCs instead of SH-Mobile
+Message-Id: <1385656049-17138-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
-for a long term.
-But in these days, the ICK clock is defined in random place.
-This patch arranges it.
+Only the SH-Mobile product name is mentioned in the Kconfig descriptions
+and help texts. This makes it difficult for external engineers working
+on other Renesas platforms to find upstream platform support as the
+combination of the SH-Mobile name and using the product number proved an
+effective method of concealment.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Replace the "SH-Mobile" name with "Renesas ARM SoCs" in all the related
+descriptions, help texts and comments.
+
+Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/Kconfig               |  7 ++++---
+ arch/arm/mach-shmobile/Kconfig | 18 +++++++++---------
+ 2 files changed, 13 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 1c9d261..0814a50 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -170,6 +170,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 483d316..341b67d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -645,7 +645,7 @@ config ARCH_MSM
+ 	  (clock and power control, etc).
  
- 	/* MSTP clocks */
-+	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
-+
-+	/* ICK */
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP46]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP45]),
-@@ -178,7 +181,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
--	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- };
+ config ARCH_SHMOBILE_LEGACY
+-	bool "Renesas SH-Mobile / R-Mobile (non-multiplatform)"
++	bool "Renesas ARM SoCs (non-multiplatform)"
+ 	select ARCH_SHMOBILE
+ 	select ARM_PATCH_PHYS_VIRT
+ 	select CLKDEV_LOOKUP
+@@ -661,8 +661,9 @@ config ARCH_SHMOBILE_LEGACY
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
+-	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms using
+-	  a non-multiplatform kernel.
++	  Support for Renesas ARM SoC platforms using a non-multiplatform
++	  kernel. This includes the SH-Mobile, R-Mobile, EMMA-Mobile, R-Car
++	  and RZ families.
  
- void __init r7s72100_clock_init(void)
+ config ARCH_RPC
+ 	bool "RiscPC"
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index bc8108b..039b5e0 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -2,7 +2,7 @@ config ARCH_SHMOBILE
+ 	bool
+ 
+ config ARCH_SHMOBILE_MULTI
+-	bool "SH-Mobile Series" if ARCH_MULTI_V7
++	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
+ 	depends on MMU
+ 	select ARCH_SHMOBILE
+ 	select CPU_V7
+@@ -19,7 +19,7 @@ config ARCH_SHMOBILE_MULTI
+ 
+ if ARCH_SHMOBILE_MULTI
+ 
+-comment "SH-Mobile System Type"
++comment "Renesas ARM SoCs System Type"
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+@@ -31,7 +31,7 @@ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+ 	select RENESAS_IRQC
+ 
+-comment "SH-Mobile Board Type"
++comment "Renesas ARM SoCs Board Type"
+ 
+ config MACH_GENMAI
+ 	bool "Genmai board"
+@@ -46,12 +46,12 @@ config MACH_KZM9D
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+-comment "SH-Mobile System Configuration"
++comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+ if ARCH_SHMOBILE_LEGACY
+ 
+-comment "SH-Mobile System Type"
++comment "Renesas ARM SoCs System Type"
+ 
+ config ARCH_SH7372
+ 	bool "SH-Mobile AP4 (SH7372)"
+@@ -136,7 +136,7 @@ config ARCH_R7S72100
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 
+-comment "SH-Mobile Board Type"
++comment "Renesas ARM SoCs Board Type"
+ 
+ config MACH_APE6EVM
+ 	bool "APE6EVM board"
+@@ -300,7 +300,7 @@ config MACH_KZM9G_REFERENCE
+ 
+ 	   This is intended to aid developers
+ 
+-comment "SH-Mobile System Configuration"
++comment "Renesas ARM SoCs System Configuration"
+ 
+ config CPU_HAS_INTEVT
+         bool
+@@ -325,8 +325,8 @@ config SHMOBILE_TIMER_HZ
+ 	  Allows the configuration of the timer frequency. It is customary
+ 	  to have the timer interrupt run at 1000 Hz or 100 Hz, but in the
+ 	  case of low timer frequencies other values may be more suitable.
+-	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
+-	  to select a HZ value such as 128 that can evenly divide RCLK.
++	  Renesas ARM SoC systems using a 32768 Hz RCLK for clock events may
++	  want to select a HZ value such as 128 that can evenly divide RCLK.
+ 	  A HZ value that does not divide evenly may cause timer drift.
+ 
+ config SH_TIMER_CMT
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
