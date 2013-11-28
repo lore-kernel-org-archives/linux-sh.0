@@ -1,32 +1,113 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Nov 2013 01:00:13 +0000
-Subject: [PATCH 0/3] ARM: shmobile: marzen: enable HSPI0 to DTS
-Message-Id: <1385341216-27101-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:50 +0000
+Subject: [PATCH v3 13/15] ARM: shmobile: Remove Lager reference DTS
+Message-Id: <1385600632-5181-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
+and board-lager-reference.c, proceed with removing
+r8a7790-lager-reference.dts.
 
-this short series enables HSPI0 in DTS for the r8a7779 based marzen board.
-It is based on work by Kuninori Morimoto for the r8a7778 based bockw board.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 84 ---------------------------
+ 1 file changed, 84 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
 
-This series is based on the renesas-devel-v3.13-rc1-20131124 tag
-of my renesas tree.
-
-
-Simon Horman (3):
-  ARM: shmobile: r8a7779: add HSPI clock support for DT
-  ARM: shmobile: r8a7779: add HSPI support to DTSI
-  ARM: shmobile: marzen: enable HSPI0 in DTS
-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 11 ++++++++++
- arch/arm/boot/dts/r8a7779.dtsi                 | 30 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7779.c         |  3 +++
- 3 files changed, 44 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+deleted file mode 100644
+index cce7dbf..0000000
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ /dev/null
+@@ -1,84 +0,0 @@
+-/*
+- * Device Tree Source for the Lager board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7790.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Lager";
+-	compatible = "renesas,lager-reference", "renesas,r8a7790";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-
+-	fixedregulator3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data";
+-		renesas,function = "scif1";
+-	};
+-
+-	mmc1_pins: mmc1 {
+-		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+-		renesas,function = "mmc1";
+-	};
+-};
+-
+-&mmcif1 {
+-	pinctrl-0 = <&mmc1_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&fixedregulator3v3>;
+-	bus-width = <8>;
+-	non-removable;
+-	status = "okay";
+-};
 -- 
-1.8.4
+1.8.3.2
 
