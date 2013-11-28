@@ -1,36 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Nov 2013 13:52:11 +0000
-Subject: [PATCH 1/5] drm/rcar-du: Don't cast crtc to rcrtc twice in the same function
-Message-Id: <1384350735-4419-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 09:08:37 +0000
+Subject: [PATCH 07/16] ARM: shmobile: bockw: Enable CONFIG_VFP in defconfig
+Message-Id: <5a14cbb732a6a4eff2a0be59deba6fdb890253b8.1385629477.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1385629477.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Reuse the previously cast variable instead.
+CONFIG_VFP is required to boot into a Debian armhf user-space.
+This change brings the bockw defconfig into line with
+other shmobile defconfigs.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/configs/bockw_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index a9d24e4..d2af2bc 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -413,7 +413,7 @@ static int rcar_du_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
- 	rcrtc->plane->src_x = x;
- 	rcrtc->plane->src_y = y;
- 
--	rcar_du_crtc_update_base(to_rcar_crtc(crtc));
-+	rcar_du_crtc_update_base(rcrtc);
- 
- 	return 0;
- }
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 63e8bcd..8b5866e 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -27,6 +27,7 @@ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
++CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ # CONFIG_SUSPEND is not set
+ CONFIG_PM_RUNTIME=y
 -- 
-1.8.3.2
+1.8.4
 
