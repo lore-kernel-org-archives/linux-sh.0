@@ -1,77 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 25 Nov 2013 01:18:24 +0000
-Subject: [RFC 09/17] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
-Message-Id: <1385342312-1967-10-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:40 +0000
+Subject: [PATCH v3 03/15] ARM: shmobile: lager: Specify external clock frequency in DT
+Message-Id: <1385600632-5181-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-r8a7779_earlytimer_init() calls r8a7779_clock_init() and
-r8a7779_clock_init() is defined in clock-r8a7779.c.
+The external crystal frequency is 20MHz on the Lager board. Specify it
+in the device tree.
 
-If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
-as will be the case when marzen-reference moves to use
-the common clock framework, then setup-r8a7779.c is compiled
-but clock-r8a7779.c is not.
-
-As r8a7779_earlytimer_init() is not used by marzen-reference
-simply move it to clock-r8a7779.c.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
- 2 files changed, 11 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index decf122..182a71a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <linux/sh_timer.h>
- #include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r8a7779.h>
-@@ -267,3 +268,13 @@ void __init r8a7779_clock_init(void)
- 	else
- 		panic("failed to setup r8a7779 clocks\n");
- }
-+
-+/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-+void __init __weak r8a7779_register_twd(void) { }
-+
-+void __init r8a7779_earlytimer_init(void)
-+{
-+	r8a7779_clock_init();
-+	r8a7779_register_twd();
-+	shmobile_earlytimer_init();
-+}
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 4e3fbfb..73bb67f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -786,16 +786,6 @@ void __init r8a7779_add_standard_devices(void)
- 	r8a7779_register_hpb_dmae();
- }
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 3c697e2..2da3312 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -53,6 +53,10 @@
+ 	};
+ };
  
--/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
--void __init __weak r8a7779_register_twd(void) { }
--
--void __init r8a7779_earlytimer_init(void)
--{
--	r8a7779_clock_init();
--	r8a7779_register_twd();
--	shmobile_earlytimer_init();
--}
--
- void __init r8a7779_add_early_devices(void)
- {
- 	early_platform_add_devices(r8a7779_devices_dt,
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.8.4
+1.8.3.2
 
