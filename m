@@ -1,46 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Nov 2013 06:25:16 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: bockw: enable HPB-DMAC in defconfig
-Message-Id: <20131101062515.GA22183@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 15:44:52 +0000
+Subject: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
+Message-Id: <1385653493-9952-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201309290011.28982.sergei.shtylyov@cogentembedded.com>
- <20130930005033.GC30501@verge.net.au>
- <52559ACA.4050509@cogentembedded.com>
- <20131009235918.GA26091@verge.net.au>
- <52571745.6080307@cogentembedded.com>
- <20131011022302.GC32056@verge.net.au>
- <525864D7.8050403@cogentembedded.com>
- <527020EB.5090203@cogentembedded.com>
-In-Reply-To: <527020EB.5090203@cogentembedded.com>
+References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 29, 2013 at 11:56:11PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 10/12/2013 12:51 AM, Sergei Shtylyov wrote:
-> 
-> >>>>>>>Enable HPB-DMAC driver in 'bockw_defconfig'.
-> 
-> >>>>>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>>>>>Thanks, I will queue this up for v3.13.
-> 
-> >>>>>    As I understand you're waiting for lazy Vinod to merge the driver
-> >>>>>fixes? :-)
-> 
-> >>>>I am holding off on sending a pull request for these defconfig updates
-> >>>>until Vinod takes the fixes. Could you ping him about them?
-> 
-> >>>    Already done yesterday.
-> 
-> >>Thanks
-> 
-> >    Vinod has taken them today.
-> 
->    Simon, I still don't see these 2 defconfig patches queued and it
-> seems too late for 3.13 now... :-(
+The gpio-regulator driver requires the regulator-type property to be
+present. Document it as required in the DT bindings.
 
-Indeed it is. But they are queued as of yesterday.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ Documentation/devicetree/bindings/regulator/gpio-regulator.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
+index 63c6598..a560711 100644
+--- a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
++++ b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
+@@ -4,6 +4,7 @@ Required properties:
+ - compatible		: Must be "regulator-gpio".
+ - states		: Selection of available voltages and GPIO configs.
+                           if there are no states, then use a fixed regulator
++- regulator-type	: Must be either "voltage" or "current".
+ 
+ Optional properties:
+ - enable-gpio		: GPIO to use to enable/disable the regulator.
+@@ -22,6 +23,7 @@ Example:
+ 		regulator-name = "mmci-gpio-supply";
+ 		regulator-min-microvolt = <1800000>;
+ 		regulator-max-microvolt = <2600000>;
++		regulator-type = "voltage";
+ 		regulator-boot-on;
+ 
+ 		enable-gpio = <&gpio0 23 0x4>;
+-- 
+1.8.3.2
+
