@@ -1,74 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Nov 2013 07:32:15 +0000
-Subject: [PATCH RFC v2 13/17] ARM: shmobile: marzen-reference: Initialize CPG device
-Message-Id: <1385451139-29686-14-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:26 +0000
+Subject: [PATCH 12/16] ARM: shmobile: r8a7790: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <1385675010-26904-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385451139-29686-1-git-send-email-horms+renesas@verge.net.au>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
 
-On multiplatform kernels clocks are handled by the CCF CPG driver. It
-must be explicitly initialized by a call to r8a7779_clocks_init() with
-the value of the boot mode pins.
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-Based on similar work for the Koelsch board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2
-* Correct changelog to refer to r8a7779_clocks_init()
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index d3e8319..e261431 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,7 +19,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 70bb553..bb805a4 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -78,11 +78,10 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_gpio(5);
+ }
  
--#include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/clocksource.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -27,11 +28,17 @@
- #include <asm/irq.h>
- #include <asm/mach/arch.h>
+-#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
++#define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scbrr_algo_id	= algo,						\
+ 	.scscr		= _scscr,					\
+ };									\
+ 									\
+@@ -93,19 +92,19 @@ static struct resource scif##index##_resources[] = {			\
  
--static void __init marzen_init(void)
-+static void __init marzen_init_timer(void)
- {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
--#else
-+	r8a7779_clocks_init(r8a7779_read_mode_pins());
-+#endif
-+	clocksource_of_init();
-+}
-+
-+static void __init marzen_init(void)
-+{
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7779_clock_init();
- #endif
- 	r8a7779_add_standard_devices_dt();
-@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_init_delay,
-+	.init_time	= marzen_init_timer,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
+ #define R8A7790_SCIF(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
+-		       SCBRR_ALGO_2, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ #define R8A7790_SCIFA(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
+-		       SCBRR_ALGO_4, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ #define R8A7790_SCIFB(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
+-		       SCBRR_ALGO_4, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ #define R8A7790_HSCIF(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
+-		       SCBRR_ALGO_6, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
+ R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
 -- 
-1.8.4
+1.8.3.2
 
