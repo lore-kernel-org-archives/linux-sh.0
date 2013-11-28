@@ -1,38 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 01:18:24 +0000
-Subject: [PATCH 02/15] input: sh_keysc: Restrict non-COMPILE_TEST compilation
-Message-Id: <1385515117-23664-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 28 Nov 2013 07:36:36 +0000
+Subject: Re: [PATCH 02/15] input: sh_keysc: Restrict non-COMPILE_TEST compilation
+Message-Id: <20131128073636.GD24146@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hardware supported by the driver is only found on SUPERH or
-ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
+On Wed, Nov 27, 2013 at 02:18:24AM +0100, Laurent Pinchart wrote:
+> Hardware supported by the driver is only found on SUPERH or
+> ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
+> 
+> Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+> Cc: linux-input@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: linux-input@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/input/keyboard/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-index bb174c1..a673c9f 100644
---- a/drivers/input/keyboard/Kconfig
-+++ b/drivers/input/keyboard/Kconfig
-@@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
- 
- config KEYBOARD_SH_KEYSC
- 	tristate "SuperH KEYSC keypad support"
--	depends on SUPERH || ARM || COMPILE_TEST
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
- 	help
- 	  Say Y here if you want to use a keypad attached to the KEYSC block
- 	  on SuperH processors such as sh7722 and sh7343.
--- 
-1.8.3.2
-
+> ---
+>  drivers/input/keyboard/Kconfig | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+> index bb174c1..a673c9f 100644
+> --- a/drivers/input/keyboard/Kconfig
+> +++ b/drivers/input/keyboard/Kconfig
+> @@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
+>  
+>  config KEYBOARD_SH_KEYSC
+>  	tristate "SuperH KEYSC keypad support"
+> -	depends on SUPERH || ARM || COMPILE_TEST
+> +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+>  	help
+>  	  Say Y here if you want to use a keypad attached to the KEYSC block
+>  	  on SuperH processors such as sh7722 and sh7343.
+> -- 
+> 1.8.3.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
