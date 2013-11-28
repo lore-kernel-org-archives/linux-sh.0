@@ -1,105 +1,45 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 Nov 2013 02:47:17 +0000
-Subject: Re: [PATCH] ARM: shmobile: Include all 2 GiB of memory on APE6EVM
-Message-Id: <20131125024715.GC2786@verge.net.au>
+Date: Thu, 28 Nov 2013 07:55:24 +0000
+Subject: Re: [PATCH] ARM: shmobile: Include all 2 GiB of memory on APE6EVM DT Ref
+Message-Id: <20131128075522.GM24146@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131031031549.15985.23547.sendpatchset@w520>
- <20131031042035.GG1603@verge.net.au>
- <CANqRtoSW6jFX3pa94ZBgrKkvx5YNKqgxVSsYkSxMP_btcxFh7A@mail.gmail.com>
- <20131106014801.GD22183@verge.net.au>
- <CANqRtoRD3xFx-OKP1AxRPpn8VrOsDeNXKCYtUA57cCu8Dbtqvg@mail.gmail.com>
- <20131108062622.GI9828@verge.net.au>
-In-Reply-To: <20131108062622.GI9828@verge.net.au>
+References: <20131031031841.15992.74619.sendpatchset@w520>
+In-Reply-To: <20131031031841.15992.74619.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 08, 2013 at 03:26:23PM +0900, Simon Horman wrote:
-> On Wed, Nov 06, 2013 at 06:48:45PM +0900, Magnus Damm wrote:
-> > Hi Simon,
-> > 
-> > On Wed, Nov 6, 2013 at 10:48 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Thu, Oct 31, 2013 at 05:02:13PM +0900, Magnus Damm wrote:
-> > >> Hi Simon,
-> > >>
-> > >> On Thu, Oct 31, 2013 at 1:20 PM, Simon Horman <horms@verge.net.au> wrote:
-> > >> > On Thu, Oct 31, 2013 at 12:15:49PM +0900, Magnus Damm wrote:
-> > >> >> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-> > >> >>
-> > >> >> Add 1GiB of DRAM at 0x2_0000_0000 to support the full 2GiB
-> > >> >> of APE6EVM system memory.
-> > >> >>
-> > >> >> Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-> > >> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> > >> >> ---
-> > >> >>
-> > >> >>  For correct run time operation regardless of kernel configuration
-> > >> >>  ARM patches 7863/1 and 7864/1 are needed.
-> > >> >
-> > >> > I take it that I should wait for those patches before applying this one.
-> > >>
-> > >> That's probably a good idea. RMK has applied them to "git-curr", so I
-> > >> suppose they are queued up for something at least:
-> > >>
-> > >> http://www.arm.linux.org.uk/developer/patches/viewpatch.php?idx63/1
-> > >
-> > > I have also sighted them in linux-next.
-> > > So I expect they will show up in v3.13-rc1 or thereabouts.
-
-v3.13-rc1 is released and I have rebased the branches in the renesas tree
-on top of it. Should I go ahead and queue up this patch and its 3 friends:
-
-	ARM: shmobile: Include all 2 GiB of memory on APE6EVM DT Ref
-	ARM: shmobile: Include all 4 GiB of memory on Lager
-	ARM: shmobile: Include all 4 GiB of memory on Lager DT Ref
-
-> > >
-> > >> > With those two patches and this one applied on top of
-> > >> > renesas-devel-v3.12-rc7-20131030 I was able to successfully
-> > >> > boot an ape6evm board. But /proc/meminfo still indicates only 1Gb of
-> > >> > memory. What am I missing.
-> > >>
-> > >> You probably need to enable HIGHMEM and LPAE to be able to access to
-> > >> all memory. Same thing on Lager, to get the full 4GiB you need to
-> > >> select those in your kernel configuration too.
-> > >
-> > > Thanks, I have been able to successfully test all 4 patches in this
-> > > series with those settings enabled.
-> > >
-> > > Tested-by: Simon Horman <horms+renesas@verge.net.au>
-> > >
-> > >> Please note that having memory located on 64-bit addresses may break
-> > >> some drivers doing bus mastering or using the DMAC. These drivers need
-> > >> to be fixed both with short term DMA zone workarounds and proper
-> > >> 64-bit address support whenever possible.
-> > >>
-> > >> So if I could suggest a policy then having LPAE=n in defconfig for the
-> > >> C board code for default stable operation. This together with LPAE=y
-> > >> in the case of DT reference and/or Multiplatform where we can be a bit
-> > >> more experimental. I don't care enough to send defconfig patches, but
-> > >> if some issue comes up then perhaps adjusting the defconfig to disable
-> > >> LPAE may work well as a workaround.
-> > >
-> > > Thanks.
-> > >
-> > > As it stands the defconfig for both APE6EVM and Lager lead to a
-> > > configuration with LPAE disabled, although neither explicitly disable LPAE.
-> > > I think it is best to leave things as-is in this regards and explicitly
-> > > disable LPAE in the defconfigs if the need arises.
-> > >
-> > > While looking over this I noticed that the APE6EVM defconfig selects
-> > > HIGHMEM while the Lager defconfig does not and it is not selected in the
-> > > resulting config. Would it be worth updating the Lager defconfig to enable
-> > > HIGHMEM? If so, I'll make a patch.
-> > 
-> > Thanks. I think it mainly makes sense to enable LPAE and HIGHMEM
-> > together, so easiest is probably just to wait with both Lager and
-> > APE6EVM.
+On Thu, Oct 31, 2013 at 12:18:41PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
 > 
-> Sure. I will immediately do nothing :)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Add 1GiB of DRAM at 0x2_0000_0000 to support the full 2GiB
+> of APE6EVM system memory also in case of DT reference.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+
+Thanks, I have queued this up.
+
+> ---
+> 
+>  For correct run time operation regardless of kernel configuration
+>  ARM patches 7863/1 and 7864/1 are needed.
+> 
+>  arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts |    5 +++++
+>  1 file changed, 5 insertions(+)
+> 
+> --- 0001/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+> +++ work/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts	2013-10-31 11:46:51.000000000 +0900
+> @@ -25,6 +25,11 @@
+>  		reg = <0 0x40000000 0 0x40000000>;
+>  	};
+>  
+> +	memory@200000000 {
+> +		device_type = "memory";
+> +		reg = <2 0x00000000 0 0x40000000>;
+> +	};
+> +
+>  	vcc_mmc0: regulator@0 {
+>  		compatible = "regulator-fixed";
+>  		regulator-name = "MMC0 Vcc";
 > 
