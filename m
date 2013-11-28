@@ -1,26 +1,111 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Thu, 21 Nov 2013 10:39:37 +0000
-Subject: Re: [PATCH 9/9] ARM: shmobile: lager: add PCI USB host controllers
-Message-Id: <CAO3366x8gQcLarXPq_=beL8eAVbSWKuR5BRC=dvD+2P-cvD4EA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 15:17:58 +0000
+Subject: [PATCH] ARM: shmobile: mackerel: Use pinconf API to configure pin pull-down
+Message-Id: <1385651878-7002-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384969086-8920-10-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1384969086-8920-10-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 20, 2013 at 10:24 PM, Valentine
-<valentine.barshak@cogentembedded.com> wrote:
-> On 11/20/2013 09:38 PM, Ulrich Hecht wrote:
->> +       usb_bind_phy("0000:00:01.0", 0, "usb_phy_rcar_gen2");
->> +       usb_bind_phy("0000:00:02.0", 0, "usb_phy_rcar_gen2");
->
-> You don't seem to register PCI controller 0 here. Thus, PCI bus 0 is the
-> root bus of controller 1
-> which has nothing to do with the USB phy.
+The USB0 and USB1 VBUS pins must be pulled down. Add corresponding
+configuration entries in the pinctrl map table instead of manually
+poking the pin control registers.
 
-Good point. I'll remove those.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c | 17 +++++++++--------
+ arch/arm/mach-shmobile/sh-gpio.h        | 19 -------------------
+ 2 files changed, 9 insertions(+), 27 deletions(-)
 
-CU
-Uli
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index d90d2f1..207acf0 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -41,6 +41,7 @@
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/pinctrl/pinconf-generic.h>
+ #include <linux/platform_data/gpio_backlight.h>
+ #include <linux/pm_clock.h>
+ #include <linux/regulator/fixed.h>
+@@ -1311,6 +1312,10 @@ static struct i2c_board_info i2c1_devices[] = {
+ 	},
+ };
+ 
++static unsigned long pin_pulldown_conf[] = {
++	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_DOWN, 0),
++};
++
+ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* ADXL34X */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("1-0053", "pfc-sh7372",
+@@ -1396,17 +1401,19 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* USBHS0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.0", "pfc-sh7372",
+ 				  "usb0_vbus", "usb0"),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.0", "pfc-sh7372",
++				      "usb0_vbus", pin_pulldown_conf),
+ 	/* USBHS1 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
+ 				  "usb1_vbus", "usb1"),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.&", "pfc-sh7372",
++				      "usb1_vbus", pin_pulldown_conf),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
+ 				  "usb1_otg_id_0", "usb1"),
+ };
+ 
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+-#define GPIO_PORT167CR	IOMEM(0xE60520A7)
+-#define GPIO_PORT168CR	IOMEM(0xE60520A8)
+ #define SRCR4		IOMEM(0xe61580bc)
+ #define USCCR1		IOMEM(0xE6058144)
+ static void __init mackerel_init(void)
+@@ -1446,12 +1453,6 @@ static void __init mackerel_init(void)
+ 
+ 	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+-	/* USBHS0 */
+-	gpio_request_pulldown(GPIO_PORT168CR); /* VBUS0_0 pull down */
+-
+-	/* USBHS1 */
+-	gpio_request_pulldown(GPIO_PORT167CR); /* VBUS0_1 pull down */
+-
+ 	/* FSI2 port A (ak4643) */
+ 	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+diff --git a/arch/arm/mach-shmobile/sh-gpio.h b/arch/arm/mach-shmobile/sh-gpio.h
+index e834763..2c41414 100644
+--- a/arch/arm/mach-shmobile/sh-gpio.h
++++ b/arch/arm/mach-shmobile/sh-gpio.h
+@@ -26,23 +26,4 @@ static inline void __init gpio_direction_none(void __iomem * addr)
+ 	__raw_writeb(0x00, addr);
+ }
+ 
+-static inline void __init gpio_request_pullup(void __iomem * addr)
+-{
+-	u8 data = __raw_readb(addr);
+-
+-	data &= 0x0F;
+-	data |= 0xC0;
+-	__raw_writeb(data, addr);
+-}
+-
+-static inline void __init gpio_request_pulldown(void __iomem * addr)
+-{
+-	u8 data = __raw_readb(addr);
+-
+-	data &= 0x0F;
+-	data |= 0xA0;
+-
+-	__raw_writeb(data, addr);
+-}
+-
+ #endif /* __ASM_ARCH_GPIO_H */
+-- 
+Regards,
+
+Laurent Pinchart
+
