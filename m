@@ -1,44 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 26 Nov 2013 07:47:10 +0000
-Subject: [PATCH v2 1/3] ARM: shmobile: r8a7779: add HSPI clock support for DT
-Message-Id: <1385452032-11544-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:45 +0000
+Subject: [PATCH v3 08/15] ARM: shmobile: koelsch-reference: Instantiate clkdevs for SCIF and CMT
+Message-Id: <1385600632-5181-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385452032-11544-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1385452032-11544-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Based on work for the r8a7778 SoC by Kuninori Morimoto.
+Now that the common clock framework is supported, the clock lookup
+entries in clock-r8a7791.c are not registered anymore. Devices must
+instead reference their clocks in the device tree. However, SCIF and CMT
+devices are still instantiated through platform code, and thus need a
+clock lookup entry.
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Retrieve the SCIF and CMT clock entries by name and register clkdevs for
+the corresponding devices. This will be removed when the SCIF and CMT
+devices will be instantiated from the device tree.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2
-* Correct clock name suffix,
-  it should be "spi" to the match subsequent DTS patch.
----
- arch/arm/mach-shmobile/clock-r8a7779.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 30 +++++++++++++++++++++++-
+ 1 file changed, 29 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index b7ce0e7..f1fb89b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -198,8 +198,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
- 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
-+	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-+	CLKDEV_DEV_ID("fffc8000.spi", &mstp_clks[MSTP007]), /* HSPI1 */
- 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
-+	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("ffe4c000.sd", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 788ccdf..d4b0633 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -19,6 +19,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk.h>
++#include <linux/clkdev.h>
+ #include <linux/clk/shmobile.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+@@ -37,7 +39,33 @@ static void __init koelsch_init_time(void)
+ 
+ static void __init koelsch_add_standard_devices(void)
+ {
+-#ifndef CONFIG_COMMON_CLK
++#ifdef CONFIG_COMMON_CLK
++	/*
++	 * This is a really crude hack to provide clkdev support to the SCIF
++	 * and CMT devices until they get moved to DT.
++	 */
++	static const char * const scif_names[] = {
++		"scifa0", "scifa1", "scifb0", "scifb1", "scifb2", "scifa2",
++		"scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scifa3",
++		"scifa4", "scifa5",
++	};
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
++		clk = clk_get(NULL, scif_names[i]);
++		if (clk) {
++			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
++			clk_put(clk);
++		}
++	}
++
++	clk = clk_get(NULL, "cmt0");
++	if (clk) {
++		clk_register_clkdev(clk, NULL, "sh_cmt.0");
++		clk_put(clk);
++	}
++#else
+ 	r8a7791_clock_init();
+ #endif
+ 	r8a7791_add_dt_devices();
 -- 
-1.8.4
+1.8.3.2
 
