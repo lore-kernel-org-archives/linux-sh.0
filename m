@@ -1,55 +1,72 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Nov 2013 09:04:57 +0000
-Subject: [PATCH 3/6] ARM: shmobile: sh73a0: tidyup clock table order
-Message-Id: <8761roep8q.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 09:08:05 +0000
+Subject: [PATCH 00/16] Renesas ARM based SoC defconfig updates for v3.14
+Message-Id: <cover.1385629477.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
-for a long term.
-But in these days, the ICK clock is defined in random place.
-This patch arranges it.
+Hi Kevin, Olof, and Arnd,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/clock-sh73a0.c |   14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+please consider these Renesas ARM based SoC defconfig updates for v3.14.
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 96cc7da..30d8868 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -625,12 +625,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("sdhi0_clk", &div6_clks[DIV6_SDHI0]),
- 	CLKDEV_CON_ID("sdhi1_clk", &div6_clks[DIV6_SDHI1]),
- 	CLKDEV_CON_ID("sdhi2_clk", &div6_clks[DIV6_SDHI2]),
--	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
--	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
--	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
--	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
--	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
--	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
- 
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* I2C2 */
-@@ -680,6 +674,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
- 	CLKDEV_DEV_ID("e6828000.i2c", &mstp_clks[MSTP410]), /* I2C4 */
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
-+
-+	/* ICK */
-+	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
-+	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
-+	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
-+	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
-+	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
-+	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
- };
- 
- void __init sh73a0_clock_init(void)
--- 
-1.7.9.5
+The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
 
+  Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.14
+
+for you to fetch changes up to 577092b3d11530acd8467074f6ea7e2dd36b5028:
+
+  ARM: shmobile: kzm9d: Enable AUTO_ZRELADDR in defconfig (2013-11-24 15:13:43 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC defconfig updates for v3.14
+
+* Add Genmai defconfig
+  - The board was added in v3.13 but the defconfig missed the cut
+* Enable AUTO_ZRELADDR for kzm9d board
+* Enable HPB-DMAC, PACKET, VFP on bockw and marzen boards
+* Do not disable INOTIFY_USER on bockw or marzen boards
+* Do not enable CONFIG_DEVTMPFS on bockw or marzen boards
+* Do not enable CONFIG_SMC911X on marzen
+  - That hardware does not exist on the marzen board
+* Do not set command line on bockw or marzen boards
+  - This is handled in the DTS
+* Enable REGULATOR on bockw board
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: bockw: enable CONFIG_REGULATOR
+
+Magnus Damm (1):
+      ARM: shmobile: Genmai defconfig
+
+Sergei Shtylyov (2):
+      ARM: shmobile: marzen: enable HPB-DMAC in defconfig
+      ARM: shmobile: bockw: enable HPB-DMAC in defconfig
+
+Simon Horman (12):
+      ARM: shmobile: bockw: Do not set command line in defconfig
+      ARM: shmobile: marzen: Do not set command line in defconfig
+      ARM: shmobile: bockw: Do not disable CONFIG_INOTIFY_USER in defconfig
+      ARM: shmobile: marzen: Do not disable CONFIG_INOTIFY_USER in defconfig
+      ARM: shmobile: bockw: Enable CONFIG_VFP in defconfig
+      ARM: shmobile: marzen: Enable CONFIG_VFP in defconfig
+      ARM: shmobile: bockw: Do not enable CONFIG_DEVTMPFS defconfig
+      ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig
+      ARM: shmobile: bockw: Enable CONFIG_PACKET in defconfig
+      ARM: shmobile: marzen: Enable CONFIG_PACKET in defconfig
+      ARM: shmobile: marzen: Do not enable CONFIG_SMC911X in defconfig
+      ARM: shmobile: kzm9d: Enable AUTO_ZRELADDR in defconfig
+
+ arch/arm/configs/bockw_defconfig  |  10 ++--
+ arch/arm/configs/genmai_defconfig | 116 ++++++++++++++++++++++++++++++++++++++
+ arch/arm/configs/kzm9d_defconfig  |   1 +
+ arch/arm/configs/marzen_defconfig |  10 ++--
+ 4 files changed, 126 insertions(+), 11 deletions(-)
+ create mode 100644 arch/arm/configs/genmai_defconfig
