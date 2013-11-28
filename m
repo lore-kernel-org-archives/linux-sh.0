@@ -1,48 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 08:54:28 +0000
-Subject: [PATCH 04/16] ARM: shmobile: sh73a0: don't use named resource for TMU
-Message-Id: <bd6dfe584097e38272705fe00d2892d272b54bce.1385628709.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:24 +0000
+Subject: [PATCH 10/16] ARM: shmobile: r8a7778: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <1385675010-26904-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385628709.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-sh_tmu driver doesn't care resource name.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 22de174..b7ce68e 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -273,7 +273,7 @@ static struct sh_timer_config tmu00_platform_data = {
- };
- 
- static struct resource tmu00_resources[] = {
--	[0] = DEFINE_RES_MEM_NAMED(0xfff60008, 0xc, "TMU00"),
-+	[0] = DEFINE_RES_MEM(0xfff60008, 0xc),
- 	[1] = {
- 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
- 		.flags	= IORESOURCE_IRQ,
-@@ -298,7 +298,7 @@ static struct sh_timer_config tmu01_platform_data = {
- };
- 
- static struct resource tmu01_resources[] = {
--	[0] = DEFINE_RES_MEM_NAMED(0xfff60014, 0xc, "TMU00"),
-+	[0] = DEFINE_RES_MEM(0xfff60014, 0xc),
- 	[1] = {
- 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
- 		.flags	= IORESOURCE_IRQ,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 47c8230..855e2f3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -48,7 +48,6 @@
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.type		= PORT_SCIF,				\
+ };								\
+ 								\
 -- 
-1.8.4
+1.8.3.2
 
