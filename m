@@ -1,74 +1,88 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:03:44 +0000
-Subject: [PATCH v3 07/15] ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
-Message-Id: <1385600632-5181-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:17 +0000
+Subject: [PATCH 03/16] serial: sh-sci: Compute overrun_bit without using baud rate algo
+Message-Id: <1385675010-26904-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
 
-Now that the common clock framework is supported, the clock lookup
-entries in clock-r8a7790.c are not registered anymore. Devices must
-instead reference their clocks in the device tree. However, SCIF and CMT
-devices are still instantiated through platform code, and thus need a
-clock lookup entry.
-
-Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-the corresponding devices. This will be removed when the SCIF and CMT
-devices will be instantiated from the device tree.
+The overrun bit index is a property of the hardware. It's currently
+computed based on a different and unrelated hardware property, the baud
+rate calculation algorithm. Compute it using hardware identification
+information only.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 28 ++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+ drivers/tty/serial/sh-sci.c | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 396ef28..85a744b 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,6 +18,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e75ead0..d9b14d0 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2137,30 +2137,38 @@ static int sci_init_single(struct platform_device *dev,
+ 		sci_port->irqs[3] = sci_port->irqs[0];
+ 	}
  
-+#include <linux/clk.h>
-+#include <linux/clkdev.h>
- #include <linux/clk/shmobile.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
-@@ -35,6 +37,32 @@ static void __init lager_init_time(void)
- 
- static void __init lager_add_standard_devices(void)
- {
-+	/*
-+	 * This is a really crude hack to provide clkdev support to the SCIF
-+	 * and CMT devices until they get moved to DT.
-+	 */
-+	static const char * const scif_names[] = {
-+		"scifa0", "scifa1", "scifb0", "scifb1",
-+		"scifb2", "scifa2", "scif0", "scif1",
-+		"hscif0", "hscif1",
-+	};
-+	struct clk *clk;
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
-+		clk = clk_get(NULL, scif_names[i]);
-+		if (clk) {
-+			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
-+			clk_put(clk);
-+		}
++	if (p->regtype = SCIx_PROBE_REGTYPE) {
++		ret = sci_probe_regmap(p);
++		if (unlikely(ret))
++			return ret;
 +	}
 +
-+	clk = clk_get(NULL, "cmt0");
-+	if (clk) {
-+		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_put(clk);
-+	}
-+
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+ 	switch (p->type) {
+ 	case PORT_SCIFB:
+ 		port->fifosize = 256;
++		sci_port->overrun_bit = 9;
+ 		break;
+ 	case PORT_HSCIF:
+ 		port->fifosize = 128;
++		sci_port->overrun_bit = 0;
+ 		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
++		sci_port->overrun_bit = 9;
+ 		break;
+ 	case PORT_SCIF:
+ 		port->fifosize = 16;
++		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
++			sci_port->overrun_bit = 9;
++		else
++			sci_port->overrun_bit = 0;
+ 		break;
+ 	default:
+ 		port->fifosize = 1;
++		sci_port->overrun_bit = 5;
+ 		break;
+ 	}
+ 
+-	if (p->regtype = SCIx_PROBE_REGTYPE) {
+-		ret = sci_probe_regmap(p);
+-		if (unlikely(ret))
+-			return ret;
+-	}
+-
+ 	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ 		if (IS_ERR(sci_port->iclk)) {
+@@ -2198,12 +2206,6 @@ static int sci_init_single(struct platform_device *dev,
+ 	 * Establish sensible defaults for the overrun detection, unless
+ 	 * the part has explicitly disabled support for it.
+ 	 */
+-	if (p->type = PORT_SCI)
+-		sci_port->overrun_bit = 5;
+-	else if (p->scbrr_algo_id = SCBRR_ALGO_4)
+-		sci_port->overrun_bit = 9;
+-	else
+-		sci_port->overrun_bit = 0;
+ 
+ 	/*
+ 	 * Make the error mask inclusive of overrun detection, if
 -- 
 1.8.3.2
 
