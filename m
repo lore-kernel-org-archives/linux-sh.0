@@ -1,160 +1,145 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:21 +0000
-Subject: [PATCH v4 11/29] ARM: shmobile: r8a7779: Use macros to declare SCIF devices
-Message-Id: <1385594319-5758-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:15 +0000
+Subject: [PATCH 01/16] serial: sh-sci: Move overrun_bit and error_mask fields out of pdata
+Message-Id: <1385675010-26904-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-serial@vger.kernel.org
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+None of the fields is ever set by board code, and both of them are set
+in the driver at probe time. Move them out of struct plat_sci_port to
+struct sci_port.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 124 +++++++--------------------------
- 1 file changed, 24 insertions(+), 100 deletions(-)
+ drivers/tty/serial/sh-sci.c | 50 +++++++++++++++++++++------------------------
+ drivers/tty/serial/sh-sci.h |  2 +-
+ include/linux/serial_sci.h  |  3 ---
+ 3 files changed, 24 insertions(+), 31 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8f94531..df418f1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -188,107 +188,31 @@ void __init r8a7779_pinmux_init(void)
- 			    ARRAY_SIZE(r8a7779_pinctrl_devices));
- }
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 28f8b7e..475b364 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -82,6 +82,9 @@ struct sci_port {
  
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xffe40000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xffe41000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xffe42000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xffe43000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xffe44000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xffe45000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
--};
-+/* SCIF */
-+#define R8A7779_SCIF(index, baseaddr, irq)			\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= PORT_SCIF,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
+ 	/* Platform configuration */
+ 	struct plat_sci_port	*cfg;
++	int			overrun_bit;
++	unsigned int		error_mask;
++
  
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
-+R8A7779_SCIF(0, 0xffe40000, gic_iid(0x78));
-+R8A7779_SCIF(1, 0xffe41000, gic_iid(0x79));
-+R8A7779_SCIF(2, 0xffe42000, gic_iid(0x7a));
-+R8A7779_SCIF(3, 0xffe43000, gic_iid(0x7b));
-+R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
-+R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
+ 	/* Break timer */
+ 	struct timer_list	break_timer;
+@@ -774,19 +777,15 @@ static int sci_handle_errors(struct uart_port *port)
+ 	struct tty_port *tport = &port->state->port;
+ 	struct sci_port *s = to_sci_port(port);
  
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
+-	/*
+-	 * Handle overruns, if supported.
+-	 */
+-	if (s->cfg->overrun_bit != SCIx_NOT_SUPPORTED) {
+-		if (status & (1 << s->cfg->overrun_bit)) {
+-			port->icount.overrun++;
++	/* Handle overruns */
++	if (status & (1 << s->overrun_bit)) {
++		port->icount.overrun++;
+ 
+-			/* overrun error */
+-			if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
+-				copied++;
++		/* overrun error */
++		if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
++			copied++;
+ 
+-			dev_notice(port->dev, "overrun error");
+-		}
++		dev_notice(port->dev, "overrun error");
+ 	}
+ 
+ 	if (status & SCxSR_FER(port)) {
+@@ -848,7 +847,7 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
+ 	if (!reg->size)
+ 		return 0;
+ 
+-	if ((serial_port_in(port, SCLSR) & (1 << s->cfg->overrun_bit))) {
++	if ((serial_port_in(port, SCLSR) & (1 << s->overrun_bit))) {
+ 		serial_port_out(port, SCLSR, 0);
+ 
+ 		port->icount.overrun++;
+@@ -2257,28 +2256,25 @@ static int sci_init_single(struct platform_device *dev,
+ 	/*
+ 	 * Establish some sensible defaults for the error detection.
+ 	 */
+-	if (!p->error_mask)
+-		p->error_mask = (p->type = PORT_SCI) ?
++	sci_port->error_mask = (p->type = PORT_SCI) ?
+ 			SCI_DEFAULT_ERROR_MASK : SCIF_DEFAULT_ERROR_MASK;
+ 
+ 	/*
+ 	 * Establish sensible defaults for the overrun detection, unless
+ 	 * the part has explicitly disabled support for it.
+ 	 */
+-	if (p->overrun_bit != SCIx_NOT_SUPPORTED) {
+-		if (p->type = PORT_SCI)
+-			p->overrun_bit = 5;
+-		else if (p->scbrr_algo_id = SCBRR_ALGO_4)
+-			p->overrun_bit = 9;
+-		else
+-			p->overrun_bit = 0;
++	if (p->type = PORT_SCI)
++		sci_port->overrun_bit = 5;
++	else if (p->scbrr_algo_id = SCBRR_ALGO_4)
++		sci_port->overrun_bit = 9;
++	else
++		sci_port->overrun_bit = 0;
+ 
+-		/*
+-		 * Make the error mask inclusive of overrun detection, if
+-		 * supported.
+-		 */
+-		p->error_mask |= (1 << p->overrun_bit);
+-	}
++	/*
++	 * Make the error mask inclusive of overrun detection, if
++	 * supported.
++	 */
++	sci_port->error_mask |= 1 << sci_port->overrun_bit;
+ 
+ 	port->type		= p->type;
+ 	port->flags		= UPF_FIXED_PORT | p->flags;
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 5aca736..d5db81a 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -9,7 +9,7 @@
+ #define SCxSR_PER(port)		(((port)->type = PORT_SCI) ? SCI_PER    : SCIF_PER)
+ #define SCxSR_BRK(port)		(((port)->type = PORT_SCI) ? 0x00       : SCIF_BRK)
+ 
+-#define SCxSR_ERRORS(port)	(to_sci_port(port)->cfg->error_mask)
++#define SCxSR_ERRORS(port)	(to_sci_port(port)->error_mask)
+ 
+ #if defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 0f6ca22..2c8e9c1 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -126,9 +126,6 @@ struct plat_sci_port {
+ 	/*
+ 	 * Platform overrides if necessary, defaults otherwise.
+ 	 */
+-	int		overrun_bit;
+-	unsigned int	error_mask;
+-
+ 	int		port_reg;
+ 	unsigned char	regshift;
+ 	unsigned char	regtype;
 -- 
 1.8.3.2
 
