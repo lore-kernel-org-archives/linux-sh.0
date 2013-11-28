@@ -1,52 +1,97 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 17:11:46 +0000
-Subject: [PATCH 2/2] serial: sh-sci: Convert to clk_prepare/unprepare
-Message-Id: <1385658706-20093-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:30 +0000
+Subject: [PATCH 16/16] serial: sh-sci: Remove platform data scbrr_algo_id field
+Message-Id: <1385675010-26904-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>
+Cc: linux-serial@vger.kernel.org
 
-Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
-clk_disable_unprepare() to get ready for the migration to the common
-clock framework.
+The field isn't set by any board, remote it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/tty/serial/sh-sci.c | 26 +++++---------------------
+ include/linux/serial_sci.h  | 10 ----------
+ 2 files changed, 5 insertions(+), 31 deletions(-)
 
 diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index decaf24..852cc19 100644
+index c65d37b..0bdbde1 100644
 --- a/drivers/tty/serial/sh-sci.c
 +++ b/drivers/tty/serial/sh-sci.c
-@@ -440,9 +440,9 @@ static void sci_port_enable(struct sci_port *sci_port)
+@@ -1770,17 +1770,6 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 	if (s->sampling_rate)
+ 		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
  
- 	pm_runtime_get_sync(sci_port->port.dev);
+-	switch (s->cfg->scbrr_algo_id) {
+-	case SCBRR_ALGO_1:
+-		return freq / (16 * bps);
+-	case SCBRR_ALGO_2:
+-		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
+-	case SCBRR_ALGO_3:
+-		return freq / (8 * bps);
+-	case SCBRR_ALGO_4:
+-		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
+-	}
+-
+ 	/* Warn, but use a safe default */
+ 	WARN_ON(1);
  
--	clk_enable(sci_port->iclk);
-+	clk_prepare_enable(sci_port->iclk);
- 	sci_port->port.uartclk = clk_get_rate(sci_port->iclk);
--	clk_enable(sci_port->fclk);
-+	clk_prepare_enable(sci_port->fclk);
- }
+@@ -2180,17 +2169,12 @@ static int sci_init_single(struct platform_device *dev,
+ 		break;
+ 	}
  
- static void sci_port_disable(struct sci_port *sci_port)
-@@ -458,8 +458,8 @@ static void sci_port_disable(struct sci_port *sci_port)
- 	del_timer_sync(&sci_port->break_timer);
- 	sci_port->break_flag = 0;
+-	/* Set the sampling rate if the baud rate calculation algorithm isn't
+-	 * specified.
++	/* SCIFA on sh7723 and sh7724 need a custom sampling rate that doesn't
++	 * match the SoC datasheet, this should be investigated. Let platform
++	 * data override the sampling rate for now.
+ 	 */
+-	if (p->scbrr_algo_id = SCBRR_ALGO_NONE) {
+-		/* SCIFA on sh7723 and sh7724 need a custom sampling rate that
+-		 * doesn't match the SoC datasheet, this should be investigated.
+-		 * Let platform data override the sampling rate for now.
+-		 */
+-		sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
+-					: sampling_rate;
+-	}
++	sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
++				: sampling_rate;
  
--	clk_disable(sci_port->fclk);
--	clk_disable(sci_port->iclk);
-+	clk_disable_unprepare(sci_port->fclk);
-+	clk_disable_unprepare(sci_port->iclk);
+ 	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 06dc806..22b3640 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -10,15 +10,6 @@
  
- 	pm_runtime_put_sync(sci_port->port.dev);
- }
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+-enum {
+-	SCBRR_ALGO_NONE,	/* Compute sampling rate in the driver */
+-	SCBRR_ALGO_1,		/* clk / (16 * bps) */
+-	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
+-	SCBRR_ALGO_3,		/* clk / (8 * bps) */
+-	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
+-	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+-};
+-
+ #define SCSCR_TIE	(1 << 7)
+ #define SCSCR_RIE	(1 << 6)
+ #define SCSCR_TE	(1 << 5)
+@@ -110,7 +101,6 @@ struct plat_sci_port {
+ 	unsigned long	capabilities;		/* Port features/capabilities */
+ 
+ 	unsigned int	sampling_rate;
+-	unsigned int	scbrr_algo_id;		/* SCBRR calculation algo */
+ 	unsigned int	scscr;			/* SCSCR initialization */
+ 
+ 	/*
 -- 
 1.8.3.2
 
