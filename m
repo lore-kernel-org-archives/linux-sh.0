@@ -1,78 +1,58 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:38 +0000
-Subject: [PATCH v4 28/29] serial: sh-sci: Add device tree bindings documentation
-Message-Id: <1385594319-5758-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 21:43:27 +0000
+Subject: [PATCH 13/16] ARM: shmobile: r8a7791: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <1385675010-26904-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>, devicetree@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
 
-Document the device tree bindings for the sci serial port devices.
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-Cc: devicetree@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../bindings/serial/renesas,sci-serial.txt         | 46 ++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+ arch/arm/mach-shmobile/setup-r8a7791.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-new file mode 100644
-index 0000000..f372cf2
---- /dev/null
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -0,0 +1,46 @@
-+* Renesas SH-Mobile Serial Communication Interface
-+
-+Required properties:
-+
-+  - compatible: Must contain one of the following:
-+
-+    - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
-+    - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
-+    - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
-+    - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
-+    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2) SCIF compatible UART.
-+    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
-+    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
-+    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
-+    - "renesas,scif" for generic SCIF compatible UART.
-+    - "renesas,scifa" for generic SCIFA compatible UART.
-+    - "renesas,scifb" for generic SCIFB compatible UART.
-+    - "renesas,hscif" for generic HSCIF compatible UART.
-+
-+    When compatible with the generic version, nodes must list the
-+    SoC-specific version corresponding to the platform first followed by the
-+    generic version.
-+
-+  - reg: Base address and length of the I/O registers used by the UART.
-+  - interrupts: Must contain an interrupt-specifier for the SCIx interrupt.
-+
-+  - clocks: Must contain a phandle and clock-specifier pair for each entry
-+    in clock-names.
-+  - clock-names: Must contain "sci_ick" for the SCIx UART interface clock.
-+
-+Note: Each enabled SCIx UART should have an alias correctly numbered in the
-+"aliases" node.
-+
-+Example:
-+	aliases {
-+		serial0 = &scifa0;
-+	};
-+
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index f15b537..e28404e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -84,11 +84,10 @@ void __init r8a7791_pinmux_init(void)
+ 	r8a7791_register_gpio(7);
+ }
+ 
+-#define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
++#define __R8A7791_SCIF(scif_type, index, baseaddr, irq)			\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scbrr_algo_id	= algo,						\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,				\
+ };									\
+ 									\
+@@ -98,13 +97,13 @@ static struct resource scif##index##_resources[] = {			\
+ }
+ 
+ #define R8A7791_SCIF(index, baseaddr, irq)				\
+-	__R8A7791_SCIF(PORT_SCIF, SCBRR_ALGO_2, index, baseaddr, irq)
++	__R8A7791_SCIF(PORT_SCIF, index, baseaddr, irq)
+ 
+ #define R8A7791_SCIFA(index, baseaddr, irq)				\
+-	__R8A7791_SCIF(PORT_SCIFA, SCBRR_ALGO_4, index, baseaddr, irq)
++	__R8A7791_SCIF(PORT_SCIFA, index, baseaddr, irq)
+ 
+ #define R8A7791_SCIFB(index, baseaddr, irq)				\
+-	__R8A7791_SCIF(PORT_SCIFB, SCBRR_ALGO_4, index, baseaddr, irq)
++	__R8A7791_SCIF(PORT_SCIFB, index, baseaddr, irq)
+ 
+ R8A7791_SCIFA(0,  0xe6c40000, gic_spi(144)); /* SCIFA0 */
+ R8A7791_SCIFA(1,  0xe6c50000, gic_spi(145)); /* SCIFA1 */
 -- 
 1.8.3.2
 
