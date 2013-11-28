@@ -1,124 +1,23 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 21 Nov 2013 05:22:00 +0000
-Subject: [PATCH v2] ARM: shmobile: Fix r8a7791 GPIO resources in DTS
-Message-Id: <20131121052200.16972.40390.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 28 Nov 2013 08:11:00 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: Fix r8a7791 GPIO resources in DTS
+Message-Id: <20131128081058.GS24146@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20131121052200.16972.40390.sendpatchset@w520>
+In-Reply-To: <20131121052200.16972.40390.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Nov 21, 2013 at 02:22:00PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> The r8a7791 GPIO resources are currently incorrect. Fix that
+> by making them match the English r8a7791 v0.31 data sheet.
+> 
+> Tested with GPIO LED using Koelsch DT reference.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-The r8a7791 GPIO resources are currently incorrect. Fix that
-by making them match the English r8a7791 v0.31 data sheet.
-
-Tested with GPIO LED using Koelsch DT reference.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- Change since V1:
- - Update commit message to include data sheet version
-
- arch/arm/boot/dts/r8a7791.dtsi |   32 ++++++++++++++++----------------
- 1 file changed, 16 insertions(+), 16 deletions(-)
-
---- 0021/arch/arm/boot/dts/r8a7791.dtsi
-+++ work/arch/arm/boot/dts/r8a7791.dtsi	2013-11-20 17:28:26.000000000 +0900
-@@ -49,9 +49,9 @@
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
- 
--	gpio0: gpio@ffc40000 {
-+	gpio0: gpio@e6050000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc40000 0 0x50>;
-+		reg = <0 0xe6050000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -61,9 +61,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio1: gpio@ffc41000 {
-+	gpio1: gpio@e6051000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc41000 0 0x50>;
-+		reg = <0 0xe6051000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -73,9 +73,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio2: gpio@ffc42000 {
-+	gpio2: gpio@e6052000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc42000 0 0x50>;
-+		reg = <0 0xe6052000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -85,9 +85,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio3: gpio@ffc43000 {
-+	gpio3: gpio@e6053000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc43000 0 0x50>;
-+		reg = <0 0xe6053000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -97,9 +97,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio4: gpio@ffc44000 {
-+	gpio4: gpio@e6054000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc44000 0 0x50>;
-+		reg = <0 0xe6054000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -109,9 +109,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio5: gpio@ffc45000 {
-+	gpio5: gpio@e6055000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc45000 0 0x50>;
-+		reg = <0 0xe6055000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -121,9 +121,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio6: gpio@ffc45400 {
-+	gpio6: gpio@e6055400 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc45400 0 0x50>;
-+		reg = <0 0xe6055400 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -133,9 +133,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio7: gpio@ffc45800 {
-+	gpio7: gpio@e6055800 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc45800 0 0x50>;
-+		reg = <0 0xe6055800 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
+Thanks, I have queued this up.
