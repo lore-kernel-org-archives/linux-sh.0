@@ -1,50 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 10:17:28 +0000
-Subject: [PATCH v2] mtd: sh_flctl: Fix warnings due to improper casts
-Message-Id: <1385547448-13747-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:45 +0000
+Subject: [PATCH 15/16] ARM: shmobile: r7s72100: tidyup clock table order
+Message-Id: <204aa273a7b7f2861ecc592c1fd722e7b51b6134.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mtd@lists.infradead.org, David Woodhouse <dwmw2@infradead.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Cast pointers to uintptr_t instead of unsigned int. This fixes warnings
-on platforms where pointers have a different size than int.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Cc: David Woodhouse <dwmw2@infradead.org>
-Cc: linux-mtd@lists.infradead.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
+for a long term.
+But in these days, the ICK clock is defined in random place.
+This patch arranges it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mtd/nand/sh_flctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Changes compared to v1:
-
-- Cast to uintptr_t instead of unsigned long
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index a3c84eb..0f135cb 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -151,7 +151,7 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
- 	dma_cap_set(DMA_SLAVE, mask);
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 4aba20c..0814a50 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -170,6 +170,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
  
- 	flctl->chan_fifo0_tx = dma_request_channel(mask, shdma_chan_filter,
--					    (void *)pdata->slave_id_fifo0_tx);
-+				(void *)(uintptr_t)pdata->slave_id_fifo0_tx);
- 	dev_dbg(&pdev->dev, "%s: TX: got channel %p\n", __func__,
- 		flctl->chan_fifo0_tx);
- 
-@@ -168,7 +168,7 @@ static void flctl_setup_dma(struct sh_flctl *flctl)
- 		goto err;
- 
- 	flctl->chan_fifo0_rx = dma_request_channel(mask, shdma_chan_filter,
--					    (void *)pdata->slave_id_fifo0_rx);
-+				(void *)(uintptr_t)pdata->slave_id_fifo0_rx);
- 	dev_dbg(&pdev->dev, "%s: RX: got channel %p\n", __func__,
- 		flctl->chan_fifo0_rx);
- 
+ 	/* MSTP clocks */
++	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
++
++	/* ICK */
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP46]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP45]),
 -- 
-1.8.3.2
+1.8.4
 
