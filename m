@@ -1,64 +1,69 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Fri, 08 Nov 2013 10:10:31 +0000
-Subject: Re: [PATCH v2 1/2] clocksource: sh_tmu: Release clock when sh_tmu_register() fails
-Message-Id: <527CB897.8070107@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 06:40:57 +0000
+Subject: [PATCH] irqchip: renesas-intc-irqpin: Update Documentation of DT bindings compat string and example
+Message-Id: <1385620857-18994-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383057097-22689-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383057097-22689-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 10/29/2013 03:31 PM, Laurent Pinchart wrote:
-> Fix the probe error path to release the clock resource when the
-> sh_tmu_register() call fails.
->
-> Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
+Update the compat strings to provide hardware-specific compat strings
+for each variant of the hardware that is supported.
 
-Applied in my tree as 3.13 fixes
+Also provide an example which was previously missing from
+the bindings documentation
 
-> ---
->   drivers/clocksource/sh_tmu.c | 13 ++++++++++---
->   1 file changed, 10 insertions(+), 3 deletions(-)
->
-> diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-> index 78b8dae..1597837 100644
-> --- a/drivers/clocksource/sh_tmu.c
-> +++ b/drivers/clocksource/sh_tmu.c
-> @@ -475,9 +475,16 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struc=
-t platform_device *pdev)
->   	p->cs_enabled =3D false;
->   	p->enable_count =3D 0;
->
-> -	return sh_tmu_register(p, (char *)dev_name(&p->pdev->dev),
-> -			       cfg->clockevent_rating,
-> -			       cfg->clocksource_rating);
-> +	ret =3D sh_tmu_register(p, (char *)dev_name(&p->pdev->dev),
-> +			      cfg->clockevent_rating,
-> +			      cfg->clocksource_rating);
-> +	if (ret < 0)
-> +		goto err2;
-> +
-> +	return 0;
-> +
-> + err2:
-> +	clk_put(p->clk);
->    err1:
->   	iounmap(p->mapbase);
->    err0:
->
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ .../interrupt-controller/renesas,intc-irqpin.txt   | 29 +++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
-
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+index 1f8b0c5..240ab2a 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -2,7 +2,12 @@ DT bindings for the R-/SH-Mobile irqpin controller
+ 
+ Required properties:
+ 
+-- compatible: has to be "renesas,intc-irqpin"
++- compatible: Must be one of the following:
++    "renesas,intc-irqpin"
++    "renesas,intc-irqpin-r8a7740"
++    "renesas,intc-irqpin-r8a7778"
++    "renesas,intc-irqpin-r8a7779"
++    "renesas,intc-irqpin-sh73a0"
+ - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
+   interrupts.txt in this directory
+ 
+@@ -14,3 +19,25 @@ Optional properties:
+   if different from the default 4 bits
+ - control-parent: disable and enable interrupts on the parent interrupt
+   controller, needed for some broken implementations
++
++Example:
++
++        irqpin0: irqpin@e6900000 {
++                compatible = "renesas,intc-irqpin";
++                #interrupt-cells = <2>;
++                interrupt-controller;
++                reg = <0xe6900000 4>,
++                        <0xe6900010 4>,
++                        <0xe6900020 1>,
++                        <0xe6900040 1>,
++                        <0xe6900060 1>;
++                interrupt-parent = <&gic>;
++                interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH
++                              0 149 IRQ_TYPE_LEVEL_HIGH>;
++        };
+-- 
+1.8.4
 
