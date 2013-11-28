@@ -1,34 +1,35 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 19 Nov 2013 08:26:47 +0000
-Subject: Re: [PATCH 00/03] gpio: R-Car and EM GPIO update
-Message-Id: <CACRpkdYZ07wrGiHtFww4TExUM8Ny13OtQZBQ3XqLc-hUC+-5+A@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 15:44:53 +0000
+Subject: [PATCH 2/2] ARM: shmobile: armadillo: Set vccq_sdhi0 regulator type in DT
+Message-Id: <1385653493-9952-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131113225927.21449.78044.sendpatchset@w520>
-In-Reply-To: <20131113225927.21449.78044.sendpatchset@w520>
+References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Grant Likely <grant.likely@secretlab.ca>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 13, 2013 at 11:59 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+The mandatory regulator-type property is missing, add it.
 
-> gpio: R-Car and EM GPIO update
->
-> [PATCH 01/03] gpio: rcar: Use lazy disable and mask on suspend
-> [PATCH 02/03] gpio: em: Setup gpiochip->dev
-> [PATCH 03/03] gpio: em: Use lazy disable and mask on suspend
->
-> Update the R-Car GPIO driver and the GPIO driver used on EMEV2 to use lazy
-> disable and mask on suspend. This fixes the Suspend-to-RAM behavior to make
-> sure wakeup sources are left enabled while suspending. Also include a small
-> fix for gpio-em that fixes the DT use case.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-These look OK but I see you and Laurent are discussing
-patch 1, so whenever you feel ready with the series, please
-resend so I can apply it.
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 7b80f19..013a7cd 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -53,6 +53,8 @@
+ 		regulator-name = "SDHI0 VccQ";
+ 		regulator-min-microvolt = <1800000>;
+ 		regulator-max-microvolt = <3300000>;
++		regulator-type = "voltage";
++
+ 		vin-supply = <&vcc_sdhi0>;
+ 
+ 		enable-gpio = <&pfc 74 GPIO_ACTIVE_HIGH>;
+-- 
+1.8.3.2
 
-Yours,
-Linus Walleij
