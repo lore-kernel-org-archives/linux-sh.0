@@ -1,93 +1,78 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:15:48 +0000
-Subject: [PATCH v2 1/8] ARM: shmobile: Sync Lager DTS with Lager reference DTS
-Message-Id: <1384053355-30703-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:12 +0000
+Subject: [GIT PULL 00/16] Renesas ARM based SoC cleanups for v3.14
+Message-Id: <cover.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Copy the device nodes from Lager reference into the Lager device tree
-file. This will allow us to use a single DTS file regarless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-are used.
+Hi Kevin, Olof and Arnd,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 53 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 53 insertions(+)
+please consider these Renesas ARM based SoC cleanups for v3.14.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 8799dfb..3c697e2 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -10,6 +10,7 @@
- 
- /dts-v1/;
- #include "r8a7790.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Lager";
-@@ -28,4 +29,56 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led6 {
-+			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
-+		};
-+		led7 {
-+			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
-+		};
-+		led8 {
-+			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif0_pins &scif1_pins>;
-+	pinctrl-names = "default";
-+
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data";
-+		renesas,function = "scif0";
-+	};
-+
-+	scif1_pins: serial1 {
-+		renesas,groups = "scif1_data";
-+		renesas,function = "scif1";
-+	};
-+
-+	mmc1_pins: mmc1 {
-+		renesas,groups = "mmc1_data8", "mmc1_ctrl";
-+		renesas,function = "mmc1";
-+	};
-+};
-+
-+&mmcif1 {
-+	pinctrl-0 = <&mmc1_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
- };
--- 
-1.8.1.5
+The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
 
+  Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.14
+
+for you to fetch changes up to 8af3f18b7b42e32387b54d2e2f8300589b0198e9:
+
+  ARM: shmobile: sh7372: tidyup clock table order (2013-11-24 15:14:32 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC cleanups for v3.14
+
+* Tidy up clock table order for r7s72100, r8a7779, r8a7779, r8a7790,
+  sh7372 and sh73a0 SoCs.
+* Tidy up camera-rcar header for r8a7779 SoC
+* Tidy up registration of VIN on r8a7779 SoC
+* Tidy up PFC registration on r8a7790 SoC
+* Correct typo in clocks for r8a7790 SoC
+* Don't use named resources for IPMMU, I2C and TMU on sh73a0 SoC
+* Don't use named resources for MMCIF and SDHI on ape6evm board
+* Don't use named resources for MMCIF on lager board
+* Tidy up device registration on lager board
+* Tidy up headers for bockw board
+
+----------------------------------------------------------------
+Kuninori Morimoto (13):
+      ARM: shmobile: ape6evm: don't use named resource for MMCIF
+      ARM: shmobile: ape6evm: don't use named resource for SDHI
+      ARM: shmobile: lager: don't use named resource for MMCIF
+      ARM: shmobile: sh73a0: don't use named resource for TMU
+      ARM: shmobile: sh73a0: don't use named resource for I2C
+      ARM: shmobile: sh73a0: don't use named resource for IPMMU
+      ARM: shmobile: bockw: header cleanup
+      ARM: shmobile: r8a7779: cleanup registration of VIN
+      ARM: shmobile: r8a7779: camera-rcar header cleanup
+      ARM: shmobile: r8a7779: cleanup registration of sh_eth
+      ARM: shmobile: sh73a0: tidyup clock table order
+      ARM: shmobile: r7s72100: tidyup clock table order
+      ARM: shmobile: sh7372: tidyup clock table order
+
+Magnus Damm (2):
+      ARM: shmobile: Cosmetic update of Lager DT Reference
+      ARM: shmobile: Add r8a7790_register_pfc() function
+
+Simon Horman (1):
+      ARM: shmobile: r8a7790: Correct typo in clocks
+
+ arch/arm/mach-shmobile/board-ape6evm.c         |  6 +--
+ arch/arm/mach-shmobile/board-bockw-reference.c |  1 -
+ arch/arm/mach-shmobile/board-lager-reference.c |  5 +--
+ arch/arm/mach-shmobile/board-lager.c           |  2 +-
+ arch/arm/mach-shmobile/board-marzen.c          | 25 ++++++++++-
+ arch/arm/mach-shmobile/clock-r7s72100.c        |  3 ++
+ arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c          |  9 ++--
+ arch/arm/mach-shmobile/clock-sh73a0.c          | 14 ++++---
+ arch/arm/mach-shmobile/include/mach/r8a7779.h  |  5 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c         | 57 --------------------------
+ arch/arm/mach-shmobile/setup-r8a7790.c         |  7 +++-
+ arch/arm/mach-shmobile/setup-sh73a0.c          | 16 ++++----
+ 13 files changed, 59 insertions(+), 93 deletions(-)
