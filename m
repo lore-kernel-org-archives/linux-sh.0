@@ -1,105 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:39:42 +0000
-Subject: [PATCH 1/2] spi: sh-msiof: Use devm_* managed allocators
-Message-Id: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 28 Nov 2013 10:27:12 +0000
+Subject: Re: [PATCH 1/2] spi: sh-msiof: Use devm_* managed allocators
+Message-Id: <20131128102712.GH14725@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="RPn/zOJtKokylJL7"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+References: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
 
-This simplifies error and cleanup code paths.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/spi/spi-sh-msiof.c | 37 ++++++++++++++-----------------------
- 1 file changed, 14 insertions(+), 23 deletions(-)
+--RPn/zOJtKokylJL7
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index c74298c..541e1ec 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -635,8 +635,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	master = spi_alloc_master(&pdev->dev, sizeof(struct sh_msiof_spi_priv));
- 	if (master = NULL) {
- 		dev_err(&pdev->dev, "failed to allocate spi master\n");
--		ret = -ENOMEM;
--		goto err0;
-+		return -ENOMEM;
- 	}
- 
- 	p = spi_master_get_devdata(master);
-@@ -655,32 +654,32 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 
- 	init_completion(&p->done);
- 
--	p->clk = clk_get(&pdev->dev, NULL);
-+	p->clk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(p->clk)) {
- 		dev_err(&pdev->dev, "cannot get clock\n");
- 		ret = PTR_ERR(p->clk);
- 		goto err1;
- 	}
- 
--	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	i = platform_get_irq(pdev, 0);
--	if (!r || i < 0) {
--		dev_err(&pdev->dev, "cannot get platform resources\n");
-+	if (i < 0) {
-+		dev_err(&pdev->dev, "cannot get platform IRQ\n");
- 		ret = -ENOENT;
--		goto err2;
-+		goto err1;
- 	}
--	p->mapbase = ioremap_nocache(r->start, resource_size(r));
--	if (!p->mapbase) {
--		dev_err(&pdev->dev, "unable to ioremap\n");
--		ret = -ENXIO;
--		goto err2;
-+
-+	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	p->mapbase = devm_ioremap_resource(&pdev->dev, r);
-+	if (IS_ERR(p->mapbase)) {
-+		ret = PTR_ERR(p->mapbase);
-+		goto err1;
- 	}
- 
--	ret = request_irq(i, sh_msiof_spi_irq, 0,
--			  dev_name(&pdev->dev), p);
-+	ret = devm_request_irq(&pdev->dev, i, sh_msiof_spi_irq, 0,
-+			       dev_name(&pdev->dev), p);
- 	if (ret) {
- 		dev_err(&pdev->dev, "unable to request irq\n");
--		goto err3;
-+		goto err1;
- 	}
- 
- 	p->pdev = pdev;
-@@ -719,13 +718,8 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 		return 0;
- 
- 	pm_runtime_disable(&pdev->dev);
-- err3:
--	iounmap(p->mapbase);
-- err2:
--	clk_put(p->clk);
-  err1:
- 	spi_master_put(master);
-- err0:
- 	return ret;
- }
- 
-@@ -737,9 +731,6 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
- 	ret = spi_bitbang_stop(&p->bitbang);
- 	if (!ret) {
- 		pm_runtime_disable(&pdev->dev);
--		free_irq(platform_get_irq(pdev, 0), p);
--		iounmap(p->mapbase);
--		clk_put(p->clk);
- 		spi_master_put(p->bitbang.master);
- 	}
- 	return ret;
--- 
-1.8.3.2
+On Thu, Nov 28, 2013 at 02:39:42AM +0100, Laurent Pinchart wrote:
+> This simplifies error and cleanup code paths.
 
+Applied, thanks.
+
+--RPn/zOJtKokylJL7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSlxp9AAoJELSic+t+oim9ML0QAIlDRFUzHljjaYXlJAfntdOP
+LilMIK4ycxlcEnkqHdUoDRNfjHpiPKgo97wrqjwIOs/5rZ9tppFhJFt4rTzmQY8m
+CPJ6MVRzhsx8lSVdYvYHodLn8/lf4IlJIoBBqKfDzC6AOe93aTRfOgIkCdXGe8YK
+yjjtIpWvcq+J6cqiozqF/Ea50FZsz96p6TXXK7riNrSjxig2np4arM1b9OzogtH5
+aiqpai71vDVJ47wXOv+BTu/0o6daQsd6vbcoxzc8yzOhDDPZ54Xs20Lyr2T8ygQo
+V5jsTW3okvnm+FAsny9POH8PgeA3jCMoUXNB/KKCR+O/JSN+t4f0IxiPAgRevKdt
+DIGhfrDK/cmH5h6tq8ueBtOKBfE5Q7oj6B0VKsuC9zXOBOu3KBikUHz6Yuf1FoJu
+b1+AXv+3sPc7LhR7e8yrgI9Fs+pN9kSiBvytAC7jzLvzZhwirGrg+ctzU6bo0udy
+bwP8j5jJGl9fONWdvrq2LiZU1+n18DatUN25cdhqj6fqso6LRZf3+mn+OTnEzFvu
+Rjg0uhPbox+LZKiMIMBr5CF+CkUtvIvxO6lZiawhSLCpUgOV9tcRoYXro7rDti4d
+Z3SddeQaSchbKc+Pr6CcZBLvzofwnqGVTSeKMLOSEA2kzd9Ol7PB4EXf65hskxaN
+XeYqYj56TTnOOfFVMpgj
+=fP8L
+-----END PGP SIGNATURE-----
+
+--RPn/zOJtKokylJL7--
