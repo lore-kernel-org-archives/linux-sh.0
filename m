@@ -1,36 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 09:08:39 +0000
-Subject: [PATCH 09/16] ARM: shmobile: bockw: Do not enable CONFIG_DEVTMPFS defconfig
-Message-Id: <e14ee5deab24200e4b70fe31a8c806f0acd3d37c.1385629477.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:38 +0000
+Subject: [PATCH v3 01/15] ARM: shmobile: Sync Lager DTS with Lager reference DTS
+Message-Id: <1385600632-5181-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This change brings the bockw defconfig into line with
-other shmobile defconfigs.
+Copy the device nodes from Lager reference into the Lager device tree
+file. This will allow us to use a single DTS file regarless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+are used.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/bockw_defconfig | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 8b5866e..01721faf 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -43,8 +43,6 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_INET_DIAG is not set
- # CONFIG_IPV6 is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_DEVTMPFS=y
--CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 8799dfb..3c697e2 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -10,6 +10,7 @@
+ 
+ /dts-v1/;
+ #include "r8a7790.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Lager";
+@@ -28,4 +29,56 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data";
++		renesas,function = "scif1";
++	};
++
++	mmc1_pins: mmc1 {
++		renesas,groups = "mmc1_data8", "mmc1_ctrl";
++		renesas,function = "mmc1";
++	};
++};
++
++&mmcif1 {
++	pinctrl-0 = <&mmc1_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
+ };
 -- 
-1.8.4
+1.8.3.2
 
