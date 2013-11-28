@@ -1,60 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 01:39:43 +0000
-Subject: [PATCH 2/2] spi: sh-msiof: Convert to clk_prepare/unprepare
-Message-Id: <1385602783-3439-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 28 Nov 2013 10:34:07 +0000
+Subject: Re: [PATCH 2/2] spi: sh-msiof: Convert to clk_prepare/unprepare
+Message-Id: <20131128103407.GI14725@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="PSbnZfZb/hnz6qjT"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385602783-3439-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+ <1385602783-3439-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385602783-3439-2-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+To: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Get the driver ready for the migration to the common clock framework by
-calling clk_prepare() and clk_unprepare(). The calls are added in the
-probe and remove handlers as the clk_enable() and clk_disable() calls
-are located in atomic context and there's no callback function in
-non-atomic context that can be used to prepare/unprepare the clock.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/spi/spi-sh-msiof.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+--PSbnZfZb/hnz6qjT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 541e1ec..fbbe949 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -682,6 +682,12 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 		goto err1;
- 	}
- 
-+	ret = clk_prepare(p->clk);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "unable to prepare clock\n");
-+		goto err1;
-+	}
-+
- 	p->pdev = pdev;
- 	pm_runtime_enable(&pdev->dev);
- 
-@@ -718,6 +724,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 		return 0;
- 
- 	pm_runtime_disable(&pdev->dev);
-+	clk_unprepare(p->clk);
-  err1:
- 	spi_master_put(master);
- 	return ret;
-@@ -731,6 +738,7 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
- 	ret = spi_bitbang_stop(&p->bitbang);
- 	if (!ret) {
- 		pm_runtime_disable(&pdev->dev);
-+		clk_unprepare(p->clk);
- 		spi_master_put(p->bitbang.master);
- 	}
- 	return ret;
--- 
-1.8.3.2
+On Thu, Nov 28, 2013 at 02:39:43AM +0100, Laurent Pinchart wrote:
 
+> Get the driver ready for the migration to the common clock framework by
+> calling clk_prepare() and clk_unprepare(). The calls are added in the
+> probe and remove handlers as the clk_enable() and clk_disable() calls
+> are located in atomic context and there's no callback function in
+> non-atomic context that can be used to prepare/unprepare the clock.
+
+Applied, thanks.  However it does seem like you should be able to move
+the prepare and disable to runtime PM rather than leaving it prepared
+for the entire time the driver is loaded.  In most systems this won't
+make any difference since prepare won't do anything but it's a bit
+neater.
+
+--PSbnZfZb/hnz6qjT
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSlxwbAAoJELSic+t+oim90X4P/jrVHDMyqpdKTj4ghj/ml5dx
+8Vw79C/nJNTHoZfh/GJboYziNPcbTTVKoOGr0UsPYPayt2wcFoD4vtTSkB4zredy
+7JtfhwGIoCb6SalfVCfmvBi9Xzkuu2r5km06qGFJwLRgbxe14+dmZKXj9nsznSPt
+mc0WuN5BZbixjwqERKU2nCr0GrCJBEKmqQbA+/hMhon2v9lrUg9kN+KaHZua9oCf
+qiWqfc5MityO4AZnmrpkZM3HHXbFXXGJY7DBphakz+6sxEQma4K4xgOl7zKIYqy2
+SRR7KwzrTjByiTvzDbOKb/snn/sbp3Wntr0aLdzMysOL9kYCCvHNjnDkLPLJYaPW
+SWaWr+MMnZBngYZu/HO1dNkQ18FeKfo/zTn4kiuTzlTN76dr017wdjvV0EFluCD4
+jLi7fcoANLMFAj/K37QHcQQHJmXhwY7RFp1h5+q1wOafs2T1icMX/GE2tM6KP7LG
+hUZb2mkdgcogusTR7SVhyekGyswsmr2gshfnQgiISDiqkLzH/m9mn97rcAeSwTfC
+ODUHq23k00SDFKfs0hno9uaaynxU55UrICB6IiPypcBh+j2zGOdvWmrN0yNZ5NAe
+ZUKFLs8knUg/TonjHyMtrU6Pc9K9ZgR+Fk4ThFkFGf3F81ur2kS70J0STEJfLHlf
+YB0CI9EXSAwghOjXAYmq
+=l9HP
+-----END PGP SIGNATURE-----
+
+--PSbnZfZb/hnz6qjT--
