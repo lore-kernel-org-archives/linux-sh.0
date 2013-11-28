@@ -1,58 +1,47 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Nov 2013 03:33:31 +0000
-Subject: [PATCH v2 19/29] ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as resources
-Message-Id: <1384054421-13357-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:48 +0000
+Subject: [PATCH v3 11/15] ARM: shmobile: Let Lager multiplatform boot with Lager DTB
+Message-Id: <1385600632-5181-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384054421-13357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+Let the multiplatform Lager support boot with the legacy DTS for Lager
+as well as the Lager reference DTS.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r7s72100.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/Makefile                     | 2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index dbcbb81..d47d20e 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -35,9 +35,15 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,					\
- 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
- 			  SCSCR_REIE,					\
--	.mapbase	= baseaddr,					\
--	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
--}
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq + 1),					\
-+	DEFINE_RES_IRQ(irq + 2),					\
-+	DEFINE_RES_IRQ(irq + 3),					\
-+	DEFINE_RES_IRQ(irq),						\
-+}									\
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 37aefa2..f28b4ef 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -234,7 +234,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
+-	r8a7790-lager-reference.dtb \
++	r8a7790-lager.dtb \
+ 	r8a7791-koelsch-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 85a744b..0723a68 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -68,6 +68,7 @@ static void __init lager_add_standard_devices(void)
+ }
  
- R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
- R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-@@ -49,7 +55,9 @@ R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
- R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 
- #define r7s72100_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
- 					  &scif##index##_platform_data,	       \
- 					  sizeof(scif##index##_platform_data))
- 
+ static const char *lager_boards_compat_dt[] __initdata = {
++	"renesas,lager",
+ 	"renesas,lager-reference",
+ 	NULL,
+ };
 -- 
-1.8.1.5
+1.8.3.2
 
