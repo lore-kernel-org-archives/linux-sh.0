@@ -1,36 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 Nov 2013 09:08:52 +0000
-Subject: [PATCH 13/16] ARM: shmobile: marzen: Do not enable CONFIG_SMC911X in defconfig
-Message-Id: <f3a3d2cfb7fb10e2e23d02abb5459ff974f2c8bd.1385629477.git.horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:27 +0000
+Subject: [PATCH 03/16] ARM: shmobile: lager: don't use named resource for MMCIF
+Message-Id: <b7b42df6c9400ae09453f894b06d9e7719058948.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385629477.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_SMC911X is not needed by marzen.
-It appears to have been accidently enabled as well
-as CONFIG_SMSC911X which is needed by marzen.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+sh_mmcif driver doesn't care resource name.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/board-lager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index a423bad..9ce38f6 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -59,7 +59,6 @@ CONFIG_NETDEVICES=y
- # CONFIG_NET_VENDOR_MICREL is not set
- # CONFIG_NET_VENDOR_NATSEMI is not set
- # CONFIG_NET_VENDOR_SEEQ is not set
--CONFIG_SMC911X=y
- CONFIG_SMSC911X=y
- # CONFIG_NET_VENDOR_STMICRO is not set
- # CONFIG_WLAN is not set
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index a8d3ce6..78a31b6 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -148,7 +148,7 @@ static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
+ };
+ 
+ static const struct resource mmcif1_resources[] __initconst = {
+-	DEFINE_RES_MEM_NAMED(0xee220000, 0x80, "MMCIF1"),
++	DEFINE_RES_MEM(0xee220000, 0x80),
+ 	DEFINE_RES_IRQ(gic_spi(170)),
+ };
+ 
 -- 
 1.8.4
 
