@@ -1,157 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Nov 2013 23:18:37 +0000
-Subject: [PATCH v4 27/29] serial: sh-sci: Remove platform data mapbase and irqs fields
-Message-Id: <1385594319-5758-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 09:08:49 +0000
+Subject: [PATCH 10/16] ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig
+Message-Id: <41307133da4b6f242ecbb45950b9d043c0b21b96.1385629477.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385594319-5758-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1385629477.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385629477.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The fields are not used anymore by board files, remove them.
+This change brings the marzen defconfig into line with
+other shmobile defconfigs.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 60 +++++++++++++++++++++++++--------------------
- include/linux/serial_sci.h  | 26 --------------------
- 2 files changed, 34 insertions(+), 52 deletions(-)
+ arch/arm/configs/marzen_defconfig | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index aeb04e4..ecd4dc0 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -59,6 +59,23 @@
- 
- #include "sh-sci.h"
- 
-+/* Offsets into the sci_port->irqs array */
-+enum {
-+	SCIx_ERI_IRQ,
-+	SCIx_RXI_IRQ,
-+	SCIx_TXI_IRQ,
-+	SCIx_BRI_IRQ,
-+	SCIx_NR_IRQS,
-+
-+	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
-+};
-+
-+#define SCIx_IRQ_IS_MUXED(port)			\
-+	((port)->irqs[SCIx_ERI_IRQ] =	\
-+	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
-+	((port)->irqs[SCIx_ERI_IRQ] &&	\
-+	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
-+
- struct sci_port {
- 	struct uart_port	port;
- 
-@@ -2160,36 +2177,27 @@ static int sci_init_single(struct platform_device *dev,
- 	port->iotype	= UPIO_MEM;
- 	port->line	= index;
- 
--	if (dev->num_resources) {
--		/* Device has resources, use them. */
--		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
--		if (res = NULL)
--			return -ENOMEM;
-+	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
-+	if (res = NULL)
-+		return -ENOMEM;
- 
--		port->mapbase = res->start;
-+	port->mapbase = res->start;
- 
--		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
--			sci_port->irqs[i] = platform_get_irq(dev, i);
-+	for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
-+		sci_port->irqs[i] = platform_get_irq(dev, i);
- 
--		/* The SCI generates several interrupts. They can be muxed
--		 * together or connected to different interrupt lines. In the
--		 * muxed case only one interrupt resource is specified. In the
--		 * non-muxed case three or four interrupt resources are
--		 * specified, as the BRI interrupt is optional.
--		 */
--		if (sci_port->irqs[0] < 0)
--			return -ENXIO;
-+	/* The SCI generates several interrupts. They can be muxed together or
-+	 * connected to different interrupt lines. In the muxed case only one
-+	 * interrupt resource is specified. In the non-muxed case three or four
-+	 * interrupt resources are specified, as the BRI interrupt is optional.
-+	 */
-+	if (sci_port->irqs[0] < 0)
-+		return -ENXIO;
- 
--		if (sci_port->irqs[1] < 0) {
--			sci_port->irqs[1] = sci_port->irqs[0];
--			sci_port->irqs[2] = sci_port->irqs[0];
--			sci_port->irqs[3] = sci_port->irqs[0];
--		}
--	} else {
--		/* No resources, use old-style platform data. */
--		port->mapbase = p->mapbase;
--		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
--			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
-+	if (sci_port->irqs[1] < 0) {
-+		sci_port->irqs[1] = sci_port->irqs[0];
-+		sci_port->irqs[2] = sci_port->irqs[0];
-+		sci_port->irqs[3] = sci_port->irqs[0];
- 	}
- 
- 	switch (p->type) {
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 42620f1..0f6ca22 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -58,17 +58,6 @@ enum {
- /* HSSRR HSCIF */
- #define HSCIF_SRE	0x8000
- 
--/* Offsets into the sci_port->irqs array */
--enum {
--	SCIx_ERI_IRQ,
--	SCIx_RXI_IRQ,
--	SCIx_TXI_IRQ,
--	SCIx_BRI_IRQ,
--	SCIx_NR_IRQS,
--
--	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
--};
--
- /* Offsets into the sci_port->gpios array */
- enum {
- 	SCIx_SCK,
-@@ -98,19 +87,6 @@ enum {
- 	SCIx_NR_REGTYPES,
- };
- 
--#define SCIx_IRQ_MUXED(irq)		\
--{					\
--	[SCIx_ERI_IRQ]	= (irq),	\
--	[SCIx_RXI_IRQ]	= (irq),	\
--	[SCIx_TXI_IRQ]	= (irq),	\
--	[SCIx_BRI_IRQ]	= (irq),	\
--}
--
--#define SCIx_IRQ_IS_MUXED(port)			\
--	((port)->irqs[SCIx_ERI_IRQ] =	\
--	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
--	((port)->irqs[SCIx_ERI_IRQ] &&	\
--	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
- /*
-  * SCI register subset common for all port types.
-  * Not all registers will exist on all parts.
-@@ -139,8 +115,6 @@ struct plat_sci_port_ops {
-  * Platform device specific platform_data struct
-  */
- struct plat_sci_port {
--	unsigned long	mapbase;		/* resource base */
--	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
- 	unsigned int	gpios[SCIx_NR_FNS];	/* SCK, RXD, TXD, CTS, RTS */
- 	unsigned int	type;			/* SCI / SCIF / IRDA / HSCIF */
- 	upf_t		flags;			/* UPF_* flags */
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 39e2dfe..3f0f41f 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -42,8 +42,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-CONFIG_DEVTMPFS=y
+-CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
 -- 
-1.8.3.2
+1.8.4
 
