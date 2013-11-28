@@ -1,43 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 15:44:52 +0000
-Subject: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
-Message-Id: <1385653493-9952-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 06:40:47 +0000
+Subject: [PATCH] irqchip: renesas-intc: Document DT bindings
+Message-Id: <1385620847-18919-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The gpio-regulator driver requires the regulator-type property to be
-present. Document it as required in the DT bindings.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/regulator/gpio-regulator.txt | 2 ++
- 1 file changed, 2 insertions(+)
+ .../interrupt-controller/renesas,intc-irqc.txt     | 30 ++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt
 
-diff --git a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
-index 63c6598..a560711 100644
---- a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
-+++ b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
-@@ -4,6 +4,7 @@ Required properties:
- - compatible		: Must be "regulator-gpio".
- - states		: Selection of available voltages and GPIO configs.
-                           if there are no states, then use a fixed regulator
-+- regulator-type	: Must be either "voltage" or "current".
- 
- Optional properties:
- - enable-gpio		: GPIO to use to enable/disable the regulator.
-@@ -22,6 +23,7 @@ Example:
- 		regulator-name = "mmci-gpio-supply";
- 		regulator-min-microvolt = <1800000>;
- 		regulator-max-microvolt = <2600000>;
-+		regulator-type = "voltage";
- 		regulator-boot-on;
- 
- 		enable-gpio = <&gpio0 23 0x4>;
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt
+new file mode 100644
+index 0000000..305d4e7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqc.txt
+@@ -0,0 +1,30 @@
++DT bindings for the R-/SH-Mobile INTC controller
++
++Required properties:
++
++- compatible: Must be one of the following:
++    "renesas,intc"
++    "renesas,intc-r8a73a4"
++    "renesas,intc-r8a7790"
++    "renesas,intc-r8a7791"
++- #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
++  interrupts.txt in this directory
++
++Optional properties:
++
++- any properties, listed in interrupts.txt, and any standard resource allocation
++  properties
++
++Example:
++
++        irqc0: interrupt-controller@e61c0000 {
++                compatible = "renesas,irqc-r8a7790", "renesas,irqc";
++                #interrupt-cells = <2>;
++                interrupt-controller;
++                reg = <0 0xe61c0000 0 0x200>;
++                interrupt-parent = <&gic>;
++                interrupts = <0 0 IRQ_TYPE_LEVEL_HIGH>,
++                             <0 1 IRQ_TYPE_LEVEL_HIGH>,
++                             <0 2 IRQ_TYPE_LEVEL_HIGH>,
++                             <0 3 IRQ_TYPE_LEVEL_HIGH>;
++        };
 -- 
-1.8.3.2
+1.8.4
 
