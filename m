@@ -1,32 +1,93 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 29 Nov 2013 03:00:55 +0000
-Subject: [PATCH 0/4] ARM: shmobile: R-Car H2 sound support prepare
-Message-Id: <87pppj52u4.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 Nov 2013 08:54:43 +0000
+Subject: [PATCH 13/16] ARM: shmobile: r8a7779: cleanup registration of sh_eth
+Message-Id: <be15182068582bc38281329d86d106adaca63fda.1385628709.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Simon, Laurent
+sh_eth driver which needs platform data at the time of
+registration is not used.
+Now, ARM/shmobile aims to support DT,
+and the C code base board support will be removed
+if DT support is completed.
+Current driver registration method which needs platform data
+and which is not shared complicates codes.
+This means legacy C code cleanup after DT supporting
+will be more complicated
+This patch removes r8a7779_add_ether_device()
 
-These are prepare patches for R-Car H2 sound support.
-H2 sound support itself needs ALSA ASoC update,
-so, I can't send lager board sound support patches at this point.
-But, these doesn't have relationship to ALSA.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c        | 20 --------------------
+ 2 files changed, 22 deletions(-)
 
-#1 #2 are PFC patches
-#3    is  I2C patch
-#4    is  clock patch
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 1cab247..5014145 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -3,7 +3,6 @@
+ 
+ #include <linux/sh_clk.h>
+ #include <linux/pm_domain.h>
+-#include <linux/sh_eth.h>
+ 
+ /* HPB-DMA slave IDs */
+ enum {
+@@ -39,7 +38,6 @@ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+-extern void r8a7779_add_ether_device(struct sh_eth_plat_data *pdata);
+ extern void r8a7779_init_late(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 51a43c5..8f94531 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -598,18 +598,6 @@ static struct platform_device ohci1_device = {
+ 	.resource	= ohci1_resources,
+ };
+ 
+-/* Ether */
+-static struct resource ether_resources[] __initdata = {
+-	{
+-		.start	= 0xfde00000,
+-		.end	= 0xfde003ff,
+-		.flags	= IORESOURCE_MEM,
+-	}, {
+-		.start	= gic_iid(0xb4),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+ /* HPB-DMA */
+ 
+ /* Asynchronous mode register bits */
+@@ -798,14 +786,6 @@ void __init r8a7779_add_standard_devices(void)
+ 	r8a7779_register_hpb_dmae();
+ }
+ 
+-void __init r8a7779_add_ether_device(struct sh_eth_plat_data *pdata)
+-{
+-	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  pdata, sizeof(*pdata));
+-}
+-
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+ void __init __weak r8a7779_register_twd(void) { }
+ 
+-- 
+1.8.4
 
-Kuninori Morimoto (4):
-      sh-pfc: r8a7790: Add SSI pin support
-      sh-pfc: r8a7790: Add Audio pin support
-      ARM: shmobile: r8a7790: add I2C support
-      ARM: shmobile: r8a7790: add sound clock support
-
- arch/arm/mach-shmobile/clock-r8a7790.c |   45 +++++
- arch/arm/mach-shmobile/setup-r8a7790.c |   25 +++
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c   |  309 ++++++++++++++++++++++++++++++++
- 3 files changed, 379 insertions(+)
