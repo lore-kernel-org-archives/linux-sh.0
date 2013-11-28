@@ -1,53 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 Nov 2013 11:16:27 +0000
-Subject: Re: [PATCH 04/04] ARM: shmobile: Genmai SCIF2 PINCTRL configuration
-Message-Id: <1887631.943WIBMsEu@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 01:03:43 +0000
+Subject: [PATCH v3 06/15] ARM: shmobile: koelsch-reference: Initialize CPG device
+Message-Id: <1385600632-5181-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127082736.20015.21303.sendpatchset@w520>
- <20131127082814.20015.72207.sendpatchset@w520>
-In-Reply-To: <20131127082814.20015.72207.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+On multiplatform kernels clocks are handled by the CCF CPG driver. It
+must be explicitly initialized by a call to rcar_gen2_clocks_init() with
+the value of the boot mode pins.
 
-Thank you for the patch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-On Wednesday 27 November 2013 17:28:14 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Configure the r7s72100 PINCTRL hardware and select pin function
-> for the SCIF2 serial console.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> 
->  arch/arm/boot/dts/r7s72100-genmai-reference.dts |   10 ++++++++++
->  1 file changed, 10 insertions(+)
-> 
-> --- 0009/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27
-> 17:13:43.000000000 +0900 @@ -58,3 +58,13 @@
->  	};
-> 
->  };
-> +
-> +&pfc {
-> +	pinctrl-0 = <&scif2_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	scif2_pins: serial2 {
-> +		renesas,groups = "scif2_txd_p3_0", "scif2_rxd_p3_2";
-> +		renesas,function = "scif2";
-> +	};
-> +};
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a804a17..788ccdf 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -19,7 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <mach/common.h>
+@@ -27,11 +27,17 @@
+ #include <mach/r8a7791.h>
+ #include <asm/mach/arch.h>
+ 
+-static void __init koelsch_add_standard_devices(void)
++static void __init koelsch_init_time(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+-	of_clk_init(NULL);
+-#else
++	rcar_gen2_clocks_init(rcar_gen2_read_mode_pins());
++#endif
++	rcar_gen2_timer_init();
++}
++
++static void __init koelsch_add_standard_devices(void)
++{
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7791_clock_init();
+ #endif
+ 	r8a7791_add_dt_devices();
+@@ -46,7 +52,7 @@ static const char * const koelsch_boards_compat_dt[] __initconst = {
+ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+ 	.init_early	= r8a7791_init_early,
+-	.init_time	= rcar_gen2_timer_init,
++	.init_time	= koelsch_init_time,
+ 	.init_machine	= koelsch_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= koelsch_boards_compat_dt,
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
