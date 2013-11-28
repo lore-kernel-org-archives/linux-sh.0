@@ -1,160 +1,52 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 19 Nov 2013 14:02:12 +0000
-Subject: [PATCH v3 11/29] ARM: shmobile: r8a7779: Use macros to declare SCIF devices
-Message-Id: <1384869751-9786-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 28 Nov 2013 17:11:46 +0000
+Subject: [PATCH 2/2] serial: sh-sci: Convert to clk_prepare/unprepare
+Message-Id: <1385658706-20093-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-serial@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 124 +++++++--------------------------
- 1 file changed, 24 insertions(+), 100 deletions(-)
+ drivers/tty/serial/sh-sci.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8f94531..df418f1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -188,107 +188,31 @@ void __init r8a7779_pinmux_init(void)
- 			    ARRAY_SIZE(r8a7779_pinctrl_devices));
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index decaf24..852cc19 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -440,9 +440,9 @@ static void sci_port_enable(struct sci_port *sci_port)
+ 
+ 	pm_runtime_get_sync(sci_port->port.dev);
+ 
+-	clk_enable(sci_port->iclk);
++	clk_prepare_enable(sci_port->iclk);
+ 	sci_port->port.uartclk = clk_get_rate(sci_port->iclk);
+-	clk_enable(sci_port->fclk);
++	clk_prepare_enable(sci_port->fclk);
  }
  
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xffe40000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xffe41000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xffe42000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xffe43000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xffe44000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xffe45000,
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
--	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
--	.scbrr_algo_id	= SCBRR_ALGO_2,
--	.type		= PORT_SCIF,
--	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
--};
-+/* SCIF */
-+#define R8A7779_SCIF(index, baseaddr, irq)			\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= PORT_SCIF,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_2,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
+ static void sci_port_disable(struct sci_port *sci_port)
+@@ -458,8 +458,8 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	del_timer_sync(&sci_port->break_timer);
+ 	sci_port->break_flag = 0;
  
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
-+R8A7779_SCIF(0, 0xffe40000, gic_iid(0x78));
-+R8A7779_SCIF(1, 0xffe41000, gic_iid(0x79));
-+R8A7779_SCIF(2, 0xffe42000, gic_iid(0x7a));
-+R8A7779_SCIF(3, 0xffe43000, gic_iid(0x7b));
-+R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
-+R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
+-	clk_disable(sci_port->fclk);
+-	clk_disable(sci_port->iclk);
++	clk_disable_unprepare(sci_port->fclk);
++	clk_disable_unprepare(sci_port->iclk);
  
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
+ 	pm_runtime_put_sync(sci_port->port.dev);
+ }
 -- 
 1.8.3.2
 
