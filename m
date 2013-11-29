@@ -1,58 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 18 Nov 2013 11:20:11 +0000
-Subject: Re: [PATCH 0/5] R-Car DU fixes and support for R8A7791
-Message-Id: <3012893.yAoPSuaixC@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 29 Nov 2013 03:02:12 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7790: add I2C support
+Message-Id: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384350735-4419-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20131118082309.GB1506@verge.net.au>
-In-Reply-To: <20131118082309.GB1506@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c |    4 ++++
+ arch/arm/mach-shmobile/setup-r8a7790.c |   25 +++++++++++++++++++++++++
+ 2 files changed, 29 insertions(+)
 
-On Monday 18 November 2013 17:23:11 Simon Horman wrote:
-> Hi Laurent,
-> 
-> I am wondering if you have any patches to wire up this driver
-> for the Koelsch board so that I might test it.
-
-Here you go.
-
-	git://linuxtv.org/pinchartl/fbdev.git drm/du/koelsch
-
-Only the LVDS output is currently supported.
-
-> On Wed, Nov 13, 2013 at 02:52:10PM +0100, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > This patch series adds support for the DU found in the R8A7791 SoC. It
-> > starts by a cleanup patch (1/5), a bug fix (2/5), two preparation patches
-> > (3/5 and 4/5) and finally adds support for the R8A7791 DU (5/5).
-> > 
-> > Patch 2/5 is a candidate for stable kernels. There's no rush to get this
-> > upstreamed in v3.13, v3.14 is fine.
-> > 
-> > The series is based on top of the latest drm-next branch.
-> > 
-> > Laurent Pinchart (5):
-> >   drm/rcar-du: Don't cast crtc to rcrtc twice in the same function
-> >   drm/rcar-du: Update plane pitch in .mode_set_base() operation
-> >   drm/rcar-du: Split features and quirks
-> >   drm/rcar-du: Add LVDS_LANES quirk
-> >   drm/rcar-du: Add support for the r8a7791 DU
-> >  
-> >  drivers/gpu/drm/rcar-du/rcar_du_crtc.c    |  3 +--
-> >  drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 24 ++++++++++++++++++++++--
-> >  drivers/gpu/drm/rcar-du/rcar_du_drv.h     | 14 ++++++++++++--
-> >  drivers/gpu/drm/rcar-du/rcar_du_kms.c     |  4 ++--
-> >  drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 15 ++++++++++-----
-> >  drivers/gpu/drm/rcar-du/rcar_du_plane.c   | 21 +++++++++++----------
-> >  6 files changed, 58 insertions(+), 23 deletions(-)
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 7960dc0..cf6dd7f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -277,9 +277,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+ 	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 3543c3b..8474818 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -67,6 +67,27 @@ R8A7790_GPIO(5);
+ 		&r8a7790_gpio##idx##_platform_data,			\
+ 		sizeof(r8a7790_gpio##idx##_platform_data))
+ 
++static struct resource i2c_resources[] __initdata = {
++	/* I2C0 */
++	DEFINE_RES_MEM(0xE6508000, 0x40),
++	DEFINE_RES_IRQ(gic_spi(287)),
++	/* I2C1 */
++	DEFINE_RES_MEM(0xE6518000, 0x40),
++	DEFINE_RES_IRQ(gic_spi(288)),
++	/* I2C2 */
++	DEFINE_RES_MEM(0xE6530000, 0x40),
++	DEFINE_RES_IRQ(gic_spi(286)),
++	/* I2C3 */
++	DEFINE_RES_MEM(0xE6540000, 0x40),
++	DEFINE_RES_IRQ(gic_spi(290)),
++
++};
++
++#define r8a7790_register_i2c(idx)		\
++	platform_device_register_simple(	\
++		"i2c-rcar", idx,		\
++		i2c_resources + (2 * idx), 2);	\
++
+ void __init r8a7790_pinmux_init(void)
+ {
+ 	r8a7790_register_pfc();
+@@ -76,6 +97,10 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_gpio(3);
+ 	r8a7790_register_gpio(4);
+ 	r8a7790_register_gpio(5);
++	r8a7790_register_i2c(0);
++	r8a7790_register_i2c(1);
++	r8a7790_register_i2c(2);
++	r8a7790_register_i2c(3);
+ }
+ 
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
