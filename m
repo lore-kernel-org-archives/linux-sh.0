@@ -1,43 +1,61 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 05 Nov 2013 20:33:25 +0000
-Subject: [RFC PATCH 0/2] Defer HCD init until the external PHY, bound to the HCD is ready
-Message-Id: <1383683607-28119-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 29 Nov 2013 22:50:47 +0000
+Subject: [PATCH 1/6] v4l: vsp1: Supply frames to the DU continuously
+Message-Id: <1385765452-25754-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385765452-25754-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385765452-25754-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-This adds remove_phy flag to the HCD structure. If the flag is
-set and if hcd->phy is valid, the phy is shutdown and released
-whenever usb_add_hcd fails or usb_hcd_remove is called.
-This also adds CONFIG_USB_HCD_EXTERNAL_PHY option that allows
-the HCD driver to search for a USB phy, bound to the HCD,
-when the HC is being added.
+When operating in DU output mode (deep pipeline to the DU through the
+LIF), the VSP1 needs to constantly supply frames to the display. To
+ensure reuse the last queued buffer instead of returning it to the user.
 
-If the USB PHY is found, it is initialized and the remove_phy flag
-is set. In case PHY is not ready, the usb_add_hcd function returns
-the -EPROBE_DEFER error code which defers HCD probing till the PHY
-becomes ready.
-If no PHY is bound to the HCD, or it has been initialized by
-the low-level driver before calling usb_add_hcd(), the HCD is
-added as usual.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/vsp1/vsp1_video.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-This approach can be used to initialize the external PHY for
-the R-Car PCI USB hosts, that share USB ports with USBHS/USBSS devices.
-All we need to do is to make R-Car Gen2 platform code bind the
-Gen2 USB phy device to the PCI HC devices, and make the phy-rcar-gen2-usb
-driver register USB phy with usb_add_phy_dev() AOT usb_add_phy() callback.
-
-Valentine Barshak (2):
-  usb: hcd: Remove USB phy if needed
-  usb: hcd: Introduce CONFIG_USB_HCD_EXTERNAL_PHY option
-
- drivers/usb/core/hcd.c   | 34 +++++++++++++++++++++++++++++++++-
- drivers/usb/host/Kconfig | 11 +++++++++++
- include/linux/usb/hcd.h  |  1 +
- 3 files changed, 45 insertions(+), 1 deletion(-)
-
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 4b0ac07..b4687a8 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -488,11 +488,17 @@ static bool vsp1_pipeline_ready(struct vsp1_pipeline *pipe)
+  * This function completes the current buffer by filling its sequence number,
+  * time stamp and payload size, and hands it back to the videobuf core.
+  *
++ * When operating in DU output mode (deep pipeline to the DU through the LIF),
++ * the VSP1 needs to constantly supply frames to the display. In that case, if
++ * no other buffer is queued, reuse the one that has just been processed instead
++ * of handing it back to the videobuf core.
++ *
+  * Return the next queued buffer or NULL if the queue is empty.
+  */
+ static struct vsp1_video_buffer *
+ vsp1_video_complete_buffer(struct vsp1_video *video)
+ {
++	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
+ 	struct vsp1_video_buffer *next = NULL;
+ 	struct vsp1_video_buffer *done;
+ 	unsigned long flags;
+@@ -507,6 +513,13 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
+ 
+ 	done = list_first_entry(&video->irqqueue,
+ 				struct vsp1_video_buffer, queue);
++
++	/* In DU output mode reuse the buffer if the list is singular. */
++	if (pipe->lif && list_is_singular(&video->irqqueue)) {
++		spin_unlock_irqrestore(&video->irqlock, flags);
++		return done;
++	}
++
+ 	list_del(&done->queue);
+ 
+ 	if (!list_empty(&video->irqqueue))
 -- 
-1.8.3.1
+1.8.3.2
 
