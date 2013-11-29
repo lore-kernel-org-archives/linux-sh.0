@@ -1,47 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Nov 2013 03:57:55 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: marzen: remove SDHI0 WP pin setting
-Message-Id: <20131121035753.GB31130@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 29 Nov 2013 13:32:20 +0000
+Subject: [PATCH] gpio: rcar: Fix level interrupt handling
+Message-Id: <1385731940-25359-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871u2bahi7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871u2bahi7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
 
-On Tue, Nov 19, 2013 at 07:17:55PM -0800, Kuninori Morimoto wrote:
-> WP pin is not implemented on Marzen
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+According to the manual, if a port is set for level detection using
+the corresponding bit in the edge/level select register and an external
+level interrupt signal is asserted, the corresponding bit in INTDT
+does not use the FF to hold the input.
+Thus, writing 1 to the corresponding bits in INTCLR cannot clear the
+corresponding bits in the INTDT register. Instead, when an external
+input signal is stopped, the corresponding bit in INTDT is cleared
+automatically.
 
-Thanks, I will queue this up.
-Assuming all goes will I plan to push this and other updates
-today or tomorrow.
+Since the INTDT bit cannot be cleared for the level interrupts until
+the interrupt signal is stopped, we end up with the infinite loop
+when using deferred (threaded) IRQ handling.
 
-> ---
->  arch/arm/mach-shmobile/board-marzen.c |    2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-> index 4f9e3ec..d832a44 100644
-> --- a/arch/arm/mach-shmobile/board-marzen.c
-> +++ b/arch/arm/mach-shmobile/board-marzen.c
-> @@ -347,8 +347,6 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
->  				  "sdhi0_ctrl", "sdhi0"),
->  	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
->  				  "sdhi0_cd", "sdhi0"),
-> -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-> -				  "sdhi0_wp", "sdhi0"),
->  	/* SMSC */
->  	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
->  				  "intc_irq1_b", "intc"),
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Workaround the issue by dropping level interrupts from the pending
+mask once the interrupt is handled. If the IRQ is not cleared by the
+handler, it will be invoked again when the interrupt is re-enabled.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/gpio/gpio-rcar.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index d3f15ae..918a1de 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -166,12 +166,18 @@ static int gpio_rcar_irq_set_type(struct irq_data *d, unsigned int type)
+ static irqreturn_t gpio_rcar_irq_handler(int irq, void *dev_id)
+ {
+ 	struct gpio_rcar_priv *p = dev_id;
+-	u32 pending;
++	u32 pending, mask = 0;
+ 	unsigned int offset, irqs_handled = 0;
+ 
+-	while ((pending = gpio_rcar_read(p, INTDT))) {
++	/*
++	 * Level interrupts cannot be cleared in the INTDT,
++	 * so we just drop them from the pending mask when
++	 * the interrupt is handled.
++	 */
++	while ((pending = gpio_rcar_read(p, INTDT) & ~mask)) {
+ 		offset = __ffs(pending);
+ 		gpio_rcar_write(p, INTCLR, BIT(offset));
++		mask |= BIT(offset) & ~gpio_rcar_read(p, EDGLEVEL);
+ 		generic_handle_irq(irq_find_mapping(p->irq_domain, offset));
+ 		irqs_handled++;
+ 	}
+-- 
+1.8.3.1
+
