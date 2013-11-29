@@ -1,49 +1,134 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Nov 2013 07:37:11 +0000
-Subject: Re: [PATCH 03/15] serial: sh-sci: Restrict non-COMPILE_TEST compilation
-Message-Id: <20131128073711.GF24146@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 29 Nov 2013 13:48:00 +0000
+Subject: [PATCH RESEND] gpio: rcar: Support both edge trigger with DT
+Message-Id: <1811469.aLo43mdTt2@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-gpio@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Nov 27, 2013 at 02:18:25AM +0100, Laurent Pinchart wrote:
-> Hardware supported by the driver is only found on SUPERH or
-> ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
-> 
-> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> Cc: linux-serial@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Some versions of the R-Car GPIO controller support triggering on both
+edges of the input signal. Whether this capability is supported is
+currently specified in platform data. R-Car GPIO devices instantiated
+from the device tree have the capability turned off even when the
+hardware supports it.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+To fix this, add DT match data support to the driver, initialize both
+edge trigger support from match data and enable both edge trigger in
+r8a7790 and r8a7791 match data.
 
-> ---
->  drivers/tty/serial/Kconfig | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-> index a3817ab..a640d0b 100644
-> --- a/drivers/tty/serial/Kconfig
-> +++ b/drivers/tty/serial/Kconfig
-> @@ -709,7 +709,8 @@ config SERIAL_IP22_ZILOG_CONSOLE
->  
->  config SERIAL_SH_SCI
->  	tristate "SuperH SCI(F) serial port support"
-> -	depends on HAVE_CLK && (SUPERH || ARM || COMPILE_TEST)
-> +	depends on HAVE_CLK
-> +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
->  	select SERIAL_CORE
->  
->  config SERIAL_SH_SCI_NR_UARTS
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+---
+ drivers/gpio/gpio-rcar.c | 56 +++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 43 insertions(+), 13 deletions(-)
+
+(With the correct linux-sh address this time, sorry about the noise)
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 5c25fa1..2fdd019 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -284,7 +284,34 @@ static struct irq_domain_ops gpio_rcar_irq_domain_ops = {
+ 	.map	= gpio_rcar_irq_domain_map,
+ };
+ 
+-static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
++struct gpio_rcar_info {
++	bool has_both_edge_trigger;
++};
++
++static const struct of_device_id gpio_rcar_of_table[] = {
++	{
++		.compatible = "renesas,gpio-r8a7790",
++		.data = (void *)&(const struct gpio_rcar_info) {
++			.has_both_edge_trigger = true,
++		},
++	}, {
++		.compatible = "renesas,gpio-r8a7791",
++		.data = (void *)&(const struct gpio_rcar_info) {
++			.has_both_edge_trigger = true,
++		},
++	}, {
++		.compatible = "renesas,gpio-rcar",
++		.data = (void *)&(const struct gpio_rcar_info) {
++			.has_both_edge_trigger = false,
++		},
++	}, {
++		/* Terminator */
++	},
++};
++
++MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
++
++static int gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
+ {
+ 	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
+ 	struct device_node *np = p->pdev->dev.of_node;
+@@ -294,11 +321,21 @@ static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
+ 	if (pdata) {
+ 		p->config = *pdata;
+ 	} else if (IS_ENABLED(CONFIG_OF) && np) {
++		const struct of_device_id *match;
++		const struct gpio_rcar_info *info;
++
++		match = of_match_node(gpio_rcar_of_table, np);
++		if (!match)
++			return -EINVAL;
++
++		info = match->data;
++
+ 		ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0,
+ 						       &args);
+ 		p->config.number_of_pins = ret = 0 ? args.args[2]
+ 					 : RCAR_MAX_GPIO_PER_BANK;
+ 		p->config.gpio_base = -1;
++		p->config.has_both_edge_trigger = info->has_both_edge_trigger;
+ 	}
+ 
+ 	if (p->config.number_of_pins = 0 ||
+@@ -308,6 +345,8 @@ static void gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
+ 			 p->config.number_of_pins, RCAR_MAX_GPIO_PER_BANK);
+ 		p->config.number_of_pins = RCAR_MAX_GPIO_PER_BANK;
+ 	}
++
++	return 0;
+ }
+ 
+ static int gpio_rcar_probe(struct platform_device *pdev)
+@@ -330,7 +369,9 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	spin_lock_init(&p->lock);
+ 
+ 	/* Get device configuration from DT node or platform data. */
+-	gpio_rcar_parse_pdata(p);
++	ret = gpio_rcar_parse_pdata(p);
++	if (ret < 0)
++		return ret;
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
+@@ -434,17 +475,6 @@ static int gpio_rcar_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-#ifdef CONFIG_OF
+-static const struct of_device_id gpio_rcar_of_table[] = {
+-	{
+-		.compatible = "renesas,gpio-rcar",
+-	},
+-	{ },
+-};
+-
+-MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
+-#endif
+-
+ static struct platform_driver gpio_rcar_device_driver = {
+ 	.probe		= gpio_rcar_probe,
+ 	.remove		= gpio_rcar_remove,
+-- 
+Regards,
+
+Laurent Pinchart
+
