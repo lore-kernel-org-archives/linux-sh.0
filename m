@@ -1,21 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 08 Nov 2013 07:52:21 +0000
-Subject: Re: [PATCH 01/03] ARM: shmobile: r7s72100 Genmai DT reference DTS bits
-Message-Id: <20131108075220.GC23477@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 29 Nov 2013 18:04:09 +0000
+Subject: [PATCH V2] gpio: rcar: Fix level interrupt handling
+Message-Id: <1385748249-27170-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131106233032.8117.71968.sendpatchset@w520>
- <20131106233107.8117.46385.sendpatchset@w520>
-In-Reply-To: <20131106233107.8117.46385.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
 
-On Thu, Nov 07, 2013 at 08:31:07AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add the DT bits for r7s72100 Genmai DT reference support.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+According to the manual, if a port is set for level detection using
+the corresponding bit in the edge/level select register and an external
+level interrupt signal is asserted, the corresponding bit in INTDT
+does not use the FF to hold the input.
+Thus, writing 1 to the corresponding bits in INTCLR cannot clear the
+corresponding bits in the INTDT register. Instead, when an external
+input signal is stopped, the corresponding bit in INTDT is cleared
+automatically.
 
-Thanks, I have queued this up.
+Since the INTDT bit cannot be cleared for the level interrupts until
+the interrupt signal is stopped, we end up with the infinite loop
+when using deferred (threaded) IRQ handling.
+
+Since a deferred interrupt is disabled by the low-level handler and
+re-enabled only when the deferred handler is completed, Fix the issue
+by dropping disabled interrupts from the pending mask as suggested by
+Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+Changes in V2:
+* Drop disabled interrupts from pending mask altogether instead of
+  dropping level interrupts one by one once they get handled.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/gpio/gpio-rcar.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index d3f15ae..fd2d827 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -169,7 +169,8 @@ static irqreturn_t gpio_rcar_irq_handler(int irq, void *dev_id)
+ 	u32 pending;
+ 	unsigned int offset, irqs_handled = 0;
+ 
+-	while ((pending = gpio_rcar_read(p, INTDT))) {
++	while ((pending = gpio_rcar_read(p, INTDT) &
++			  gpio_rcar_read(p, INTMSK))) {
+ 		offset = __ffs(pending);
+ 		gpio_rcar_write(p, INTCLR, BIT(offset));
+ 		generic_handle_irq(irq_find_mapping(p->irq_domain, offset));
+-- 
+1.8.3.1
+
