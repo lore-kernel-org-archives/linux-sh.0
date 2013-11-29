@@ -1,58 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 28 Nov 2013 21:43:27 +0000
-Subject: [PATCH 13/16] ARM: shmobile: r8a7791: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <1385675010-26904-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 29 Nov 2013 03:00:55 +0000
+Subject: [PATCH 0/4] ARM: shmobile: R-Car H2 sound support prepare
+Message-Id: <87pppj52u4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/setup-r8a7791.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+Hi Simon, Laurent
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index f15b537..e28404e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -84,11 +84,10 @@ void __init r8a7791_pinmux_init(void)
- 	r8a7791_register_gpio(7);
- }
- 
--#define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
-+#define __R8A7791_SCIF(scif_type, index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scbrr_algo_id	= algo,						\
- 	.scscr		= SCSCR_RE | SCSCR_TE,				\
- };									\
- 									\
-@@ -98,13 +97,13 @@ static struct resource scif##index##_resources[] = {			\
- }
- 
- #define R8A7791_SCIF(index, baseaddr, irq)				\
--	__R8A7791_SCIF(PORT_SCIF, SCBRR_ALGO_2, index, baseaddr, irq)
-+	__R8A7791_SCIF(PORT_SCIF, index, baseaddr, irq)
- 
- #define R8A7791_SCIFA(index, baseaddr, irq)				\
--	__R8A7791_SCIF(PORT_SCIFA, SCBRR_ALGO_4, index, baseaddr, irq)
-+	__R8A7791_SCIF(PORT_SCIFA, index, baseaddr, irq)
- 
- #define R8A7791_SCIFB(index, baseaddr, irq)				\
--	__R8A7791_SCIF(PORT_SCIFB, SCBRR_ALGO_4, index, baseaddr, irq)
-+	__R8A7791_SCIF(PORT_SCIFB, index, baseaddr, irq)
- 
- R8A7791_SCIFA(0,  0xe6c40000, gic_spi(144)); /* SCIFA0 */
- R8A7791_SCIFA(1,  0xe6c50000, gic_spi(145)); /* SCIFA1 */
--- 
-1.8.3.2
+These are prepare patches for R-Car H2 sound support.
+H2 sound support itself needs ALSA ASoC update,
+so, I can't send lager board sound support patches at this point.
+But, these doesn't have relationship to ALSA.
 
+#1 #2 are PFC patches
+#3    is  I2C patch
+#4    is  clock patch
+
+Kuninori Morimoto (4):
+      sh-pfc: r8a7790: Add SSI pin support
+      sh-pfc: r8a7790: Add Audio pin support
+      ARM: shmobile: r8a7790: add I2C support
+      ARM: shmobile: r8a7790: add sound clock support
+
+ arch/arm/mach-shmobile/clock-r8a7790.c |   45 +++++
+ arch/arm/mach-shmobile/setup-r8a7790.c |   25 +++
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c   |  309 ++++++++++++++++++++++++++++++++
+ 3 files changed, 379 insertions(+)
