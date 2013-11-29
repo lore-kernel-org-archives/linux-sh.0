@@ -1,36 +1,63 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 09 Nov 2013 12:33:49 +0000
-Subject: [PATCH 2/2] ASoC: sh: rcar: Depend on ARCH_SHMOBILE_LEGACY
-Message-Id: <1384000429-3590-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 29 Nov 2013 22:50:46 +0000
+Subject: [PATCH 0/6] Miscellaneous VSP1 patches
+Message-Id: <1385765452-25754-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-The driver doesn't compile on multiplatform kernels as it requires
-<mach/clock.h>.
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- sound/soc/sh/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+Here are a couple of patches for the Renesas VSP1 driver. The first patch
+fixes a bug in the driver, while the remaining patches add new features
+(cropping at the inputs and outputs, and HST, HSI, SRU and LUT blocks).
 
-diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
-index 56d8ff6..ce7cfd6 100644
---- a/sound/soc/sh/Kconfig
-+++ b/sound/soc/sh/Kconfig
-@@ -36,6 +36,7 @@ config SND_SOC_SH4_SIU
- 
- config SND_SOC_RCAR
- 	tristate "R-Car series SRU/SCU/SSIU/SSI support"
-+	depends on ARCH_SHMOBILE_LEGACY
- 	select SND_SIMPLE_CARD
- 	select RCAR_CLK_ADG
- 	help
+The HST and HSI blocks convert RGB to/from HSV and thus require a new HSV
+media bus format, introduced in patch 3/6.
+
+Laurent Pinchart (6):
+  v4l: vsp1: Supply frames to the DU continuously
+  v4l: vsp1: Add cropping support
+  v4l: Add media format codes for AHSV8888 on 32-bit busses
+  v4l: vsp1: Add HST and HSI support
+  v4l: vsp1: Add SRU support
+  v4l: vsp1: Add LUT support
+
+ Documentation/DocBook/media/v4l/subdev-formats.xml | 157 +++++++++
+ drivers/media/platform/vsp1/Makefile               |   3 +-
+ drivers/media/platform/vsp1/vsp1.h                 |   7 +
+ drivers/media/platform/vsp1/vsp1_drv.c             |  39 +++
+ drivers/media/platform/vsp1/vsp1_entity.c          |   7 +
+ drivers/media/platform/vsp1/vsp1_entity.h          |   4 +
+ drivers/media/platform/vsp1/vsp1_hsit.c            | 222 +++++++++++++
+ drivers/media/platform/vsp1/vsp1_hsit.h            |  38 +++
+ drivers/media/platform/vsp1/vsp1_lut.c             | 252 +++++++++++++++
+ drivers/media/platform/vsp1/vsp1_lut.h             |  38 +++
+ drivers/media/platform/vsp1/vsp1_regs.h            |  16 +
+ drivers/media/platform/vsp1/vsp1_rpf.c             |  34 +-
+ drivers/media/platform/vsp1/vsp1_rwpf.c            |  96 ++++++
+ drivers/media/platform/vsp1/vsp1_rwpf.h            |  10 +
+ drivers/media/platform/vsp1/vsp1_sru.c             | 356 +++++++++++++++++++++
+ drivers/media/platform/vsp1/vsp1_sru.h             |  41 +++
+ drivers/media/platform/vsp1/vsp1_video.c           |  13 +
+ drivers/media/platform/vsp1/vsp1_wpf.c             |  17 +-
+ include/linux/platform_data/vsp1.h                 |   2 +
+ include/uapi/linux/v4l2-mediabus.h                 |   3 +
+ include/uapi/linux/vsp1.h                          |  34 ++
+ 21 files changed, 1372 insertions(+), 17 deletions(-)
+ create mode 100644 drivers/media/platform/vsp1/vsp1_hsit.c
+ create mode 100644 drivers/media/platform/vsp1/vsp1_hsit.h
+ create mode 100644 drivers/media/platform/vsp1/vsp1_lut.c
+ create mode 100644 drivers/media/platform/vsp1/vsp1_lut.h
+ create mode 100644 drivers/media/platform/vsp1/vsp1_sru.c
+ create mode 100644 drivers/media/platform/vsp1/vsp1_sru.h
+ create mode 100644 include/uapi/linux/vsp1.h
+
 -- 
-1.8.1.5
+Regards,
+
+Laurent Pinchart
 
