@@ -1,60 +1,75 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 11 Dec 2013 22:36:30 +0000
-Subject: Re: [PATCH] irqchip: Renesas IRQC driver
-Message-Id: <52A8F6FC.40201@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 01 Dec 2013 09:50:16 +0000
+Subject: Re: Build regressions/improvements in v3.13-rc2
+Message-Id: <CAMuHMdV1hoUnYixPghCAy-LuTaB9JU-BFfBPH06gxhLRAqfp8Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130227081501.30706.60471.sendpatchset@w520>
-In-Reply-To: <20130227081501.30706.60471.sendpatchset@w520>
+References: <1385891092-13266-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1385891092-13266-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, tglx@linutronix.de
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: sparclinux <sparclinux@vger.kernel.org>, "linux-xtensa@linux-xtensa.org" <linux-xtensa@linux-xtensa.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hello.
+On Sun, Dec 1, 2013 at 10:44 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.13-rc2[1] to v3.13-rc1[3], the summaries are:
+>   - build errors: +8/-8
+>   - build warnings: +147/-97
 
-On 02/27/2013 11:15 AM, Magnus Damm wrote:
+  + /scratch/kisskb/src/drivers/crypto/caam/jr.c: error: implicit
+declaration of function 'of_iomap'
+[-Werror=implicit-function-declaration]:  => 468:2
 
-> From: Magnus Damm <damm@opensource.se>
+powerpc/mpc85xx_defconfig
 
-    Magnus, explain me one thing about your driver please.
+  + /scratch/kisskb/src/arch/powerpc/kernel/swsusp_booke.S: Error:
+invalid sprg number:  => 161, 85, 165, 91, 167, 163, 87, 89
 
-> This patch adds a driver for external IRQ pins connected
-> to the IRQC hardware block on recent SoCs from Renesas.
->
-> The IRQC hardware block is used together with more
-> recent ARM based SoCs using the GIC. As usual the GIC
-> requires external IRQ trigger setup somewhere else
-> which in this particular case happens to be IRQC.
->
-> This driver implements the glue code needed to configure
-> IRQ trigger and also handle mask/unmask and demux of
-> external IRQ pins hooked up from the IRQC to the GIC.
+powerpc-randconfig
 
-    Judging on the R8A779x manual pictures, IRQn enter the SoC via IRQC, right?
-Why then you call request_irq() on GIC interrupt numbers and expect an 
-interrupt to "enter" from the GIC side, and then only read IRQC's 
-DETECT_STATUS register to make sure the matching IRQn is really active (you 
-call it demux, but I don't really see much of a demultiplexing there). This 
-seems to me fundamentally broken, and is probably why the interrupt from PHY 
-doesn't happen despite I set the interrupt type to active low via a call to 
-irq_set_irq_type()...
+  + /scratch/kisskb/src/drivers/tty/ehv_bytechan.c: error: type
+defaults to 'int' in declaration of 'console_initcall'
+[-Werror=implicit-int]:  => 363:1
 
-> Tested on r8a73a4 but is designed to work with a wide
-> range of SoCs. The driver requires one GIC SPI per
-> external IRQ pin to operate.  Each driver instance
-> will handle up to 32 external IRQ pins.
+powerpc-allmodconfig
 
-    Ah, so you've even tested it... I got an impression from your words that 
-the driver hasn't been tested.
+  + /scratch/kisskb/src/arch/sparc/kernel/kgdb_64.c: error: implicit
+declaration of function 'exception_enter'
+[-Werror=implicit-function-declaration]:  => 162:7
+  + /scratch/kisskb/src/arch/sparc/kernel/kgdb_64.c: error: implicit
+declaration of function 'exception_exit'
+[-Werror=implicit-function-declaration]:  => 176:2
 
-> The SoCs using this driver are currently mainly used
-> together with regular platform devices so this driver
-> allows configuration via platform data to support things
-> like static interrupt base address. DT support will
-> be added incrementally in the not so distant future.
+sparc64-allmodconfig
 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+  + error: drivers/built-in.o: undefined reference to
+`i2c_register_driver':  => .init.literal+0xd88)
+  + error: sram.c: undefined reference to `devm_regmap_init_i2c':  =>
+.text+0x590dc)
 
-WBR, Sergei
+sparc-allmodconfig
+xtensa-allmodconfig
 
+  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
+implicit declaration of function 'dma_alloc_writecombine'
+[-Werror=implicit-function-declaration]:  => 91:2
+  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
+implicit declaration of function 'dma_free_writecombine'
+[-Werror=implicit-function-declaration]:  => 176:3
+
+sh-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/6939/ (119 out of 120 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/6919/ (119 out of 120 configs)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
