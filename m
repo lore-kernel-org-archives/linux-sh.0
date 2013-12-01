@@ -1,69 +1,84 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 30 Dec 2013 17:20:50 +0000
-Subject: Re: [PATCH 4/6] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
-Message-Id: <CAMuHMdVxKD1PZdBZiFGeR6ADovyazs6EzH24+DBUUOLupQzVnQ@mail.gmail.com>
+From: takasi-y@ops.dti.ne.jp
+Date: Sun, 01 Dec 2013 18:19:20 +0000
+Subject: [PATCH 09/11] ARM: shmobile: r8a7791: MSIOF platform device
+Message-Id: <1385921962-19843-9-git-send-email-takasi-y@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
- <2582506.8vb3LhHISh@avalon>
- <CAMuHMdUnf77Z1u=d8zFZk0vQtGJ9QhhCk6KVJsVKS-iMFSMUKw@mail.gmail.com>
- <3193607.9r7LL0m5xX@avalon>
-In-Reply-To: <3193607.9r7LL0m5xX@avalon>
+References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+ <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Mon, Dec 30, 2013 at 4:18 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> There are subtle register differences between RSPI on SH7757 and RZ/A1H,
->> cfr. what rspi_parse_platform_data() does when no platform_data is
->> passed[*]. RSPI on RZ/A1H seems to be an evolutionary step from RSPI on SH
->> towards QSPI on RCar Gen2 (but without Dual/Quad).
->>
->> [*] setup-sh7757.c doesn't pass platform data, although the rspi driver and
->> its platform data has support for DMA on SH7757, which is not used by
->> setup-sh7757.c nor any other in-tree platform.
->
-> The only important difference I can see (beside the hardcoded 16-bit width
-> which could be selected as the default) is that the SSH7757 RSPI has no SPL
-> bits in SPDCR. I don't have access tot he SH7757 datasheet, could you please
-> confirm that ?
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-SH7757 has RSPI Control Register 2 and the TX only mode flag, while
-RSPI-RZ (and QSPI) haven't.
-The number of interrupts also differ, but that's easily handled via
-the interrupts
-property.
+Define resources for msiof0,1,2. HWM says there is msiof3, but omit
+it because its clock, reset and irqs are not seen on HWM. Anyway, only
+msiof0 is registerd, so far, because others lack of chance for testing.
+msiof0 has id=1 (spi_sh_msiof.1), for a compatibility with BSP.
 
-BTW, I also don't have the SH7757 datasheet (will check), so my knowledge
-there is purely based on the behavior of the code.
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+---
+ arch/arm/mach-shmobile/setup-r8a7791.c |   30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
->> > in my opinion is whether we want to use
->> >
->> > compatible = "renesas,rspi-r7s72100", "renesas,rspi";
->> >
->> > or
->> >
->> > compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz", "renesas,rspi";
->>
->> So we end up with:
->>
->> compatible = "renesas,sh7757", "renesas,rspi-sh" (SH legacy)
->> compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz" (Genmai)
->> compatible = "renesas,rspi-r8a7790", "renesas,qspi" (Lager)
->> compatible = "renesas,rspi-r8a7791", "renesas,qspi" (Koelsch)
->
-> Don't you mean "renesas,qspi-r8a7790" and "renesas,qspi-r8a7791" ?
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index cddca99..5669fa0 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -26,6 +26,7 @@
+ #include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
++#include <linux/spi/sh_msiof.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+@@ -200,6 +201,34 @@ static const struct resource thermal_resources[] __initconst = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
++static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
++	.rx_fifo_override	= 256,
++	.num_chipselect		= 1,
++	.rx_need_dummy_tx	= 1,
++};
++
++static const struct resource sh_msiof0_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e20000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(156)),
++};
++
++static const struct resource sh_msiof1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e10000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(157)),
++};
++
++static const struct resource sh_msiof2_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e00000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(158)),
++};
++
++#define r8a7791_register_msiof(idx)					\
++	platform_device_register_resndata(&platform_bus, "spi_sh_msiof", \
++				  (idx+1), sh_msiof##idx##_resources,	\
++				  ARRAY_SIZE(sh_msiof##idx##_resources), \
++				  &sh_msiof_info,		\
++				  sizeof(struct sh_msiof_spi_info))
++
+ void __init r8a7791_add_dt_devices(void)
+ {
+ 	r8a7791_register_scif(SCIFA0);
+@@ -218,6 +247,7 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_scif(SCIFA4);
+ 	r8a7791_register_scif(SCIFA5);
+ 	r8a7791_register_cmt(00);
++	r8a7791_register_msiof(0);
+ }
+ 
+ void __init r8a7791_add_standard_devices(void)
+-- 
+1.7.9.5
 
-Oops, yes, sorry about that.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
