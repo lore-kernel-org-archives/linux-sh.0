@@ -1,171 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:23 +0000
-Subject: [PATCH 17/28] ARM: shmobile: Remove legacy KZM9D board code
-Message-Id: <1e816d06a78b95f5f4204543fea2d4b235ec8fc3.1385950394.git.horms+renesas@verge.net.au>
+From: Takashi YOSHII <takasi-y@ops.dti.ne.jp>
+Date: Sun, 01 Dec 2013 18:15:57 +0000
+Subject: [PATCH 00/11] ARM: shmobile: koelsch: MSIOF support
+Message-Id: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
 
-From: Magnus Damm <damm@opensource.se>
+Koelsch board has SPI connected on-board PMIC(r2a11302).
+These patches enable spidev interface for it using MSIOF
+(Clock-Synchronized Serial Interface with FIFO) module on SoC(r8a7791).
+This adds platform device support to Koelsh single-platform.
+(dt, -reference, multi-platform support are not included)
 
-Remove the C and platform device version of KZM9D.
+Summary of patches:
 
-The DT version of KZM9D board support can now instead
-directly be used with SoC specific code in setup-emev2.c.
+These are bug fix.
+ [PATCH 01/11] pinctrl: sh-pfc: r8a7791: fix msiof groups to follow GROUP
+ [PATCH 02/11] spi: spi-sh-msiof: round up div to fix freq calculation
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+To use CS output function which the HW module has.
+ [PATCH 03/11] spi: spi-sh-msiof: let it run even without GPIO
+ [PATCH 04/11] spi: spi-sh-msiof: set hi/low Active for HW CS
+
+To support MSIOF variant that TX and RX are not separately controllable.
+ [PATCH 05/11] spi: spi-sh-msiof: rx_need_dummy_tx variant
+ [PATCH 06/11] spi: spi-sh-msiof: RMDIR1[15:0] may should be zero
+ [PATCH 07/11] spi: spi-sh-msiof: RSCR register may absent
+
+r8a7791 part
+ [PATCH 08/11] ARM: shmobile: r8a7791: Add MSIOF clocks
+ [PATCH 09/11] ARM: shmobile: r8a7791: MSIOF platform device
+
+Koelsh part
+ [PATCH 10/11] ARM: shmobile: koelsch: pinctrl map for MSIOF0
+ [PATCH 11/11] ARM: shmobile: koelsch: spidev for r2a11302
+
 ---
- arch/arm/mach-shmobile/Kconfig       |  6 ---
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- arch/arm/mach-shmobile/board-kzm9d.c | 92 ------------------------------------
- 4 files changed, 100 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-kzm9d.c
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c604ef1..564e0ad 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -234,12 +234,6 @@ config MACH_KOELSCH
- 	depends on ARCH_R8A7791
- 	select USE_OF
- 
--config MACH_KZM9D
--	bool "KZM9D board"
--	depends on ARCH_EMEV2
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 51db2bc..c7e8774 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
--obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
- endif
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 391d72a..4f30e3d 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -8,7 +8,6 @@ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
--loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
-deleted file mode 100644
-index 30c2cc6..0000000
---- a/arch/arm/mach-shmobile/board-kzm9d.c
-+++ /dev/null
-@@ -1,92 +0,0 @@
--/*
-- * kzm9d board support
-- *
-- * Copyright (C) 2012  Renesas Solutions Corp.
-- * Copyright (C) 2012  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/kernel.h>
--#include <linux/interrupt.h>
--#include <linux/platform_device.h>
--#include <linux/regulator/fixed.h>
--#include <linux/regulator/machine.h>
--#include <linux/smsc911x.h>
--#include <mach/common.h>
--#include <mach/emev2.h>
--#include <asm/mach-types.h>
--#include <asm/mach/arch.h>
--
--/* Dummy supplies, where voltage doesn't matter */
--static struct regulator_consumer_supply dummy_supplies[] = {
--	REGULATOR_SUPPLY("vddvario", "smsc911x"),
--	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
--};
--
--/* Ether */
--static struct resource smsc911x_resources[] = {
--	[0] = {
--		.start	= 0x20000000,
--		.end	= 0x2000ffff,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= EMEV2_GPIO_IRQ(1),
--		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
--	},
--};
--
--static struct smsc911x_platform_config smsc911x_platdata = {
--	.flags		= SMSC911X_USE_32BIT,
--	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
--	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
--};
--
--static struct platform_device smsc91x_device = {
--	.name	= "smsc911x",
--	.id	= -1,
--	.dev	= {
--		  .platform_data = &smsc911x_platdata,
--		},
--	.num_resources	= ARRAY_SIZE(smsc911x_resources),
--	.resource	= smsc911x_resources,
--};
--
--static struct platform_device *kzm9d_devices[] __initdata = {
--	&smsc91x_device,
--};
--
--void __init kzm9d_add_standard_devices(void)
--{
--	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
--
--	emev2_add_standard_devices();
--
--	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
--}
--
--static const char *kzm9d_boards_compat_dt[] __initdata = {
--	"renesas,kzm9d",
--	NULL,
--};
--
--DT_MACHINE_START(KZM9D_DT, "kzm9d")
--	.smp		= smp_ops(emev2_smp_ops),
--	.map_io		= emev2_map_io,
--	.init_early	= emev2_init_delay,
--	.init_machine	= kzm9d_add_standard_devices,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= kzm9d_boards_compat_dt,
--MACHINE_END
+Takashi Yoshii (11):
+  pinctrl: sh-pfc: r8a7791: fix msiof groups to follow GROUP
+  spi: spi-sh-msiof: round up div to fix freq calculation
+  spi: spi-sh-msiof: let it run even without GPIO
+  spi: spi-sh-msiof: set hi/low Active for HW CS
+  spi: spi-sh-msiof: rx_need_dummy_tx variant
+  spi: spi-sh-msiof: RMDIR1[15:0] may should be zero
+  spi: spi-sh-msiof: RSCR register may absent
+  ARM: shmobile: r8a7791: Add MSIOF clocks
+  ARM: shmobile: r8a7791: MSIOF platform device
+  ARM: shmobile: koelsch: pinctrl map for MSIOF0
+  ARM: shmobile: koelsch: spidev for r2a11302
+
+ arch/arm/mach-shmobile/board-koelsch.c |   20 ++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7791.c |    9 ++++++++-
+ arch/arm/mach-shmobile/setup-r8a7791.c |   30 ++++++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c   |   21 +++++++++++++++------
+ drivers/spi/spi-sh-msiof.c             |   30 +++++++++++++++++++++---------
+ include/linux/spi/sh_msiof.h           |    1 +
+ 6 files changed, 95 insertions(+), 16 deletions(-)
+
 -- 
-1.8.4
+1.7.9.5
 
