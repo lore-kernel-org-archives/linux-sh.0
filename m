@@ -1,20 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 04:06:42 +0000
-Subject: Re: [PATCH 4/4 v2] ARM: shmobile: r8a7790: add SSI MSTP clocks
-Message-Id: <20131205040640.GB12774@verge.net.au>
+From: takasi-y@ops.dti.ne.jp
+Date: Sun, 01 Dec 2013 18:19:18 +0000
+Subject: [PATCH 07/11] spi: spi-sh-msiof: RSCR register may absent
+Message-Id: <1385921962-19843-7-git-send-email-takasi-y@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r4ignqie.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4ignqie.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+ <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Sun, Dec 01, 2013 at 06:17:18PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
-> 
->  - MSTP part only
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Thanks, I will queue this up.
+On Ape6, Rcar-H2, and Rcar-M2,
+MSIOF lacks RSCR(Receive Clock Select Register).
+I guess this is a part of .rx_need_dummy_tx case, and use same flag.
+
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+---
+ drivers/spi/spi-sh-msiof.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index b0334b6..bbd989f 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -164,7 +164,8 @@ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
+ 	k = min_t(int, k, ARRAY_SIZE(sh_msiof_spi_clk_table) - 1);
+ 
+ 	sh_msiof_write(p, TSCR, sh_msiof_spi_clk_table[k].scr);
+-	sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
++	if (!p->info->rx_need_dummy_tx)
++		sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
+ }
+ 
+ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
+-- 
+1.7.9.5
+
