@@ -1,85 +1,72 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Dec 2013 23:53:03 +0000
-Subject: Re: [PATCH 7/8] spi: rspi: Add support for specifying CPHA/CPOL
-Message-Id: <15602504.DsQsiMiuEH@avalon>
+From: takasi-y@ops.dti.ne.jp
+Date: Sun, 01 Dec 2013 18:19:16 +0000
+Subject: [PATCH 05/11] spi: spi-sh-msiof: rx_need_dummy_tx variant
+Message-Id: <1385921962-19843-5-git-send-email-takasi-y@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org> <1387885248-28425-8-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387885248-28425-8-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+ <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org
 
-Hi Geert,
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Thank you for the patch.
+There is a variant of MSIOF, that need dummy data transfer even when
+you want only to receive.
 
-On Tuesday 24 December 2013 12:40:47 Geert Uytterhoeven wrote:
-> Add support for specifying the SPI clock phase and polarity, based on the
-> SDK reference code.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+This patch adds the option
+ .rx_need_dummy_tx
+to sh_msiof_spi_info.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Consult "Transmit and Receive Procedures" on HWM, if it says
+ - Set SICTR.TSCKE to 1
+ - Write dummy transmission data to SITFDR
+to *receive*, enable this.
+Ape6, Rcar-H2, and Rcar-M2 are found having this type of module.
 
-> ---
->  drivers/spi/spi-rspi.c |   12 ++++++++++--
->  1 file changed, 10 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-> index 34674fe6df5d..850025278519 100644
-> --- a/drivers/spi/spi-rspi.c
-> +++ b/drivers/spi/spi-rspi.c
-> @@ -181,6 +181,7 @@ struct rspi_data {
->  	u8 spsr;
->  	u8 spdcr;
->  	u8 data_width;
-> +	u16 spcmd;
->  	int irq[MAX_NUM_IRQ];
->  	unsigned int numirq;
->  	const struct spi_ops *ops;
-> @@ -328,7 +329,7 @@ static int rspi_set_config_register(const struct
-> rspi_data *rspi, rspi_write8(rspi, 0x00, RSPI_SPCR2);
-> 
->  	/* Sets SPCMD */
-> -	rspi_write16(rspi, SPCMD_SPB_8_TO_16(access_size) | SPCMD_SSLKP,
-> +	rspi_write16(rspi, SPCMD_SPB_8_TO_16(access_size) | rspi->spcmd,
->  		     RSPI_SPCMD0);
-> 
->  	/* Sets RSPI mode */
-> @@ -383,7 +384,7 @@ static int qspi_set_config_register(const struct
-> rspi_data *rspi, else
->  		spcmd = SPCMD_SPB_32BIT;
-> 
-> -	spcmd |= SPCMD_SCKDEN | SPCMD_SLNDEN | SPCMD_SSLKP | SPCMD_SPNDEN;
-> +	spcmd |= SPCMD_SCKDEN | SPCMD_SLNDEN | rspi->spcmd | SPCMD_SPNDEN;
-> 
->  	/* Resets transfer data length */
->  	rspi_write32(rspi, 0, QSPI_SPBMUL0);
-> @@ -903,6 +904,12 @@ static int rspi_setup(struct spi_device *spi)
->  		spi->bits_per_word = 8;
->  	rspi->max_speed_hz = spi->max_speed_hz;
-> 
-> +	rspi->spcmd = SPCMD_SSLKP;
-> +	if (spi->mode & SPI_CPOL)
-> +		rspi->spcmd |= SPCMD_CPOL;
-> +	if (spi->mode & SPI_CPHA)
-> +		rspi->spcmd |= SPCMD_CPHA;
-> +
->  	set_config_register(rspi, 8);
-> 
->  	return 0;
-> @@ -1092,6 +1099,7 @@ static int rspi_probe(struct platform_device *pdev)
->  	master->setup = rspi_setup;
->  	master->transfer = rspi_transfer;
->  	master->cleanup = rspi_cleanup;
-> +	master->mode_bits = SPI_CPHA | SPI_CPOL;
-> 
->  	for (i = 0; i < rspi->numirq; i++) {
->  		ret = devm_request_irq(&pdev->dev, rspi->irq[i], rspi_irq, 0,
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+---
+ drivers/spi/spi-sh-msiof.c   |    4 +++-
+ include/linux/spi/sh_msiof.h |    1 +
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 8683732..936d8ab 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -207,7 +207,7 @@ static void sh_msiof_spi_set_mode_regs(struct sh_msiof_spi_priv *p,
+ {
+ 	u32 dr2 = ((bits - 1) << 24) | ((words - 1) << 16);
+ 
+-	if (tx_buf)
++	if (tx_buf || (rx_buf && p->info->rx_need_dummy_tx))
+ 		sh_msiof_write(p, TMDR2, dr2);
+ 	else
+ 		sh_msiof_write(p, TMDR2, dr2 | 1);
+@@ -464,6 +464,8 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
+ 	/* write tx fifo */
+ 	if (tx_buf)
+ 		tx_fifo(p, tx_buf, words, fifo_shift);
++	else if (rx_buf && p->info->rx_need_dummy_tx)
++		tx_fifo(p, rx_buf, words, fifo_shift);
+ 
+ 	/* setup clock and rx/tx signals */
+ 	ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TSCKE);
+diff --git a/include/linux/spi/sh_msiof.h b/include/linux/spi/sh_msiof.h
+index 2e8db3d..cf36781 100644
+--- a/include/linux/spi/sh_msiof.h
++++ b/include/linux/spi/sh_msiof.h
+@@ -5,6 +5,7 @@ struct sh_msiof_spi_info {
+ 	int tx_fifo_override;
+ 	int rx_fifo_override;
+ 	u16 num_chipselect;
++	u16 rx_need_dummy_tx:1;
+ };
+ 
+ #endif /* __SPI_SH_MSIOF_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
