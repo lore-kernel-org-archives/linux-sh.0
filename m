@@ -1,54 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:19 +0000
-Subject: [PATCH 13/28] ARM: shmobile: r8a7790: add QSPI support
-Message-Id: <7df76f23cc85718cd2bd7460781a20b090ca2c24.1385950394.git.horms+renesas@verge.net.au>
+From: takasi-y@ops.dti.ne.jp
+Date: Sun, 01 Dec 2013 18:19:17 +0000
+Subject: [PATCH 06/11] spi: spi-sh-msiof: RMDIR1[15:0] may should be zero
+Message-Id: <1385921962-19843-6-git-send-email-takasi-y@ops.dti.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+ <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Adds support for QSPI on the r8a7790.
+On Ape6, Rcar-H2, and Rcar-M2,
+RMDR1(Receive Mode Register 1) has no FLD, CONT, RXSTP bits.
+HW manual says "The write value should always be 0" for RMDR1[15:0].
+I guess this is a part of .rx_need_dummy_tx case, and use same flag.
 
-Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/spi/spi-sh-msiof.c |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 161d44e..5269640 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -183,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928,
-+	MSTP917,
- 	MSTP813,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
-@@ -199,6 +200,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
- 	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
- 	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
-+	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
-@@ -298,6 +300,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
- };
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 936d8ab..b0334b6 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -183,11 +183,13 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
+ 	 */
+ 	sh_msiof_write(p, FCTR, 0);
+ 
+-	tmp = 0;
++	tmp = 0x00000005;
+ 	tmp |= !cs_high << 25;
+ 	tmp |= lsb_first << 24;
+-	sh_msiof_write(p, TMDR1, 0xe0000005 | tmp);
+-	sh_msiof_write(p, RMDR1, 0x20000005 | tmp);
++	sh_msiof_write(p, TMDR1, 0xe0000000 | tmp);
++	if (p->info->rx_need_dummy_tx)
++		tmp &= ~0x0000ffff;
++	sh_msiof_write(p, RMDR1, 0x20000000 | tmp);
+ 
+ 	tmp = 0xa0000000;
+ 	tmp |= cpol << 30; /* TSCKIZ */
 -- 
-1.8.4
+1.7.9.5
 
