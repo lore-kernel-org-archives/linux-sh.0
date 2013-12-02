@@ -1,53 +1,71 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:57 +0000
-Subject: [PATCH 05/13] ARM: shmobile: r8a7791: add Ether clock
-Message-Id: <893c3f0bc55e749124f14b02eee9510147fefd90.1387857168.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:27 +0000
+Subject: [PATCH 21/28] ARM: shmobile: r8a7791: Add DU and LVDS clocks
+Message-Id: <f817c83b3b8ee81829fceb4bfc999e8421a077b3.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add support for R8A7791 Ether clock.
+The ZX parent clock isn't implemented yet, add it as well.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index ff2d60d..f546126 100644
+index c9a26f1..fda7c6c 100644
 --- a/arch/arm/mach-shmobile/clock-r8a7791.c
 +++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -122,6 +122,7 @@ static struct clk *main_clks[] = {
+@@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
+ SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
+ SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
+ SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
++SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
+ 
+ static struct clk *main_clks[] = {
+ 	&extal_clk,
+@@ -116,11 +117,12 @@ static struct clk *main_clks[] = {
+ 	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
++	&zx_clk,
+ };
  
  /* MSTP */
  enum {
-+	MSTP813,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+-	MSTP721, MSTP720,
++	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
  	MSTP719, MSTP718, MSTP715, MSTP714,
- 	MSTP522,
-@@ -132,6 +133,7 @@ enum {
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+@@ -129,6 +131,9 @@ enum {
  };
  
  static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
- 	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
-@@ -192,6 +194,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-+	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
- };
++	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
++	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
++	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP719] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 19, 0), /* SCIF2 */
+@@ -164,6 +169,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+ 	/* MSTP */
++	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7791", &mstp_clks[MSTP726]),
++	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7791", &mstp_clks[MSTP724]),
++	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7791", &mstp_clks[MSTP723]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]), /* SCIFB0 */
 -- 
 1.8.4
 
