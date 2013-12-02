@@ -1,123 +1,85 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:37 +0000
-Subject: [PATCH 14/21] ARM: shmobile: Remove Lager reference DTS
-Message-Id: <2b4baad03854ab23ce9a4c073e3795ac29985132.1387893834.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:20 +0000
+Subject: [PATCH 14/28] ARM: shmobile: Enable MTU2 on r7s72100
+Message-Id: <9e2b4e8b5a82659e3ddd785f6b59417f408a933d.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
-and board-lager-reference.c, proceed with removing
-r8a7790-lager-reference.dts.
+Add MTU2 as r7s72100 system timer.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts | 89 ---------------------------
- 1 file changed, 89 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+ arch/arm/mach-shmobile/clock-r7s72100.c |  1 +
+ arch/arm/mach-shmobile/setup-r7s72100.c | 22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-deleted file mode 100644
-index dfedc0e..0000000
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ /dev/null
-@@ -1,89 +0,0 @@
--/*
-- * Device Tree Source for the Lager board
-- *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7790.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "Lager";
--	compatible = "renesas,lager-reference", "renesas,r8a7790";
--
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
--
--	memory@180000000 {
--		device_type = "memory";
--		reg = <1 0x80000000 0 0x80000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
--		};
--	};
--
--	fixedregulator3v3: fixedregulator@0 {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-3.3V";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--};
--
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data";
--		renesas,function = "scif1";
--	};
--
--	mmc1_pins: mmc1 {
--		renesas,groups = "mmc1_data8", "mmc1_ctrl";
--		renesas,function = "mmc1";
--	};
--};
--
--&mmcif1 {
--	pinctrl-0 = <&mmc1_pins>;
--	pinctrl-names = "default";
--
--	vmmc-supply = <&fixedregulator3v3>;
--	bus-width = <8>;
--	non-removable;
--	status = "okay";
--};
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 4aba20c..1c9d261 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -178,6 +178,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
++	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ };
+ 
+ void __init r7s72100_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index d4eb509..55f0b9c 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -22,6 +22,7 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
++#include <linux/sh_timer.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+@@ -58,6 +59,26 @@ static inline void r7s72100_register_scif(int idx)
+ 				      sizeof(struct plat_sci_port));
+ }
+ 
++
++static struct sh_timer_config mtu2_0_platform_data __initdata = {
++	.name = "MTU2_0",
++	.timer_bit = 0,
++	.channel_offset = -0x80,
++	.clockevent_rating = 200,
++};
++
++static struct resource mtu2_0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfcff0300, 0x27),
++	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
++};
++
++#define r7s72100_register_mtu2(idx)					\
++	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
++					  idx, mtu2_##idx##_resources,	\
++					  ARRAY_SIZE(mtu2_##idx##_resources), \
++					  &mtu2_##idx##_platform_data,	\
++					  sizeof(struct sh_timer_config))
++
+ void __init r7s72100_add_dt_devices(void)
+ {
+ 	r7s72100_register_scif(SCIF0);
+@@ -68,6 +89,7 @@ void __init r7s72100_add_dt_devices(void)
+ 	r7s72100_register_scif(SCIF5);
+ 	r7s72100_register_scif(SCIF6);
+ 	r7s72100_register_scif(SCIF7);
++	r7s72100_register_mtu2(0);
+ }
+ 
+ void __init r7s72100_init_early(void)
 -- 
 1.8.4
 
