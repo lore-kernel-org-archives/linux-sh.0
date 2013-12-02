@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 05:03:04 +0000
-Subject: [PATCH 02/04] ARM: shmobile: Genmai SCIF2 PINCTRL configuration
-Message-Id: <20131217050304.727.24761.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:30 +0000
+Subject: [PATCH 24/28] ARM: shmobile: Add r8a7791 thermal platform device
+Message-Id: <2e83b75b6740c73f1ffc92149101ffb788d871d3.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217050232.727.9552.sendpatchset@w520>
-In-Reply-To: <20131217050232.727.9552.sendpatchset@w520>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,29 +12,47 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Configure the r7s72100 PINCTRL hardware and select pin function
-for the SCIF2 serial console.
+Add a thermal platform device for the legacy case
+on the r8a7791 SoC. This keeps the r8a7791 in sync
+with the r8a7790 sister device.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7791.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
- arch/arm/boot/dts/r7s72100-genmai-reference.dts |   10 ++++++++++
- 1 file changed, 10 insertions(+)
-
---- 0009/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27 17:13:43.000000000 +0900
-@@ -58,3 +58,13 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 59dd442..cddca99 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -189,6 +189,17 @@ static struct resource irqc0_resources[] = {
+ 					  &irqc##idx##_data,		\
+ 					  sizeof(struct renesas_irqc_config))
  
- };
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins>;
-+	pinctrl-names = "default";
-+
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_txd_p3_0", "scif2_rxd_p3_2";
-+		renesas,function = "scif2";
-+	};
++static const struct resource thermal_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe61f0000, 0x14),
++	DEFINE_RES_MEM(0xe61f0100, 0x38),
++	DEFINE_RES_IRQ(gic_spi(69)),
 +};
++
++#define r8a7791_register_thermal()					\
++	platform_device_register_simple("rcar_thermal", -1,		\
++					thermal_resources,		\
++					ARRAY_SIZE(thermal_resources))
++
+ void __init r8a7791_add_dt_devices(void)
+ {
+ 	r8a7791_register_scif(SCIFA0);
+@@ -213,6 +224,7 @@ void __init r8a7791_add_standard_devices(void)
+ {
+ 	r8a7791_add_dt_devices();
+ 	r8a7791_register_irqc(0);
++	r8a7791_register_thermal();
+ }
+ 
+ void __init r8a7791_init_early(void)
+-- 
+1.8.4
+
