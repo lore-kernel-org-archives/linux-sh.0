@@ -1,65 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:46 +0000
-Subject: [PATCH 39/47] ARM: shmobile: r8a7790: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <1386323994-12850-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:16 +0000
+Subject: [PATCH 10/28] ARM: shmobile: r8a7778: add SDHI clock support for DT
+Message-Id: <2d86ca7c84a48547f1bfc5dad90dfbcbf3de5d60.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 70bb553..bb805a4 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -78,11 +78,10 @@ void __init r8a7790_pinmux_init(void)
- 	r8a7790_register_gpio(5);
- }
- 
--#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
-+#define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scbrr_algo_id	= algo,						\
- 	.scscr		= _scscr,					\
- };									\
- 									\
-@@ -93,19 +92,19 @@ static struct resource scif##index##_resources[] = {			\
- 
- #define R8A7790_SCIF(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_2, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_SCIFA(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
--		       SCBRR_ALGO_4, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_SCIFB(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_4, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_HSCIF(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_6, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
- R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index e043715..011564f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -175,8 +175,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("ffe4e000.mmcif", &mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("ffe4c000.sdhi", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("ffe4d000.sdhi", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("ffe4f000.sdhi", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("r8a777x-ether", &mstp_clks[MSTP114]), /* Ether */
+ 	CLKDEV_DEV_ID("r8a7778-vin.0", &mstp_clks[MSTP110]), /* VIN0 */
+ 	CLKDEV_DEV_ID("r8a7778-vin.1", &mstp_clks[MSTP109]), /* VIN1 */
 -- 
-1.8.3.2
+1.8.4
 
