@@ -1,158 +1,217 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Wed, 18 Dec 2013 12:44:19 +0000
-Subject: [PATCH 4/5] arm: shmobile: lager: Add internal PCI support
-Message-Id: <1387370660-20481-5-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:24 +0000
+Subject: [PATCH 18/28] ARM: shmobile: Remove legacy platform devices from EMEV2 SoC code
+Message-Id: <00749fc3abc50d840a55ef8d005f2651d33956c2.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host devices to R-Car H2 Lager board.
-If USBHS device is disabled, channel 0 is configured as PCI USB host.
-Otherwise, it is configured as USBHS. The USB phy is bound bound to
-either USB host or USBHS device respectively. We don't bind USB phy
-to the PCI host at channel 2 since it's configured as PCI host by
-default and is not currently used by anything else.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Now when KZM9D legacy C board support code is
+gone then remove emev2_add_standard_devices()
+and all the platform devices from setup-emev2.c.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c | 90 +++++++++++++++++++++++++++++++-----
- 1 file changed, 79 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/include/mach/emev2.h |   5 -
+ arch/arm/mach-shmobile/setup-emev2.c        | 148 ----------------------------
+ 2 files changed, 153 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f1efe8f..af00f1d 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -375,7 +375,11 @@ static struct usbhs_private usbhs_priv __initdata = {
- 	}
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/emev2.h b/arch/arm/mach-shmobile/include/mach/emev2.h
+index c2eb756..fcb142a 100644
+--- a/arch/arm/mach-shmobile/include/mach/emev2.h
++++ b/arch/arm/mach-shmobile/include/mach/emev2.h
+@@ -3,12 +3,7 @@
  
--static void __init lager_register_usbhs(void)
-+/* Channel 0 is USBHS */
-+#define LAGER_USB0_PCI	0
-+#define LAGER_USB0_NAME	"renesas_usbhs"
-+
-+static void __init lager_add_usb0_device(void)
+ extern void emev2_map_io(void);
+ extern void emev2_init_delay(void);
+-extern void emev2_add_standard_devices(void);
+ extern void emev2_clock_init(void);
+-
+-#define EMEV2_GPIO_BASE 200
+-#define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
+-
+ extern struct smp_operations emev2_smp_ops;
+ 
+ #endif /* __ASM_EMEV2_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index 4d39bf4..e7031b0 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -19,22 +19,12 @@
+ #include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+-#include <linux/platform_data/gpio-em.h>
+ #include <linux/of_platform.h>
+-#include <linux/delay.h>
+-#include <linux/input.h>
+-#include <linux/io.h>
+-#include <linux/irqchip/arm-gic.h>
+ #include <mach/common.h>
+ #include <mach/emev2.h>
+-#include <mach/irqs.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+-#include <asm/mach/time.h>
+ 
+ static struct map_desc emev2_io_desc[] __initdata = {
+ #ifdef CONFIG_SMP
+@@ -53,144 +43,6 @@ void __init emev2_map_io(void)
+ 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
+ }
+ 
+-/* UART */
+-static struct resource uart0_resources[] = {
+-	DEFINE_RES_MEM(0xe1020000, 0x38),
+-	DEFINE_RES_IRQ(40),
+-};
+-
+-static struct resource uart1_resources[] = {
+-	DEFINE_RES_MEM(0xe1030000, 0x38),
+-	DEFINE_RES_IRQ(41),
+-};
+-
+-static struct resource uart2_resources[] = {
+-	DEFINE_RES_MEM(0xe1040000, 0x38),
+-	DEFINE_RES_IRQ(42),
+-};
+-
+-static struct resource uart3_resources[] = {
+-	DEFINE_RES_MEM(0xe1050000, 0x38),
+-	DEFINE_RES_IRQ(43),
+-};
+-
+-#define emev2_register_uart(idx)					\
+-	platform_device_register_simple("serial8250-em", idx,		\
+-					uart##idx##_resources,		\
+-					ARRAY_SIZE(uart##idx##_resources))
+-
+-/* STI */
+-static struct resource sti_resources[] = {
+-	DEFINE_RES_MEM(0xe0180000, 0x54),
+-	DEFINE_RES_IRQ(157),
+-};
+-
+-#define emev2_register_sti()					\
+-	platform_device_register_simple("em_sti", 0,		\
+-					sti_resources,		\
+-					ARRAY_SIZE(sti_resources))
+-
+-/* GIO */
+-static struct gpio_em_config gio0_config = {
+-	.gpio_base = 0,
+-	.irq_base = EMEV2_GPIO_IRQ(0),
+-	.number_of_pins = 32,
+-};
+-
+-static struct resource gio0_resources[] = {
+-	DEFINE_RES_MEM(0xe0050000, 0x2c),
+-	DEFINE_RES_MEM(0xe0050040, 0x20),
+-	DEFINE_RES_IRQ(99),
+-	DEFINE_RES_IRQ(100),
+-};
+-
+-static struct gpio_em_config gio1_config = {
+-	.gpio_base = 32,
+-	.irq_base = EMEV2_GPIO_IRQ(32),
+-	.number_of_pins = 32,
+-};
+-
+-static struct resource gio1_resources[] = {
+-	DEFINE_RES_MEM(0xe0050080, 0x2c),
+-	DEFINE_RES_MEM(0xe00500c0, 0x20),
+-	DEFINE_RES_IRQ(101),
+-	DEFINE_RES_IRQ(102),
+-};
+-
+-static struct gpio_em_config gio2_config = {
+-	.gpio_base = 64,
+-	.irq_base = EMEV2_GPIO_IRQ(64),
+-	.number_of_pins = 32,
+-};
+-
+-static struct resource gio2_resources[] = {
+-	DEFINE_RES_MEM(0xe0050100, 0x2c),
+-	DEFINE_RES_MEM(0xe0050140, 0x20),
+-	DEFINE_RES_IRQ(103),
+-	DEFINE_RES_IRQ(104),
+-};
+-
+-static struct gpio_em_config gio3_config = {
+-	.gpio_base = 96,
+-	.irq_base = EMEV2_GPIO_IRQ(96),
+-	.number_of_pins = 32,
+-};
+-
+-static struct resource gio3_resources[] = {
+-	DEFINE_RES_MEM(0xe0050180, 0x2c),
+-	DEFINE_RES_MEM(0xe00501c0, 0x20),
+-	DEFINE_RES_IRQ(105),
+-	DEFINE_RES_IRQ(106),
+-};
+-
+-static struct gpio_em_config gio4_config = {
+-	.gpio_base = 128,
+-	.irq_base = EMEV2_GPIO_IRQ(128),
+-	.number_of_pins = 31,
+-};
+-
+-static struct resource gio4_resources[] = {
+-	DEFINE_RES_MEM(0xe0050200, 0x2c),
+-	DEFINE_RES_MEM(0xe0050240, 0x20),
+-	DEFINE_RES_IRQ(107),
+-	DEFINE_RES_IRQ(108),
+-};
+-
+-#define emev2_register_gio(idx)						\
+-	platform_device_register_resndata(&platform_bus, "em_gio",	\
+-					  idx, gio##idx##_resources,	\
+-					  ARRAY_SIZE(gio##idx##_resources), \
+-					  &gio##idx##_config,		\
+-					  sizeof(struct gpio_em_config))
+-
+-static struct resource pmu_resources[] = {
+-	DEFINE_RES_IRQ(152),
+-	DEFINE_RES_IRQ(153),
+-};
+-
+-#define emev2_register_pmu()					\
+-	platform_device_register_simple("arm-pmu", -1,		\
+-					pmu_resources,		\
+-					ARRAY_SIZE(pmu_resources))
+-
+-void __init emev2_add_standard_devices(void)
+-{
+-	if (!IS_ENABLED(CONFIG_COMMON_CLK))
+-		emev2_clock_init();
+-
+-	emev2_register_uart(0);
+-	emev2_register_uart(1);
+-	emev2_register_uart(2);
+-	emev2_register_uart(3);
+-	emev2_register_sti();
+-	emev2_register_gio(0);
+-	emev2_register_gio(1);
+-	emev2_register_gio(2);
+-	emev2_register_gio(3);
+-	emev2_register_gio(4);
+-	emev2_register_pmu();
+-}
+-
+ void __init emev2_init_delay(void)
  {
- 	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
- 	platform_device_register_resndata(&platform_bus,
-@@ -386,19 +390,82 @@ static void __init lager_register_usbhs(void)
- 					  sizeof(usbhs_priv.info));
- }
- #else	/* CONFIG_USB_RENESAS_USBHS_UDC */
--static inline void lager_register_usbhs(void) { }
-+
-+/* Channel 0 is PCI USB host */
-+#define LAGER_USB0_PCI	1
-+#define LAGER_USB0_NAME	"pci-rcar-gen2.0"
-+
-+/* Internal PCI0 */
-+static const struct resource pci0_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee090000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee080000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(108)),
-+};
-+
-+static void __init lager_add_usb0_device(void)
-+{
-+	usb_bind_phy("0000:00:01.0", 0, "usb_phy_rcar_gen2");
-+	usb_bind_phy("0000:00:02.0", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_simple("pci-rcar-gen2",
-+					0, pci0_resources,
-+					ARRAY_SIZE(pci0_resources));
-+}
- #endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
- 
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(112)),
-+};
-+
-+static void __init lager_add_usb1_device(void)
-+{
-+	platform_device_register_simple("pci-rcar-gen2",
-+					1, pci1_resources,
-+					ARRAY_SIZE(pci1_resources));
-+}
-+
-+/* Channel 2 is PCI USB host */
-+#define LAGER_USB2_PCI	1
-+
-+/* Internal PCI2 */
-+static const struct resource pci2_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static void __init lager_add_usb2_device(void)
-+{
-+	platform_device_register_simple("pci-rcar-gen2",
-+					2, pci2_resources,
-+					ARRAY_SIZE(pci2_resources));
-+}
-+
- /* USBHS PHY */
- static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
--	.chan0_pci = 0,	/* Channel 0 is USBHS */
--	.chan2_pci = 1,	/* Channel 2 is PCI USB */
-+	.chan0_pci = LAGER_USB0_PCI,
-+	.chan2_pci = LAGER_USB2_PCI,
- };
- 
- static const struct resource usbhs_phy_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6590100, 0x100),
- };
- 
-+/* Add all available USB devices */
-+static void __init lager_add_usb_devices(void)
-+{
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	lager_add_usb0_device();
-+	lager_add_usb1_device();
-+	lager_add_usb2_device();
-+}
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -428,8 +495,14 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
- 				  "intc_irq0", "intc"),
- 	/* USB0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
-+	PIN_MAP_MUX_GROUP_DEFAULT(LAGER_USB0_NAME, "pfc-r8a7790",
- 				  "usb0", "usb0"),
-+	/* USB1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
-+				  "usb1", "usb1"),
-+	/* USB2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
-+				  "usb2", "usb2"),
- };
- 
- static void __init lager_add_standard_devices(void)
-@@ -480,12 +553,7 @@ static void __init lager_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
- 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
- 
--	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
--					  -1, usbhs_phy_resources,
--					  ARRAY_SIZE(usbhs_phy_resources),
--					  &usbhs_phy_pdata,
--					  sizeof(usbhs_phy_pdata));
--	lager_register_usbhs();
-+	lager_add_usb_devices();
- }
- 
- /*
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
 -- 
-1.8.3.1
+1.8.4
 
