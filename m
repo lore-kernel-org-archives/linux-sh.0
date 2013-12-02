@@ -1,114 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:50 +0000
-Subject: [PATCH 06/29] ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
-Message-Id: <4d32e834e19c34dcb510a7645ee8139c7e87bce4.1387888861.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:29 +0000
+Subject: [PATCH 23/28] ARM: shmobile: Add r8a7790 clocks for thermal devices
+Message-Id: <5bbf648dd6740bf37542dd029febf9f805ec4df8.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
+Add the r8a7790 DT thermal device to the legacy clocks.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 58 +++++++++++++++-------------------
- 1 file changed, 26 insertions(+), 32 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index cc94b64..605298b 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -40,41 +40,35 @@ void __init r8a73a4_pinmux_init(void)
- 					ARRAY_SIZE(pfc_resources));
- }
- 
--#define SCIF_COMMON(scif_type, baseaddr, irq)			\
-+#define R8A73A4_SCIF(scif_type, _scscr, index, baseaddr, irq)	\
-+static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
- 	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
--	.irqs		= SCIx_IRQ_MUXED(irq)
--
--#define SCIFA_DATA(index, baseaddr, irq)		\
--[index] = {						\
--	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
--	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+	.scscr		= _scscr,				\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
- }
- 
--#define SCIFB_DATA(index, baseaddr, irq)	\
--[index] = {					\
--	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
--	.scscr = SCSCR_RE | SCSCR_TE,		\
--}
-+#define R8A73A4_SCIFA(index, baseaddr, irq)	\
-+	R8A73A4_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0, \
-+		     index, baseaddr, irq)
- 
--enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
-+#define R8A73A4_SCIFB(index, baseaddr, irq)	\
-+	R8A73A4_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE, \
-+		     index, baseaddr, irq)
- 
--static const struct plat_sci_port scif[] = {
--	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
--	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
--	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
--	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
--	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
--	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
--};
-+R8A73A4_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
-+R8A73A4_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
-+R8A73A4_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
-+R8A73A4_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
-+R8A73A4_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
-+R8A73A4_SCIFB(5, 0xe6cf0000, gic_spi(151)); /* SCIFB3 */
- 
--static inline void r8a73a4_register_scif(int idx)
--{
--	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
--				      sizeof(struct plat_sci_port));
--}
-+#define r8a73a4_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
- 
- static const struct renesas_irqc_config irqc0_data = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ31 */
-@@ -192,12 +186,12 @@ static struct resource cmt10_resources[] = {
- 
- void __init r8a73a4_add_dt_devices(void)
- {
--	r8a73a4_register_scif(SCIFA0);
--	r8a73a4_register_scif(SCIFA1);
--	r8a73a4_register_scif(SCIFB0);
--	r8a73a4_register_scif(SCIFB1);
--	r8a73a4_register_scif(SCIFB2);
--	r8a73a4_register_scif(SCIFB3);
-+	r8a73a4_register_scif(0);
-+	r8a73a4_register_scif(1);
-+	r8a73a4_register_scif(2);
-+	r8a73a4_register_scif(3);
-+	r8a73a4_register_scif(4);
-+	r8a73a4_register_scif(5);
- 	r8a7790_register_cmt(10);
- }
- 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 5269640..33e80b10 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -286,6 +286,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
++	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
 -- 
 1.8.4
 
