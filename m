@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:05:00 +0000
-Subject: [PATCH 2/3] ARM: shmobile: bockw: fixup DMA mask
-Message-Id: <4799e310caf0fb9078389766d0210d1c6133ad51.1387856124.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:03 +0000
+Subject: [PATCH 01/28] ARM: shmobile: r8a7778: add I2C clock for DT
+Message-Id: <807dd3dcb5c3871e778540485b9c4c00535ed66e.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387856124.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387856124.git.horms+renesas@verge.net.au>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,36 +12,30 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-4dcfa60071b3d23f0181f27d8519f12e37cefbb9
-(ARM: DMA-API: better handing of DMA masks for coherent allocations)
-exchanged DMA mask check method.
-Below warning will appear without this patch
-
-asoc-simple-card asoc-simple-card.0: \
-  Coherent DMA mask 0xffffffffffffffff is larger than dma_addr_t allows
-asoc-simple-card asoc-simple-card.0: \
-  Driver did not use or check the return value from dma_set_coherent_mask()?
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 3861152..3c4995a 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -679,7 +679,7 @@ static void __init bockw_init(void)
- 			.id             = i,
- 			.data           = &rsnd_card_info[i],
- 			.size_data      = sizeof(struct asoc_simple_card_info),
--			.dma_mask       = ~0,
-+			.dma_mask	= DMA_BIT_MASK(32),
- 		};
- 
- 		platform_device_register_full(&cardinfo);
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index fb6af83..a77089f 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -183,9 +183,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("ffc71000.i2c", &mstp_clks[MSTP029]), /* I2C1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("ffc72000.i2c", &mstp_clks[MSTP028]), /* I2C2 */
+ 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
++	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
 1.8.4
 
