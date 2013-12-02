@@ -1,48 +1,51 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Sun, 01 Dec 2013 18:19:13 +0000
-Subject: [PATCH 02/11] spi: spi-sh-msiof: round up div to fix freq calculation
-Message-Id: <1385921962-19843-2-git-send-email-takasi-y@ops.dti.ne.jp>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 02 Dec 2013 12:48:43 +0000
+Subject: Re: [PATCH 02/11] spi: spi-sh-msiof: round up div to fix freq calculation
+Message-Id: <20131202124843.GC27568@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="XGa5gNSGTk93P04E"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
  <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+ <1385921962-19843-2-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-2-git-send-email-takasi-y@ops.dti.ne.jp>
+To: takasi-y@ops.dti.ne.jp
+Cc: linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, linux-spi@vger.kernel.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Truncation on integer division in sh_msiof_spi_set_clk_regs()
-results in insufficient transfer frequency (> max_speed_freq).
+--XGa5gNSGTk93P04E
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-For example, source 52MHz, required max 6MHz
- 52/6 = 8.6 --> 8, then 1/8 table selected,
-and result in 52/8 = 6.5 MHz (>6MHz)
+On Mon, Dec 02, 2013 at 03:19:13AM +0900, takasi-y@ops.dti.ne.jp wrote:
+> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+>=20
+> Truncation on integer division in sh_msiof_spi_set_clk_regs()
+> results in insufficient transfer frequency (> max_speed_freq).
 
-Rounding it up is a simple solution.
- 52/6 = 8.6 --> 9, then 1/16 table selected,
-and result in 52/16 = 3.25 MHz
+Applied, thanks.
 
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
----
- drivers/spi/spi-sh-msiof.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--XGa5gNSGTk93P04E
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index c74298c..ac8795f 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -152,7 +152,7 @@ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
- 	size_t k;
- 
- 	if (!WARN_ON(!spi_hz || !parent_rate))
--		div = parent_rate / spi_hz;
-+		div = DIV_ROUND_UP(parent_rate, spi_hz);
- 
- 	/* TODO: make more fine grained */
- 
--- 
-1.7.9.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
+iQIcBAEBAgAGBQJSnIGnAAoJELSic+t+oim9JKUP/RR+dgGkloQEDCl01/bP8Sch
+FtJEvjGhNuVxVWHHri2zJqPqrobe959PQOqKhG8OPVE/JvmprFW35CK1+CgnZcX9
+ZoGsJClOraQjVA3LFnwHwNciMJxP4YOscvDzGzrN0Sl3GEsdN3tOpbFtIzRzIJTE
+RyjAwSX7hUE8sDSt+eJTlAX5e4LX1AAgWbvg/mrHXTM5Rq+rvweWKdUtxp4x+HY0
+gAYv0/ZG9pc/Ba7u8NdfkpYYP/nei9rayQLoeJ/3336126j0tZS00tMcOF8hoPzq
+l2zs/hYhFEoJMz/il2Y7zq+gKtV0l/y6TI4FUCHQaIsEtB5GsHWBnxccHou18/Yt
+jmBM+HMRTNz4ckLQ0FAzzk+zXAH5bYLZYVZkmrpviGOTmu73ihoxUjXtqLv841EN
+gFknV6XTnhvCEUfiuAkEFdjmiudqwAJBucCRIZ0VHCqX8xiLB6+f/sbN+8XOKhzz
+ZBI/7yp3fT5AsPMa65dqfb4ndYxm25Qb9aOGtP2zyX/rBjERWMeqJFyzb+MFfmBG
+/y7acphW3CvimzwtquE9GWtynfscSvY6zNHVPBHh1xHLhn0EeiehtnD0tnLRqD1n
+XHPB0W2MX3Ml1YCCY9ILSCVcRcGyOwYVq+HGFBbNy5FoPTRI2ZradEo3cq3e6kRn
+MYIAWQWd3/uwUiQFXTZ0
+=Yr0F
+-----END PGP SIGNATURE-----
+
+--XGa5gNSGTk93P04E--
