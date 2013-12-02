@@ -1,65 +1,51 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Sun, 01 Dec 2013 18:19:15 +0000
-Subject: [PATCH 04/11] spi: spi-sh-msiof: set hi/low Active for HW CS
-Message-Id: <1385921962-19843-4-git-send-email-takasi-y@ops.dti.ne.jp>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 02 Dec 2013 12:54:45 +0000
+Subject: Re: [PATCH 04/11] spi: spi-sh-msiof: set hi/low Active for HW CS
+Message-Id: <20131202125445.GE27568@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="QdA8+0Hc+u1HcecE"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
  <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org
+ <1385921962-19843-4-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-4-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
+To: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Set hardware CS(CS control function on MSIOF <-> GPIO CS) polarity
-according to SPI_CS_HIGH flag on spi->mode.
+--QdA8+0Hc+u1HcecE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
----
- drivers/spi/spi-sh-msiof.c |   13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
+On Mon, Dec 02, 2013 at 03:19:15AM +0900, takasi-y@ops.dti.ne.jp wrote:
+> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+>=20
+> Set hardware CS(CS control function on MSIOF <-> GPIO CS) polarity
+> according to SPI_CS_HIGH flag on spi->mode.
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 2a2b0dd..8683732 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -169,7 +169,7 @@ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
- 
- static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
- 				      u32 cpol, u32 cpha,
--				      u32 tx_hi_z, u32 lsb_first)
-+				      u32 tx_hi_z, u32 lsb_first, u32 cs_high)
- {
- 	u32 tmp;
- 	int edge;
-@@ -182,8 +182,12 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
- 	 *    1    1         11     11    1    1
- 	 */
- 	sh_msiof_write(p, FCTR, 0);
--	sh_msiof_write(p, TMDR1, 0xe2000005 | (lsb_first << 24));
--	sh_msiof_write(p, RMDR1, 0x22000005 | (lsb_first << 24));
-+
-+	tmp = 0;
-+	tmp |= !cs_high << 25;
-+	tmp |= lsb_first << 24;
-+	sh_msiof_write(p, TMDR1, 0xe0000005 | tmp);
-+	sh_msiof_write(p, RMDR1, 0x20000005 | tmp);
- 
- 	tmp = 0xa0000000;
- 	tmp |= cpol << 30; /* TSCKIZ */
-@@ -417,7 +421,8 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
- 		sh_msiof_spi_set_pin_regs(p, !!(spi->mode & SPI_CPOL),
- 					  !!(spi->mode & SPI_CPHA),
- 					  !!(spi->mode & SPI_3WIRE),
--					  !!(spi->mode & SPI_LSB_FIRST));
-+					  !!(spi->mode & SPI_LSB_FIRST),
-+					  !!(spi->mode & SPI_CS_HIGH));
- 	}
- 
- 	/* use spi->controller data for CS (same strategy as spi_gpio),
--- 
-1.7.9.5
+Applied, thanks.
 
+--QdA8+0Hc+u1HcecE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSnIMSAAoJELSic+t+oim9Vy0P/2A8Z4j22p/rMGqDpB2YFo8W
+hQILrTa8XaxYhiT/MdTkBcv2f3KOJ0dqTS/ko9maYrIxBSLvCaaH6rbcI8G6gGOT
+irBKq+CjWkGvpHsu1IpHW8LinZBXMWEpKvJgJsqbkGD9BkLEto4Id83ROrR4+e/o
+VCfwEAzAJKr1J3O3u11BwfFpTnPCkJ4RhhYZa0zFU8DmZmfF26bUhYFVNip2+X5P
+3CKTtOja8l/ffN+XR8hNykYyEWxGxWuYgg29UHfjSyvFKgyKwbkru6ZXx2k90I3h
+dzLw7xUlgyHAj8wVXOVkAAtv+ZbnNMo68w3dfSST1+pjBCXc5xb77k305xiYuFyt
+1gC6P41L2soWU09XVYEslDrvy5KajNM4smvazMfL9gYnGCcKuGRiVdSaJprdOqza
+ybdKtTFhJLuAxCjDUZFLJ9uNC0t6OHOnmUqbPguOb/O8lucdnjQkJ/4MLMHjhqKR
+5JKHWAoLkhY9Od90exBwLy7MHBnJrSEWfQ8w3abIt/bydU2SKfgcDNpw8tvqQSZx
+S5JBfnGlhFJ8rxOkCArDGC5TT88s+95/eBl/ARnqaf9OcTgJRIKaqQ6JuElsCW//
+RyvV/DA3i4M2LscS7IiQ1I132MWcT06HJu2awaLkZMvFJtlUdv1cpuNt0MouAsLc
+j81uwYSnsy4MPXl4EDzl
+=aYrG
+-----END PGP SIGNATURE-----
+
+--QdA8+0Hc+u1HcecE--
