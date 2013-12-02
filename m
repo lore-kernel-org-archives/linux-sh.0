@@ -1,38 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 15 Dec 2013 08:24:43 +0000
-Subject: [PATCH RFC 0/3] Add ethernet support for r7s72100
-Message-Id: <1387095886-15163-1-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:09 +0000
+Subject: [PATCH 07/28] ARM: shmobile: r8a73a4: don't use named irq for DMAEngine
+Message-Id: <3a47b0a1a26d70f391bb42fa8c70afc6bbd8e5a1.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-this is a first pass at adding ethernet support to sh-pfc for
-the r7s72100 SoC.
+sh-dma-engine driver doesn't care irq name.
 
-It has been written with reference to the hardware documentation
-but not well tested.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-This series is based on the topic/r7s72100-v3.13-rc3-20131214v2
-tag in my renesas tree.
-
-The first patch, for the sh_eth driver, applies cleanly to net-next.
-
-Simon Horman (3):
-  sh_eth: Add support for r7s72100
-  ARM: shmobile: r7s72100: Add clock for r7s72100-gether
-  ARM: shmobile: genmai: Enable r7s72100-gether
-
- arch/arm/mach-shmobile/board-genmai.c   | 20 ++++++++++++++++++
- arch/arm/mach-shmobile/clock-r7s72100.c |  5 ++++-
- drivers/net/ethernet/renesas/sh_eth.c   | 37 ++++++++++++++++++++++++++++++---
- drivers/net/ethernet/renesas/sh_eth.h   |  2 +-
- 4 files changed, 59 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index b0f2749..cc94b64 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -275,7 +275,7 @@ static const struct sh_dmae_pdata dma_pdata = {
+ 
+ static struct resource dma_resources[] = {
+ 	DEFINE_RES_MEM(0xe6700020, 0x89e0),
+-	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
++	DEFINE_RES_IRQ(gic_spi(220)),
+ 	{
+ 		/* IRQ for channels 0-19 */
+ 		.start  = gic_spi(200),
 -- 
 1.8.4
 
