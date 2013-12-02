@@ -1,54 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:56 +0000
-Subject: [PATCH 16/29] ARM: shmobile: r8a7779: Declare SCIF register base and IRQ as resources
-Message-Id: <aa61ee2ee3bdeee17242bb7357f3edc19d417f41.1387888861.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:33 +0000
+Subject: [PATCH 27/28] ARM: shmobile: r8a7790: fixup I2C clock source
+Message-Id: <420382f4eea728d4104c28275aa9594f1d6dbf0c.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+I2C clock is based on P clock, not HP clock
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index ceb5bb8..35c2268 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -192,16 +192,21 @@ void __init r8a7779_pinmux_init(void)
- #define R8A7779_SCIF(index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= PORT_SCIF,				\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- };								\
- 								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
-+};								\
-+								\
- static struct platform_device scif##index##_device = {		\
- 	.name		= "sh-sci",				\
- 	.id		= index,				\
-+	.resource	= scif##index##_resources,		\
-+	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
- 	.dev		= {					\
- 		.platform_data	= &scif##index##_platform_data,	\
- 	},							\
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index ecec746..3a267c2 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -196,10 +196,10 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP931] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 31, 0), /* I2C0 */
+-	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
+-	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
+-	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
++	[MSTP931] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 31, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 30, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 29, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
+ 	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
 -- 
 1.8.4
 
