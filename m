@@ -1,51 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 02 Dec 2013 10:59:25 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 02 Dec 2013 12:53:20 +0000
 Subject: Re: [PATCH 03/11] spi: spi-sh-msiof: let it run even without GPIO
-Message-Id: <529C680D.4050604@cogentembedded.com>
+Message-Id: <20131202125320.GD27568@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="DYCP9ZX4RRtQiwKl"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp> <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp> <1385921962-19843-3-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-3-git-send-email-takasi-y@ops.dti.ne.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: takasi-y@ops.dti.ne.jp, linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org
+References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+ <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
+ <1385921962-19843-3-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-3-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
+To: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hello.
 
-On 01-12-2013 22:19, takasi-y@ops.dti.ne.jp wrote:
+--DYCP9ZX4RRtQiwKl
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+On Mon, Dec 02, 2013 at 03:19:14AM +0900, takasi-y@ops.dti.ne.jp wrote:
 
-> In current implementation, CS is controlled by GPIO, which is passed
-> through spi->controller_data. But because sh-msiof HW module has a
-> function to output CS by itself, which is already enabled and actual
-> switch will be done by pinmux, we can silently ignore if GPIO is null.
-
-> Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-> ---
->   drivers/spi/spi-sh-msiof.c |    6 ++++--
->   1 file changed, 4 insertions(+), 2 deletions(-)
-
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index ac8795f..2a2b0dd 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-> @@ -420,8 +420,10 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
->   					  !!(spi->mode & SPI_LSB_FIRST));
->   	}
->
 > -	/* use spi->controller data for CS (same strategy as spi_gpio) */
 > -	gpio_set_value((unsigned)spi->controller_data, value);
 > +	/* use spi->controller data for CS (same strategy as spi_gpio),
 > +	 * if any. otherwise let HW controll CS */
+> +	if (spi->controller_data)
+> +		gpio_set_value((unsigned)spi->controller_data, value);
 
-    The preferred style of multi-line comments is this:
+This makes sense in terms of what it tries to do however the standard
+thing is to set the GPIO value to an error value if it isn't there
+(especially since 0 is in theory a valid GPIO) so the test should be
+different.
 
-/*
-  * bla
-  * bla
-  */
+I'd also suggest changing to use the core cs_gpio field but that's a
+separate thing.
 
-WBR, Sergei
+--DYCP9ZX4RRtQiwKl
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSnIK9AAoJELSic+t+oim97LUP/2wxHJrMeaCTZ5a3Rp9qSr+g
+59rH+xuCJDNIjfoaAnZSfStwhdn0u+J9CqFwByCb/H9fbGIgrzrSuAXyGcMPXvGQ
+Z9m+f9dOgKM/FLDeI8HXDuYg1q9s5AXBLqJBj5BC9u8junNmjQMyDocdCEcu0KKX
+b6KEfhREdfn6FH0++L/DbCN839MNKUBFFwvmPJhRffXxGz/tpxhPV34bg5aWspko
+UQU+8tryqoX3ptYARrVeIsGx9ceuKqW+de/70FrqaI0hOXULc6kU6eOxoOLE0K+M
+0aFaqsbcwdomlYWSgK2Ls4Vubf/hz/PLt/GlouZW6iOVl0Znf75KGrHH1KRo7Uqu
+xSBwuEjfg0fZ7UUlPiTaiAFMBKOKpMvOoMUmvr/MHzgzGvJrGVZ+1X0aGPkMBsE1
+TaMqqL5UYfMEETjAsJw/0LyggzAcgPdp42Fdpeg+hgy4iDMdqlBGF8Et8SjjoYsP
+3GfOjw2iNMBUOkq5WJUTUvJAKgxhrUEizDJmi7Mt6higDl31REypfxYrqywSmST0
+34YJjp++H2FhKJaL2WlKA4oFXBp8a5Y6Saa4eV13QmyiXSzuNhZlUWd0rl5QMKQW
+p1hcQzTH+/iOoCFBcBOVtSu86Dy5TxD7axba5LXyFxqY6fWLJ0jzEOhGm+BTBFAN
+4Fx2ALTtEKkWsenA6Kcg
+=fhW5
+-----END PGP SIGNATURE-----
+
+--DYCP9ZX4RRtQiwKl--
