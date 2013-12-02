@@ -1,44 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:31 +0000
-Subject: [PATCH v5 07/17] ARM: shmobile: koelsch-reference: Remove duplicate CCF initialization
-Message-Id: <1387034741-3852-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:07 +0000
+Subject: [PATCH 05/28] ARM: shmobile: Select GPIO in case of the r8a7791 SoC
+Message-Id: <aeee29c56ae524c188d15fcb6a1aca617e1e601a.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The common clock framework is initialized in the rcar_gen2_init_timer()
-function, remove the of_clk_init() call.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Make it possible to build GPIO on r8a7791.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/arm/mach-shmobile/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index a804a17..4b48e2d 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,7 +19,6 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index ff7c4ce..4e1cc76 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -97,6 +97,7 @@ config ARCH_R8A7790
  
--#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <mach/common.h>
-@@ -29,9 +28,7 @@
- 
- static void __init koelsch_add_standard_devices(void)
- {
--#ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
--#else
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7791_clock_init();
- #endif
- 	r8a7791_add_dt_devices();
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
 -- 
-1.8.3.2
+1.8.4
 
