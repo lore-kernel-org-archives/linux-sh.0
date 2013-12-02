@@ -1,90 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:35 +0000
-Subject: [PATCH v5 11/17] ARM: shmobile: Remove non-multiplatform Koelsch reference support
-Message-Id: <1387034741-3852-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:31 +0000
+Subject: [PATCH 25/28] ARM: shmobile: Add r8a7791 clocks for thermal devices
+Message-Id: <ae716af15fee82018a7d810a366a64e27a6c2c0a.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that r8a7791 has CCF support remove the legacy Koelsch reference
-Kconfig bits CONFIG_MACH_KOELSCH_REFERENCE for the non-multiplatform
-case.
+From: Magnus Damm <damm@opensource.se>
 
-Starting from this commit Koelsch board support is always enabled via
-CONFIG_MACH_KOELSCH, and CONFIG_ARCH_MULTIPLATFORM is used to select
-between board-koelsch.c and board-koelsch-reference.c
+Add the r8a7791 thermal device as legacy clocks.
 
-The file board-koelsch-reference.c can no longer be used together with
-the legacy sh-clk clock framework, instead CCF is used.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile           |  1 -
- arch/arm/mach-shmobile/Kconfig       | 11 -----------
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- 4 files changed, 14 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 0457edb..37aefa2 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -226,7 +226,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r8a7779-marzen.dtb \
- 	r8a7779-marzen-reference.dtb \
- 	r8a7791-koelsch.dtb \
--	r8a7791-koelsch-reference.dtb \
- 	r8a7790-lager.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 54357a1..cd205c3 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -267,17 +267,6 @@ config MACH_KOELSCH
- 	depends on ARCH_R8A7791
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index fda7c6c..ff2d60d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -124,6 +124,7 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP522,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
+@@ -140,6 +141,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP718] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 18, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
++	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+@@ -188,6 +190,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ };
  
--config MACH_KOELSCH_REFERENCE
--	bool "Koelsch board - Reference Device Tree Implementation"
--	depends on ARCH_R8A7791
--	select USE_OF
--	---help---
--	   Use reference implementation of Koelsch board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index fad94ee..fe7d4ff 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -74,7 +74,6 @@ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
--obj-$(CONFIG_MACH_KOELSCH_REFERENCE)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
- endif
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index f6d5119..99455ec 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -9,7 +9,6 @@ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
- loadaddr-$(CONFIG_MACH_GENMAI_REFERENCE) += 0x08008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
--loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.8.3.2
+1.8.4
 
