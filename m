@@ -1,144 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:39 +0000
-Subject: [PATCH v5 15/17] ARM: shmobile: Remove Koelsch reference DTS
-Message-Id: <1387034741-3852-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:32 +0000
+Subject: [PATCH 26/28] ARM: shmobile: r8a7790: care EXTAL divider settings
+Message-Id: <a13ba65e1e082032d3953dd249f576d64d153665.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that the DTS file r8a7790-koelsch.dts can be used with
-board-koelsch.c and board-koelsch-reference.c, proceed with removing
-r8a7790-koelsch-reference.dts.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+EXTAL clock frequency needs 1/2 when
+(MD14, MD13, MD19) = (1, x, x).
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 115 ------------------------
- 1 file changed, 115 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-deleted file mode 100644
-index 588ca17..0000000
---- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-+++ /dev/null
-@@ -1,115 +0,0 @@
--/*
-- * Device Tree Source for the Koelsch board
-- *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7791.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "Koelsch";
--	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
--
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	gpio-keys {
--		compatible = "gpio-keys";
--
--		key-a {
--			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
--			linux,code = <30>;
--			label = "SW30";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-b {
--			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
--			linux,code = <48>;
--			label = "SW31";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-c {
--			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
--			linux,code = <46>;
--			label = "SW32";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-d {
--			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
--			linux,code = <32>;
--			label = "SW33";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-e {
--			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
--			linux,code = <18>;
--			label = "SW34";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-f {
--			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
--			linux,code = <33>;
--			label = "SW35";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-g {
--			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
--			linux,code = <34>;
--			label = "SW36";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
--		};
--	};
--};
--
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data_d";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data_d";
--		renesas,function = "scif1";
--	};
--};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 33e80b10..ecec746 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -329,10 +329,10 @@ void __init r8a7790_clock_init(void)
+ 		R8A7790_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
+ 		break;
+ 	case MD(14):
+-		R8A7790_CLOCK_ROOT(26, &extal_div2_clk, 200, 240, 122, 102);
++		R8A7790_CLOCK_ROOT(26 / 2, &extal_div2_clk, 200, 240, 122, 102);
+ 		break;
+ 	case MD(13) | MD(14):
+-		R8A7790_CLOCK_ROOT(30, &extal_div2_clk, 172, 208, 106, 88);
++		R8A7790_CLOCK_ROOT(30 / 2, &extal_div2_clk, 172, 208, 106, 88);
+ 		break;
+ 	}
+ 
 -- 
-1.8.3.2
+1.8.4
 
