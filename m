@@ -1,39 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:18 +0000
-Subject: [PATCH 12/12] ARM: shmobile: mackerel: Fix USBHS pinconf entry
-Message-Id: <b58c8e7b43ad804ad18b30f882b16da2e3d4ed9d.1387891831.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:25 +0000
+Subject: [PATCH 19/28] ARM: shmobile: r8a7778: add HSPI clock support for DT
+Message-Id: <8775e2d612ec47feb158292a706cfec0508e68b1.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Fix a typo in the USBHS1 pinconf entry that prevented the pull-down from
-being enabled.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 207acf0..b3ee96e 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1406,7 +1406,7 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
- 	/* USBHS1 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
- 				  "usb1_vbus", "usb1"),
--	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.&", "pfc-sh7372",
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
- 				      "usb1_vbus", pin_pulldown_conf),
- 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
- 				  "usb1_otg_id_0", "usb1"),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 011564f..5406434 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -203,8 +203,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("fffc8000.spi", &mstp_clks[MSTP007]), /* HSPI1 */
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
++	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP008]), /* SRU */
+ 
+ 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP012]),
 -- 
 1.8.4
 
