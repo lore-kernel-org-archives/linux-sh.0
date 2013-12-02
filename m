@@ -1,35 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Dec 2013 09:22:18 +0000
-Subject: Re: [PATCH] arm: shmobile: clks: remove duplicated clock from r7s72100
-Message-Id: <20131219092218.GB27244@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 02 Dec 2013 13:36:32 +0000
+Subject: Re: [PATCH 0/2] serial: sh-sci: Prepare for CCF migration
+Message-Id: <1516614.DSSr7jaai1@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387403317-24485-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387403317-24485-1-git-send-email-wsa@the-dreams.de>
+References: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-On Wed, Dec 18, 2013 at 10:48:37PM +0100, Wolfram Sang wrote:
-> Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
-> ---
->  arch/arm/mach-shmobile/clock-r7s72100.c | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-> index 9cda215..dd8ce87 100644
-> --- a/arch/arm/mach-shmobile/clock-r7s72100.c
-> +++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-> @@ -191,7 +191,6 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
->  	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
->  	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
-> -	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
->  };
->  
->  void __init r7s72100_clock_init(void)
-> -- 
-> 1.8.4.2
-> 
+Hi Greg,
 
-Thanks, I will queue this up.
+On Thursday 28 November 2013 18:11:44 Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch set prepares the driver to CCF migration by replacing
+> clk_enable() and clk_disable() by clk_prepare_enable() and
+> clk_disable_unprepare() respectively (2/2). In order to do so it first
+> ensures that the clk_enable() and clk_disable() calls will only take place
+> from non-atomic context (1/2).
+> 
+> Greg, these patches are dependencies for a bunch of ARM patches that will go
+> through Simon's tree. Would you be fine if Simon merged all sh-sci patches
+> through his tree for v3.14 ?
+
+Ping ?
+
+> Laurent Pinchart (2):
+>   serial: sh-sci: Don't enable/disable port from within break timer
+>   serial: sh-sci: Convert to clk_prepare/unprepare
+> 
+>  drivers/tty/serial/sh-sci.c | 20 ++++++++++++--------
+>  1 file changed, 12 insertions(+), 8 deletions(-)
+-- 
+Regards,
+
+Laurent Pinchart
+
