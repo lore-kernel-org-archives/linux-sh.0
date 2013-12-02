@@ -1,72 +1,58 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Sun, 01 Dec 2013 18:19:16 +0000
-Subject: [PATCH 05/11] spi: spi-sh-msiof: rx_need_dummy_tx variant
-Message-Id: <1385921962-19843-5-git-send-email-takasi-y@ops.dti.ne.jp>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 02 Dec 2013 17:49:01 +0000
+Subject: Re: [PATCH 05/11] spi: spi-sh-msiof: rx_need_dummy_tx variant
+Message-Id: <20131202174901.GN27568@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="22aa2PWZKnsI44rM"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
  <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org
+ <1385921962-19843-5-git-send-email-takasi-y@ops.dti.ne.jp>
+In-Reply-To: <1385921962-19843-5-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
+To: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-There is a variant of MSIOF, that need dummy data transfer even when
-you want only to receive.
+--22aa2PWZKnsI44rM
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-This patch adds the option
- .rx_need_dummy_tx
-to sh_msiof_spi_info.
+On Mon, Dec 02, 2013 at 03:19:16AM +0900, takasi-y@ops.dti.ne.jp wrote:
 
-Consult "Transmit and Receive Procedures" on HWM, if it says
- - Set SICTR.TSCKE to 1
- - Write dummy transmission data to SITFDR
-to *receive*, enable this.
-Ape6, Rcar-H2, and Rcar-M2 are found having this type of module.
+>  	if (tx_buf)
+>  		tx_fifo(p, tx_buf, words, fifo_shift);
+> +	else if (rx_buf && p->info->rx_need_dummy_tx)
+> +		tx_fifo(p, rx_buf, words, fifo_shift);
 
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
----
- drivers/spi/spi-sh-msiof.c   |    4 +++-
- include/linux/spi/sh_msiof.h |    1 +
- 2 files changed, 4 insertions(+), 1 deletion(-)
+This is going to transmit the contents of the RX buffer.  This means
+that if there's any data in there it'll get sent but the expected
+behaviour would be to send all zeros.  It's possible some devices may
+misbehave if this were to happen.  It would be better to allocate some
+zeros with kzalloc() and send that.
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 8683732..936d8ab 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -207,7 +207,7 @@ static void sh_msiof_spi_set_mode_regs(struct sh_msiof_spi_priv *p,
- {
- 	u32 dr2 = ((bits - 1) << 24) | ((words - 1) << 16);
- 
--	if (tx_buf)
-+	if (tx_buf || (rx_buf && p->info->rx_need_dummy_tx))
- 		sh_msiof_write(p, TMDR2, dr2);
- 	else
- 		sh_msiof_write(p, TMDR2, dr2 | 1);
-@@ -464,6 +464,8 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	/* write tx fifo */
- 	if (tx_buf)
- 		tx_fifo(p, tx_buf, words, fifo_shift);
-+	else if (rx_buf && p->info->rx_need_dummy_tx)
-+		tx_fifo(p, rx_buf, words, fifo_shift);
- 
- 	/* setup clock and rx/tx signals */
- 	ret = sh_msiof_modify_ctr_wait(p, 0, CTR_TSCKE);
-diff --git a/include/linux/spi/sh_msiof.h b/include/linux/spi/sh_msiof.h
-index 2e8db3d..cf36781 100644
---- a/include/linux/spi/sh_msiof.h
-+++ b/include/linux/spi/sh_msiof.h
-@@ -5,6 +5,7 @@ struct sh_msiof_spi_info {
- 	int tx_fifo_override;
- 	int rx_fifo_override;
- 	u16 num_chipselect;
-+	u16 rx_need_dummy_tx:1;
- };
- 
- #endif /* __SPI_SH_MSIOF_H__ */
--- 
-1.7.9.5
+Really we should have core support for this, it's not the only
+controller with such limitations.
 
+--22aa2PWZKnsI44rM
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSnMgKAAoJELSic+t+oim9vNoQAJyA8h9DxiHLzalwfj7VixhF
+9tDhyIE3bwe/i29UXCu++XqPQQQjRiPFFf4CXHaLebggPZmg1Suw71EDoPJlqNKC
+x6jnJW2/+kNpGrQ2mKRbqWQeFMFzYGUweFhw/rJaHpbmC5UlgxoSsfIS/baF+1Su
+2lTL99Q3jIAwFrU5MRad1pNdKxUWVX5EBlrlEpPbHr2DZTP9JrBsPH4RGuz0jyPZ
+ay/ycbXhnPzHQja8KtO3LOZusQL78C44HQWZpCJa2qqW03efPEIOiXjBDlX5CFLo
+Gu9vIUl2uKq1fVZ1lbLz0Kv7YVTp03yj4M1iOEY50L1IPT1m3BWyFTrral+LtWPT
+0FdFtjdMblNSMtpoGU3nYkEukpmG82tUOk2KR0l7GP7LicMAFPF7E4Avm3quGink
+CST4h2nDv8fBFWRRaBprIfpnmsFEz3Us7DXzg8V/ulFTi/40ecUBYLcoqoYIRkXn
+Dz3hSoMxUKmQROIlBCJvn7qoz+3SVlPEmj1/6pLaGs4gaAbpc1rzYmff2BksQ2A3
+QFe4RobQXgz26LTbQC4TNLXwiOv+acWqoaRDDq7HUd6jXuPDc11ONVDJPQqCrSoe
+fketkyIUpz8xiJeixT02HAjP6yrebsuhWKURERsNgNx6jMDq4+L2CppbthN1f6Hz
+agnctdBwVqxTi2PSildL
+=4VaB
+-----END PGP SIGNATURE-----
+
+--22aa2PWZKnsI44rM--
