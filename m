@@ -1,91 +1,103 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Dec 2013 11:53:27 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: r8a7790: add I2C support
-Message-Id: <20131212115325.GB18308@verge.net.au>
+Date: Mon, 02 Dec 2013 02:25:51 +0000
+Subject: Re: [PATCH v2 3/3] ARM: shmobile: kzm9d: Use common clock framework
+Message-Id: <20131202022549.GA12357@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131008143040.52f36df8edb7ab63224d8433@ops.dti.ne.jp>
+ <20131008143403.c11f294c8a1701a2ab3bc5fd@ops.dti.ne.jp>
+ <20131009034057.GO15065@verge.net.au>
+ <CANqRtoQs+31mv0ZULOd3SGshkBkvp-kGoaVOSb10+Ncdp+WNXw@mail.gmail.com>
+ <20131009065438.GA7220@verge.net.au>
+ <CANqRtoSGFEjcBPDAtq3YCDbkiFCftyr8b=qniYqyMafng=zurw@mail.gmail.com>
+ <20131009103915.GB17869@verge.net.au>
+ <20131029044239.GC20432@verge.net.au>
+In-Reply-To: <20131029044239.GC20432@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 28, 2013 at 07:02:12PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/clock-r8a7790.c |    4 ++++
->  arch/arm/mach-shmobile/setup-r8a7790.c |   25 +++++++++++++++++++++++++
->  2 files changed, 29 insertions(+)
+On Tue, Oct 29, 2013 at 01:42:41PM +0900, Simon Horman wrote:
+> On Wed, Oct 09, 2013 at 07:39:18PM +0900, Simon Horman wrote:
+> > On Wed, Oct 09, 2013 at 04:29:56PM +0900, Magnus Damm wrote:
+> > > Hi Simon,
+> > > 
+> > > On Wed, Oct 9, 2013 at 3:54 PM, Simon Horman <horms@verge.net.au> wrote:
+> > > > On Wed, Oct 09, 2013 at 01:59:46PM +0900, Magnus Damm wrote:
+> > > >> Hi Simon,
+> > > >>
+> > > >> On Wed, Oct 9, 2013 at 12:40 PM, Simon Horman <horms@verge.net.au> wrote:
+> > > >> > On Tue, Oct 08, 2013 at 02:34:03PM +0900, takasi-y@ops.dti.ne.jp wrote:
+> > > >> >> Use common clock framework version of clock
+> > > >> >>  drivers/clk/shmobile/clk-emev2.c
+> > > >> >> instead of sh-clkfwk version
+> > > >> >>  arch/arm/mach-shmobile/clock-emev2.c
+> > > >> >> when it is configured as a part of multi-platform.
+> > > >> >>
+> > > >> >> Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+> > > >> >
+> > > >> > Thanks.
+> > > >> >
+> > > >> > I plan to add this patch to a new topic branch,
+> > > >> > topic/emev2-common-clock, in the renesas tree and
+> > > >> > queue it up from there for inclusion in mainline
+> > > >> > if/when the first patch of this series is accepted
+> > > >> > by Mike Turquette.
+> > > >>
+> > > >> Thanks for picking up patches, Simon.
+> > > >>
+> > > >> I think you can simply merge this patch after the following series:
+> > > >>
+> > > >> [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
+> > > >
+> > > > This is already queued up.
+> > > 
+> > > Yes, I know, thanks for that. I tried to explain the dependency in the
+> > > 00/00 cover letter but I will try to be more clear next time!
+> > > 
+> > > >> There are no build time dependencies on patch 1 and 2 so this patch
+> > > >> can be merged independently. Regarding run-time operation, the
+> > > >> multiplatform series above makes KZM9D DT reference only build for
+> > > >> multiplatform, and in such case CCF is required.
+> > > >>
+> > > >> So if you want to keep KZM9D DT reference working until Mike Turquette
+> > > >> accepts the CCF bits, then I recommend you to wait with "[PATCH 00/05]
+> > > >> ARM: shmobile: KZM9D Multiplatform update" until all EMEV2 CCF bits
+> > > >> have been merged.
+> > > >>
+> > > >> Another way is to merge "[PATCH 00/05] ARM: shmobile: KZM9D
+> > > >> Multiplatform update" before the EMEV2 CCF bits, but if so you may as
+> > > >> well merge this patch as well IMO. This
+> > > >> multiplatform-update-series-merge-before-CCF plan will result in
+> > > >> untestable KZM9D DT reference until EMEV2 CCF is merged. Either way is
+> > > >> fine with me.
+> > > >
+> > > > I am mainly concerned that the bindings may change before
+> > > > they are finally merged. And I thought it would be nice to avoid
+> > > > having to fix up the usage of the bindings if they change.
+> > > 
+> > > Sure, but the code in this patch looks like it simply starts DT CCF
+> > > probing regardless of what the bindings look like. So I don't think
+> > > you will have to worry about actual bindings detail.
+> > > 
+> > > > But I'm happy to just queue-up patches 2 and 3 of this series
+> > > > now if you prefer.
+> > > 
+> > > Well, I meant patch 3 only. Patch 1 and 2 are tied together by dependencies. =)
+> > 
+> > Thanks, I understand now.
+> > 
+> > I'll queue-up 3/3.
+> 
+> Which I did.
+> 
+> Then some time passed...
+> 
+> Mike has accepted my pull-request for patch 1 of this series
+> and accordingly I have queued-up this patch for v3.14.
+> It should appear in the devel branch the next time that I push it.
 
-Thanks, I will queue this up.
+I was mistaken. It was not queued up  for v3.14.
+And still has not been queued up.
 
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index 7960dc0..cf6dd7f 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -277,9 +277,13 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
->  	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
->  	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
-> +	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
->  	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
-> +	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
->  	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
-> +	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
->  	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
-> +	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
->  	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
->  	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
->  	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-> index 3543c3b..8474818 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -67,6 +67,27 @@ R8A7790_GPIO(5);
->  		&r8a7790_gpio##idx##_platform_data,			\
->  		sizeof(r8a7790_gpio##idx##_platform_data))
->  
-> +static struct resource i2c_resources[] __initdata = {
-> +	/* I2C0 */
-> +	DEFINE_RES_MEM(0xE6508000, 0x40),
-> +	DEFINE_RES_IRQ(gic_spi(287)),
-> +	/* I2C1 */
-> +	DEFINE_RES_MEM(0xE6518000, 0x40),
-> +	DEFINE_RES_IRQ(gic_spi(288)),
-> +	/* I2C2 */
-> +	DEFINE_RES_MEM(0xE6530000, 0x40),
-> +	DEFINE_RES_IRQ(gic_spi(286)),
-> +	/* I2C3 */
-> +	DEFINE_RES_MEM(0xE6540000, 0x40),
-> +	DEFINE_RES_IRQ(gic_spi(290)),
-> +
-> +};
-> +
-> +#define r8a7790_register_i2c(idx)		\
-> +	platform_device_register_simple(	\
-> +		"i2c-rcar", idx,		\
-> +		i2c_resources + (2 * idx), 2);	\
-> +
->  void __init r8a7790_pinmux_init(void)
->  {
->  	r8a7790_register_pfc();
-> @@ -76,6 +97,10 @@ void __init r8a7790_pinmux_init(void)
->  	r8a7790_register_gpio(3);
->  	r8a7790_register_gpio(4);
->  	r8a7790_register_gpio(5);
-> +	r8a7790_register_i2c(0);
-> +	r8a7790_register_i2c(1);
-> +	r8a7790_register_i2c(2);
-> +	r8a7790_register_i2c(3);
->  }
->  
->  #define SCIF_COMMON(scif_type, baseaddr, irq)			\
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I have un-queued this patch accordingly.
