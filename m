@@ -1,34 +1,26 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Sun, 29 Dec 2013 21:54:42 +0000
-Subject: Re: [PATCH V2 0/2] clk: shmobile: clk-mstp fixes
-Message-Id: <20131229215442.12054.41926@quantum>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 02 Dec 2013 02:21:37 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: lager: add gpio regulator support on defconfig
+Message-Id: <87eh5wc7rm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388232549-6740-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1388232549-6740-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <87fvqqxlsd.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fvqqxlsd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Quoting Valentine Barshak (2013-12-28 04:09:07)
-> This fixes a number of issues with CPG MSTP clock array handling.
 
-Thanks for the quick respin. Taken into clk-next.
+Hi Simon
 
-Regards,
-Mike
+> On Wed, Nov 20, 2013 at 11:21:26PM -0800, Kuninori Morimoto wrote:
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > ---
+> >  arch/arm/configs/lager_defconfig |    1 +
+> >  1 file changed, 1 insertion(+)
+> 
+> Thanks, I will queue this up.
 
-> 
-> Changes in V2:
-> * removed brackets from the one-line for loop
-> 
-> Valentine Barshak (2):
->   clk: shmobile: Fix MSTP clock index
->   clk: shmobile: Fix MSTP clock array initialization
-> 
->  drivers/clk/shmobile/clk-mstp.c | 12 ++++++++----
->  1 file changed, 8 insertions(+), 4 deletions(-)
-> 
-> -- 
-> 1.8.3.1
-> 
+I could find this "defconfig" patch,
+but, can't find "board-lager" side patch (= 1/2)
+
