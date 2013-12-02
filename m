@@ -1,140 +1,55 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 26 Dec 2013 15:37:59 +0000
-Subject: [PATCH V2 3/3] arm: shmobile: koelsch: Add VIN1 SoC camera support
-Message-Id: <1388072279-12508-4-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Dec 2013 02:19:18 +0000
+Subject: [PATCH 12/28] ARM: shmobile: r8a7790: Add USBHS clock support
+Message-Id: <9324a0e3380a9088f2a2f2d28ceba8366087f6de.1385950394.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1385950394.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds VIN1 SoC camera along with ADV7180 subdevice support to Koelsch.
-VIN0 camera is not registered because it has ADV7612 I2C subdevice
-which is not supported yet.
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Changes in V2:
-* made koelsch_add_vin_device function static.
+This adds USBHS clock support.
 
 Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 76 ++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 799825c..6eb5a58 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -27,6 +27,7 @@
- #include <linux/leds.h>
- #include <linux/phy.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
- #include <linux/platform_device.h>
-@@ -35,6 +36,7 @@
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
- #include <mach/rcar-gen2.h>
-+#include <media/soc_camera.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-@@ -180,6 +182,62 @@ static void __init koelsch_add_i2c(unsigned idx)
- 					i2c_resources + res_idx, 2);
- }
- 
-+/* VIN */
-+static const struct resource vin_resources[] __initconst = {
-+	/* VIN0 */
-+	DEFINE_RES_MEM(0xe6ef0000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(188)),
-+	/* VIN1 */
-+	DEFINE_RES_MEM(0xe6ef1000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(189)),
-+};
-+
-+static void __init koelsch_add_vin_device(unsigned idx,
-+					  struct rcar_vin_platform_data *pdata)
-+{
-+	struct platform_device_info vin_info = {
-+		.parent		= &platform_bus,
-+		.name		= "r8a7791-vin",
-+		.id		= idx,
-+		.res		= &vin_resources[idx * 2],
-+		.num_res	= 2,
-+		.dma_mask	= DMA_BIT_MASK(32),
-+		.data		= pdata,
-+		.size_data	= sizeof(*pdata),
-+	};
-+
-+	BUG_ON(idx > 1);
-+
-+	platform_device_register_full(&vin_info);
-+}
-+
-+#define KOELSCH_CAMERA(idx, name, addr, pdata, flag)			\
-+static struct i2c_board_info i2c_cam##idx##_device = {			\
-+	I2C_BOARD_INFO(name, addr),					\
-+};									\
-+									\
-+static struct rcar_vin_platform_data vin##idx##_pdata = {		\
-+	.flags = flag,							\
-+};									\
-+									\
-+static struct soc_camera_link cam##idx##_link = {			\
-+	.bus_id = idx,							\
-+	.board_info = &i2c_cam##idx##_device,				\
-+	.i2c_adapter_id = 2,						\
-+	.module_name = name,						\
-+	.priv = pdata,							\
-+}
-+
-+/* Camera 0 is not currently supported due to adv7612 support missing */
-+KOELSCH_CAMERA(1, "adv7180", 0x20, NULL, RCAR_VIN_BT656);
-+
-+static void __init koelsch_add_camera1_device(void)
-+{
-+	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 1,
-+				      &cam1_link, sizeof(cam1_link));
-+	koelsch_add_vin_device(1, &vin1_pdata);
-+}
-+
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -212,6 +270,22 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* I2C4 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.4", "pfc-r8a7791",
- 				  "i2c4_c", "i2c4"),
-+	/* VIN0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_data24", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_sync", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_field", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_clkenb", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_clk", "vin0"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.1", "pfc-r8a7791",
-+				  "vin1_data8", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.1", "pfc-r8a7791",
-+				  "vin1_clk", "vin1"),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a64f965..161d44e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -186,6 +186,7 @@ enum {
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
++	MSTP704,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+@@ -208,6 +209,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
++	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -296,6 +298,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
  };
  
- static void __init koelsch_add_standard_devices(void)
-@@ -238,6 +312,8 @@ static void __init koelsch_add_standard_devices(void)
- 	koelsch_add_i2c(2);
- 	koelsch_add_i2c(4);
- 	koelsch_add_i2c(5);
-+
-+	koelsch_add_camera1_device();
- }
- 
- /*
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.8.3.1
+1.8.4
 
