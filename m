@@ -1,42 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:35 +0000
-Subject: [PATCH 05/21] ARM: shmobile: sh73a0: Specify PFC interrupts in DT
-Message-Id: <aba76d286e8cccb05b3a4c23833faaee171a6c5d.1387893834.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 03 Dec 2013 21:42:21 +0000
+Subject: [PATCH 1/2] usb: hcd: Remove USB phy if needed
+Message-Id: <1386106942-13730-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This can be used by the HCD drivers to auto-remove
+the external USB phy when it is no longer needed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ drivers/usb/core/hcd.c  | 14 +++++++++++++-
+ include/linux/usb/hcd.h |  1 +
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index c460dd2..b7bd3b9 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -242,6 +242,15 @@
- 		      <0xe605801c 0x1c>;
- 		gpio-controller;
- 		#gpio-cells = <2>;
-+		interrupts-extended +			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
-+			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
-+			<&irqpin1 0 0>, <&irqpin1 1 0>, <&irqpin1 2 0>, <&irqpin1 3 0>,
-+			<&irqpin1 4 0>, <&irqpin1 5 0>, <&irqpin1 6 0>, <&irqpin1 7 0>,
-+			<&irqpin2 0 0>, <&irqpin2 1 0>, <&irqpin2 2 0>, <&irqpin2 3 0>,
-+			<&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
-+			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
-+			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
- 	};
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index 6bffb8c..7527c8e 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -44,6 +44,7 @@
  
- 	sh_fsi2: sound@ec230000 {
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
++#include <linux/usb/phy.h>
+ 
+ #include "usb.h"
+ 
+@@ -2603,7 +2604,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		return retval;
++		goto err_remove_phy;
+ 	}
+ 
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2734,6 +2735,12 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
++err_remove_phy:
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ 	return retval;
+ }
+ EXPORT_SYMBOL_GPL(usb_add_hcd);
+@@ -2806,6 +2813,11 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+ 	usb_put_dev(hcd->self.root_hub);
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++	if (hcd->remove_phy && hcd->phy) {
++		usb_phy_shutdown(hcd->phy);
++		usb_put_phy(hcd->phy);
++		hcd->phy = NULL;
++	}
+ }
+ EXPORT_SYMBOL_GPL(usb_remove_hcd);
+ 
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index b8aba19..758ce80 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -134,6 +134,7 @@ struct usb_hcd {
+ 	unsigned		rh_registered:1;/* is root hub registered? */
+ 	unsigned		rh_pollable:1;	/* may we poll the root hub? */
+ 	unsigned		msix_enabled:1;	/* driver has MSI-X enabled? */
++	unsigned		remove_phy:1;	/* auto-remove USB phy */
+ 
+ 	/* The next flag is a stopgap, to be removed when all the HCDs
+ 	 * support the new root-hub polling mechanism. */
 -- 
-1.8.4
+1.8.3.1
 
