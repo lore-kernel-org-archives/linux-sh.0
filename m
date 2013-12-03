@@ -1,36 +1,38 @@
-From: Florian Fainelli <f.fainelli@gmail.com>
-Date: Tue, 10 Dec 2013 17:05:11 +0000
-Subject: Re: [PATCH v3 2/3] ARM: shmobile: Koelsch: add Ether support
-Message-Id: <CAGVrzcZ7Pm69UpUeLoh4oz_uh6jQeVMkqjpZc=Rh3dyyCPOgpw@mail.gmail.com>
+From: Greg KH <greg@kroah.com>
+Date: Tue, 03 Dec 2013 18:40:02 +0000
+Subject: Re: [PATCH 2/2] usb: hcd: Initialize USB phy if needed
+Message-Id: <20131203184002.GA23280@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312082348.17588.sergei.shtylyov@cogentembedded.com>
- <201312082352.45265.sergei.shtylyov@cogentembedded.com>
- <CAMuHMdWFmO4d4b77JDY0_Z5NuQFoP73-PVho2dwAOY4ES57Dug@mail.gmail.com>
- <52A62753.8060202@cogentembedded.com>
- <CAMuHMdXDHMRy2LTEa50omMs0dV9Vdf2woBsNAHzhkceXDfqyOg@mail.gmail.com>
- <52A64DCB.8000504@cogentembedded.com>
- <CAMuHMdV6RN4E7xez9xXLbcbp0Ga9zu09ndfa7b_YiobdQypc4w@mail.gmail.com>
-In-Reply-To: <CAMuHMdV6RN4E7xez9xXLbcbp0Ga9zu09ndfa7b_YiobdQypc4w@mail.gmail.com>
+References: <1385505929-30926-3-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1385505929-30926-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-2013/12/10 Geert Uytterhoeven <geert@linux-m68k.org>:
-> On Tue, Dec 10, 2013 at 12:10 AM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
->>>>     You can try my simplistic 'sh_eth' driver patch:
->>
->>>> http://marc.info/?l=linux-sh&m7911743723032
->>
->>> Thanks, that also fixes the problem!
->>
->>    Let's hope Florian's patches get queued for 3.14. You can also test them
->> meanwhile...
->
-> I applied the whole series "net: phy: consolidate PHY reset", and sh_eth
-> now works fine on Koelsch.
+On Wed, Nov 27, 2013 at 02:45:29AM +0400, Valentine Barshak wrote:
+> This adds external USB phy support to USB HCD driver that
+> allows to find and initialize external USB phy, bound to
+> the HCD, when the HCD is added.
+> The usb_add_hcd function returns -EPROBE_DEFER if the USB
+> phy, bound to the HCD, is not ready.
+> If no USB phy is bound, the HCD is initialized as usual.
+> 
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> Acked-by: Alan Stern <stern@rowland.harvard.edu>
+> ---
+>  drivers/usb/core/hcd.c | 20 ++++++++++++++++++++
+>  1 file changed, 20 insertions(+)
+> 
+> diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+> index 7527c8e..649506b 100644
+> --- a/drivers/usb/core/hcd.c
+> +++ b/drivers/usb/core/hcd.c
+> @@ -2589,6 +2589,26 @@ int usb_add_hcd(struct usb_hcd *hcd,
+>  	int retval;
+>  	struct usb_device *rhdev;
+>  
+> +#ifdef CONFIG_USB_PHY
+> +	if (!hcd->phy) {
 
-Great! Thanks Geert.
---
-Florian
+Please no #ifdef.
