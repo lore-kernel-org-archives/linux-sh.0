@@ -1,19 +1,27 @@
-From: "Luck, Tony" <tony.luck@intel.com>
-Date: Wed, 18 Dec 2013 21:59:49 +0000
-Subject: RE: [PATCH v2 00/10] Kconfig: cleanup SERIO_I8042 dependencies
-Message-Id: <3908561D78D1C84285E8C5FCA982C28F31D8CDD5@ORSMSX106.amr.corp.intel.com>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Tue, 03 Dec 2013 18:45:15 +0000
+Subject: Re: [PATCH v2] serial: sh-sci: Fix warnings due to improper casts and printk formats
+Message-Id: <20131203184515.GD23280@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387295333-24684-1-git-send-email-msalter@redhat.com>
-In-Reply-To: <1387295333-24684-1-git-send-email-msalter@redhat.com>
+References: <1385547037-13422-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385547037-13422-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
 
-> This is v2 of the patch series. Changes from version 1:
->
->  o Added acks. arm, ia64, and sh are only ones without acks.
+On Wed, Nov 27, 2013 at 11:10:37AM +0100, Laurent Pinchart wrote:
+> Use the %zu printk specifier to print size_t variables, and cast
+> pointers to uintptr_t instead of unsigned int where applicable. This
+> fixes warnings on platforms where pointers and/or dma_addr_t have a
+> different size than int.
+> 
+> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Cc: linux-serial@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/tty/serial/sh-sci.c | 19 ++++++++++---------
+>  1 file changed, 10 insertions(+), 9 deletions(-)
 
-ia64 bits look OK
-
-Acked-by: Tony Luck <tony.luck@intel.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
