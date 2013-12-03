@@ -1,98 +1,150 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 27 Dec 2013 11:27:39 +0000
-Subject: [PATCH 3/3 V2] ARM: shmobile: koelsch: Add I2C support
-Message-Id: <1388143659-8739-4-git-send-email-valentine.barshak@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 03 Dec 2013 02:12:24 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: add SSIx DMAEngine support
+Message-Id: <87r49ubr9m.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This adds I2C[1245] busses support to Koelsch board.
-I2C[03] do not have any slave devices connected and
-are not used because of the following:
-* I2C0 pins are multiplexed with LBSC pins;
-* I2C3 pins are multiplexed with EtherMAC and VIN0 pins.
-
-Changes in V2:
-* Capitalized ARM in the subject.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 46 ++++++++++++++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
+>> Simon
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index de7cc64..799825c 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -148,6 +148,38 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
- };
+I will send SSI DMAEngine support patch for BockW board,
+but it needs HPB-DMAC fixup branch merge.
+It is already exist on
+
+git://git.infradead.org/users/vkoul/slave-dma.git :: dma/fixes
+
+But, is not merged on linus/master yet.
+
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |   18 +++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   51 +++++++++++++++++++++++++
+ 2 files changed, 69 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index b497f93..a3440e5 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -27,6 +27,24 @@ enum {
+ 	HPBDMA_SLAVE_DUMMY,
+ 	HPBDMA_SLAVE_SDHI0_TX,
+ 	HPBDMA_SLAVE_SDHI0_RX,
++	HPBDMA_SLAVE_SSI0_TX,
++	HPBDMA_SLAVE_SSI0_RX,
++	HPBDMA_SLAVE_SSI1_TX,
++	HPBDMA_SLAVE_SSI1_RX,
++	HPBDMA_SLAVE_SSI2_TX,
++	HPBDMA_SLAVE_SSI2_RX,
++	HPBDMA_SLAVE_SSI3_TX,
++	HPBDMA_SLAVE_SSI3_RX,
++	HPBDMA_SLAVE_SSI4_TX,
++	HPBDMA_SLAVE_SSI4_RX,
++	HPBDMA_SLAVE_SSI5_TX,
++	HPBDMA_SLAVE_SSI5_RX,
++	HPBDMA_SLAVE_SSI6_TX,
++	HPBDMA_SLAVE_SSI6_RX,
++	HPBDMA_SLAVE_SSI7_TX,
++	HPBDMA_SLAVE_SSI7_RX,
++	HPBDMA_SLAVE_SSI8_TX,
++	HPBDMA_SLAVE_SSI8_RX,
+ 	HPBDMA_SLAVE_HPBIF0_TX,
+ 	HPBDMA_SLAVE_HPBIF0_RX,
+ 	HPBDMA_SLAVE_HPBIF1_TX,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 81701cf..e786338 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -319,6 +319,29 @@ void __init r8a7778_add_dt_devices(void)
+ #define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
+ #define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
  
-+/* I2C */
-+static const struct resource i2c_resources[] __initconst = {
-+	/* I2C0 */
-+	DEFINE_RES_MEM(0xE6508000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(287)),
-+	/* I2C1 */
-+	DEFINE_RES_MEM(0xE6518000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(288)),
-+	/* I2C2 */
-+	DEFINE_RES_MEM(0xE6530000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(286)),
-+	/* I2C3 */
-+	DEFINE_RES_MEM(0xE6540000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(290)),
-+	/* I2C4 */
-+	DEFINE_RES_MEM(0xE6520000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(19)),
-+	/* I2C5 */
-+	DEFINE_RES_MEM(0xE6528000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(20)),
-+};
-+
-+static void __init koelsch_add_i2c(unsigned idx)
-+{
-+	unsigned res_idx = idx * 2;
-+
-+	BUG_ON(res_idx >= ARRAY_SIZE(i2c_resources));
-+
-+	platform_device_register_simple("i2c-rcar_gen2", idx,
-+					i2c_resources + res_idx, 2);
++#define HPBDMA_SSI(_id)				\
++{						\
++	.id	= HPBDMA_SLAVE_SSI## _id ##_TX,	\
++	.addr	= 0xffd91008 + (_id * 0x40),	\
++	.dcr	= HPB_DMAE_DCR_CT |		\
++		  HPB_DMAE_DCR_DIP |		\
++		  HPB_DMAE_DCR_SPDS_32BIT |	\
++		  HPB_DMAE_DCR_DMDL |		\
++		  HPB_DMAE_DCR_DPDS_32BIT,	\
++	.port   = _id + (_id << 8),		\
++	.dma_ch = (28 + _id),			\
++}, {						\
++	.id	= HPBDMA_SLAVE_SSI## _id ##_RX,	\
++	.addr	= 0xffd9100c + (_id * 0x40),	\
++	.dcr	= HPB_DMAE_DCR_CT |		\
++		  HPB_DMAE_DCR_DIP |		\
++		  HPB_DMAE_DCR_SMDL |		\
++		  HPB_DMAE_DCR_SPDS_32BIT |	\
++		  HPB_DMAE_DCR_DPDS_32BIT,	\
++	.port   = _id + (_id << 8),		\
++	.dma_ch = (28 + _id),			\
 +}
 +
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -171,6 +203,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* SCIF1 (CN20: DEBUG SERIAL1) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
- 				  "scif1_data_d", "scif1"),
-+	/* I2C1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.1", "pfc-r8a7791",
-+				  "i2c1_e", "i2c1"),
-+	/* I2C2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.2", "pfc-r8a7791",
-+				  "i2c2", "i2c2"),
-+	/* I2C4 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.4", "pfc-r8a7791",
-+				  "i2c4_c", "i2c4"),
- };
+ #define HPBDMA_HPBIF(_id)				\
+ {							\
+ 	.id	= HPBDMA_SLAVE_HPBIF## _id ##_TX,	\
+@@ -373,6 +396,16 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 		.dma_ch	= 22,
+ 	},
  
- static void __init koelsch_add_standard_devices(void)
-@@ -192,6 +233,11 @@ static void __init koelsch_add_standard_devices(void)
- 				      sizeof(koelsch_keys_pdata));
- 
- 	koelsch_add_du_device();
++	HPBDMA_SSI(0),
++	HPBDMA_SSI(1),
++	HPBDMA_SSI(2),
++	HPBDMA_SSI(3),
++	HPBDMA_SSI(4),
++	HPBDMA_SSI(5),
++	HPBDMA_SSI(6),
++	HPBDMA_SSI(7),
++	HPBDMA_SSI(8),
 +
-+	koelsch_add_i2c(1);
-+	koelsch_add_i2c(2);
-+	koelsch_add_i2c(4);
-+	koelsch_add_i2c(5);
- }
- 
- /*
+ 	HPBDMA_HPBIF(0),
+ 	HPBDMA_HPBIF(1),
+ 	HPBDMA_HPBIF(2),
+@@ -387,22 +420,40 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ static const struct hpb_dmae_channel hpb_dmae_channels[] = {
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_TX),   /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_RX),   /* ch. 28 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_TX), /* ch. 28 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_RX), /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_TX),   /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_RX),   /* ch. 29 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_TX), /* ch. 29 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_RX), /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_TX),   /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_RX),   /* ch. 30 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_TX), /* ch. 30 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_RX), /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_TX),   /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_RX),   /* ch. 31 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_TX), /* ch. 31 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_RX), /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_TX),   /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_RX),   /* ch. 32 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_TX), /* ch. 32 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_RX), /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_TX),   /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_RX),   /* ch. 33 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_TX), /* ch. 33 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_RX), /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_TX),   /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_RX),   /* ch. 34 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_TX), /* ch. 34 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_RX), /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_TX),   /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_RX),   /* ch. 35 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_TX), /* ch. 35 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_RX), /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_TX),   /* ch. 36 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_RX),   /* ch. 36 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_TX), /* ch. 36 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_RX), /* ch. 36 */
+ };
 -- 
-1.8.3.1
+1.7.9.5
 
