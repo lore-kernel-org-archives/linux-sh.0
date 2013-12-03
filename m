@@ -1,26 +1,28 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 24 Dec 2013 18:55:32 +0000
-Subject: [PATCH 0/2] arm: shmobile: lager: Add VIN1 support
-Message-Id: <1387911334-27117-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Greg KH <greg@kroah.com>
+Date: Tue, 03 Dec 2013 18:44:28 +0000
+Subject: Re: [PATCH 00/16] sh-sci: Remove unnecessary fields from platform data
+Message-Id: <20131203184428.GC23280@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385675010-26904-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
 
-This adds VIN clocks to R8A7790 SoC and VIN1 camera support to Lager.
-VIN1 uses I2C ADV7180 decoder device that is also added.
-The board also has VIN0 wired up to the I2C ADV7612 decoder, but it's
-not enabled yet due to the lack of ADV7612 support in the kernel.
+On Thu, Nov 28, 2013 at 10:43:14PM +0100, Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch set removes or replaces unneeded fields from the sh-sci platform
+> data structure. Fields are simply removed when unused (gpios), moved to the
+> sci_port structure when used by the driver but not by board code (overrun_bit
+> and error_mask), or replaced by a more explicit field with a default value
+> computed in the driver for most cases (scbrr_algo_id).
+> 
+> The patches are based on top of the sh-sci DT patch series previously posted
+> to the mailing lists.
 
-Valentine Barshak (2):
-  arm: shmobile: r8a7790: Add VIN clock support
-  arm: shmobile: lager: Add VIN1 SoC camera support
+For all serial patches:
 
- arch/arm/mach-shmobile/board-lager.c   | 76 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c |  9 ++++
- 2 files changed, 85 insertions(+)
-
--- 
-1.8.3.1
-
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
