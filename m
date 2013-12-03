@@ -1,157 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:32 +0000
-Subject: [PATCH 11/11] serial: sh-sci: Rework baud rate calculation
-Message-Id: <ec09c5eb491834d4011c72538e58d8b7096076bd.1387887969.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 03 Dec 2013 21:42:20 +0000
+Subject: [V3 PATCH 0/2] Defer HCD init until the external PHY, bound to the HCD is ready
+Message-Id: <1386106942-13730-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds remove_phy flag to the HCD structure. If the flag is
+set and if hcd->phy is valid, the phy is shutdown and released
+whenever usb_add_hcd fails or usb_hcd_remove is called.
+This also adds generic external phy support that allows
+the HCD driver to search for a USB phy, bound to the HCD,
+when the HC is being added.
 
-Computing the baud rate register value requires knowledge of the
-hardware sampling rate. This information is currently encoded in a baud
-rate calculation algorithm ID passed through platform data. However, it
-can be derived from the port type directly in most cases.
+If the USB PHY is found, it is initialized and the remove_phy flag
+is set. In case PHY is not ready, the usb_add_hcd function returns
+the -EPROBE_DEFER error code which defers HCD probing till the PHY
+becomes ready.
+If no PHY is bound to the HCD, or it has been initialized by
+the glue-driver before calling usb_add_hcd(), the HCD is
+added as usual.
 
-Compute the sampling rate internally in the driver if the baud rate
-calculation algorithm ID isn't specified, and allow platforms to
-override the sampling rate through platform data in special cases (this
-is only required for SCIFA ports on sh7723 and sh7724, the reason needs
-to be investigated).
+This approach can be used to initialize the external PHY for
+the R-Car PCI USB hosts, that share USB ports with USBHS/USBSS devices.
+All we need to do is to make R-Car Gen2 platform code bind the
+Gen2 USB phy device to the PCI HC devices, and make the phy-rcar-gen2-usb
+driver register USB phy with usb_add_phy_dev() AOT usb_add_phy() callback.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/tty/serial/sh-sci.c | 37 ++++++++++++++++++++++++++++++-------
- include/linux/serial_sci.h  |  2 ++
- 2 files changed, 32 insertions(+), 7 deletions(-)
+Changes in version 2:
+* Used #ifdef CONFIG_USB_PHY instead of introducing new config option.
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index d5239d5..e4bf0e4 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -65,6 +65,7 @@ struct sci_port {
- 	struct plat_sci_port	*cfg;
- 	int			overrun_bit;
- 	unsigned int		error_mask;
-+	unsigned int		sampling_rate;
- 
- 
- 	/* Break timer */
-@@ -1750,10 +1751,13 @@ static void sci_shutdown(struct uart_port *port)
- 	sci_free_irq(s);
- }
- 
--static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
-+static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 				   unsigned long freq)
- {
--	switch (algo_id) {
-+	if (s->sampling_rate)
-+		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
-+
-+	switch (s->cfg->scbrr_algo_id) {
- 	case SCBRR_ALGO_1:
- 		return freq / (16 * bps);
- 	case SCBRR_ALGO_2:
-@@ -1843,12 +1847,11 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 
- 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
- 	if (likely(baud && port->uartclk)) {
--		if (s->cfg->scbrr_algo_id = SCBRR_ALGO_6) {
-+		if (s->cfg->type = PORT_HSCIF) {
- 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
- 					    &cks);
- 		} else {
--			t = sci_scbrr_calc(s->cfg->scbrr_algo_id, baud,
--					   port->uartclk);
-+			t = sci_scbrr_calc(s, baud, port->uartclk);
- 			for (cks = 0; t >= 256 && cks <= 3; cks++)
- 				t >>= 2;
- 		}
-@@ -2092,6 +2095,7 @@ static int sci_init_single(struct platform_device *dev,
- {
- 	struct uart_port *port = &sci_port->port;
- 	const struct resource *res;
-+	unsigned int sampling_rate;
- 	unsigned int i;
- 	int ret;
- 
-@@ -2143,28 +2147,47 @@ static int sci_init_single(struct platform_device *dev,
- 	case PORT_SCIFB:
- 		port->fifosize = 256;
- 		sci_port->overrun_bit = 9;
-+		sampling_rate = 16;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
-+		sampling_rate = 0;
- 		sci_port->overrun_bit = 0;
- 		break;
- 	case PORT_SCIFA:
- 		port->fifosize = 64;
- 		sci_port->overrun_bit = 9;
-+		sampling_rate = 16;
- 		break;
- 	case PORT_SCIF:
- 		port->fifosize = 16;
--		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
-+		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
- 			sci_port->overrun_bit = 9;
--		else
-+			sampling_rate = 16;
-+		} else {
- 			sci_port->overrun_bit = 0;
-+			sampling_rate = 32;
-+		}
- 		break;
- 	default:
- 		port->fifosize = 1;
- 		sci_port->overrun_bit = 5;
-+		sampling_rate = 32;
- 		break;
- 	}
- 
-+	/* Set the sampling rate if the baud rate calculation algorithm isn't
-+	 * specified.
-+	 */
-+	if (p->scbrr_algo_id = SCBRR_ALGO_NONE) {
-+		/* SCIFA on sh7723 and sh7724 need a custom sampling rate that
-+		 * doesn't match the SoC datasheet, this should be investigated.
-+		 * Let platform data override the sampling rate for now.
-+		 */
-+		sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
-+					: sampling_rate;
-+	}
-+
- 	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
- 		if (IS_ERR(sci_port->iclk)) {
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index e9c3021..af414e1 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -11,6 +11,7 @@
- #define SCIx_NOT_SUPPORTED	(-1)
- 
- enum {
-+	SCBRR_ALGO_NONE,	/* Compute sampling rate in the driver */
- 	SCBRR_ALGO_1,		/* clk / (16 * bps) */
- 	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
- 	SCBRR_ALGO_3,		/* clk / (8 * bps) */
-@@ -134,6 +135,7 @@ struct plat_sci_port {
- 	upf_t		flags;			/* UPF_* flags */
- 	unsigned long	capabilities;		/* Port features/capabilities */
- 
-+	unsigned int	sampling_rate;
- 	unsigned int	scbrr_algo_id;		/* SCBRR calculation algo */
- 	unsigned int	scscr;			/* SCSCR initialization */
- 
+Changes in version 3:
+* Used if (IS_ENABLED(CONFIG_USB_PHY)... instead of #ifdef CONFIG_USB_PHY.
+
+Valentine Barshak (2):
+  usb: hcd: Remove USB phy if needed
+  usb: hcd: Initialize USB phy if needed
+
+ drivers/usb/core/hcd.c  | 32 +++++++++++++++++++++++++++++++-
+ include/linux/usb/hcd.h |  1 +
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
 -- 
-1.8.4
+1.8.3.1
 
