@@ -1,7 +1,7 @@
-From: Greg KH <greg@kroah.com>
-Date: Tue, 03 Dec 2013 18:40:02 +0000
-Subject: Re: [PATCH 2/2] usb: hcd: Initialize USB phy if needed
-Message-Id: <20131203184002.GA23280@kroah.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 03 Dec 2013 21:42:22 +0000
+Subject: [PATCH 2/2] usb: hcd: Initialize USB phy if needed
+Message-Id: <1386106942-13730-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385505929-30926-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1385505929-30926-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,29 +10,47 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 27, 2013 at 02:45:29AM +0400, Valentine Barshak wrote:
-> This adds external USB phy support to USB HCD driver that
-> allows to find and initialize external USB phy, bound to
-> the HCD, when the HCD is added.
-> The usb_add_hcd function returns -EPROBE_DEFER if the USB
-> phy, bound to the HCD, is not ready.
-> If no USB phy is bound, the HCD is initialized as usual.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> Acked-by: Alan Stern <stern@rowland.harvard.edu>
-> ---
->  drivers/usb/core/hcd.c | 20 ++++++++++++++++++++
->  1 file changed, 20 insertions(+)
-> 
-> diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
-> index 7527c8e..649506b 100644
-> --- a/drivers/usb/core/hcd.c
-> +++ b/drivers/usb/core/hcd.c
-> @@ -2589,6 +2589,26 @@ int usb_add_hcd(struct usb_hcd *hcd,
->  	int retval;
->  	struct usb_device *rhdev;
->  
-> +#ifdef CONFIG_USB_PHY
-> +	if (!hcd->phy) {
+This adds external USB phy support to USB HCD driver that
+allows to find and initialize external USB phy, bound to
+the HCD, when the HCD is added.
+The usb_add_hcd function returns -EPROBE_DEFER if the USB
+phy, bound to the HCD, is not ready.
+If no USB phy is bound, the HCD is initialized as usual.
 
-Please no #ifdef.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/core/hcd.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index 7527c8e..d3a9bcd 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -2589,6 +2589,24 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	int retval;
+ 	struct usb_device *rhdev;
+ 
++	if (IS_ENABLED(CONFIG_USB_PHY) && !hcd->phy) {
++		struct usb_phy *phy = usb_get_phy_dev(hcd->self.controller, 0);
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				return retval;
++		} else {
++			retval = usb_phy_init(phy);
++			if (retval) {
++				usb_put_phy(phy);
++				return retval;
++			}
++			hcd->phy = phy;
++			hcd->remove_phy = 1;
++		}
++	}
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+ 
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+-- 
+1.8.3.1
+
