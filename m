@@ -1,37 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Dec 2013 12:11:16 +0000
-Subject: Re: [PATCH v3] ARM: shmobile: koelsch: Add DU device
-Message-Id: <20131212121113.GE18308@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Dec 2013 19:21:42 +0000
+Subject: Re: [PATCH 00/04] ARM: shmobile: Use SoC suffix for INTC compat string
+Message-Id: <CANqRtoQ4fsCm=-uw8BgN48wFs_iTaG-H_kjDvcZssJXZqE8VTA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386379064-29668-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386379064-29668-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20131127231450.29081.98054.sendpatchset@w520>
+ <20131128064555.GA14878@verge.net.au>
+In-Reply-To: <20131128064555.GA14878@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 11, 2013 at 06:45:37PM +0900, Magnus Damm wrote:
-> On Sat, Dec 7, 2013 at 10:17 AM, Laurent Pinchart
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > Only the LVDS output is currently supported.
-> >
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> >  arch/arm/mach-shmobile/board-koelsch.c | 63 ++++++++++++++++++++++++++++++++++
-> >  1 file changed, 63 insertions(+)
-> >
-> > Changes since v2:
-> >
-> > - Use koelsch instead of lager in structure names
-> >
-> > Changes since v1:
-> >
-> > - Rebased on top of renesas-devel-v3.13-rc2-20131202
-> 
-> Goes without saying, but:
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+On Thu, Nov 28, 2013 at 7:45 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Nov 28, 2013 at 08:14:50AM +0900, Magnus Damm wrote:
+>> ARM: shmobile: Use SoC suffix for INTC compat string
+>>
+>> [PATCH 01/04] ARM: shmobile: Use sh73a0 suffix for INTC compat string
+>> [PATCH 02/04] ARM: shmobile: Use r8a7740 suffix for INTC compat string
+>> [PATCH 03/04] ARM: shmobile: Use r8a7778 suffix for INTC compat string
+>> [PATCH 04/04] ARM: shmobile: Use r8a7779 suffix for INTC compat string
+>>
+>> Update the DTS for INTC irqpin devices to include the SoC in the compat string.
+>>
+>> Both IRQC and INTC irqpin need documentation for the DT bindings, and this
+>> will happen in incremental patches.
+>
+> I have posted some patches for that a few moments ago :)
 
-Thanks for saying it.
+Thanks for that!
 
-I will queue this up.
+> I am curious to if it is intentional that this series replaces
+> the use of less-specific compat strings with more specific ones
+> while the recent update to the r8a7790 supplemented the
+> less-specific renesas,irqc comat string with the more-specific
+> renesas,irqc-r8a7790 compat string.
+>
+> i.e.
+>         before: "renesas,intc-irqpin"
+>         after:  "renesas,intc-irqpin-sh73a0"
+>
+>         as opposed to
+>
+>         before: "renesas,irqc"
+>         after: "renesas,irqc-r8a7790", "renesas,irqc"
+
+My intention is to keep them the same. I just checked the intc-irqpin
+patches but they seem to be following the same style as IRQC. On which
+SoC did you observe this difference?
+
+Thanks,
+
+/ magnus
