@@ -1,46 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 19:22:09 +0000
-Subject: Re: [PATCH 0/8] spi: rspi: Add prelimary support for RZ/A1H
-Message-Id: <CAMuHMdX=CX-vAmiJvo5M2ZNCb+Uga9x4KTTYVC920d5bMxqszQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Dec 2013 21:29:15 +0000
+Subject: [PATCH] ARM: shmobile: Genmai SPI over GPIO support
+Message-Id: <20131204212915.24243.27225.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 12:40 PM, Geert Uytterhoeven
-<geert+renesas@linux-m68k.org> wrote:
-> This patch series adds preliminary support for RSPI in the RZ/A1H aka
-> R7S72100 SoC, which is found on the Genmai development board.
->
-> It hasn't received much testing, so please don't apply yet.
+From: Magnus Damm <damm@opensource.se>
 
-In the mean time this has received some more testing on the Genmai
-development board, using loopback mode, with the same outcome as
-the SDK reference code.
+Hook up the serial flash memory to bit bang SPI on the Genmai board.
 
->     [1/8] spi: rspi: Add more RSPI register documentation
->     [2/8] spi: rspi: Add more QSPI register documentation
->     [3/8] spi: rspi: Add support for more than one interrupt
->     [4/8] spi: rspi: Add support for 8-bit Data Register access
->     [5/8] spi: rspi: Add support for no TX only mode
->     [6/8] spi: rspi: Add support for missing SPCR2 register
->     [7/8] spi: rspi: Add support for specifying CPHA/CPOL
->     [8/8] spi: rspi: Add support for loopback mode
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-No changes needed to the code, one silly spelling typo in the summary
-of [5/8] (s/nevers/never/). Anyway, will resend the series later.
+ Written on to of renesas git tag renesas-devel-v3.13-rc2-20131202 and
+ [PATCH 00/04] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL support
 
-Gr{oetje,eeting}s,
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0010/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-12-05 06:23:57.000000000 +0900
+@@ -56,5 +56,20 @@
+ 			reg = <0x50>;
+ 		};
+ 	};
++	spi0 {
++		compatible = "spi-gpio";
++		gpio-sck = <&port9 2 0>;
++		gpio-mosi = <&port9 4 0>;
++		gpio-miso = <&port9 5 0>;
++		cs-gpios = <&port9 3 0>;
++		num-chipselects = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 
++		s25fl512s: s25fl512s0 {
++			compatible = "s25fl512s";
++			reg = <0>;
++			spi-max-frequency = <104000000>;
++                };
++        };
+ };
