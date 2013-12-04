@@ -1,38 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:10 +0000
-Subject: [PATCH 08/28] ARM: shmobile: Select GPIO in case of the r7s72100 SoC
-Message-Id: <bebd60f91cb43b03707d90f88a7470d2efd83776.1385950394.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Dec 2013 20:38:18 +0000
+Subject: [PATCH v3 00/03] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+Message-Id: <20131204203818.19090.92396.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Magnus Damm <damm@opensource.se>
+clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits (v3)
 
-The r7s72100 contains GPIO controllers so make sure the GPIO
-subsystem can be built by selecting ARCH_WANT_OPTIONAL_GPIOLIB.
+[PATCH v3 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+[PATCH v3 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+[PATCH v2 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
+
+This is V3 of the SH and ARM mach-shmobile clocksource Kconfig
+consolidation series.
+
+By sharing Kconfig entires in drivers/clocksource/Kconfig we
+can get rid of duplicated bits that do not belong under arch/.
+
+With this series applied it is possible to build the timer
+drivers for CMT, MTU2, TMU and STI in case of SH or ARM. The timer
+drivers are automatically selected by default. It is also possible
+to select and/or deselect freely when COMPILE_TEST has been selected.
+
+Since last time this has been broken out into 3 separate patches,
+where [PATCH v3 01/03] needs to go first, and the other patches
+can be merged any time after without any build or configuration
+issues.
+
+Thanks to Daniel, John and Arnd for feedback!
+
+This version tries to find a middle ground by:
+ - Not allowing user selection of timers by default
+ - Automaticlally select available drivers using SYS_SUPPORTS_xxx.
+ - Allow manual override in case of COMPILE_TEST (select and deselect)
+ - The system will boot regardless of these settigns
+ - In this version the special case menu tand if have been dropped
+
+Slightly different and/or not really handled in this version:
+ - The acronym soup is kept as-is for now
+ - Allow select _and_ deselect in case of COMPILE_TEST (not only select)
+ - Follow same style as SH and select per-SoC SYS_SUPPORTS_xxx
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4e1cc76..c604ef1 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -111,6 +111,7 @@ config ARCH_EMEV2
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
--- 
-1.8.4
+ Written against renesas.git tag renesas-devel-v3.13-rc2-20131202
 
+ arch/arm/mach-shmobile/Kconfig |   35 +++++++++++++++++------------------
+ arch/sh/Kconfig                |   21 ---------------------
+ drivers/clocksource/Kconfig    |   36 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 53 insertions(+), 39 deletions(-)
