@@ -1,52 +1,68 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:48:01 +0000
-Subject: Re: [PATCH 04/15] iommu: shmobile: Enable driver compilation with COMPILE_TEST
-Message-Id: <11462751.6CMKaYKG99@avalon>
+Date: Wed, 04 Dec 2013 21:29:07 +0000
+Subject: [GIT PULL FOR v3.14] Renesas R-Car Gen 2 Common Clock Framework
+Message-Id: <3302362.MUz5Y8N3ER@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131128073651.GE24146@verge.net.au>
-In-Reply-To: <20131128073651.GE24146@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Joerg,
+Hi Mike,
 
-Could you please pick this patch up for v3.14 ?
+As nobody replied to the last version of the patches I will assume that either 
+they're perfect, or I've managed to make all reviewers hibernate from boredom. 
+Both cases call for a pull request.
 
-On Thursday 28 November 2013 16:36:51 Simon Horman wrote:
-> On Wed, Nov 27, 2013 at 02:18:26AM +0100, Laurent Pinchart wrote:
-> > This helps increasing build testing coverage.
-> > 
-> > The driver doesn't compile on non-ARM platforms due to usage of the ARM
-> > DMA IOMMU API, restrict compilation to ARM.
-> > 
-> > Cc: Joerg Roedel <joro@8bytes.org>
-> > Cc: iommu@lists.linux-foundation.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> > ---
-> > 
-> >  drivers/iommu/Kconfig | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
-> > index 3e7fdbb..79bbc21 100644
-> > --- a/drivers/iommu/Kconfig
-> > +++ b/drivers/iommu/Kconfig
-> > @@ -207,6 +207,7 @@ config SHMOBILE_IOMMU
-> >  	bool "IOMMU for Renesas IPMMU/IPMMUI"
-> >  	default n
-> >  	depends on ARM
-> > +	depends on SH_MOBILE || COMPILE_TEST
-> >  	select IOMMU_API
-> >  	select ARM_DMA_USE_IOMMU
-> >  	select SHMOBILE_IPMMU
+Could you please pull the following three patches for v3.14 ? They have no 
+extra compile-time or runtime dependency, but subsequent platform patches will 
+depend on them. Could you thus please provide a stable branch that Simon can 
+merge in his tree ?
+
+Changes compared to v4:
+
+- Rebased on top of the latest clk-next branch
+- Revert to ARCH_SHMOBILE_MULTI (as in v3) for drivers/clk/Makefile
+
+The following changes since commit cdf64eeeb0d762585e2126f3024458d199c2635d:
+
+  clk: exynos5420: fix cpll clock register offsets (2013-12-04 10:46:45 -0800)
+
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/rcar-gen2-mainline
+
+for you to fetch changes up to 7135ea019305179dd6f6a99ea7c1e78773eca166:
+
+  clk: shmobile: Add MSTP clock support (2013-12-04 22:18:36 +0100)
+
+----------------------------------------------------------------
+Laurent Pinchart (3):
+      clk: shmobile: Add R-Car Gen2 clocks support
+      clk: shmobile: Add DIV6 clock support
+      clk: shmobile: Add MSTP clock support
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt          |  28 +++
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt          |  51 ++++
+ .../bindings/clock/renesas,rcar-gen2-cpg-clocks.txt     |  32 +++
+ drivers/clk/Makefile                                    |   1 +
+ drivers/clk/shmobile/Makefile                           |   7 +
+ drivers/clk/shmobile/clk-div6.c                         | 185 +++++++++++++
+ drivers/clk/shmobile/clk-mstp.c                         | 229 ++++++++++++++
+ drivers/clk/shmobile/clk-rcar-gen2.c                    | 298 +++++++++++++++
+ include/linux/clk/shmobile.h                            |  19 ++
+ 9 files changed, 850 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-div6-
+clocks.txt
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mstp-
+clocks.txt
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,rcar-gen2-
+cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/Makefile
+ create mode 100644 drivers/clk/shmobile/clk-div6.c
+ create mode 100644 drivers/clk/shmobile/clk-mstp.c
+ create mode 100644 drivers/clk/shmobile/clk-rcar-gen2.c
+ create mode 100644 include/linux/clk/shmobile.h
 
 -- 
 Regards,
