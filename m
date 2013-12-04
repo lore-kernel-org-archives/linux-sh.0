@@ -1,78 +1,155 @@
-From: Eduardo Valentin <eduardo.valentin@ti.com>
-Date: Thu, 12 Dec 2013 14:01:44 +0000
-Subject: Re: [PATCH 12/15] thermal: rcar-thermal: Enable driver compilation with COMPILE_TEST
-Message-Id: <52A9C1C8.2030907@ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="5raGqgdR5u0RLIaPJTFhI1IiunJVJ6Toe"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Dec 2013 20:38:37 +0000
+Subject: [PATCH v3 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+Message-Id: <20131204203837.19090.96622.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <5903007.OehDdPcG2U@avalon>
-In-Reply-To: <5903007.OehDdPcG2U@avalon>
-To: linux-arm-kernel@lists.infradead.org
+References: <20131204203818.19090.92396.sendpatchset@w520>
+In-Reply-To: <20131204203818.19090.92396.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
---5raGqgdR5u0RLIaPJTFhI1IiunJVJ6Toe
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+From: Magnus Damm <damm@opensource.se>
 
-On 11-12-2013 08:50, Laurent Pinchart wrote:
-> Hi Zhang and Eduardo,
->=20
-> Could you please pick this patch up for v3.14 ?
+Now when drivers/clocksource/Kconfig has been
+updated with entires for CMT, TMU and STI
+it is safe to remove these from mach-shmobile.
 
-Yes Laurent, I can pick it.
+Also select timers per SoC via SYS_SUPPORTS_xxx.
 
->=20
-> On Wednesday 27 November 2013 02:18:34 Laurent Pinchart wrote:
->> This helps increasing build testing coverage.
->>
->> Cc: Zhang Rui <rui.zhang@intel.com>
->> Cc: Eduardo Valentin <eduardo.valentin@ti.com>
->> Cc: linux-pm@vger.kernel.org
->> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard=
-=2Ecom>
->> Acked-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Acked-by: Eduardo Valentin <eduardo.valentin@ti.com>
+ arch/arm/mach-shmobile/Kconfig |   35 +++++++++++++++++------------------
+ 1 file changed, 17 insertions(+), 18 deletions(-)
 
->> ---
->>  drivers/thermal/Kconfig | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
->> index f35a1f7..661cafc 100644
->> --- a/drivers/thermal/Kconfig
->> +++ b/drivers/thermal/Kconfig
->> @@ -121,7 +121,7 @@ config SPEAR_THERMAL
->>
->>  config RCAR_THERMAL
->>  	tristate "Renesas R-Car thermal driver"
->> -	depends on ARCH_SHMOBILE
->> +	depends on ARCH_SHMOBILE || COMPILE_TEST
->>  	help
->>  	  Enable this to plug the R-Car thermal sensor driver into the Linux=
-
->>  	  thermal framework.
-
-
---=20
-You have got to be excited about what you are doing. (L. Lamport)
-
-Eduardo Valentin
-
-
---5raGqgdR5u0RLIaPJTFhI1IiunJVJ6Toe
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iF4EAREIAAYFAlKpwcwACgkQCXcVR3XQvP1mkQD/ePDH+zoxcQvLP5VXDLT4EG90
-Wf12up6SQozBlbzRmOkA/1rlnd7iOZSTb72xVMm+gs1reG9PbWFBNd91Zd9niQuU
-=fEZC
------END PGP SIGNATURE-----
-
---5raGqgdR5u0RLIaPJTFhI1IiunJVJ6Toe--
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-12-04 22:04:05.000000000 +0900
+@@ -23,13 +23,16 @@ comment "SH-Mobile System Type"
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
++	select SYS_SUPPORTS_STI
+ 
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
++	select SYS_SUPPORTS_MTU2
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+ 	select RENESAS_IRQC
++	select SYS_SUPPORTS_CMT
+ 
+ comment "SH-Mobile Board Type"
+ 
+@@ -59,6 +62,8 @@ config ARCH_SH7372
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_TMU
+ 
+ config ARCH_SH73A0
+ 	bool "SH-Mobile AG5 (R8A73A00)"
+@@ -68,6 +73,8 @@ config ARCH_SH73A0
+ 	select I2C
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_TMU
+ 
+ config ARCH_R8A73A4
+ 	bool "R-Mobile APE6 (R8A73A40)"
+@@ -78,6 +85,8 @@ config ARCH_R8A73A4
+ 	select RENESAS_IRQC
+ 	select ARCH_HAS_CPUFREQ
+ 	select ARCH_HAS_OPP
++	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_TMU
+ 
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+@@ -86,6 +95,8 @@ config ARCH_R8A7740
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_TMU
+ 
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
+@@ -95,6 +106,7 @@ config ARCH_R8A7778
+ 	select ARM_GIC
+ 	select USB_ARCH_HAS_EHCI
+ 	select USB_ARCH_HAS_OHCI
++	select SYS_SUPPORTS_TMU
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+@@ -105,6 +117,7 @@ config ARCH_R8A7779
+ 	select USB_ARCH_HAS_EHCI
+ 	select USB_ARCH_HAS_OHCI
+ 	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_TMU
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+@@ -113,6 +126,7 @@ config ARCH_R8A7790
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
++	select SYS_SUPPORTS_CMT
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+@@ -121,6 +135,7 @@ config ARCH_R8A7791
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
++	select SYS_SUPPORTS_CMT
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+@@ -128,6 +143,7 @@ config ARCH_EMEV2
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select USE_OF
++	select SYS_SUPPORTS_STI
+ 
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+@@ -135,6 +151,7 @@ config ARCH_R7S72100
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select SYS_SUPPORTS_MTU2
+ 
+ comment "SH-Mobile Board Type"
+ 
+@@ -329,24 +346,6 @@ config SHMOBILE_TIMER_HZ
+ 	  to select a HZ value such as 128 that can evenly divide RCLK.
+ 	  A HZ value that does not divide evenly may cause timer drift.
+ 
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	default y
+-	help
+-	  This enables build of the TMU timer driver.
+-
+-config EM_TIMER_STI
+-	bool "STI timer driver"
+-	default y
+-	help
+-	  This enables build of the STI timer driver.
+-
+ endmenu
+ 
+ endif
