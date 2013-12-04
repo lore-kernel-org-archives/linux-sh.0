@@ -1,41 +1,29 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:21 +0000
-Subject: [PATCH 04/11] serial: sh-sci: Remove duplicate interrupt check in verify port op
-Message-Id: <b5e17b71c6b2ff284b4018e272e18876ccfa9b2c.1387887969.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 04 Dec 2013 00:51:32 +0000
+Subject: Re: [GIT PULL 00/16] Renesas ARM based SoC cleanups for v3.14
+Message-Id: <20131204005132.GD18383@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
+References: <cover.1385628709.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1385628709.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Thu, Nov 28, 2013 at 05:54:12PM +0900, Simon Horman wrote:
+> Hi Kevin, Olof and Arnd,
+> 
+> please consider these Renesas ARM based SoC cleanups for v3.14.
+> 
+> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
+> 
+>   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.14
 
-The driver checks if the interrupt number is greater than nr_irqs and
-returns an error in that case. The same check is already performed by
-the caller, remove it.
+Pulled, thanks.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index f2fad4d..8c17d55 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2120,7 +2120,7 @@ static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
- {
- 	struct sci_port *s = to_sci_port(port);
- 
--	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ] || ser->irq > nr_irqs)
-+	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
- 		return -EINVAL;
- 	if (ser->baud_base < 2400)
- 		/* No paper tape reader for Mitch.. */
--- 
-1.8.4
-
+-Olof
