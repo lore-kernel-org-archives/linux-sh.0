@@ -1,78 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:44 +0000
-Subject: [PATCH 21/21] ARM: shmobile: r8a7791: Add SSI clocks in device tree
-Message-Id: <b652896b02df3dfde3a68957cce01f2aa4585842.1387893834.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 04 Dec 2013 12:05:56 +0000
+Subject: [PATCH 02/02] irqchip: renesas-irqc: Enable mask on suspend
+Message-Id: <20131204120556.29642.27021.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <20131204120537.29642.942.sendpatchset@w520>
+In-Reply-To: <20131204120537.29642.942.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, rob.herring@calxeda.com, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Now when lazy interrupt disable has been enabled in the driver
+then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
+the core that only IRQs marked as wakeups need to stay enabled
+during Suspend-to-RAM.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 20 ++++++++++++++++++++
- include/dt-bindings/clock/r8a7791-clock.h | 13 +++++++++++++
- 2 files changed, 33 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 19c6550..e92c1f7 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -495,6 +495,26 @@
- 				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c4", "i2c3",
- 				"i2c2", "i2c1", "i2c0";
- 		};
-+		mstp10_clks: mstp10_clks@e6150998 {
-+			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-+			clocks = <&p_clk>, <&mstp10_clks R8A7791_CLK_SSI>,
-+				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
-+				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
-+				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
-+				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
-+				 <&mstp10_clks R8A7791_CLK_SSI>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7791_CLK_SSI R8A7791_CLK_SSI9 R8A7791_CLK_SSI8
-+				R8A7791_CLK_SSI7 R8A7791_CLK_SSI6 R8A7791_CLK_SSI5
-+				R8A7791_CLK_SSI4 R8A7791_CLK_SSI3 R8A7791_CLK_SSI2
-+				R8A7791_CLK_SSI1 R8A7791_CLK_SSI0
-+			>;
-+			clock-output-names +				"ssi", "ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
-+				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0";
-+		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 30f82f2..1c8f00d 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -103,6 +103,19 @@
- #define R8A7791_CLK_I2C1		30
- #define R8A7791_CLK_I2C0		31
+ drivers/irqchip/irq-renesas-irqc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0002/drivers/irqchip/irq-renesas-irqc.c
++++ work/drivers/irqchip/irq-renesas-irqc.c	2013-12-04 18:15:48.000000000 +0900
+@@ -213,7 +213,7 @@ static int irqc_probe(struct platform_de
+ 	irq_chip->irq_mask = irqc_irq_disable;
+ 	irq_chip->irq_unmask = irqc_irq_enable;
+ 	irq_chip->irq_set_type = irqc_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
++	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
  
-+/* MSTP10 */
-+#define R8A7791_CLK_SSI			5
-+#define R8A7791_CLK_SSI9		6
-+#define R8A7791_CLK_SSI8		7
-+#define R8A7791_CLK_SSI7		8
-+#define R8A7791_CLK_SSI6		9
-+#define R8A7791_CLK_SSI5		10
-+#define R8A7791_CLK_SSI4		11
-+#define R8A7791_CLK_SSI3		12
-+#define R8A7791_CLK_SSI2		13
-+#define R8A7791_CLK_SSI1		14
-+#define R8A7791_CLK_SSI0		15
-+
- /* MSTP11 */
- #define R8A7791_CLK_SCIFA3		6
- #define R8A7791_CLK_SCIFA4		7
--- 
-1.8.4
-
+ 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+ 					      p->number_of_irqs,
