@@ -1,40 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:14 +0000
-Subject: [PATCH 40/69] ARM: shmobile: marzen: remove SDHI0 WP pin setting from DTS
-Message-Id: <72e7db878b8469261d01a3dfcece8ab99ffc9cb6.1386901186.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Dec 2013 01:32:54 +0000
+Subject: [PATCH 2/3] ARM: shmobile: sh73a0: add FSI support via DTSI
+Message-Id: <877gbkqdz0.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-WP pin is not implemented on Marzen
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 13fa8be..918085c 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -94,8 +94,7 @@
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 29d2ee6..8cb6071 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -243,4 +243,13 @@
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
  	};
- 
- 	sdhi0_pins: sd0 {
--		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
--				 "sdhi0_wp";
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
- 		renesas,function = "sdhi0";
- 	};
++
++	sh_fsi2: sound@ec230000 {
++		#sound-dai-cells = <1>;
++		compatible = "renesas,sh_fsi2";
++		reg = <0xec230000 0x400>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 146 0x4>;
++		status = "disabled";
++	};
  };
 -- 
-1.8.4
+1.7.9.5
 
