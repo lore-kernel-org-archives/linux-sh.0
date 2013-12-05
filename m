@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 04 Dec 2013 22:54:15 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 05 Dec 2013 12:20:06 +0000
 Subject: Re: [PATCH] ARM: shmobile: Genmai SPI over GPIO support
-Message-Id: <3565394.fetym5DAi6@avalon>
+Message-Id: <52A06F76.1010105@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131204212915.24243.27225.sendpatchset@w520>
 In-Reply-To: <20131204212915.24243.27225.sendpatchset@w520>
@@ -10,62 +10,53 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hello.
 
-Thank you for the patch.
+On 05-12-2013 1:29, Magnus Damm wrote:
 
-On Thursday 05 December 2013 06:29:15 Magnus Damm wrote:
 > From: Magnus Damm <damm@opensource.se>
-> 
+
 > Hook up the serial flash memory to bit bang SPI on the Genmai board.
-> 
+
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 > ---
-> 
->  Written on to of renesas git tag renesas-devel-v3.13-rc2-20131202 and
->  [PATCH 00/04] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL support
-> 
->  arch/arm/boot/dts/r7s72100-genmai-reference.dts |   15 +++++++++++++++
->  1 file changed, 15 insertions(+)
-> 
+
+>   Written on to of renesas git tag renesas-devel-v3.13-rc2-20131202 and
+>   [PATCH 00/04] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL support
+
+>   arch/arm/boot/dts/r7s72100-genmai-reference.dts |   15 +++++++++++++++
+>   1 file changed, 15 insertions(+)
+
 > --- 0010/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-12-05
-> 06:23:57.000000000 +0900 @@ -56,5 +56,20 @@
->  			reg = <0x50>;
->  		};
->  	};
+> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-12-05 06:23:57.000000000 +0900
+> @@ -56,5 +56,20 @@
+>   			reg = <0x50>;
+>   		};
+>   	};
 > +	spi0 {
+
+    Maybe just "spi"?
+
 > +		compatible = "spi-gpio";
 > +		gpio-sck = <&port9 2 0>;
 > +		gpio-mosi = <&port9 4 0>;
 > +		gpio-miso = <&port9 5 0>;
 > +		cs-gpios = <&port9 3 0>;
-
-What about replacing those 0 with GPIO_ACTIVE_HIGH ?
-
 > +		num-chipselects = <1>;
 > +		#address-cells = <1>;
 > +		#size-cells = <0>;
-> 
+>
 > +		s25fl512s: s25fl512s0 {
 
-The node should be called flash@0.
+    The node should probably be named "flash", according to ePAPR spec. And 
+why you didn't specify "@0"?
 
 > +			compatible = "s25fl512s";
 > +			reg = <0>;
 > +			spi-max-frequency = <104000000>;
 > +                };
 > +        };
+>   };
 
-Please use tabs for indentation here.
-
-The rest looks fine to me, but I obviously can't review most of the 
-information as I don't have access to the board schematics. I'll trust you 
-that you have tested the patch :-)
-
->  };
--- 
-Regards,
-
-Laurent Pinchart
+WBR, Sergei
 
