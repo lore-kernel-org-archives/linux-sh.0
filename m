@@ -1,80 +1,161 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 20:15:56 +0000
-Subject: [PATCH v2 2/8] ARM: shmobile: r7s72100: Add RSPI clocks
-Message-Id: <1388175362-17132-3-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Dec 2013 05:31:42 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: lager: add gpio/fixed regulator for SDHI
+Message-Id: <20131205053140.GJ12774@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Wed, Nov 20, 2013 at 11:21:07PM -0800, Kuninori Morimoto wrote:
+> Fixed regulator is used for SDHI0/2 Vcc.
+> We should use da9063 driver for Vccq,
+> but, it doesn't have regulator support at this point.
+> This patch uses gpio-regulator for it as quick-hack.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
-v2: Correct platform device names ("rspi%u" -> "rspi.%u")
+Could you please rebase this patch on top of
+renesas-devel-v3.13-rc2-20131202. It does not appear to apply any more.
 
- arch/arm/mach-shmobile/clock-r7s72100.c |   21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
+> ---
+>  arch/arm/mach-shmobile/board-lager.c |   83 +++++++++++++++++++++++++++++++++-
+>  1 file changed, 82 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+> index f5dab34..109b102 100644
+> --- a/arch/arm/mach-shmobile/board-lager.c
+> +++ b/arch/arm/mach-shmobile/board-lager.c
+> @@ -31,7 +31,9 @@
+>  #include <linux/platform_data/rcar-du.h>
+>  #include <linux/platform_device.h>
+>  #include <linux/phy.h>
+> +#include <linux/regulator/driver.h>
+>  #include <linux/regulator/fixed.h>
+> +#include <linux/regulator/gpio-regulator.h>
+>  #include <linux/regulator/machine.h>
+>  #include <linux/sh_eth.h>
+>  #include <mach/common.h>
+> @@ -141,6 +143,71 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[] >  	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
+>  };
+>  
+> +/*
+> + * SDHI regulator macro
+> + *
+> + ** FIXME**
+> + * Lager board vqmmc is provided via DA9063 PMIC chip,
+> + * and we should use ${LINK}/drivers/mfd/da9063-* driver for it.
+> + * but, it doesn't have regulator support at this point.
+> + * It uses gpio-regulator for vqmmc as quick-hack.
+> + */
+> +#define SDHI_REGULATOR(idx, vdd_pin, vccq_pin)				\
+> +static struct regulator_consumer_supply vcc_sdhi##idx##_consumer =	\
+> +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi." #idx);		\
+> +									\
+> +static struct regulator_init_data vcc_sdhi##idx##_init_data = {		\
+> +	.constraints = {						\
+> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,		\
+> +	},								\
+> +	.consumer_supplies	= &vcc_sdhi##idx##_consumer,		\
+> +	.num_consumer_supplies	= 1,					\
+> +};									\
+> +									\
+> +static const struct fixed_voltage_config vcc_sdhi##idx##_info __initconst= {\
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 0242ca5f499a..6ae341ca713c 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -22,13 +22,15 @@
- #include <mach/common.h>
- #include <mach/r7s72100.h>
- 
--/* registers */
-+/* Frequency Control Registers */
- #define FRQCR		0xfcfe0010
- #define FRQCR2		0xfcfe0014
-+/* Standby Control Registers */
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
- #define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
-+#define STBCR10		0xfcfe043c
- 
- #define PLL_RATE 30
- 
-@@ -146,12 +148,20 @@ struct clk div4_clks[DIV4_NR] = {
- 					| CLK_ENABLE_ON_INIT),
- };
- 
--enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+enum {
-+	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
-+	MSTP97, MSTP96, MSTP95, MSTP94,
- 	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
--	MSTP33,	MSTP_NR };
-+	MSTP33,	MSTP_NR
-+};
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
-+	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
-+	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
-+	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
-+	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
- 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
-@@ -179,6 +189,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
- 
- 	/* MSTP clocks */
-+	CLKDEV_DEV_ID("rspi.0", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("rspi.1", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("rspi.2", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("rspi.3", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("rspi.4", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
--- 
-1.7.9.5
+Please add a space before the '='
 
+> +	.supply_name	= "SDHI" #idx "Vcc",				\
+> +	.microvolts	= 3300000,					\
+> +	.gpio		= vdd_pin,					\
+> +	.enable_high	= 1,						\
+> +	.init_data	= &vcc_sdhi##idx##_init_data,			\
+> +};									\
+> +									\
+> +static struct regulator_consumer_supply vccq_sdhi##idx##_consumer=	\
+
+Ditto
+
+> +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi." #idx);		\
+> +									\
+> +static struct regulator_init_data vccq_sdhi##idx##_init_data = {	\
+> +	.constraints = {						\
+> +		.input_uV	= 3300000,				\
+> +		.min_uV		= 1800000,				\
+> +		.max_uV		= 3300000,				\
+> +		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |		\
+> +				  REGULATOR_CHANGE_STATUS,		\
+> +	},								\
+> +	.consumer_supplies	= &vccq_sdhi##idx##_consumer,		\
+> +	.num_consumer_supplies	= 1,					\
+> +};									\
+> +									\
+> +static struct gpio vccq_sdhi##idx##_gpio =				\
+> +	{ vccq_pin, GPIOF_OUT_INIT_HIGH, "vccq-sdhi" #idx };		\
+> +									\
+> +static struct gpio_regulator_state vccq_sdhi##idx##_states[] = {	\
+> +	{ .value = 1800000, .gpios = 0 },				\
+> +	{ .value = 3300000, .gpios = 1 },				\
+> +};									\
+> +									\
+> +static const struct gpio_regulator_config vccq_sdhi##idx##_info __initconst = {\
+> +	.supply_name	= "vqmmc",					\
+> +	.gpios		= &vccq_sdhi##idx##_gpio,			\
+> +	.nr_gpios	= 1,						\
+> +	.states		= vccq_sdhi##idx##_states,			\
+> +	.nr_states	= ARRAY_SIZE(vccq_sdhi##idx##_states),		\
+> +	.type		= REGULATOR_VOLTAGE,				\
+> +	.init_data	= &vccq_sdhi##idx##_init_data,			\
+> +};
+> +
+> +SDHI_REGULATOR(0, RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 29));
+> +SDHI_REGULATOR(2, RCAR_GP_PIN(5, 25), RCAR_GP_PIN(5, 30));
+> +
+>  /* MMCIF */
+>  static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
+>  	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
+> @@ -198,6 +265,9 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+>  
+>  static void __init lager_add_standard_devices(void)
+>  {
+> +	int fixed_regulator_idx = 0;
+> +	int gpio_regulator_idx = 0;
+> +
+>  	r8a7790_clock_init();
+>  
+>  	pinctrl_register_mappings(lager_pinctrl_map,
+> @@ -211,7 +281,8 @@ static void __init lager_add_standard_devices(void)
+>  	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+>  				      &lager_keys_pdata,
+>  				      sizeof(lager_keys_pdata));
+> -	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+> +	regulator_register_always_on(fixed_regulator_idx++,
+> +				     "fixed-3.3V", fixed3v3_power_consumers,
+>  				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+>  	platform_device_register_resndata(&platform_bus, "sh_mmcif", 1,
+>  					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
+> @@ -223,6 +294,16 @@ static void __init lager_add_standard_devices(void)
+>  					  &ether_pdata, sizeof(ether_pdata));
+>  
+>  	lager_add_du_device();
+> +
+> +	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
+> +				      &vcc_sdhi0_info, sizeof(struct fixed_voltage_config));
+> +	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
+> +				      &vcc_sdhi2_info, sizeof(struct fixed_voltage_config));
+> +
+> +	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
+> +				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
+> +	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
+> +				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
+>  }
+>  
+>  /*
+> -- 
+> 1.7.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
