@@ -1,58 +1,128 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 12 Dec 2013 00:53:34 +0000
-Subject: Re: [PATCH 09/11] ARM: shmobile: r8a7791: MSIOF platform device
-Message-Id: <20131212005334.GG21531@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 05 Dec 2013 22:34:51 +0000
+Subject: [PATCH v2] ARM: shmobile: koelsch: Add DU device
+Message-Id: <1386282891-2698-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
- <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
- <1385921962-19843-9-git-send-email-takasi-y@ops.dti.ne.jp>
- <CACRpkdbvrYgRh7cK0N1HrcxkYzzu9Qw4yAoQwj4f9pEf0r1qQw@mail.gmail.com>
- <20131205030235.GG21443@verge.net.au>
- <CACRpkda=m_3Y+FcKUvAj4e1gDUuvqB4VS4bv6u-VnX4LVQQP8Q@mail.gmail.com>
-In-Reply-To: <CACRpkda=m_3Y+FcKUvAj4e1gDUuvqB4VS4bv6u-VnX4LVQQP8Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, "arm-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <arm-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Dec 11, 2013 at 01:27:34PM +0100, Linus Walleij wrote:
-> On Thu, Dec 5, 2013 at 4:02 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Tue, Dec 03, 2013 at 11:12:32AM +0100, Linus Walleij wrote:
-> 
-> >> NAK.
-> >
-> > Hi Linus,
-> >
-> > the way that shmobile is handling moving to DT is multi-faceted.
-> > One such facet is that we currently maintain two ways of booting each board.
-> > One uses legacy-C code and initialises devices using platform devices.
-> > The other, which we call -reference uses DT.
-> >
-> > This patch is for the legacy-C board code to use.
-> >
-> > This has been the approach that we have been taking for about a year now.
-> > We have recently been giving some consideration to moving to the next stage
-> > which we believe is to enable devices whose drivers don't have DT bindings
-> > (yet) using DT in -reference. With this in place it should be possible
-> > to plan removal of the legacy-C board code.
-> >
-> > In the mean time I would prefer if we kept with the pattern that
-> > we have been using up until now.
-> 
-> If you get an OK from the ARM SoC maintainers on this approach I
-> will rest my case. I have to provide some kind of pushback you know,
-> lest I fear nothing ever happens...
+Only the LVDS output is currently supported.
 
-So the deal we've had with the Renesas guys is that we've been allowing
-some legacy code to go in, but that we got a handshake earlier this year
-that they were done adding legacy code as of 3.13 / end of the year, and
-they will now start focusing on enabling multiplatform and modernizing
-the shmobile platform.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-koelsch.c | 63 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
 
-So, is this one of the few straggling drivers still looking to go in? Or
-are you anticipating more of this over time? I don't want to see much
-more of this added right before it's time to cleanup.
+Changes since v1:
 
+- Rebased on top of renesas-devel-v3.13-rc2-20131202
 
--Olof
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 6e12914..53846ec 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/dma-mapping.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+@@ -26,13 +27,66 @@
+ #include <linux/leds.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS0,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static const struct rcar_du_platform_data lager_du_pdata __initconst = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
++
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfeb00000, 0x40000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++};
++
++static void __init koelsch_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7791",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &lager_du_pdata,
++		.size_data = sizeof(lager_du_pdata),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ /* LEDS */
+ static struct gpio_led koelsch_leds[] = {
+ 	{
+@@ -80,6 +134,13 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
+ };
+ 
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
++	/* DU */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
++				  "du_rgb666", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
++				  "du_sync", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
++				  "du_clk_out_0", "du"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
+ 				  "scif0_data_d", "scif0"),
+@@ -101,6 +162,8 @@ static void __init koelsch_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &koelsch_keys_pdata,
+ 				      sizeof(koelsch_keys_pdata));
++
++	koelsch_add_du_device();
+ }
+ 
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
+-- 
+Regards,
+
+Laurent Pinchart
+
