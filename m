@@ -1,121 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 17 Dec 2013 21:48:52 +0000
-Subject: Re: [PATCH 1/5] pinctrl: r7s72100: add riic groups
-Message-Id: <3802769.F4PZtN5om9@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Dec 2013 03:43:11 +0000
+Subject: Re: [PATCH 1/2] sh-pfc: r8a7740: Fix pin bias setup
+Message-Id: <20131205034311.GA20388@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
- <1387316678-10174-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387316678-10174-2-git-send-email-wsa@the-dreams.de>
+References: <1385652004-7117-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385652004-7117-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
+Hi Laurent,
 
-Thank you for the patch.
+On Thu, Nov 28, 2013 at 04:20:03PM +0100, Laurent Pinchart wrote:
+> When computing the pin configuration register offset the bias setup code
+> erroneously compares the pin number range with the loop index instead of
+> the pin number. Fix it.
 
-On Tuesday 17 December 2013 22:44:34 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
+this appears to be a bug-fix. If you haven't queued this up already
+could you consider adding something like this to the changelog?
+Likewise for "[2/2] sh-pfc: sh7372: Fix pin bias setup".
+
+This resolves a problem that was added when bias pinconf support was added
+by 80da8e02d22caaef ("sh-pfc: r8a7740: Add bias (pull-up/down) pinconf
+support") in v3.10-rc3.
+
 > 
-> Tested RIIC2 on a genmai board. Other riic groups are untested but seem
-> trivial enough to be added.
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > ---
+>  drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> Note: With the current PFC driver as posted by Magnus, it needs another
-> patch to work. Yet, I think this is a seperate PFC issue which needs to be
-> sorted out seperately and shouldn't affect these declarations. I'll add the
-> needed patch as a response to this mail.
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+> index 009174d..bc5eb45 100644
+> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+> @@ -3720,7 +3720,7 @@ static void __iomem *r8a7740_pinmux_portcr(struct sh_pfc *pfc, unsigned int pin)
+>  		const struct r8a7740_portcr_group *group >  			&r8a7740_portcr_offsets[i];
+>  
+> -		if (i <= group->end_pin)
+> +		if (pin <= group->end_pin)
+>  			return pfc->window->virt + group->offset + pin;
+>  	}
+>  
+> -- 
+> 1.8.3.2
 > 
->  drivers/pinctrl/sh-pfc/pfc-r7s72100.c | 45 ++++++++++++++++++++++++++++++++
->  1 file changed, 45 insertions(+)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-> b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c index a662876..2b716d1 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-> @@ -229,6 +229,27 @@ SCIF5(RZ_PIN_AND_MUX)
->  SCIF6(RZ_PIN_AND_MUX)
->  SCIF7(RZ_PIN_AND_MUX)
-> 
-> +#define RIIC0(fn)			\
-> +	fn(riic0, scl, 1, 0, 1)		\
-> +	fn(riic0, sda, 1, 1, 1)
-> +
-> +#define RIIC1(fn)			\
-> +	fn(riic1, scl, 1, 2, 1)		\
-> +	fn(riic1, sda, 1, 3, 1)
-> +
-> +#define RIIC2(fn)			\
-> +	fn(riic2, scl, 1, 4, 1)		\
-> +	fn(riic2, sda, 1, 5, 1)
-> +
-> +#define RIIC3(fn)			\
-> +	fn(riic3, scl, 1, 6, 1)		\
-> +	fn(riic3, sda, 1, 7, 1)
-> +
-> +RIIC0(RZ_PIN_AND_MUX)
-> +RIIC1(RZ_PIN_AND_MUX)
-> +RIIC2(RZ_PIN_AND_MUX)
-> +RIIC3(RZ_PIN_AND_MUX)
-
-Could you please move this above the SCIF declarations (same comment below) ? 
-The pfc-*.c files tend to grow pretty big, and keeping entries sorted 
-alphabetically helps.
-
-> +
->  static const struct sh_pfc_pin_group pinmux_groups[] = {
->  	SCIF0(RZ_PMX_GROUP)
->  	SCIF1(RZ_PMX_GROUP)
-> @@ -238,6 +259,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] > { SCIF5(RZ_PMX_GROUP)
->  	SCIF6(RZ_PMX_GROUP)
->  	SCIF7(RZ_PMX_GROUP)
-> +	RIIC0(RZ_PMX_GROUP)
-> +	RIIC1(RZ_PMX_GROUP)
-> +	RIIC2(RZ_PMX_GROUP)
-> +	RIIC3(RZ_PMX_GROUP)
->  };
-> 
->  static const char * const scif0_groups[] = {
-> @@ -272,6 +297,22 @@ static const char * const scif7_groups[] = {
->  	SCIF7(RZ_GROUPS)
->  };
-> 
-> +static const char * const riic0_groups[] = {
-> +	RIIC0(RZ_GROUPS)
-> +};
-> +
-> +static const char * const riic1_groups[] = {
-> +	RIIC1(RZ_GROUPS)
-> +};
-> +
-> +static const char * const riic2_groups[] = {
-> +	RIIC2(RZ_GROUPS)
-> +};
-> +
-> +static const char * const riic3_groups[] = {
-> +	RIIC3(RZ_GROUPS)
-> +};
-> +
->  static const struct sh_pfc_function pinmux_functions[] = {
->  	SH_PFC_FUNCTION(scif0),
->  	SH_PFC_FUNCTION(scif1),
-> @@ -281,6 +322,10 @@ static const struct sh_pfc_function pinmux_functions[]
-> = { SH_PFC_FUNCTION(scif5),
->  	SH_PFC_FUNCTION(scif6),
->  	SH_PFC_FUNCTION(scif7),
-> +	SH_PFC_FUNCTION(riic0),
-> +	SH_PFC_FUNCTION(riic1),
-> +	SH_PFC_FUNCTION(riic2),
-> +	SH_PFC_FUNCTION(riic3),
->  };
-> 
->  #define PFC_REG(idx, name, reg)						\
--- 
-Regards,
-
-Laurent Pinchart
-
