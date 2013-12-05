@@ -1,430 +1,148 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 02 Dec 2013 13:34:15 +0000
-Subject: [PATCH v4 1/3] clk: shmobile: Add R-Car Gen2 clocks support
-Message-Id: <1385991257-28042-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Dec 2013 03:47:16 +0000
+Subject: Re: [PATCH] ARM: shmobile: Use interrupt macros in r8a73a4 and r8a7778 DT files
+Message-Id: <20131205034716.GC20388@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385991214-28003-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385991214-28003-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The R-Car Gen2 SoCs (R8A7790 and R8A7791) have several clocks that are
-too custom to be supported in a generic driver. Those clocks can be
-divided in two categories:
+On Thu, Nov 28, 2013 at 05:22:13PM +0100, Laurent Pinchart wrote:
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/boot/dts/r8a73a4.dtsi | 50 +++++++++++++++++++++---------------------
+>  arch/arm/boot/dts/r8a7778.dtsi |  6 ++---
+>  2 files changed, 28 insertions(+), 28 deletions(-)
 
-- Fixed rate clocks with multiplier and divisor set according to boot
-  mode configuration
+Thanks, I will queue this up.
 
-- Custom divider clocks with SoC-specific divider values
-
-This driver supports both.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Kumar Gala <galak@codeaurora.org>
----
- .../clock/renesas,rcar-gen2-cpg-clocks.txt         |  32 +++
- drivers/clk/Makefile                               |   1 +
- drivers/clk/shmobile/Makefile                      |   5 +
- drivers/clk/shmobile/clk-rcar-gen2.c               | 298 +++++++++++++++++++++
- include/linux/clk/shmobile.h                       |  19 ++
- 5 files changed, 355 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/Makefile
- create mode 100644 drivers/clk/shmobile/clk-rcar-gen2.c
- create mode 100644 include/linux/clk/shmobile.h
-
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-new file mode 100644
-index 0000000..7b41c2f
---- /dev/null
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-@@ -0,0 +1,32 @@
-+* Renesas R-Car Gen2 Clock Pulse Generator (CPG)
-+
-+The CPG generates core clocks for the R-Car Gen2 SoCs. It includes three PLLs
-+and several fixed ratio dividers.
-+
-+Required Properties:
-+
-+  - compatible: Must be one of
-+    - "renesas,r8a7790-cpg-clocks" for the r8a7790 CPG
-+    - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
-+    - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
-+
-+  - reg: Base address and length of the memory resource used by the CPG
-+
-+  - clocks: Reference to the parent clock
-+  - #clock-cells: Must be 1
-+  - clock-output-names: The names of the clocks. Supported clocks are "main",
-+    "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1" and "z"
-+
-+
-+Example
-+-------
-+
-+	cpg_clocks: cpg_clocks@e6150000 {
-+		compatible = "renesas,r8a7790-cpg-clocks",
-+			     "renesas,rcar-gen2-cpg-clocks";
-+		reg = <0 0xe6150000 0 0x1000>;
-+		clocks = <&extal_clk>;
-+		#clock-cells = <1>;
-+		clock-output-names = "main", "pll0, "pll1", "pll3",
-+				     "lb", "qspi", "sdh", "sd0", "sd1", "z";
-+	};
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index 7a10bc9..b0a71ff 100644
---- a/drivers/clk/Makefile
-+++ b/drivers/clk/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_ARCH_SIRF)		+= clk-prima2.o
- obj-$(CONFIG_PLAT_ORION)	+= mvebu/
- ifeq ($(CONFIG_COMMON_CLK), y)
- obj-$(CONFIG_ARCH_MMP)		+= mmp/
-+obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
- endif
- obj-$(CONFIG_MACH_LOONGSON1)	+= clk-ls1x.o
- obj-$(CONFIG_ARCH_ROCKCHIP)	+= rockchip/
-diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-new file mode 100644
-index 0000000..d0a9034
---- /dev/null
-+++ b/drivers/clk/shmobile/Makefile
-@@ -0,0 +1,5 @@
-+obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
-+obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
-+
-+# for emply built-in.o
-+obj-n	:= dummy
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-new file mode 100644
-index 0000000..a59ec21
---- /dev/null
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -0,0 +1,298 @@
-+/*
-+ * rcar_gen2 Core CPG Clocks
-+ *
-+ * Copyright (C) 2013  Ideas On Board SPRL
-+ *
-+ * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ */
-+
-+#include <linux/clk-provider.h>
-+#include <linux/clkdev.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/math64.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/spinlock.h>
-+
-+struct rcar_gen2_cpg {
-+	struct clk_onecell_data data;
-+	spinlock_t lock;
-+	void __iomem *reg;
-+};
-+
-+#define CPG_SDCKCR			0x00000074
-+#define CPG_PLL0CR			0x000000d8
-+#define CPG_FRQCRC			0x000000e0
-+#define CPG_FRQCRC_ZFC_MASK		(0x1f << 8)
-+#define CPG_FRQCRC_ZFC_SHIFT		8
-+
-+/* -----------------------------------------------------------------------------
-+ * Z Clock
-+ *
-+ * Traits of this clock:
-+ * prepare - clk_prepare only ensures that parents are prepared
-+ * enable - clk_enable only ensures that parents are enabled
-+ * rate - rate is adjustable.  clk->rate = parent->rate * mult / 32
-+ * parent - fixed parent.  No clk_set_parent support
-+ */
-+
-+struct cpg_z_clk {
-+	struct clk_hw hw;
-+	void __iomem *reg;
-+};
-+
-+#define to_z_clk(_hw)	container_of(_hw, struct cpg_z_clk, hw)
-+
-+static unsigned long cpg_z_clk_recalc_rate(struct clk_hw *hw,
-+					   unsigned long parent_rate)
-+{
-+	struct cpg_z_clk *zclk = to_z_clk(hw);
-+	unsigned int mult;
-+	unsigned int val;
-+
-+	val = (clk_readl(zclk->reg) & CPG_FRQCRC_ZFC_MASK)
-+	    >> CPG_FRQCRC_ZFC_SHIFT;
-+	mult = 32 - val;
-+
-+	return div_u64((u64)parent_rate * mult, 32);
-+}
-+
-+static long cpg_z_clk_round_rate(struct clk_hw *hw, unsigned long rate,
-+				 unsigned long *parent_rate)
-+{
-+	unsigned long prate  = *parent_rate;
-+	unsigned int mult;
-+
-+	if (!prate)
-+		prate = 1;
-+
-+	mult = div_u64((u64)rate * 32, prate);
-+	mult = clamp(mult, 1U, 32U);
-+
-+	return *parent_rate / 32 * mult;
-+}
-+
-+static int cpg_z_clk_set_rate(struct clk_hw *hw, unsigned long rate,
-+			      unsigned long parent_rate)
-+{
-+	struct cpg_z_clk *zclk = to_z_clk(hw);
-+	unsigned int mult;
-+	u32 val;
-+
-+	mult = div_u64((u64)rate * 32, parent_rate);
-+	mult = clamp(mult, 1U, 32U);
-+
-+	val = clk_readl(zclk->reg);
-+	val &= ~CPG_FRQCRC_ZFC_MASK;
-+	val |= (32 - mult) << CPG_FRQCRC_ZFC_SHIFT;
-+	clk_writel(val, zclk->reg);
-+
-+	return 0;
-+}
-+
-+static const struct clk_ops cpg_z_clk_ops = {
-+	.recalc_rate = cpg_z_clk_recalc_rate,
-+	.round_rate = cpg_z_clk_round_rate,
-+	.set_rate = cpg_z_clk_set_rate,
-+};
-+
-+static struct clk * __init cpg_z_clk_register(struct rcar_gen2_cpg *cpg)
-+{
-+	static const char *parent_name = "pll0";
-+	struct clk_init_data init;
-+	struct cpg_z_clk *zclk;
-+	struct clk *clk;
-+
-+	zclk = kzalloc(sizeof(*zclk), GFP_KERNEL);
-+	if (!zclk)
-+		return ERR_PTR(-ENOMEM);
-+
-+	init.name = "z";
-+	init.ops = &cpg_z_clk_ops;
-+	init.flags = 0;
-+	init.parent_names = &parent_name;
-+	init.num_parents = 1;
-+
-+	zclk->reg = cpg->reg + CPG_FRQCRC;
-+	zclk->hw.init = &init;
-+
-+	clk = clk_register(NULL, &zclk->hw);
-+	if (IS_ERR(clk))
-+		kfree(zclk);
-+
-+	return clk;
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * CPG Clock Data
-+ */
-+
-+/*
-+ *   MD		EXTAL		PLL0	PLL1	PLL3
-+ * 14 13 19	(MHz)		*1	*1
-+ *---------------------------------------------------
-+ * 0  0  0	15 x 1		x172/2	x208/2	x106
-+ * 0  0  1	15 x 1		x172/2	x208/2	x88
-+ * 0  1  0	20 x 1		x130/2	x156/2	x80
-+ * 0  1  1	20 x 1		x130/2	x156/2	x66
-+ * 1  0  0	26 / 2		x200/2	x240/2	x122
-+ * 1  0  1	26 / 2		x200/2	x240/2	x102
-+ * 1  1  0	30 / 2		x172/2	x208/2	x106
-+ * 1  1  1	30 / 2		x172/2	x208/2	x88
-+ *
-+ * *1 :	Table 7.6 indicates VCO ouput (PLLx = VCO/2)
-+ */
-+#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 12) | \
-+					 (((md) & BIT(13)) >> 12) | \
-+					 (((md) & BIT(19)) >> 19))
-+struct cpg_pll_config {
-+	unsigned int extal_div;
-+	unsigned int pll1_mult;
-+	unsigned int pll3_mult;
-+};
-+
-+static const struct cpg_pll_config cpg_pll_configs[8] __initconst = {
-+	{ 1, 208, 106 }, { 1, 208,  88 }, { 1, 156,  80 }, { 1, 156,  66 },
-+	{ 2, 240, 122 }, { 2, 240, 102 }, { 2, 208, 106 }, { 2, 208,  88 },
-+};
-+
-+/* SDHI divisors */
-+static const struct clk_div_table cpg_sdh_div_table[] = {
-+	{  0,  2 }, {  1,  3 }, {  2,  4 }, {  3,  6 },
-+	{  4,  8 }, {  5, 12 }, {  6, 16 }, {  7, 18 },
-+	{  8, 24 }, { 10, 36 }, { 11, 48 }, {  0,  0 },
-+};
-+
-+static const struct clk_div_table cpg_sd01_div_table[] = {
-+	{  5, 12 }, {  6, 16 }, {  7, 18 }, {  8, 24 },
-+	{ 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Initialization
-+ */
-+
-+static u32 cpg_mode __initdata;
-+
-+static struct clk * __init
-+rcar_gen2_cpg_register_clock(struct device_node *np, struct rcar_gen2_cpg *cpg,
-+			     const struct cpg_pll_config *config,
-+			     const char *name)
-+{
-+	const struct clk_div_table *table = NULL;
-+	const char *parent_name = "main";
-+	unsigned int shift;
-+	unsigned int mult = 1;
-+	unsigned int div = 1;
-+
-+	if (!strcmp(name, "main")) {
-+		parent_name = of_clk_get_parent_name(np, 0);
-+		div = config->extal_div;
-+	} else if (!strcmp(name, "pll0")) {
-+		/* PLL0 is a configurable multiplier clock. Register it as a
-+		 * fixed factor clock for now as there's no generic multiplier
-+		 * clock implementation and we currently have no need to change
-+		 * the multiplier value.
-+		 */
-+		u32 value = clk_readl(cpg->reg + CPG_PLL0CR);
-+		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
-+	} else if (!strcmp(name, "pll1")) {
-+		mult = config->pll1_mult / 2;
-+	} else if (!strcmp(name, "pll3")) {
-+		mult = config->pll3_mult;
-+	} else if (!strcmp(name, "lb")) {
-+		div = cpg_mode & BIT(18) ? 36 : 24;
-+	} else if (!strcmp(name, "qspi")) {
-+		div = (cpg_mode & (BIT(3) | BIT(2) | BIT(1))) = BIT(2)
-+		    ? 16 : 20;
-+	} else if (!strcmp(name, "sdh")) {
-+		table = cpg_sdh_div_table;
-+		shift = 8;
-+	} else if (!strcmp(name, "sd0")) {
-+		table = cpg_sd01_div_table;
-+		shift = 4;
-+	} else if (!strcmp(name, "sd1")) {
-+		table = cpg_sd01_div_table;
-+		shift = 0;
-+	} else if (!strcmp(name, "z")) {
-+		return cpg_z_clk_register(cpg);
-+	} else {
-+		return ERR_PTR(-EINVAL);
-+	}
-+
-+	if (!table)
-+		return clk_register_fixed_factor(NULL, name, parent_name, 0,
-+						 mult, div);
-+	else
-+		return clk_register_divider_table(NULL, name, parent_name, 0,
-+						 cpg->reg + CPG_SDCKCR, shift,
-+						 4, 0, table, &cpg->lock);
-+}
-+
-+static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
-+{
-+	const struct cpg_pll_config *config;
-+	struct rcar_gen2_cpg *cpg;
-+	struct clk **clks;
-+	unsigned int i;
-+	int num_clks;
-+
-+	num_clks = of_property_count_strings(np, "clock-output-names");
-+	if (num_clks < 0) {
-+		pr_err("%s: failed to count clocks\n", __func__);
-+		return;
-+	}
-+
-+	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-+	clks = kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
-+	if (cpg = NULL || clks = NULL) {
-+		/* We're leaking memory on purpose, there's no point in cleaning
-+		 * up as the system won't boot anyway.
-+		 */
-+		pr_err("%s: failed to allocate cpg\n", __func__);
-+		return;
-+	}
-+
-+	spin_lock_init(&cpg->lock);
-+
-+	cpg->data.clks = clks;
-+	cpg->data.clk_num = num_clks;
-+
-+	cpg->reg = of_iomap(np, 0);
-+	if (WARN_ON(cpg->reg = NULL))
-+		return;
-+
-+	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
-+
-+	for (i = 0; i < num_clks; ++i) {
-+		const char *name;
-+		struct clk *clk;
-+
-+		of_property_read_string_index(np, "clock-output-names", i,
-+					      &name);
-+
-+		clk = rcar_gen2_cpg_register_clock(np, cpg, config, name);
-+		if (IS_ERR(clk))
-+			pr_err("%s: failed to register %s %s clock (%ld)\n",
-+			       __func__, np->name, name, PTR_ERR(clk));
-+		else
-+			cpg->data.clks[i] = clk;
-+	}
-+
-+	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+}
-+CLK_OF_DECLARE(rcar_gen2_cpg_clks, "renesas,rcar-gen2-cpg-clocks",
-+	       rcar_gen2_cpg_clocks_init);
-+
-+void __init rcar_gen2_clocks_init(u32 mode)
-+{
-+	cpg_mode = mode;
-+
-+	of_clk_init(NULL);
-+}
-diff --git a/include/linux/clk/shmobile.h b/include/linux/clk/shmobile.h
-new file mode 100644
-index 0000000..f9bf080
---- /dev/null
-+++ b/include/linux/clk/shmobile.h
-@@ -0,0 +1,19 @@
-+/*
-+ * Copyright 2013 Ideas On Board SPRL
-+ *
-+ * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __LINUX_CLK_SHMOBILE_H_
-+#define __LINUX_CLK_SHMOBILE_H_
-+
-+#include <linux/types.h>
-+
-+void rcar_gen2_clocks_init(u32 mode);
-+
-+#endif
--- 
-1.8.3.2
-
+> 
+> diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+> index b4a6c3b..6b7ce89 100644
+> --- a/arch/arm/boot/dts/r8a73a4.dtsi
+> +++ b/arch/arm/boot/dts/r8a73a4.dtsi
+> @@ -137,27 +137,27 @@
+>  			compatible = "renesas,shdma-r8a73a4";
+>  			reg = <0 0xe6700020 0 0x89e0>;
+>  			interrupt-parent = <&gic>;
+> -			interrupts = <0 220 4
+> -					0 200 4
+> -					0 201 4
+> -					0 202 4
+> -					0 203 4
+> -					0 204 4
+> -					0 205 4
+> -					0 206 4
+> -					0 207 4
+> -					0 208 4
+> -					0 209 4
+> -					0 210 4
+> -					0 211 4
+> -					0 212 4
+> -					0 213 4
+> -					0 214 4
+> -					0 215 4
+> -					0 216 4
+> -					0 217 4
+> -					0 218 4
+> -					0 219 4>;
+> +			interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+> +					0 200 IRQ_TYPE_LEVEL_HIGH
+> +					0 201 IRQ_TYPE_LEVEL_HIGH
+> +					0 202 IRQ_TYPE_LEVEL_HIGH
+> +					0 203 IRQ_TYPE_LEVEL_HIGH
+> +					0 204 IRQ_TYPE_LEVEL_HIGH
+> +					0 205 IRQ_TYPE_LEVEL_HIGH
+> +					0 206 IRQ_TYPE_LEVEL_HIGH
+> +					0 207 IRQ_TYPE_LEVEL_HIGH
+> +					0 208 IRQ_TYPE_LEVEL_HIGH
+> +					0 209 IRQ_TYPE_LEVEL_HIGH
+> +					0 210 IRQ_TYPE_LEVEL_HIGH
+> +					0 211 IRQ_TYPE_LEVEL_HIGH
+> +					0 212 IRQ_TYPE_LEVEL_HIGH
+> +					0 213 IRQ_TYPE_LEVEL_HIGH
+> +					0 214 IRQ_TYPE_LEVEL_HIGH
+> +					0 215 IRQ_TYPE_LEVEL_HIGH
+> +					0 216 IRQ_TYPE_LEVEL_HIGH
+> +					0 217 IRQ_TYPE_LEVEL_HIGH
+> +					0 218 IRQ_TYPE_LEVEL_HIGH
+> +					0 219 IRQ_TYPE_LEVEL_HIGH>;
+>  			interrupt-names = "error",
+>  					"ch0", "ch1", "ch2", "ch3",
+>  					"ch4", "ch5", "ch6", "ch7",
+> @@ -181,7 +181,7 @@
+>  		compatible = "renesas,rmobile-iic";
+>  		reg = <0 0xe6500000 0 0x428>;
+>  		interrupt-parent = <&gic>;
+> -		interrupts = <0 174 0x4>;
+> +		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  
+> @@ -191,7 +191,7 @@
+>  		compatible = "renesas,rmobile-iic";
+>  		reg = <0 0xe6510000 0 0x428>;
+>  		interrupt-parent = <&gic>;
+> -		interrupts = <0 175 0x4>;
+> +		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  
+> @@ -201,7 +201,7 @@
+>  		compatible = "renesas,rmobile-iic";
+>  		reg = <0 0xe6520000 0 0x428>;
+>  		interrupt-parent = <&gic>;
+> -		interrupts = <0 176 0x4>;
+> +		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  
+> @@ -211,7 +211,7 @@
+>  		compatible = "renesas,rmobile-iic";
+>  		reg = <0 0xe6530000 0 0x428>;
+>  		interrupt-parent = <&gic>;
+> -		interrupts = <0 177 0x4>;
+> +		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  
+> diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+> index 3314e0a..b530df6 100644
+> --- a/arch/arm/boot/dts/r8a7778.dtsi
+> +++ b/arch/arm/boot/dts/r8a7778.dtsi
+> @@ -247,7 +247,7 @@
+>  		compatible = "renesas,hspi";
+>  		reg = <0xfffc7000 0x18>;
+>  		interrupt-controller = <&gic>;
+> -		interrupts = <0 63 4>;
+> +		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  
+> @@ -255,7 +255,7 @@
+>  		compatible = "renesas,hspi";
+>  		reg = <0xfffc8000 0x18>;
+>  		interrupt-controller = <&gic>;
+> -		interrupts = <0 84 4>;
+> +		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  
+> @@ -263,7 +263,7 @@
+>  		compatible = "renesas,hspi";
+>  		reg = <0xfffc6000 0x18>;
+>  		interrupt-controller = <&gic>;
+> -		interrupts = <0 85 4>;
+> +		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
+>  		status = "disabled";
+>  	};
+>  };
+> -- 
+> 1.8.3.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
