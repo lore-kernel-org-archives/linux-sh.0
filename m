@@ -1,47 +1,24 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 26 Dec 2013 14:15:44 +0000
-Subject: Re: [PATCH] pinctl: sh-pfc: r8a7790: Fix vsync value in the vin3_sync_mux array
-Message-Id: <1875201.Ssrh3mNrfs@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Dec 2013 05:14:21 +0000
+Subject: Re: [PATCH 1/3][resend] ARM: shmobile: bockw: remove unused RSND_SSI_CLK_FROM_ADG
+Message-Id: <20131205051421.GG12774@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387830508-10710-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387830508-10710-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <87fvqramfr.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fvqramfr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Valentine,
-
-Thank you for the patch.
-
-On Tuesday 24 December 2013 00:28:28 Valentine Barshak wrote:
-> This fixes a typo in the vin3_sync_mux array (s/VI2/VI3/).
+On Wed, Nov 20, 2013 at 09:45:16AM +0000, Mark Brown wrote:
+> On Tue, Nov 19, 2013 at 05:31:23PM -0800, Kuninori Morimoto wrote:
+> > 92eba04e4bcd469518cc759ac1bf1a49acaa5cc1
+> > (ASoC: rcar: remove RSND_SSI_CLK_FROM_ADG) removed
+> > RSND_SSI_CLK_FROM_ADG, it is no longer needed
 > 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-and applied to my tree.
-
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Acked-by: Mark Brown <broonie@linaro.org>
 > 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index 293a51a..01236c5 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> @@ -3564,7 +3564,7 @@ static const unsigned int vin3_sync_pins[] = {
->  };
->  static const unsigned int vin3_sync_mux[] = {
->  	VI3_HSYNC_N_MARK,
-> -	VI2_VSYNC_N_MARK,
-> +	VI3_VSYNC_N_MARK,
->  };
->  static const unsigned int vin3_field_pins[] = {
->  	RCAR_GP_PIN(1, 15),
--- 
-Regards,
+> I ignored this because it was ARM: - I get CCed on a lot of architecture
+> patches that arne't terribly relevant/interesting.
 
-Laurent Pinchart
-
+Thanks, I have (finally) queued this up.
