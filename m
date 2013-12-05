@@ -1,50 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 13 Dec 2013 12:31:34 +0000
-Subject: Re: [PATCH V2] gpio: rcar: Fix level interrupt handling
-Message-Id: <CANqRtoTTur+8_VTV4AQiVqZ+TQfHVH3ONHbOBcByE_4JSNqo8Q@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Dec 2013 01:32:42 +0000
+Subject: [PATCH 1/3] ARM: shmobile: sh73a0: add FSI clock support for DT
+Message-Id: <878uw0qdzc.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385748249-27170-1-git-send-email-valentine.barshak@cogentembedded.com>
-	<CACRpkdbeT8fp4i-ahpzZN2MnC7uYAcuLH7SOgJnpL54XBaoTqw@mail.gmail.com>
-In-Reply-To: <CACRpkdbeT8fp4i-ahpzZN2MnC7uYAcuLH7SOgJnpL54XBaoTqw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-On Fri, Dec 13, 2013 at 4:54 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Fri, Nov 29, 2013 at 7:04 PM, Valentine Barshak
-> <valentine.barshak@cogentembedded.com> wrote:
->
->> According to the manual, if a port is set for level detection using
->> the corresponding bit in the edge/level select register and an external
->> level interrupt signal is asserted, the corresponding bit in INTDT
->> does not use the FF to hold the input.
->> Thus, writing 1 to the corresponding bits in INTCLR cannot clear the
->> corresponding bits in the INTDT register. Instead, when an external
->> input signal is stopped, the corresponding bit in INTDT is cleared
->> automatically.
->>
->> Since the INTDT bit cannot be cleared for the level interrupts until
->> the interrupt signal is stopped, we end up with the infinite loop
->> when using deferred (threaded) IRQ handling.
->>
->> Since a deferred interrupt is disabled by the low-level handler and
->> re-enabled only when the deferred handler is completed, Fix the issue
->> by dropping disabled interrupts from the pending mask as suggested by
->> Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->>
->> Changes in V2:
->> * Drop disabled interrupts from pending mask altogether instead of
->>   dropping level interrupts one by one once they get handled.
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->
-> This v2 version applied to fixes with Laurent's and Magnus' ACKs,
-> tell me if it also need to go into -stable.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks for your help, Linus! I don't think there is any need to involve -stable.
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 30d8868..23edf83 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -652,6 +652,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+ 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
++	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+-- 
+1.7.9.5
 
-Cheers,
-
-/ magnus
