@@ -1,49 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 19 Dec 2013 22:19:24 +0000
-Subject: [PATCH 1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
-Message-Id: <201312200219.31121.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Dec 2013 03:45:54 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: armadillo: Set vccq_sdhi0 regulator type in DT
+Message-Id: <20131205034554.GB20388@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
+References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385653493-9952-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385653493-9952-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
-trigger type to be low-level as per the Micrel PHY driver's setup.
+On Thu, Nov 28, 2013 at 04:44:53PM +0100, Laurent Pinchart wrote:
+> The mandatory regulator-type property is missing, add it.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Thanks, I will queue this up.
 
----
- arch/arm/mach-shmobile/board-lager.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-lager.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-lager.c
-+++ renesas/arch/arm/mach-shmobile/board-lager.c
-@@ -22,6 +22,7 @@
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
- #include <linux/interrupt.h>
-+#include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
- #include <linux/mmc/host.h>
-@@ -228,6 +229,7 @@ static const struct resource mmcif1_reso
- /* Ether */
- static const struct sh_eth_plat_data ether_pdata __initconst = {
- 	.phy			= 0x1,
-+	.phy_irq		= irq_pin(0),
- 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
- 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
- 	.ether_link_active_low	= 1,
-@@ -391,6 +393,8 @@ static void __init lager_init(void)
- {
- 	lager_add_standard_devices();
- 
-+	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
-+
- 	if (IS_ENABLED(CONFIG_PHYLIB))
- 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
- 					  lager_ksz8041_fixup);
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> index 7b80f19..013a7cd 100644
+> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+> @@ -53,6 +53,8 @@
+>  		regulator-name = "SDHI0 VccQ";
+>  		regulator-min-microvolt = <1800000>;
+>  		regulator-max-microvolt = <3300000>;
+> +		regulator-type = "voltage";
+> +
+>  		vin-supply = <&vcc_sdhi0>;
+>  
+>  		enable-gpio = <&pfc 74 GPIO_ACTIVE_HIGH>;
+> -- 
+> 1.8.3.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
