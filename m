@@ -1,25 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 19 Dec 2013 22:18:01 +0000
-Subject: [PATCH 0/2] Add Ether's PHY IRQ support for R8A7790/Lager board
-Message-Id: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 06 Dec 2013 01:41:19 +0000
+Subject: [PATCH 2/2] ARM: shmobile: armadillo800eva: Enable SMSC_PHY in defconfig
+Message-Id: <1386294079-16392-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+The armadillo800eva board uses has an SMSC LAN8710A phy.
+Enable SMSC_PHY in the defconfig to make use of the SMSC-specific phy
+driver rather than relying on the generic phy driver.
 
-   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-v3.13-rc4-20131219' tag. Here we add support for the Ether's PHY
-IRQ to the R8A7790/Lager board. The patchset depends on the two 'sh_eth' driver
-patches posted earlier in order to compile and work. It would be good if Dave Miller
-could merge these patches thru his tree, along with 'sh_eth' patches as this
-would have prevented delaying these patches to 3.15 which seems inevitable
-otherwise (well, unless Simon merges net-next to his tree?). I'll rebase the
-patches to the 'net-next.git' repo if Dave consents to merging them...
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/armadillo800eva_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-[1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
-[2/2] ARM: shmobile: Lager: conditionally select CONFIG_MICREL_PHY
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 5abf1a2..6162a4b 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -75,6 +75,7 @@ CONFIG_SH_ETH=y
+ # CONFIG_NET_VENDOR_SEEQ is not set
+ # CONFIG_NET_VENDOR_SMSC is not set
+ # CONFIG_NET_VENDOR_STMICRO is not set
++CONFIG_SMSC_PHY=y
+ # CONFIG_WLAN is not set
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ CONFIG_INPUT_EVDEV=y
+-- 
+1.8.4
 
-WBR, Sergei
