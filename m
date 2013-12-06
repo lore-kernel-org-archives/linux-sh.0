@@ -1,43 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:59 +0000
-Subject: [PATCH 26/33] ARM: shmobile: r8a7790: care EXTAL divider settings
-Message-Id: <31ac8e47e9060a9b27ac955d387264b3b6b76bec.1386897180.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:32 +0000
+Subject: [PATCH 25/47] ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as resources
+Message-Id: <1386323994-12850-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-EXTAL clock frequency needs 1/2 when
-(MD14, MD13, MD19) = (1, x, x).
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/setup-r7s72100.c | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 33e80b10..ecec746 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -329,10 +329,10 @@ void __init r8a7790_clock_init(void)
- 		R8A7790_CLOCK_ROOT(20, &extal_clk, 130, 156, 80, 66);
- 		break;
- 	case MD(14):
--		R8A7790_CLOCK_ROOT(26, &extal_div2_clk, 200, 240, 122, 102);
-+		R8A7790_CLOCK_ROOT(26 / 2, &extal_div2_clk, 200, 240, 122, 102);
- 		break;
- 	case MD(13) | MD(14):
--		R8A7790_CLOCK_ROOT(30, &extal_div2_clk, 172, 208, 106, 88);
-+		R8A7790_CLOCK_ROOT(30 / 2, &extal_div2_clk, 172, 208, 106, 88);
- 		break;
- 	}
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 6ae7e32..81b995b 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -36,9 +36,15 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,					\
+ 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
+ 			  SCSCR_REIE,					\
+-	.mapbase	= baseaddr,					\
+-	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
+-}
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq + 1),					\
++	DEFINE_RES_IRQ(irq + 2),					\
++	DEFINE_RES_IRQ(irq + 3),					\
++	DEFINE_RES_IRQ(irq),						\
++}									\
  
+ R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
+ R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
+@@ -50,9 +56,11 @@ R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
+ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
+ 
+ #define r7s72100_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
+ 
+ 
+ static struct sh_timer_config mtu2_0_platform_data __initdata = {
 -- 
-1.8.4
+1.8.3.2
 
