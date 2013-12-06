@@ -1,80 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:27 +0000
-Subject: [PATCH 53/69] ARM: shmobile: kzm9g-reference: Add GPIO keys to DT
-Message-Id: <5ec5f73463611514fe46b2167e471b17626007f9.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:41 +0000
+Subject: [PATCH 34/47] ARM: shmobile: r7s72100: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <1386323994-12850-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 46 ++++++++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
+ arch/arm/mach-shmobile/setup-r7s72100.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index d58877d..5bb593d 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -106,6 +106,52 @@
- 			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
- 		};
- 	};
-+
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		back-key {
-+			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
-+			linux,code = <158>;
-+			label = "SW3";
-+		};
-+
-+		right-key {
-+			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
-+			linux,code = <106>;
-+			label = "SW2-R";
-+		};
-+
-+		left-key {
-+			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
-+			linux,code = <105>;
-+			label = "SW2-L";
-+		};
-+
-+		enter-key {
-+			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
-+			linux,code = <28>;
-+			label = "SW2-P";
-+		};
-+
-+		up-key {
-+			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
-+			linux,code = <103>;
-+			label = "SW2-U";
-+		};
-+
-+		down-key {
-+			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
-+			linux,code = <108>;
-+			label = "SW2-D";
-+		};
-+
-+		home-key {
-+			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
-+			linux,code = <102>;
-+			label = "SW1";
-+		};
-+	};
- };
- 
- &i2c0 {
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 81b995b..9c0b3a9 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -33,7 +33,6 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,					\
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,					\
+ 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
+ 			  SCSCR_REIE,					\
+ };									\
 -- 
-1.8.4
+1.8.3.2
 
