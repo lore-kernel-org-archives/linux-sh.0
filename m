@@ -1,50 +1,89 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Sun, 01 Dec 2013 18:19:17 +0000
-Subject: [PATCH 06/11] spi: spi-sh-msiof: RMDIR1[15:0] may should be zero
-Message-Id: <1385921962-19843-6-git-send-email-takasi-y@ops.dti.ne.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:49 +0000
+Subject: [PATCH 42/47] sh: sh772[34]: Set serial port sampling rate to 8 for SCIFA ports
+Message-Id: <1386323994-12850-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
- <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+SCIFA ports on sh7723 and sh7724 seem to use a sampling rate of half the
+value specified in the datasheet. This is currently handled by a custom
+baud rate calculation algorithm. The algorithm ID will be removed from
+platform data, set the sampling rate directly instead.
 
-On Ape6, Rcar-H2, and Rcar-M2,
-RMDR1(Receive Mode Register 1) has no FLD, CONT, RXSTP bits.
-HW manual says "The write value should always be 0" for RMDR1[15:0].
-I guess this is a part of .rx_need_dummy_tx case, and use same flag.
-
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/spi/spi-sh-msiof.c |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 6 +++---
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 936d8ab..b0334b6 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -183,11 +183,13 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
- 	 */
- 	sh_msiof_write(p, FCTR, 0);
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index 521a09e..079951b 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -98,7 +98,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.port_reg	= SCIx_NOT_SUPPORTED,
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+-	.scbrr_algo_id	= SCBRR_ALGO_3,
++	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
  
--	tmp = 0;
-+	tmp = 0x00000005;
- 	tmp |= !cs_high << 25;
- 	tmp |= lsb_first << 24;
--	sh_msiof_write(p, TMDR1, 0xe0000005 | tmp);
--	sh_msiof_write(p, RMDR1, 0x20000005 | tmp);
-+	sh_msiof_write(p, TMDR1, 0xe0000000 | tmp);
-+	if (p->info->rx_need_dummy_tx)
-+		tmp &= ~0x0000ffff;
-+	sh_msiof_write(p, RMDR1, 0x20000000 | tmp);
+@@ -121,7 +121,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.port_reg	= SCIx_NOT_SUPPORTED,
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+-	.scbrr_algo_id	= SCBRR_ALGO_3,
++	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
  
- 	tmp = 0xa0000000;
- 	tmp |= cpol << 30; /* TSCKIZ */
+@@ -144,7 +144,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.port_reg	= SCIx_NOT_SUPPORTED,
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+-	.scbrr_algo_id	= SCBRR_ALGO_3,
++	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index fb0a237..59c3594 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -365,7 +365,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.port_reg	= SCIx_NOT_SUPPORTED,
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_3,
++	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+ 
+@@ -388,7 +388,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.port_reg	= SCIx_NOT_SUPPORTED,
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_3,
++	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+ 
+@@ -411,7 +411,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.port_reg	= SCIx_NOT_SUPPORTED,
+ 	.flags          = UPF_BOOT_AUTOCONF,
+ 	.scscr		= SCSCR_RE | SCSCR_TE,
+-	.scbrr_algo_id	= SCBRR_ALGO_3,
++	.sampling_rate	= 8,
+ 	.type           = PORT_SCIFA,
+ };
+ 
 -- 
-1.7.9.5
+1.8.3.2
 
