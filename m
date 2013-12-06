@@ -1,74 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:34 +0000
-Subject: [PATCH 11/21] ARM: shmobile: Sync Koelsch DTS with Koelsch reference DTS
-Message-Id: <f8e2535d988a7945fa2c11214d55c20c73c60840.1387893834.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:31 +0000
+Subject: [PATCH 24/47] ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
+Message-Id: <1386323994-12850-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Copy the device nodes from Koelsch reference into the Koeslch device
-tree file. This will allow us to use a single DTS file regarless of
-kernel configuration. In case of legacy C board code the device nodes
-may or may not be used, but in the multiplatform case all the DT device
-nodes are used.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index c4e8b3a..d431f31 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -11,6 +11,7 @@
- 
- /dts-v1/;
- #include "r8a7791.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Koelsch";
-@@ -29,4 +30,32 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led6 {
-+			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
-+		};
-+		led7 {
-+			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
-+		};
-+		led8 {
-+			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif0_pins &scif1_pins>;
-+	pinctrl-names = "default";
-+
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_d";
-+		renesas,function = "scif0";
-+	};
-+
-+	scif1_pins: serial1 {
-+		renesas,groups = "scif1_data_d";
-+		renesas,function = "scif1";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 9c94f34..55ed98f 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -75,16 +75,21 @@ void __init sh73a0_pinmux_init(void)
+ #define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,			\
+ };								\
+ 								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
++};								\
++								\
+ static struct platform_device scif##index##_device = {		\
+ 	.name		= "sh-sci",				\
+ 	.id		= index,				\
++	.resource	= scif##index##_resources,		\
++	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+ 	.dev		= {					\
+ 		.platform_data	= &scif##index##_platform_data,	\
+ 	},							\
 -- 
-1.8.4
+1.8.3.2
 
