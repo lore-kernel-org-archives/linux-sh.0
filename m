@@ -1,63 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:58 +0000
-Subject: [PATCH 06/13] ARM: rcar-gen2: Do not setup timer in non-secure mode
-Message-Id: <0fe35077a92ce45acfa2b7259bba516757fb0c3f.1387857168.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:10 +0000
+Subject: [PATCH 03/47] serial: sh-sci: Sort headers alphabetically
+Message-Id: <1386323994-12850-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+This helps locating duplicates.
 
-If the system has been started in non-secure mode, then the ARM generic
-timer is not configurable during the kernel initialisation. Currently
-the only thing we can check for is if the timer has been correctly
-configured during the boot process.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 21 ++++++++++++++++-----
- 1 file changed, 16 insertions(+), 5 deletions(-)
+ drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
+ 1 file changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 5734c24..b6275ab 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -78,12 +78,23 @@ void __init rcar_gen2_timer_init(void)
- 	/* Remap "armgcnt address map" space */
- 	base = ioremap(0xe6080000, PAGE_SIZE);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 07a5da4..6211a2e 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -23,35 +23,35 @@
  
--	/* Update registers with correct frequency */
--	iowrite32(freq, base + CNTFID0);
--	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
-+	/*
-+	 * Update the timer if it is either not running, or is not at the
-+	 * right frequency. The timer is only configurable in secure mode
-+	 * so this avoids an abort if the loader started the timer and
-+	 * entered the kernel in non-secure mode.
-+	 */
-+
-+	if ((ioread32(base + CNTCR) & 1) = 0 ||
-+	    ioread32(base + CNTFID0) != freq) {
-+		/* Update registers with correct frequency */
-+		iowrite32(freq, base + CNTFID0);
-+		asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
-+
-+		/* make sure arch timer is started by setting bit 0 of CNTCR */
-+		iowrite32(1, base + CNTCR);
-+	}
+ #undef DEBUG
  
--	/* make sure arch timer is started by setting bit 0 of CNTCR */
--	iowrite32(1, base + CNTCR);
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
+-#include <linux/module.h>
++#include <linux/clk.h>
++#include <linux/console.h>
++#include <linux/ctype.h>
++#include <linux/cpufreq.h>
++#include <linux/delay.h>
++#include <linux/dmaengine.h>
++#include <linux/dma-mapping.h>
++#include <linux/err.h>
+ #include <linux/errno.h>
+-#include <linux/sh_dma.h>
+-#include <linux/timer.h>
++#include <linux/gpio.h>
++#include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/tty.h>
+-#include <linux/tty_flip.h>
+-#include <linux/serial.h>
+-#include <linux/major.h>
+-#include <linux/string.h>
+-#include <linux/sysrq.h>
+ #include <linux/ioport.h>
++#include <linux/major.h>
++#include <linux/module.h>
+ #include <linux/mm.h>
+-#include <linux/init.h>
+-#include <linux/delay.h>
+-#include <linux/console.h>
+-#include <linux/platform_device.h>
+-#include <linux/serial_sci.h>
+ #include <linux/notifier.h>
++#include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+-#include <linux/cpufreq.h>
+-#include <linux/clk.h>
+-#include <linux/ctype.h>
+-#include <linux/err.h>
+-#include <linux/dmaengine.h>
+-#include <linux/dma-mapping.h>
+ #include <linux/scatterlist.h>
++#include <linux/serial.h>
++#include <linux/serial_sci.h>
++#include <linux/sh_dma.h>
+ #include <linux/slab.h>
+-#include <linux/gpio.h>
++#include <linux/string.h>
++#include <linux/sysrq.h>
++#include <linux/timer.h>
++#include <linux/tty.h>
++#include <linux/tty_flip.h>
  
+ #ifdef CONFIG_SUPERH
+ #include <asm/sh_bios.h>
 -- 
-1.8.4
+1.8.3.2
 
