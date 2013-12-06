@@ -1,61 +1,32 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:36 +0000
-Subject: [PATCH 2/3] irqchip: renesas-intc-irqpin: Fix register bitfield shift calculation
-Message-Id: <e55bc55867585e6628359fd5496316576fe58a2f.1386899269.git.horms+renesas@verge.net.au>
+Date: Fri, 06 Dec 2013 01:41:17 +0000
+Subject: [PATCH 0/2] ARM: shmobile: kzm9g, armadillo800eva: Enable SMSC_PHY in defconfig
+Message-Id: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386899269.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386899269.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi,
 
-The SENSE register bitfield position is incorrectly computed for SoCs
-that use 2-bit IRQ sense fields. Fix it.
+these two patches enable the SMSC_PHY driver for the armadillo800eva
+and kzm9d boards allowing them to make use of that driver rather
+than relying on the generic phy driver.
 
-This has been tested on the Marzen (H1) and Bockw (M1) boards.
+If these patches are well received I plan to make similar
+changes for other shmobile boards.
 
-This bug has been present since the renesas-intc-irqpin driver was
-introduced by 443580486e3b9657 ("irqchip: Renesas INTC External IRQ pin
-driver") in v3.10-rc1.
+These patches are based on renesas-devel-v3.13-rc2-20131205.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/irqchip/irq-renesas-intc-irqpin.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+Simon Horman (2):
+  ARM: shmobile: kzm9g: Enable SMSC_PHY in defconfig
+  ARM: shmobile: armadillo800eva: Enable SMSC_PHY in defconfig
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 82cec63..3ee78f02 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -149,8 +149,9 @@ static void intc_irqpin_read_modify_write(struct intc_irqpin_priv *p,
- static void intc_irqpin_mask_unmask_prio(struct intc_irqpin_priv *p,
- 					 int irq, int do_mask)
- {
--	int bitfield_width = 4; /* PRIO assumed to have fixed bitfield width */
--	int shift = (7 - irq) * bitfield_width; /* PRIO assumed to be 32-bit */
-+	/* The PRIO register is assumed to be 32-bit with fixed 4-bit fields. */
-+	int bitfield_width = 4;
-+	int shift = 32 - (irq + 1) * bitfield_width;
- 
- 	intc_irqpin_read_modify_write(p, INTC_IRQPIN_REG_PRIO,
- 				      shift, bitfield_width,
-@@ -159,8 +160,9 @@ static void intc_irqpin_mask_unmask_prio(struct intc_irqpin_priv *p,
- 
- static int intc_irqpin_set_sense(struct intc_irqpin_priv *p, int irq, int value)
- {
-+	/* The SENSE register is assumed to be 32-bit. */
- 	int bitfield_width = p->config.sense_bitfield_width;
--	int shift = (7 - irq) * bitfield_width; /* SENSE assumed to be 32-bit */
-+	int shift = 32 - (irq + 1) * bitfield_width;
- 
- 	dev_dbg(&p->pdev->dev, "sense irq = %d, mode = %d\n", irq, value);
- 
+ arch/arm/configs/armadillo800eva_defconfig | 1 +
+ arch/arm/configs/kzm9g_defconfig           | 1 +
+ 2 files changed, 2 insertions(+)
+
 -- 
 1.8.4
 
