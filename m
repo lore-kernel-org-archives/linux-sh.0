@@ -1,128 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:32 +0000
-Subject: [PATCH 58/69] ARM: shmobile: Fix r8a7791 GPIO resources in DTS
-Message-Id: <89fbba1210a171f134b72c4d3ccf376265c6ff3f.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:37 +0000
+Subject: [PATCH 30/47] ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as resources
+Message-Id: <1386323994-12850-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-The r8a7791 GPIO resources are currently incorrect. Fix that
-by making them match the English r8a7791 v0.31 data sheet.
-
-Tested with GPIO LED using Koelsch DT reference.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 32 ++++++++++++++++----------------
- 1 file changed, 16 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e36b3652..a349aff 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -49,9 +49,9 @@
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 8344743..70bb553 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -81,11 +81,14 @@ void __init r8a7790_pinmux_init(void)
+ #define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+-	.mapbase	= baseaddr,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+ 	.scbrr_algo_id	= algo,						\
+ 	.scscr		= _scscr,					\
+-	.irqs		= SCIx_IRQ_MUXED(irq),				\
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq),						\
+ }
  
--	gpio0: gpio@ffc40000 {
-+	gpio0: gpio@e6050000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc40000 0 0x50>;
-+		reg = <0 0xe6050000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -61,9 +61,9 @@
- 		interrupt-controller;
- 	};
+ #define R8A7790_SCIF(index, baseaddr, irq)				\
+@@ -116,9 +119,11 @@ R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
+ R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
  
--	gpio1: gpio@ffc41000 {
-+	gpio1: gpio@e6051000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc41000 0 0x50>;
-+		reg = <0 0xe6051000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -73,9 +73,9 @@
- 		interrupt-controller;
- 	};
+ #define r8a7790_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
  
--	gpio2: gpio@ffc42000 {
-+	gpio2: gpio@e6052000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc42000 0 0x50>;
-+		reg = <0 0xe6052000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -85,9 +85,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio3: gpio@ffc43000 {
-+	gpio3: gpio@e6053000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc43000 0 0x50>;
-+		reg = <0 0xe6053000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -97,9 +97,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio4: gpio@ffc44000 {
-+	gpio4: gpio@e6054000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc44000 0 0x50>;
-+		reg = <0 0xe6054000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -109,9 +109,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio5: gpio@ffc45000 {
-+	gpio5: gpio@e6055000 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc45000 0 0x50>;
-+		reg = <0 0xe6055000 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -121,9 +121,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio6: gpio@ffc45400 {
-+	gpio6: gpio@e6055400 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc45400 0 0x50>;
-+		reg = <0 0xe6055400 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
-@@ -133,9 +133,9 @@
- 		interrupt-controller;
- 	};
- 
--	gpio7: gpio@ffc45800 {
-+	gpio7: gpio@e6055800 {
- 		compatible = "renesas,gpio-r8a7791", "renesas,gpio-rcar";
--		reg = <0 0xffc45800 0 0x50>;
-+		reg = <0 0xe6055800 0 0x50>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
+ static const struct renesas_irqc_config irqc0_data __initconst = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
 -- 
-1.8.4
+1.8.3.2
 
