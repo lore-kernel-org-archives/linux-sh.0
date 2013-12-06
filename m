@@ -1,76 +1,95 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:33 +0000
-Subject: [PATCH v5 09/17] ARM: shmobile: koelsch-reference: Instantiate clkdevs for SCIF and CMT
-Message-Id: <1387034741-3852-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:27 +0000
+Subject: [PATCH 20/47] ARM: shmobile: r8a7778: Don't define SCIF platform data in an array
+Message-Id: <1386323994-12850-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-Now that the common clock framework is supported, the clock lookup
-entries in clock-r8a7791.c are not registered anymore. Devices must
-instead reference their clocks in the device tree. However, SCIF and CMT
-devices are still instantiated through platform code, and thus need a
-clock lookup entry.
-
-Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-the corresponding devices. This will be removed when the SCIF and CMT
-devices will be instantiated from the device tree.
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 30 +++++++++++++++++++++++-
- 1 file changed, 29 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 36 ++++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 17 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 4b48e2d..e1c787e 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,6 +19,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 81701cf..676257e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -44,8 +44,8 @@
+ #include <asm/hardware/cache-l2x0.h>
  
-+#include <linux/clk.h>
-+#include <linux/clkdev.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <mach/common.h>
-@@ -28,7 +30,33 @@
+ /* SCIF */
+-#define SCIF_INFO(baseaddr, irq)				\
+-{								\
++#define R8A7778_SCIF(index, baseaddr, irq)			\
++static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+@@ -54,14 +54,17 @@
+ 	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ }
  
- static void __init koelsch_add_standard_devices(void)
+-static struct plat_sci_port scif_platform_data[] __initdata = {
+-	SCIF_INFO(0xffe40000, gic_iid(0x66)),
+-	SCIF_INFO(0xffe41000, gic_iid(0x67)),
+-	SCIF_INFO(0xffe42000, gic_iid(0x68)),
+-	SCIF_INFO(0xffe43000, gic_iid(0x69)),
+-	SCIF_INFO(0xffe44000, gic_iid(0x6a)),
+-	SCIF_INFO(0xffe45000, gic_iid(0x6b)),
+-};
++R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
++R8A7778_SCIF(1, 0xffe41000, gic_iid(0x67));
++R8A7778_SCIF(2, 0xffe42000, gic_iid(0x68));
++R8A7778_SCIF(3, 0xffe43000, gic_iid(0x69));
++R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
++R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
++
++#define r8a7778_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
+ 
+ /* TMU */
+ static struct resource sh_tmu0_resources[] __initdata = {
+@@ -287,8 +290,6 @@ static void __init r8a7778_register_hspi(int id)
+ 
+ void __init r8a7778_add_dt_devices(void)
  {
--#ifndef CONFIG_COMMON_CLK
-+#ifdef CONFIG_COMMON_CLK
-+	/*
-+	 * This is a really crude hack to provide clkdev support to the SCIF
-+	 * and CMT devices until they get moved to DT.
-+	 */
-+	static const char * const scif_names[] = {
-+		"scifa0", "scifa1", "scifb0", "scifb1", "scifb2", "scifa2",
-+		"scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scifa3",
-+		"scifa4", "scifa5",
-+	};
-+	struct clk *clk;
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
-+		clk = clk_get(NULL, scif_names[i]);
-+		if (clk) {
-+			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
-+			clk_put(clk);
-+		}
-+	}
-+
-+	clk = clk_get(NULL, "cmt0");
-+	if (clk) {
-+		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_put(clk);
-+	}
-+#else
- 	r8a7791_clock_init();
+-	int i;
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	void __iomem *base = ioremap_nocache(0xf0100000, 0x1000);
+ 	if (base) {
+@@ -300,11 +301,12 @@ void __init r8a7778_add_dt_devices(void)
+ 	}
  #endif
- 	r8a7791_add_dt_devices();
+ 
+-	for (i = 0; i < ARRAY_SIZE(scif_platform_data); i++)
+-		platform_device_register_data(&platform_bus, "sh-sci", i,
+-					      &scif_platform_data[i],
+-					      sizeof(struct plat_sci_port));
+-
++	r8a7778_register_scif(0);
++	r8a7778_register_scif(1);
++	r8a7778_register_scif(2);
++	r8a7778_register_scif(3);
++	r8a7778_register_scif(4);
++	r8a7778_register_scif(5);
+ 	r8a7778_register_tmu(0);
+ 	r8a7778_register_tmu(1);
+ }
 -- 
 1.8.3.2
 
