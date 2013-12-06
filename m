@@ -1,40 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:17 +0000
-Subject: [PATCH 43/69] ARM: shmobile: Use r8a7791 suffix for IRQC compat string
-Message-Id: <26041b06107fbf4618422618630f154f8d1a7d64.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:13 +0000
+Subject: [PATCH 06/47] serial: sh-sci: Remove duplicate interrupt check in verify port op
+Message-Id: <1386323994-12850-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+The driver checks if the interrupt number is greater than nr_irqs and
+returns an error in that case. The same check is already performed by
+the caller, remove it.
 
-Add "renesas,irqc-r8a7791" to the compatible string for IRQC
-in case of r8a7791. This makes the IRQC follow the same style
-as the other devices and also makes it more future proof.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+ drivers/tty/serial/sh-sci.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 86d5d3a..d85254c 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -154,7 +154,7 @@
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 1671074..3e5f62a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2119,7 +2119,7 @@ static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
+ {
+ 	struct sci_port *s = to_sci_port(port);
  
- 	irqc0: interrupt-controller@e61c0000 {
--		compatible = "renesas,irqc";
-+		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0 0xe61c0000 0 0x200>;
+-	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ] || ser->irq > nr_irqs)
++	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
+ 		return -EINVAL;
+ 	if (ser->baud_base < 2400)
+ 		/* No paper tape reader for Mitch.. */
 -- 
-1.8.4
+1.8.3.2
 
