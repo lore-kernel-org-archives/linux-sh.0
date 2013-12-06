@@ -1,312 +1,162 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:28 +0000
-Subject: [PATCH 22/28] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
-Message-Id: <81728d6e9f72067fdebf9572b5326e28ad6a385d.1385950394.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:18 +0000
+Subject: [PATCH 11/47] serial: sh-sci: Remove unused GPIO request code
+Message-Id: <1386323994-12850-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-SH-Mobile platforms are transitioning from non-multiplatform to
-multiplatform kernel. A new ARCH_SHMOBILE_MULTI configuration symbol has
-been created to group all multiplatform-enabled SH-Mobile SoCs. The
-existing ARCH_SHMOBILE configuration symbol groups SoCs that haven't
-been converted yet.
-
-This arrangement works fine for the arch/ code, but lots of drivers
-needed on both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI depend on
-ARCH_SHMOBILE only. In order to avoid changing them, rename
-ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY, and create a new boolean
-ARCH_SHMOBILE configuration symbol that is selected by both
-ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI.
+The driver requests at initialization time GPIOs passed through platform
+data. No platform makes use of this feature, remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/arm/Kconfig                           | 14 ++++++++------
- arch/arm/Makefile                          |  1 -
- arch/arm/boot/compressed/Makefile          |  2 +-
- arch/arm/boot/dts/Makefile                 |  2 +-
- arch/arm/configs/ape6evm_defconfig         |  2 +-
- arch/arm/configs/armadillo800eva_defconfig |  2 +-
- arch/arm/configs/bockw_defconfig           |  2 +-
- arch/arm/configs/genmai_defconfig          |  2 +-
- arch/arm/configs/koelsch_defconfig         |  2 +-
- arch/arm/configs/kzm9d_defconfig           |  2 +-
- arch/arm/configs/kzm9g_defconfig           |  2 +-
- arch/arm/configs/lager_defconfig           |  2 +-
- arch/arm/configs/mackerel_defconfig        |  2 +-
- arch/arm/configs/marzen_defconfig          |  2 +-
- arch/arm/mach-shmobile/Kconfig             |  8 ++++++--
- drivers/Makefile                           |  2 +-
- 16 files changed, 27 insertions(+), 22 deletions(-)
+ drivers/tty/serial/sh-sci.c | 67 ---------------------------------------------
+ include/linux/serial_sci.h  | 12 --------
+ 2 files changed, 79 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index c1f1a7e..483d316 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -644,8 +644,9 @@ config ARCH_MSM
- 	  stack and controls some vital subsystems
- 	  (clock and power control, etc).
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 9e6600b..5cb7189 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -32,7 +32,6 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/err.h>
+ #include <linux/errno.h>
+-#include <linux/gpio.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+@@ -79,7 +78,6 @@ struct sci_port {
  
--config ARCH_SHMOBILE
--	bool "Renesas SH-Mobile / R-Mobile"
-+config ARCH_SHMOBILE_LEGACY
-+	bool "Renesas SH-Mobile / R-Mobile (non-multiplatform)"
-+	select ARCH_SHMOBILE
- 	select ARM_PATCH_PHYS_VIRT
- 	select CLKDEV_LOOKUP
- 	select GENERIC_CLOCKEVENTS
-@@ -660,7 +661,8 @@ config ARCH_SHMOBILE
- 	select PM_GENERIC_DOMAINS if PM
- 	select SPARSE_IRQ
- 	help
--	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms.
-+	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms using
-+	  a non-multiplatform kernel.
+ 	int			irqs[SCIx_NR_IRQS];
+ 	char			*irqstr[SCIx_NR_IRQS];
+-	char			*gpiostr[SCIx_NR_FNS];
  
- config ARCH_RPC
- 	bool "RiscPC"
-@@ -1611,7 +1613,7 @@ config HZ_FIXED
- 	default 200 if ARCH_EBSA110 || ARCH_S3C24XX || ARCH_S5P64X0 || \
- 		ARCH_S5PV210 || ARCH_EXYNOS4
- 	default AT91_TIMER_HZ if ARCH_AT91
--	default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE
-+	default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE_LEGACY
- 	default 0
+ 	struct dma_chan			*chan_tx;
+ 	struct dma_chan			*chan_rx;
+@@ -1153,67 +1151,6 @@ static void sci_free_irq(struct sci_port *port)
+ 	}
+ }
  
- choice
-@@ -1796,8 +1798,8 @@ config ARCH_WANT_GENERAL_HUGETLB
- source "mm/Kconfig"
+-static const char *sci_gpio_names[SCIx_NR_FNS] = {
+-	"sck", "rxd", "txd", "cts", "rts",
+-};
+-
+-static const char *sci_gpio_str(unsigned int index)
+-{
+-	return sci_gpio_names[index];
+-}
+-
+-static void sci_init_gpios(struct sci_port *port)
+-{
+-	struct uart_port *up = &port->port;
+-	int i;
+-
+-	if (!port->cfg)
+-		return;
+-
+-	for (i = 0; i < SCIx_NR_FNS; i++) {
+-		const char *desc;
+-		int ret;
+-
+-		if (!port->cfg->gpios[i])
+-			continue;
+-
+-		desc = sci_gpio_str(i);
+-
+-		port->gpiostr[i] = kasprintf(GFP_KERNEL, "%s:%s",
+-					     dev_name(up->dev), desc);
+-
+-		/*
+-		 * If we've failed the allocation, we can still continue
+-		 * on with a NULL string.
+-		 */
+-		if (!port->gpiostr[i])
+-			dev_notice(up->dev, "%s string allocation failure\n",
+-				   desc);
+-
+-		ret = gpio_request(port->cfg->gpios[i], port->gpiostr[i]);
+-		if (unlikely(ret != 0)) {
+-			dev_notice(up->dev, "failed %s gpio request\n", desc);
+-
+-			/*
+-			 * If we can't get the GPIO for whatever reason,
+-			 * no point in keeping the verbose string around.
+-			 */
+-			kfree(port->gpiostr[i]);
+-		}
+-	}
+-}
+-
+-static void sci_free_gpios(struct sci_port *port)
+-{
+-	int i;
+-
+-	for (i = 0; i < SCIx_NR_FNS; i++)
+-		if (port->cfg->gpios[i]) {
+-			gpio_free(port->cfg->gpios[i]);
+-			kfree(port->gpiostr[i]);
+-		}
+-}
+-
+ static unsigned int sci_tx_empty(struct uart_port *port)
+ {
+ 	unsigned short status = serial_port_in(port, SCxSR);
+@@ -2239,8 +2176,6 @@ static int sci_init_single(struct platform_device *dev,
  
- config FORCE_MAX_ZONEORDER
--	int "Maximum zone order" if ARCH_SHMOBILE
--	range 11 64 if ARCH_SHMOBILE
-+	int "Maximum zone order" if ARCH_SHMOBILE_LEGACY
-+	range 11 64 if ARCH_SHMOBILE_LEGACY
- 	default "12" if SOC_AM33XX
- 	default "9" if SA1111
- 	default "11"
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index c99b108..1edf8eb 100644
---- a/arch/arm/Makefile
-+++ b/arch/arm/Makefile
-@@ -190,7 +190,6 @@ machine-$(CONFIG_ARCH_S5PC100)		+= s5pc100
- machine-$(CONFIG_ARCH_S5PV210)		+= s5pv210
- machine-$(CONFIG_ARCH_SA1100)		+= sa1100
- machine-$(CONFIG_ARCH_SHMOBILE) 	+= shmobile
--machine-$(CONFIG_ARCH_SHMOBILE_MULTI) 	+= shmobile
- machine-$(CONFIG_ARCH_SIRF)		+= prima2
- machine-$(CONFIG_ARCH_SOCFPGA)		+= socfpga
- machine-$(CONFIG_ARCH_STI)		+= sti
-diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
-index e7190bb..f54d5a2 100644
---- a/arch/arm/boot/compressed/Makefile
-+++ b/arch/arm/boot/compressed/Makefile
-@@ -64,7 +64,7 @@ else
- endif
- endif
+ 		port->dev = &dev->dev;
  
--ifeq ($(CONFIG_ARCH_SHMOBILE),y)
-+ifeq ($(CONFIG_ARCH_SHMOBILE_LEGACY),y)
- OBJS		+= head-shmobile.o
- endif
+-		sci_init_gpios(sci_port);
+-
+ 		pm_runtime_enable(&dev->dev);
+ 	}
  
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index d57c1a6..5839077 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -216,7 +216,7 @@ dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
- dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
- dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
- 	s3c6410-smdk6410.dtb
--dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
-+dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index 1ce3994..cb26c62 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -13,7 +13,7 @@ CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- # CONFIG_BLOCK is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A73A4=y
- CONFIG_MACH_APE6EVM=y
- # CONFIG_ARM_THUMB is not set
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index fae939d..5abf1a2 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -15,7 +15,7 @@ CONFIG_MODULE_FORCE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7740=y
- CONFIG_MACH_ARMADILLO800EVA=y
- # CONFIG_SH_TIMER_TMU is not set
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 8110d8a..80cff50 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -8,7 +8,7 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7778=y
- CONFIG_MACH_BOCKW=y
- CONFIG_MEMORY_START=0x60000000
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-index 69b1531..aa0b704 100644
---- a/arch/arm/configs/genmai_defconfig
-+++ b/arch/arm/configs/genmai_defconfig
-@@ -12,7 +12,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R7S72100=y
- CONFIG_MACH_GENMAI=y
- # CONFIG_SH_TIMER_CMT is not set
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 825c16d..7fd65a0 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -9,7 +9,7 @@ CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- # CONFIG_BLOCK is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_MACH_KOELSCH=y
- # CONFIG_SWP_EMULATE is not set
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index e6aed23..e42ce37 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -13,7 +13,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_MACH_KZM9D=y
- CONFIG_MEMORY_START=0x40000000
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 1ad0280..9934dbc2 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -22,7 +22,7 @@ CONFIG_MODULE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_SH73A0=y
- CONFIG_MACH_KZM9G=y
- CONFIG_MEMORY_START=0x41000000
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 35bff5e..35dc8b2 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -12,7 +12,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_MACH_LAGER=y
- # CONFIG_SH_TIMER_TMU is not set
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index 9fb1189..a61e165 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -14,7 +14,7 @@ CONFIG_MODULE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_SH7372=y
- CONFIG_MACH_MACKEREL=y
- CONFIG_MEMORY_SIZE=0x10000000
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index dd4aced..f21bd40 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -9,7 +9,7 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
- CONFIG_MEMORY_START=0x60000000
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 180b71f..1b7df17 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -1,6 +1,10 @@
-+config ARCH_SHMOBILE
-+	bool
-+
- config ARCH_SHMOBILE_MULTI
- 	bool "SH-Mobile Series" if ARCH_MULTI_V7
- 	depends on MMU
-+	select ARCH_SHMOBILE
- 	select CPU_V7
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU if SMP
-@@ -30,7 +34,7 @@ config MACH_KZM9D
- comment "SH-Mobile System Configuration"
- endif
+@@ -2297,8 +2232,6 @@ static int sci_init_single(struct platform_device *dev,
  
--if ARCH_SHMOBILE
-+if ARCH_SHMOBILE_LEGACY
+ static void sci_cleanup_single(struct sci_port *port)
+ {
+-	sci_free_gpios(port);
+-
+ 	clk_put(port->iclk);
+ 	clk_put(port->fclk);
  
- comment "SH-Mobile System Type"
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index af9834b..e9c3021 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -69,17 +69,6 @@ enum {
+ 	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
+ };
  
-@@ -272,7 +276,7 @@ source "drivers/sh/Kconfig"
+-/* Offsets into the sci_port->gpios array */
+-enum {
+-	SCIx_SCK,
+-	SCIx_RXD,
+-	SCIx_TXD,
+-	SCIx_CTS,
+-	SCIx_RTS,
+-
+-	SCIx_NR_FNS,
+-};
+-
+ enum {
+ 	SCIx_PROBE_REGTYPE,
  
- endif
- 
--if ARCH_SHMOBILE || ARCH_SHMOBILE_MULTI
-+if ARCH_SHMOBILE
- 
- menu "Timer and clock configuration"
- 
-diff --git a/drivers/Makefile b/drivers/Makefile
-index 3cc8214..8e3b8b0 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -118,7 +118,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
-+obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
+@@ -141,7 +130,6 @@ struct plat_sci_port_ops {
+ struct plat_sci_port {
+ 	unsigned long	mapbase;		/* resource base */
+ 	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
+-	unsigned int	gpios[SCIx_NR_FNS];	/* SCK, RXD, TXD, CTS, RTS */
+ 	unsigned int	type;			/* SCI / SCIF / IRDA / HSCIF */
+ 	upf_t		flags;			/* UPF_* flags */
+ 	unsigned long	capabilities;		/* Port features/capabilities */
 -- 
-1.8.4
+1.8.3.2
 
