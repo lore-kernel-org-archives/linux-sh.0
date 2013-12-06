@@ -1,192 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 11:40:48 +0000
-Subject: [PATCH 8/8] spi: rspi: Add support for loopback mode
-Message-Id: <1387885248-28425-9-git-send-email-geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 06 Dec 2013 10:07:43 +0000
+Subject: Re: [PATCH 2/2] ASoC: sh: rcar: Depend on ARCH_SHMOBILE_LEGACY
+Message-Id: <1682501.71qI5yTem5@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
+References: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1384000429-3590-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1384000429-3590-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-spi@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
 
-Add support for specifying loopback mode for RSPI only, based on the SDK
-reference code.
+Hi Morimoto-san,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-rspi.c |   59 +++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 48 insertions(+), 11 deletions(-)
+What's your opinion about this patch ? It needs to be applied on top of 
+"[PATCH 1/2] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY" which has been 
+queued by Simon.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 850025278519..c8f51a3978e1 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -161,8 +161,8 @@
- #define SPCMD_SPRW		0x0060	/* SPI Read/Write Access */
- 
- /* SPBFCR - Buffer Control Register */
--#define SPBFCR_TXRST		0x80	/* Transmit Buffer Data Reset (qspi only) */
--#define SPBFCR_RXRST		0x40	/* Receive Buffer Data Reset (qspi only) */
-+#define SPBFCR_TXRST		0x80	/* Transmit Buffer Data Reset */
-+#define SPBFCR_RXRST		0x40	/* Receive Buffer Data Reset */
- #define SPBFCR_TXTRG_MASK	0x30	/* Transmit Buffer Data Triggering Number */
- #define SPBFCR_RXTRG_MASK	0x07	/* Receive Buffer Data Triggering Number */
- 
-@@ -179,6 +179,7 @@ struct rspi_data {
- 	spinlock_t lock;
- 	struct clk *clk;
- 	u8 spsr;
-+	u8 sppcr;
- 	u8 spdcr;
- 	u8 data_width;
- 	u16 spcmd;
-@@ -248,7 +249,7 @@ struct spi_ops {
- 			struct spi_transfer *t);
- 	int (*receive_pio)(struct rspi_data *rspi, struct spi_message *mesg,
- 			   struct spi_transfer *t);
--
-+	u16 mode_bits;
- };
- 
- /*
-@@ -309,8 +310,8 @@ static int rspi_set_config_register(const struct rspi_data *rspi,
- {
- 	int spbr;
- 
--	/* Sets output mode(CMOS) and MOSI signal(from previous transfer) */
--	rspi_write8(rspi, 0x00, RSPI_SPPCR);
-+	/* Sets output mode */
-+	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
- 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz) - 1;
-@@ -361,8 +362,8 @@ static int qspi_set_config_register(const struct rspi_data *rspi,
- 	u16 spcmd;
- 	int spbr;
- 
--	/* Sets output mode(CMOS) and MOSI signal(from previous transfer) */
--	rspi_write8(rspi, 0x00, RSPI_SPPCR);
-+	/* Sets output mode */
-+	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
- 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz);
-@@ -405,6 +406,21 @@ static int qspi_set_config_register(const struct rspi_data *rspi,
- 
- #define set_config_register(spi, n) spi->ops->set_config_register(spi, n)
- 
-+static void rspi_clear_rxbuf(struct rspi_data *rspi)
-+{
-+	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPBFCR) | SPBFCR_RXRST,
-+		    RSPI_SPBFCR);
-+	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPBFCR) & (~SPBFCR_RXRST),
-+		    RSPI_SPBFCR);
-+}
-+static void rspi_clear_txbuf(struct rspi_data *rspi)
-+{
-+	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPBFCR) | SPBFCR_TXRST,
-+		    RSPI_SPBFCR);
-+	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPBFCR) & (~SPBFCR_TXRST),
-+		    RSPI_SPBFCR);
-+}
-+
- static void rspi_enable_irq(const struct rspi_data *rspi, u8 enable)
- {
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | enable, RSPI_SPCR);
-@@ -444,6 +460,13 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- {
- 	int remain = t->len;
- 	const u8 *data = t->tx_buf;
-+
-+	if (rspi->sppcr & SPPCR_SPLP) {
-+		/* loopback mode */
-+		rspi_clear_txbuf(rspi);
-+		rspi_clear_rxbuf(rspi);
-+	}
-+
- 	while (remain > 0) {
- 		rspi_set_txmode(rspi);
- 
-@@ -453,7 +476,8 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 			return -ETIMEDOUT;
- 		}
- 
--		if (!rspi->txmode && remain != t->len) {
-+		if (!rspi->txmode && remain != t->len &&
-+		    !(rspi->sppcr & SPPCR_SPLP)) {
- 			if (rspi_wait_for_interrupt(rspi, SPSR_SPRF,
- 						    SPCR_SPRIE) < 0) {
- 				dev_err(&rspi->master->dev,
-@@ -470,7 +494,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	/* Waiting for the last transmition */
- 	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
- 
--	if (!rspi->txmode) {
-+	if (!rspi->txmode && !(rspi->sppcr & SPPCR_SPLP)) {
- 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
- 			dev_err(&rspi->master->dev,
- 				"%s: receive timeout\n", __func__);
-@@ -643,7 +667,7 @@ static void rspi_receive_init(const struct rspi_data *rspi)
- 	u8 spsr;
- 
- 	spsr = rspi_read8(rspi, RSPI_SPSR);
--	if (spsr & SPSR_SPRF)
-+	if (spsr & SPSR_SPRF && !(rspi->sppcr & SPPCR_SPLP))
- 		rspi_read_data(rspi);	/* dummy read */
- 	if (spsr & SPSR_OVRF)
- 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPSR) & ~SPSR_OVRF,
-@@ -681,6 +705,12 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 		remain--;
- 	}
- 
-+	if (rspi->sppcr & SPPCR_SPLP) {
-+		/* loopback mode */
-+		rspi_clear_txbuf(rspi);
-+		rspi_clear_rxbuf(rspi);
-+	}
-+
- 	return 0;
- }
- 
-@@ -910,6 +940,11 @@ static int rspi_setup(struct spi_device *spi)
- 	if (spi->mode & SPI_CPHA)
- 		rspi->spcmd |= SPCMD_CPHA;
- 
-+	/* CMOS output mode and MOSI signal from previous transfer */
-+	rspi->sppcr = 0;
-+	if (spi->mode & SPI_LOOP)
-+		rspi->sppcr |= SPPCR_SPLP;
-+
- 	set_config_register(rspi, 8);
- 
- 	return 0;
-@@ -1099,7 +1134,7 @@ static int rspi_probe(struct platform_device *pdev)
- 	master->setup = rspi_setup;
- 	master->transfer = rspi_transfer;
- 	master->cleanup = rspi_cleanup;
--	master->mode_bits = SPI_CPHA | SPI_CPOL;
-+	master->mode_bits = ops->mode_bits;
- 
- 	for (i = 0; i < rspi->numirq; i++) {
- 		ret = devm_request_irq(&pdev->dev, rspi->irq[i], rspi_irq, 0,
-@@ -1146,6 +1181,7 @@ static struct spi_ops rspi_ops = {
- 	.set_config_register =		rspi_set_config_register,
- 	.send_pio =			rspi_send_pio,
- 	.receive_pio =			rspi_receive_pio,
-+	.mode_bits =			SPI_CPHA | SPI_CPOL | SPI_LOOP,
- };
- 
- static struct spi_ops qspi_ops = {
-@@ -1153,6 +1189,7 @@ static struct spi_ops qspi_ops = {
- 	.set_config_register =		qspi_set_config_register,
- 	.send_pio =			qspi_send_pio,
- 	.receive_pio =			qspi_receive_pio,
-+	.mode_bits =			SPI_CPHA | SPI_CPOL,
- };
- 
- static struct platform_device_id spi_driver_ids[] = {
+On Saturday 09 November 2013 13:33:49 Laurent Pinchart wrote:
+> The driver doesn't compile on multiplatform kernels as it requires
+> <mach/clock.h>.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  sound/soc/sh/Kconfig | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+> index 56d8ff6..ce7cfd6 100644
+> --- a/sound/soc/sh/Kconfig
+> +++ b/sound/soc/sh/Kconfig
+> @@ -36,6 +36,7 @@ config SND_SOC_SH4_SIU
+> 
+>  config SND_SOC_RCAR
+>  	tristate "R-Car series SRU/SCU/SSIU/SSI support"
+> +	depends on ARCH_SHMOBILE_LEGACY
+>  	select SND_SIMPLE_CARD
+>  	select RCAR_CLK_ADG
+>  	help
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
