@@ -1,134 +1,112 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:19 +0000
-Subject: [PATCH 23/26] ARM: Kconfig: Mention Renesas ARM SoCs instead of SH-Mobile
-Message-Id: <0d9fd6165a01093ac82c1088d0544a304f72b4d6.1387763524.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:26 +0000
+Subject: [PATCH 19/47] ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
+Message-Id: <1386323994-12850-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
 
-Only the SH-Mobile product name is mentioned in the Kconfig descriptions
-and help texts. This makes it difficult for external engineers working
-on other Renesas platforms to find upstream platform support as the
-combination of the SH-Mobile name and using the product number proved an
-effective method of concealment.
-
-Replace the "SH-Mobile" name with "Renesas ARM SoCs" in all the related
-descriptions, help texts and comments.
-
-Reported-by: Phil Edworthy <phil.edworthy@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/Kconfig               |  7 ++++---
- arch/arm/mach-shmobile/Kconfig | 18 +++++++++---------
- 2 files changed, 13 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 58 +++++++++++++++-------------------
+ 1 file changed, 26 insertions(+), 32 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 483d316..341b67d 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -645,7 +645,7 @@ config ARCH_MSM
- 	  (clock and power control, etc).
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index cc94b64..605298b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -40,41 +40,35 @@ void __init r8a73a4_pinmux_init(void)
+ 					ARRAY_SIZE(pfc_resources));
+ }
  
- config ARCH_SHMOBILE_LEGACY
--	bool "Renesas SH-Mobile / R-Mobile (non-multiplatform)"
-+	bool "Renesas ARM SoCs (non-multiplatform)"
- 	select ARCH_SHMOBILE
- 	select ARM_PATCH_PHYS_VIRT
- 	select CLKDEV_LOOKUP
-@@ -661,8 +661,9 @@ config ARCH_SHMOBILE_LEGACY
- 	select PM_GENERIC_DOMAINS if PM
- 	select SPARSE_IRQ
- 	help
--	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms using
--	  a non-multiplatform kernel.
-+	  Support for Renesas ARM SoC platforms using a non-multiplatform
-+	  kernel. This includes the SH-Mobile, R-Mobile, EMMA-Mobile, R-Car
-+	  and RZ families.
+-#define SCIF_COMMON(scif_type, baseaddr, irq)			\
++#define R8A73A4_SCIF(scif_type, _scscr, index, baseaddr, irq)	\
++static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+ 	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq)
+-
+-#define SCIFA_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
+-	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++	.scscr		= _scscr,				\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ }
  
- config ARCH_RPC
- 	bool "RiscPC"
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index bb0837b..3e57d45 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -2,7 +2,7 @@ config ARCH_SHMOBILE
- 	bool
+-#define SCIFB_DATA(index, baseaddr, irq)	\
+-[index] = {					\
+-	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
+-	.scscr = SCSCR_RE | SCSCR_TE,		\
+-}
++#define R8A73A4_SCIFA(index, baseaddr, irq)	\
++	R8A73A4_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0, \
++		     index, baseaddr, irq)
  
- config ARCH_SHMOBILE_MULTI
--	bool "SH-Mobile Series" if ARCH_MULTI_V7
-+	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
- 	depends on MMU
- 	select ARCH_SHMOBILE
- 	select CPU_V7
-@@ -19,7 +19,7 @@ config ARCH_SHMOBILE_MULTI
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
++#define R8A73A4_SCIFB(index, baseaddr, irq)	\
++	R8A73A4_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE, \
++		     index, baseaddr, irq)
  
- if ARCH_SHMOBILE_MULTI
+-static const struct plat_sci_port scif[] = {
+-	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+-	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+-	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+-	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
+-	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
+-	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
+-};
++R8A73A4_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
++R8A73A4_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
++R8A73A4_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
++R8A73A4_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
++R8A73A4_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
++R8A73A4_SCIFB(5, 0xe6cf0000, gic_spi(151)); /* SCIFB3 */
  
--comment "SH-Mobile System Type"
-+comment "Renesas ARM SoCs System Type"
+-static inline void r8a73a4_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define r8a73a4_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-@@ -31,7 +31,7 @@ config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
+ static const struct renesas_irqc_config irqc0_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ31 */
+@@ -192,12 +186,12 @@ static struct resource cmt10_resources[] = {
  
--comment "SH-Mobile Board Type"
-+comment "Renesas ARM SoCs Board Type"
+ void __init r8a73a4_add_dt_devices(void)
+ {
+-	r8a73a4_register_scif(SCIFA0);
+-	r8a73a4_register_scif(SCIFA1);
+-	r8a73a4_register_scif(SCIFB0);
+-	r8a73a4_register_scif(SCIFB1);
+-	r8a73a4_register_scif(SCIFB2);
+-	r8a73a4_register_scif(SCIFB3);
++	r8a73a4_register_scif(0);
++	r8a73a4_register_scif(1);
++	r8a73a4_register_scif(2);
++	r8a73a4_register_scif(3);
++	r8a73a4_register_scif(4);
++	r8a73a4_register_scif(5);
+ 	r8a7790_register_cmt(10);
+ }
  
- config MACH_GENMAI
- 	bool "Genmai board"
-@@ -46,12 +46,12 @@ config MACH_KZM9D
- 	depends on ARCH_EMEV2
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 
--comment "SH-Mobile System Configuration"
-+comment "Renesas ARM SoCs System Configuration"
- endif
- 
- if ARCH_SHMOBILE_LEGACY
- 
--comment "SH-Mobile System Type"
-+comment "Renesas ARM SoCs System Type"
- 
- config ARCH_SH7372
- 	bool "SH-Mobile AP4 (SH7372)"
-@@ -137,7 +137,7 @@ config ARCH_R7S72100
- 	select CPU_V7
- 	select SH_CLK_CPG
- 
--comment "SH-Mobile Board Type"
-+comment "Renesas ARM SoCs Board Type"
- 
- config MACH_APE6EVM
- 	bool "APE6EVM board"
-@@ -301,7 +301,7 @@ config MACH_KZM9G_REFERENCE
- 
- 	   This is intended to aid developers
- 
--comment "SH-Mobile System Configuration"
-+comment "Renesas ARM SoCs System Configuration"
- 
- config CPU_HAS_INTEVT
-         bool
-@@ -326,8 +326,8 @@ config SHMOBILE_TIMER_HZ
- 	  Allows the configuration of the timer frequency. It is customary
- 	  to have the timer interrupt run at 1000 Hz or 100 Hz, but in the
- 	  case of low timer frequencies other values may be more suitable.
--	  SH-Mobile systems using a 32768 Hz RCLK for clock events may want
--	  to select a HZ value such as 128 that can evenly divide RCLK.
-+	  Renesas ARM SoC systems using a 32768 Hz RCLK for clock events may
-+	  want to select a HZ value such as 128 that can evenly divide RCLK.
- 	  A HZ value that does not divide evenly may cause timer drift.
- 
- config SH_TIMER_CMT
 -- 
-1.8.4
+1.8.3.2
 
