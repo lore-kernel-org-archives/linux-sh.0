@@ -1,24 +1,30 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 11 Dec 2013 22:10:05 +0000
-Subject: Re: [PATCH] micrel: add support for KSZ8041RNLI
-Message-Id: <20131211.171005.1026686921972557583.davem@davemloft.net>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Fri, 06 Dec 2013 20:52:38 +0000
+Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
+Message-Id: <52A23916.40507@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52A8D90F.9090002@cogentembedded.com>
-	<20131211.161146.379334754489134708.davem@davemloft.net>
-	<52A8EEF8.3090503@cogentembedded.com>
-In-Reply-To: <52A8EEF8.3090503@cogentembedded.com>
+References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk> <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk> <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk> <20130905060429.GJ14960@verge.net.au> <20130925044503.GA24243@verge.net.au>
+In-Reply-To: <20130925044503.GA24243@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>
+Cc: magnus.damm@gmail.com, grant.likely@linaro.org, rob.herring@calxeda.com, devicetree@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, ben.dooks@codethink.co.uk
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 12 Dec 2013 02:02:16 +0300
+On 25/09/13 05:45, Simon Horman wrote:
 
->    Well, the R8A7791 Ether platform support should appear only in 3.14,
->    so don't bother. I just wanted to understand the principle you
->    follow...
+> Hi Ian,
+>
+> I spoke with Magnus and in turn Ben about this at LinuxCon in New Orleans
+> last week.
+>
+> Basically the position of Magnus and I is that any support for this
+> hardware is an incremental improvement on the current situation: no
+> support.
+>
+> With this in mind from an shmobile point of view I am happy for this code.
+> And there is no need to wait for a review from Magnus.
 
-Generally speaking, if the change to support a new device is simply
-a matter of adding a new device ID I tend to queue it up for 'net'.
+Has anyone merged this for upstream yet? If not, where should I send it?
+
+-Ian
