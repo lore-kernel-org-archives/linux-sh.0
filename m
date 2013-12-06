@@ -1,49 +1,134 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 20:15:54 +0000
-Subject: [PATCH v2 0/8] SoC and board integration for RSPI on RZ/A1H
-Message-Id: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:07 +0000
+Subject: [PATCH 00/47] sh-sci updates for v3.14
+Message-Id: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-This patch series integrates Renesas RSPI on the RZ/A1H aka R7S72100 SoC,
-and the Genmai development board.
+Hello,
 
-The series is based on renesas-devel-v3.13-rc5-20131226, with Magnus'
-pinctrl, Wolfram's riic, and Simon's sh_eth work applied on top.
+This patch series combines the sh-sci and related arch/ changes from the
+following previously posted series.
 
-It was tested on the Genmai development board (genmai-reference), using
-an in-kernel version of Documentation/spi/spidev_test.c, exercising
-loopback mode on rspi1, with the same outcome as the SDK reference code.
+[PATCH 0/2] serial: sh-sci: Prepare for CCF migration
+[PATCH v3 00/29] Add OF support to the sh-sci serial port driver
+[PATCH 00/16] sh-sci: Remove unnecessary fields from platform data
 
-Notes:
-  1. The proposed DT bindings also talk about QSPI on the R8A779x, as those
-     SoCs use the same driver.
-  2. As the actual spi-rspi driver doesn't use DT yet, platform devices and
-     spi board info are still used from C to instantiate SPI buses and their
-     children, while pinctrl is performed by DT.
-  3. It will not work with the non-reference version of genmai, due to
-     missing pinmux configuration in setup-r7s72100.c.
-  4. Patches [4/8] and [5/8] are new.
+The patches have been rebased on top of renesas-devel-v3.13-rc2-20131205 and
+reordered to have a single arch/ set between two sh-sci sets. Nothing else has
+been changed.
 
-    [1/8] pinctrl: sh-pfc: r7s72100: Add RSPI support
-    [2/8] ARM: shmobile: r7s72100: Add RSPI clocks
-    [3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
-    [4/8] ARM: shmobile: genmai: Add RSPI children (NEW)
-    [5/8] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux (NEW)
-    [6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
-    [7/8] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
-    [8/8] [RFC] ARM: shmobile: genmai reference: Add RSPI nodes
+Simon, I believe this set to be ready for v3.14. Greg has acked all the sh-sci
+patches, and no comment has been received for some time now.
 
-Gr{oetje,eeting}s,
+Bastian Hecht (1):
+  serial: sh-sci: Add OF support
 
-						Geert
+Laurent Pinchart (46):
+  serial: sh-sci: Don't enable/disable port from within break timer
+  serial: sh-sci: Convert to clk_prepare/unprepare
+  serial: sh-sci: Sort headers alphabetically
+  serial: sh-sci: Remove baud rate calculation algorithm 5
+  serial: sh-sci: Simplify baud rate calculation algorithms
+  serial: sh-sci: Remove duplicate interrupt check in verify port op
+  serial: sh-sci: Set the UPF_FIXED_PORT flag
+  serial: sh-sci: Don't check IRQ in verify port operation
+  serial: sh-sci: Support resources passed through platform resources
+  serial: sh-sci: Move overrun_bit and error_mask fields out of pdata
+  serial: sh-sci: Remove unused GPIO request code
+  serial: sh-sci: Compute overrun_bit without using baud rate algo
+  serial: sh-sci: Rework baud rate calculation
+  ARM: shmobile: sh7372: Use macros to declare SCIF devices
+  ARM: shmobile: sh73a0: Use macros to declare SCIF devices
+  ARM: shmobile: r8a7740: Use macros to declare SCIF devices
+  ARM: shmobile: r8a7779: Use macros to declare SCIF devices
+  ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7778: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
+  ARM: shmobile: r8a7791: Don't define SCIF platform data in an array
+  ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
+  ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
+  ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a73a4: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7740: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7779: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as
+    resources
+  ARM: shmobile: sh7372: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: sh73a0: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r7s72100: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r8a73a4: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r8a7740: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r8a7778: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r8a7779: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r8a7790: Don't set plat_sci_port scbrr_algo_id field
+  ARM: shmobile: r8a7791: Don't set plat_sci_port scbrr_algo_id field
+  sh: Declare SCIF register base and IRQ as resources
+  sh: sh772[34]: Set serial port sampling rate to 8 for SCIFA ports
+  sh: Don't set plat_sci_port scbrr_algo_id field
+  serial: sh-sci: Remove platform data scbrr_algo_id field
+  serial: sh-sci: Remove platform data mapbase and irqs fields
+  serial: sh-sci: Add device tree bindings documentation
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ .../bindings/serial/renesas,sci-serial.txt         |  46 +++
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  64 ++--
+ arch/arm/mach-shmobile/setup-r8a73a4.c             |  66 ++--
+ arch/arm/mach-shmobile/setup-r8a7740.c             | 195 ++--------
+ arch/arm/mach-shmobile/setup-r8a7778.c             |  46 ++-
+ arch/arm/mach-shmobile/setup-r8a7779.c             | 128 ++-----
+ arch/arm/mach-shmobile/setup-r8a7790.c             | 116 +++---
+ arch/arm/mach-shmobile/setup-r8a7791.c             | 129 +++----
+ arch/arm/mach-shmobile/setup-sh7372.c              | 160 ++------
+ arch/arm/mach-shmobile/setup-sh73a0.c              | 191 ++--------
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c              |  30 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c                |  10 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c             |  80 ++--
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  40 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  40 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c             | 104 ++++--
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c             | 104 ++++--
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c              |  20 +-
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c              |  30 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c              |  20 +-
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c              |  20 +-
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c             |  16 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c              |  20 +-
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c              |  62 ++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c             |  40 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c             |  10 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c             |  30 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c             |  63 +++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  63 +++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c             |  72 ++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c             |  30 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c             |  30 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c             | 100 +++--
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c             |  22 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c             |  60 ++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c             |  88 +++--
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c               |  48 ++-
+ arch/sh/kernel/cpu/sh5/setup-sh5.c                 |  12 +-
+ drivers/tty/serial/sh-sci.c                        | 406 ++++++++++++---------
+ drivers/tty/serial/sh-sci.h                        |   2 +-
+ include/linux/serial_sci.h                         |  52 +--
+ 41 files changed, 1497 insertions(+), 1368 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+-- 
+Regards,
+
+Laurent Pinchart
+
