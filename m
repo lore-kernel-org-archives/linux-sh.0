@@ -1,39 +1,36 @@
-From: Levente Kurusa <levex@linux.com>
-Date: Thu, 19 Dec 2013 15:03:39 +0000
-Subject: [PATCH 28/38] superhyway: intc: add missing put_device call
-Message-Id: <1387465429-3568-29-git-send-email-levex@linux.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:44 +0000
+Subject: [PATCH 37/47] ARM: shmobile: r8a7778: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <1386323994-12850-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387465429-3568-2-git-send-email-levex@linux.com>
-In-Reply-To: <1387465429-3568-2-git-send-email-levex@linux.com>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Levente Kurusa <levex@linux.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-This is required so that we give up the last reference to the device.
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-Signed-off-by: Levente Kurusa <levex@linux.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/sh/intc/core.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-index 8f32a13..c89768e 100644
---- a/drivers/sh/intc/core.c
-+++ b/drivers/sh/intc/core.c
-@@ -504,8 +504,10 @@ static int __init register_intc_devs(void)
- 			if (error = 0)
- 				error = device_create_file(&d->dev,
- 							   &dev_attr_name);
--			if (error)
-+			if (error) {
-+				put_device(&d->dev);
- 				break;
-+			}
- 		}
- 	}
- 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 47c8230..855e2f3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -48,7 +48,6 @@
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.type		= PORT_SCIF,				\
+ };								\
+ 								\
 -- 
-1.8.3.1
+1.8.3.2
 
