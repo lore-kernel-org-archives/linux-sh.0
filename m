@@ -1,19 +1,57 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 24 Dec 2013 13:20:39 +0000
-Subject: Re: [PATCH 0/5] spi: rspi: cleanups
-Message-Id: <20131224132039.GH30815@sirena.org.uk>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Fri, 06 Dec 2013 03:20:16 +0000
+Subject: Re: [PATCH 02/15] input: sh_keysc: Restrict non-COMPILE_TEST compilation
+Message-Id: <20131206032016.GA16530@core.coreip.homeip.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131128073636.GD24146@verge.net.au>
+In-Reply-To: <20131128073636.GD24146@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 10:49:29AM +0100, Geert Uytterhoeven wrote:
-> 	Hi Mark,
+On Thu, Nov 28, 2013 at 04:36:36PM +0900, Simon Horman wrote:
+> On Wed, Nov 27, 2013 at 02:18:24AM +0100, Laurent Pinchart wrote:
+> > Hardware supported by the driver is only found on SUPERH or
+> > ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
+> > 
+> > Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+> > Cc: linux-input@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > 
-> This is a series of small cleanups for the Renesas RSPI driver:
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Applied all, thanks.
+
+Applied, thank you.
+
+> 
+> > ---
+> >  drivers/input/keyboard/Kconfig | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+> > index bb174c1..a673c9f 100644
+> > --- a/drivers/input/keyboard/Kconfig
+> > +++ b/drivers/input/keyboard/Kconfig
+> > @@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
+> >  
+> >  config KEYBOARD_SH_KEYSC
+> >  	tristate "SuperH KEYSC keypad support"
+> > -	depends on SUPERH || ARM || COMPILE_TEST
+> > +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+> >  	help
+> >  	  Say Y here if you want to use a keypad attached to the KEYSC block
+> >  	  on SuperH processors such as sh7722 and sh7343.
+> > -- 
+> > 1.8.3.2
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+
+-- 
+Dmitry
