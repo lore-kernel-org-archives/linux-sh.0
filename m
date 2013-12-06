@@ -1,39 +1,60 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 02:38:33 +0000
-Subject: [PATCH 05/05 v2] pinctrl: sh-pfc: r8a7791 and r7s72100 binding docs
-Message-Id: <20131217023833.24573.83149.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:38 +0000
+Subject: [PATCH 31/47] ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as resources
+Message-Id: <1386323994-12850-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217023745.24573.3660.sendpatchset@w520>
-In-Reply-To: <20131217023745.24573.3660.sendpatchset@w520>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, wsa@the-dreams.de, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Magnus Damm <damm@opensource.se>
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Add compatible strings for r7s72100 and r8a7791.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/setup-r8a7791.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
- Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    2 ++
- 1 file changed, 2 insertions(+)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 3fe0d7d..f15b537 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -87,11 +87,14 @@ void __init r8a7791_pinmux_init(void)
+ #define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+-	.mapbase	= baseaddr,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+ 	.scbrr_algo_id	= algo,						\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq),				\
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq),						\
+ }
+ 
+ #define R8A7791_SCIF(index, baseaddr, irq)				\
+@@ -120,9 +123,11 @@ R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
+ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+ 
+ #define r8a7791_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
+ 
+ static const struct sh_timer_config cmt00_platform_data __initconst = {
+ 	.name = "CMT00",
+-- 
+1.8.3.2
 
---- 0001/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-+++ work/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt	2013-12-16 19:55:12.000000000 +0900
-@@ -10,11 +10,13 @@ Pin Control
- Required Properties:
- 
-   - compatible: should be one of the following.
-+    - "renesas,pfc-r7s72100": for R7S72100 (RZ/A1H) compatible pin-controller.
-     - "renesas,pfc-r8a73a4": for R8A73A4 (R-Mobile APE6) compatible pin-controller.
-     - "renesas,pfc-r8a7740": for R8A7740 (R-Mobile A1) compatible pin-controller.
-     - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
-     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
-     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
-+    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
-     - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
-     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
- 
