@@ -1,132 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:06 +0000
-Subject: [PATCH 02/12] ARM: shmobile: Koelsch: add Ether support
-Message-Id: <974faba70550409049ee349939f4479ad98908ae.1387891831.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:30 +0000
+Subject: [PATCH 23/47] ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
+Message-Id: <1386323994-12850-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Register Ether platform device and pin data on  the  Koelsch board.
-Register platform fixup for Micrel KSZ8041 PHY, just like on the Lager board.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 56 +++++++++++++++++++++++++++++++++-
- 1 file changed, 55 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh7372.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 5d84fb6..de7cc64 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -25,10 +25,12 @@
- #include <linux/input.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
-+#include <linux/phy.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
- #include <linux/platform_device.h>
-+#include <linux/sh_eth.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
-@@ -87,6 +89,19 @@ static void __init koelsch_add_du_device(void)
- 	platform_device_register_full(&info);
- }
- 
-+/* Ether */
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
-+	.phy			= 0x1,
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.phy_interface		= PHY_INTERFACE_MODE_RMII,
-+	.ether_link_active_low	= 1,
-+};
-+
-+static const struct resource ether_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee700000, 0x400),
-+	DEFINE_RES_IRQ(gic_spi(162)),
-+};
-+
- /* LEDS */
- static struct gpio_led koelsch_leds[] = {
- 	{
-@@ -141,6 +156,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 				  "du_sync", "du"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
- 				  "du_clk_out_0", "du"),
-+	/* Ether */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
-+				  "eth_link", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
-+				  "eth_mdio", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
-+				  "eth_rmii", "eth"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
-+				  "intc_irq0", "intc"),
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
- 				  "scif0_data_d", "scif0"),
-@@ -156,6 +180,10 @@ static void __init koelsch_add_standard_devices(void)
- 				  ARRAY_SIZE(koelsch_pinctrl_map));
- 	r8a7791_pinmux_init();
- 	r8a7791_add_standard_devices();
-+	platform_device_register_resndata(&platform_bus, "r8a7791-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  &ether_pdata, sizeof(ether_pdata));
- 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
- 				      &koelsch_leds_pdata,
- 				      sizeof(koelsch_leds_pdata));
-@@ -166,6 +194,32 @@ static void __init koelsch_add_standard_devices(void)
- 	koelsch_add_du_device();
- }
- 
-+/*
-+ * Ether LEDs on the Koelsch board are named LINK and ACTIVE which corresponds
-+ * to non-default 01 setting of the Micrel KSZ8041 PHY control register 1 bits
-+ * 14-15. We have to set them back to 01 from the default 00 value each time
-+ * the PHY is reset. It's also important because the PHY's LED0 signal is
-+ * connected to SoC's ETH_LINK signal and in the PHY's default mode it will
-+ * bounce on and off after each packet, which we apparently want to avoid.
-+ */
-+static int koelsch_ksz8041_fixup(struct phy_device *phydev)
-+{
-+	u16 phyctrl1 = phy_read(phydev, 0x1e);
-+
-+	phyctrl1 &= ~0xc000;
-+	phyctrl1 |= 0x4000;
-+	return phy_write(phydev, 0x1e, phyctrl1);
-+}
-+
-+static void __init koelsch_init(void)
-+{
-+	koelsch_add_standard_devices();
-+
-+	if (IS_ENABLED(CONFIG_PHYLIB))
-+		phy_register_fixup_for_id("r8a7791-ether-ff:01",
-+					  koelsch_ksz8041_fixup);
-+}
-+
- static const char * const koelsch_boards_compat_dt[] __initconst = {
- 	"renesas,koelsch",
- 	NULL,
-@@ -175,7 +229,7 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= r8a7791_init_early,
- 	.init_time	= rcar_gen2_timer_init,
--	.init_machine	= koelsch_add_standard_devices,
-+	.init_machine	= koelsch_init,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= koelsch_boards_compat_dt,
- MACHINE_END
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 77627dd..798f8ac 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -90,16 +90,21 @@ void __init sh7372_pinmux_init(void)
+ #define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,			\
+ };								\
+ 								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
++};								\
++								\
+ static struct platform_device scif##index##_device = {		\
+ 	.name		= "sh-sci",				\
+ 	.id		= index,				\
++	.resource	= scif##index##_resources,		\
++	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+ 	.dev		= {					\
+ 		.platform_data	= &scif##index##_platform_data,	\
+ 	},							\
 -- 
-1.8.4
+1.8.3.2
 
