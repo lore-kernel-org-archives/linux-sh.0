@@ -1,85 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:54 +0000
-Subject: [PATCH 02/13] ARM: shmobile: r8a7790: add I2C support
-Message-Id: <b448c904f5058b6cd35bf1a43ca219dcfeca4da6.1387857168.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:45 +0000
+Subject: [PATCH 38/47] ARM: shmobile: r8a7779: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <1386323994-12850-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c |  4 ++++
- arch/arm/mach-shmobile/setup-r8a7790.c | 25 +++++++++++++++++++++++++
- 2 files changed, 29 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 36c8917..b6ecea3 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -292,9 +292,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
- 	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
-+	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
-+	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
-+	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
-+	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index c47bcebb..1a11e26 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -63,6 +63,27 @@ R8A7790_GPIO(5);
- 		&r8a7790_gpio##idx##_platform_data,			\
- 		sizeof(r8a7790_gpio##idx##_platform_data))
- 
-+static struct resource i2c_resources[] __initdata = {
-+	/* I2C0 */
-+	DEFINE_RES_MEM(0xE6508000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(287)),
-+	/* I2C1 */
-+	DEFINE_RES_MEM(0xE6518000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(288)),
-+	/* I2C2 */
-+	DEFINE_RES_MEM(0xE6530000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(286)),
-+	/* I2C3 */
-+	DEFINE_RES_MEM(0xE6540000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(290)),
-+
-+};
-+
-+#define r8a7790_register_i2c(idx)		\
-+	platform_device_register_simple(	\
-+		"i2c-rcar", idx,		\
-+		i2c_resources + (2 * idx), 2);	\
-+
- void __init r8a7790_pinmux_init(void)
- {
- 	platform_device_register_simple("pfc-r8a7790", -1, pfc_resources,
-@@ -73,6 +94,10 @@ void __init r8a7790_pinmux_init(void)
- 	r8a7790_register_gpio(3);
- 	r8a7790_register_gpio(4);
- 	r8a7790_register_gpio(5);
-+	r8a7790_register_i2c(0);
-+	r8a7790_register_i2c(1);
-+	r8a7790_register_i2c(2);
-+	r8a7790_register_i2c(3);
- }
- 
- #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 85371ee..8e860b3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -193,7 +193,6 @@ void __init r8a7779_pinmux_init(void)
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+ };								\
+ 								\
 -- 
-1.8.4
+1.8.3.2
 
