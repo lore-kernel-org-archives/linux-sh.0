@@ -1,32 +1,160 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 04 Dec 2013 01:27:57 +0000
-Subject: [PATCH 0/3] ARM: shmobile: add FSI sound support for DT
-Message-Id: <871u1t1k2x.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:24 +0000
+Subject: [PATCH 17/47] ARM: shmobile: r8a7779: Use macros to declare SCIF devices
+Message-Id: <1386323994-12850-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
+Replace copy-n-paste SCIF platform data and device declaration with a
+macro. This reduces the amount of code and improves readability.
 
-Hi Simon
-
-ALSA SoC supports simple-audio-card via DT now
-
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: topic/dt
-
-These pathes adds FSI-WM8978 sound support for armadillo.
-
-Kuninori Morimoto (3):
-      ARM: shmobile: r8a7740: add FSI clock support for DT
-      ARM: shmobile: r8a7740: add FSI support via DTSI
-      ARM: shmobile: armadillo: add FSI support for DTS
-
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   37 ++++++++++++++++++++
- arch/arm/boot/dts/r8a7740.dtsi                     |    9 +++++
- arch/arm/mach-shmobile/clock-r8a7740.c             |    1 +
- 3 files changed, 47 insertions(+)
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/setup-r8a7779.c | 124 +++++++--------------------------
+ 1 file changed, 24 insertions(+), 100 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8f94531..df418f1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -188,107 +188,31 @@ void __init r8a7779_pinmux_init(void)
+ 			    ARRAY_SIZE(r8a7779_pinctrl_devices));
+ }
+ 
+-static struct plat_sci_port scif0_platform_data = {
+-	.mapbase	= 0xffe40000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
+-};
+-
+-static struct platform_device scif0_device = {
+-	.name		= "sh-sci",
+-	.id		= 0,
+-	.dev		= {
+-		.platform_data	= &scif0_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif1_platform_data = {
+-	.mapbase	= 0xffe41000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
+-};
+-
+-static struct platform_device scif1_device = {
+-	.name		= "sh-sci",
+-	.id		= 1,
+-	.dev		= {
+-		.platform_data	= &scif1_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif2_platform_data = {
+-	.mapbase	= 0xffe42000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
+-};
+-
+-static struct platform_device scif2_device = {
+-	.name		= "sh-sci",
+-	.id		= 2,
+-	.dev		= {
+-		.platform_data	= &scif2_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif3_platform_data = {
+-	.mapbase	= 0xffe43000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
+-};
+-
+-static struct platform_device scif3_device = {
+-	.name		= "sh-sci",
+-	.id		= 3,
+-	.dev		= {
+-		.platform_data	= &scif3_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif4_platform_data = {
+-	.mapbase	= 0xffe44000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
+-};
+-
+-static struct platform_device scif4_device = {
+-	.name		= "sh-sci",
+-	.id		= 4,
+-	.dev		= {
+-		.platform_data	= &scif4_platform_data,
+-	},
+-};
+-
+-static struct plat_sci_port scif5_platform_data = {
+-	.mapbase	= 0xffe45000,
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
+-	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+-	.scbrr_algo_id	= SCBRR_ALGO_2,
+-	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
+-};
++/* SCIF */
++#define R8A7779_SCIF(index, baseaddr, irq)			\
++static struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= PORT_SCIF,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
++	.scbrr_algo_id	= SCBRR_ALGO_2,				\
++	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
++};								\
++								\
++static struct platform_device scif##index##_device = {		\
++	.name		= "sh-sci",				\
++	.id		= index,				\
++	.dev		= {					\
++		.platform_data	= &scif##index##_platform_data,	\
++	},							\
++}
+ 
+-static struct platform_device scif5_device = {
+-	.name		= "sh-sci",
+-	.id		= 5,
+-	.dev		= {
+-		.platform_data	= &scif5_platform_data,
+-	},
+-};
++R8A7779_SCIF(0, 0xffe40000, gic_iid(0x78));
++R8A7779_SCIF(1, 0xffe41000, gic_iid(0x79));
++R8A7779_SCIF(2, 0xffe42000, gic_iid(0x7a));
++R8A7779_SCIF(3, 0xffe43000, gic_iid(0x7b));
++R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
++R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
+ 
+ /* TMU */
+ static struct sh_timer_config tmu00_platform_data = {
+-- 
+1.8.3.2
+
