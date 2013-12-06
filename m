@@ -1,54 +1,68 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Dec 2013 19:25:13 +0000
-Subject: [PATCH 0/4] pinctrl: sh-pfc: Constify const data
-Message-Id: <1387221917-15437-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 06 Dec 2013 09:59:12 +0000
+Subject: [PATCH 05/47] serial: sh-sci: Simplify baud rate calculation algorithms
+Message-Id: <1386323994-12850-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-Hello,
+Rewrite the baud rate register value calculations in easier to read
+forms. The computed value isn't modified.
 
-This patch set makes sure that const data is stored in .rodata. The first
-patch and part of the second patch seem to require gcc 4.8 to have an effect,
-as gcc 4.7.3 stores the compound literals in .data in this case.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/sh-sci.c | 8 ++++----
+ include/linux/serial_sci.h  | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-Simon, should I split patch 4/4 or is it fine as-is ?
-
-Laurent Pinchart (4):
-  pinctrl: sh-pfc: Constify enum_ids and var_field_width compound
-    literals
-  pinctrl: sh-pfc: Constify IRQ GPIOs arrays
-  pinctrl: sh-pfc: sh: Constify pins and cfg_regs arrays
-  pinctrl: sh-pfc: ARM: Constify pins and cfg_regs arrays
-
- drivers/pinctrl/sh-pfc/gpio.c        |  2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  4 ++--
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  4 ++--
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  4 ++--
- drivers/pinctrl/sh-pfc/pfc-sh7203.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7264.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7269.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7720.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7722.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7723.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7724.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7757.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7785.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-sh7786.c  |  2 +-
- drivers/pinctrl/sh-pfc/pfc-shx3.c    |  2 +-
- drivers/pinctrl/sh-pfc/sh_pfc.h      | 13 +++++++------
- 22 files changed, 31 insertions(+), 30 deletions(-)
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 86b33f3..1671074 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1817,13 +1817,13 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+ {
+ 	switch (algo_id) {
+ 	case SCBRR_ALGO_1:
+-		return ((freq + 16 * bps) / (16 * bps) - 1);
++		return freq / (16 * bps);
+ 	case SCBRR_ALGO_2:
+-		return ((freq + 16 * bps) / (32 * bps) - 1);
++		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
+ 	case SCBRR_ALGO_3:
+-		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
++		return freq / (8 * bps);
+ 	case SCBRR_ALGO_4:
+-		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
++		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
+ 	}
+ 
+ 	/* Warn, but use a safe default */
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index babc5fe..12cf50c 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -11,10 +11,10 @@
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+ enum {
+-	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
+-	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
+-	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
+-	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
++	SCBRR_ALGO_1,		/* clk / (16 * bps) */
++	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
++	SCBRR_ALGO_3,		/* clk / (8 * bps) */
++	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
+ 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+ };
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
