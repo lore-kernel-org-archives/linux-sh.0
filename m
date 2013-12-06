@@ -1,128 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 05 Dec 2013 22:34:51 +0000
-Subject: [PATCH v2] ARM: shmobile: koelsch: Add DU device
-Message-Id: <1386282891-2698-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 06 Dec 2013 22:53:06 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: koelsch: Add DU device
+Message-Id: <52A25552.5080508@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386282891-2698-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386282891-2698-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Only the LVDS output is currently supported.
+Hello.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-koelsch.c | 63 ++++++++++++++++++++++++++++++++++
- 1 file changed, 63 insertions(+)
+On 06-12-2013 2:34, Laurent Pinchart wrote:
 
-Changes since v1:
+> Only the LVDS output is currently supported.
 
-- Rebased on top of renesas-devel-v3.13-rc2-20131202
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>   arch/arm/mach-shmobile/board-koelsch.c | 63 ++++++++++++++++++++++++++++++++++
+>   1 file changed, 63 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 6e12914..53846ec 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/dma-mapping.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
-@@ -26,13 +27,66 @@
- #include <linux/leds.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
-+#include <linux/platform_data/rcar-du.h>
- #include <linux/platform_device.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7791.h>
- #include <mach/rcar-gen2.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* DU */
-+static struct rcar_du_encoder_data lager_du_encoders[] = {
-+	{
-+		.type = RCAR_DU_ENCODER_NONE,
-+		.output = RCAR_DU_OUTPUT_LVDS0,
-+		.connector.lvds.panel = {
-+			.width_mm = 210,
-+			.height_mm = 158,
-+			.mode = {
-+				.clock = 65000,
-+				.hdisplay = 1024,
-+				.hsync_start = 1048,
-+				.hsync_end = 1184,
-+				.htotal = 1344,
-+				.vdisplay = 768,
-+				.vsync_start = 771,
-+				.vsync_end = 777,
-+				.vtotal = 806,
-+				.flags = 0,
-+			},
-+		},
-+	},
-+};
-+
-+static const struct rcar_du_platform_data lager_du_pdata __initconst = {
-+	.encoders = lager_du_encoders,
-+	.num_encoders = ARRAY_SIZE(lager_du_encoders),
-+};
-+
-+static const struct resource du_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xfeb00000, 0x40000),
-+	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
-+	DEFINE_RES_IRQ(gic_spi(256)),
-+	DEFINE_RES_IRQ(gic_spi(268)),
-+};
-+
-+static void __init koelsch_add_du_device(void)
-+{
-+	struct platform_device_info info = {
-+		.name = "rcar-du-r8a7791",
-+		.id = -1,
-+		.res = du_resources,
-+		.num_res = ARRAY_SIZE(du_resources),
-+		.data = &lager_du_pdata,
-+		.size_data = sizeof(lager_du_pdata),
-+		.dma_mask = DMA_BIT_MASK(32),
-+	};
-+
-+	platform_device_register_full(&info);
-+}
-+
- /* LEDS */
- static struct gpio_led koelsch_leds[] = {
- 	{
-@@ -80,6 +134,13 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
- };
- 
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
-+	/* DU */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-+				  "du_rgb666", "du"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-+				  "du_sync", "du"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-+				  "du_clk_out_0", "du"),
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
- 				  "scif0_data_d", "scif0"),
-@@ -101,6 +162,8 @@ static void __init koelsch_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
- 				      &koelsch_keys_pdata,
- 				      sizeof(koelsch_keys_pdata));
-+
-+	koelsch_add_du_device();
- }
- 
- static const char * const koelsch_boards_compat_dt[] __initconst = {
--- 
-Regards,
+> Changes since v1:
 
-Laurent Pinchart
+> - Rebased on top of renesas-devel-v3.13-rc2-20131202
+
+> diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+> index 6e12914..53846ec 100644
+> --- a/arch/arm/mach-shmobile/board-koelsch.c
+> +++ b/arch/arm/mach-shmobile/board-koelsch.c
+[...]
+> @@ -26,13 +27,66 @@
+>   #include <linux/leds.h>
+>   #include <linux/pinctrl/machine.h>
+>   #include <linux/platform_data/gpio-rcar.h>
+> +#include <linux/platform_data/rcar-du.h>
+>   #include <linux/platform_device.h>
+>   #include <mach/common.h>
+> +#include <mach/irqs.h>
+>   #include <mach/r8a7791.h>
+>   #include <mach/rcar-gen2.h>
+>   #include <asm/mach-types.h>
+>   #include <asm/mach/arch.h>
+>
+> +/* DU */
+> +static struct rcar_du_encoder_data lager_du_encoders[] = {
+
+    Apparently it should be named koelsch_du_encoders[].
+
+> +static const struct rcar_du_platform_data lager_du_pdata __initconst = {
+
+    Again, 'koelsch_du_pdata'...
+
+WBR, Sergei
 
