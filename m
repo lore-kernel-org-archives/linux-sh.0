@@ -1,59 +1,37 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:05:01 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7790: fix shdi resource sizes
-Message-Id: <d721a15c300c5f638a11573a6dd492158e737d6a.1387856124.git.horms+renesas@verge.net.au>
+Date: Fri, 06 Dec 2013 01:41:18 +0000
+Subject: [PATCH 1/2] ARM: shmobile: kzm9g: Enable SMSC_PHY in defconfig
+Message-Id: <1386294079-16392-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387856124.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387856124.git.horms+renesas@verge.net.au>
+References: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+The kzm9g board uses has an SMSC 9221 ethernet controller
+which includes an integrated phy. Enable SMSC_PHY in the defconfig
+to make use of the SMSC-specific phy driver rather than
+relying on the generic phy driver.
 
-The r8a7790.dtsi file has four sdhi nodes which the first two have the wrong
-resource size for their register block. This causes the sh_modbile_sdhi driver
-to fail to communicate with card at-all.
-
-Change sdhi{0,1} node size from 0x100 to 0x200 to correct these nodes
-as per Kuninori Morimoto's response to the original patch where all four
-nodes where changed. sdhi{2,3} are the correct size.
-
-This bug has been present since sdhi resources were added to the r8a7790 by
-8c9b1aa41853272a ("ARM: shmobile: r8a7790: add MMCIF and SDHI DT
-templates") in v3.11-rc2.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Tested-by: William Towle <william.towle@codethink.co.uk>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/configs/kzm9g_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 46e1d7e..9987dd0e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -241,7 +241,7 @@
- 
- 	sdhi0: sdhi@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee100000 0 0x100>;
-+		reg = <0 0xee100000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 4>;
- 		cap-sd-highspeed;
-@@ -250,7 +250,7 @@
- 
- 	sdhi1: sdhi@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee120000 0 0x100>;
-+		reg = <0 0xee120000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 4>;
- 		cap-sd-highspeed;
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 9934dbc2..2a55951 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -64,6 +64,7 @@ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ CONFIG_SMSC911X=y
++CONFIG_SMSC_PHY=y
+ # CONFIG_WLAN is not set
+ CONFIG_INPUT_SPARSEKMAP=y
+ # CONFIG_INPUT_MOUSEDEV is not set
 -- 
 1.8.4
 
