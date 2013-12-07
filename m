@@ -1,53 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 30 Dec 2013 00:58:06 +0000
-Subject: [PATCH 1/3] ARM: shmobile: armadillo: Fix coherent DMA mask
-Message-Id: <dcd740b645003b866d7eb30d13d34d0729cce9db.1388364591.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 07 Dec 2013 22:59:21 +0000
+Subject: [PATCH v2] sh_eth: add R8A7791 support
+Message-Id: <201312080259.19163.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1388364591.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1388364591.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add support for yet another ARM member of the R-Car family, R-Car M2, also known
+as R8A7791 -- it will share the code and data with previously added R8A7790.
+Despite the Ether devices in these SoCs are indistinguishable at least from the
+driver's point of view, we do introduce a new platform device ID "r8a7791-ether"
+unlike the wildcard ID used for R8A7778/9 SoCs, due to newly established policy
+for the Renesas SoCs.
 
-Commit 4dcfa60071b3d23f0181f27d8519f12e37cefbb9 ("ARM: DMA-API: better
-handing of DMA masks for coherent allocations") added an additional
-check to the coherent DMA mask that results in an error when the mask is
-larger than what dma_addr_t can address.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Set the LCDC coherent DMA mask to DMA_BIT_MASK(32) instead of ~0 to fix
-the problem.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+This patch is atop of DaveM's 'net-next.git' repo.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index c186891..8ea87bd 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -483,7 +483,7 @@ static struct platform_device lcdc0_device = {
- 	.id		= 0,
- 	.dev	= {
- 		.platform_data	= &lcdc0_info,
--		.coherent_dma_mask = ~0,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
- 	},
+Changes in version 2:
+- added a new platform device ID for R8A7791 instead of changing the existing ID
+  for R8A7790 to a R8A779x wildcard ID.
+
+ drivers/net/ethernet/renesas/Kconfig  |    2 +-
+ drivers/net/ethernet/renesas/sh_eth.c |    7 ++++---
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/Kconfig
+=================================--- net-next.orig/drivers/net/ethernet/renesas/Kconfig
++++ net-next/drivers/net/ethernet/renesas/Kconfig
+@@ -13,4 +13,4 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
+-		  R8A7740, R8A777x and R8A7790.
++		  R8A7740, R8A777x and R8A779x.
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -395,8 +395,8 @@ static struct sh_eth_cpu_data r8a777x_da
+ 	.hw_swap	= 1,
  };
  
-@@ -580,7 +580,7 @@ static struct platform_device hdmi_lcdc_device = {
- 	.id		= 1,
- 	.dev	= {
- 		.platform_data	= &hdmi_lcdc_info,
--		.coherent_dma_mask = ~0,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
- 	},
- };
+-/* R8A7790 */
+-static struct sh_eth_cpu_data r8a7790_data = {
++/* R8A7790/1 */
++static struct sh_eth_cpu_data r8a779x_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+ 	.set_rate	= sh_eth_set_rate_r8a777x,
  
--- 
-1.8.4
-
+@@ -2807,7 +2807,8 @@ static struct platform_device_id sh_eth_
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+-	{ "r8a7790-ether", (kernel_ulong_t)&r8a7790_data },
++	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
++	{ "r8a7791-ether", (kernel_ulong_t)&r8a779x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
