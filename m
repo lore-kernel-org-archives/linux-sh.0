@@ -1,31 +1,35 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 03 Dec 2013 21:01:27 +0000
-Subject: Re: Build regressions/improvements in v3.13-rc2
-Message-Id: <CAMuHMdXsn9R6-R5yMCnjEmum5LjBRmL8+v+_ryvRLJyQBg1ZtA@mail.gmail.com>
+Date: Sat, 07 Dec 2013 16:14:45 +0000
+Subject: Re: Build regressions/improvements in v3.13-rc3
+Message-Id: <CAMuHMdW_sS2+8yrXRPyiToiWhRWn4PjLMNQid63So3ikwogJvg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385891092-13266-1-git-send-email-geert@linux-m68k.org>
- <CAMuHMdV1hoUnYixPghCAy-LuTaB9JU-BFfBPH06gxhLRAqfp8Q@mail.gmail.com>
- <20131203204540.GA4796@roeck-us.net>
-In-Reply-To: <20131203204540.GA4796@roeck-us.net>
+References: <1386432168-26334-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1386432168-26334-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: sparclinux <sparclinux@vger.kernel.org>, "linux-xtensa@linux-xtensa.org" <linux-xtensa@linux-xtensa.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, the arch/x86 maintainers <x86@kernel.org>
 
-On Tue, Dec 3, 2013 at 9:45 PM, Guenter Roeck <linux@roeck-us.net> wrote:
-> ia64-defconfig:
->
-> arch/ia64/kernel/built-in.o: In function `skip_rbs_switch':
-> (.text+0xef2): undefined reference to `preempt_schedule_irq'
+On Sat, Dec 7, 2013 at 5:02 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.13-rc3[1]  to v3.13-rc2[3], the summaries are:
+>   - build errors: +3/-4
 
-Funny, that one was actually introduced in v3.13-rc1, but it fell through
-the cracks of the regex handling in my script.
+  + /scratch/kisskb/src/arch/sh/mm/cache-sh4.c: error:
+'cached_to_uncached' undeclared (first use in this function):  =>
+99:17
+  + /scratch/kisskb/src/arch/sh/mm/cache-sh4.c: error: implicit
+declaration of function 'cpu_context'
+[-Werror=implicit-function-declaration]:  => 192:2
 
-BTW, my scripts are back online: https://github.com/geertu/linux-scripts.
-linux-log-diff didn't see the ia64 breakage, linux-log-summary did.
-One day I plan to merge linux-log-diff and linux-log-summary, so I have
-to maintain only one regex chain.
+sh-randconfig
+
+  + error: No rule to make target drivers/scsi/aic7xxx/aicasm/*.[chyl]:  => N/A
+
+x86_64-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/6964/ (119 out of 120 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/6939/ (119 out of 120 configs)
 
 Gr{oetje,eeting}s,
 
