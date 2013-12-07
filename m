@@ -1,83 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 19 Dec 2013 15:51:02 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r8a7791: Add MSIOF clocks in device tree
-Message-Id: <1387468266-13625-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 07 Dec 2013 21:08:25 +0000
+Subject: Re: [PATCH] sh_eth: add R8A7791 support
+Message-Id: <52A39C55.2070204@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201311150211.36049.sergei.shtylyov@cogentembedded.com>
+ <20131118075433.GA1506@verge.net.au>
+In-Reply-To: <20131118075433.GA1506@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791.dtsi            | 17 +++++++++++++----
- include/dt-bindings/clock/r8a7791-clock.h |  5 +++++
- 2 files changed, 18 insertions(+), 4 deletions(-)
+Hello.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 0a82192..6a29341 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -394,6 +394,14 @@
- 		};
- 
- 		/* Gate clocks */
-+		mstp0_clks: mstp0_clks@e6150130 {
-+			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
-+			clocks = <&mp_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <R8A7791_CLK_MSIOF0>;
-+			clock-output-names = "msiof0";
-+		};
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-@@ -413,15 +421,16 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
--				 <&mp_clk>;
-+				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
--				R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1 R8A7791_CLK_SCIFB2
-+				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
-+				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
- 			>;
- 			clock-output-names -				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
--				"scifb2";
-+				"scifa2", "scifa1", "scifa0", "misof2", "scifb0",
-+				"scifb1", "msiof1", "scifb2";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index df1715b..a69e090 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -21,6 +21,9 @@
- #define R8A7791_CLK_SD0			7
- #define R8A7791_CLK_Z			8
- 
-+/* MSTP0 */
-+#define R8A7791_CLK_MSIOF0		0
-+
- /* MSTP1 */
- #define R8A7791_CLK_TMU1		11
- #define R8A7791_CLK_TMU3		21
-@@ -35,8 +38,10 @@
- #define R8A7791_CLK_SCIFA2		2
- #define R8A7791_CLK_SCIFA1		3
- #define R8A7791_CLK_SCIFA0		4
-+#define R8A7791_CLK_MSIOF2		5
- #define R8A7791_CLK_SCIFB0		6
- #define R8A7791_CLK_SCIFB1		7
-+#define R8A7791_CLK_MSIOF1		8
- #define R8A7791_CLK_SCIFB2		16
- #define R8A7791_CLK_DMAC		18
- 
--- 
-1.8.3.2
+On 11/18/2013 10:54 AM, Simon Horman wrote:
+
+    Too bad you haven't spoken out before I went and done this patch and its 
+follow-ups, at the point where I only laid out my plan of action in a reply to 
+Magnus...
+
+>> Add support for yet another ARM member of the R-Car family, R-Car M2, also known
+>> as R8A7791 -- it will share the code and data with previously added R8A7790.
+>> Since  the Ether devices in these SoCs are indistinguishable at least from the
+>> driver's point of view,  do not introduce  a new platform device ID but modify
+>> device name "r8a7790-ether" to "r8a779x-ether" throughout the files (and also
+>> 'r8a7790_data' to 'r8a779x_data' in the driver), just like the names used for
+>> R8A7778/9 SoCs.
+
+> I realise that this is the approach that has been taken previously by this
+> driver for some other SoCs but it is inconsistent with the approach that
+> has (recently) emerged for drivers for Renesas IP.
+
+> The problem with this approach is that although the hardware may appear to
+> be the same in the absence of some kind of version number for the IP we
+> can't be certain it is the same.  Some difference may come to light later
+> and then this system breaks down.
+
+    I don't think that'll be the case here, but do I understand your concern 
+about things breaking down.
+
+> Sure, at that point we can create a more fine-grained compatibility string.
+
+    Slight correction of terms: we're dealing with platform device ID here, 
+not (device tree) compatibility string.
+
+> But the approach that has emerged is that in the absence of a clearly
+> documented version number for the hardware the SoC name is used as the
+> version number.
+
+    I just deviated a little from this scheme by using a wildcard.
+
+> I am also not entirely happy with the approach taken by this patch for
+> two other reasons:
+
+> 1) It removes rather than deprecating an existing compatibility string.
+>     Albeit one that may not actually be used in the wild.
+
+    We don't care about out of tree code, do we? At least I don't see how we 
+do that with our current platform device registration policy (mostly per board).
+
+> 2) It changes both drivers/net/ and arch/arm/mach-shmobile/ code.
+>     This kind of cross-subsystem change can lead to conflicts which
+>     make Linus grumpy: this has occurred recently with shmobile code
+>     though not in this driver.
+
+    OK, let's do it your way, with adding another platform device ID, and so 
+doing only drivers/net/ change.
+
+> That said, I did successfully test this patch in conjunction with
+> companion patches for the r8A7791 SoC and Koelsch board.
+
+    I try not to post untested patches (except when I trust other people to do 
+the testing of their patches. :-)
+
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+WBR, Sergei
 
