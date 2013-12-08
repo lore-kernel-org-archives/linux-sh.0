@@ -1,83 +1,42 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 05 Dec 2013 06:49:01 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 08 Dec 2013 10:16:02 +0000
 Subject: Re: [PATCH/RFC] sh: Always link in helper functions extracted from libgcc
-Message-Id: <CABMQnV+mYYmSKK6ayeDbaiOnNSOgUhN4TjZV50eYmQwaQ3rHhQ@mail.gmail.com>
+Message-Id: <CAMuHMdVLjruEChvHjzTLuNqaR9YpDG7hQ7Ukbwrm4phmm6HfNA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1369815408-12719-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1369815408-12719-1-git-send-email-geert@linux-m68k.org>
+	<CABMQnV+mYYmSKK6ayeDbaiOnNSOgUhN4TjZV50eYmQwaQ3rHhQ@mail.gmail.com>
+In-Reply-To: <CABMQnV+mYYmSKK6ayeDbaiOnNSOgUhN4TjZV50eYmQwaQ3rHhQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>, linux-arch@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, stable@vger.kernel.org
+To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, stable <stable@vger.kernel.org>
 
-# Add akpm@linux-foundation.org and stable@vger.kernel.org to CC.
+Hi Iwamatsu-san,
 
-Hi, Geert.
+On Thu, Dec 5, 2013 at 7:49 AM, Nobuhiro Iwamatsu
+<nobuhiro.iwamatsu.yj@renesas.com> wrote:
+> I was just creating a patch as your patch.... I noticed your patch by chance.
+> I think your proposal is good.
+>
+> But Paul does not maintain the SH tree.
+> Andrew, Could you pickup this patch ?
 
-I was just creating a patch as your patch.... I noticed your patch by chance.
-I think your proposal is good.
+As Andrew wasn't CCed on the original submission, I forwarded the original
+patch to him.
 
-But Paul does not maintain the SH tree.
-Andrew, Could you pickup this patch ?
+> Tested-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+> Reviewed-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Tested-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Reviewed-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Thanks!
 
-Best regards,
-  Nobuhiro
+Gr{oetje,eeting}s,
 
-2013/5/29 Geert Uytterhoeven <geert@linux-m68k.org>:
-> E.g. landisk_defconfig, which has CONFIG_NTFS_FS=m:
->
-> ERROR: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!
->
-> For "lib-y", if no symbols in a compilation unit are referenced by other
-> units, the compilation unit will not be included in vmlinux.
-> This breaks modules that do reference those symbols.
->
-> Use "obj-y" instead to fix this.
->
-> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> ---
-> http://kisskb.ellerman.id.au/kisskb/buildresult/8838077/
->
-> This doesn't fix all cases. There are others, e.g. udivsi3.
-> This is also not limited to sh, many architectures handle this in the same
-> way.
->
-> A simple solution is to unconditionally include all helper functions.
-> A more complex solution is to make the choice of "lib-y" or "obj-y" depend
-> on CONFIG_MODULES:
->   obj-$(CONFIG_MODULES) += ...
->   lib-y($CONFIG_MODULES) += ...
->
-> What do you think?
-> Thanks for your comments!
->
->  arch/sh/lib/Makefile |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
->
-> diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
-> index 7b95f29..3baff31 100644
-> --- a/arch/sh/lib/Makefile
-> +++ b/arch/sh/lib/Makefile
-> @@ -6,7 +6,7 @@ lib-y  = delay.o memmove.o memchr.o \
->          checksum.o strlen.o div64.o div64-generic.o
->
->  # Extracted from libgcc
-> -lib-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
-> +obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
->          ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
->          udiv_qrnnd.o
->
-> --
-> 1.7.0.4
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+                        Geert
 
--- 
-Nobuhiro Iwamatsu
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
