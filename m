@@ -1,28 +1,35 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 11 Dec 2013 10:08:11 +0000
-Subject: Re: [GIT PULL FOR v3.14] pinctrl sh-pfc patches
-Message-Id: <CACRpkdam91bxcj+h-FFEoYvx--0vn63y4==ezvXwdz6vyuk=2Q@mail.gmail.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Mon, 09 Dec 2013 12:35:05 +0000
+Subject: [PATCH] usb: phy: R-Car Gen2: Use usb_phy_add_dev
+Message-Id: <1386592505-24585-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <7350665.cppfL7BT7r@avalon>
-In-Reply-To: <7350665.cppfL7BT7r@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 10, 2013 at 4:25 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
+Use add_phy_dev instead of usb_phy_add, so that devices can
+be bound to the phy. This is needed to set up USB phy for
+some internal PCI USB host controllers on R-Car Gen2.
 
-> The following changes since commit 18334c8e18b2cea1c5c1ad4103ea1bf359a21775:
->
->   pinctrl: make the MSM SoC driver depend on OF (2013-12-10 10:03:47 +0100)
->
-> are available in the git repository at:
->
->   git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/usb/phy/phy-rcar-gen2-usb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks Laurent, I've pulled this into the devel branch of the pin control
-tree and pushed out so we get some linux-next rotation.
+diff --git a/drivers/usb/phy/phy-rcar-gen2-usb.c b/drivers/usb/phy/phy-rcar-gen2-usb.c
+index db3ab34..551e0a6 100644
+--- a/drivers/usb/phy/phy-rcar-gen2-usb.c
++++ b/drivers/usb/phy/phy-rcar-gen2-usb.c
+@@ -213,7 +213,7 @@ static int rcar_gen2_usb_phy_probe(struct platform_device *pdev)
+ 	priv->phy.shutdown = rcar_gen2_usb_phy_shutdown;
+ 	priv->phy.set_suspend = rcar_gen2_usb_phy_set_suspend;
+ 
+-	retval = usb_add_phy(&priv->phy, USB_PHY_TYPE_USB2);
++	retval = usb_add_phy_dev(&priv->phy);
+ 	if (retval < 0) {
+ 		dev_err(dev, "Failed to add USB phy\n");
+ 		return retval;
+-- 
+1.8.3.1
 
-Yours,
-Linus Walleij
