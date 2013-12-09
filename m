@@ -1,57 +1,76 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Fri, 06 Dec 2013 03:20:16 +0000
-Subject: Re: [PATCH 02/15] input: sh_keysc: Restrict non-COMPILE_TEST compilation
-Message-Id: <20131206032016.GA16530@core.coreip.homeip.net>
+From: Valentine <valentine.barshak@cogentembedded.com>
+Date: Mon, 09 Dec 2013 19:25:00 +0000
+Subject: Re: [PATCH V2] gpio: rcar: Fix level interrupt handling
+Message-Id: <52A6190C.200@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131128073636.GD24146@verge.net.au>
-In-Reply-To: <20131128073636.GD24146@verge.net.au>
+References: <1385748249-27170-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1385748249-27170-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
 
-On Thu, Nov 28, 2013 at 04:36:36PM +0900, Simon Horman wrote:
-> On Wed, Nov 27, 2013 at 02:18:24AM +0100, Laurent Pinchart wrote:
-> > Hardware supported by the driver is only found on SUPERH or
-> > ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
-> > 
-> > Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-> > Cc: linux-input@vger.kernel.org
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+On 11/29/2013 10:04 PM, Valentine Barshak wrote:
+> According to the manual, if a port is set for level detection using
+> the corresponding bit in the edge/level select register and an external
+> level interrupt signal is asserted, the corresponding bit in INTDT
+> does not use the FF to hold the input.
+> Thus, writing 1 to the corresponding bits in INTCLR cannot clear the
+> corresponding bits in the INTDT register. Instead, when an external
+> input signal is stopped, the corresponding bit in INTDT is cleared
+> automatically.
+>
+> Since the INTDT bit cannot be cleared for the level interrupts until
+> the interrupt signal is stopped, we end up with the infinite loop
+> when using deferred (threaded) IRQ handling.
+>
+> Since a deferred interrupt is disabled by the low-level handler and
+> re-enabled only when the deferred handler is completed, Fix the issue
+> by dropping disabled interrupts from the pending mask as suggested by
+> Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+>
+> Changes in V2:
+> * Drop disabled interrupts from pending mask altogether instead of
+>    dropping level interrupts one by one once they get handled.
+>
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> ---
+>   drivers/gpio/gpio-rcar.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+> index d3f15ae..fd2d827 100644
+> --- a/drivers/gpio/gpio-rcar.c
+> +++ b/drivers/gpio/gpio-rcar.c
+> @@ -169,7 +169,8 @@ static irqreturn_t gpio_rcar_irq_handler(int irq, void *dev_id)
+>   	u32 pending;
+>   	unsigned int offset, irqs_handled = 0;
+>
+> -	while ((pending = gpio_rcar_read(p, INTDT))) {
+> +	while ((pending = gpio_rcar_read(p, INTDT) &
+> +			  gpio_rcar_read(p, INTMSK))) {
+>   		offset = __ffs(pending);
+>   		gpio_rcar_write(p, INTCLR, BIT(offset));
+>   		generic_handle_irq(irq_find_mapping(p->irq_domain, offset));
+>
+
+Laurent, Magnus,
+do you have any concerns about fixing the level IRQ's as proposed here?
+
+I'm more inclined to re-read the registers instead of caching the pending value
+  pending = gpio_rcar_read(p, INTDT) & gpio_rcar_read(p, INTMSK));
+and dropping bits inside the while loop
+  pending &= ~BIT(offset);
+
+I think this could help to catch new interrupts while processing previous ones.
+It also makes minimum change to the original logic.
+
+Please let me know if you think it's not good enough and the cached "pending" value
+(or any other approach) should be used instead.
+
+Thanks,
+Val.
 
 
-Applied, thank you.
 
-> 
-> > ---
-> >  drivers/input/keyboard/Kconfig | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-> > index bb174c1..a673c9f 100644
-> > --- a/drivers/input/keyboard/Kconfig
-> > +++ b/drivers/input/keyboard/Kconfig
-> > @@ -525,7 +525,7 @@ config KEYBOARD_SUNKBD
-> >  
-> >  config KEYBOARD_SH_KEYSC
-> >  	tristate "SuperH KEYSC keypad support"
-> > -	depends on SUPERH || ARM || COMPILE_TEST
-> > +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-> >  	help
-> >  	  Say Y here if you want to use a keypad attached to the KEYSC block
-> >  	  on SuperH processors such as sh7722 and sh7343.
-> > -- 
-> > 1.8.3.2
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-
--- 
-Dmitry
