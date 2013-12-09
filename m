@@ -1,39 +1,62 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 29 Dec 2013 21:23:30 +0000
-Subject: Re: [GIT PULL 0/3] Renesas SH SCI updates for v3.14
-Message-Id: <20131229212330.GD20958@quad.lixom.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 09 Dec 2013 00:16:15 +0000
+Subject: Re: [alsa-devel] [PATCH 2/2] ASoC: sh: rcar: Depend on	ARCH_SHMOBILE_LEGACY
+Message-Id: <87wqjevpyv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387761495.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387761495.git.horms+renesas@verge.net.au>
+References: <1384000429-3590-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1384000429-3590-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<1682501.71qI5yTem5@avalon>
+In-Reply-To: <1682501.71qI5yTem5@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent <laurent.pinchart@ideasonboard.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ARM <linux-arm-kernel@lists.infradead.org>, Linux-ALSA <alsa-devel@alsa-project.org>
 
-On Mon, Dec 23, 2013 at 11:08:41AM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
-> 
-> please consider these Renesas SH SCI updates for v3.14.
-> 
-> They have been acked by Greg Kroah-Hartman to be taken
-> through my tree. The reason for this is that they are dependencies
-> for subsequent changes to use the common clock framework.
-> 
-> 
-> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
-> 
->   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-sci-for-v3.14
-> 
-> for you to fetch changes up to b016b646e8676858f39ea9be760494b04b9ee0af:
-> 
->   serial: sh-sci: Convert to clk_prepare/unprepare (2013-12-14 09:59:31 +0900)
+Hi Laurent
 
-Merged into next/cleanup, since they're mostly bugfixes and they're a prereq
-for other code so the dependency flow works better that way.
+Thank you for your patch
 
+> What's your opinion about this patch ? It needs to be applied on top of 
+> "[PATCH 1/2] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY" which has been 
+> queued by Simon.
+> 
+> On Saturday 09 November 2013 13:33:49 Laurent Pinchart wrote:
+> > The driver doesn't compile on multiplatform kernels as it requires
+> > <mach/clock.h>.
+> > 
+> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> >  sound/soc/sh/Kconfig | 1 +
+> >  1 file changed, 1 insertion(+)
+> > 
+> > diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+> > index 56d8ff6..ce7cfd6 100644
+> > --- a/sound/soc/sh/Kconfig
+> > +++ b/sound/soc/sh/Kconfig
+> > @@ -36,6 +36,7 @@ config SND_SOC_SH4_SIU
+> > 
+> >  config SND_SOC_RCAR
+> >  	tristate "R-Car series SRU/SCU/SSIU/SSI support"
+> > +	depends on ARCH_SHMOBILE_LEGACY
+> >  	select SND_SIMPLE_CARD
+> >  	select RCAR_CLK_ADG
+> >  	help
 
--Olof
+<mach/clock.h> had been removed by this patch.
+Does it solve your issue ?
+
+commit d3be689e6a07c00123786659b4429b07cf4272ac
+Author: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date:   Tue Sep 24 01:25:08 2013 -0700
+
+    ASoC: rcar: remove unnecessary mach/clock.h
+    
+    ${LINUX}/sound/soc/sh driver can be compiled from
+    SuperH and ARM.
+    but, ${LINUX}/sound/soc/sh/rcar driver included
+    SH-ARM specific header.
+    This patch removes it
+    
+    Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+    Signed-off-by: Mark Brown <broonie@linaro.org>
