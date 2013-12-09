@@ -1,32 +1,72 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 13 Dec 2013 22:24:53 +0000
-Subject: [PATCH] irq-gic: remove file name from heading comment
-Message-Id: <201312140224.53928.sergei.shtylyov@cogentembedded.com>
+From: Jingoo Han <jg1.han@samsung.com>
+Date: Mon, 09 Dec 2013 01:46:17 +0000
+Subject: Re: [PATCH] PCI: rcar: fix return value check in rcar_pci_probe()
+Message-Id: <001001cef480$73896b20$5a9c4160$%han@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <CAPgLHd-XTnQXdK7H2uLbGW1ftxNB_nHwzcNCoiCjpXsB5X3HnA@mail.gmail.com>
+ <20131207225012.GC7901@google.com>
+In-Reply-To: <20131207225012.GC7901@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: 'Bjorn Helgaas' <bhelgaas@google.com>, 'Valentine Barshak' <valentine.barshak@cogentembedded.com>
+Cc: 'Wei Yongjun' <weiyj.lk@gmail.com>, 'Wei Yongjun' <yongjun_wei@trendmicro.com.cn>, linux-pci@vger.kernel.org, 'Simon Horman' <horms@verge.net.au>, 'Magnus Damm' <magnus.damm@gmail.com>, 'Kuninori Morimoto' <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, 'Jingoo Han' <jg1.han@samsung.com>
 
-File names in the heading comments  fell out of favor long ago, and this one
-weren't even changed when the driver was moved from arch/arm/common/, so remove
-it at last...
+On Sunday, December 08, 2013 7:50 AM, Bjorn Helgaas wrote:
+> On Tue, Nov 19, 2013 at 11:40:28AM +0800, Wei Yongjun wrote:
+> > From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+> >
+> > In case of error, the function devm_ioremap_resource() returns ERR_PTR()
+> > and never returns NULL. The NULL test in the return value check should
+> > be replaced with IS_ERR().
+> >
+> > Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+> 
+> Applied with Jingoo's reviewed-by to pci/host-rcar for v3.14, thanks!
+> 
+> For drivers/pci/host/*, I normally look for an ack from the responsible
+> person,  but this patch is trivial enough that I'm fine taking it without
+> that.  But for more significant changes, I don't have any notes about who
+> should own pci-rcar-gen2.c.  Valentine could be a candidate since he added
+> it in the first place?  Or Jingoo?
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+(+cc Simon Horman, Magnus Damm, Kuninori Morimoto, linux-sh mailing-list)
 
----
-The patch is against the 'irq/core' branch of the 'tip.git' repo.
+Hi Bjorn,
 
- drivers/irqchip/irq-gic.c |    2 --
- 1 file changed, 2 deletions(-)
+I think that Valentine could be a candidate, because he is an author.
+However, pci-rcar-gen2.c is working on Renesas SoC, so, it may be
+necessary to get ACK from Renesas people such as Simon Horman,
+Magnus Damm, and Kuninori Morimoto.
 
-Index: tip/drivers/irqchip/irq-gic.c
-=================================--- tip.orig/drivers/irqchip/irq-gic.c
-+++ tip/drivers/irqchip/irq-gic.c
-@@ -1,6 +1,4 @@
- /*
-- *  linux/arch/arm/common/gic.c
-- *
-  *  Copyright (C) 2002 ARM Limited, All Rights Reserved.
-  *
-  * This program is free software; you can redistribute it and/or modify
+Simon Horman, Magnus Damm, and Kuninori Morimoto,
+Who is a proper person responsible for RCar Gen PCIe driver?
+(drivers/pci/host/pci-rcar-gen2.c)
+
+Best regards,
+Jingoo Han
+
+> 
+> Bjorn
+> 
+> > ---
+> >  drivers/pci/host/pci-rcar-gen2.c | 4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
+> >
+> > diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+> > index cbaa5c4..96d1182 100644
+> > --- a/drivers/pci/host/pci-rcar-gen2.c
+> > +++ b/drivers/pci/host/pci-rcar-gen2.c
+> > @@ -276,8 +276,8 @@ static int __init rcar_pci_probe(struct platform_device *pdev)
+> >
+> >  	cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+> >  	reg = devm_ioremap_resource(&pdev->dev, cfg_res);
+> > -	if (!reg)
+> > -		return -ENODEV;
+> > +	if (IS_ERR(reg))
+> > +		return PTR_ERR(reg);
+> >
+> >  	mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+> >  	if (!mem_res || !mem_res->start)
+> >
+
