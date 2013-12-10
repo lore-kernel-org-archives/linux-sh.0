@@ -1,53 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 30 Dec 2013 00:58:08 +0000
-Subject: [PATCH 3/3] ARM: shmobile: mackerel: Fix coherent DMA mask
-Message-Id: <b6328a6b7ba57fc84c38248f6f0e387e1170f1a8.1388364591.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 10 Dec 2013 02:56:08 +0000
+Subject: Re: [PATCH 0/4] mmc: tmio/SDHI fixup patches
+Message-Id: <87y53tjtxa.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1388364591.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1388364591.git.horms+renesas@verge.net.au>
+References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Hi Chris
 
-Commit 4dcfa60071b3d23f0181f27d8519f12e37cefbb9 ("ARM: DMA-API: better
-handing of DMA masks for coherent allocations") added an additional
-check to the coherent DMA mask that results in an error when the mask is
-larger than what dma_addr_t can address.
+ping ?
 
-Set the LCDC coherent DMA mask to DMA_BIT_MASK(32) instead of ~0 to fix
-the problem.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-mackerel.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index af06753..e721d2c 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -409,7 +409,7 @@ static struct platform_device lcdc_device = {
- 	.resource	= lcdc_resources,
- 	.dev	= {
- 		.platform_data	= &lcdc_info,
--		.coherent_dma_mask = ~0,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
- 	},
- };
- 
-@@ -499,7 +499,7 @@ static struct platform_device hdmi_lcdc_device = {
- 	.id		= 1,
- 	.dev	= {
- 		.platform_data	= &hdmi_lcdc_info,
--		.coherent_dma_mask = ~0,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
- 	},
- };
- 
--- 
-1.8.4
-
+> Now, our new board would like to use sh_mobile_sdhi driver,
+> then, it is expecting sh_mobile_sdhi use regulator.
+> But, this regulator is based on GPIO driver,
+> and GPIO driver probe timing is after sh_mobile_sdhi.
+> So, sh_mobile_sdhi (= tmio_mmc_pio) use default ocr_avail,
+> and it doesn't work for us.
+> #1 patch returns -EPROBE_DEFER in such case.
+> it changes tmio_mmc_host_probe() behavior, but
+> in my check, tmio_mmc_pio driver user is sh_mobile_sdhi/tmio-mmc only,
+> and, current user has no conflict by this patch.
+> 
+> sh_mobile_sdhi/tmio-mmc is very similar, but, have some difference.
+> #2 - #4 cares such case.
+> 
+> These were part of "SDHI support for r8a7790" patch set,
+> but was separated
+> 
+> Kuninori Morimoto (4):
+>       mmc: tmio: use -EPROBE_DEFER if driver can't find regulator
+>       mmc: tmio: bus_shift become tmio_mmc_data member
+>       mmc: tmio: add new TMIO_MMC_HAVE_HIGH_REG flags
+>       mmc: SDHI: add SoC specific workaround via HW version
+> 
+>  drivers/mmc/host/sh_mobile_sdhi.c |   19 +++++++++++++++++++
+>  drivers/mmc/host/tmio_mmc.c       |    9 +++++++++
+>  drivers/mmc/host/tmio_mmc.h       |   17 ++++++++---------
+>  drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
+>  drivers/mmc/host/tmio_mmc_pio.c   |   36 +++++++++++++++++++-----------------
+>  include/linux/mfd/tmio.h          |    8 ++++++++
+>  include/linux/mmc/tmio.h          |    1 +
+>  7 files changed, 65 insertions(+), 27 deletions(-)
+> 
+> 
+> Best regards
+> ---
+> Kuninori Morimoto
