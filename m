@@ -1,79 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:28:56 +0000
-Subject: [GIT PULL 0/3] Renesas SH based SoC Updates for v3.14
-Message-Id: <cover.1387889858.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 10 Dec 2013 18:20:23 +0000
+Subject: [PATCH 2/5] pinctrl: sh-pfc: pfc-r8a7790: Group VIN0 HSYNC and VSYNC together
+Message-Id: <1386699626-15803-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Kevin, Hi Olof, Hi Arnd,
+This groups VIN0 HSYNC and VSYNC pins together
+since one cannot be used without another.
 
-Please consider these Renesas SH based SoC Updates for v3.14.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-I am routing these changes through my tree as they are
-dependencies for updates to the SH SCI driver.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 21d41f8..fa4d7093 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -3045,16 +3045,12 @@ static const unsigned int vin0_data_b_mux[] = {
+ 	VI0_DATA3_VI0_B3_MARK, VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
+ 	VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
+ };
+-static const unsigned int vin0_hsync_pins[] = {
+-	RCAR_GP_PIN(0, 12),
++static const unsigned int vin0_sync_pins[] = {
++	RCAR_GP_PIN(0, 12), /* HSYNC */
++	RCAR_GP_PIN(0, 13), /* VSYNC */
+ };
+-static const unsigned int vin0_hsync_mux[] = {
++static const unsigned int vin0_sync_mux[] = {
+ 	VI0_HSYNC_N_MARK,
+-};
+-static const unsigned int vin0_vsync_pins[] = {
+-	RCAR_GP_PIN(0, 13),
+-};
+-static const unsigned int vin0_vsync_mux[] = {
+ 	VI0_VSYNC_N_MARK,
+ };
+ static const unsigned int vin0_field_pins[] = {
+@@ -3269,8 +3265,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(vin0_data_g),
+ 	SH_PFC_PIN_GROUP(vin0_data_r),
+ 	SH_PFC_PIN_GROUP(vin0_data_b),
+-	SH_PFC_PIN_GROUP(vin0_hsync),
+-	SH_PFC_PIN_GROUP(vin0_vsync),
++	SH_PFC_PIN_GROUP(vin0_sync),
+ 	SH_PFC_PIN_GROUP(vin0_field),
+ 	SH_PFC_PIN_GROUP(vin0_clkenb),
+ 	SH_PFC_PIN_GROUP(vin0_clk),
+@@ -3556,8 +3551,7 @@ static const char * const vin0_groups[] = {
+ 	"vin0_data_g",
+ 	"vin0_data_r",
+ 	"vin0_data_b",
+-	"vin0_hsync",
+-	"vin0_vsync",
++	"vin0_sync",
+ 	"vin0_field",
+ 	"vin0_clkenb",
+ 	"vin0_clk",
+-- 
+1.8.3.1
 
-This pull-request is based on the second round of Renesas SH SCI updates
-for v3.14, tagged as renesas-sh-sci2-for-v3.14, which I will
-also send a pull-request for today.
-
-
-The following changes since commit ec09c5eb491834d4011c72538e58d8b7096076bd:
-
-  serial: sh-sci: Rework baud rate calculation (2013-12-24 11:17:53 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-soc-for-v3.14
-
-for you to fetch changes up to d5917ef318b850fc72bd10db438580f7d1c406d9:
-
-  sh: Don't set plat_sci_port scbrr_algo_id field (2013-12-24 21:49:43 +0900)
-
-----------------------------------------------------------------
-Renesas SH based SoC Updates for v3.14
-
-* Global
-  - Don't set plat_sci_port scbrr_algo_id field
-  - Declare SCIF register base and IRQ as resources
-
-* sh772[34] SoCs
-  - Set serial port sampling rate to 8 for SCIFA ports
-
-----------------------------------------------------------------
-Laurent Pinchart (3):
-      sh: Declare SCIF register base and IRQ as resources
-      sh: sh772[34]: Set serial port sampling rate to 8 for SCIFA ports
-      sh: Don't set plat_sci_port scbrr_algo_id field
-
- arch/sh/kernel/cpu/sh2/setup-sh7619.c  |  30 +++++++---
- arch/sh/kernel/cpu/sh2a/setup-mxg.c    |  10 +++-
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c |  80 +++++++++++++++++--------
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c |  40 +++++++++----
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c |  40 +++++++++----
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c | 104 +++++++++++++++++++++++++--------
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c | 104 +++++++++++++++++++++++++--------
- arch/sh/kernel/cpu/sh3/setup-sh7705.c  |  20 +++++--
- arch/sh/kernel/cpu/sh3/setup-sh770x.c  |  30 +++++++---
- arch/sh/kernel/cpu/sh3/setup-sh7710.c  |  20 +++++--
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |  20 +++++--
- arch/sh/kernel/cpu/sh4/setup-sh4-202.c |  16 +++--
- arch/sh/kernel/cpu/sh4/setup-sh7750.c  |  20 +++++--
- arch/sh/kernel/cpu/sh4/setup-sh7760.c  |  62 ++++++++++++--------
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  40 +++++++++----
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  10 +++-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  30 +++++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  63 ++++++++++++++------
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  63 ++++++++++++++------
- arch/sh/kernel/cpu/sh4a/setup-sh7734.c |  72 +++++++++++++++--------
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  30 +++++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |  30 +++++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7770.c | 100 +++++++++++++++++++++----------
- arch/sh/kernel/cpu/sh4a/setup-sh7780.c |  22 ++++---
- arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  60 +++++++++++++------
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  88 +++++++++++++++++++---------
- arch/sh/kernel/cpu/sh4a/setup-shx3.c   |  48 +++++++++------
- arch/sh/kernel/cpu/sh5/setup-sh5.c     |  12 +++-
- 28 files changed, 889 insertions(+), 375 deletions(-)
