@@ -1,26 +1,32 @@
-From: Ralf Baechle <ralf@linux-mips.org>
-Date: Mon, 16 Dec 2013 16:23:47 +0000
-Subject: Re: [PATCH 10/10] Kconfig: cleanup SERIO_I8042 dependencies
-Message-Id: <20131216162346.GA19285@linux-mips.org>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 10 Dec 2013 18:20:21 +0000
+Subject: [PATCH V2 0/5] pinctrl: sh-pfc: pfc-r8a7790: Update VIN groups
+Message-Id: <1386699626-15803-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387040376-26906-1-git-send-email-msalter@redhat.com>
- <1387040376-26906-11-git-send-email-msalter@redhat.com>
-In-Reply-To: <1387040376-26906-11-git-send-email-msalter@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Dec 14, 2013 at 11:59:36AM -0500, Mark Salter wrote:
+This adds missing VIN pins to the pfc-r8a7790 driver, and reorganizes
+the VIN groups to cover all possible configurations of VIN data pins.
+This also groups hsync and vsync pins together and renames "field_signal"
+and "data_enable" groups to "field" and "clkenb" respectively.
 
-> -	depends on !PARISC && (!ARM || FOOTBRIDGE_HOST) && \
-> -		   (!SUPERH || SH_CAYMAN) && !M68K && !BLACKFIN && !S390 && \
-> -		   !ARC
-> +	depends on ARCH_MIGHT_HAVE_PC_SERIO
+Changes in version 2:
+* Split big patches into smaller series.
+* Reorganized the existing pin groups before adding new ones.
 
-Most dependencies on an architecture's kconfig symbol outside arch/
-should probably be treated as a bug.
+Valentine Barshak (5):
+  pinctrl: sh-pfc: pfc-r8a7790: Rename VIN pin groups
+  pinctrl: sh-pfc: pfc-r8a7790: Group VIN0 HSYNC and VSYNC together
+  pinctrl: sh-pfc: pfc-r8a7790: Reorganize VIN0 data pins
+  pinctrl: sh-pfc: pfc-r8a7790: Add missing VIN1 pins
+  pinctrl: sh-pfc: pfc-r8a7790: Add VIN2 and VIN3 pins
 
-Acked-by: Ralf Baechle <ralf@linux-mips.org>
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 441 ++++++++++++++++++++++++++++++-----
+ 1 file changed, 382 insertions(+), 59 deletions(-)
 
-  Ralf
+-- 
+1.8.3.1
+
