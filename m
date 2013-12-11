@@ -1,53 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 13:14:20 +0000
-Subject: [PATCH v3 0/4] Lager and Koelsch reference serial port support
-Message-Id: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 11 Dec 2013 00:51:04 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: add USB Func DMAEngine support
+Message-Id: <87txegnrbf.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch set implements serial port support for the Lager reference board.
+HPB-DMAC has 2 channel for USB Func (= D0/D1)
+D0 is used as Tx, D1 is used as Rx on this patch
 
-The code is available in my git tree at
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+> Simon
 
-        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial/boards
+BockW board will use this patch, but it needs
+HPB-DMAC fixup patches merge.
+I will send it when merged, but this patch
+itself doesn't depend on HPB-DMAC fixup branch.
 
-The patches are based on top of the "[PATCH 00/47] sh-sci updates for v3.14"
-and "[PATCH v3 00/15] Lager and Koelsch multiplatform support" patch series.
+ arch/arm/mach-shmobile/include/mach/r8a7778.h |    2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c        |   18 ++++++++++++++++++
+ 2 files changed, 20 insertions(+)
 
-Changes compared to v2:
-
-- Added Koelsch support
-
-Changes compared to v1:
-
-- Removed early debugging support as it requires more work before being
-  mainlined
-
-Laurent Pinchart (4):
-  ARM: shmobile: r8a7790: Add serial ports to the device tree
-  ARM: shmobile: r8a7791: Add serial ports to the device tree
-  ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
-  ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT
-
- arch/arm/boot/dts/r8a7790-lager.dts              |  24 ++-
- arch/arm/boot/dts/r8a7790.dtsi                   | 100 +++++++++++++
- arch/arm/boot/dts/r8a7791-koelsch.dts            |  24 ++-
- arch/arm/boot/dts/r8a7791.dtsi                   | 180 +++++++++++++++++++++++
- arch/arm/mach-shmobile/board-koelsch-reference.c |  18 +--
- arch/arm/mach-shmobile/board-lager-reference.c   |  18 +--
- arch/arm/mach-shmobile/clock-r8a7790.c           |  16 +-
- arch/arm/mach-shmobile/clock-r8a7791.c           |  24 +--
- arch/arm/mach-shmobile/setup-r8a7790.c           |  26 ++--
- arch/arm/mach-shmobile/setup-r8a7791.c           |  34 ++---
- 10 files changed, 374 insertions(+), 90 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a3440e5..5efd89d 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -63,6 +63,8 @@ enum {
+ 	HPBDMA_SLAVE_HPBIF7_RX,
+ 	HPBDMA_SLAVE_HPBIF8_TX,
+ 	HPBDMA_SLAVE_HPBIF8_RX,
++	HPBDMA_SLAVE_USBFUNC_TX,
++	HPBDMA_SLAVE_USBFUNC_RX,
+ };
+ 
+ extern void r8a7778_add_standard_devices(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index e786338..7ea6308 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -394,6 +394,22 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 		.port	= 0x0D0C,
+ 		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
+ 		.dma_ch	= 22,
++	}, {
++		.id	= HPBDMA_SLAVE_USBFUNC_TX, /* for D0 */
++		.addr	= 0xffe60018,
++		.dcr	= HPB_DMAE_DCR_SPDS_32BIT |
++			  HPB_DMAE_DCR_DMDL |
++			  HPB_DMAE_DCR_DPDS_32BIT,
++		.port	= 0x0000,
++		.dma_ch	= 14,
++	}, {
++		.id	= HPBDMA_SLAVE_USBFUNC_RX, /* for D1 */
++		.addr	= 0xffe6001c,
++		.dcr	= HPB_DMAE_DCR_SMDL |
++			  HPB_DMAE_DCR_SPDS_32BIT |
++			  HPB_DMAE_DCR_DPDS_32BIT,
++		.port	= 0x0101,
++		.dma_ch	= 15,
+ 	},
+ 
+ 	HPBDMA_SSI(0),
+@@ -418,6 +434,8 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ };
+ 
+ static const struct hpb_dmae_channel hpb_dmae_channels[] = {
++	HPB_DMAE_CHANNEL(0x7c, HPBDMA_SLAVE_USBFUNC_TX), /* ch. 14 */
++	HPB_DMAE_CHANNEL(0x7c, HPBDMA_SLAVE_USBFUNC_RX), /* ch. 15 */
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_TX),   /* ch. 28 */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
