@@ -1,57 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 05:17:49 +0000
-Subject: Re: [PATCH 00/04] ARM: shmobile: Use SoC suffix for INTC compat string
-Message-Id: <20131205051746.GH12774@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:49:53 +0000
+Subject: Re: [PATCH 11/15] pwm: pwm-renesas-tpu: Enable driver compilation with COMPILE_TEST
+Message-Id: <2487119.M3l3CLesSz@avalon>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="nextPart1722428.a4LKQWphW0"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127231450.29081.98054.sendpatchset@w520>
- <20131128064555.GA14878@verge.net.au>
- <CANqRtoQ4fsCm=-uw8BgN48wFs_iTaG-H_kjDvcZssJXZqE8VTA@mail.gmail.com>
- <20131205025001.GF21443@verge.net.au>
-In-Reply-To: <20131205025001.GF21443@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131129105353.GI22771@ulmo.nvidia.com> <7787436.L49ODt45in@avalon>
+In-Reply-To: <7787436.L49ODt45in@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 05, 2013 at 11:50:04AM +0900, Simon Horman wrote:
-> On Wed, Dec 04, 2013 at 08:21:42PM +0100, Magnus Damm wrote:
-> > On Thu, Nov 28, 2013 at 7:45 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Thu, Nov 28, 2013 at 08:14:50AM +0900, Magnus Damm wrote:
-> > >> ARM: shmobile: Use SoC suffix for INTC compat string
-> > >>
-> > >> [PATCH 01/04] ARM: shmobile: Use sh73a0 suffix for INTC compat string
-> > >> [PATCH 02/04] ARM: shmobile: Use r8a7740 suffix for INTC compat string
-> > >> [PATCH 03/04] ARM: shmobile: Use r8a7778 suffix for INTC compat string
-> > >> [PATCH 04/04] ARM: shmobile: Use r8a7779 suffix for INTC compat string
-> > >>
-> > >> Update the DTS for INTC irqpin devices to include the SoC in the compat string.
-> > >>
-> > >> Both IRQC and INTC irqpin need documentation for the DT bindings, and this
-> > >> will happen in incremental patches.
-> > >
-> > > I have posted some patches for that a few moments ago :)
-> > 
-> > Thanks for that!
-> > 
-> > > I am curious to if it is intentional that this series replaces
-> > > the use of less-specific compat strings with more specific ones
-> > > while the recent update to the r8a7790 supplemented the
-> > > less-specific renesas,irqc comat string with the more-specific
-> > > renesas,irqc-r8a7790 compat string.
-> > >
-> > > i.e.
-> > >         before: "renesas,intc-irqpin"
-> > >         after:  "renesas,intc-irqpin-sh73a0"
-> > >
-> > >         as opposed to
-> > >
-> > >         before: "renesas,irqc"
-> > >         after: "renesas,irqc-r8a7790", "renesas,irqc"
-> > 
-> > My intention is to keep them the same. I just checked the intc-irqpin
-> > patches but they seem to be following the same style as IRQC. On which
-> > SoC did you observe this difference?
-> 
-> Sorry, ignore this. I was confused.
 
-Now that I am not longer confused I will queue up these patches.
+--nextPart1722428.a4LKQWphW0
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+
+Hi Thierry,
+
+On Friday 29 November 2013 14:51:25 Laurent Pinchart wrote:
+> On Friday 29 November 2013 11:53:54 Thierry Reding wrote:
+> > On Wed, Nov 27, 2013 at 02:18:33AM +0100, Laurent Pinchart wrote:
+> > > This helps increasing build testing coverage.
+> > > 
+> > > Cc: Thierry Reding <thierry.reding@gmail.com>
+> > > Cc: linux-pwm@vger.kernel.org
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > Acked-by: Simon Horman <horms@verge.net.au>
+> > > ---
+> > > 
+> > >  drivers/pwm/Kconfig | 2 +-
+> > >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > I'm not sure if this has been answered in any of the various subthreads
+> > before. I've tried to read through them, but I may have missed some. It
+> > was mentioned that iowrite16() wasn't supported on all architectures;
+> > won't this possibly cause randconfig autobuilders to break?
+> 
+> That's possible (although it has been reported to me that the situation got
+> fixed on arch/cris in v3.12), but the only way to find out is to try it.
+> That would be a bug in the architecture, and it should then get fixed.
+
+Would you consider picking this patch up for v3.14 ?
+
+-- 
+Regards,
+
+Laurent Pinchart
+
+--nextPart1722428.a4LKQWphW0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQEcBAABAgAGBQJSqF92AAoJEIkPb2GL7hl1UDoH/Ah3klx7HNe3xJLfsuK/GDry
+0F40ERbGf3b5NHX3csKvKzlsHTY0cVdMl4GDEKvEe5pfs4fFDOSaRCLI8Xh4Vg31
+JFsDkcMow7at/06jFhtKUI6KAqzCetAVQSpLWY/ubV0pEIZWvM/7IjCAMje0bhiw
+VBR/MHwVVMAxeizCpTzCAVWVRsCu4n+uavN6VwCCK8lx+avw5BJXxBQ6BUbz5XI9
+CEFvzL9eCJSH4qjb449vdCkDPQMjJ5bgTxWKFbOlPFxCGnpDvo8mUjP4u/bXoGjA
+2f3IJjauG8/95YjDJ64+QXv6dqNdFvuXv3YJFwb3JHykN7+R6ELqoePgf23j9Xs=
+=GMv8
+-----END PGP SIGNATURE-----
+
+--nextPart1722428.a4LKQWphW0--
+
