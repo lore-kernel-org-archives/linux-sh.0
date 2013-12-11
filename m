@@ -1,95 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:12 +0000
-Subject: [PATCH 08/12] ARM: shmobile: Remove non-multiplatform Lager reference support
-Message-Id: <a8325d627fdd688de0b50e9edf4ed3787c6b5ee5.1387891831.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:29:15 +0000
+Subject: [PATCH v3.1 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
+Message-Id: <1386772155-24725-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
+variables, and cast pointers to uintptr_t instead of unsigned int where
+applicable. This fixes warnings on platforms where pointers and/or
+dma_addr_t have a different size than int
 
-Now that r8a7790 has CCF support remove the legacy Lager reference
-Kconfig bits CONFIG_MACH_LAGER_REFERENCE for the non-multiplatform
-case.
-
-Starting from this commit Lager board support is always enabled via
-CONFIG_MACH_LAGER, and CONFIG_ARCH_MULTIPLATFORM is used to select
-between board-lager.c and board-lager-reference.c
-
-The file board-lager-reference.c can no longer be used together with
-the legacy sh-clk clock framework, instead CCF is used.
-
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Vinod Koul <vinod.koul@intel.com>
+Cc: dmaengine@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile           |  1 -
- arch/arm/mach-shmobile/Kconfig       | 11 -----------
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- 4 files changed, 14 deletions(-)
+ drivers/dma/sh/shdma-base.c | 10 +++++-----
+ drivers/dma/sh/shdma-of.c   |  3 ++-
+ drivers/dma/sh/sudmac.c     |  4 ++--
+ 3 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 9e22bd4..37aefa2 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -227,7 +227,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r8a7779-marzen-reference.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
--	r8a7790-lager-reference.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e7033a8..88bf980 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -262,17 +262,6 @@ config MACH_LAGER
- 	depends on ARCH_R8A7790
- 	select USE_OF
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 2e7b394..5239677 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
+ 	const struct shdma_ops *ops = sdev->ops;
+-	int match = (int)arg;
++	int match = (long)arg;
+ 	int ret;
  
--config MACH_LAGER_REFERENCE
--	bool "Lager board - Reference Device Tree Implementation"
--	depends on ARCH_R8A7790
--	select USE_OF
--	---help---
--	   Use reference implementation of Lager board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_KOELSCH
- 	bool "Koelsch board"
- 	depends on ARCH_R8A7791
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 9daa9c1..fad94ee 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
--obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 759e4f8f..f6d5119 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -13,7 +13,6 @@ loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
--loadaddr-$(CONFIG_MACH_LAGER_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
- loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
- loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
+ 	if (match < 0)
+@@ -491,8 +491,8 @@ static struct shdma_desc *shdma_add_desc(struct shdma_chan *schan,
+ 	}
+ 
+ 	dev_dbg(schan->dev,
+-		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
+-		copy_size, *len, *src, *dst, &new->async_tx,
++		"chaining (%zu/%zu)@%pad -> %pad with %p, cookie %d\n",
++		copy_size, *len, src, dst, &new->async_tx,
+ 		new->async_tx.cookie);
+ 
+ 	new->mark = DESC_PREPARED;
+@@ -555,8 +555,8 @@ static struct dma_async_tx_descriptor *shdma_prep_sg(struct shdma_chan *schan,
+ 			goto err_get_desc;
+ 
+ 		do {
+-			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
+-				i, sg, len, (unsigned long long)sg_addr);
++			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %pad\n",
++				i, sg, len, &sg_addr);
+ 
+ 			if (direction = DMA_DEV_TO_MEM)
+ 				new = shdma_add_desc(schan, flags,
+diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
+index 06473a0..b4ff9d3 100644
+--- a/drivers/dma/sh/shdma-of.c
++++ b/drivers/dma/sh/shdma-of.c
+@@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
+ 	/* Only slave DMA channels can be allocated via DT */
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+-	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
++	chan = dma_request_channel(mask, shdma_chan_filter,
++				   (void *)(uintptr_t)id);
+ 	if (chan)
+ 		to_shdma_chan(chan)->hw_req = id;
+ 
+diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
+index c7e9cdf..4e7df43 100644
+--- a/drivers/dma/sh/sudmac.c
++++ b/drivers/dma/sh/sudmac.c
+@@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan *schan,
+ 	struct sudmac_chan *sc = to_chan(schan);
+ 	struct sudmac_desc *sd = to_desc(sdesc);
+ 
+-	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
+-		__func__, src, dst, *len);
++	dev_dbg(sc->shdma_chan.dev, "%s: src=%pad, dst=%pad, len=%zu\n",
++		__func__, &src, &dst, *len);
+ 
+ 	if (*len > schan->max_xfer_len)
+ 		*len = schan->max_xfer_len;
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
