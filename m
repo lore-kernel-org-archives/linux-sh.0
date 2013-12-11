@@ -1,41 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:51 +0000
-Subject: [PATCH] ARM: shmobile: remove unnecessary platform_device as header cleanup
-Message-Id: <2eb7a8146f5ab5be7cde42438e32461f313d0d0b.1387762178.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:48:01 +0000
+Subject: Re: [PATCH 04/15] iommu: shmobile: Enable driver compilation with COMPILE_TEST
+Message-Id: <11462751.6CMKaYKG99@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387762178.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387762178.git.horms+renesas@verge.net.au>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131128073651.GE24146@verge.net.au>
+In-Reply-To: <20131128073651.GE24146@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Joerg,
 
-8e0e7aaef3c98c52e85f5640b73ffa82058abcfd
-(ARM: shmobile: Drop r8a7779_add_device_to_domain())
-removed last user of struct platform_device on this header.
-It is no longer needed
+Could you please pick this patch up for v3.14 ?
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 --
- 1 file changed, 2 deletions(-)
+On Thursday 28 November 2013 16:36:51 Simon Horman wrote:
+> On Wed, Nov 27, 2013 at 02:18:26AM +0100, Laurent Pinchart wrote:
+> > This helps increasing build testing coverage.
+> > 
+> > The driver doesn't compile on non-ARM platforms due to usage of the ARM
+> > DMA IOMMU API, restrict compilation to ARM.
+> > 
+> > Cc: Joerg Roedel <joro@8bytes.org>
+> > Cc: iommu@lists.linux-foundation.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> > ---
+> > 
+> >  drivers/iommu/Kconfig | 1 +
+> >  1 file changed, 1 insertion(+)
+> > 
+> > diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
+> > index 3e7fdbb..79bbc21 100644
+> > --- a/drivers/iommu/Kconfig
+> > +++ b/drivers/iommu/Kconfig
+> > @@ -207,6 +207,7 @@ config SHMOBILE_IOMMU
+> >  	bool "IOMMU for Renesas IPMMU/IPMMUI"
+> >  	default n
+> >  	depends on ARM
+> > +	depends on SH_MOBILE || COMPILE_TEST
+> >  	select IOMMU_API
+> >  	select ARM_DMA_USE_IOMMU
+> >  	select SHMOBILE_IPMMU
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 5014145..b40e136 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -11,8 +11,6 @@ enum {
- 	HPBDMA_SLAVE_SDHI0_RX,
- };
- 
--struct platform_device;
--
- struct r8a7779_pm_ch {
- 	unsigned long chan_offs;
- 	unsigned int chan_bit;
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
