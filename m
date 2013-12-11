@@ -1,68 +1,90 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:12 +0000
-Subject: [PATCH 05/47] serial: sh-sci: Simplify baud rate calculation algorithms
-Message-Id: <1386323994-12850-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:13:56 +0000
+Subject: [PATCH v4 10/16] ARM: shmobile: Remove non-multiplatform Lager reference support
+Message-Id: <1386771242-21876-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-Rewrite the baud rate register value calculations in easier to read
-forms. The computed value isn't modified.
+Now that r8a7790 has CCF support remove the legacy Lager reference
+Kconfig bits CONFIG_MACH_LAGER_REFERENCE for the non-multiplatform
+case.
+
+Starting from this commit Lager board support is always enabled via
+CONFIG_MACH_LAGER, and CONFIG_ARCH_MULTIPLATFORM is used to select
+between board-lager.c and board-lager-reference.c
+
+The file board-lager-reference.c can no longer be used together with
+the legacy sh-clk clock framework, instead CCF is used.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/tty/serial/sh-sci.c | 8 ++++----
- include/linux/serial_sci.h  | 8 ++++----
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/boot/dts/Makefile           |  1 -
+ arch/arm/mach-shmobile/Kconfig       | 11 -----------
+ arch/arm/mach-shmobile/Makefile      |  1 -
+ arch/arm/mach-shmobile/Makefile.boot |  1 -
+ 4 files changed, 14 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 86b33f3..1671074 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1817,13 +1817,13 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
- {
- 	switch (algo_id) {
- 	case SCBRR_ALGO_1:
--		return ((freq + 16 * bps) / (16 * bps) - 1);
-+		return freq / (16 * bps);
- 	case SCBRR_ALGO_2:
--		return ((freq + 16 * bps) / (32 * bps) - 1);
-+		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
- 	case SCBRR_ALGO_3:
--		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
-+		return freq / (8 * bps);
- 	case SCBRR_ALGO_4:
--		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
-+		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
- 	}
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 74e4186..0457edb 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -228,7 +228,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7791-koelsch-reference.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7790-lager-reference.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb \
+ 	r8a73a4-ape6evm.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index b7c0969..829f623 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -258,17 +258,6 @@ config MACH_LAGER
+ 	depends on ARCH_R8A7790
+ 	select USE_OF
  
- 	/* Warn, but use a safe default */
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index babc5fe..12cf50c 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -11,10 +11,10 @@
- #define SCIx_NOT_SUPPORTED	(-1)
- 
- enum {
--	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
--	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
--	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
--	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
-+	SCBRR_ALGO_1,		/* clk / (16 * bps) */
-+	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
-+	SCBRR_ALGO_3,		/* clk / (8 * bps) */
-+	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
- 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
- };
- 
+-config MACH_LAGER_REFERENCE
+-	bool "Lager board - Reference Device Tree Implementation"
+-	depends on ARCH_R8A7790
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of Lager board support
+-	   which makes use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_KOELSCH
+ 	bool "Koelsch board"
+ 	depends on ARCH_R8A7791
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 9daa9c1..fad94ee 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+-obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 759e4f8f..f6d5119 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -13,7 +13,6 @@ loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+-loadaddr-$(CONFIG_MACH_LAGER_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
+ loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
 -- 
 1.8.3.2
 
