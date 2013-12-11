@@ -1,7 +1,7 @@
-From: "Shevchenko, Andriy" <andriy.shevchenko@intel.com>
-Date: Wed, 11 Dec 2013 12:59:34 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:27:41 +0000
 Subject: Re: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <1386766746.1871.181.camel@smile>
+Message-Id: <1467807.P36IqR6kbP@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,26 +10,32 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-T24gV2VkLCAyMDEzLTEyLTExIGF0IDEzOjQzICswMTAwLCBMYXVyZW50IFBpbmNoYXJ0IHdyb3Rl
-Og0KPiBVc2UgdGhlICV6dSBhbmQgJXBhZCBwcmludGsgc3BlY2lmaWVycyB0byBwcmludCBzaXpl
-X3QgYW5kIGRtYV9hZGRyX3QNCj4gdmFyaWFibGVzLCBhbmQgY2FzdCBwb2ludGVycyB0byB1aW50
-cHRyX3QgaW5zdGVhZCBvZiB1bnNpZ25lZCBpbnQgd2hlcmUNCj4gYXBwbGljYWJsZS4gVGhpcyBm
-aXhlcyB3YXJuaW5ncyBvbiBwbGF0Zm9ybXMgd2hlcmUgcG9pbnRlcnMgYW5kL29yDQo+IGRtYV9h
-ZGRyX3QgaGF2ZSBhIGRpZmZlcmVudCBzaXplIHRoYW4gaW50DQoNClRoYW5rcyBmb3IgYW4gdXBk
-YXRlZCB2ZXJzaW9uLiBOb3cgbG9va3MgYmV0dGVyIHdpdGggdGhvc2UgJXBhZC4NCk9uZSBjb21t
-ZW50IGJlbG93Lg0KDQo+IEBAIC01NTUsNyArNTU1LDcgQEAgc3RhdGljIHN0cnVjdCBkbWFfYXN5
-bmNfdHhfZGVzY3JpcHRvciAqc2hkbWFfcHJlcF9zZyhzdHJ1Y3Qgc2hkbWFfY2hhbiAqc2NoYW4s
-DQo+ICAJCQlnb3RvIGVycl9nZXRfZGVzYzsNCj4gIA0KPiAgCQlkbyB7DQo+IC0JCQlkZXZfZGJn
-KHNjaGFuLT5kZXYsICJBZGQgU0cgIyVkQCVwWyVkXSwgZG1hICVsbHhcbiIsDQo+ICsJCQlkZXZf
-ZGJnKHNjaGFuLT5kZXYsICJBZGQgU0cgIyVkQCVwWyV6dV0sIGRtYSAlbGx4XG4iLA0KPiAgCQkJ
-CWksIHNnLCBsZW4sICh1bnNpZ25lZCBsb25nIGxvbmcpc2dfYWRkcik7DQoNCnNnX2FkZHIgLT4g
-JXBhZCBhcyB3ZWxsID8NCg0KLS0gDQpBbmR5IFNoZXZjaGVua28gPGFuZHJpeS5zaGV2Y2hlbmtv
-QGludGVsLmNvbT4NCkludGVsIEZpbmxhbmQgT3kNCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQpJbnRlbCBGaW5sYW5k
-IE95ClJlZ2lzdGVyZWQgQWRkcmVzczogUEwgMjgxLCAwMDE4MSBIZWxzaW5raSAKQnVzaW5lc3Mg
-SWRlbnRpdHkgQ29kZTogMDM1NzYwNiAtIDQgCkRvbWljaWxlZCBpbiBIZWxzaW5raSAKClRoaXMg
-ZS1tYWlsIGFuZCBhbnkgYXR0YWNobWVudHMgbWF5IGNvbnRhaW4gY29uZmlkZW50aWFsIG1hdGVy
-aWFsIGZvcgp0aGUgc29sZSB1c2Ugb2YgdGhlIGludGVuZGVkIHJlY2lwaWVudChzKS4gQW55IHJl
-dmlldyBvciBkaXN0cmlidXRpb24KYnkgb3RoZXJzIGlzIHN0cmljdGx5IHByb2hpYml0ZWQuIElm
-IHlvdSBhcmUgbm90IHRoZSBpbnRlbmRlZApyZWNpcGllbnQsIHBsZWFzZSBjb250YWN0IHRoZSBz
-ZW5kZXIgYW5kIGRlbGV0ZSBhbGwgY29waWVzLgo
+On Wednesday 11 December 2013 12:59:34 Shevchenko, Andriy wrote:
+> On Wed, 2013-12-11 at 13:43 +0100, Laurent Pinchart wrote:
+> 
+> > Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
+> > variables, and cast pointers to uintptr_t instead of unsigned int where
+> > applicable. This fixes warnings on platforms where pointers and/or
+> > dma_addr_t have a different size than int
+> 
+> Thanks for an updated version. Now looks better with those %pad.
+> One comment below.
+> 
+> > @@ -555,7 +555,7 @@ static struct dma_async_tx_descriptor
+> > *shdma_prep_sg(struct shdma_chan *schan,
+> >  			goto err_get_desc;
+> >  
+> >  		do {
+> > -			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
+> > +			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %llx\n",
+> >  				i, sg, len, (unsigned long long)sg_addr);
+> 
+> sg_addr -> %pad as well ?
+
+Indeed. I'll repost this patch.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
