@@ -1,102 +1,39 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:25 +0000
-Subject: [PATCH 18/47] ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
-Message-Id: <1386323994-12850-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 03:26:28 +0000
+Subject: [PATCH 08/10] ARM: shmobile: r8a7740: Specify PFC interrupts in DT
+Message-Id: <1386732390-31724-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
-
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r7s72100.c | 49 +++++++++++++++------------------
- 1 file changed, 22 insertions(+), 27 deletions(-)
+ arch/arm/boot/dts/r8a7740.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 55f0b9c..6ae7e32 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -28,8 +28,8 @@
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 2782f64..8280884 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -155,6 +155,15 @@
+ 		      <0xe605800c 0x20>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		interrupts-extended +			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
++			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
++			<&irqpin1 0 0>, <&irqpin1 1 0>, <&irqpin1 2 0>, <&irqpin1 3 0>,
++			<&irqpin1 4 0>, <&irqpin1 5 0>, <&irqpin1 6 0>, <&irqpin1 7 0>,
++			<&irqpin2 0 0>, <&irqpin2 1 0>, <&irqpin2 2 0>, <&irqpin2 3 0>,
++			<&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
++			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
++			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
+ 	};
  
--#define SCIF_DATA(index, baseaddr, irq)					\
--[index] = {								\
-+#define R7S72100_SCIF(index, baseaddr, irq)				\
-+static const struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= PORT_SCIF,					\
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-@@ -40,24 +40,19 @@
- 	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
- }
- 
--enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
-+R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
-+R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-+R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
-+R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
-+R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
-+R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
-+R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
-+R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 
--static const struct plat_sci_port scif[] __initconst = {
--	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
--	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
--	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
--	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
--	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
--	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
--	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
--	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
--};
--
--static inline void r7s72100_register_scif(int idx)
--{
--	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
--				      sizeof(struct plat_sci_port));
--}
-+#define r7s72100_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
- 
- 
- static struct sh_timer_config mtu2_0_platform_data __initdata = {
-@@ -81,14 +76,14 @@ static struct resource mtu2_0_resources[] __initdata = {
- 
- void __init r7s72100_add_dt_devices(void)
- {
--	r7s72100_register_scif(SCIF0);
--	r7s72100_register_scif(SCIF1);
--	r7s72100_register_scif(SCIF2);
--	r7s72100_register_scif(SCIF3);
--	r7s72100_register_scif(SCIF4);
--	r7s72100_register_scif(SCIF5);
--	r7s72100_register_scif(SCIF6);
--	r7s72100_register_scif(SCIF7);
-+	r7s72100_register_scif(0);
-+	r7s72100_register_scif(1);
-+	r7s72100_register_scif(2);
-+	r7s72100_register_scif(3);
-+	r7s72100_register_scif(4);
-+	r7s72100_register_scif(5);
-+	r7s72100_register_scif(6);
-+	r7s72100_register_scif(7);
- 	r7s72100_register_mtu2(0);
- }
- 
+ 	tpu: pwm@e6600000 {
 -- 
 1.8.3.2
 
