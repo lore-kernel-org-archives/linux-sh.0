@@ -1,54 +1,44 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 10 Dec 2013 15:29:43 +0000
-Subject: Re: [PATCH] ARM: shmobile: mackerel: Use pinconf API to configure pin pull-down
-Message-Id: <173349858.zqd3Wj5xck@avalon>
+Date: Wed, 11 Dec 2013 12:48:50 +0000
+Subject: Re: [PATCH 09/15] mtd: sh_flctl: Enable driver compilation with COMPILE_TEST
+Message-Id: <3651259.U0RP9jvU5Q@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385651878-7002-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385651878-7002-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Hi David,
 
-On Thursday 28 November 2013 16:17:58 Laurent Pinchart wrote:
-> The USB0 and USB1 VBUS pins must be pulled down. Add corresponding
-> configuration entries in the pinctrl map table instead of manually
-> poking the pin control registers.
+Could you please pick this patch up for v3.14 ?
+
+On Wednesday 27 November 2013 02:18:31 Laurent Pinchart wrote:
+> This helps increasing build testing coverage.
 > 
+> Cc: David Woodhouse <dwmw2@infradead.org>
+> Cc: linux-mtd@lists.infradead.org
 > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms@verge.net.au>
 > ---
->  arch/arm/mach-shmobile/board-mackerel.c | 17 +++++++++--------
->  arch/arm/mach-shmobile/sh-gpio.h        | 19 -------------------
->  2 files changed, 9 insertions(+), 27 deletions(-)
+>  drivers/mtd/nand/Kconfig | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/arch/arm/mach-shmobile/board-mackerel.c
-> b/arch/arm/mach-shmobile/board-mackerel.c index d90d2f1..207acf0 100644
-> --- a/arch/arm/mach-shmobile/board-mackerel.c
-> +++ b/arch/arm/mach-shmobile/board-mackerel.c
-
-[snip]
-
-> @@ -1396,17 +1401,19 @@ static const struct pinctrl_map
-> mackerel_pinctrl_map[] = { /* USBHS0 */
->  	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.0", "pfc-sh7372",
->  				  "usb0_vbus", "usb0"),
-> +	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.0", "pfc-sh7372",
-> +				      "usb0_vbus", pin_pulldown_conf),
->  	/* USBHS1 */
->  	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
->  				  "usb1_vbus", "usb1"),
-> +	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.&", "pfc-sh7372",
-> +				      "usb1_vbus", pin_pulldown_conf),
-
-This is obviously a mistake ('&' should be '1'). Should I submit a v2 with the 
-typo fixed, or a new patch that fixes the bug ?
-
->  	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
->  				  "usb1_otg_id_0", "usb1"),
->  };
-
+> diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+> index 93ae6a6..cb1f2ec 100644
+> --- a/drivers/mtd/nand/Kconfig
+> +++ b/drivers/mtd/nand/Kconfig
+> @@ -458,7 +458,7 @@ config MTD_NAND_MXC
+> 
+>  config MTD_NAND_SH_FLCTL
+>  	tristate "Support for NAND on Renesas SuperH FLCTL"
+> -	depends on SUPERH || ARCH_SHMOBILE
+> +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+>  	help
+>  	  Several Renesas SuperH CPU has FLCTL. This option enables support
+>  	  for NAND Flash using FLCTL.
 -- 
 Regards,
 
