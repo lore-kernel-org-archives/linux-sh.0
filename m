@@ -1,49 +1,58 @@
-From: Kevin Hilman <khilman@linaro.org>
-Date: Fri, 20 Dec 2013 19:26:38 +0000
-Subject: Re: [GIT PULL] Renesas USB r8a66597 HCD update for v3.14
-Message-Id: <87haa3gw7l.fsf@linaro.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 03:26:22 +0000
+Subject: [PATCH 02/10] sh-pfc: Terminate gpios array by -1
+Message-Id: <1386732390-31724-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386898134.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386898134.git.horms+renesas@verge.net.au> (Simon Horman's
- message of "Fri, 13 Dec 2013 11:28:37 +0900")
+References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Simon Horman <horms+renesas@verge.net.au> writes:
+0 is a valid GPIO value, use -1 to terminate the gpios array in IRQ
+lists.
 
-> Hi Olof, Hi Kevin, Hi Arnd,
->
-> please consider this Renesas USB r8a66597 HCD update for v3.14
->
-> It has been acked by Greg Kroah-Hartman.
-> I would like it to go through the arm-soc tree as it
-> is a dependency for forthcoming CCF changes.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/gpio.c   | 4 ++--
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-OK.
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 3d30e6e..c24be81 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -207,9 +207,9 @@ static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
+ 	unsigned int i, k;
+ 
+ 	for (i = 0; i < pfc->info->gpio_irq_size; i++) {
+-		unsigned short *gpios = pfc->info->gpio_irq[i].gpios;
++		short *gpios = pfc->info->gpio_irq[i].gpios;
+ 
+-		for (k = 0; gpios[k]; k++) {
++		for (k = 0; gpios[k] >= 0; k++) {
+ 			if (gpios[k] = offset)
+ 				return pfc->info->gpio_irq[i].irq;
+ 		}
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 11bd0d9..cd040e0 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -94,11 +94,11 @@ struct pinmux_data_reg {
+ 
+ struct pinmux_irq {
+ 	int irq;
+-	unsigned short *gpios;
++	short *gpios;
+ };
+ 
+ #define PINMUX_IRQ(irq_nr, ids...)			   \
+-	{ .irq = irq_nr, .gpios = (unsigned short []) { ids, 0 } }	\
++	{ .irq = irq_nr, .gpios = (short []) { ids, -1 } }
+ 
+ struct pinmux_range {
+ 	u16 begin;
+-- 
+1.8.3.2
 
-> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
->
->   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
->
-> are available in the git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-usb-r8a66597-hcd-for-v3.14
->
-> for you to fetch changes up to 9b547a882e9ffec67bb41a4e66b4bcc0e91a2737:
->
->   usb: r8a66597-hcd: Convert to clk_prepare/unprepare (2013-11-28 17:19:11 +0900)
->
-> ----------------------------------------------------------------
-> Renesas USB r8a66597 HCD update for v3.14
->
-> Convert to clk_prepare/unprepare
->
-> ----------------------------------------------------------------
-
-Pulled into next/drivers.
-
-Thanks,
-
-Kevin
