@@ -1,40 +1,90 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:12 +0000
-Subject: [PATCH 38/69] ARM: shmobile: bockw-reference: Use falling edge IRQ for LAN9221
-Message-Id: <08281424f1ca5680e4a17656f3d9b978103779eb.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:14:01 +0000
+Subject: [PATCH v4 15/16] ARM: shmobile: Remove Koelsch reference DTS
+Message-Id: <1386771242-21876-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The device is configured to generate an active-low interrupt signal that
-is automatically deasserted without requiring any action from the host.
-Configure the IRQ to trigger on falling edge.
+Now that the DTS file r8a7790-koelsch.dts can be used with
+board-koelsch.c and board-koelsch-reference.c, proceed with removing
+r8a7790-koelsch-reference.dts.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 61 -------------------------
+ 1 file changed, 61 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 2000cf8..bb62c7a 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -46,7 +46,7 @@
- 
- 		phy-mode = "mii";
- 		interrupt-parent = <&irqpin>;
--		interrupts = <0 IRQ_TYPE_NONE>; /* IRQ0: hwirq 0 on irqpin */
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+deleted file mode 100644
+index 1919273..0000000
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ /dev/null
+@@ -1,61 +0,0 @@
+-/*
+- * Device Tree Source for the Koelsch board
+- *
+- * Copyright (C) 2013 Renesas Electronics Corporation
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7791.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Koelsch";
+-	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data_d";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data_d";
+-		renesas,function = "scif1";
+-	};
+-};
 -- 
-1.8.4
+1.8.3.2
 
