@@ -1,39 +1,133 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:10 +0000
-Subject: [PATCH 14/26] ARM: shmobile: lager: mark GPIO keys as wake-up sources
-Message-Id: <e0554d90b076da1c543b42599c1d6636286ca47f.1387763524.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 13:14:21 +0000
+Subject: [PATCH v3 1/4] ARM: shmobile: r8a7790: Add serial ports to the device tree
+Message-Id: <1386767664-20113-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Add all serial ports marked as disabled.
 
-Enable wakeup for the GPIO keys on the Lager board.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 100 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 100 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index fcf06fd..f5dab34 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -121,7 +121,7 @@ static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d, ...) \
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
--	  .debounce_interval = 20 }
-+	  .wakeup = 1, .debounce_interval = 20 }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 8ed48de..6582f9d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -299,6 +299,106 @@
+ 		status = "disabled";
+ 	};
  
- static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
++		reg = <0 0xe6c40000 0 64>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa1: serial@e6c50000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c50000 0 64>;
++		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa2: serial@e6c60000 {
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c60000 0 64>;
++		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb0: serial@e6c20000 {
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c20000 0 64>;
++		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb1: serial@e6c30000 {
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c30000 0 64>;
++		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb2: serial@e6ce0000 {
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6ce0000 0 64>;
++		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif0: serial@e6e60000 {
++		compatible = "renesas,scif-r8a7790", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e60000 0 64>;
++		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e6e68000 {
++		compatible = "renesas,scif-r8a7790", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e68000 0 64>;
++		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif0: serial@e62c0000 {
++		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62c0000 0 96>;
++		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif1: serial@e62c8000 {
++		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62c8000 0 96>;
++		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.8.4
+1.8.3.2
 
