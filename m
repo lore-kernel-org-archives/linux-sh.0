@@ -1,61 +1,107 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:35 +0000
-Subject: [PATCH 28/47] ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as resources
-Message-Id: <1386323994-12850-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:05:15 +0000
+Subject: [PATCH v4 4/5] ARM: shmobile: r8a7790: Reference clocks
+Message-Id: <1386770716-21610-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+Reference clocks using a "clocks" property in all nodes corresponding to
+devices that require a clock.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 676257e..47c8230 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -46,12 +46,15 @@
- /* SCIF */
- #define R8A7778_SCIF(index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {	\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
- 	.type		= PORT_SCIF,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+};								\
-+								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
- }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d14c855..8ed48de 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -197,6 +197,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
  
- R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
-@@ -62,9 +65,11 @@ R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
- R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
+@@ -207,6 +208,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
  
- #define r8a7778_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
+@@ -217,6 +219,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
  
- /* TMU */
- static struct resource sh_tmu0_resources[] __initdata = {
+@@ -227,6 +230,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -235,6 +239,7 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -244,6 +249,7 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -258,6 +264,7 @@
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -267,6 +274,7 @@
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -276,6 +284,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -285,6 +294,7 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
 -- 
 1.8.3.2
 
