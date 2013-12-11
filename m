@@ -1,233 +1,353 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 10:13:19 +0000
-Subject: [PATCH v5 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
-Message-Id: <20131217101319.17491.50953.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:05:14 +0000
+Subject: [PATCH v4 3/5] ARM: shmobile: r8a7790: Add clocks
+Message-Id: <1386770716-21610-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217101212.17491.56898.sendpatchset@w520>
-In-Reply-To: <20131217101212.17491.56898.sendpatchset@w520>
+References: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Declare all core clocks and DIV6 clocks, as well as all MSTP clocks
+currently used by r8a7790 boards.
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU and MTU2
-it is safe to remove these from SH.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7790.dtsi | 318 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 318 insertions(+)
 
- arch/sh/Kconfig |   76 ++++++++++++++++---------------------------------------
- 1 file changed, 23 insertions(+), 53 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 68b7b87..d14c855 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -8,6 +8,7 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/clock/r8a7790-clock.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+@@ -287,4 +288,321 @@
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* External root clock */
++		extal_clk: extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overriden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a7790-cpg-clocks",
++				     "renesas,rcar-gen2-cpg-clocks";
++			reg = <0 0xe6150000 0 0x1000>;
++			clocks = <&extal_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "main", "pll0", "pll1", "pll3",
++					     "lb", "qspi", "sdh", "sd0", "sd1",
++					     "z";
++		};
++
++		/* Variable factor clocks */
++		sd2_clk: sd2_clk@e6150078 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150078 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd2";
++		};
++		sd3_clk: sd3_clk@e615007c {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615007c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "sd3";
++		};
++		mmc0_clk: mmc0_clk@e6150240 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150240 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc0";
++		};
++		mmc1_clk: mmc1_clk@e6150244 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150244 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc1";
++		};
++		ssp_clk: ssp_clk@e6150248 {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe6150248 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "ssp";
++		};
++		ssprs_clk: ssprs_clk@e615024c {
++			compatible = "renesas,r8a7790-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0 0xe615024c 0 4>;
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-output-names = "ssprs";
++		};
++
++		/* Fixed factor clocks */
++		pll1_div2_clk: pll1_div2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "pll1_div2";
++		};
++		z2_clk: z2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "z2";
++		};
++		zg_clk: zg_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <3>;
++			clock-mult = <1>;
++			clock-output-names = "zg";
++		};
++		zx_clk: zx_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <3>;
++			clock-mult = <1>;
++			clock-output-names = "zx";
++		};
++		zs_clk: zs_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <6>;
++			clock-mult = <1>;
++			clock-output-names = "zs";
++		};
++		hp_clk: hp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "hp";
++		};
++		i_clk: i_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "i";
++		};
++		b_clk: b_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "b";
++		};
++		p_clk: p_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <24>;
++			clock-mult = <1>;
++			clock-output-names = "p";
++		};
++		cl_clk: cl_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <48>;
++			clock-mult = <1>;
++			clock-output-names = "cl";
++		};
++		m2_clk: m2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "m2";
++		};
++		imp_clk: imp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "imp";
++		};
++		rclk_clk: rclk_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <(48 * 1024)>;
++			clock-mult = <1>;
++			clock-output-names = "rclk";
++		};
++		oscclk_clk: oscclk_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <(12 * 1024)>;
++			clock-mult = <1>;
++			clock-output-names = "oscclk";
++		};
++		zb3_clk: zb3_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "zb3";
++		};
++		zb3d2_clk: zb3d2_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "zb3d2";
++		};
++		ddr_clk: ddr_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7790_CLK_PLL3>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "ddr";
++		};
++		mp_clk: mp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&pll1_div2_clk>;
++			#clock-cells = <0>;
++			clock-div = <15>;
++			clock-mult = <1>;
++			clock-output-names = "mp";
++		};
++		cp_clk: cp_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&extal_clk>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "cp";
++		};
++
++		/* Gate clocks */
++		mstp1_clks: mstp1_clks@e6150134 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
++			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
++				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
++				 <&zs_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
++				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
++				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_RT R8A7790_CLK_VSP1_SY
++			>;
++			clock-output-names +				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
++				"vsp1-du0", "vsp1-rt", "vsp1-sy";
++		};
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
++			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&mp_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
++				R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1 R8A7790_CLK_SCIFB2
++			>;
++			clock-output-names +				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
++				"scifb2";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
++				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
++				 <&mmc0_clk>, <&rclk_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
++				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
++				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
++			>;
++			clock-output-names +				"tpu0", "mmcif1", "sdhi3", "sdhi2",
++				"sdhi1", "sdhi0", "mmcif0", "cmt1";
++		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
++			clocks = <&extal_clk>, <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
++			clock-output-names = "thermal", "pwm";
++		};
++		mstp7_clks: mstp7_clks@e615014c {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
++			clocks = <&mp_clk>, <&mp_clk>, <&zs_clk>, <&zs_clk>, <&p_clk>,
++				 <&p_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>,
++				 <&zx_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_EHCI R8A7790_CLK_HSUSB R8A7790_CLK_HSCIF1
++				R8A7790_CLK_HSCIF0 R8A7790_CLK_SCIF1 R8A7790_CLK_SCIF0
++				R8A7790_CLK_DU2 R8A7790_CLK_DU1 R8A7790_CLK_DU0
++				R8A7790_CLK_LVDS1 R8A7790_CLK_LVDS0
++			>;
++			clock-output-names +				"ehci", "hsusb", "hscif1", "hscif0", "scif1",
++				"scif0", "du2", "du1", "du0", "lvds1", "lvds0";
++		};
++		mstp8_clks: mstp8_clks@e6150990 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
++			clocks = <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R8A7790_CLK_ETHER>;
++			clock-output-names = "ether";
++		};
++		mstp9_clks: mstp9_clks@e6150994 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
++			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_I2C3
++				R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
++			>;
++			clock-output-names = "rcan1", "rcan0", "i2c3", "i2c2", "i2c1", "i2c0";
++		};
++	};
+ };
+-- 
+1.8.3.2
 
---- 0001/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2013-12-17 18:56:15.000000000 +0900
-@@ -122,15 +122,6 @@ config SYS_SUPPORTS_NUMA
- config SYS_SUPPORTS_PCI
- 	bool
- 
--config SYS_SUPPORTS_CMT
--	bool
--
--config SYS_SUPPORTS_MTU2
--	bool
--
--config SYS_SUPPORTS_TMU
--	bool
--
- config STACKTRACE_SUPPORT
- 	def_bool y
- 
-@@ -190,14 +181,14 @@ config CPU_SH3
- 	bool
- 	select CPU_HAS_INTEVT
- 	select CPU_HAS_SR_RB
--	select SYS_SUPPORTS_TMU
-+	select SYS_SUPPORTS_SH_TMU
- 
- config CPU_SH4
- 	bool
- 	select CPU_HAS_INTEVT
- 	select CPU_HAS_SR_RB
- 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
--	select SYS_SUPPORTS_TMU
-+	select SYS_SUPPORTS_SH_TMU
- 	select SYS_SUPPORTS_HUGETLBFS if MMU
- 
- config CPU_SH4A
-@@ -212,7 +203,7 @@ config CPU_SH4AL_DSP
- config CPU_SH5
- 	bool
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_TMU
-+	select SYS_SUPPORTS_SH_TMU
- 	select SYS_SUPPORTS_HUGETLBFS if MMU
- 
- config CPU_SHX2
-@@ -249,7 +240,7 @@ choice
- config CPU_SUBTYPE_SH7619
- 	bool "Support SH7619 processor"
- 	select CPU_SH2
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 
- # SH-2A Processor Support
- 
-@@ -257,50 +248,50 @@ config CPU_SUBTYPE_SH7201
- 	bool "Support SH7201 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_MTU2
-  
- config CPU_SUBTYPE_SH7203
- 	bool "Support SH7203 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 
- config CPU_SUBTYPE_SH7206
- 	bool "Support SH7206 processor"
- 	select CPU_SH2A
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 
- config CPU_SUBTYPE_SH7263
- 	bool "Support SH7263 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 
- config CPU_SUBTYPE_SH7264
- 	bool "Support SH7264 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 	select PINCTRL
- 
- config CPU_SUBTYPE_SH7269
- 	bool "Support SH7269 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 	select PINCTRL
- 
- config CPU_SUBTYPE_MXG
- 	bool "Support MX-G processor"
- 	select CPU_SH2A
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_MTU2
- 	help
- 	  Select MX-G if running on an R8A03022BG part.
- 
-@@ -353,7 +344,7 @@ config CPU_SUBTYPE_SH7720
- 	bool "Support SH7720 processor"
- 	select CPU_SH3
- 	select CPU_HAS_DSP
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select USB_ARCH_HAS_OHCI
- 	select USB_OHCI_SH if USB_OHCI_HCD
-@@ -365,7 +356,7 @@ config CPU_SUBTYPE_SH7721
- 	bool "Support SH7721 processor"
- 	select CPU_SH3
- 	select CPU_HAS_DSP
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select USB_ARCH_HAS_OHCI
- 	select USB_OHCI_SH if USB_OHCI_HCD
- 	help
-@@ -421,7 +412,7 @@ config CPU_SUBTYPE_SH7723
- 	select CPU_SHX2
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 	help
-@@ -433,7 +424,7 @@ config CPU_SUBTYPE_SH7724
- 	select CPU_SHX2
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 	help
-@@ -513,7 +504,7 @@ config CPU_SUBTYPE_SH7343
- 	bool "Support SH7343 processor"
- 	select CPU_SH4AL_DSP
- 	select ARCH_SHMOBILE
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 
- config CPU_SUBTYPE_SH7722
- 	bool "Support SH7722 processor"
-@@ -522,7 +513,7 @@ config CPU_SUBTYPE_SH7722
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_NUMA
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 
-@@ -533,7 +524,7 @@ config CPU_SUBTYPE_SH7366
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_NUMA
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 
- endchoice
- 
-@@ -566,27 +557,6 @@ source "arch/sh/boards/Kconfig"
- 
- menu "Timer and clock configuration"
- 
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	depends on SYS_SUPPORTS_TMU
--	default y
--	help
--	  This enables the build of the TMU timer driver.
--
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	depends on SYS_SUPPORTS_CMT
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_MTU2
--	bool "MTU2 timer driver"
--	depends on SYS_SUPPORTS_MTU2
--	default y
--	help
--	  This enables build of the MTU2 timer driver.
--
- config SH_PCLK_FREQ
- 	int "Peripheral clock frequency (in Hz)"
- 	depends on SH_CLK_CPG_LEGACY
