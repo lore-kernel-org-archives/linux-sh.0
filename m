@@ -1,55 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 19 Dec 2013 15:51:03 +0000
-Subject: [PATCH 3/6] ARM: shmobile: r8a7790: Add QSPI module clock in device tree
-Message-Id: <1387468266-13625-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:49:15 +0000
+Subject: Re: [PATCH 10/15] irda: sh_irda: Enable driver compilation with COMPILE_TEST
+Message-Id: <2434798.8bvsZzgdNb@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790.dtsi            | 11 +++++++----
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- 2 files changed, 8 insertions(+), 4 deletions(-)
+Hi Samuel,
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index fb9d4f4..f48487c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -615,13 +615,16 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
-+			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
-+				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_I2C3
--				R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
-+				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
-+				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
-+				R8A7790_CLK_I2C0
- 			>;
--			clock-output-names = "rcan1", "rcan0", "i2c3", "i2c2", "i2c1", "i2c0";
-+			clock-output-names +				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
- 	};
- };
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index bbabb8e..859e9be 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -97,6 +97,7 @@
- #define R8A7790_CLK_GPIO0		12
- #define R8A7790_CLK_RCAN1		15
- #define R8A7790_CLK_RCAN0		16
-+#define R8A7790_CLK_QSPI_MOD		17
- #define R8A7790_CLK_IICDVFS		26
- #define R8A7790_CLK_I2C3		28
- #define R8A7790_CLK_I2C2		29
+Could you please pick this patch up for v3.14 ?
+
+On Wednesday 27 November 2013 02:18:32 Laurent Pinchart wrote:
+> This helps increasing build testing coverage.
+> 
+> Cc: Samuel Ortiz <samuel@sortiz.org>
+> Cc: netdev@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms@verge.net.au>
+> ---
+>  drivers/net/irda/Kconfig | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/drivers/net/irda/Kconfig b/drivers/net/irda/Kconfig
+> index 2a30193..cae5ee2 100644
+> --- a/drivers/net/irda/Kconfig
+> +++ b/drivers/net/irda/Kconfig
+> @@ -403,7 +403,8 @@ config MCS_FIR
+> 
+>  config SH_IRDA
+>  	tristate "SuperH IrDA driver"
+> -	depends on IRDA && ARCH_SHMOBILE
+> +	depends on IRDA
+> +	depends on ARCH_SHMOBILE || COMPILE_TEST
+>  	help
+>  	  Say Y here if your want to enable SuperH IrDA devices.
 -- 
-1.8.3.2
+Regards,
+
+Laurent Pinchart
 
