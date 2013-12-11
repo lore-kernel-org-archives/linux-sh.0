@@ -1,38 +1,135 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:16:03 +0000
-Subject: [PATCH 23/29] ARM: shmobile: r8a7778: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <938ed60f7a0698a27f40369f3f89e0f07f570959.1387888861.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:05:13 +0000
+Subject: [PATCH v4 2/5] ARM: shmobile: r8a7791: Add clock index macros for DT sources
+Message-Id: <1386770716-21610-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
+Add macros usable by device tree sources to reference r8a7791 clocks by
+index.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 1 -
- 1 file changed, 1 deletion(-)
+ include/dt-bindings/clock/r8a7791-clock.h | 105 ++++++++++++++++++++++++++++++
+ 1 file changed, 105 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 3e583cd..6d69452 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -48,7 +48,6 @@
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
--	.scbrr_algo_id	= SCBRR_ALGO_2,				\
- 	.type		= PORT_SCIF,				\
- };								\
- 								\
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+new file mode 100644
+index 0000000..df1715b
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -0,0 +1,105 @@
++/*
++ * Copyright 2013 Ideas On Board SPRL
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
++#define __DT_BINDINGS_CLOCK_R8A7791_H__
++
++/* CPG */
++#define R8A7791_CLK_MAIN		0
++#define R8A7791_CLK_PLL0		1
++#define R8A7791_CLK_PLL1		2
++#define R8A7791_CLK_PLL3		3
++#define R8A7791_CLK_LB			4
++#define R8A7791_CLK_QSPI		5
++#define R8A7791_CLK_SDH			6
++#define R8A7791_CLK_SD0			7
++#define R8A7791_CLK_Z			8
++
++/* MSTP1 */
++#define R8A7791_CLK_TMU1		11
++#define R8A7791_CLK_TMU3		21
++#define R8A7791_CLK_TMU2		22
++#define R8A7791_CLK_CMT0		24
++#define R8A7791_CLK_TMU0		25
++#define R8A7791_CLK_VSP1_DU1		27
++#define R8A7791_CLK_VSP1_DU0		28
++#define R8A7791_CLK_VSP1_SY		31
++
++/* MSTP2 */
++#define R8A7791_CLK_SCIFA2		2
++#define R8A7791_CLK_SCIFA1		3
++#define R8A7791_CLK_SCIFA0		4
++#define R8A7791_CLK_SCIFB0		6
++#define R8A7791_CLK_SCIFB1		7
++#define R8A7791_CLK_SCIFB2		16
++#define R8A7791_CLK_DMAC		18
++
++/* MSTP3 */
++#define R8A7791_CLK_TPU0		4
++#define R8A7791_CLK_SDHI2		11
++#define R8A7791_CLK_SDHI1		12
++#define R8A7791_CLK_SDHI0		14
++#define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_SSUSB		28
++#define R8A7791_CLK_CMT1		29
++#define R8A7791_CLK_USBDMAC0		30
++#define R8A7791_CLK_USBDMAC1		31
++
++/* MSTP5 */
++#define R8A7791_CLK_THERMAL		22
++#define R8A7791_CLK_PWM			23
++
++/* MSTP7 */
++#define R8A7791_CLK_HSUSB		4
++#define R8A7791_CLK_HSCIF2		13
++#define R8A7791_CLK_SCIF5		14
++#define R8A7791_CLK_SCIF4		15
++#define R8A7791_CLK_HSCIF1		16
++#define R8A7791_CLK_HSCIF0		17
++#define R8A7791_CLK_SCIF3		18
++#define R8A7791_CLK_SCIF2		19
++#define R8A7791_CLK_SCIF1		20
++#define R8A7791_CLK_SCIF0		21
++#define R8A7791_CLK_DU1			23
++#define R8A7791_CLK_DU0			24
++#define R8A7791_CLK_LVDS0		26
++
++/* MSTP8 */
++#define R8A7791_CLK_VIN2		9
++#define R8A7791_CLK_VIN1		10
++#define R8A7791_CLK_VIN0		11
++#define R8A7791_CLK_ETHER		13
++#define R8A7791_CLK_SATA1		14
++#define R8A7791_CLK_SATA0		15
++
++/* MSTP9 */
++#define R8A7791_CLK_GPIO7		4
++#define R8A7791_CLK_GPIO6		5
++#define R8A7791_CLK_GPIO5		7
++#define R8A7791_CLK_GPIO4		8
++#define R8A7791_CLK_GPIO3		9
++#define R8A7791_CLK_GPIO2		10
++#define R8A7791_CLK_GPIO1		11
++#define R8A7791_CLK_GPIO0		12
++#define R8A7791_CLK_RCAN1		15
++#define R8A7791_CLK_RCAN0		16
++#define R8A7791_CLK_I2C5		25
++#define R8A7791_CLK_IICDVFS		26
++#define R8A7791_CLK_I2C4		27
++#define R8A7791_CLK_I2C3		28
++#define R8A7791_CLK_I2C2		29
++#define R8A7791_CLK_I2C1		30
++#define R8A7791_CLK_I2C0		31
++
++/* MSTP11 */
++#define R8A7791_CLK_SCIFA3		6
++#define R8A7791_CLK_SCIFA4		7
++#define R8A7791_CLK_SCIFA5		8
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
 -- 
-1.8.4
+1.8.3.2
 
