@@ -1,90 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:43:04 +0000
-Subject: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: "Shevchenko, Andriy" <andriy.shevchenko@intel.com>
+Date: Wed, 11 Dec 2013 12:59:34 +0000
+Subject: Re: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
+Message-Id: <1386766746.1871.181.camel@smile>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
-variables, and cast pointers to uintptr_t instead of unsigned int where
-applicable. This fixes warnings on platforms where pointers and/or
-dma_addr_t have a different size than int
-
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/dma/sh/shdma-base.c | 8 ++++----
- drivers/dma/sh/shdma-of.c   | 3 ++-
- drivers/dma/sh/sudmac.c     | 4 ++--
- 3 files changed, 8 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 2e7b394..5367e01 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- 	struct shdma_chan *schan = to_shdma_chan(chan);
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
--	int match = (int)arg;
-+	int match = (long)arg;
- 	int ret;
- 
- 	if (match < 0)
-@@ -491,8 +491,8 @@ static struct shdma_desc *shdma_add_desc(struct shdma_chan *schan,
- 	}
- 
- 	dev_dbg(schan->dev,
--		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
--		copy_size, *len, *src, *dst, &new->async_tx,
-+		"chaining (%zu/%zu)@%pad -> %pad with %p, cookie %d\n",
-+		copy_size, *len, src, dst, &new->async_tx,
- 		new->async_tx.cookie);
- 
- 	new->mark = DESC_PREPARED;
-@@ -555,7 +555,7 @@ static struct dma_async_tx_descriptor *shdma_prep_sg(struct shdma_chan *schan,
- 			goto err_get_desc;
- 
- 		do {
--			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
-+			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %llx\n",
- 				i, sg, len, (unsigned long long)sg_addr);
- 
- 			if (direction = DMA_DEV_TO_MEM)
-diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-index 06473a0..b4ff9d3 100644
---- a/drivers/dma/sh/shdma-of.c
-+++ b/drivers/dma/sh/shdma-of.c
-@@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
- 	/* Only slave DMA channels can be allocated via DT */
- 	dma_cap_set(DMA_SLAVE, mask);
- 
--	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
-+	chan = dma_request_channel(mask, shdma_chan_filter,
-+				   (void *)(uintptr_t)id);
- 	if (chan)
- 		to_shdma_chan(chan)->hw_req = id;
- 
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-index c7e9cdf..4e7df43 100644
---- a/drivers/dma/sh/sudmac.c
-+++ b/drivers/dma/sh/sudmac.c
-@@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan *schan,
- 	struct sudmac_chan *sc = to_chan(schan);
- 	struct sudmac_desc *sd = to_desc(sdesc);
- 
--	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
--		__func__, src, dst, *len);
-+	dev_dbg(sc->shdma_chan.dev, "%s: src=%pad, dst=%pad, len=%zu\n",
-+		__func__, &src, &dst, *len);
- 
- 	if (*len > schan->max_xfer_len)
- 		*len = schan->max_xfer_len;
--- 
-1.8.3.2
-
+T24gV2VkLCAyMDEzLTEyLTExIGF0IDEzOjQzICswMTAwLCBMYXVyZW50IFBpbmNoYXJ0IHdyb3Rl
+Og0KPiBVc2UgdGhlICV6dSBhbmQgJXBhZCBwcmludGsgc3BlY2lmaWVycyB0byBwcmludCBzaXpl
+X3QgYW5kIGRtYV9hZGRyX3QNCj4gdmFyaWFibGVzLCBhbmQgY2FzdCBwb2ludGVycyB0byB1aW50
+cHRyX3QgaW5zdGVhZCBvZiB1bnNpZ25lZCBpbnQgd2hlcmUNCj4gYXBwbGljYWJsZS4gVGhpcyBm
+aXhlcyB3YXJuaW5ncyBvbiBwbGF0Zm9ybXMgd2hlcmUgcG9pbnRlcnMgYW5kL29yDQo+IGRtYV9h
+ZGRyX3QgaGF2ZSBhIGRpZmZlcmVudCBzaXplIHRoYW4gaW50DQoNClRoYW5rcyBmb3IgYW4gdXBk
+YXRlZCB2ZXJzaW9uLiBOb3cgbG9va3MgYmV0dGVyIHdpdGggdGhvc2UgJXBhZC4NCk9uZSBjb21t
+ZW50IGJlbG93Lg0KDQo+IEBAIC01NTUsNyArNTU1LDcgQEAgc3RhdGljIHN0cnVjdCBkbWFfYXN5
+bmNfdHhfZGVzY3JpcHRvciAqc2hkbWFfcHJlcF9zZyhzdHJ1Y3Qgc2hkbWFfY2hhbiAqc2NoYW4s
+DQo+ICAJCQlnb3RvIGVycl9nZXRfZGVzYzsNCj4gIA0KPiAgCQlkbyB7DQo+IC0JCQlkZXZfZGJn
+KHNjaGFuLT5kZXYsICJBZGQgU0cgIyVkQCVwWyVkXSwgZG1hICVsbHhcbiIsDQo+ICsJCQlkZXZf
+ZGJnKHNjaGFuLT5kZXYsICJBZGQgU0cgIyVkQCVwWyV6dV0sIGRtYSAlbGx4XG4iLA0KPiAgCQkJ
+CWksIHNnLCBsZW4sICh1bnNpZ25lZCBsb25nIGxvbmcpc2dfYWRkcik7DQoNCnNnX2FkZHIgLT4g
+JXBhZCBhcyB3ZWxsID8NCg0KLS0gDQpBbmR5IFNoZXZjaGVua28gPGFuZHJpeS5zaGV2Y2hlbmtv
+QGludGVsLmNvbT4NCkludGVsIEZpbmxhbmQgT3kNCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQpJbnRlbCBGaW5sYW5k
+IE95ClJlZ2lzdGVyZWQgQWRkcmVzczogUEwgMjgxLCAwMDE4MSBIZWxzaW5raSAKQnVzaW5lc3Mg
+SWRlbnRpdHkgQ29kZTogMDM1NzYwNiAtIDQgCkRvbWljaWxlZCBpbiBIZWxzaW5raSAKClRoaXMg
+ZS1tYWlsIGFuZCBhbnkgYXR0YWNobWVudHMgbWF5IGNvbnRhaW4gY29uZmlkZW50aWFsIG1hdGVy
+aWFsIGZvcgp0aGUgc29sZSB1c2Ugb2YgdGhlIGludGVuZGVkIHJlY2lwaWVudChzKS4gQW55IHJl
+dmlldyBvciBkaXN0cmlidXRpb24KYnkgb3RoZXJzIGlzIHN0cmljdGx5IHByb2hpYml0ZWQuIElm
+IHlvdSBhcmUgbm90IHRoZSBpbnRlbmRlZApyZWNpcGllbnQsIHBsZWFzZSBjb250YWN0IHRoZSBz
+ZW5kZXIgYW5kIGRlbGV0ZSBhbGwgY29waWVzLgo
