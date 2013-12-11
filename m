@@ -1,42 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Dec 2013 02:01:26 +0000
-Subject: Re: [PATCH V2 2/5] arm: shmobile: r7s72100: add i2c clocks
-Message-Id: <20131227020126.GA9184@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 02:48:14 +0000
+Subject: [PATCH 0/4] Fix backlight on Armadillo 800 EVA
+Message-Id: <1386730098-26641-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
- <1387402321-21866-3-git-send-email-wsa@the-dreams.de>
- <20131224024855.GC22401@verge.net.au>
- <CAMuHMdWPZjeF7+nEjXR3vL4HgSEVEk-uf-qQ68ZnFA=+Y_Q8tQ@mail.gmail.com>
- <20131226212539.GA2561@katana>
- <CAMuHMdXF6WmS_j4pC1U5jL3SK-ck7N=EA+-45duXdRZP1cOJkw@mail.gmail.com>
- <CAMuHMdXP4DAF1_DPtNfwCyP8WHFU03=zgM7i8FW9n6tcJpAHHQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXP4DAF1_DPtNfwCyP8WHFU03=zgM7i8FW9n6tcJpAHHQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Dec 26, 2013 at 10:51:34PM +0100, Geert Uytterhoeven wrote:
-> On Thu, Dec 26, 2013 at 10:34 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> >>> Note that after dropping these lines:
-> >>>
-> >>>        CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
-> >>>        CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
-> >>>        CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
-> >>>        CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
-> >>>
-> >>> i2c stopped working.
-> >>
-> >> ??? Why do you want to drop these lines?
-> >
-> > Your v2 dropped them, presumably in response to Sergei's ICKy comments.
-> > And that's what Simon committed...
-> 
-> Upon checking again, your v2 did contain them, but gmail tried to smart
-> me out by not showing those few lines.
-> So it must have been Simon who dropped them, or lost them during rebase?
+Hello,
 
-Yes, it seems so. Sorry about that!
+Commit 22ceeee16eb8f0d04de3ef43a5174fb30ec18af9 ("pwm-backlight: Add power
+supply support") added a mandatory power supply for the PWM backlight,
+resulting in broken backlight on the Armadillo board. This patch set fixes the
+issue by adding power supplies to board code and DT, and adds proper handling
+of the panel enable signal through the PWM backlight enable GPIO.
 
-Wolfram, could you post the these missing clocks as an incremental patch?
+Patch 1/4 fixes a v3.13 regression. Strictly speaking patch 3/4 is as well,
+but the backlight was broken anyway with DT due to the enable GPIO not being
+handled at all, so there's no need to push it to v3.13.
+
+Laurent Pinchart (4):
+  ARM: shmobile: armadillo: Add PWM backlight power supply
+  ARM: shmobile: armadillo: Set backlight enable GPIO
+  ARM: shmobile: armadillo: dts: Add PWM backlight power supply
+  ARM: shmobile: armadillo: dts: Add PWM backlight enable GPIO
+
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 11 +++++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva.c          | 12 ++++++++----
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
