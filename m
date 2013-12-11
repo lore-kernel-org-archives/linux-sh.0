@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:53:21 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 11 Dec 2013 18:01:53 +0000
 Subject: Re: [PATCH 07/15] mmc: sdhi: Enable driver compilation with COMPILE_TEST
-Message-Id: <2090378.13zHUAnprd@avalon>
+Message-Id: <52A8A891.40302@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1385515117-23664-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,18 +11,16 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Chris,
+Hello.
 
-Could you please pick this patch (and patch 08/15 in the same series) up for 
-v3.14 ?
+On 27-11-2013 5:18, Laurent Pinchart wrote:
 
-On Wednesday 27 November 2013 02:18:29 Laurent Pinchart wrote:
 > This helps increasing build testing coverage.
-> 
+
 > The driver doesn't compile on (at least) x86 due (possibly among others)
 > to missing readsw/writesw I/O accessors, restrict compilation to SUPERH
 > or ARM.
-> 
+
 > Whether the CTL_DMA_ENABLE register is part of the standard TMIO
 > controller or is Renesas-specific is unknown and impossible to test as
 > we have no current or planned TMIO DMA users other than SUPERH and
@@ -33,7 +31,7 @@ On Wednesday 27 November 2013 02:18:29 Laurent Pinchart wrote:
 > thus get rid of the conditional compilation completely without
 > introducing any further issue, and let future non-Renesas users deal
 > with the situation if it turns out to be a the problem.
-> 
+
 > Cc: Chris Ball <cjb@laptop.org>
 > Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > Cc: Ian Molton <ian@mnementh.co.uk>
@@ -41,25 +39,22 @@ On Wednesday 27 November 2013 02:18:29 Laurent Pinchart wrote:
 > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > Acked-by: Simon Horman <horms@verge.net.au>
 > ---
->  drivers/mmc/host/Kconfig | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
+>   drivers/mmc/host/Kconfig | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+
 > diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
 > index 7fc5099..ca1315e 100644
 > --- a/drivers/mmc/host/Kconfig
 > +++ b/drivers/mmc/host/Kconfig
 > @@ -479,7 +479,8 @@ config MMC_TMIO
-> 
->  config MMC_SDHI
->  	tristate "SH-Mobile SDHI SD/SDIO controller support"
+>
+>   config MMC_SDHI
+>   	tristate "SH-Mobile SDHI SD/SDIO controller support"
 > -	depends on SUPERH || ARCH_SHMOBILE
 > +	depends on SUPERH || ARM
 > +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
->  	select MMC_TMIO_CORE
->  	help
->  	  This provides support for the SDHI SD/SDIO controller found in
--- 
-Regards,
 
-Laurent Pinchart
+    Hm, why 2 "depends" lines with SUPERH in both?
+
+WBR, Sergei
 
