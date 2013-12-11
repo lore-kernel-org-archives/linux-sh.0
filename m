@@ -1,65 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 20:15:59 +0000
-Subject: [PATCH v2 5/8] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux setup
-Message-Id: <1388175362-17132-6-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:43:05 +0000
+Subject: [PATCH v3 2/3] DMA: shdma: Fix warnings due to declared but unused symbols
+Message-Id: <1386765786-1926-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Several functions and variables are use on SH_CPU4 or ARM only. Guard
+their declaration with conditional compilation directives to avoid
+warnings.
 
-This does not work as there's no pinmux configuration in setup-r7s72100.c
-yet.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Vinod Koul <vinod.koul@intel.com>
+Cc: dmaengine@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-New in v2
+ drivers/dma/sh/shdmac.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
- arch/arm/mach-shmobile/board-genmai.c |   17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 7c912d337828..d89d87ac1c6f 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -19,6 +19,7 @@
-  */
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 0d765c0..2150987 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -443,6 +443,7 @@ static bool sh_dmae_reset(struct sh_dmae_device *shdev)
+ 	return ret;
+ }
  
- #include <linux/kernel.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/sh_eth.h>
- #include <linux/spi/spi.h>
-@@ -51,9 +52,25 @@ static const struct spi_board_info spi_info[] __initconst = {
- 	},
- };
- 
-+static const struct pinctrl_map genmai_pinctrl_map[] = {
-+	/* RSPI4 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_rspck_p4_0", "rspi4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_ssl0_p4_1", "rspi4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_mosi_p4_2", "rspi4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_miso_p4_3", "rspi4"),
-+};
-+
- static void __init genmai_add_standard_devices(void)
++#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
+ static irqreturn_t sh_dmae_err(int irq, void *data)
  {
- 	r7s72100_clock_init();
-+	pinctrl_register_mappings(genmai_pinctrl_map,
-+				  ARRAY_SIZE(genmai_pinctrl_map));
-+	/* FIXME there's no pinmux configuration in setup-r7s72100.c yet */
-+	/* r7s72100_pinmux_init(); */
- 	r7s72100_add_dt_devices();
+ 	struct sh_dmae_device *shdev = data;
+@@ -453,6 +454,7 @@ static irqreturn_t sh_dmae_err(int irq, void *data)
+ 	sh_dmae_reset(shdev);
+ 	return IRQ_HANDLED;
+ }
++#endif
  
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ static bool sh_dmae_desc_completed(struct shdma_chan *schan,
+ 				   struct shdma_desc *sdesc)
+@@ -685,9 +687,12 @@ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+ static int sh_dmae_probe(struct platform_device *pdev)
+ {
+ 	const struct sh_dmae_pdata *pdata;
+-	unsigned long irqflags = 0,
+-		chan_flag[SH_DMAE_MAX_CHANNELS] = {};
+-	int errirq, chan_irq[SH_DMAE_MAX_CHANNELS];
++	unsigned long chan_flag[SH_DMAE_MAX_CHANNELS] = {};
++	int chan_irq[SH_DMAE_MAX_CHANNELS];
++#if defined(CONFIG_CPU_SH4) || defined(CONFIG_ARM)
++	unsigned long irqflags = 0;
++	int errirq;
++#endif
+ 	int err, i, irq_cnt = 0, irqres = 0, irq_cap = 0;
+ 	struct sh_dmae_device *shdev;
+ 	struct dma_device *dma_dev;
 -- 
-1.7.9.5
+1.8.3.2
 
