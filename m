@@ -1,39 +1,46 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 27 Dec 2013 11:57:48 +0000
-Subject: [PATCH V3 0/3] ARM: shmobile: koelsch: Add VIN1 camera support
-Message-Id: <1388145471-9361-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 03:26:27 +0000
+Subject: [PATCH 07/10] ARM: shmobile: r8a73a4: Specify PFC interrupts in DT
+Message-Id: <1386732390-31724-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds VIN pins and clocks to R8A7791 SoC along with
-VIN1 camera support to Koelsch board.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-This is probably a bit early since it depends on
-the following pending patches:
-http://marc.info/?l=linux-sh&m8807191506999&w=2
-([PATCH V2] media: soc_camera: rcar_vin: Add preliminary R-Car M2 support)
-http://marc.info/?l=linux-sh&m8814366919427&w=2
-([PATCH 0/3 V2] ARM: shmobile: koelsch: Add I2C support)
-
-Changes in V2:
-* made koelsch_add_vin_device function static.
-
-Changes in V3:
-* capitalized ARM in the subject.
-
-Valentine Barshak (3):
-  pinctrl: sh-pfc: r8a7791: Add VIN pins
-  ARM: shmobile: r8a7791: Add VIN clocks
-  ARM: shmobile: koelsch: Add VIN1 SoC camera support
-
- arch/arm/mach-shmobile/board-koelsch.c |  76 +++++++
- arch/arm/mach-shmobile/clock-r8a7791.c |  10 +
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c   | 360 +++++++++++++++++++++++++++++++++
- 3 files changed, 446 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 6b7ce89..62d0211 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -288,6 +288,22 @@
+ 		reg = <0 0xe6050000 0 0x9000>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		interrupts-extended +			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
++			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
++			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
++			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
++			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
++			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
++			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
++			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
++			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
++			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
++			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
++			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
++			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
++			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
++			<&irqc1 24 0>, <&irqc1 25 0>;
+ 	};
+ 
+ 	sdhi0: sd@ee100000 {
 -- 
-1.8.3.1
+1.8.3.2
 
