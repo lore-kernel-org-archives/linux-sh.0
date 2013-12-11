@@ -1,81 +1,188 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:11 +0000
-Subject: [PATCH 07/12] ARM: shmobile: koelsch-reference: Instantiate clkdevs for SCIF and CMT
-Message-Id: <f31239ef590186b6895a2f2cf7e0f2709a5c0da0.1387891831.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 13:14:23 +0000
+Subject: [PATCH v3 3/4] ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+Message-Id: <1386767664-20113-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+SCIF0 and SCIF1 are used as debug serial ports. Enable them and
+configure pinmuxing appropriately. We can now remove the clkdev
+registration hack for SCIF devices from the Lager reference board file.
 
-Now that the common clock framework is supported, the clock lookup
-entries in clock-r8a7791.c are not registered anymore. Devices must
-instead reference their clocks in the device tree. However, SCIF and CMT
-devices are still instantiated through platform code, and thus need a
-clock lookup entry.
-
-Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-the corresponding devices. This will be removed when the SCIF and CMT
-devices will be instantiated from the device tree.
+As a side effect of switching to DT-based serial port instantiation,
+ttySC6 and ttySC7 get renamed to ttySC0 and ttySC1. As the device tree
+source if now shared between lager and lager-reference, we need to
+update the serial ports in C code as well.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 30 +++++++++++++++++++++++-
- 1 file changed, 29 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790-lager.dts            | 24 ++++++++++++++++++++----
+ arch/arm/mach-shmobile/board-lager-reference.c | 18 ++----------------
+ arch/arm/mach-shmobile/clock-r8a7790.c         | 16 ++++++++--------
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 26 +++++++++++++-------------
+ 4 files changed, 43 insertions(+), 41 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 4b48e2d..e1c787e 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,6 +19,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 57569cb..fde806b 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -16,8 +16,13 @@
+ 	model = "Lager";
+ 	compatible = "renesas,lager", "renesas,r8a7790";
  
-+#include <linux/clk.h>
-+#include <linux/clkdev.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <mach/common.h>
-@@ -28,7 +30,33 @@
- 
- static void __init koelsch_add_standard_devices(void)
- {
--#ifndef CONFIG_COMMON_CLK
-+#ifdef CONFIG_COMMON_CLK
-+	/*
-+	 * This is a really crude hack to provide clkdev support to the SCIF
-+	 * and CMT devices until they get moved to DT.
-+	 */
-+	static const char * const scif_names[] = {
-+		"scifa0", "scifa1", "scifb0", "scifb1", "scifb2", "scifa2",
-+		"scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scifa3",
-+		"scifa4", "scifa5",
++	aliases {
++		serial0 = &scif0;
++		serial1 = &scif1;
 +	};
-+	struct clk *clk;
-+	unsigned int i;
 +
-+	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
-+		clk = clk_get(NULL, scif_names[i]);
-+		if (clk) {
-+			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
-+			clk_put(clk);
-+		}
-+	}
+ 	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		bootargs = "console=ttySC0,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+ 
+ 	memory@40000000 {
+@@ -63,9 +68,6 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data";
+ 		renesas,function = "scif0";
+@@ -91,3 +93,17 @@
+ 	non-removable;
+ 	status = "okay";
+ };
 +
-+	clk = clk_get(NULL, "cmt0");
-+	if (clk) {
-+		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_put(clk);
-+	}
-+#else
- 	r8a7791_clock_init();
- #endif
- 	r8a7791_add_dt_devices();
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index a6e271d..19170e7 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -31,24 +31,10 @@ static void __init lager_add_standard_devices(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+ 	/*
+-	 * This is a really crude hack to provide clkdev support to the SCIF
+-	 * and CMT devices until they get moved to DT.
++	 * This is a really crude hack to provide clkdev support to the CMT
++	 * device until it gets moved to DT.
+ 	 */
+-	static const char * const scif_names[] = {
+-		"scifa0", "scifa1", "scifb0", "scifb1",
+-		"scifb2", "scifa2", "scif0", "scif1",
+-		"hscif0", "hscif1",
+-	};
+ 	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+-		clk = clk_get(NULL, scif_names[i]);
+-		if (clk) {
+-			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
+-			clk_put(clk);
+-		}
+-	}
+ 
+ 	clk = clk_get(NULL, "cmt0");
+ 	if (clk) {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 368cb40..25b0648 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -281,14 +281,14 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* MSTP */
+ 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP1005]),
+-	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+-	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+-	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+-	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
+-	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
+-	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP202]),
+-	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP721]),
+-	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
++	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP721]),
++	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP720]),
++	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP216]),
++	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP202]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index bb805a4..0208d0b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -106,14 +106,14 @@ static struct resource scif##index##_resources[] = {			\
+ 	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
+ 		       index, baseaddr, irq)
+ 
+-R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
+-R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
+-R8A7790_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
+-R8A7790_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
+-R8A7790_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
+-R8A7790_SCIFA(5, 0xe6c60000, gic_spi(151)); /* SCIFA2 */
+-R8A7790_SCIF(6,  0xe6e60000, gic_spi(152)); /* SCIF0 */
+-R8A7790_SCIF(7,  0xe6e68000, gic_spi(153)); /* SCIF1 */
++R8A7790_SCIF(0,  0xe6e60000, gic_spi(152)); /* SCIF0 */
++R8A7790_SCIF(1,  0xe6e68000, gic_spi(153)); /* SCIF1 */
++R8A7790_SCIFA(2, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
++R8A7790_SCIFA(3, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
++R8A7790_SCIFB(4, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
++R8A7790_SCIFB(5, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
++R8A7790_SCIFB(6, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
++R8A7790_SCIFA(7, 0xe6c60000, gic_spi(151)); /* SCIFA2 */
+ R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
+ R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
+ 
+@@ -175,6 +175,11 @@ static const struct resource cmt00_resources[] __initconst = {
+ 
+ void __init r8a7790_add_dt_devices(void)
+ {
++	r8a7790_register_cmt(00);
++}
++
++void __init r8a7790_add_standard_devices(void)
++{
+ 	r8a7790_register_scif(0);
+ 	r8a7790_register_scif(1);
+ 	r8a7790_register_scif(2);
+@@ -185,11 +190,6 @@ void __init r8a7790_add_dt_devices(void)
+ 	r8a7790_register_scif(7);
+ 	r8a7790_register_scif(8);
+ 	r8a7790_register_scif(9);
+-	r8a7790_register_cmt(00);
+-}
+-
+-void __init r8a7790_add_standard_devices(void)
+-{
+ 	r8a7790_add_dt_devices();
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
 -- 
-1.8.4
+1.8.3.2
 
