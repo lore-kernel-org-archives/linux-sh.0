@@ -1,69 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:06 +0000
-Subject: [PATCH 32/69] ARM: shmobile: r8a7778: add HSPI suppport on DTSI
-Message-Id: <a50da08569b2d9804575c0cf9d0b67db049afa81.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:13:47 +0000
+Subject: [PATCH v4 01/16] ARM: shmobile: Sync Lager DTS with Lager reference DTS
+Message-Id: <1386771242-21876-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Copy the device nodes from Lager reference into the Lager device tree
+file. This will allow us to use a single DTS file regarless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+are used.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 53 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 698809f..819b194 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -25,6 +25,12 @@
- 		};
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 10e6a08..67a6939 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -10,6 +10,7 @@
  
-+	aliases {
-+		spi0 = &hspi0;
-+		spi1 = &hspi1;
-+		spi2 = &hspi2;
-+	};
-+
- 	gic: interrupt-controller@fe438000 {
- 		compatible = "arm,cortex-a9-gic";
- 		#interrupt-cells = <3>;
-@@ -234,4 +240,28 @@
- 		interrupts = <0 77 0x4>;
- 		status = "disabled";
+ /dts-v1/;
+ #include "r8a7790.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Lager";
+@@ -33,4 +34,56 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
  	};
 +
-+	hspi0: spi@fffc7000 {
-+		compatible = "renesas,hspi";
-+		reg = <0xfffc7000 0x18>;
-+		interrupt-controller = <&gic>;
-+		interrupts = <0 63 4>;
-+		status = "disabled";
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
++		};
 +	};
 +
-+	hspi1: spi@fffc8000 {
-+		compatible = "renesas,hspi";
-+		reg = <0xfffc8000 0x18>;
-+		interrupt-controller = <&gic>;
-+		interrupts = <0 84 4>;
-+		status = "disabled";
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data";
++		renesas,function = "scif0";
 +	};
 +
-+	hspi2: spi@fffc6000 {
-+		compatible = "renesas,hspi";
-+		reg = <0xfffc6000 0x18>;
-+		interrupt-controller = <&gic>;
-+		interrupts = <0 85 4>;
-+		status = "disabled";
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data";
++		renesas,function = "scif1";
 +	};
++
++	mmc1_pins: mmc1 {
++		renesas,groups = "mmc1_data8", "mmc1_ctrl";
++		renesas,function = "mmc1";
++	};
++};
++
++&mmcif1 {
++	pinctrl-0 = <&mmc1_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
  };
 -- 
-1.8.4
+1.8.3.2
 
