@@ -1,29 +1,65 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 12 Dec 2013 19:36:32 +0000
-Subject: Re: [PATCH 02/10] sh-pfc: Terminate gpios array by -1
-Message-Id: <CACRpkda-ZtnBtymG7WKR=SrbZYBK_K8Dm=7Pz5yHo+nvz3LZ7w@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:53:21 +0000
+Subject: Re: [PATCH 07/15] mmc: sdhi: Enable driver compilation with COMPILE_TEST
+Message-Id: <2090378.13zHUAnprd@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1386732390-31724-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386732390-31724-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 11, 2013 at 4:26 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Hi Chris,
 
-> 0 is a valid GPIO value, use -1 to terminate the gpios array in IRQ
-> lists.
->
+Could you please pick this patch (and patch 08/15 in the same series) up for 
+v3.14 ?
+
+On Wednesday 27 November 2013 02:18:29 Laurent Pinchart wrote:
+> This helps increasing build testing coverage.
+> 
+> The driver doesn't compile on (at least) x86 due (possibly among others)
+> to missing readsw/writesw I/O accessors, restrict compilation to SUPERH
+> or ARM.
+> 
+> Whether the CTL_DMA_ENABLE register is part of the standard TMIO
+> controller or is Renesas-specific is unknown and impossible to test as
+> we have no current or planned TMIO DMA users other than SUPERH and
+> ARCH_SHMOBILE. Writing to the register is thus conditionally compiled
+> for SUPERH and ARCH_SHMOBILE only. Adding ARCH_SHMOBILE_MULTI to the
+> list would extend this to multiarch kernels, but would break the driver
+> for non-shmobile platforms if the register is Renesas-specific. We can
+> thus get rid of the conditional compilation completely without
+> introducing any further issue, and let future non-Renesas users deal
+> with the situation if it turns out to be a the problem.
+> 
+> Cc: Chris Ball <cjb@laptop.org>
+> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> Cc: Ian Molton <ian@mnementh.co.uk>
+> Cc: linux-mmc@vger.kernel.org
 > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms@verge.net.au>
+> ---
+>  drivers/mmc/host/Kconfig | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+> index 7fc5099..ca1315e 100644
+> --- a/drivers/mmc/host/Kconfig
+> +++ b/drivers/mmc/host/Kconfig
+> @@ -479,7 +479,8 @@ config MMC_TMIO
+> 
+>  config MMC_SDHI
+>  	tristate "SH-Mobile SDHI SD/SDIO controller support"
+> -	depends on SUPERH || ARCH_SHMOBILE
+> +	depends on SUPERH || ARM
+> +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+>  	select MMC_TMIO_CORE
+>  	help
+>  	  This provides support for the SDHI SD/SDIO controller found in
+-- 
+Regards,
 
-Patch applied.
+Laurent Pinchart
 
-Another solution to the same problem: terminate with
-USHRT_MAX and for (k = 0; gpios[k] != USHRT_MAX; k++) {}
-but this works too...
-
-Yours,
-Linus Walleij
