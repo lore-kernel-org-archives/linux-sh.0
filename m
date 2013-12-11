@@ -1,89 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Dec 2013 09:18:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sizes
-Message-Id: <20131219091839.GA27244@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 11 Dec 2013 22:36:30 +0000
+Subject: Re: [PATCH] irqchip: Renesas IRQC driver
+Message-Id: <52A8F6FC.40201@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387197528-1177-1-git-send-email-ben.dooks@codethink.co.uk>
- <1387197528-1177-2-git-send-email-ben.dooks@codethink.co.uk>
- <87sitsnygu.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sitsnygu.wl%kuninori.morimoto.gx@gmail.com>
+References: <20130227081501.30706.60471.sendpatchset@w520>
+In-Reply-To: <20130227081501.30706.60471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, tglx@linutronix.de
 
-On Mon, Dec 16, 2013 at 03:54:47PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi
-> 
-> > The r8a7790.dtsi file has four sdhi nodes which the first two have the wrong
-> > resource size for their register block. This causes the sh_modbile_sdhi driver
-> > to fail to communicate with card at-all.
-> > 
-> > Change sdhi{0,1} node size from 0x100 to 0x200 to correct these nodes
-> > as per Kuninori Morimoto's response to the original patch where all four
-> > nodes where changed. sdhi{2,3} are the correct size.
-> > 
-> > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > Cc: Simon Horman <horms@verge.net.au>
-> > Cc: Linux SH <linux-sh@vger.kernel.org>
-> > Cc: Linux ARM <linux-arm-kernel@lists.infradead.org>
-> > Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> > Tested-by: William Towle <william.towle@codethink.co.uk>
-> > ---
-> 
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello.
 
-Thanks. I will queue up the following as a fix for v3.13.
+On 02/27/2013 11:15 AM, Magnus Damm wrote:
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+> From: Magnus Damm <damm@opensource.se>
 
-ARM: shmobile: r8a7790: fix shdi resource sizes
+    Magnus, explain me one thing about your driver please.
 
-The r8a7790.dtsi file has four sdhi nodes which the first two have the wrong
-resource size for their register block. This causes the sh_modbile_sdhi driver
-to fail to communicate with card at-all.
+> This patch adds a driver for external IRQ pins connected
+> to the IRQC hardware block on recent SoCs from Renesas.
+>
+> The IRQC hardware block is used together with more
+> recent ARM based SoCs using the GIC. As usual the GIC
+> requires external IRQ trigger setup somewhere else
+> which in this particular case happens to be IRQC.
+>
+> This driver implements the glue code needed to configure
+> IRQ trigger and also handle mask/unmask and demux of
+> external IRQ pins hooked up from the IRQC to the GIC.
 
-Change sdhi{0,1} node size from 0x100 to 0x200 to correct these nodes
-as per Kuninori Morimoto's response to the original patch where all four
-nodes where changed. sdhi{2,3} are the correct size.
+    Judging on the R8A779x manual pictures, IRQn enter the SoC via IRQC, right?
+Why then you call request_irq() on GIC interrupt numbers and expect an 
+interrupt to "enter" from the GIC side, and then only read IRQC's 
+DETECT_STATUS register to make sure the matching IRQn is really active (you 
+call it demux, but I don't really see much of a demultiplexing there). This 
+seems to me fundamentally broken, and is probably why the interrupt from PHY 
+doesn't happen despite I set the interrupt type to active low via a call to 
+irq_set_irq_type()...
 
-This bug has been present since sdhi resources were added to the r8a7790 by
-8c9b1aa41853272a ("ARM: shmobile: r8a7790: add MMCIF and SDHI DT
-templates") in v3.11-rc2.
+> Tested on r8a73a4 but is designed to work with a wide
+> range of SoCs. The driver requires one GIC SPI per
+> external IRQ pin to operate.  Each driver instance
+> will handle up to 32 external IRQ pins.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Tested-by: William Towle <william.towle@codethink.co.uk>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+    Ah, so you've even tested it... I got an impression from your words that 
+the driver hasn't been tested.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 46e1d7e..9987dd0e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -241,7 +241,7 @@
- 
- 	sdhi0: sdhi@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee100000 0 0x100>;
-+		reg = <0 0xee100000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 4>;
- 		cap-sd-highspeed;
-@@ -250,7 +250,7 @@
- 
- 	sdhi1: sdhi@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee120000 0 0x100>;
-+		reg = <0 0xee120000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 4>;
- 		cap-sd-highspeed;
--- 
-1.8.4
+> The SoCs using this driver are currently mainly used
+> together with regular platform devices so this driver
+> allows configuration via platform data to support things
+> like static interrupt base address. DT support will
+> be added incrementally in the not so distant future.
+
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+
+WBR, Sergei
 
