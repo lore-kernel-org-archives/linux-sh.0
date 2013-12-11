@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 11 Dec 2013 23:56:45 +0000
-Subject: [PATCH v2 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
-Message-Id: <20131211235645.12661.28823.sendpatchset@w520>
+Date: Wed, 11 Dec 2013 23:56:26 +0000
+Subject: [PATCH v4 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+Message-Id: <20131211235626.12661.8865.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131211235616.12661.19702.sendpatchset@w520>
 In-Reply-To: <20131211235616.12661.19702.sendpatchset@w520>
@@ -13,44 +13,64 @@ Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@
 
 From: Magnus Damm <damm@opensource.se>
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU and MTU2
-it is safe to remove these from SH.
+Add Kconfig entries for CMT, MTU2, TMU and STI to
+drivers/clocksource/Kconfig. This will allow us to
+get rid of duplicated entires in architecture code
+such as arch/sh and arch/arm/mach-shmobile.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
 ---
 
- arch/sh/Kconfig |   21 ---------------------
- 1 file changed, 21 deletions(-)
+ drivers/clocksource/Kconfig |   44 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
---- 0001/arch/sh/Kconfig
-+++ work/arch/sh/Kconfig	2013-11-05 21:03:10.000000000 +0900
-@@ -565,27 +565,6 @@ source "arch/sh/boards/Kconfig"
- 
- menu "Timer and clock configuration"
- 
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	depends on SYS_SUPPORTS_TMU
--	default y
--	help
--	  This enables the build of the TMU timer driver.
--
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	depends on SYS_SUPPORTS_CMT
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_MTU2
--	bool "MTU2 timer driver"
--	depends on SYS_SUPPORTS_MTU2
--	default y
--	help
--	  This enables build of the MTU2 timer driver.
--
- config SH_PCLK_FREQ
- 	int "Peripheral clock frequency (in Hz)"
- 	depends on SH_CLK_CPG_LEGACY
+--- 0001/drivers/clocksource/Kconfig
++++ work/drivers/clocksource/Kconfig	2013-12-12 08:41:55.000000000 +0900
+@@ -134,3 +134,47 @@ config VF_PIT_TIMER
+ 	bool
+ 	help
+ 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
++
++config SYS_SUPPORTS_CMT
++        bool
++
++config SYS_SUPPORTS_TMU
++        bool
++
++config SYS_SUPPORTS_MTU2
++        bool
++
++config SYS_SUPPORTS_STI
++        bool
++
++config SH_TIMER_CMT
++	bool "Renesas CMT timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_CMT
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the Compare Match Timer (CMT) hardware available in 16/32/48 bit
++	  variants on a wide range of Mobile and Automotive SoCs from Renesas.
++
++config SH_TIMER_MTU2
++	bool "Renesas MTU2 timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_MTU2
++	help
++	  This enables build of a clockevent driver for the Multi-Function
++	  Timer Pulse Unit 2 (TMU2) hardware available on SoCs from Renesas.
++	  This hardware comes with 16 bit timer registers.
++
++config SH_TIMER_TMU
++	bool "Renesas TMU timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_TMU
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the 32-bit Timer Unit (TMU) hardware available on a wide range
++	  SoCs from Renesas.
++
++config EM_TIMER_STI
++	bool "Renesas STI timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_STI
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the 48-bit System Timer (STI) hardware available on a SoCs
++	  such as EMEV2 from former NEC Electronics.
