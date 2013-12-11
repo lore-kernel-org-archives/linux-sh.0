@@ -1,144 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:33 +0000
-Subject: [PATCH 59/69] ARM: shmobile: Use interrupt macros in r8a73a4 and r8a7778 DT files
-Message-Id: <d6dd1313f74e2035e77c36686e7348a1bcd1c102.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:13:46 +0000
+Subject: [PATCH v4 00/16] Lager and Koelsch multiplatform support
+Message-Id: <1386771242-21876-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4.dtsi | 50 +++++++++++++++++++++---------------------
- arch/arm/boot/dts/r8a7778.dtsi |  6 ++---
- 2 files changed, 28 insertions(+), 28 deletions(-)
+This is the fourth version of the patch set that moves the lager-reference and
+koelsch-reference boards to multiplatform kernel. It starts by syncing the
+non-reference DTSes with the reference DTSes (01/16 and 02/16), setting the
+external clock frequency in DT (03/16 and 04/16), adding CCF support to the
+-reference boards (05/16 to 09/16), and cleaning up unneeded leftovers (10/16
+to 16/16).
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index b4a6c3b..6b7ce89 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -137,27 +137,27 @@
- 			compatible = "renesas,shdma-r8a73a4";
- 			reg = <0 0xe6700020 0 0x89e0>;
- 			interrupt-parent = <&gic>;
--			interrupts = <0 220 4
--					0 200 4
--					0 201 4
--					0 202 4
--					0 203 4
--					0 204 4
--					0 205 4
--					0 206 4
--					0 207 4
--					0 208 4
--					0 209 4
--					0 210 4
--					0 211 4
--					0 212 4
--					0 213 4
--					0 214 4
--					0 215 4
--					0 216 4
--					0 217 4
--					0 218 4
--					0 219 4>;
-+			interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
-+					0 200 IRQ_TYPE_LEVEL_HIGH
-+					0 201 IRQ_TYPE_LEVEL_HIGH
-+					0 202 IRQ_TYPE_LEVEL_HIGH
-+					0 203 IRQ_TYPE_LEVEL_HIGH
-+					0 204 IRQ_TYPE_LEVEL_HIGH
-+					0 205 IRQ_TYPE_LEVEL_HIGH
-+					0 206 IRQ_TYPE_LEVEL_HIGH
-+					0 207 IRQ_TYPE_LEVEL_HIGH
-+					0 208 IRQ_TYPE_LEVEL_HIGH
-+					0 209 IRQ_TYPE_LEVEL_HIGH
-+					0 210 IRQ_TYPE_LEVEL_HIGH
-+					0 211 IRQ_TYPE_LEVEL_HIGH
-+					0 212 IRQ_TYPE_LEVEL_HIGH
-+					0 213 IRQ_TYPE_LEVEL_HIGH
-+					0 214 IRQ_TYPE_LEVEL_HIGH
-+					0 215 IRQ_TYPE_LEVEL_HIGH
-+					0 216 IRQ_TYPE_LEVEL_HIGH
-+					0 217 IRQ_TYPE_LEVEL_HIGH
-+					0 218 IRQ_TYPE_LEVEL_HIGH
-+					0 219 IRQ_TYPE_LEVEL_HIGH>;
- 			interrupt-names = "error",
- 					"ch0", "ch1", "ch2", "ch3",
- 					"ch4", "ch5", "ch6", "ch7",
-@@ -181,7 +181,7 @@
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0 0xe6500000 0 0x428>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 174 0x4>;
-+		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- 
-@@ -191,7 +191,7 @@
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0 0xe6510000 0 0x428>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 175 0x4>;
-+		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- 
-@@ -201,7 +201,7 @@
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0 0xe6520000 0 0x428>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 176 0x4>;
-+		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- 
-@@ -211,7 +211,7 @@
- 		compatible = "renesas,rmobile-iic";
- 		reg = <0 0xe6530000 0 0x428>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 177 0x4>;
-+		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 3314e0a..b530df6 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -247,7 +247,7 @@
- 		compatible = "renesas,hspi";
- 		reg = <0xfffc7000 0x18>;
- 		interrupt-controller = <&gic>;
--		interrupts = <0 63 4>;
-+		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- 
-@@ -255,7 +255,7 @@
- 		compatible = "renesas,hspi";
- 		reg = <0xfffc8000 0x18>;
- 		interrupt-controller = <&gic>;
--		interrupts = <0 84 4>;
-+		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- 
-@@ -263,7 +263,7 @@
- 		compatible = "renesas,hspi";
- 		reg = <0xfffc6000 0x18>;
- 		interrupt-controller = <&gic>;
--		interrupts = <0 85 4>;
-+		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
- 		status = "disabled";
- 	};
- };
+The net result are multiplatform-only lager-reference and koelsch-reference
+boards with a DTSes shared by the reference and non-reference boards.
+
+The code is available in my git tree at
+
+	git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/rcar-gen2-boards
+
+It has been tested on both the Lager and Koelsch boards.
+
+Changes compared to v3:
+
+- Rebase on top of the fourth version of the R-Car Gen2 CCF patches
+- Initialize clocks in rcar_gen2_timer_init()
+
+Changes compared to v2:
+
+- Rebase on top of the third version of the R-Car Gen2 CCF patches
+- Add Koelsch board multiplatform support
+
+Changes compared to v1:
+
+- Rebase on top of the second version of the r8a7790 CCF patches
+
+Laurent Pinchart (16):
+  ARM: shmobile: Sync Lager DTS with Lager reference DTS
+  ARM: shmobile: Sync Koelsch DTS with Koelsch reference DTS
+  ARM: shmobile: lager: Specify external clock frequency in DT
+  ARM: shmobile: koelsch: Specify external clock frequency in DT
+  ARM: shmobile: rcar-gen2: Initialize CCF before clock sources
+  ARM: shmobile: lager-reference: Enable multiplaform kernel support
+  ARM: shmobile: koelsch-reference: Remove duplicate CCF initialization
+  ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
+  ARM: shmobile: koelsch-reference: Instantiate clkdevs for SCIF and CMT
+  ARM: shmobile: Remove non-multiplatform Lager reference support
+  ARM: shmobile: Remove non-multiplatform Koelsch reference support
+  ARM: shmobile: Let Lager multiplatform boot with Lager DTB
+  ARM: shmobile: Let Koelsch multiplatform boot with Koelsch DTB
+  ARM: shmobile: Remove Lager reference DTS
+  ARM: shmobile: Remove Koelsch reference DTS
+  ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
+
+ arch/arm/boot/dts/Makefile                       |  5 +-
+ arch/arm/boot/dts/r8a7790-lager-reference.dts    | 89 ------------------------
+ arch/arm/boot/dts/r8a7790-lager.dts              | 57 +++++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts  | 61 ----------------
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 33 +++++++++
+ arch/arm/mach-shmobile/Kconfig                   | 30 +++-----
+ arch/arm/mach-shmobile/Makefile                  |  3 +-
+ arch/arm/mach-shmobile/Makefile.boot             |  2 -
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 30 +++++++-
+ arch/arm/mach-shmobile/board-lager-reference.c   | 32 +++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c           | 10 ---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c         |  8 ++-
+ 12 files changed, 168 insertions(+), 192 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+ delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
