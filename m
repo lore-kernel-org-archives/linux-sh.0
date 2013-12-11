@@ -1,23 +1,76 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 20 Dec 2013 11:27:16 +0000
-Subject: Re: [PATCH 2/4] pinctrl: sh-pfc: Constify IRQ GPIOs arrays
-Message-Id: <CACRpkdb1evjmQQSO=uTBY-jrZkzu36d-kOFEmyYXxvJyOhtj8g@mail.gmail.com>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Wed, 11 Dec 2013 18:32:37 +0000
+Subject: [PATCH] MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
+Message-Id: <20131211183237.GI4699@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387221917-15437-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1387221917-15437-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 16, 2013 at 8:25 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+If this looks reasonable, I'll merge it via the PCI tree for v3.13.
 
-> The arrays are never modified, make them const.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Bjorn
 
-Patch applied.
 
-Yours,
-Linus Walleij
+MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
+
+Add entries for PCI host controller drivers in drivers/pci/host/.
+
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ MAINTAINERS |   31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 8285ed4676b6..826c722d92ba 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -6449,16 +6449,47 @@ F:	drivers/pci/
+ F:	include/linux/pci*
+ F:	arch/x86/pci/
+ 
++PCI DRIVER FOR DESIGNWARE
++M:	Jingoo Han <jg1.han@samsung.com>
++L:	linux-pci@vger.kernel.org
++S:	Maintained
++F:	drivers/pci/host/*designware*
++
++PCI DRIVER FOR IMX6
++M:	Shawn Guo <shawn.guo@linaro.org>
++L:	linux-pci@vger.kernel.org
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	drivers/pci/host/*imx6*
++
++PCI DRIVER FOR MVEBU (Marvell Armada 370 and Armada XP SOC support)
++M:	Jason Cooper <jason@lakedaemon.net>
++L:	linux-pci@vger.kernel.org
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	drivers/pci/host/*mvebu*
++
+ PCI DRIVER FOR NVIDIA TEGRA
+ M:	Thierry Reding <thierry.reding@gmail.com>
+ L:	linux-tegra@vger.kernel.org
++L:	linux-pci@vger.kernel.org
+ S:	Supported
+ F:	Documentation/devicetree/bindings/pci/nvidia,tegra20-pcie.txt
+ F:	drivers/pci/host/pci-tegra.c
+ 
++PCI DRIVER FOR RENESAS R-CAR
++M:	Simon Horman <horms@verge.net.au>
++M:	Magnus Damm <magnus.damm@gmail.com>
++L:	linux-pci@vger.kernel.org
++L:	linux-sh@vger.kernel.org
++S:	Maintained
++F:	drivers/pci/host/*rcar*
++
+ PCI DRIVER FOR SAMSUNG EXYNOS
+ M:	Jingoo Han <jg1.han@samsung.com>
+ L:	linux-pci@vger.kernel.org
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++L:	linux-samsung-soc@vger.kernel.org (moderated for non-subscribers)
+ S:	Maintained
+ F:	drivers/pci/host/pci-exynos.c
+ 
