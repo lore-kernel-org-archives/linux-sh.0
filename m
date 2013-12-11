@@ -1,56 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:44 +0000
-Subject: [PATCH 10/69] ARM: shmobile: bockw: remove manual PFC settings on reference
-Message-Id: <dbece02b3460dcc8f43b8c1827b9eb363c2ced36.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:33:03 +0000
+Subject: [PATCH v3] v4l: sh_vou: Fix warnings due to improper casts and printk formats
+Message-Id: <1386765183-1522-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-media@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
+variables. This fixes warnings on platforms where dma_addr_t has a
+different size than int.
 
-Current Bock-W reference is calling PFC initializer manually,
-but now, it can use DTS PFC.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+Cc: linux-media@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c | 12 ------------
- 1 file changed, 12 deletions(-)
+ drivers/media/platform/sh_vou.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index ae88fda..972f951 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -28,14 +28,6 @@
-  *	see board-bock.c for checking detail of dip-switch
-  */
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 4f30341..65c9f18 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
+ 	vb->size = vb->height * bytes_per_line;
+ 	if (vb->baddr && vb->bsize < vb->size) {
+ 		/* User buffer too small */
+-		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
++		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
+ 			 vb->bsize, vb->baddr);
+ 		return -EINVAL;
+ 	}
+@@ -302,9 +302,10 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
+ 	}
  
--static const struct pinctrl_map bockw_pinctrl_map[] = {
--	/* SCIF0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
--				  "scif0_data_a", "scif0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
--				  "scif0_ctrl", "scif0"),
--};
--
- #define FPGA	0x18200000
- #define IRQ0MR	0x30
- #define COMCTLR	0x101c
-@@ -45,10 +37,6 @@ static void __init bockw_init(void)
+ 	dev_dbg(vou_dev->v4l2_dev.dev,
+-		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
++		"%s(): fmt #%d, %u bytes per line, phys %pad, type %d, state %d\n",
+ 		__func__, vou_dev->pix_idx, bytes_per_line,
+-		videobuf_to_dma_contig(vb), vb->memory, vb->state);
++		({ dma_addr_t addr = videobuf_to_dma_contig(vb); &addr; }),
++		vb->memory, vb->state);
  
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin_dt(1);
--
--	pinctrl_register_mappings(bockw_pinctrl_map,
--				  ARRAY_SIZE(bockw_pinctrl_map));
--	r8a7778_pinmux_init();
- 	r8a7778_add_dt_devices();
- 
- 	fpga = ioremap_nocache(FPGA, SZ_1M);
+ 	return 0;
+ }
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
