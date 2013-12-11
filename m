@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 03:15:32 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 11 Dec 2013 00:35:30 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7778: add SSIx DMAEngine support
-Message-Id: <20131205031530.GI21443@verge.net.au>
+Message-Id: <87vbywns1c.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87r49ubr9m.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87r49ubr9m.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,147 +10,27 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Dec 03, 2013 at 11:12:24AM +0900, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> >> Simon
-> 
-> I will send SSI DMAEngine support patch for BockW board,
-> but it needs HPB-DMAC fixup branch merge.
-> It is already exist on
-> 
-> git://git.infradead.org/users/vkoul/slave-dma.git :: dma/fixes
-> 
-> But, is not merged on linus/master yet.
 
-Thanks. Please let me know if/when it is merged.
+Hi Simon
 
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > ---
+> > >> Simon
+> > 
+> > I will send SSI DMAEngine support patch for BockW board,
+> > but it needs HPB-DMAC fixup branch merge.
+> > It is already exist on
+> > 
+> > git://git.infradead.org/users/vkoul/slave-dma.git :: dma/fixes
+> > 
+> > But, is not merged on linus/master yet.
 > 
->  arch/arm/mach-shmobile/include/mach/r8a7778.h |   18 +++++++++
->  arch/arm/mach-shmobile/setup-r8a7778.c        |   51 +++++++++++++++++++++++++
->  2 files changed, 69 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-> index b497f93..a3440e5 100644
-> --- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-> +++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-> @@ -27,6 +27,24 @@ enum {
->  	HPBDMA_SLAVE_DUMMY,
->  	HPBDMA_SLAVE_SDHI0_TX,
->  	HPBDMA_SLAVE_SDHI0_RX,
-> +	HPBDMA_SLAVE_SSI0_TX,
-> +	HPBDMA_SLAVE_SSI0_RX,
-> +	HPBDMA_SLAVE_SSI1_TX,
-> +	HPBDMA_SLAVE_SSI1_RX,
-> +	HPBDMA_SLAVE_SSI2_TX,
-> +	HPBDMA_SLAVE_SSI2_RX,
-> +	HPBDMA_SLAVE_SSI3_TX,
-> +	HPBDMA_SLAVE_SSI3_RX,
-> +	HPBDMA_SLAVE_SSI4_TX,
-> +	HPBDMA_SLAVE_SSI4_RX,
-> +	HPBDMA_SLAVE_SSI5_TX,
-> +	HPBDMA_SLAVE_SSI5_RX,
-> +	HPBDMA_SLAVE_SSI6_TX,
-> +	HPBDMA_SLAVE_SSI6_RX,
-> +	HPBDMA_SLAVE_SSI7_TX,
-> +	HPBDMA_SLAVE_SSI7_RX,
-> +	HPBDMA_SLAVE_SSI8_TX,
-> +	HPBDMA_SLAVE_SSI8_RX,
->  	HPBDMA_SLAVE_HPBIF0_TX,
->  	HPBDMA_SLAVE_HPBIF0_RX,
->  	HPBDMA_SLAVE_HPBIF1_TX,
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-> index 81701cf..e786338 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> @@ -319,6 +319,29 @@ void __init r8a7778_add_dt_devices(void)
->  #define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
->  #define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
->  
-> +#define HPBDMA_SSI(_id)				\
-> +{						\
-> +	.id	= HPBDMA_SLAVE_SSI## _id ##_TX,	\
-> +	.addr	= 0xffd91008 + (_id * 0x40),	\
-> +	.dcr	= HPB_DMAE_DCR_CT |		\
-> +		  HPB_DMAE_DCR_DIP |		\
-> +		  HPB_DMAE_DCR_SPDS_32BIT |	\
-> +		  HPB_DMAE_DCR_DMDL |		\
-> +		  HPB_DMAE_DCR_DPDS_32BIT,	\
-> +	.port   = _id + (_id << 8),		\
-> +	.dma_ch = (28 + _id),			\
-> +}, {						\
-> +	.id	= HPBDMA_SLAVE_SSI## _id ##_RX,	\
-> +	.addr	= 0xffd9100c + (_id * 0x40),	\
-> +	.dcr	= HPB_DMAE_DCR_CT |		\
-> +		  HPB_DMAE_DCR_DIP |		\
-> +		  HPB_DMAE_DCR_SMDL |		\
-> +		  HPB_DMAE_DCR_SPDS_32BIT |	\
-> +		  HPB_DMAE_DCR_DPDS_32BIT,	\
-> +	.port   = _id + (_id << 8),		\
-> +	.dma_ch = (28 + _id),			\
-> +}
-> +
->  #define HPBDMA_HPBIF(_id)				\
->  {							\
->  	.id	= HPBDMA_SLAVE_HPBIF## _id ##_TX,	\
-> @@ -373,6 +396,16 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
->  		.dma_ch	= 22,
->  	},
->  
-> +	HPBDMA_SSI(0),
-> +	HPBDMA_SSI(1),
-> +	HPBDMA_SSI(2),
-> +	HPBDMA_SSI(3),
-> +	HPBDMA_SSI(4),
-> +	HPBDMA_SSI(5),
-> +	HPBDMA_SSI(6),
-> +	HPBDMA_SSI(7),
-> +	HPBDMA_SSI(8),
-> +
->  	HPBDMA_HPBIF(0),
->  	HPBDMA_HPBIF(1),
->  	HPBDMA_HPBIF(2),
-> @@ -387,22 +420,40 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
->  static const struct hpb_dmae_channel hpb_dmae_channels[] = {
->  	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
->  	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_TX),   /* ch. 28 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_RX),   /* ch. 28 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_TX), /* ch. 28 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_RX), /* ch. 28 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_TX),   /* ch. 29 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_RX),   /* ch. 29 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_TX), /* ch. 29 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_RX), /* ch. 29 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_TX),   /* ch. 30 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_RX),   /* ch. 30 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_TX), /* ch. 30 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_RX), /* ch. 30 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_TX),   /* ch. 31 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_RX),   /* ch. 31 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_TX), /* ch. 31 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_RX), /* ch. 31 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_TX),   /* ch. 32 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_RX),   /* ch. 32 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_TX), /* ch. 32 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_RX), /* ch. 32 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_TX),   /* ch. 33 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_RX),   /* ch. 33 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_TX), /* ch. 33 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_RX), /* ch. 33 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_TX),   /* ch. 34 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_RX),   /* ch. 34 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_TX), /* ch. 34 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_RX), /* ch. 34 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_TX),   /* ch. 35 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_RX),   /* ch. 35 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_TX), /* ch. 35 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_RX), /* ch. 35 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_TX),   /* ch. 36 */
-> +	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_RX),   /* ch. 36 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_TX), /* ch. 36 */
->  	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_RX), /* ch. 36 */
->  };
-> -- 
-> 1.7.9.5
-> 
+> Thanks. Please let me know if/when it is merged.
+
+Thank you, will do.
+But, this patch itself doesn't depend on HPB-DMAC fixup branch.
+Sorry for my confusable English.
+
+# BockW board support side only depends on HPB-DMAC fixup
+# I will send it when these are merged to linus branch
+
