@@ -1,67 +1,12 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:38 +0000
-Subject: [PATCH 64/69] ARM: shmobile: Use sh73a0 suffix for INTC compat string
-Message-Id: <8bb44445b08d1068a0ca5f72159d8e373f810155.1386901186.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 11 Dec 2013 10:07:41 +0000
+Subject: [V2] correct patch for renesas arm timer
+Message-Id: <1386756462-26033-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Add "renesas,intc-irqpin-sh73a0" to the compatible string for the
-IRQ pins in case of sh73a0 INTC. This makes the INTC irqpin follow
-the same style as the other devices and also makes it more future proof.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 29d2ee6..241c8cd 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -47,7 +47,7 @@
- 	};
- 
- 	irqpin0: irqpin@e6900000 {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe6900000 4>,
-@@ -67,7 +67,7 @@
- 	};
- 
- 	irqpin1: irqpin@e6900004 {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe6900004 4>,
-@@ -88,7 +88,7 @@
- 	};
- 
- 	irqpin2: irqpin@e6900008 {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe6900008 4>,
-@@ -108,7 +108,7 @@
- 	};
- 
- 	irqpin3: irqpin@e690000c {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe690000c 4>,
--- 
-1.8.4
+Sorry, previous one had not had the review comments fixed. This one has.
 
