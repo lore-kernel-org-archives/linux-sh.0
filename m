@@ -1,217 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:51 +0000
-Subject: [PATCH 18/33] ARM: shmobile: Remove legacy platform devices from EMEV2 SoC code
-Message-Id: <59032702ead9056231f273e0e99655c2f2280491.1386897180.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 11 Dec 2013 23:56:16 +0000
+Subject: [PATCH v4 00/03] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+Message-Id: <20131211235616.12661.19702.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Magnus Damm <damm@opensource.se>
+clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits (v4)
 
-Now when KZM9D legacy C board support code is
-gone then remove emev2_add_standard_devices()
-and all the platform devices from setup-emev2.c.
+[PATCH v4 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+[PATCH v4 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+[PATCH v2 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
+
+This is V4 of the SH and ARM mach-shmobile clocksource Kconfig
+consolidation series.
+
+By sharing Kconfig entires in drivers/clocksource/Kconfig we
+can get rid of duplicated bits that do not belong under arch/.
+
+With this series applied it is possible to build the timer
+drivers for CMT, MTU2, TMU and STI in case of SH or ARM. The timer
+drivers are automatically selected by default. It is also possible
+to select and/or deselect freely when COMPILE_TEST has been selected.
+
+Many thanks to John, Daniel and Arnd for feedback!
+
+Changes since V3:
+ - Updated patch 1/3 with more detailed help texts
+ - Updated patch 2/3 to fit latest renesas-devel tag, see below
+ - Included acks from John Stultz for patch 2/3 and 3/3
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/emev2.h |   5 -
- arch/arm/mach-shmobile/setup-emev2.c        | 148 ----------------------------
- 2 files changed, 153 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/emev2.h b/arch/arm/mach-shmobile/include/mach/emev2.h
-index c2eb756..fcb142a 100644
---- a/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ b/arch/arm/mach-shmobile/include/mach/emev2.h
-@@ -3,12 +3,7 @@
- 
- extern void emev2_map_io(void);
- extern void emev2_init_delay(void);
--extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
--
--#define EMEV2_GPIO_BASE 200
--#define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
--
- extern struct smp_operations emev2_smp_ops;
- 
- #endif /* __ASM_EMEV2_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 4d39bf4..e7031b0 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -19,22 +19,12 @@
- #include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
--#include <linux/interrupt.h>
--#include <linux/irq.h>
--#include <linux/platform_device.h>
--#include <linux/platform_data/gpio-em.h>
- #include <linux/of_platform.h>
--#include <linux/delay.h>
--#include <linux/input.h>
--#include <linux/io.h>
--#include <linux/irqchip/arm-gic.h>
- #include <mach/common.h>
- #include <mach/emev2.h>
--#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
--#include <asm/mach/time.h>
- 
- static struct map_desc emev2_io_desc[] __initdata = {
- #ifdef CONFIG_SMP
-@@ -53,144 +43,6 @@ void __init emev2_map_io(void)
- 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
- }
- 
--/* UART */
--static struct resource uart0_resources[] = {
--	DEFINE_RES_MEM(0xe1020000, 0x38),
--	DEFINE_RES_IRQ(40),
--};
--
--static struct resource uart1_resources[] = {
--	DEFINE_RES_MEM(0xe1030000, 0x38),
--	DEFINE_RES_IRQ(41),
--};
--
--static struct resource uart2_resources[] = {
--	DEFINE_RES_MEM(0xe1040000, 0x38),
--	DEFINE_RES_IRQ(42),
--};
--
--static struct resource uart3_resources[] = {
--	DEFINE_RES_MEM(0xe1050000, 0x38),
--	DEFINE_RES_IRQ(43),
--};
--
--#define emev2_register_uart(idx)					\
--	platform_device_register_simple("serial8250-em", idx,		\
--					uart##idx##_resources,		\
--					ARRAY_SIZE(uart##idx##_resources))
--
--/* STI */
--static struct resource sti_resources[] = {
--	DEFINE_RES_MEM(0xe0180000, 0x54),
--	DEFINE_RES_IRQ(157),
--};
--
--#define emev2_register_sti()					\
--	platform_device_register_simple("em_sti", 0,		\
--					sti_resources,		\
--					ARRAY_SIZE(sti_resources))
--
--/* GIO */
--static struct gpio_em_config gio0_config = {
--	.gpio_base = 0,
--	.irq_base = EMEV2_GPIO_IRQ(0),
--	.number_of_pins = 32,
--};
--
--static struct resource gio0_resources[] = {
--	DEFINE_RES_MEM(0xe0050000, 0x2c),
--	DEFINE_RES_MEM(0xe0050040, 0x20),
--	DEFINE_RES_IRQ(99),
--	DEFINE_RES_IRQ(100),
--};
--
--static struct gpio_em_config gio1_config = {
--	.gpio_base = 32,
--	.irq_base = EMEV2_GPIO_IRQ(32),
--	.number_of_pins = 32,
--};
--
--static struct resource gio1_resources[] = {
--	DEFINE_RES_MEM(0xe0050080, 0x2c),
--	DEFINE_RES_MEM(0xe00500c0, 0x20),
--	DEFINE_RES_IRQ(101),
--	DEFINE_RES_IRQ(102),
--};
--
--static struct gpio_em_config gio2_config = {
--	.gpio_base = 64,
--	.irq_base = EMEV2_GPIO_IRQ(64),
--	.number_of_pins = 32,
--};
--
--static struct resource gio2_resources[] = {
--	DEFINE_RES_MEM(0xe0050100, 0x2c),
--	DEFINE_RES_MEM(0xe0050140, 0x20),
--	DEFINE_RES_IRQ(103),
--	DEFINE_RES_IRQ(104),
--};
--
--static struct gpio_em_config gio3_config = {
--	.gpio_base = 96,
--	.irq_base = EMEV2_GPIO_IRQ(96),
--	.number_of_pins = 32,
--};
--
--static struct resource gio3_resources[] = {
--	DEFINE_RES_MEM(0xe0050180, 0x2c),
--	DEFINE_RES_MEM(0xe00501c0, 0x20),
--	DEFINE_RES_IRQ(105),
--	DEFINE_RES_IRQ(106),
--};
--
--static struct gpio_em_config gio4_config = {
--	.gpio_base = 128,
--	.irq_base = EMEV2_GPIO_IRQ(128),
--	.number_of_pins = 31,
--};
--
--static struct resource gio4_resources[] = {
--	DEFINE_RES_MEM(0xe0050200, 0x2c),
--	DEFINE_RES_MEM(0xe0050240, 0x20),
--	DEFINE_RES_IRQ(107),
--	DEFINE_RES_IRQ(108),
--};
--
--#define emev2_register_gio(idx)						\
--	platform_device_register_resndata(&platform_bus, "em_gio",	\
--					  idx, gio##idx##_resources,	\
--					  ARRAY_SIZE(gio##idx##_resources), \
--					  &gio##idx##_config,		\
--					  sizeof(struct gpio_em_config))
--
--static struct resource pmu_resources[] = {
--	DEFINE_RES_IRQ(152),
--	DEFINE_RES_IRQ(153),
--};
--
--#define emev2_register_pmu()					\
--	platform_device_register_simple("arm-pmu", -1,		\
--					pmu_resources,		\
--					ARRAY_SIZE(pmu_resources))
--
--void __init emev2_add_standard_devices(void)
--{
--	if (!IS_ENABLED(CONFIG_COMMON_CLK))
--		emev2_clock_init();
--
--	emev2_register_uart(0);
--	emev2_register_uart(1);
--	emev2_register_uart(2);
--	emev2_register_uart(3);
--	emev2_register_sti();
--	emev2_register_gio(0);
--	emev2_register_gio(1);
--	emev2_register_gio(2);
--	emev2_register_gio(3);
--	emev2_register_gio(4);
--	emev2_register_pmu();
--}
--
- void __init emev2_init_delay(void)
- {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
--- 
-1.8.4
+ Written against renesas.git tag renesas-devel-v3.13-rc2-20131211
+
+ arch/arm/mach-shmobile/Kconfig |   35 +++++++++++++++----------------
+ arch/sh/Kconfig                |   21 -------------------
+ drivers/clocksource/Kconfig    |   44 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 61 insertions(+), 39 deletions(-)
 
