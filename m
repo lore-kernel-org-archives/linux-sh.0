@@ -1,41 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:36 +0000
-Subject: [PATCH 62/69] ARM: shmobile: r8a7740: add FSI support via DTSI
-Message-Id: <efcd869b7c5ef0cff5887842afe2c184e509807a.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:46:38 +0000
+Subject: Re: [PATCH 06/15] v4l: sh_vou: Enable driver compilation with COMPILE_TEST
+Message-Id: <1658704.CLqRDCzrbM@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Mauro,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
+Could you please pick this patch up for v3.14 ?
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index b1c2ed9..52255bf 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -208,4 +208,13 @@
- 		cap-sdio-irq;
- 		status = "disabled";
- 	};
-+
-+	sh_fsi2: sound@fe1f0000 {
-+		#sound-dai-cells = <1>;
-+		compatible = "renesas,sh_fsi2";
-+		reg = <0xfe1f0000 0x400>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 9 0x4>;
-+		status = "disabled";
-+	};
- };
+On Wednesday 27 November 2013 02:18:28 Laurent Pinchart wrote:
+> This helps increasing build testing coverage.
+> 
+> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
+> Cc: linux-media@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Simon Horman <horms@verge.net.au>
+> ---
+>  drivers/media/platform/Kconfig | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+> index d7f0249..7f6ea65 100644
+> --- a/drivers/media/platform/Kconfig
+> +++ b/drivers/media/platform/Kconfig
+> @@ -36,7 +36,8 @@ source "drivers/media/platform/blackfin/Kconfig"
+>  config VIDEO_SH_VOU
+>  	tristate "SuperH VOU video output driver"
+>  	depends on MEDIA_CAMERA_SUPPORT
+> -	depends on VIDEO_DEV && ARCH_SHMOBILE && I2C
+> +	depends on VIDEO_DEV && I2C
+> +	depends on ARCH_SHMOBILE || COMPILE_TEST
+>  	select VIDEOBUF_DMA_CONTIG
+>  	help
+>  	  Support for the Video Output Unit (VOU) on SuperH SoCs.
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
