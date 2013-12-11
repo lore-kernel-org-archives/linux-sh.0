@@ -1,58 +1,53 @@
-From: WANG Chao <chaowang@redhat.com>
-Date: Tue, 17 Dec 2013 05:37:30 +0000
-Subject: Re: [PATCH 0/4] Minor fixes and improvements for kexec
-Message-Id: <20131217053730.GA13848@dhcp-17-89.nay.redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 13:14:20 +0000
+Subject: [PATCH v3 0/4] Lager and Koelsch reference serial port support
+Message-Id: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386807069.git.geoff@infradead.org>
-In-Reply-To: <cover.1386807069.git.geoff@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geoff Levand <geoff@infradead.org>
-Cc: linux-sh@vger.kernel.org, kexec@lists.infradead.org, Paul Mundt <lethal@linux-sh.org>, Paul Mackerras <paulus@samba.org>, Eric Biederman <ebiederm@xmission.com>, linuxppc-dev@lists.ozlabs.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 12/12/13 at 12:18am, Geoff Levand wrote:
-> Hi Eric,
-> 
-> Here are a few minor fixes and improvements for kexec.  Please consider.
-> 
-> -Geoff
-> 
-> The following changes since commit 374b105797c3d4f29c685f3be535c35f5689b30e:
-> 
->   Linux 3.13-rc3 (2013-12-06 09:34:04 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.linaro.org/people/geoff.levand/linux-kexec.git for-kexec
-> 
-> for you to fetch changes up to 594a3d26aac66e9668edc81d7bfb4e801575514f:
-> 
->   sh/kexec: Fix kexec build warning (2013-12-11 16:03:27 -0800)
-> 
-> ----------------------------------------------------------------
-> Geoff Levand (4):
->       kexec: Simplify conditional
->       kexec: Add IND_FLAGS macro
->       powerpc/kexec: Use global IND_FLAGS macro
->       sh/kexec: Fix kexec build warning
+Hello,
 
-For this series (besides 4/4 v2):
+This patch set implements serial port support for the Lager reference board.
 
-Acked-by: WANG Chao <chaowang@redhat.com>
+The code is available in my git tree at
 
-> 
->  arch/powerpc/kernel/machine_kexec_64.c |  2 --
->  arch/sh/kernel/machine_kexec.c         |  2 +-
->  include/linux/kexec.h                  |  1 +
->  kernel/kexec.c                         | 17 ++++++++++-------
->  4 files changed, 12 insertions(+), 10 deletions(-)
-> 
-> -- 
-> 1.8.1.2
-> 
-> 
-> _______________________________________________
-> kexec mailing list
-> kexec@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/kexec
+        git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial/boards
+
+The patches are based on top of the "[PATCH 00/47] sh-sci updates for v3.14"
+and "[PATCH v3 00/15] Lager and Koelsch multiplatform support" patch series.
+
+Changes compared to v2:
+
+- Added Koelsch support
+
+Changes compared to v1:
+
+- Removed early debugging support as it requires more work before being
+  mainlined
+
+Laurent Pinchart (4):
+  ARM: shmobile: r8a7790: Add serial ports to the device tree
+  ARM: shmobile: r8a7791: Add serial ports to the device tree
+  ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+  ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT
+
+ arch/arm/boot/dts/r8a7790-lager.dts              |  24 ++-
+ arch/arm/boot/dts/r8a7790.dtsi                   | 100 +++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts            |  24 ++-
+ arch/arm/boot/dts/r8a7791.dtsi                   | 180 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  18 +--
+ arch/arm/mach-shmobile/board-lager-reference.c   |  18 +--
+ arch/arm/mach-shmobile/clock-r8a7790.c           |  16 +-
+ arch/arm/mach-shmobile/clock-r8a7791.c           |  24 +--
+ arch/arm/mach-shmobile/setup-r8a7790.c           |  26 ++--
+ arch/arm/mach-shmobile/setup-r8a7791.c           |  34 ++---
+ 10 files changed, 374 insertions(+), 90 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
