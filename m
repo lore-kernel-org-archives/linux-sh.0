@@ -1,32 +1,94 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 29 Dec 2013 21:40:25 +0000
-Subject: Re: [GIT PULL 00/13] Second Round of Renesas ARM Based SoC Updates for v3.14
-Message-Id: <20131229214025.GG20958@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 12:40:31 +0000
+Subject: [PATCH v3] serial: sh-sci: Fix warnings due to improper casts and printk formats
+Message-Id: <1386765631-1840-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linux-serial@vger.kernel.org
 
-On Tue, Dec 24, 2013 at 03:06:44PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
-> 
-> please consider this second round of Renesas ARM based SoC updates for v3.14.
-> It is based on the first round of such changes, tagged as
-> renesas-soc2-for-v3.14, which you have already pulled.
-> 
-> 
-> The following changes since commit fee05eb3d2ce4813b5e9a70ab888d2bc0047f4e1:
-> 
->   ARM: shmobile: r8a7779: add HSPI clock support for DT (2013-12-10 17:20:15 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.14
+Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
+variables, and cast pointers to uintptr_t instead of unsigned int where
+applicable. This fixes warnings on platforms where pointers and/or
+dma_addr_t have a different size than int.
 
-Pulled, thanks.
+Cc: linux-serial@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/sh-sci.c | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
 
+This patch depends on "vsprintf: add %pad extension for dma_addr_t use" that
+should make it to v3.14.
 
--Olof
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 7d8103c..6e5ce62 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -557,7 +557,7 @@ static inline int sci_rxd_in(struct uart_port *port)
+ 		return 1;
+ 
+ 	/* Cast for ARM damage */
+-	return !!__raw_readb((void __iomem *)s->cfg->port_reg);
++	return !!__raw_readb((void __iomem *)(uintptr_t)s->cfg->port_reg);
+ }
+ 
+ /* ********************************************************************** *
+@@ -1309,7 +1309,7 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
+ 	}
+ 
+ 	if (room < count)
+-		dev_warn(port->dev, "Rx overrun: dropping %u bytes\n",
++		dev_warn(port->dev, "Rx overrun: dropping %zu bytes\n",
+ 			 count - room);
+ 	if (!room)
+ 		return room;
+@@ -1442,7 +1442,7 @@ static void work_fn_rx(struct work_struct *work)
+ 		int count;
+ 
+ 		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
+-		dev_dbg(port->dev, "Read %u bytes with cookie %d\n",
++		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
+ 			sh_desc->partial, sh_desc->cookie);
+ 
+ 		spin_lock_irqsave(&port->lock, flags);
+@@ -1691,16 +1691,17 @@ static void sci_request_dma(struct uart_port *port)
+ 		s->chan_tx = chan;
+ 		sg_init_table(&s->sg_tx, 1);
+ 		/* UART circular tx buffer is an aligned page. */
+-		BUG_ON((int)port->state->xmit.buf & ~PAGE_MASK);
++		BUG_ON((uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+ 		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+-			    UART_XMIT_SIZE, (int)port->state->xmit.buf & ~PAGE_MASK);
++			    UART_XMIT_SIZE,
++			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+ 		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
+ 		if (!nent)
+ 			sci_tx_dma_release(s, false);
+ 		else
+-			dev_dbg(port->dev, "%s: mapped %d@%p to %x\n", __func__,
+-				sg_dma_len(&s->sg_tx),
+-				port->state->xmit.buf, sg_dma_address(&s->sg_tx));
++			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n", __func__,
++				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
++				&sg_dma_address(&s->sg_tx));
+ 
+ 		s->sg_len_tx = nent;
+ 
+@@ -1740,7 +1741,7 @@ static void sci_request_dma(struct uart_port *port)
+ 
+ 			sg_init_table(sg, 1);
+ 			sg_set_page(sg, virt_to_page(buf[i]), s->buf_len_rx,
+-				    (int)buf[i] & ~PAGE_MASK);
++				    (uintptr_t)buf[i] & ~PAGE_MASK);
+ 			sg_dma_address(sg) = dma[i];
+ 		}
+ 
+-- 
+Regards,
+
+Laurent Pinchart
+
