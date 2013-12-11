@@ -1,55 +1,36 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Wed, 18 Dec 2013 12:44:20 +0000
-Subject: [PATCH 5/5] arm: shmobile: lager: Add SATA support
-Message-Id: <1387370660-20481-6-git-send-email-valentine.barshak@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:13:49 +0000
+Subject: [PATCH v4 03/16] ARM: shmobile: lager: Specify external clock frequency in DT
+Message-Id: <1386771242-21876-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This adds SATA support to Lager board. Only SATA1 port is available.
+The external crystal frequency is 20MHz on the Lager board. Specify it
+in the device tree.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index af00f1d..287a0a1 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -466,6 +466,21 @@ static void __init lager_add_usb_devices(void)
- 	lager_add_usb2_device();
- }
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 67a6939..57569cb 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -58,6 +58,10 @@
+ 	};
+ };
  
-+/* SATA1 */
-+static const struct resource sata1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee500000, 0x2000),
-+	DEFINE_RES_IRQ(gic_spi(106)),
++&extal_clk {
++	clock-frequency = <20000000>;
 +};
 +
-+static const struct platform_device_info sata1_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "sata-r8a7790",
-+	.id		= 1,
-+	.res		= sata1_resources,
-+	.num_res	= ARRAY_SIZE(sata1_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -554,6 +569,8 @@ static void __init lager_add_standard_devices(void)
- 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
- 
- 	lager_add_usb_devices();
-+
-+	platform_device_register_full(&sata1_info);
- }
- 
- /*
+ &pfc {
+ 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.8.3.1
+1.8.3.2
 
