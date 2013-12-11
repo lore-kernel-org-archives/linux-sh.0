@@ -1,67 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:39 +0000
-Subject: [PATCH 65/69] ARM: shmobile: Use r8a7740 suffix for INTC compat string
-Message-Id: <96327999805dfb5b6e91e6969311d9a77a0160cd.1386901186.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 14:13:51 +0000
+Subject: [PATCH v4 05/16] ARM: shmobile: rcar-gen2: Initialize CCF before clock sources
+Message-Id: <1386771242-21876-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+When CONFIG_COMMON_CLOCK is enabled, call rcar_gen2_clocks_init() in the
+timer init function to initialize the common clock framework before
+initializing the clock sources. This will take care of clock
+initialization when the r8a779[01] boards will be switched to
+multiplatform kernels.
 
-Add "renesas,intc-irqpin-r8a7740" to the compatible string for the
-IRQ pins in case of r8a7740 INTC. This makes the INTC irqpin follow
-the same style as the other devices and also makes it more future proof.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 52255bf..2782f64 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -41,7 +41,7 @@
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 5734c24..367bad7 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- 	/* irqpin0: IRQ0 - IRQ7 */
- 	irqpin0: irqpin@e6900000 {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe6900000 4>,
-@@ -62,7 +62,7 @@
++#include <linux/clk/shmobile.h>
+ #include <linux/clocksource.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+@@ -44,8 +45,10 @@ u32 __init rcar_gen2_read_mode_pins(void)
  
- 	/* irqpin1: IRQ8 - IRQ15 */
- 	irqpin1: irqpin@e6900004 {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe6900004 4>,
-@@ -83,7 +83,7 @@
+ void __init rcar_gen2_timer_init(void)
+ {
+-#ifdef CONFIG_ARM_ARCH_TIMER
++#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
++#endif
++#ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
+@@ -87,5 +90,8 @@ void __init rcar_gen2_timer_init(void)
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
  
- 	/* irqpin2: IRQ16 - IRQ23 */
- 	irqpin2: irqpin@e6900008 {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe6900008 4>,
-@@ -104,7 +104,7 @@
- 
- 	/* irqpin3: IRQ24 - IRQ31 */
- 	irqpin3: irqpin@e690000c {
--		compatible = "renesas,intc-irqpin";
-+		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0xe690000c 4>,
++#ifdef CONFIG_COMMON_CLK
++	rcar_gen2_clocks_init(mode);
++#endif
+ 	clocksource_of_init();
+ }
 -- 
-1.8.4
+1.8.3.2
 
