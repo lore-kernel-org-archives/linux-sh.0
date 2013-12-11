@@ -1,89 +1,213 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:19 +0000
-Subject: [PATCH 12/47] serial: sh-sci: Compute overrun_bit without using baud rate algo
-Message-Id: <1386323994-12850-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 13:14:22 +0000
+Subject: [PATCH v3 2/4] ARM: shmobile: r8a7791: Add serial ports to the device tree
+Message-Id: <1386767664-20113-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The overrun bit index is a property of the hardware. It's currently
-computed based on a different and unrelated hardware property, the baud
-rate calculation algorithm. Compute it using hardware identification
-information only.
+Add all serial ports marked as disabled.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/tty/serial/sh-sci.c | 26 ++++++++++++++------------
- 1 file changed, 14 insertions(+), 12 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 180 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 180 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5cb7189..cd508c6 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2132,30 +2132,38 @@ static int sci_init_single(struct platform_device *dev,
- 			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
- 	}
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 0a82192..413e6ed 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -185,6 +185,186 @@
+ 		#gpio-range-cells = <3>;
+ 	};
  
-+	if (p->regtype = SCIx_PROBE_REGTYPE) {
-+		ret = sci_probe_regmap(p);
-+		if (unlikely(ret))
-+			return ret;
-+	}
++	scifa0: serial@e6c40000 {
++		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
++		reg = <0 0xe6c40000 0 64>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7791_CLK_SCIFA0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
- 	switch (p->type) {
- 	case PORT_SCIFB:
- 		port->fifosize = 256;
-+		sci_port->overrun_bit = 9;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
-+		sci_port->overrun_bit = 0;
- 		break;
- 	case PORT_SCIFA:
- 		port->fifosize = 64;
-+		sci_port->overrun_bit = 9;
- 		break;
- 	case PORT_SCIF:
- 		port->fifosize = 16;
-+		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
-+			sci_port->overrun_bit = 9;
-+		else
-+			sci_port->overrun_bit = 0;
- 		break;
- 	default:
- 		port->fifosize = 1;
-+		sci_port->overrun_bit = 5;
- 		break;
- 	}
- 
--	if (p->regtype = SCIx_PROBE_REGTYPE) {
--		ret = sci_probe_regmap(p);
--		if (unlikely(ret))
--			return ret;
--	}
--
- 	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
- 		if (IS_ERR(sci_port->iclk)) {
-@@ -2193,12 +2201,6 @@ static int sci_init_single(struct platform_device *dev,
- 	 * Establish sensible defaults for the overrun detection, unless
- 	 * the part has explicitly disabled support for it.
- 	 */
--	if (p->type = PORT_SCI)
--		sci_port->overrun_bit = 5;
--	else if (p->scbrr_algo_id = SCBRR_ALGO_4)
--		sci_port->overrun_bit = 9;
--	else
--		sci_port->overrun_bit = 0;
- 
- 	/*
- 	 * Make the error mask inclusive of overrun detection, if
++	scifa1: serial@e6c50000 {
++		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c50000 0 64>;
++		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7791_CLK_SCIFA1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa2: serial@e6c60000 {
++		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c60000 0 64>;
++		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7791_CLK_SCIFA2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa3: serial@e6c70000 {
++		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c70000 0 64>;
++		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp11_clks R8A7791_CLK_SCIFA3>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa4: serial@e6c78000 {
++		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c78000 0 64>;
++		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp11_clks R8A7791_CLK_SCIFA4>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifa5: serial@e6c80000 {
++		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c80000 0 64>;
++		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp11_clks R8A7791_CLK_SCIFA5>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb0: serial@e6c20000 {
++		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c20000 0 64>;
++		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7791_CLK_SCIFB0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb1: serial@e6c30000 {
++		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6c30000 0 64>;
++		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7791_CLK_SCIFB1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scifb2: serial@e6ce0000 {
++		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6ce0000 0 64>;
++		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7791_CLK_SCIFB2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif0: serial@e6e60000 {
++		compatible = "renesas,scif-r8a7791", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e60000 0 64>;
++		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e6e68000 {
++		compatible = "renesas,scif-r8a7791", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e68000 0 64>;
++		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif2: serial@e6e58000 {
++		compatible = "renesas,scif-r8a7791", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6e58000 0 64>;
++		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif3: serial@e6ea8000 {
++		compatible = "renesas,scif-r8a7791", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6ea8000 0 64>;
++		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif4: serial@e6ee0000 {
++		compatible = "renesas,scif-r8a7791", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6ee0000 0 64>;
++		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif5: serial@e6ee8000 {
++		compatible = "renesas,scif-r8a7791", "renesas,scif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe6ee8000 0 64>;
++		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif0: serial@e62c0000 {
++		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62c0000 0 96>;
++		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif1: serial@e62c8000 {
++		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62c8000 0 96>;
++		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	hscif2: serial@e62d0000 {
++		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
++		interrupt-parent = <&gic>;
++		reg = <0 0xe62d0000 0 96>;
++		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
 1.8.3.2
 
