@@ -1,76 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:07 +0000
-Subject: [PATCH 11/26] ARM: shmobile: r7s72100 Genmai DT reference DTS bits
-Message-Id: <495e06d1daff7f59b511c27c95d2601c1d9dad49.1387763524.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 11 Dec 2013 02:48:16 +0000
+Subject: [PATCH 2/4] ARM: shmobile: armadillo: Set backlight enable GPIO
+Message-Id: <1386730098-26641-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The Armadillo 800 EVA panel module has a backlight enable signal
+connected to GPIO 61. Instead of requesting the GPIO in board code and
+setting it to a high level unconditionally, pass the GPIO number to the
+PWM backlight driver as the backlight enable GPIO.
 
-Add the DT bits for r7s72100 Genmai DT reference support.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/Makefile                      |  1 +
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 31 +++++++++++++++++++++++++
- 2 files changed, 32 insertions(+)
- create mode 100644 arch/arm/boot/dts/r7s72100-genmai-reference.dts
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 8254bfc..b17de79 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -218,6 +218,7 @@ dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
- 	s3c6410-smdk6410.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
-+	r7s72100-genmai-reference.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-new file mode 100644
-index 0000000..da19c70
---- /dev/null
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Genmai board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r7s72100.dtsi"
-+
-+/ {
-+	model = "Genmai";
-+	compatible = "renesas,genmai-reference", "renesas,r7s72100";
-+
-+	chosen {
-+		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+	};
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x08000000 0x08000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d0835a2..fbcbabe 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -423,7 +423,7 @@ static struct platform_pwm_backlight_data pwm_backlight_data = {
+ 	.max_brightness = 255,
+ 	.dft_brightness = 255,
+ 	.pwm_period_ns = 33333, /* 30kHz */
+-	.enable_gpio = -1,
++	.enable_gpio = 61,
+ };
+ 
+ static struct platform_device pwm_backlight_device = {
+@@ -1210,9 +1210,6 @@ static void __init eva_init(void)
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+-	/* LCDC0 */
+-	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-
+ 	/* GETHER */
+ 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 
 -- 
-1.8.4
+1.8.3.2
 
