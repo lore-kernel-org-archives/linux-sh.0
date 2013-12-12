@@ -1,73 +1,71 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 18 Dec 2013 14:26:53 +0000
-Subject: Re: [PATCH 00/04 v2] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL V2
-Message-Id: <CAMuHMdUuG_jiodEvZXGyzK2tz-8BPR6vJA=+zxUw5fBVMVYaNQ@mail.gmail.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 12 Dec 2013 17:24:00 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sies
+Message-Id: <1386869040-20849-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217050232.727.9552.sendpatchset@w520>
-In-Reply-To: <20131217050232.727.9552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+The r8a7790.dtsi file has three sdhi nodes which all have the wrong resource
+size for their register block. This causes the sh_modbile_sdhi driver to
+fail to communicate with card at-all.
 
-On Tue, Dec 17, 2013 at 6:02 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> [PATCH 02/04] ARM: shmobile: Genmai SCIF2 PINCTRL configuration
-> [PATCH 03/04] ARM: shmobile: Genmai LED1 and LED2 support
+Change each sdhi node size from 0x100 to 0x200 to correct this.
 
-FWIW,  "[PATCH 02/04] ARM: shmobile: Genmai SCIF2 PINCTRL
-configuration" appends to a version of r7s72100-genmai-reference.dts
-that's 60 lines long:
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Linux SH <linux-sh@vger.kernel.org>
+Cc: Linux ARM <linux-arm-kernel@lists.infradead.org>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Tested-by: William Towle <william.towle@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
---- 0009/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-2013-11-27 17:13:43.000000000 +0900
-@@ -58,3 +58,13 @@
-        };
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 68b7b87..e218f25 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -254,7 +254,7 @@
+ 
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee100000 0 0x100>;
++		reg = <0 0xee100000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -263,7 +263,7 @@
+ 
+ 	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee120000 0 0x100>;
++		reg = <0 0xee120000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -272,7 +272,7 @@
+ 
+ 	sdhi2: sd@ee140000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee140000 0 0x100>;
++		reg = <0 0xee140000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -281,7 +281,7 @@
+ 
+ 	sdhi3: sd@ee160000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee160000 0 0x100>;
++		reg = <0 0xee160000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+-- 
+1.8.5.1
 
- };
-+
-+&pfc {
-+       pinctrl-0 = <&scif2_pins>;
-+       pinctrl-names = "default";
-+
-+       scif2_pins: serial2 {
-+               renesas,groups = "scif2_txd_p3_0", "scif2_rxd_p3_2";
-+               renesas,function = "scif2";
-+       };
-+};
-
-while "[PATCH 03/04] ARM: shmobile: Genmai LED1 and LED2 support"
-inserts into a version that has only 31 lines:
-
-@@ -28,4 +29,14 @@
-                #address-cells = <1>;
-                #size-cells = <1>;
-        };
-+
-+       leds {
-+               compatible = "gpio-leds";
-+               led1 {
-+                       gpios = <&port4 10 GPIO_ACTIVE_LOW>;
-+               };
-+               led2 {
-+                       gpios = <&port4 11 GPIO_ACTIVE_LOW>;
-+               };
-+       };
- };
-
-Perhaps you reordered or edited them by hand?
-
-Anyway, I managed to apply them by manually,
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
