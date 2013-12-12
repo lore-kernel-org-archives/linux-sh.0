@@ -1,58 +1,29 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 03:26:22 +0000
-Subject: [PATCH 02/10] sh-pfc: Terminate gpios array by -1
-Message-Id: <1386732390-31724-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 12 Dec 2013 19:36:32 +0000
+Subject: Re: [PATCH 02/10] sh-pfc: Terminate gpios array by -1
+Message-Id: <CACRpkda-ZtnBtymG7WKR=SrbZYBK_K8Dm=7Pz5yHo+nvz3LZ7w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1386732390-31724-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386732390-31724-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-0 is a valid GPIO value, use -1 to terminate the gpios array in IRQ
-lists.
+On Wed, Dec 11, 2013 at 4:26 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/gpio.c   | 4 ++--
- drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+> 0 is a valid GPIO value, use -1 to terminate the gpios array in IRQ
+> lists.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 3d30e6e..c24be81 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -207,9 +207,9 @@ static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
- 	unsigned int i, k;
- 
- 	for (i = 0; i < pfc->info->gpio_irq_size; i++) {
--		unsigned short *gpios = pfc->info->gpio_irq[i].gpios;
-+		short *gpios = pfc->info->gpio_irq[i].gpios;
- 
--		for (k = 0; gpios[k]; k++) {
-+		for (k = 0; gpios[k] >= 0; k++) {
- 			if (gpios[k] = offset)
- 				return pfc->info->gpio_irq[i].irq;
- 		}
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 11bd0d9..cd040e0 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -94,11 +94,11 @@ struct pinmux_data_reg {
- 
- struct pinmux_irq {
- 	int irq;
--	unsigned short *gpios;
-+	short *gpios;
- };
- 
- #define PINMUX_IRQ(irq_nr, ids...)			   \
--	{ .irq = irq_nr, .gpios = (unsigned short []) { ids, 0 } }	\
-+	{ .irq = irq_nr, .gpios = (short []) { ids, -1 } }
- 
- struct pinmux_range {
- 	u16 begin;
--- 
-1.8.3.2
+Patch applied.
 
+Another solution to the same problem: terminate with
+USHRT_MAX and for (k = 0; gpios[k] != USHRT_MAX; k++) {}
+but this works too...
+
+Yours,
+Linus Walleij
