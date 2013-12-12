@@ -1,7 +1,7 @@
-From: Jason Cooper <jason@lakedaemon.net>
-Date: Thu, 12 Dec 2013 20:48:16 +0000
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Thu, 12 Dec 2013 22:11:03 +0000
 Subject: Re: [PATCH v2] MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
-Message-Id: <20131212204816.GA2609@titan.lakedaemon.net>
+Message-Id: <20131212231103.3ceeb3bb@skate>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131211183237.GI4699@google.com>
  <20131212204610.GK4699@google.com>
@@ -11,7 +11,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 12, 2013 at 01:46:10PM -0700, Bjorn Helgaas wrote:
+Dear Bjorn Helgaas,
+
+On Thu, 12 Dec 2013 13:46:10 -0700, Bjorn Helgaas wrote:
 > [+cc Thomas]
 > 
 > On Wed, Dec 11, 2013 at 11:32:37AM -0700, Bjorn Helgaas wrote:
@@ -43,13 +45,44 @@ On Thu, Dec 12, 2013 at 01:46:10PM -0700, Bjorn Helgaas wrote:
 > Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 > Acked-by: Simon Horman <horms+renesas@verge.net.au>	(R-CAR)
 > Acked-by: Jason Cooper <jason@lakedaemon.net>		(MVEBU)
+> Acked-by: Jingoo Han <jg1.han@samsung.com>
+> Acked-by: Thierry Reding <treding@nvidia.com>
+> ---
+>  MAINTAINERS |   34 ++++++++++++++++++++++++++++++++++
+>  1 file changed, 34 insertions(+)
+> 
+> diff --git a/MAINTAINERS b/MAINTAINERS
+> index 8285ed4676b6..1c5dc36ec522 100644
+> --- a/MAINTAINERS
+> +++ b/MAINTAINERS
+> @@ -6449,19 +6449,53 @@ F:	drivers/pci/
+>  F:	include/linux/pci*
+>  F:	arch/x86/pci/
+>  
+> +PCI DRIVER FOR IMX6
+> +M:	Richard Zhu <r65037@freescale.com>
+> +M:	Shawn Guo <shawn.guo@linaro.org>
+> +L:	linux-pci@vger.kernel.org
+> +L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+> +S:	Maintained
+> +F:	drivers/pci/host/*imx6*
+> +
+> +PCI DRIVER FOR MVEBU (Marvell Armada 370 and Armada XP SOC support)
+> +M:	Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+> +M:	Jason Cooper <jason@lakedaemon.net>
+> +L:	linux-pci@vger.kernel.org
+> +L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+> +S:	Maintained
+> +F:	drivers/pci/host/*mvebu*
 
-If Thomas is ok with it:
+Acked-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
-Double-Plus-Acked-by: Jason Cooper <jason@lakedaemon.net>
+Thanks for doing this!
 
-for the mvebu bits.
+Best regards,
 
-thx,
-
-Jason.
+Thomas
+-- 
+Thomas Petazzoni, CTO, Free Electrons
+Embedded Linux, Kernel and Android engineering
+http://free-electrons.com
