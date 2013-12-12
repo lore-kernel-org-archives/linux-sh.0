@@ -1,35 +1,33 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 29 Dec 2013 21:21:18 +0000
-Subject: Re: [GIT PULL 0/3] Second Round of Renesas ARM Based SoC DT Updates for v3.14
-Message-Id: <20131229212118.GC20958@quad.lixom.net>
+From: Geoff Levand <geoff@infradead.org>
+Date: Thu, 12 Dec 2013 00:18:56 +0000
+Subject: [PATCH 4/4] sh/kexec: Fix kexec build warning
+Message-Id: <594a3d26aac66e9668edc81d7bfb4e801575514f.1386807069.git.geoff@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387764079.git.horms+renesas@verge.net.au>
- <20131224034541.GA7267@verge.net.au>
-In-Reply-To: <20131224034541.GA7267@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 24, 2013 at 12:45:41PM +0900, Simon Horman wrote:
-> [ Corrected subject: s/3.13.3.14 ]
-> 
-> On Mon, Dec 23, 2013 at 11:08:12AM +0900, Simon Horman wrote:
-> > Hi Kevin, Hi Olof, Hi Arnd,
-> > 
-> > Please consider this second round of Renesas ARM Based SoC DT Updates for
-> > v3.13. It is based on the first round, tagged as renesas-dt-for-v3.14,
-> > which you have already pulled.
-> > 
-> > 
-> > The following changes since commit 1fd219561a4afc51b5f257692f3581546434db5b:
-> > 
-> >   ARM: shmobile: marzen: enable HSPI0 in DTS (2013-12-10 17:27:25 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.14
+Add a cast to a printk argument to suppress a type mismatch compiler warning.
 
-Pulled, thanks.
+Signed-off-by: Geoff Levand <geoff@infradead.org> for Huawei, Linaro
+---
+ arch/sh/kernel/machine_kexec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
--Olof
+diff --git a/arch/sh/kernel/machine_kexec.c b/arch/sh/kernel/machine_kexec.c
+index 9fea49f..b7e65a8 100644
+--- a/arch/sh/kernel/machine_kexec.c
++++ b/arch/sh/kernel/machine_kexec.c
+@@ -60,7 +60,7 @@ static void kexec_info(struct kimage *image)
+ 		       i,
+ 		       (unsigned int)image->segment[i].mem,
+ 		       (unsigned int)image->segment[i].mem +
+-				     image->segment[i].memsz,
++		       (unsigned int)image->segment[i].memsz,
+ 		       (unsigned int)image->segment[i].memsz);
+ 	}
+ 	printk("  start     : 0x%08x\n\n", (unsigned int)image->start);
+-- 
+1.8.1.2
+
