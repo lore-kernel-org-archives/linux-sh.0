@@ -1,93 +1,107 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 17 Dec 2013 22:16:31 +0000
-Subject: Re: [PATCH 3/5] arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-Message-Id: <1626395.klZkGtWWeG@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2561529.evHK9WVSGK"
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Thu, 12 Dec 2013 20:46:10 +0000
+Subject: [PATCH v2] MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
+Message-Id: <20131212204610.GK4699@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
- <1632121.4oJZuIln5n@avalon> <20131217221309.GD1196@katana>
-In-Reply-To: <20131217221309.GD1196@katana>
+References: <20131211183237.GI4699@google.com>
+In-Reply-To: <20131211183237.GI4699@google.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+[+cc Thomas]
 
---nextPart2561529.evHK9WVSGK
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+On Wed, Dec 11, 2013 at 11:32:37AM -0700, Bjorn Helgaas wrote:
+> If this looks reasonable, I'll merge it via the PCI tree for v3.13.
 
-Hi Wolfram,
+OK, here's another try.  I'm not actually trying to nominate anybody; I
+just tried to write down the list we came up with in an earlier discussion [1].
 
-On Tuesday 17 December 2013 23:13:09 Wolfram Sang wrote:
-> On Tue, Dec 17, 2013 at 10:55:31PM +0100, Laurent Pinchart wrote:
-> > On Tuesday 17 December 2013 22:44:36 Wolfram Sang wrote:
-> > > From: Wolfram Sang <wsa@sang-engineering.com>
-> > > 
-> > > I decided to put the pinmuxing into the dtsi file since there is only
-> > > one pinmux posiibility which one probably wants to have when using the
-> > > bus.
-> 
-> I tried to explain here why the pin-groups are in the dtsi.
-> 
-> > > +		riic0_pins: i2c0 {
-> > > +			renesas,groups = "riic0_scl_p1_0", "riic0_sda_p1_1";
-> > > +			renesas,function = "riic0";
-> > > +		};
-> > > +
-> > > +		riic1_pins: i2c1 {
-> > > +			renesas,groups = "riic1_scl_p1_2", "riic1_sda_p1_3";
-> > > +			renesas,function = "riic1";
-> > > +		};
-> > > +
-> > > +		riic2_pins: i2c2 {
-> > > +			renesas,groups = "riic2_scl_p1_4", "riic2_sda_p1_5";
-> > > +			renesas,function = "riic2";
-> > > +		};
-> > > +
-> > > +		riic3_pins: i2c3 {
-> > > +			renesas,groups = "riic3_scl_p1_6", "riic3_sda_p1_7";
-> > > +			renesas,function = "riic3";
-> > > +		};
-> > 
-> > The SoC allows other options for the I2C pin groups. Instead of declaring
-> > all possible groups here, I think we should thus only add the groups that
-> > are really used to the board .dts files.
-> 
-> Really? Couldn't find any. This is why I included it here: since it is
-> the only option, people probably want to use it when they activate the
-> bus.
+I'd like confirmation from the following people that they approve of being
+listed here:
 
-My bad, sorry, I've misread patch 1/5 and spoke too fast :-/ I thus makes 
-sense to add the groups here.
+  Richard Zhu (IMX6)
+  Thomas Petazzoni (MVEBU)
+  Magnus Damm (R-CAR)
 
-> > > +		clock-frequency = <100000>;
-> > 
-> > Isn't that a board-specific property ?
-> 
-> It is meant as a sane default. Can be overridden.
+I think everybody else listed has already said they approve.
 
-OK.
+[1] http://lkml.kernel.org/r/CAErSpo5tN=4nSv2u3SUBe_L4VsWn4P7TN+LtrC172Qj1vhtog@mail.gmail.com
 
--- 
-Regards,
 
-Laurent Pinchart
+MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
 
---nextPart2561529.evHK9WVSGK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+From: Bjorn Helgaas <bhelgaas@google.com>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Add entries for PCI host controller drivers in drivers/pci/host/.
 
-iQEcBAABAgAGBQJSsM1EAAoJEIkPb2GL7hl1nE4H/36Iv81tO/6ddmltjRmEkqb3
-RiUBYRbadv2UCuAmHHFo3zNTt3IgSy0sHGGluGXVL6gLCFN86JrKC9KGmoX12lBU
-dm8uX5r8kH4dmpXv9942/+qhM9BAYpc4COMaTENjJpt/MJ158iqv8LlDdPSi7Of3
-dGHm8HoOpffPehtOLJPgHYTyRBTfEjZwCsdN+B+kGZNOKdaUa+iNIvbjTkwIsnx4
-dXbLz4KCWO0gSSKiOMrAneRwLA0RuaTcDNiPD8WYEVa2ZeqJlEPHKIGbqqe/CKa6
-tf70ShJEBpwTU3hTd0LpXMHpodY+lFCWxJ3+c80JBGLZLsvDsYgY7yOqoJ0zxIw=
-=CrPs
------END PGP SIGNATURE-----
+Signed-off-by: Mohit Kumar <mohit.kumar@st.com>		(DesignWare)
+Signed-off-by: Pratyush Anand <pratyush.anand@st.com>	(DesignWare)
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>	(R-CAR)
+Acked-by: Jason Cooper <jason@lakedaemon.net>		(MVEBU)
+Acked-by: Jingoo Han <jg1.han@samsung.com>
+Acked-by: Thierry Reding <treding@nvidia.com>
+---
+ MAINTAINERS |   34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
---nextPart2561529.evHK9WVSGK--
-
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 8285ed4676b6..1c5dc36ec522 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -6449,19 +6449,53 @@ F:	drivers/pci/
+ F:	include/linux/pci*
+ F:	arch/x86/pci/
+ 
++PCI DRIVER FOR IMX6
++M:	Richard Zhu <r65037@freescale.com>
++M:	Shawn Guo <shawn.guo@linaro.org>
++L:	linux-pci@vger.kernel.org
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	drivers/pci/host/*imx6*
++
++PCI DRIVER FOR MVEBU (Marvell Armada 370 and Armada XP SOC support)
++M:	Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
++M:	Jason Cooper <jason@lakedaemon.net>
++L:	linux-pci@vger.kernel.org
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	drivers/pci/host/*mvebu*
++
+ PCI DRIVER FOR NVIDIA TEGRA
+ M:	Thierry Reding <thierry.reding@gmail.com>
+ L:	linux-tegra@vger.kernel.org
++L:	linux-pci@vger.kernel.org
+ S:	Supported
+ F:	Documentation/devicetree/bindings/pci/nvidia,tegra20-pcie.txt
+ F:	drivers/pci/host/pci-tegra.c
+ 
++PCI DRIVER FOR RENESAS R-CAR
++M:	Simon Horman <horms@verge.net.au>
++M:	Magnus Damm <magnus.damm@gmail.com>
++L:	linux-pci@vger.kernel.org
++L:	linux-sh@vger.kernel.org
++S:	Maintained
++F:	drivers/pci/host/*rcar*
++
+ PCI DRIVER FOR SAMSUNG EXYNOS
+ M:	Jingoo Han <jg1.han@samsung.com>
+ L:	linux-pci@vger.kernel.org
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++L:	linux-samsung-soc@vger.kernel.org (moderated for non-subscribers)
+ S:	Maintained
+ F:	drivers/pci/host/pci-exynos.c
+ 
++PCI DRIVER FOR SYNOPSIS DESIGNWARE
++M:	Mohit Kumar <mohit.kumar@st.com>
++M:	Jingoo Han <jg1.han@samsung.com>
++L:	linux-pci@vger.kernel.org
++S:	Maintained
++F:	drivers/pci/host/*designware*
++
+ PCMCIA SUBSYSTEM
+ P:	Linux PCMCIA Team
+ L:	linux-pcmcia@lists.infradead.org
