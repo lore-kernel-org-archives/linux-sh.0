@@ -1,69 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:49:53 +0000
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Thu, 12 Dec 2013 12:37:30 +0000
 Subject: Re: [PATCH 11/15] pwm: pwm-renesas-tpu: Enable driver compilation with COMPILE_TEST
-Message-Id: <2487119.M3l3CLesSz@avalon>
+Message-Id: <20131212123728.GJ11524@ulmo.nvidia.com>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1722428.a4LKQWphW0"
+Content-Type: multipart/mixed; boundary="QnBU6tTI9sljzm9u"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131129105353.GI22771@ulmo.nvidia.com> <7787436.L49ODt45in@avalon>
-In-Reply-To: <7787436.L49ODt45in@avalon>
+ <1385515117-23664-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-arm-kernel@lists.infradead.org
 
 
---nextPart1722428.a4LKQWphW0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+--QnBU6tTI9sljzm9u
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Hi Thierry,
+On Wed, Nov 27, 2013 at 02:18:33AM +0100, Laurent Pinchart wrote:
+> This helps increasing build testing coverage.
+>=20
+> Cc: Thierry Reding <thierry.reding@gmail.com>
+> Cc: linux-pwm@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
+m>
+> Acked-by: Simon Horman <horms@verge.net.au>
+> ---
+>  drivers/pwm/Kconfig | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 
-On Friday 29 November 2013 14:51:25 Laurent Pinchart wrote:
-> On Friday 29 November 2013 11:53:54 Thierry Reding wrote:
-> > On Wed, Nov 27, 2013 at 02:18:33AM +0100, Laurent Pinchart wrote:
-> > > This helps increasing build testing coverage.
-> > > 
-> > > Cc: Thierry Reding <thierry.reding@gmail.com>
-> > > Cc: linux-pwm@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > Acked-by: Simon Horman <horms@verge.net.au>
-> > > ---
-> > > 
-> > >  drivers/pwm/Kconfig | 2 +-
-> > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > I'm not sure if this has been answered in any of the various subthreads
-> > before. I've tried to read through them, but I may have missed some. It
-> > was mentioned that iowrite16() wasn't supported on all architectures;
-> > won't this possibly cause randconfig autobuilders to break?
-> 
-> That's possible (although it has been reported to me that the situation got
-> fixed on arch/cris in v3.12), but the only way to find out is to try it.
-> That would be a bug in the architecture, and it should then get fixed.
+Applied, thanks.
 
-Would you consider picking this patch up for v3.14 ?
+Thierry
 
--- 
-Regards,
-
-Laurent Pinchart
-
---nextPart1722428.a4LKQWphW0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+--QnBU6tTI9sljzm9u
+Content-Type: application/pgp-signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQEcBAABAgAGBQJSqF92AAoJEIkPb2GL7hl1UDoH/Ah3klx7HNe3xJLfsuK/GDry
-0F40ERbGf3b5NHX3csKvKzlsHTY0cVdMl4GDEKvEe5pfs4fFDOSaRCLI8Xh4Vg31
-JFsDkcMow7at/06jFhtKUI6KAqzCetAVQSpLWY/ubV0pEIZWvM/7IjCAMje0bhiw
-VBR/MHwVVMAxeizCpTzCAVWVRsCu4n+uavN6VwCCK8lx+avw5BJXxBQ6BUbz5XI9
-CEFvzL9eCJSH4qjb449vdCkDPQMjJ5bgTxWKFbOlPFxCGnpDvo8mUjP4u/bXoGjA
-2f3IJjauG8/95YjDJ64+QXv6dqNdFvuXv3YJFwb3JHykN7+R6ELqoePgf23j9Xs=
-=GMv8
+iQIcBAEBAgAGBQJSqa4IAAoJEN0jrNd/PrOh0qEP/jM/p14kYO0YYlOzTomJGkZ0
+wdXC2pvRg2VmKcyvrQh3g66HbcBhJt6FDqqoIt5Qwr33sQFWSrxm3lUewGT+mpMS
+1PuzJgsD1VGiIqsu39/tS78shNgJ7nozPp051jPdpLLnj24MAGWS8AYdEtB2UNcs
+lTwNe74CfNszPeQi4z0sNhP0mPYt8Z7Tm8hXeStQfjQNb8x1UVj7iI6dtib7equq
+DRt5WCTZ6l+PRx9eoho3tf6JWj/7GNPAHIYlpnaMRIXmTPtNGHADgRxnQNEQSxuN
+pdmv6/5GK8Xi17fgQrcf5kG6muCB+lBDd9zSv81UoCOlNOP8bW/sVl123UVi1dFY
+brQ4ahhkr6U6fSNpjpIqOnWG6SrRTYTr8c4m4+v2Xe6IxFTYlWjAsEEp+s0uacvt
++dgmKlO1zybnnfnWVEY9DDPFJ3XB9w9BOPOhNfffjzOzQt+KBMpY1nwxRWvAX8xY
+WV0W+mXfTUJAnFGh0BrE+qzvSz97igYCXB6m6MvoS7LUKEYqJoJQWSniLlzWIi65
+1t6/sOGk7Fgz+4panhnSIM7AasOMFlQU9ciWZm/+yNUfA6GAbUKZeBFDZxaCPAiQ
+NOmCj3AxEVEcsp8zZTBUd+qFuBuLgdHN7m1b+oWDIXdIh5cmrbul5Jbv6hKFyXJE
+CcSkKLKsds0xXRGZSSip
+=JZNx
 -----END PGP SIGNATURE-----
 
---nextPart1722428.a4LKQWphW0--
-
+--QnBU6tTI9sljzm9u--
