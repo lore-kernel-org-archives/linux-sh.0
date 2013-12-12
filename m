@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 12 Dec 2013 18:10:12 +0000
-Subject: Re: [PATCH] ARM: shmobile: Add select MIGHT_HAVE_PCI for PCI-AHB bridge code
-Message-Id: <52A9FC04.6000000@codethink.co.uk>
+Date: Thu, 12 Dec 2013 18:11:31 +0000
+Subject: [PATCH] ARM: shmobile: Add select MIGHT_HAVE_PCI for PCI-AHB bridge code
+Message-Id: <1386871891-23239-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1386870969-22241-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1386870969-22241-1-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,64 +10,68 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 12/12/13 19:04, Sergei Shtylyov wrote:
-> Hello.
->
-> On 12/12/2013 08:56 PM, Ben Dooks wrote:
->
->> The PCI sub-system is not enabled by default on ARM and on certain
->> Renesas devices the build does not select it. This means that there
->> are configurations that do not allow the AHB-PCI bridge used for the
->> USB sub-systems to be built.
->
->> For the R8A7790, R8A7791 and EMEV-2 select MIGHT_HAVE_PCI to allow the
->> PCI drivers to be built. Also select MIGHT_HAVE_PCI for the multi-config
->> where there may be many Reneasas devices selected.
->
->> Cc: Simon Horman <horms@verge.net.au>
->> Cc: Magnus Damm <magnus.damm@gmail.com>
->> CC: Linux SH List <linux-sh@vger.kernel.org>
->> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
->> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->> ---
->>   arch/arm/mach-shmobile/Kconfig | 4 ++++
->>   1 file changed, 4 insertions(+)
->
->> diff --git a/arch/arm/mach-shmobile/Kconfig
->> b/arch/arm/mach-shmobile/Kconfig
->> index 3e57d45..010d2a6 100644
->> --- a/arch/arm/mach-shmobile/Kconfig
->> +++ b/arch/arm/mach-shmobile/Kconfig
-> [...]
->> @@ -101,6 +102,7 @@ config ARCH_R8A7779
->>       select ARCH_WANT_OPTIONAL_GPIOLIB
->>       select ARM_GIC
->>       select CPU_V7
->> +    select MIGHT_HAVE_PCI
->>       select SH_CLK_CPG
->>       select USB_ARCH_HAS_EHCI
->>       select USB_ARCH_HAS_OHCI
->
->     Er, this is R8A7779 section. This SoC doesn't have PCI-AHB bridge.
->
->> @@ -111,6 +113,7 @@ config ARCH_R8A7790
->>       select ARCH_WANT_OPTIONAL_GPIOLIB
->>       select ARM_GIC
->>       select CPU_V7
->> +    select MIGHT_HAVE_PCI
->>       select SH_CLK_CPG
->>       select RENESAS_IRQC
->>
->
->     R8A7791 section is contrarywise missing. BTW, there's stray letter
-> 'c' before that section.
+The PCI sub-system is not enabled by default on ARM and on certain
+Renesas devices the build does not select it. This means that there
+are configurations that do not allow the AHB-PCI bridge used for the
+USB sub-systems to be built.
 
-Thanks. I've fixed the R8A7791. I cannot see the stray 'c'.
+For the R8A7790, R8A7791 and EMEV-2 select MIGHT_HAVE_PCI to allow the
+PCI drivers to be built. Also select MIGHT_HAVE_PCI for the multi-config
+where there may be many Reneasas devices selected.
 
-> WBR, Sergei
->
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+CC: Linux SH List <linux-sh@vger.kernel.org>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/mach-shmobile/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 3e57d45..4dcb216 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -12,6 +12,7 @@ config ARCH_SHMOBILE_MULTI
+ 	select HAVE_SMP
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_CACHE_L2X0
++	select MIGHT_HAVE_PCI
+ 	select NO_IOPORT
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
+@@ -101,6 +102,7 @@ config ARCH_R8A7779
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
++	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select USB_ARCH_HAS_EHCI
+ 	select USB_ARCH_HAS_OHCI
+@@ -111,6 +113,7 @@ config ARCH_R8A7790
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
++	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 
+@@ -119,6 +122,7 @@ config ARCH_R8A7791
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
++	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 
+@@ -127,6 +131,7 @@ config ARCH_EMEV2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
++	select MIGHT_HAVE_PCI
+ 	select USE_OF
+ 	select AUTO_ZRELADDR
+ 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.5.1
+
