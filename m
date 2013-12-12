@@ -1,37 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 04 Dec 2013 12:05:56 +0000
-Subject: [PATCH 02/02] irqchip: renesas-irqc: Enable mask on suspend
-Message-Id: <20131204120556.29642.27021.sendpatchset@w520>
+From: Geoff Levand <geoff@infradead.org>
+Date: Thu, 12 Dec 2013 19:51:29 +0000
+Subject: [PATCH v2 4/4] sh/kexec: Fix kexec build warning
+Message-Id: <1386877889.1002.6.camel@smoke>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131204120537.29642.942.sendpatchset@w520>
-In-Reply-To: <20131204120537.29642.942.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, rob.herring@calxeda.com, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Change the format specifiers in the kexec_info routine to match the data
+types.  Eliminates the need for type casts and fixes a type mismatch
+compiler warning.  Also replace indenting spaces with a tab character.
 
-Now when lazy interrupt disable has been enabled in the driver
-then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
-the core that only IRQs marked as wakeups need to stay enabled
-during Suspend-to-RAM.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geoff Levand <geoff@infradead.org> for Huawei, Linaro
 ---
 
- drivers/irqchip/irq-renesas-irqc.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+V2:
+  Change from type cast fix to format specifier fix.
+  
+ arch/sh/kernel/machine_kexec.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
---- 0002/drivers/irqchip/irq-renesas-irqc.c
-+++ work/drivers/irqchip/irq-renesas-irqc.c	2013-12-04 18:15:48.000000000 +0900
-@@ -213,7 +213,7 @@ static int irqc_probe(struct platform_de
- 	irq_chip->irq_mask = irqc_irq_disable;
- 	irq_chip->irq_unmask = irqc_irq_enable;
- 	irq_chip->irq_set_type = irqc_irq_set_type;
--	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
-+	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
+diff --git a/arch/sh/kernel/machine_kexec.c b/arch/sh/kernel/machine_kexec.c
+index 9fea49f..8195c35 100644
+--- a/arch/sh/kernel/machine_kexec.c
++++ b/arch/sh/kernel/machine_kexec.c
+@@ -53,17 +53,17 @@ void machine_kexec_cleanup(struct kimage *image)
  
- 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
- 					      p->number_of_irqs,
+ static void kexec_info(struct kimage *image)
+ {
+-        int i;
++	int i;
+ 	printk("kexec information\n");
+ 	for (i = 0; i < image->nr_segments; i++) {
+-	        printk("  segment[%d]: 0x%08x - 0x%08x (0x%08x)\n",
++	        printk("  segment[%d]: 0x%08lx - 0x%08lx (0x%08zx)\n",
+ 		       i,
+-		       (unsigned int)image->segment[i].mem,
+-		       (unsigned int)image->segment[i].mem +
+-				     image->segment[i].memsz,
+-		       (unsigned int)image->segment[i].memsz);
++		       image->segment[i].mem,
++		       image->segment[i].mem +
++		       image->segment[i].memsz,
++		       image->segment[i].memsz);
+ 	}
+-	printk("  start     : 0x%08x\n\n", (unsigned int)image->start);
++	printk("  start     : 0x%08lx\n\n", image->start);
+ }
+ 
+ /*
+-- 
+1.8.1.2
+
+
+
