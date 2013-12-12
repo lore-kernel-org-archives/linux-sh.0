@@ -1,42 +1,41 @@
 From: Jingoo Han <jg1.han@samsung.com>
-Date: Thu, 12 Dec 2013 09:12:18 +0000
+Date: Thu, 12 Dec 2013 10:47:02 +0000
 Subject: Re: [PATCH] MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
-Message-Id: <001901cef71a$41f3a520$c5daef60$%han@samsung.com>
+Message-Id: <000001cef727$7da93730$78fba590$%han@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131211183237.GI4699@google.com>
- <52A96877.90902@free-electrons.com>
-In-Reply-To: <52A96877.90902@free-electrons.com>
+ <20131212070045.GO18380@S2101-09.ap.freescale.net>
+In-Reply-To: <20131212070045.GO18380@S2101-09.ap.freescale.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday, December 12, 2013 4:41 PM, Gregory CLEMENT wrote:
-> On 11/12/2013 19:32, Bjorn Helgaas wrote:
-> > If this looks reasonable, I'll merge it via the PCI tree for v3.13.
-> >
-> > Bjorn
-
-[.....]
-
-> > +PCI DRIVER FOR MVEBU (Marvell Armada 370 and Armada XP SOC support)
-> > +M:	Jason Cooper <jason@lakedaemon.net>
-> > +L:	linux-pci@vger.kernel.org
-> > +L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
-> > +S:	Maintained
-> > +F:	drivers/pci/host/*mvebu*
+On Thursday, December 12, 2013 4:01 PM, Shawn Guo wrote:
+> On Wed, Dec 11, 2013 at 11:32:37AM -0700, Bjorn Helgaas wrote:
+> > +PCI DRIVER FOR IMX6
+> > +M:	Shawn Guo <shawn.guo@linaro.org>
 > 
-> I think that Thomas Petazzoni would be more appropriate, he worked
-> on the mvebu PCIe since 6 moths and now know very well the
-> subject. Until now all the mvebu PCIe related questions were
-> managed by Thomas.
+> Thanks for the nomination.  But I think a better person for this
+> position would be Richard Zhu <r65037@freescale.com> (copied).  He knows
+> the driver and controller much better than myself, and most importantly
+> he is the driver owner for Freescale kernel and he has the contact to
+> Freescale PCIe hardware people.
 
-I think so, too. :-)
+I agree with Shawn Guo's opinion. :-)
 
-Thomas Petazzoni is the author of the  mvebu PCIe. Also, he did
-The basic foundation of PCIe Host with Thierry Reding.  I think
-That he is the best person for the Maintainer of the mvebu PCIe.
+Richard Zhu has been maintaining i.MX6 PCIe driver. Also he can contact
+Freescale PCIe hardware engineers. Thus, he is the appropriate person
+for the Maintainer of i.MX PCIe.
 
 Best regards,
 Jingoo Han
+
+> 
+> Shawn
+> 
+> > +L:	linux-pci@vger.kernel.org
+> > +L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+> > +S:	Maintained
+> > +F:	drivers/pci/host/*imx6*
 
