@@ -1,42 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:15 +0000
-Subject: [PATCH 08/47] serial: sh-sci: Don't check IRQ in verify port operation
-Message-Id: <1386323994-12850-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:50 +0000
+Subject: [PATCH 09/33] ARM: shmobile: r8a7778: add MMCIF clock support for DT
+Message-Id: <ecf2b14fb93ca305ca54f89cfedba91e5aa3ff85.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The IRQ number can't be modified by the user as the port is fixed.
-There's no need to check the new IRQ number as it will be ignored by the
-core.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 4 ----
- 1 file changed, 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b5dd0ad..40ced29 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2117,10 +2117,6 @@ static void sci_config_port(struct uart_port *port, int flags)
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index a77089f..e043715 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -173,6 +173,7 @@ static struct clk_lookup lookups[] = {
  
- static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
- {
--	struct sci_port *s = to_sci_port(port);
--
--	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
--		return -EINVAL;
- 	if (ser->baud_base < 2400)
- 		/* No paper tape reader for Mitch.. */
- 		return -EINVAL;
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_mmcif", &mstp_clks[MSTP331]), /* MMC */
++	CLKDEV_DEV_ID("ffe4e000.mmcif", &mstp_clks[MSTP331]), /* MMC */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
 -- 
-1.8.3.2
+1.8.4
 
