@@ -1,78 +1,109 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 26 Dec 2013 15:37:58 +0000
-Subject: [PATCH 2/3] arm: shmobile: r8a7791: Add VIN clocks
-Message-Id: <1388072279-12508-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:37 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7790: Fix GPIO resources in DTS
+Message-Id: <23de2278ebc3a2f971ce45ca5e5e35c9d5a74040.1386899269.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
+References: <cover.1386899269.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386899269.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds VIN[0-2] clock support to R8A7791 SoC.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+The r8a7790 GPIO resources are currently incorrect. Fix that
+by making them match the English r8a7790 v0.6 data sheet.
+
+Tested with GPIO LED using Lager DT reference.
+
+This problem has been present since GPIOs were added to the r8a7790 SoC by
+f98e10c88aa95bf7 ("ARM: shmobile: r8a7790: Add GPIO controller devices to
+device tree") in v3.12-rc1.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index fe4a774..191ad60 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
- SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
- SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
-+SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
- SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ee845fa..46e1d7e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -87,9 +87,9 @@
+ 		interrupts = <1 9 0xf04>;
+ 	};
  
- static struct clk *main_clks[] = {
-@@ -117,6 +118,7 @@ static struct clk *main_clks[] = {
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-+	&zg_clk,
- 	&zx_clk,
- };
+-	gpio0: gpio@ffc40000 {
++	gpio0: gpio@e6050000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc40000 0 0x2c>;
++		reg = <0 0xe6050000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 4 0x4>;
+ 		#gpio-cells = <2>;
+@@ -99,9 +99,9 @@
+ 		interrupt-controller;
+ 	};
  
-@@ -124,6 +126,7 @@ static struct clk *main_clks[] = {
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
- 	MSTP813,
-+	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
- 	MSTP522,
-@@ -141,6 +144,9 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP927] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 27, 0), /* I2C4 */
- 	[MSTP925] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 25, 0), /* I2C5 */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
-+	[MSTP811] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 11, 0), /* VIN0 */
-+	[MSTP810] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 10, 0), /* VIN1 */
-+	[MSTP809] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  9, 0), /* VIN2 */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
- 	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
-@@ -172,6 +178,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pll1",		&pll1_clk),
- 	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
- 	CLKDEV_CON_ID("pll3",		&pll3_clk),
-+	CLKDEV_CON_ID("zg",		&zg_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
-@@ -208,6 +215,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.4", &mstp_clks[MSTP927]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.5", &mstp_clks[MSTP925]),
- 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
-+	CLKDEV_DEV_ID("r8a7791-vin.0", &mstp_clks[MSTP811]),
-+	CLKDEV_DEV_ID("r8a7791-vin.1", &mstp_clks[MSTP810]),
-+	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
- };
+-	gpio1: gpio@ffc41000 {
++	gpio1: gpio@e6051000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc41000 0 0x2c>;
++		reg = <0 0xe6051000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 5 0x4>;
+ 		#gpio-cells = <2>;
+@@ -111,9 +111,9 @@
+ 		interrupt-controller;
+ 	};
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-	gpio2: gpio@ffc42000 {
++	gpio2: gpio@e6052000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc42000 0 0x2c>;
++		reg = <0 0xe6052000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 6 0x4>;
+ 		#gpio-cells = <2>;
+@@ -123,9 +123,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio3: gpio@ffc43000 {
++	gpio3: gpio@e6053000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc43000 0 0x2c>;
++		reg = <0 0xe6053000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 7 0x4>;
+ 		#gpio-cells = <2>;
+@@ -135,9 +135,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio4: gpio@ffc44000 {
++	gpio4: gpio@e6054000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc44000 0 0x2c>;
++		reg = <0 0xe6054000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 8 0x4>;
+ 		#gpio-cells = <2>;
+@@ -147,9 +147,9 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	gpio5: gpio@ffc45000 {
++	gpio5: gpio@e6055000 {
+ 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
+-		reg = <0 0xffc45000 0 0x2c>;
++		reg = <0 0xe6055000 0 0x50>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 9 0x4>;
+ 		#gpio-cells = <2>;
 -- 
-1.8.3.1
+1.8.4
 
