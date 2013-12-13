@@ -1,167 +1,171 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 03:53:35 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: emev2: Use interrupt macros in DT files
-Message-Id: <20131205035332.GA22167@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:50 +0000
+Subject: [PATCH 17/33] ARM: shmobile: Remove legacy KZM9D board code
+Message-Id: <786deb29e7b7c356342f9f3566a6eafae2ce0c81.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 28, 2013 at 05:37:50PM +0100, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/emev2-kzm9d.dts |  3 ++-
->  arch/arm/boot/dts/emev2.dtsi      | 30 ++++++++++++++++++------------
->  2 files changed, 20 insertions(+), 13 deletions(-)
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I will queue this up.
+Remove the C and platform device version of KZM9D.
 
-> 
-> diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-> index baaa66c..50ccd15 100644
-> --- a/arch/arm/boot/dts/emev2-kzm9d.dts
-> +++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-> @@ -12,6 +12,7 @@
->  #include "emev2.dtsi"
->  #include <dt-bindings/gpio/gpio.h>
->  #include <dt-bindings/input/input.h>
-> +#include <dt-bindings/interrupt-controller/irq.h>
->  
->  / {
->  	model = "EMEV2 KZM9D Board";
-> @@ -49,7 +50,7 @@
->  		reg = <0x20000000 0x10000>;
->  		phy-mode = "mii";
->  		interrupt-parent = <&gpio0>;
-> -		interrupts = <1 1>;	/* active high */
-> +		interrupts = <1 IRQ_TYPE_EDGE_RISING>;
->  		reg-io-width = <4>;
->  		smsc,irq-active-high;
->  		smsc,irq-push-pull;
-> diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-> index 256c2f8..8467e4c 100644
-> --- a/arch/arm/boot/dts/emev2.dtsi
-> +++ b/arch/arm/boot/dts/emev2.dtsi
-> @@ -9,6 +9,7 @@
->   */
->  
->  #include "skeleton.dtsi"
-> +#include <dt-bindings/interrupt-controller/irq.h>
->  
->  / {
->  	compatible = "renesas,emev2";
-> @@ -48,8 +49,8 @@
->  
->  	pmu {
->  		compatible = "arm,cortex-a9-pmu";
-> -		interrupts = <0 120 4>,
-> -			     <0 121 4>;
-> +		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 121 IRQ_TYPE_LEVEL_HIGH>;
->  	};
->  
->  	smu@e0110000 {
-> @@ -129,7 +130,7 @@
->  	sti@e0180000 {
->  		compatible = "renesas,em-sti";
->  		reg = <0xe0180000 0x54>;
-> -		interrupts = <0 125 0>;
-> +		interrupts = <0 125 IRQ_TYPE_NONE>;
->  		clocks = <&sti_sclk>;
->  		clock-names = "sclk";
->  	};
-> @@ -137,7 +138,7 @@
->  	uart@e1020000 {
->  		compatible = "renesas,em-uart";
->  		reg = <0xe1020000 0x38>;
-> -		interrupts = <0 8 0>;
-> +		interrupts = <0 8 IRQ_TYPE_NONE>;
->  		clocks = <&usia_u0_sclk>;
->  		clock-names = "sclk";
->  	};
-> @@ -145,7 +146,7 @@
->  	uart@e1030000 {
->  		compatible = "renesas,em-uart";
->  		reg = <0xe1030000 0x38>;
-> -		interrupts = <0 9 0>;
-> +		interrupts = <0 9 IRQ_TYPE_NONE>;
->  		clocks = <&usib_u1_sclk>;
->  		clock-names = "sclk";
->  	};
-> @@ -153,7 +154,7 @@
->  	uart@e1040000 {
->  		compatible = "renesas,em-uart";
->  		reg = <0xe1040000 0x38>;
-> -		interrupts = <0 10 0>;
-> +		interrupts = <0 10 IRQ_TYPE_NONE>;
->  		clocks = <&usib_u2_sclk>;
->  		clock-names = "sclk";
->  	};
-> @@ -161,7 +162,7 @@
->  	uart@e1050000 {
->  		compatible = "renesas,em-uart";
->  		reg = <0xe1050000 0x38>;
-> -		interrupts = <0 11 0>;
-> +		interrupts = <0 11 IRQ_TYPE_NONE>;
->  		clocks = <&usib_u3_sclk>;
->  		clock-names = "sclk";
->  	};
-> @@ -169,7 +170,8 @@
->  	gpio0: gpio@e0050000 {
->  		compatible = "renesas,em-gio";
->  		reg = <0xe0050000 0x2c>, <0xe0050040 0x20>;
-> -		interrupts = <0 67 0>, <0 68 0>;
-> +		interrupts = <0 67 IRQ_TYPE_NONE>,
-> +			     <0 68 IRQ_TYPE_NONE>;
->  		gpio-controller;
->  		#gpio-cells = <2>;
->  		ngpios = <32>;
-> @@ -179,7 +181,8 @@
->  	gpio1: gpio@e0050080 {
->  		compatible = "renesas,em-gio";
->  		reg = <0xe0050080 0x2c>, <0xe00500c0 0x20>;
-> -		interrupts = <0 69 0>, <0 70 0>;
-> +		interrupts = <0 69 IRQ_TYPE_NONE>,
-> +			     <0 70 IRQ_TYPE_NONE>;
->  		gpio-controller;
->  		#gpio-cells = <2>;
->  		ngpios = <32>;
-> @@ -189,7 +192,8 @@
->  	gpio2: gpio@e0050100 {
->  		compatible = "renesas,em-gio";
->  		reg = <0xe0050100 0x2c>, <0xe0050140 0x20>;
-> -		interrupts = <0 71 0>, <0 72 0>;
-> +		interrupts = <0 71 IRQ_TYPE_NONE>,
-> +			     <0 72 IRQ_TYPE_NONE>;
->  		gpio-controller;
->  		#gpio-cells = <2>;
->  		ngpios = <32>;
-> @@ -199,7 +203,8 @@
->  	gpio3: gpio@e0050180 {
->  		compatible = "renesas,em-gio";
->  		reg = <0xe0050180 0x2c>, <0xe00501c0 0x20>;
-> -		interrupts = <0 73 0>, <0 74 0>;
-> +		interrupts = <0 73 IRQ_TYPE_NONE>,
-> +			     <0 74 IRQ_TYPE_NONE>;
->  		gpio-controller;
->  		#gpio-cells = <2>;
->  		ngpios = <32>;
-> @@ -209,7 +214,8 @@
->  	gpio4: gpio@e0050200 {
->  		compatible = "renesas,em-gio";
->  		reg = <0xe0050200 0x2c>, <0xe0050240 0x20>;
-> -		interrupts = <0 75 0>, <0 76 0>;
-> +		interrupts = <0 75 IRQ_TYPE_NONE>,
-> +			     <0 76 IRQ_TYPE_NONE>;
->  		gpio-controller;
->  		#gpio-cells = <2>;
->  		ngpios = <31>;
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+The DT version of KZM9D board support can now instead
+directly be used with SoC specific code in setup-emev2.c.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig       |  6 ---
+ arch/arm/mach-shmobile/Makefile      |  1 -
+ arch/arm/mach-shmobile/Makefile.boot |  1 -
+ arch/arm/mach-shmobile/board-kzm9d.c | 92 ------------------------------------
+ 4 files changed, 100 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-kzm9d.c
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index c604ef1..564e0ad 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -234,12 +234,6 @@ config MACH_KOELSCH
+ 	depends on ARCH_R8A7791
+ 	select USE_OF
+ 
+-config MACH_KZM9D
+-	bool "KZM9D board"
+-	depends on ARCH_EMEV2
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select USE_OF
+-
+ config MACH_KZM9G
+ 	bool "KZM-A9-GT board"
+ 	depends on ARCH_SH73A0
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 51db2bc..c7e8774 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
+-obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+ endif
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 391d72a..4f30e3d 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -8,7 +8,6 @@ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+ loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+-loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
+deleted file mode 100644
+index 30c2cc6..0000000
+--- a/arch/arm/mach-shmobile/board-kzm9d.c
++++ /dev/null
+@@ -1,92 +0,0 @@
+-/*
+- * kzm9d board support
+- *
+- * Copyright (C) 2012  Renesas Solutions Corp.
+- * Copyright (C) 2012  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/interrupt.h>
+-#include <linux/platform_device.h>
+-#include <linux/regulator/fixed.h>
+-#include <linux/regulator/machine.h>
+-#include <linux/smsc911x.h>
+-#include <mach/common.h>
+-#include <mach/emev2.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-
+-/* Dummy supplies, where voltage doesn't matter */
+-static struct regulator_consumer_supply dummy_supplies[] = {
+-	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+-	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+-};
+-
+-/* Ether */
+-static struct resource smsc911x_resources[] = {
+-	[0] = {
+-		.start	= 0x20000000,
+-		.end	= 0x2000ffff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= EMEV2_GPIO_IRQ(1),
+-		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
+-	},
+-};
+-
+-static struct smsc911x_platform_config smsc911x_platdata = {
+-	.flags		= SMSC911X_USE_32BIT,
+-	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+-	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
+-};
+-
+-static struct platform_device smsc91x_device = {
+-	.name	= "smsc911x",
+-	.id	= -1,
+-	.dev	= {
+-		  .platform_data = &smsc911x_platdata,
+-		},
+-	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+-	.resource	= smsc911x_resources,
+-};
+-
+-static struct platform_device *kzm9d_devices[] __initdata = {
+-	&smsc91x_device,
+-};
+-
+-void __init kzm9d_add_standard_devices(void)
+-{
+-	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+-
+-	emev2_add_standard_devices();
+-
+-	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
+-}
+-
+-static const char *kzm9d_boards_compat_dt[] __initdata = {
+-	"renesas,kzm9d",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(KZM9D_DT, "kzm9d")
+-	.smp		= smp_ops(emev2_smp_ops),
+-	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
+-	.init_machine	= kzm9d_add_standard_devices,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= kzm9d_boards_compat_dt,
+-MACHINE_END
+-- 
+1.8.4
+
