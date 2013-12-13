@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:46 +0000
-Subject: [PATCH 12/69] ARM: shmobile: bockw: add MMCIF support on DTS
-Message-Id: <14cdd83a6df84849c369b201ce248e0213d735e0.1386901186.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:45 +0000
+Subject: [PATCH 11/69] ARM: shmobile: r8a7778: add MMCIF support on DTSI
+Message-Id: <f7b901757918a99a52ef3ff281401ee1118fa7f6.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1386901186.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
@@ -15,35 +15,26 @@ From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ arch/arm/boot/dts/r8a7778.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 3c1d1f0..c6b834f 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -50,6 +50,21 @@
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index a582211..0ff38e6 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -156,4 +156,12 @@
+ 		interrupts = <0 77 0x4>;
+ 		status = "disabled";
  	};
 +
-+	mmc_pins: mmc {
-+		renesas,groups = "mmc_data8", "mmc_ctrl";
-+		renesas,function = "mmc";
++	mmcif: mmcif@ffe4e000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0xffe4e000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 61 4>;
++		status = "disabled";
 +	};
-+};
-+
-+&mmcif {
-+	pinctrl-0 = <&mmc_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	broken-cd;
-+	status = "okay";
  };
- 
- &irqpin {
 -- 
 1.8.4
 
