@@ -1,7 +1,7 @@
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Thu, 12 Dec 2013 22:11:03 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 13 Dec 2013 05:13:50 +0000
 Subject: Re: [PATCH v2] MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
-Message-Id: <20131212231103.3ceeb3bb@skate>
+Message-Id: <CANqRtoQEPghgEERMtzXFoUQhskbC9eNevZ1C7kO5ajoTwDua3w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131211183237.GI4699@google.com>
  <20131212204610.GK4699@google.com>
@@ -11,78 +11,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Dear Bjorn Helgaas,
-
-On Thu, 12 Dec 2013 13:46:10 -0700, Bjorn Helgaas wrote:
+On Fri, Dec 13, 2013 at 5:46 AM, Bjorn Helgaas <bhelgaas@google.com> wrote:
 > [+cc Thomas]
-> 
+>
 > On Wed, Dec 11, 2013 at 11:32:37AM -0700, Bjorn Helgaas wrote:
-> > If this looks reasonable, I'll merge it via the PCI tree for v3.13.
-> 
+>> If this looks reasonable, I'll merge it via the PCI tree for v3.13.
+>
 > OK, here's another try.  I'm not actually trying to nominate anybody; I
 > just tried to write down the list we came up with in an earlier discussion [1].
-> 
+>
 > I'd like confirmation from the following people that they approve of being
 > listed here:
-> 
+>
 >   Richard Zhu (IMX6)
 >   Thomas Petazzoni (MVEBU)
 >   Magnus Damm (R-CAR)
-> 
-> I think everybody else listed has already said they approve.
-> 
-> [1] http://lkml.kernel.org/r/CAErSpo5tN=4nSv2u3SUBe_L4VsWn4P7TN+LtrC172Qj1vhtog@mail.gmail.com
-> 
-> 
-> MAINTAINERS: Add DesignWare, i.MX6, Armada, R-Car PCI host maintainers
-> 
-> From: Bjorn Helgaas <bhelgaas@google.com>
-> 
-> Add entries for PCI host controller drivers in drivers/pci/host/.
-> 
-> Signed-off-by: Mohit Kumar <mohit.kumar@st.com>		(DesignWare)
-> Signed-off-by: Pratyush Anand <pratyush.anand@st.com>	(DesignWare)
-> Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>	(R-CAR)
-> Acked-by: Jason Cooper <jason@lakedaemon.net>		(MVEBU)
-> Acked-by: Jingoo Han <jg1.han@samsung.com>
-> Acked-by: Thierry Reding <treding@nvidia.com>
-> ---
->  MAINTAINERS |   34 ++++++++++++++++++++++++++++++++++
->  1 file changed, 34 insertions(+)
-> 
-> diff --git a/MAINTAINERS b/MAINTAINERS
-> index 8285ed4676b6..1c5dc36ec522 100644
-> --- a/MAINTAINERS
-> +++ b/MAINTAINERS
-> @@ -6449,19 +6449,53 @@ F:	drivers/pci/
->  F:	include/linux/pci*
->  F:	arch/x86/pci/
->  
-> +PCI DRIVER FOR IMX6
-> +M:	Richard Zhu <r65037@freescale.com>
-> +M:	Shawn Guo <shawn.guo@linaro.org>
-> +L:	linux-pci@vger.kernel.org
-> +L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
-> +S:	Maintained
-> +F:	drivers/pci/host/*imx6*
-> +
-> +PCI DRIVER FOR MVEBU (Marvell Armada 370 and Armada XP SOC support)
-> +M:	Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-> +M:	Jason Cooper <jason@lakedaemon.net>
-> +L:	linux-pci@vger.kernel.org
-> +L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
-> +S:	Maintained
-> +F:	drivers/pci/host/*mvebu*
 
-Acked-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Hi Bjorn,
 
-Thanks for doing this!
+Thanks for making this list. I actually have had very little to do
+with this particular driver, so I prefer to be omitted since Simon
+Horman already is listed and I trust his judgement.
 
-Best regards,
+Cheers,
 
-Thomas
--- 
-Thomas Petazzoni, CTO, Free Electrons
-Embedded Linux, Kernel and Android engineering
-http://free-electrons.com
+/ magnus
