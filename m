@@ -1,54 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:09 +0000
-Subject: [PATCH 02/47] serial: sh-sci: Convert to clk_prepare/unprepare
-Message-Id: <1386323994-12850-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:47 +0000
+Subject: [PATCH 13/69] ARM: shmobile: bockw: fixup MMC pin conflict on DTS
+Message-Id: <9ebe54baf8a166384201b4a78c649106047ebc75.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
-clk_disable_unprepare() to get ready for the migration to the common
-clock framework.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e3384a2..07a5da4 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -421,9 +421,9 @@ static void sci_port_enable(struct sci_port *sci_port)
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index c6b834f..4d997f8 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -51,10 +51,6 @@
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
  
- 	pm_runtime_get_sync(sci_port->port.dev);
+-	mmc_pins: mmc {
+-		renesas,groups = "mmc_data8", "mmc_ctrl";
+-		renesas,function = "mmc";
+-	};
+ };
  
--	clk_enable(sci_port->iclk);
-+	clk_prepare_enable(sci_port->iclk);
- 	sci_port->port.uartclk = clk_get_rate(sci_port->iclk);
--	clk_enable(sci_port->fclk);
-+	clk_prepare_enable(sci_port->fclk);
- }
- 
- static void sci_port_disable(struct sci_port *sci_port)
-@@ -439,8 +439,8 @@ static void sci_port_disable(struct sci_port *sci_port)
- 	del_timer_sync(&sci_port->break_timer);
- 	sci_port->break_flag = 0;
- 
--	clk_disable(sci_port->fclk);
--	clk_disable(sci_port->iclk);
-+	clk_disable_unprepare(sci_port->fclk);
-+	clk_disable_unprepare(sci_port->iclk);
- 
- 	pm_runtime_put_sync(sci_port->port.dev);
- }
+ &mmcif {
+@@ -79,4 +75,9 @@
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+ 		renesas,function = "scif0";
+ 	};
++
++	mmc_pins: mmc {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
+ };
 -- 
-1.8.3.2
+1.8.4
 
