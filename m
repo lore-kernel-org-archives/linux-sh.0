@@ -1,35 +1,127 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:41 +0000
-Subject: [PATCH v5 17/17] ARM: shmobile: r8a7791: Remove legacy clock aliases for DT devices
-Message-Id: <1387034741-3852-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:03 +0000
+Subject: [PATCH 30/33] ARM: shmobile: r8a7778: add HPBIFx DMAEngine support
+Message-Id: <b42831843e66688a18a65f0d24e79473b76905db.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that the r8a7791 DT platforms use the common clock framework,
-there's no need to manually create clock aliases for devices
-instantiated through DT, as those devices will reference their clocks
-directly in the device tree. Remove those aliases.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/include/mach/r8a7778.h | 18 ++++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 51 +++++++++++++++++++++++++++
+ 2 files changed, 69 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index f546126..ac2bc05 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -192,7 +192,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
--	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index 441886c..b497f93 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -27,6 +27,24 @@ enum {
+ 	HPBDMA_SLAVE_DUMMY,
+ 	HPBDMA_SLAVE_SDHI0_TX,
+ 	HPBDMA_SLAVE_SDHI0_RX,
++	HPBDMA_SLAVE_HPBIF0_TX,
++	HPBDMA_SLAVE_HPBIF0_RX,
++	HPBDMA_SLAVE_HPBIF1_TX,
++	HPBDMA_SLAVE_HPBIF1_RX,
++	HPBDMA_SLAVE_HPBIF2_TX,
++	HPBDMA_SLAVE_HPBIF2_RX,
++	HPBDMA_SLAVE_HPBIF3_TX,
++	HPBDMA_SLAVE_HPBIF3_RX,
++	HPBDMA_SLAVE_HPBIF4_TX,
++	HPBDMA_SLAVE_HPBIF4_RX,
++	HPBDMA_SLAVE_HPBIF5_TX,
++	HPBDMA_SLAVE_HPBIF5_RX,
++	HPBDMA_SLAVE_HPBIF6_TX,
++	HPBDMA_SLAVE_HPBIF6_RX,
++	HPBDMA_SLAVE_HPBIF7_TX,
++	HPBDMA_SLAVE_HPBIF7_RX,
++	HPBDMA_SLAVE_HPBIF8_TX,
++	HPBDMA_SLAVE_HPBIF8_RX,
  };
+ 
+ extern void r8a7778_add_standard_devices(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 03fcc59..81701cf 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -319,6 +319,29 @@ void __init r8a7778_add_dt_devices(void)
+ #define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
+ #define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
+ 
++#define HPBDMA_HPBIF(_id)				\
++{							\
++	.id	= HPBDMA_SLAVE_HPBIF## _id ##_TX,	\
++	.addr	= 0xffda0000 + (_id * 0x1000),		\
++	.dcr	= HPB_DMAE_DCR_CT |			\
++		  HPB_DMAE_DCR_DIP |			\
++		  HPB_DMAE_DCR_SPDS_32BIT |		\
++		  HPB_DMAE_DCR_DMDL |			\
++		  HPB_DMAE_DCR_DPDS_32BIT,		\
++	.port   = 0x1111,				\
++	.dma_ch = (28 + _id),				\
++}, {							\
++	.id	= HPBDMA_SLAVE_HPBIF## _id ##_RX,	\
++	.addr	= 0xffda0000 + (_id * 0x1000),		\
++	.dcr	= HPB_DMAE_DCR_CT |			\
++		  HPB_DMAE_DCR_DIP |			\
++		  HPB_DMAE_DCR_SMDL |			\
++		  HPB_DMAE_DCR_SPDS_32BIT |		\
++		  HPB_DMAE_DCR_DPDS_32BIT,		\
++	.port   = 0x1111,				\
++	.dma_ch = (28 + _id),				\
++}
++
+ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 	{
+ 		.id	= HPBDMA_SLAVE_SDHI0_TX,
+@@ -349,11 +372,39 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 		.flags	= HPB_DMAE_SET_ASYNC_RESET | HPB_DMAE_SET_ASYNC_MODE,
+ 		.dma_ch	= 22,
+ 	},
++
++	HPBDMA_HPBIF(0),
++	HPBDMA_HPBIF(1),
++	HPBDMA_HPBIF(2),
++	HPBDMA_HPBIF(3),
++	HPBDMA_HPBIF(4),
++	HPBDMA_HPBIF(5),
++	HPBDMA_HPBIF(6),
++	HPBDMA_HPBIF(7),
++	HPBDMA_HPBIF(8),
+ };
+ 
+ static const struct hpb_dmae_channel hpb_dmae_channels[] = {
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_TX), /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_RX), /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_TX), /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_RX), /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_TX), /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_RX), /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_TX), /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_RX), /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_TX), /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_RX), /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_TX), /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_RX), /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_TX), /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_RX), /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_TX), /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_RX), /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_TX), /* ch. 36 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_RX), /* ch. 36 */
+ };
+ 
+ static struct hpb_dmae_pdata dma_platform_data __initdata = {
 -- 
-1.8.3.2
+1.8.4
 
