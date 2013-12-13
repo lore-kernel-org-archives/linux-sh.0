@@ -1,62 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:59 +0000
-Subject: [PATCH 19/29] ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as resources
-Message-Id: <d95a95a85bb2ebb628f2d1667e7e45ad8fdf0297.1387888861.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:14 +0000
+Subject: [PATCH 40/69] ARM: shmobile: marzen: remove SDHI0 WP pin setting from DTS
+Message-Id: <72e7db878b8469261d01a3dfcece8ab99ffc9cb6.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+WP pin is not implemented on Marzen
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 3fe0d7d..f15b537 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -87,11 +87,14 @@ void __init r8a7791_pinmux_init(void)
- #define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
--	.mapbase	= baseaddr,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
- 	.scbrr_algo_id	= algo,						\
- 	.scscr		= SCSCR_RE | SCSCR_TE,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),				\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq),						\
- }
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 13fa8be..918085c 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -94,8 +94,7 @@
+ 	};
  
- #define R8A7791_SCIF(index, baseaddr, irq)				\
-@@ -120,9 +123,11 @@ R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
- R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
- 
- #define r8a7791_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- static const struct sh_timer_config cmt00_platform_data __initconst = {
- 	.name = "CMT00",
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
+-				 "sdhi0_wp";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ };
 -- 
 1.8.4
 
