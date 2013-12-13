@@ -1,32 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 15 Dec 2013 08:23:58 +0000
-Subject: [PATCH RFC 0/2] pinctl: sh-pfc: r7s72100: Ethernet support
-Message-Id: <1387095840-15008-1-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:38 +0000
+Subject: [PATCH 64/69] ARM: shmobile: Use sh73a0 suffix for INTC compat string
+Message-Id: <8bb44445b08d1068a0ca5f72159d8e373f810155.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Magnus Damm <damm@opensource.se>
 
-this is a first pass at adding ethernet support to sh-pfc for
-the r7s72100 SoC.
+Add "renesas,intc-irqpin-sh73a0" to the compatible string for the
+IRQ pins in case of sh73a0 INTC. This makes the INTC irqpin follow
+the same style as the other devices and also makes it more future proof.
 
-It has been written with reference to the hardware documentation
-but not well tested.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-This series is based on the topic/r7s72100-v3.13-rc3-20131214v2
-tag in my renesas tree.
-
-Simon Horman (2):
-  pinctl: sh-pfc: r7s72100: Ethernet support
-  ARM: shmobile: r7s72100: Add ethernet PFC node to DT
-
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 25 +++++++++-
- drivers/pinctrl/sh-pfc/pfc-r7s72100.c           | 64 +++++++++++++++++++++++++
- 2 files changed, 88 insertions(+), 1 deletion(-)
-
-- 
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 29d2ee6..241c8cd 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -47,7 +47,7 @@
+ 	};
+ 
+ 	irqpin0: irqpin@e6900000 {
+-		compatible = "renesas,intc-irqpin";
++		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0xe6900000 4>,
+@@ -67,7 +67,7 @@
+ 	};
+ 
+ 	irqpin1: irqpin@e6900004 {
+-		compatible = "renesas,intc-irqpin";
++		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0xe6900004 4>,
+@@ -88,7 +88,7 @@
+ 	};
+ 
+ 	irqpin2: irqpin@e6900008 {
+-		compatible = "renesas,intc-irqpin";
++		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0xe6900008 4>,
+@@ -108,7 +108,7 @@
+ 	};
+ 
+ 	irqpin3: irqpin@e690000c {
+-		compatible = "renesas,intc-irqpin";
++		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		reg = <0xe690000c 4>,
+-- 
 1.8.4
 
