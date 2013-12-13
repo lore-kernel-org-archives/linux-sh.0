@@ -1,7 +1,7 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 13 Dec 2013 08:23:21 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 13 Dec 2013 10:56:35 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sies
-Message-Id: <52AAC3F9.3050909@codethink.co.uk>
+Message-Id: <CANqRtoT86xdh-c73f-_59sD3E=90yW1wOp5Bobmi4qJywA72uA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1386869040-20849-1-git-send-email-ben.dooks@codethink.co.uk>
  <871u1hsd44.wl%kuninori.morimoto.gx@gmail.com>
@@ -11,7 +11,10 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 13/12/13 02:37, Kuninori Morimoto wrote:
+Hey Morimoto-san,
+
+On Fri, Dec 13, 2013 at 11:37 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@gmail.com> wrote:
 >
 > Hi Ben
 >
@@ -38,10 +41,17 @@ On 13/12/13 02:37, Kuninori Morimoto wrote:
 > Now, I'm working/sending sh_modbile_sdhi driver fixup patches for R-Car H2,
 > but it need more time (= there is merge timing issue)
 
-Ok, thanks. We will keep this in our tree until the SDHI driver
-is sorted out.
+Thanks for supporting Ben regarding this SDHI issue.
 
+Would it be possible for you to share a list of patches needed to get
+SDHI working? If some parts are missing then please post them so the
+patches are available on public lists.
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+I would like to make it possible for Ben to test your patch stack if
+he happens to have time.
+
+My plan is to try out r8a7791 SDHI early next week.
+
+Cheers,
+
+/ magnus
