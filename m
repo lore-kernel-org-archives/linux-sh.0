@@ -1,41 +1,89 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:00 +0000
-Subject: [PATCH 1/3] irqchip: renesas-irqc: Use lazy disable
-Message-Id: <272012d0f748de2e4d2428f5cb7003280032ce08.1387855444.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:57 +0000
+Subject: [PATCH 23/69] ARM: shmobile: sh73a0: tidyup DT node naming
+Message-Id: <33f6be3bf6b79c2b9b7c8cd1387e8e7d4b839d9e.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387855444.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387855444.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Set the ->irq_enable() and ->irq_disable() methods to NULL
-to enable lazy disable of interrupts. This by itself provides
-some level of optimization, but is mainly enabled as ground
-work for future Suspend-to-RAM wake up support.
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/irqchip/irq-renesas-irqc.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi         | 8 ++++----
+ arch/arm/mach-shmobile/clock-sh73a0.c | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index 2f404ba..8fdd7d6 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -212,8 +212,6 @@ static int irqc_probe(struct platform_device *pdev)
- 	irq_chip->name = name;
- 	irq_chip->irq_mask = irqc_irq_disable;
- 	irq_chip->irq_unmask = irqc_irq_enable;
--	irq_chip->irq_enable = irqc_irq_enable;
--	irq_chip->irq_disable = irqc_irq_disable;
- 	irq_chip->irq_set_type = irqc_irq_set_type;
- 	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index fcf2688..78f7201a 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -190,7 +190,7 @@
+ 		status = "disabled";
+ 	};
  
+-	mmcif: mmcif@e6bd0000 {
++	mmcif: mmc@e6bd0000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -200,7 +200,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi0: sdhi@ee100000 {
++	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xee100000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -212,7 +212,7 @@
+ 	};
+ 
+ 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
+-	sdhi1: sdhi@ee120000 {
++	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xee120000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -223,7 +223,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@ee140000 {
++	sdhi2: sd@ee140000 {
+ 		compatible = "renesas,sdhi-r8a7740";
+ 		reg = <0xee140000 0x100>;
+ 		interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index c92c023..96cc7da 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -663,13 +663,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+-	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+-	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+-	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
++	CLKDEV_DEV_ID("e6bd0000.mmc", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+-	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
++	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm.0", &mstp_clks[MSTP304]), /* TPU0 */
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
+ 	CLKDEV_DEV_ID("renesas-tpu-pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
 -- 
 1.8.4
 
