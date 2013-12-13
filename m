@@ -1,27 +1,22 @@
-From: Geoff Levand <geoff@infradead.org>
-Date: Thu, 12 Dec 2013 19:30:01 +0000
-Subject: Re: [PATCH 4/4] sh/kexec: Fix kexec build warning
-Message-Id: <1386876601.1002.0.camel@smoke>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 13 Dec 2013 11:52:38 +0000
+Subject: [PATCH 0/2] arm: shmobile: r8a7790: Add SATA and PCI USB clocks
+Message-Id: <1386935560-16739-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <594a3d26aac66e9668edc81d7bfb4e801575514f.1386807069.git.geoff@infradead.org>
-In-Reply-To: <594a3d26aac66e9668edc81d7bfb4e801575514f.1386807069.git.geoff@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+This adds SATA and PCI USB clocks to R8A7790 SoC.
 
-On Thu, 2013-12-12 at 15:48 +0100, Geert Uytterhoeven wrote:
-> On Thu, Dec 12, 2013 at 1:18 AM, Geoff Levand <geoff@infradead.org> wrote:
-> > -                                    image->segment[i].memsz,
-> > +                      (unsigned int)image->segment[i].memsz,e->start);
-> 
-> Wouldn't it be better to remove all casts and correct the printf-style
-> format specifiers instead?
+Valentine Barshak (2):
+  arm: shmobile: r8a7790: Add PCI USB host clock support
+  arm: shmobile: r8a7790: Add SATA clock
 
-That would be better, I'll make a new patch.
+ arch/arm/mach-shmobile/clock-r8a7790.c | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
 
-Thanks Geert!
-
+-- 
+1.8.3.1
 
