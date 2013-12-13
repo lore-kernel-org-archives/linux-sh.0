@@ -1,68 +1,101 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Dec 2013 14:04:51 +0000
-Subject: [PATCH RFC v2 3/3] ARM: shmobile: genmai: Enable r7s72100-ether
-Message-Id: <1388066691-5854-4-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:53 +0000
+Subject: [PATCH 19/69] ARM: shmobile: r8a73a4: tidyup DT node naming
+Message-Id: <43304a5f51066a7ef851732c35b4582a8d6a5bc0.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
----
-v2
-* As suggested by Magnus Damm and Sergei Shtylyov
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-* As suggested by Sergei Shtylyov
-  - set no_ether_link as there is no LINK signal documented
-    in the manual
----
- arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c..a1f6fe1 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,36 @@
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi         | 10 +++++-----
+ arch/arm/mach-shmobile/clock-r8a73a4.c | 10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 287e047..e079c99 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -219,7 +219,7 @@
+ 		status = "disabled";
+ 	};
  
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/sh_eth.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+-	mmcif0: mmcif@ee200000 {
++	mmcif0: mmc@ee200000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+@@ -228,7 +228,7 @@
+ 		status = "disabled";
+ 	};
  
-+/* Ether */
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
-+	.phy			= 0x00, /* PD60610 */
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.phy_interface		= PHY_INTERFACE_MODE_MII,
-+	.no_ether_link		= 1
-+};
-+
-+static const struct resource ether_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe8203000, 0x800),
-+	DEFINE_RES_MEM(0xe8204800, 0x200),
-+	DEFINE_RES_IRQ(gic_iid(359)),
-+};
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
-+
-+	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  &ether_pdata, sizeof(ether_pdata));
- }
+-	mmcif1: mmcif@ee220000 {
++	mmcif1: mmc@ee220000 {
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+@@ -244,7 +244,7 @@
+ 		#gpio-cells = <2>;
+ 	};
  
- static const char * const genmai_boards_compat_dt[] __initconst = {
+-	sdhi0: sdhi@ee100000 {
++	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -253,7 +253,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi1: sdhi@ee120000 {
++	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -262,7 +262,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@ee140000 {
++	sdhi2: sd@ee140000 {
+ 		compatible = "renesas,sdhi-r8a73a4";
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 571409b..7348d58 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -584,15 +584,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+-	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
++	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]),
++	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
++	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
+ 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
+ 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
 -- 
 1.8.4
 
