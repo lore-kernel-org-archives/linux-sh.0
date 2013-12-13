@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:01 +0000
-Subject: [PATCH 28/33] ARM: shmobile: r8a7790: tidyup clock table order
-Message-Id: <eb7a91749fc1c4fa4f011dad40e3faf4c0ca27b0.1386897180.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:55 +0000
+Subject: [PATCH 21/69] ARM: shmobile: r8a7779: tidyup DT node naming
+Message-Id: <2624705ceb7b139cffdb409682d3e1bc480abec7.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,49 +12,78 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
-for a long term.
-But in these days, the ICK clock is defined in random place.
-This patch arranges it.
+According to ePAPR spec,
+this patch tidies up DT node name and related clock.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi         | 8 ++++----
+ arch/arm/mach-shmobile/clock-r8a7779.c | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 3a267c2..a510813 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -266,11 +266,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index be737ef..05fd41c 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -207,7 +207,7 @@
+ 		interrupts = <0 100 0x4>;
+ 	};
  
- 	/* MSTP */
--	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
--	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
--	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
--	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
--	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
-@@ -303,7 +298,15 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-+
-+	/* ICK */
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
-+	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
-+	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
-+	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
-+	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
-+	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
-+
+-	sdhi0: sdhi@ffe4c000 {
++	sdhi0: sd@ffe4c000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -217,7 +217,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi1: sdhi@ffe4d000 {
++	sdhi1: sd@ffe4d000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -227,7 +227,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi2: sdhi@ffe4e000 {
++	sdhi2: sd@ffe4e000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupt-parent = <&gic>;
+@@ -237,7 +237,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	sdhi3: sdhi@ffe4f000 {
++	sdhi3: sd@ffe4f000 {
+ 		compatible = "renesas,sdhi-r8a7779";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index b545c8d..f1fb89b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -204,13 +204,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+-	CLKDEV_DEV_ID("ffe4c000.sdhi", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("ffe4c000.sd", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+-	CLKDEV_DEV_ID("ffe4d000.sdhi", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("ffe4d000.sd", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+-	CLKDEV_DEV_ID("ffe4e000.sdhi", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("ffe4e000.sd", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+-	CLKDEV_DEV_ID("ffe4f000.sdhi", &mstp_clks[MSTP320]), /* SDHI3 */
++	CLKDEV_DEV_ID("ffe4f000.sd", &mstp_clks[MSTP320]), /* SDHI3 */
+ 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
  };
  
- #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
 1.8.4
 
