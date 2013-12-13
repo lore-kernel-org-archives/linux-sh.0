@@ -1,49 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:09 +0000
-Subject: [PATCH 05/12] ARM: shmobile: koelsch-reference: Remove duplicate CCF initialization
-Message-Id: <e006502126a6a1f3afd879afa9101cc3df8b11f9.1387891831.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:31 +0000
+Subject: [PATCH 57/69] ARM: shmobile: Include all 4 GiB of memory on Lager DT Ref
+Message-Id: <fb8d2ee32e899e53de76b66da5cc3c7149d4fc04.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The common clock framework is initialized in the rcar_gen2_init_timer()
-function, remove the of_clk_init() call.
+Add 2GiB of DRAM at 0x1_8000_0000 to support the full 4GiB
+of Lager system memory in case of DT Reference.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index a804a17..4b48e2d 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,7 +19,6 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index cce7dbf..dfedc0e 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -25,6 +25,11 @@
+ 		reg = <0 0x40000000 0 0x80000000>;
+ 	};
  
--#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <mach/common.h>
-@@ -29,9 +28,7 @@
- 
- static void __init koelsch_add_standard_devices(void)
- {
--#ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
--#else
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7791_clock_init();
- #endif
- 	r8a7791_add_dt_devices();
++	memory@180000000 {
++		device_type = "memory";
++		reg = <1 0x80000000 0 0x80000000>;
++	};
++
+ 	lbsc {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 -- 
 1.8.4
 
