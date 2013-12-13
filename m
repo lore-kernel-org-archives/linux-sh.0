@@ -1,37 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Dec 2013 03:14:08 +0000
-Subject: [PATCH] ARM: shmobile: emev2: Use __initconst for const init definition
-Message-Id: <1388114048-3630-1-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:31 +0000
+Subject: [PATCH 05/69] ARM: shmobile: r8a7791 PFC device tree node
+Message-Id: <55146927a7d504dc9bef65cad9435ce04329d854.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-__initconst must be used instead of __initdata for
-const init definitions.
+From: Magnus Damm <damm@opensource.se>
 
-This problem was introduced by 3d5de27174955702 ("mach-shmobile: Emma
-Mobile EV2 DT support V3") in v3.4-rc7.
+Add a DT node for the r8a7791 PFC device.
 
-Reported-by: Fengguang Wu <fengguang.wu@intel.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-emev2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index c8f2a1a..c71d667 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -58,7 +58,7 @@ static void __init emev2_add_standard_devices_dt(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
--static const char *emev2_boards_compat_dt[] __initdata = {
-+static const char *emev2_boards_compat_dt[] __initconst = {
- 	"renesas,emev2",
- 	NULL,
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index fea5cfe..765d989 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -71,4 +71,10 @@
+ 			      <0 16 4>,
+ 			      <0 17 4>;
+ 	};
++
++	pfc: pfc@e6060000 {
++		compatible = "renesas,pfc-r8a7791";
++		reg = <0 0xe6060000 0 0x250>;
++		#gpio-range-cells = <3>;
++	};
  };
 -- 
 1.8.4
