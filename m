@@ -1,89 +1,35 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:39 +0000
-Subject: [PATCH 16/21] ARM: shmobile: r8a7790: Add MSIOF clocks in device tree
-Message-Id: <9d90951a39205206a46609055717af9bfb436e4d.1387893834.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:05 +0000
+Subject: [PATCH 32/33] ARM: shmobile: r8a7740: add FSI clock support for DT
+Message-Id: <605dfb0b5fd75d3255360e7ee3e701bf5aeda7b4.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 17 +++++++++++++----
- include/dt-bindings/clock/r8a7790-clock.h |  6 ++++++
- 2 files changed, 19 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 71ec31c..9c9a992 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -524,6 +524,14 @@
- 		};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index c826bca..e9a3c64 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -585,6 +585,7 @@ static struct clk_lookup lookups[] = {
  
- 		/* Gate clocks */
-+		mstp0_clks: mstp0_clks@e6150130 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
-+			clocks = <&mp_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <R8A7790_CLK_MSIOF0>;
-+			clock-output-names = "msiof0";
-+		};
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
-@@ -544,15 +552,16 @@
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
--				 <&mp_clk>;
-+				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
--				R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1 R8A7790_CLK_SCIFB2
-+				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
-+				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
- 			>;
- 			clock-output-names -				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
--				"scifb2";
-+				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
-+				"scifb1", "msiof1", "msiof3", "scifb2";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 420f0b0..bbabb8e 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -22,6 +22,9 @@
- #define R8A7790_CLK_SD1			8
- #define R8A7790_CLK_Z			9
- 
-+/* MSTP0 */
-+#define R8A7790_CLK_MSIOF0		0
-+
- /* MSTP1 */
- #define R8A7790_CLK_TMU1		11
- #define R8A7790_CLK_TMU3		21
-@@ -37,8 +40,11 @@
- #define R8A7790_CLK_SCIFA2		2
- #define R8A7790_CLK_SCIFA1		3
- #define R8A7790_CLK_SCIFA0		4
-+#define R8A7790_CLK_MSIOF2		5
- #define R8A7790_CLK_SCIFB0		6
- #define R8A7790_CLK_SCIFB1		7
-+#define R8A7790_CLK_MSIOF1		8
-+#define R8A7790_CLK_MSIOF3		15
- #define R8A7790_CLK_SCIFB2		16
- #define R8A7790_CLK_SYS_DMAC0		18
- #define R8A7790_CLK_SYS_DMAC1		19
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
++	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
 -- 
 1.8.4
 
