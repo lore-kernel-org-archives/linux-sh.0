@@ -1,118 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:14:00 +0000
-Subject: [PATCH v4 14/16] ARM: shmobile: Remove Lager reference DTS
-Message-Id: <1386771242-21876-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:58 +0000
+Subject: [PATCH 24/69] ARM: shmobile: armadillo: tidyup DT node naming
+Message-Id: <e63763b9b55a6833047199bd587e061520302ffc.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
-and board-lager-reference.c, proceed with removing
-r8a7790-lager-reference.dts.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+According to ePAPR spec,
+this patch tidies up DT node name.
+
+This patch removed un-used "touchscreen" label
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts | 89 ---------------------------
- 1 file changed, 89 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-deleted file mode 100644
-index dfedc0e..0000000
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ /dev/null
-@@ -1,89 +0,0 @@
--/*
-- * Device Tree Source for the Lager board
-- *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7790.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "Lager";
--	compatible = "renesas,lager-reference", "renesas,r8a7790";
--
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
--
--	memory@180000000 {
--		device_type = "memory";
--		reg = <1 0x80000000 0 0x80000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
--		};
--	};
--
--	fixedregulator3v3: fixedregulator@0 {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-3.3V";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--};
--
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data";
--		renesas,function = "scif1";
--	};
--
--	mmc1_pins: mmc1 {
--		renesas,groups = "mmc1_data8", "mmc1_ctrl";
--		renesas,function = "mmc1";
--	};
--};
--
--&mmcif1 {
--	pinctrl-0 = <&mmc1_pins>;
--	pinctrl-names = "default";
--
--	vmmc-supply = <&fixedregulator3v3>;
--	bus-width = <8>;
--	non-removable;
--	status = "okay";
--};
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 1c56c5e..6a54219 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -90,7 +90,7 @@
+ 
+ &i2c0 {
+ 	status = "okay";
+-	touchscreen: st1232@55 {
++	touchscreen@55 {
+ 		compatible = "sitronix,st1232";
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+@@ -105,12 +105,12 @@
+ 	pinctrl-0 = <&scifa1_pins>;
+ 	pinctrl-names = "default";
+ 
+-	scifa1_pins: scifa1 {
++	scifa1_pins: serial1 {
+ 		renesas,groups = "scifa1_data";
+ 		renesas,function = "scifa1";
+ 	};
+ 
+-	st1232_pins: st1232 {
++	st1232_pins: touchscreen {
+ 		renesas,groups = "intc_irq10";
+ 		renesas,function = "intc";
+ 	};
+@@ -125,7 +125,7 @@
+ 		renesas,function = "mmc0";
+ 	};
+ 
+-	sdhi0_pins: sdhi0 {
++	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
+ 		renesas,function = "sdhi0";
+ 	};
 -- 
-1.8.3.2
+1.8.4
 
