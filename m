@@ -1,40 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:23 +0000
-Subject: [PATCH 49/69] ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
-Message-Id: <b69e4435e34df68d54e204b37d6bb256606fef5d.1386901186.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:44 +0000
+Subject: [PATCH 03/33] ARM: shmobile: Select IRQC in case of the r8a7791 SoC
+Message-Id: <e08d287afb76b3b6925f7261918fa611a7e0b3ca.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The device is configured to generate an active-low interrupt signal that
-needs to be acknowledged by the host. Configure the IRQ to trigger on
-low level.
+The r8a7791 contains IRQC hardware so make sure
+the driver gets built by selecting RENESAS_IRQC.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index aef425f..7b80f19 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -95,7 +95,7 @@
- 		compatible = "sitronix,st1232";
- 		reg = <0x55>;
- 		interrupt-parent = <&irqpin1>;
--		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
-+		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
- 		pinctrl-0 = <&st1232_pins>;
- 		pinctrl-names = "default";
- 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index a4a4b75..ff7c4ce 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -100,6 +100,7 @@ config ARCH_R8A7791
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select RENESAS_IRQC
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
 -- 
 1.8.4
 
