@@ -1,37 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:43:06 +0000
-Subject: [PATCH v3 3/3] DMA: shdma: Make sh_dmae_pm static
-Message-Id: <1386765786-1926-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:18 +0000
+Subject: [PATCH 44/69] ARM: shmobile: Configure r8a7791 PFC on Koelsch via DTS
+Message-Id: <b91a89cf8d9880d1d82c7f9f4c1a448bb680dc2c.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The structure isn't used outside of its compilation unit. Make it
-static.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Configure the "D" set of data signals for SCIF0 and SCIF1
+on the Koelsch board to setup pinctrl serial console bits.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/dma/sh/shdmac.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 2150987..dda7e75 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -639,7 +639,7 @@ static int sh_dmae_resume(struct device *dev)
- #define sh_dmae_resume NULL
- #endif
- 
--const struct dev_pm_ops sh_dmae_pm = {
-+static const struct dev_pm_ops sh_dmae_pm = {
- 	.suspend		= sh_dmae_suspend,
- 	.resume			= sh_dmae_resume,
- 	.runtime_suspend	= sh_dmae_runtime_suspend,
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+index 1a0f082..8e7e917 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+@@ -30,3 +30,18 @@
+ 		#size-cells = <1>;
+ 	};
+ };
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data_d";
++		renesas,function = "scif1";
++	};
++};
 -- 
-1.8.3.2
+1.8.4
 
