@@ -1,51 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:16 +0000
-Subject: [PATCH 20/26] ARM: shmobile: mackerel: clk_round_rate() can return a zero to indicate an error
-Message-Id: <90d423faa0ed53cfda9f12d119f6938dd1ab515d.1387763524.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:01 +0000
+Subject: [PATCH 27/69] ARM: shmobile: bockw: tidyup DT node naming
+Message-Id: <fb9c1ce47c2d5844ad2bf8dc8c06affa057e69c5.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Paul Walmsley <pwalmsley@nvidia.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Treat both negative and zero return values from clk_round_rate() as
-errors.  This is needed since subsequent patches will convert
-clk_round_rate()'s return value to be an unsigned type, rather than a
-signed type, since some clock sources can generate rates higher than
-(2^31)-1 Hz.
+According to ePAPR spec,
+this patch tidies up DT node name.
 
-Eventually, when calling clk_round_rate(), only a return value of zero
-will be considered a error.  All other values will be considered valid
-rates.  The comparison against values less than 0 is kept to preserve
-the correct behavior in the meantime.
-
-Signed-off-by: Paul Walmsley <pwalmsley@nvidia.com>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 4 ++--
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index af06753..d90d2f1 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -548,9 +548,9 @@ static void __init hdmi_init_pm_clock(void)
- 		 clk_get_rate(&sh7372_pllc2_clk));
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 8b8208e..9c8bd37 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -71,7 +71,7 @@
+ 	pinctrl-0 = <&scif0_pins>;
+ 	pinctrl-names = "default";
  
- 	rate = clk_round_rate(&sh7372_pllc2_clk, 594000000);
--	if (rate < 0) {
-+	if (rate <= 0) {
- 		pr_err("Cannot get suitable rate: %ld\n", rate);
--		ret = rate;
-+		ret = -EINVAL;
- 		goto out;
- 	}
+-	scif0_pins: scif0 {
++	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_a", "scif0_ctrl";
+ 		renesas,function = "scif0";
+ 	};
+@@ -81,7 +81,7 @@
+ 		renesas,function = "mmc";
+ 	};
  
+-	sdhi0_pins: sdhi0 {
++	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+ 				  "sdhi0_cd", "sdhi0_wp";
+ 		renesas,function = "sdhi0";
 -- 
 1.8.4
 
