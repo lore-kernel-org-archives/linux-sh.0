@@ -1,50 +1,60 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 05:03:14 +0000
-Subject: [PATCH 03/04] ARM: shmobile: Genmai LED1 and LED2 support
-Message-Id: <20131217050314.727.29564.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:01 +0000
+Subject: [PATCH 28/33] ARM: shmobile: r8a7790: tidyup clock table order
+Message-Id: <eb7a91749fc1c4fa4f011dad40e3faf4c0ca27b0.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217050232.727.9552.sendpatchset@w520>
-In-Reply-To: <20131217050232.727.9552.sendpatchset@w520>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add support for Genmai board LED1 and LED2 via gpio-leds.
+SuperH lookups clock is using CLKDEV_CON/DEV/ICK_ID() macro
+for a long term.
+But in these days, the ICK clock is defined in random place.
+This patch arranges it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
- arch/arm/boot/dts/r7s72100-genmai-reference.dts |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27 15:49:27.000000000 +0900
-@@ -9,7 +9,8 @@
-  */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 3a267c2..a510813 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -266,11 +266,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("ssprs",		&div6_clks[DIV6_SSPRS]),
  
- /dts-v1/;
--/include/ "r7s72100.dtsi"
-+#include "r7s72100.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Genmai";
-@@ -28,4 +29,14 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
+ 	/* MSTP */
+-	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
+-	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
+-	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
+-	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
+-	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
+@@ -303,7 +298,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
 +
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&port4 10 GPIO_ACTIVE_LOW>;
-+		};
-+		led2 {
-+			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
-+		};
-+	};
++	/* ICK */
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
++	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
++	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
++	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
++	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
++
  };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-- 
+1.8.4
+
