@@ -1,86 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 20:15:57 +0000
-Subject: [PATCH v2 3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
-Message-Id: <1388175362-17132-4-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:30 +0000
+Subject: [PATCH 04/69] ARM: shmobile: lager: add MMCIF support on DTS
+Message-Id: <02b4a748c7ef37c2852478e67251a86e36d87152.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Correct platform device names ("rspi%u.0" -> "rspi.%u")
-  - Add missing platform data
-  - Correct summary (resources -> platform devices)
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
- arch/arm/mach-shmobile/setup-r7s72100.c |   34 +++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 9c0b3a9d5f7a..c353549cad03 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -23,6 +23,7 @@
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
-+#include <linux/spi/rspi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r7s72100.h>
-@@ -81,6 +82,34 @@ static struct resource mtu2_0_resources[] __initdata = {
- 					  &mtu2_##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index 0a3f0c6..75730f5 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -42,6 +42,15 @@
+ 			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
+ };
  
-+/* RSPI */
-+#define RSPI_RESOURCE(idx, baseaddr, irq)				\
-+static const struct resource rspi##idx##_resources[] __initconst = {	\
-+	DEFINE_RES_MEM(baseaddr, 0x24),					\
-+	DEFINE_RES_IRQ(irq),		/* SPEI */			\
-+	DEFINE_RES_IRQ(irq + 1),	/* SPRI */			\
-+	DEFINE_RES_IRQ(irq + 2),	/* SPTI */			\
-+}
+ &pfc {
+@@ -57,4 +66,19 @@
+ 		renesas,groups = "scif1_data";
+ 		renesas,function = "scif1";
+ 	};
 +
-+RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
-+RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
-+RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
-+RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
-+RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
-+
-+static const struct rspi_plat_data rspi_pdata __initconst = {
-+	.data_width	= 8,
-+	.txmode		= false,
-+	.spcr2		= false,
-+	.num_chipselect	= 1,
++	mmc1_pins: mmc1 {
++		renesas,groups = "mmc1_data8", "mmc1_ctrl";
++		renesas,function = "mmc1";
++	};
 +};
 +
-+#define r7s72100_register_rspi(idx)					\
-+	platform_device_register_resndata(&platform_bus, "rspi", idx,	\
-+					rspi##idx##_resources,		\
-+					ARRAY_SIZE(rspi##idx##_resources), \
-+					&rspi_pdata, sizeof(rspi_pdata))
++&mmcif1 {
++	pinctrl-0 = <&mmc1_pins>;
++	pinctrl-names = "default";
 +
- void __init r7s72100_add_dt_devices(void)
- {
- 	r7s72100_register_scif(0);
-@@ -92,6 +121,11 @@ void __init r7s72100_add_dt_devices(void)
- 	r7s72100_register_scif(6);
- 	r7s72100_register_scif(7);
- 	r7s72100_register_mtu2(0);
-+	r7s72100_register_rspi(0);
-+	r7s72100_register_rspi(1);
-+	r7s72100_register_rspi(2);
-+	r7s72100_register_rspi(3);
-+	r7s72100_register_rspi(4);
- }
- 
- void __init r7s72100_init_early(void)
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
+ };
 -- 
-1.7.9.5
+1.8.4
 
