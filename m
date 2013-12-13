@@ -1,57 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 20 Dec 2013 01:48:10 +0000
-Subject: Re: [PATCH v3 00/29] Add OF support to the sh-sci serial port driver
-Message-Id: <38543610.aspcIFqj1g@avalon>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 13 Dec 2013 00:10:38 +0000
+Subject: [PATCH] sh: Add EXPORT_SYMBOL(min_low_pfn) and EXPORT_SYMBOL(max_low_pfn) to sh_ksyms_32.c
+Message-Id: <1386893438-23573-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1384869751-9786-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20131209185918.GC27562@quad.lixom.net> <20131209234205.GB24573@verge.net.au>
-In-Reply-To: <20131209234205.GB24573@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Olof Johansson <olof@lixom.net>, Greg KH <greg@kroah.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org, Bastian Hecht <hechtb+renesas@gmail.com>, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-Hi,
+Min_low_pfn and max_low_pfn were used in pfn_valid macro if defined
+CONFIG_FLATMEM. When the functions that use the pfn_valid is used in driver
+module, max_low_pfn and min_low_pfn is to undefined, and fail to build.
 
-On Tuesday 10 December 2013 08:42:05 Simon Horman wrote:
-> On Mon, Dec 09, 2013 at 10:59:18AM -0800, Olof Johansson wrote:
-> > On Thu, Dec 05, 2013 at 04:03:43PM +0900, Simon Horman wrote:
-> > > On Thu, Dec 05, 2013 at 06:53:41AM +0100, Laurent Pinchart wrote:
+----
+ERROR: "min_low_pfn" [drivers/block/aoe/aoe.ko] undefined!
+ERROR: "max_low_pfn" [drivers/block/aoe/aoe.ko] undefined!
+make[2]: *** [__modpost] Error 1
+make[1]: *** [modules] Error 2
+----
 
-[snip]
+This patch fix this problem.
 
-> > > > I'm not planning for a v5, but there's another patch series ("[PATCH
-> > > > 00/16] sh-sci: Remove unnecessary fields from platform data") that is
-> > > > similarly organized as sh-sci / platform / sh-sci patches on top of
-> > > > this. Would you like me to reorganize the all the 45 patches in one
-> > > > big series with a single set of platform patches in-between two sets
-> > > > of sh-sci patches ?
-> > > 
-> > > That sounds nice, thanks.
-> > > 
-> > > To be clear, we are planning sh-sci -> soc -> sh-sci ?
-> > > 
-> > > If so, I'll have a word with Olof (CCed) as he tends to want
-> > > to avoid such circular dependencies if possible.
-> > 
-> > What are the platform changes in the middle that you need?
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/kernel/sh_ksyms_32.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-Basically we need to change the driver platform data, so the first part gets 
-the driver in shape by adding new platform data fields, the second part 
-switches the platform code, and the third part removes the old fields. Part of 
-this is about switching from passing IRQs and memory base through platform 
-data to passing them through resources, which is a dependency for OF support.
-
-> I will let Laurent speak to the nature of the changes.
-> 
-> In terms of patches Laurent has recently published a single series
-> which includes sh-sci patches, followed by SoC patches, followed
-> by sh-sci patches. The series is "[PATCH 00/47] sh-sci updates for v3.14"
-> 
-> http://www.spinics.net/lists/linux-sh/msg26033.html
-
+diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
+index 2a0a596..a7d3b1b 100644
+--- a/arch/sh/kernel/sh_ksyms_32.c
++++ b/arch/sh/kernel/sh_ksyms_32.c
+@@ -20,6 +20,11 @@ EXPORT_SYMBOL(csum_partial_copy_generic);
+ EXPORT_SYMBOL(copy_page);
+ EXPORT_SYMBOL(__clear_user);
+ EXPORT_SYMBOL(empty_zero_page);
++#ifdef CONFIG_FLATMEM
++/* need in pfn_valid macro */
++EXPORT_SYMBOL(min_low_pfn);
++EXPORT_SYMBOL(max_low_pfn);
++#endif
+ 
+ #define DECLARE_EXPORT(name)		\
+ 	extern void name(void);EXPORT_SYMBOL(name)
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.1
 
