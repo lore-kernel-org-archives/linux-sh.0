@@ -1,38 +1,62 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 20 Dec 2013 14:13:21 +0000
-Subject: [PATCH 0/3] arm: r8a7790: lager: Add USB support
-Message-Id: <1387548804-20829-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:45 +0000
+Subject: [PATCH 04/33] ARM: shmobile: r8a7791 PFC platform device support
+Message-Id: <35040127be095487ce1e2f6a487a65b92d794b7f.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-This adds USBHS device and PCI USB host support to Lager board.
-The patches depend on the following commits:
-USBHS and PCI USB host:
-* https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?i=
-d=C8ba8115a21226fba3211085f570b128fa271e31
-* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
-d2985ef720cbbdc63546a5c545ac4450d96e
-PCI USB host:
-* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
-sb-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
-* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
-sb-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
-* https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3D=
-pci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
+From: Magnus Damm <damm@opensource.se>
 
-Valentine Barshak (3):
-  arm: shmobile: lager: Add USBHS support
-  arm: shmobile: r8a7790: Add PCI USB host clock support
-  arm: shmobile: lager: Add internal PCI support
+Add a platform device for the r8a7791 PFC device.
 
- arch/arm/mach-shmobile/board-lager.c   | 185 +++++++++++++++++++++++++++++=
-++++
- arch/arm/mach-shmobile/clock-r8a7790.c |   6 +-
- 2 files changed, 190 insertions(+), 1 deletion(-)
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 13 +++++++++++++
+ 2 files changed, 14 insertions(+)
 
---=20
-1.8.3.1
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 051ead3..200fa69 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -4,6 +4,7 @@
+ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
++void r8a7791_pinmux_init(void);
+ void r8a7791_init_early(void);
+ extern struct smp_operations r8a7791_smp_ops;
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index d9393d6..84cad8c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -31,6 +31,19 @@
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
+ 
++static const struct resource pfc_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6060000, 0x250),
++};
++
++#define r8a7791_register_pfc()						\
++	platform_device_register_simple("pfc-r8a7791", -1, pfc_resources, \
++					ARRAY_SIZE(pfc_resources))
++
++void __init r8a7791_pinmux_init(void)
++{
++	r8a7791_register_pfc();
++}
++
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+ 	.type		= scif_type,				\
+ 	.mapbase	= baseaddr,				\
+-- 
+1.8.4
 
