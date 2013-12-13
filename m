@@ -1,51 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:11 +0000
-Subject: [PATCH 04/47] serial: sh-sci: Remove baud rate calculation algorithm 5
-Message-Id: <1386323994-12850-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:35 +0000
+Subject: [PATCH 1/3] ARM: shmobile: lager: phy fixup needs CONFIG_PHYLIB
+Message-Id: <6802cdc58d4fe66cffd6cd04ee55e65dd61eeeeb.1386899269.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386899269.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386899269.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The algorithm isn't used, remove it.
+Do not build the phy fixup unless CONFIG_PHYLIB is enabled.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Other than not being useful it is also not possible to link
+the code under this condition as phy_register_fixup_for_id(),
+mdiobus_read() and mdiobus_write() are absent.
+
+arch/arm/mach-shmobile/built-in.o: In function `lager_ksz8041_fixup':
+board-lager.c:(.text+0xb8): undefined reference to `mdiobus_read'
+board-lager.c:(.text+0xd4): undefined reference to `mdiobus_write'
+arch/arm/mach-shmobile/built-in.o: In function `lager_init':
+board-lager.c:(.init.text+0xafc): undefined reference to `phy_register_fixup_for_id'
+
+This problem was introduced by 48c8b96f21817aad
+("ARM: shmobile: Lager: add Micrel KSZ8041 PHY fixup")
+
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 2 --
- include/linux/serial_sci.h  | 1 -
- 2 files changed, 3 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 6211a2e..86b33f3 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1824,8 +1824,6 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
- 		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
- 	case SCBRR_ALGO_4:
- 		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
--	case SCBRR_ALGO_5:
--		return (((freq * 1000 / 32) / bps) - 1);
- 	}
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index a8d3ce6..e0406fd 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -245,7 +245,9 @@ static void __init lager_init(void)
+ {
+ 	lager_add_standard_devices();
  
- 	/* Warn, but use a safe default */
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 50fe651..babc5fe 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -15,7 +15,6 @@ enum {
- 	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
- 	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
- 	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
--	SCBRR_ALGO_5,		/* (((clk * 1000 / 32) / bps) - 1) */
- 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
- };
+-	phy_register_fixup_for_id("r8a7790-ether-ff:01", lager_ksz8041_fixup);
++	if (IS_ENABLED(CONFIG_PHYLIB))
++		phy_register_fixup_for_id("r8a7790-ether-ff:01",
++					  lager_ksz8041_fixup);
+ }
  
+ static const char * const lager_boards_compat_dt[] __initconst = {
 -- 
-1.8.3.2
+1.8.4
 
