@@ -1,86 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:10 +0000
-Subject: [PATCH 03/47] serial: sh-sci: Sort headers alphabetically
-Message-Id: <1386323994-12850-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:25 +0000
+Subject: [PATCH 51/69] ARM: shmobile: Koelsch DT reference GPIO LED support
+Message-Id: <614a198d45e523f6066f1c22b9c10e4067f2c44a.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-This helps locating duplicates.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Add led6, led7 and led8 to the Koelsch DT reference board support.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
- 1 file changed, 21 insertions(+), 21 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 07a5da4..6211a2e 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -23,35 +23,35 @@
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+index 8e7e917..1919273 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+@@ -11,6 +11,7 @@
  
- #undef DEBUG
+ /dts-v1/;
+ #include "r8a7791.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
--#include <linux/module.h>
-+#include <linux/clk.h>
-+#include <linux/console.h>
-+#include <linux/ctype.h>
-+#include <linux/cpufreq.h>
-+#include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/err.h>
- #include <linux/errno.h>
--#include <linux/sh_dma.h>
--#include <linux/timer.h>
-+#include <linux/gpio.h>
-+#include <linux/init.h>
- #include <linux/interrupt.h>
--#include <linux/tty.h>
--#include <linux/tty_flip.h>
--#include <linux/serial.h>
--#include <linux/major.h>
--#include <linux/string.h>
--#include <linux/sysrq.h>
- #include <linux/ioport.h>
-+#include <linux/major.h>
-+#include <linux/module.h>
- #include <linux/mm.h>
--#include <linux/init.h>
--#include <linux/delay.h>
--#include <linux/console.h>
--#include <linux/platform_device.h>
--#include <linux/serial_sci.h>
- #include <linux/notifier.h>
-+#include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
--#include <linux/cpufreq.h>
--#include <linux/clk.h>
--#include <linux/ctype.h>
--#include <linux/err.h>
--#include <linux/dmaengine.h>
--#include <linux/dma-mapping.h>
- #include <linux/scatterlist.h>
-+#include <linux/serial.h>
-+#include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/slab.h>
--#include <linux/gpio.h>
-+#include <linux/string.h>
-+#include <linux/sysrq.h>
-+#include <linux/timer.h>
-+#include <linux/tty.h>
-+#include <linux/tty_flip.h>
+ / {
+ 	model = "Koelsch";
+@@ -29,6 +30,19 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++		};
++	};
+ };
  
- #ifdef CONFIG_SUPERH
- #include <asm/sh_bios.h>
+ &pfc {
 -- 
-1.8.3.2
+1.8.4
 
