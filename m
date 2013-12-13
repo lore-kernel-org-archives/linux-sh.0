@@ -1,76 +1,151 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 10:12:22 +0000
-Subject: [PATCH v5 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
-Message-Id: <20131217101222.17491.98178.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:04 +0000
+Subject: [PATCH 30/69] ARM: shmobile: emev2: Add clock tree description in DT
+Message-Id: <fdf6fd2205181485ffc0fc622be7ed93dfbce361.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217101212.17491.56898.sendpatchset@w520>
-In-Reply-To: <20131217101212.17491.56898.sendpatchset@w520>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Add Kconfig entries for CMT, MTU2, TMU and STI to
-drivers/clocksource/Kconfig. This will allow us to
-get rid of duplicated entires in architecture code
-such as arch/sh and arch/arm/mach-shmobile.
+Add minimum clock tree description to .dts file.
+This provides same set of clocks as current sh-clkfwk version .c
+code does.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/emev2.dtsi | 84 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 84 insertions(+)
 
- drivers/clocksource/Kconfig |   44 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index 9063a44..df1d4cd 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -52,34 +52,118 @@
+ 			     <0 121 4>;
+ 	};
+ 
++	smu@e0110000 {
++		compatible = "renesas,emev2-smu";
++		reg = <0xe0110000 0x10000>;
++		#address-cells = <2>;
++		#size-cells = <0>;
++
++		c32ki: c32ki {
++			compatible = "fixed-clock";
++			clock-frequency = <32768>;
++			#clock-cells = <0>;
++		};
++		pll3_fo: pll3_fo {
++			compatible = "fixed-factor-clock";
++			clocks = <&c32ki>;
++			clock-div = <1>;
++			clock-mult = <7000>;
++			#clock-cells = <0>;
++		};
++		usia_u0_sclkdiv: usia_u0_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x610 0>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		usib_u1_sclkdiv: usib_u1_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x65c 0>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		usib_u2_sclkdiv: usib_u2_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x65c 16>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		usib_u3_sclkdiv: usib_u3_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x660 0>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		usia_u0_sclk: usia_u0_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x4a0 1>;
++			clocks = <&usia_u0_sclkdiv>;
++			#clock-cells = <0>;
++		};
++		usib_u1_sclk: usib_u1_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x4b8 1>;
++			clocks = <&usib_u1_sclkdiv>;
++			#clock-cells = <0>;
++		};
++		usib_u2_sclk: usib_u2_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x4bc 1>;
++			clocks = <&usib_u2_sclkdiv>;
++			#clock-cells = <0>;
++		};
++		usib_u3_sclk: usib_u3_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x4c0 1>;
++			clocks = <&usib_u3_sclkdiv>;
++			#clock-cells = <0>;
++		};
++		sti_sclk: sti_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x528 1>;
++			clocks = <&c32ki>;
++			#clock-cells = <0>;
++		};
++	};
++
+ 	sti@e0180000 {
+ 		compatible = "renesas,em-sti";
+ 		reg = <0xe0180000 0x54>;
+ 		interrupts = <0 125 0>;
++		clocks = <&sti_sclk>;
++		clock-names = "sclk";
+ 	};
+ 
+ 	uart@e1020000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1020000 0x38>;
+ 		interrupts = <0 8 0>;
++		clocks = <&usia_u0_sclk>;
++		clock-names = "sclk";
+ 	};
+ 
+ 	uart@e1030000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1030000 0x38>;
+ 		interrupts = <0 9 0>;
++		clocks = <&usib_u1_sclk>;
++		clock-names = "sclk";
+ 	};
+ 
+ 	uart@e1040000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1040000 0x38>;
+ 		interrupts = <0 10 0>;
++		clocks = <&usib_u2_sclk>;
++		clock-names = "sclk";
+ 	};
+ 
+ 	uart@e1050000 {
+ 		compatible = "renesas,em-uart";
+ 		reg = <0xe1050000 0x38>;
+ 		interrupts = <0 11 0>;
++		clocks = <&usib_u3_sclk>;
++		clock-names = "sclk";
+ 	};
+ 
+ 	gpio0: gpio@e0050000 {
+-- 
+1.8.4
 
---- 0001/drivers/clocksource/Kconfig
-+++ work/drivers/clocksource/Kconfig	2013-12-17 18:50:30.000000000 +0900
-@@ -135,3 +135,47 @@ config VF_PIT_TIMER
- 	bool
- 	help
- 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
-+
-+config SYS_SUPPORTS_SH_CMT
-+        bool
-+
-+config SYS_SUPPORTS_SH_MTU2
-+        bool
-+
-+config SYS_SUPPORTS_SH_TMU
-+        bool
-+
-+config SYS_SUPPORTS_EM_STI
-+        bool
-+
-+config SH_TIMER_CMT
-+	bool "Renesas CMT timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_SH_CMT
-+	help
-+	  This enables build of a clocksource and clockevent driver for
-+	  the Compare Match Timer (CMT) hardware available in 16/32/48-bit
-+	  variants on a wide range of Mobile and Automotive SoCs from Renesas.
-+
-+config SH_TIMER_MTU2
-+	bool "Renesas MTU2 timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_SH_MTU2
-+	help
-+	  This enables build of a clockevent driver for the Multi-Function
-+	  Timer Pulse Unit 2 (TMU2) hardware available on SoCs from Renesas.
-+	  This hardware comes with 16 bit-timer registers.
-+
-+config SH_TIMER_TMU
-+	bool "Renesas TMU timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_SH_TMU
-+	help
-+	  This enables build of a clocksource and clockevent driver for
-+	  the 32-bit Timer Unit (TMU) hardware available on a wide range
-+	  SoCs from Renesas.
-+
-+config EM_TIMER_STI
-+	bool "Renesas STI timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_EM_STI
-+	help
-+	  This enables build of a clocksource and clockevent driver for
-+	  the 48-bit System Timer (STI) hardware available on a SoCs
-+	  such as EMEV2 from former NEC Electronics.
