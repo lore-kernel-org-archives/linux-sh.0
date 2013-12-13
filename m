@@ -1,217 +1,249 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:24 +0000
-Subject: [PATCH 18/28] ARM: shmobile: Remove legacy platform devices from EMEV2 SoC code
-Message-Id: <00749fc3abc50d840a55ef8d005f2651d33956c2.1385950394.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:08 +0000
+Subject: [PATCH 34/69] ARM: shmobile: Use #include in device tree sources
+Message-Id: <31c46cbf5b8bab87e89028977521c84f2d871040.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Now when KZM9D legacy C board support code is
-gone then remove emev2_add_standard_devices()
-and all the platform devices from setup-emev2.c.
+In order to allow usage of the preprocessor in the SoC device tree
+sources, switch from /include/ to #include.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/emev2.h |   5 -
- arch/arm/mach-shmobile/setup-emev2.c        | 148 ----------------------------
- 2 files changed, 153 deletions(-)
+ arch/arm/boot/dts/r7s72100-genmai.dts                   | 2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts         | 2 +-
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts                   | 2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts           | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts           | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts                     | 2 +-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts          | 2 +-
+ arch/arm/boot/dts/r8a7779-marzen.dts                    | 2 +-
+ arch/arm/boot/dts/r8a7790-lager-reference.dts           | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts                     | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts         | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts                   | 2 +-
+ arch/arm/boot/dts/sh7372-mackerel.dts                   | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts            | 2 +-
+ arch/arm/boot/dts/sh73a0-kzm9g.dts                      | 2 +-
+ 16 files changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/emev2.h b/arch/arm/mach-shmobile/include/mach/emev2.h
-index c2eb756..fcb142a 100644
---- a/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ b/arch/arm/mach-shmobile/include/mach/emev2.h
-@@ -3,12 +3,7 @@
+diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+index 1fb20f2..b1deaf7 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+@@ -9,7 +9,7 @@
+  */
  
- extern void emev2_map_io(void);
- extern void emev2_init_delay(void);
--extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
--
--#define EMEV2_GPIO_BASE 200
--#define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
--
- extern struct smp_operations emev2_smp_ops;
+ /dts-v1/;
+-/include/ "r7s72100.dtsi"
++#include "r7s72100.dtsi"
  
- #endif /* __ASM_EMEV2_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 4d39bf4..e7031b0 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -19,22 +19,12 @@
- #include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
--#include <linux/interrupt.h>
--#include <linux/irq.h>
--#include <linux/platform_device.h>
--#include <linux/platform_data/gpio-em.h>
- #include <linux/of_platform.h>
--#include <linux/delay.h>
--#include <linux/input.h>
--#include <linux/io.h>
--#include <linux/irqchip/arm-gic.h>
- #include <mach/common.h>
- #include <mach/emev2.h>
--#include <mach/irqs.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
--#include <asm/mach/time.h>
+ / {
+ 	model = "Genmai";
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+index 25dbc1c..338f0cb 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
+@@ -9,7 +9,7 @@
+  */
  
- static struct map_desc emev2_io_desc[] __initdata = {
- #ifdef CONFIG_SMP
-@@ -53,144 +43,6 @@ void __init emev2_map_io(void)
- 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
- }
+ /dts-v1/;
+-/include/ "r8a73a4.dtsi"
++#include "r8a73a4.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
  
--/* UART */
--static struct resource uart0_resources[] = {
--	DEFINE_RES_MEM(0xe1020000, 0x38),
--	DEFINE_RES_IRQ(40),
--};
--
--static struct resource uart1_resources[] = {
--	DEFINE_RES_MEM(0xe1030000, 0x38),
--	DEFINE_RES_IRQ(41),
--};
--
--static struct resource uart2_resources[] = {
--	DEFINE_RES_MEM(0xe1040000, 0x38),
--	DEFINE_RES_IRQ(42),
--};
--
--static struct resource uart3_resources[] = {
--	DEFINE_RES_MEM(0xe1050000, 0x38),
--	DEFINE_RES_IRQ(43),
--};
--
--#define emev2_register_uart(idx)					\
--	platform_device_register_simple("serial8250-em", idx,		\
--					uart##idx##_resources,		\
--					ARRAY_SIZE(uart##idx##_resources))
--
--/* STI */
--static struct resource sti_resources[] = {
--	DEFINE_RES_MEM(0xe0180000, 0x54),
--	DEFINE_RES_IRQ(157),
--};
--
--#define emev2_register_sti()					\
--	platform_device_register_simple("em_sti", 0,		\
--					sti_resources,		\
--					ARRAY_SIZE(sti_resources))
--
--/* GIO */
--static struct gpio_em_config gio0_config = {
--	.gpio_base = 0,
--	.irq_base = EMEV2_GPIO_IRQ(0),
--	.number_of_pins = 32,
--};
--
--static struct resource gio0_resources[] = {
--	DEFINE_RES_MEM(0xe0050000, 0x2c),
--	DEFINE_RES_MEM(0xe0050040, 0x20),
--	DEFINE_RES_IRQ(99),
--	DEFINE_RES_IRQ(100),
--};
--
--static struct gpio_em_config gio1_config = {
--	.gpio_base = 32,
--	.irq_base = EMEV2_GPIO_IRQ(32),
--	.number_of_pins = 32,
--};
--
--static struct resource gio1_resources[] = {
--	DEFINE_RES_MEM(0xe0050080, 0x2c),
--	DEFINE_RES_MEM(0xe00500c0, 0x20),
--	DEFINE_RES_IRQ(101),
--	DEFINE_RES_IRQ(102),
--};
--
--static struct gpio_em_config gio2_config = {
--	.gpio_base = 64,
--	.irq_base = EMEV2_GPIO_IRQ(64),
--	.number_of_pins = 32,
--};
--
--static struct resource gio2_resources[] = {
--	DEFINE_RES_MEM(0xe0050100, 0x2c),
--	DEFINE_RES_MEM(0xe0050140, 0x20),
--	DEFINE_RES_IRQ(103),
--	DEFINE_RES_IRQ(104),
--};
--
--static struct gpio_em_config gio3_config = {
--	.gpio_base = 96,
--	.irq_base = EMEV2_GPIO_IRQ(96),
--	.number_of_pins = 32,
--};
--
--static struct resource gio3_resources[] = {
--	DEFINE_RES_MEM(0xe0050180, 0x2c),
--	DEFINE_RES_MEM(0xe00501c0, 0x20),
--	DEFINE_RES_IRQ(105),
--	DEFINE_RES_IRQ(106),
--};
--
--static struct gpio_em_config gio4_config = {
--	.gpio_base = 128,
--	.irq_base = EMEV2_GPIO_IRQ(128),
--	.number_of_pins = 31,
--};
--
--static struct resource gio4_resources[] = {
--	DEFINE_RES_MEM(0xe0050200, 0x2c),
--	DEFINE_RES_MEM(0xe0050240, 0x20),
--	DEFINE_RES_IRQ(107),
--	DEFINE_RES_IRQ(108),
--};
--
--#define emev2_register_gio(idx)						\
--	platform_device_register_resndata(&platform_bus, "em_gio",	\
--					  idx, gio##idx##_resources,	\
--					  ARRAY_SIZE(gio##idx##_resources), \
--					  &gio##idx##_config,		\
--					  sizeof(struct gpio_em_config))
--
--static struct resource pmu_resources[] = {
--	DEFINE_RES_IRQ(152),
--	DEFINE_RES_IRQ(153),
--};
--
--#define emev2_register_pmu()					\
--	platform_device_register_simple("arm-pmu", -1,		\
--					pmu_resources,		\
--					ARRAY_SIZE(pmu_resources))
--
--void __init emev2_add_standard_devices(void)
--{
--	if (!IS_ENABLED(CONFIG_COMMON_CLK))
--		emev2_clock_init();
--
--	emev2_register_uart(0);
--	emev2_register_uart(1);
--	emev2_register_uart(2);
--	emev2_register_uart(3);
--	emev2_register_sti();
--	emev2_register_gio(0);
--	emev2_register_gio(1);
--	emev2_register_gio(2);
--	emev2_register_gio(3);
--	emev2_register_gio(4);
--	emev2_register_pmu();
--}
--
- void __init emev2_init_delay(void)
- {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+ / {
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 91436b5..7db8d79 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a73a4.dtsi"
++#include "r8a73a4.dtsi"
+ 
+ / {
+ 	model = "APE6EVM";
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 6a54219..c7c5bcb 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7740.dtsi"
++#include "r8a7740.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/pwm/pwm.h>
+ 
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 426cd9c..a06a11e 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7740.dtsi"
++#include "r8a7740.dtsi"
+ 
+ / {
+ 	model = "armadillo 800 eva";
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f488c48..be9b753 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -15,7 +15,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7778.dtsi"
++#include "r8a7778.dtsi"
+ 
+ / {
+ 	model = "bockw";
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 12bbebc..46a884d 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -15,7 +15,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7778.dtsi"
++#include "r8a7778.dtsi"
+ 
+ / {
+ 	model = "bockw";
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index ce3fe9e..08b9ee37 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -10,7 +10,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7779.dtsi"
++#include "r8a7779.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index f3f7f79..a7af2c2 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -10,7 +10,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7779.dtsi"
++#include "r8a7779.dtsi"
+ 
+ / {
+ 	model = "marzen";
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+index ec82674..cce7dbf 100644
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7790.dtsi"
++#include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 203bd08..8799dfb 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7790.dtsi"
++#include "r8a7790.dtsi"
+ 
+ / {
+ 	model = "Lager";
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+index b8a374a..1a0f082 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+@@ -10,7 +10,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7791.dtsi"
++#include "r8a7791.dtsi"
+ 
+ / {
+ 	model = "Koelsch";
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 1ce5250..c4e8b3a 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -10,7 +10,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r8a7791.dtsi"
++#include "r8a7791.dtsi"
+ 
+ / {
+ 	model = "Koelsch";
+diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
+index 8acf51e..a759a27 100644
+--- a/arch/arm/boot/dts/sh7372-mackerel.dts
++++ b/arch/arm/boot/dts/sh7372-mackerel.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "sh7372.dtsi"
++#include "sh7372.dtsi"
+ 
+ / {
+ 	model = "Mackerel (AP4 EVM 2nd)";
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index df75aea..d5a6d74 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -12,7 +12,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "sh73a0.dtsi"
++#include "sh73a0.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 0f1ca77..27c5f42 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "sh73a0.dtsi"
++#include "sh73a0.dtsi"
+ 
+ / {
+ 	model = "KZM-A9-GT";
 -- 
 1.8.4
 
