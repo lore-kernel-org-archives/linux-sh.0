@@ -1,52 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:14:02 +0000
-Subject: [PATCH v4 16/16] ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
-Message-Id: <1386771242-21876-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:43 +0000
+Subject: [PATCH 02/33] ARM: shmobile: r8a7779: add I2C clock for DT
+Message-Id: <b918b68123718f262abcac6509dc8c05ee47e851.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that the r8a7790 DT platforms use the common clock framework,
-there's no need to manually create clock aliases for devices
-instantiated through DT, as those devices will reference their clocks
-directly in the device tree. Remove those aliases.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
+(ARM: mach-shmobile: r8a7779: Minimal setup using DT)
+added I2C driver for DT, but it didn't add clock.
+This patch adds missing clock for I2C
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 10 ----------
- 1 file changed, 10 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 312376d..368cb40 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -291,24 +291,14 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
--	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
--	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
--	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
--	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
--	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 1f7080f..badb8b7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -184,9 +184,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP016]), /* TMU02 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("ffc71000.i2c", &mstp_clks[MSTP029]), /* I2C1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("ffc72000.i2c", &mstp_clks[MSTP028]), /* I2C2 */
+ 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
++	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
-1.8.3.2
+1.8.4
 
