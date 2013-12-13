@@ -1,37 +1,80 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:07 +0000
-Subject: [PATCH 05/28] ARM: shmobile: Select GPIO in case of the r8a7791 SoC
-Message-Id: <aeee29c56ae524c188d15fcb6a1aca617e1e601a.1385950394.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:27 +0000
+Subject: [PATCH 53/69] ARM: shmobile: kzm9g-reference: Add GPIO keys to DT
+Message-Id: <5ec5f73463611514fe46b2167e471b17626007f9.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Make it possible to build GPIO on r8a7791.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 46 ++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index ff7c4ce..4e1cc76 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -97,6 +97,7 @@ config ARCH_R8A7790
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index d58877d..5bb593d 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -106,6 +106,52 @@
+ 			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		back-key {
++			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
++			linux,code = <158>;
++			label = "SW3";
++		};
++
++		right-key {
++			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
++			linux,code = <106>;
++			label = "SW2-R";
++		};
++
++		left-key {
++			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
++			linux,code = <105>;
++			label = "SW2-L";
++		};
++
++		enter-key {
++			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
++			linux,code = <28>;
++			label = "SW2-P";
++		};
++
++		up-key {
++			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
++			linux,code = <103>;
++			label = "SW2-U";
++		};
++
++		down-key {
++			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
++			linux,code = <108>;
++			label = "SW2-D";
++		};
++
++		home-key {
++			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
++			linux,code = <102>;
++			label = "SW1";
++		};
++	};
+ };
  
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-+	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
+ &i2c0 {
 -- 
 1.8.4
 
