@@ -1,73 +1,68 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 18 Dec 2013 21:32:00 +0000
-Subject: [PATCH V2 4/5] arm: shmobile: genmai: adapt dts to use native i2c driver
-Message-Id: <1387402321-21866-5-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:28 +0000
+Subject: [PATCH 02/69] ARM: shmobile: r8a7779: tidyup I2C driver name on DTSI
+Message-Id: <6363070ef7744ad8b6af2ef37afc913c41e82547.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Switch from the gpio-driver to the shiny new native driver. Tested by
-accessing the eeprom on the genmai board.
+10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
+(ARM: mach-shmobile: r8a7779: Minimal setup using DT)
+added I2C driver, but it was SH-Mobile I2C.
+R-Car H1 needs R-Car I2C driver.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-V2: fixed the eeprom label
-
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 29 ++++++++++---------------
- 1 file changed, 11 insertions(+), 18 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index ce5da0b..5e9f41d 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -39,24 +39,6 @@
- 			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
- 		};
- 	};
--
--	i2c@0 {
--		compatible = "i2c-gpio";
--		gpios = <&port1 5 GPIO_ACTIVE_HIGH /* sda */
--			 &port1 4 GPIO_ACTIVE_HIGH /* scl */
--			>;
--		i2c-gpio,sda-open-drain;
--		i2c-gpio,scl-open-drain;
--		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
--		#address-cells = <1>;
--		#size-cells = <0>;
--
--		flash@50 {
--			compatible = "renesas,24c128";
--			reg = <0x50>;
--			pagesize = <64>;
--		};
--	};
- };
- 
- &pfc {
-@@ -68,3 +50,14 @@
- 		renesas,function = "scif2";
- 	};
- };
-+
-+&i2c2 {
-+	status = "okay";
-+	clock-frequency = <400000>;
-+
-+	eeprom@50 {
-+		compatible = "renesas,24c128";
-+		reg = <0x50>;
-+		pagesize = <64>;
-+	};
-+};
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 19faeac..da61d27 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -153,7 +153,7 @@
+ 	i2c0: i2c@ffc70000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,i2c-r8a7779";
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 79 0x4>;
+@@ -163,7 +163,7 @@
+ 	i2c1: i2c@ffc71000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,i2c-r8a7779";
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 82 0x4>;
+@@ -173,7 +173,7 @@
+ 	i2c2: i2c@ffc72000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,i2c-r8a7779";
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 80 0x4>;
+@@ -183,7 +183,7 @@
+ 	i2c3: i2c@ffc73000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,i2c-r8a7779";
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 81 0x4>;
 -- 
-1.8.4.2
+1.8.4
 
