@@ -1,71 +1,41 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 12 Dec 2013 17:24:00 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sies
-Message-Id: <1386869040-20849-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 13 Dec 2013 02:37:08 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sies
+Message-Id: <871u1hsd44.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1386869040-20849-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1386869040-20849-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The r8a7790.dtsi file has three sdhi nodes which all have the wrong resource
-size for their register block. This causes the sh_modbile_sdhi driver to
-fail to communicate with card at-all.
 
-Change each sdhi node size from 0x100 to 0x200 to correct this.
+Hi Ben
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Linux SH <linux-sh@vger.kernel.org>
-Cc: Linux ARM <linux-arm-kernel@lists.infradead.org>
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Tested-by: William Towle <william.towle@codethink.co.uk>
+Thank you for your patch
+
+> The r8a7790.dtsi file has three sdhi nodes which all have the wrong resource
+> size for their register block. This causes the sh_modbile_sdhi driver to
+> fail to communicate with card at-all.
+> 
+> Change each sdhi node size from 0x100 to 0x200 to correct this.
+> 
+> Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> Cc: Magnus Damm <magnus.damm@gmail.com>
+> Cc: Simon Horman <horms@verge.net.au>
+> Cc: Linux SH <linux-sh@vger.kernel.org>
+> Cc: Linux ARM <linux-arm-kernel@lists.infradead.org>
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> Tested-by: William Towle <william.towle@codethink.co.uk>
+> ---
+
+Unfortunately, sdhi resource size 0x100 is corrent on Renesas SDHI.
+The wrong is SDHI/TMIO driver side, not SoC side.
+Now, I'm working/sending sh_modbile_sdhi driver fixup patches for R-Car H2,
+but it need more time (= there is merge timing issue)
+
+Best regards
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 68b7b87..e218f25 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -254,7 +254,7 @@
- 
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee100000 0 0x100>;
-+		reg = <0 0xee100000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
-@@ -263,7 +263,7 @@
- 
- 	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee120000 0 0x100>;
-+		reg = <0 0xee120000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
-@@ -272,7 +272,7 @@
- 
- 	sdhi2: sd@ee140000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee140000 0 0x100>;
-+		reg = <0 0xee140000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
-@@ -281,7 +281,7 @@
- 
- 	sdhi3: sd@ee160000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee160000 0 0x100>;
-+		reg = <0 0xee160000 0 0x200>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		cap-sd-highspeed;
--- 
-1.8.5.1
-
+Kuninori Morimoto
