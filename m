@@ -1,43 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:13 +0000
-Subject: [PATCH 17/26] ARM: shmobile: Hook up SW30-SW36 on Koelsch
-Message-Id: <159a282dc3a1bcc9a0cc3a41304c41eef229add1.1387763524.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:46 +0000
+Subject: [PATCH 13/33] ARM: shmobile: r8a7790: add QSPI support
+Message-Id: <3dd3b1cf068a64a71f1b40319ca33fcb50842bc0.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Add support for Koelsch SW30-SW36 using GPIO keys.
+Adds support for QSPI on the r8a7790.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index f0fe5d4..412e153 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -64,6 +64,13 @@ static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_3,		RCAR_GP_PIN(5, 2),	"SW2-pin3"),
- 	GPIO_KEY(KEY_2,		RCAR_GP_PIN(5, 1),	"SW2-pin2"),
- 	GPIO_KEY(KEY_1,		RCAR_GP_PIN(5, 0),	"SW2-pin1"),
-+	GPIO_KEY(KEY_G,		RCAR_GP_PIN(7, 6),	"SW36"),
-+	GPIO_KEY(KEY_F,		RCAR_GP_PIN(7, 5),	"SW35"),
-+	GPIO_KEY(KEY_E,		RCAR_GP_PIN(7, 4),	"SW34"),
-+	GPIO_KEY(KEY_D,		RCAR_GP_PIN(7, 3),	"SW33"),
-+	GPIO_KEY(KEY_C,		RCAR_GP_PIN(7, 2),	"SW32"),
-+	GPIO_KEY(KEY_B,		RCAR_GP_PIN(7, 1),	"SW31"),
-+	GPIO_KEY(KEY_A,		RCAR_GP_PIN(7, 0),	"SW30"),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 161d44e..5269640 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -183,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ /* MSTP */
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928,
++	MSTP917,
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+@@ -199,6 +200,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
+ 	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
+ 	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
++	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
+@@ -298,6 +300,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
  };
- 
- static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
 -- 
 1.8.4
 
