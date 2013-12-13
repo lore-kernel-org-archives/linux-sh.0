@@ -1,20 +1,49 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 19 Dec 2013 22:26:32 +0000
-Subject: [PATCH 0/1] Add Ether's PHY IRQ support for R8A7791/Koelsch board
-Message-Id: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:46 +0000
+Subject: [PATCH 12/69] ARM: shmobile: bockw: add MMCIF support on DTS
+Message-Id: <14cdd83a6df84849c369b201ce248e0213d735e0.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-   Here's the patch against Simon Horman's 'renesas.git' repo,
-'renesas-devel-v3.13-rc4-20131219' tag. Here we add support for the Ether's PHY
-IRQ to the R8A7791/Koelsch board. The patchset depends on the two 'sh_eth' driver
-patches posted earlier in order to compile and work.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-[1/1] ARM: shmobile: Koelsch: pass Ether PHY IRQ
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 3c1d1f0..c6b834f 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -50,6 +50,21 @@
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
++
++	mmc_pins: mmc {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
++};
++
++&mmcif {
++	pinctrl-0 = <&mmc_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	broken-cd;
++	status = "okay";
+ };
+ 
+ &irqpin {
+-- 
+1.8.4
 
-WBR, Sergei
