@@ -1,49 +1,55 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 18 Dec 2013 21:31:56 +0000
-Subject: [PATCH V2 0/5] arm: shmobile: r7s72100: add native i2c support
-Message-Id: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:58 +0000
+Subject: [PATCH 25/33] ARM: shmobile: Add r8a7791 clocks for thermal devices
+Message-Id: <8476cee684a68564d315043953fe090b36e9cfd2.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Here is a series to support the I2C core of the r7s72100 natively. It has been
-tested with a genmai board where an eeprom is connected. The series can be
-found here:
+From: Magnus Damm <damm@opensource.se>
 
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/riic
+Add the r8a7791 thermal device as legacy clocks.
 
-It is based on the latest r7s72100 topic branch from Simon and the latest patch
-series from Magnus. Note there is one issue with the current PFC driver which
-needs to be sorted out. Check patch 1/5 for details.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-I've addressed all comments from V1. See patches for details.
-
-Comments welcome. Thanks,
-
-   Wolfram
-
-
-Wolfram Sang (5):
-  pinctrl: r7s72100: add riic groups
-  arm: shmobile: r7s72100: add i2c clocks
-  arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-  arm: shmobile: genmai: adapt dts to use native i2c driver
-  i2c: riic: add driver
-
- Documentation/devicetree/bindings/i2c/i2c-riic.txt |  29 ++
- arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  29 +-
- arch/arm/boot/dts/r7s72100.dtsi                    | 102 +++++
- arch/arm/mach-shmobile/clock-r7s72100.c            |  12 +-
- drivers/i2c/busses/Kconfig                         |  10 +
- drivers/i2c/busses/Makefile                        |   1 +
- drivers/i2c/busses/i2c-riic.c                      | 426 +++++++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-r7s72100.c              |  45 +++
- 8 files changed, 635 insertions(+), 19 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-riic.txt
- create mode 100644 drivers/i2c/busses/i2c-riic.c
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index fda7c6c..ff2d60d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -124,6 +124,7 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP522,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
+@@ -140,6 +141,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP718] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 18, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
++	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+@@ -188,6 +190,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ };
+ 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.8.4.2
+1.8.4
 
