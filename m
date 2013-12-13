@@ -1,21 +1,41 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 03 Dec 2013 09:39:00 +0000
-Subject: Re: [PATCH 0/2] sh-pfc: Fix pin bias setup
-Message-Id: <CACRpkdZN-qQqsQ96sdkCUQsQXu=5skXfWWXKh5qrz-TLjf8iyA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:44 +0000
+Subject: [PATCH 11/33] ARM: shmobile: r8a7779: add SDHI clock support for DT
+Message-Id: <ac0ddd9d0baa68e952428325d42cc50a80b18761.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 28, 2013 at 4:20 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> These two patches fix typos in the pin bias setup code for r8a7740 and sh7372
-> that resulted in the incorrect register being written when configuring pull-ups
-> and pull-downs.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Both applied to the pinctrl tree for fixes.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index badb8b7..5c83259 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -201,9 +201,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("ffe4c000.sdhi", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("ffe4d000.sdhi", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("ffe4e000.sdhi", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
++	CLKDEV_DEV_ID("ffe4f000.sdhi", &mstp_clks[MSTP320]), /* SDHI3 */
+ 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
+ };
+ 
+-- 
+1.8.4
 
-Yours,
-Linus Walleij
