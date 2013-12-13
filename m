@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:47 +0000
-Subject: [PATCH 14/33] ARM: shmobile: Enable MTU2 on r7s72100
-Message-Id: <d18e06116d5e7b277e73e3bdc6e08208aabcedc7.1386897180.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:54 +0000
+Subject: [PATCH 21/33] ARM: shmobile: r8a7791: Add DU and LVDS clocks
+Message-Id: <cf4f85ccd5c235123a8a1827d2265da5c33a1bb0.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1386897180.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
@@ -10,76 +10,62 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add MTU2 as r7s72100 system timer.
+The ZX parent clock isn't implemented yet, add it as well.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c |  1 +
- arch/arm/mach-shmobile/setup-r7s72100.c | 22 ++++++++++++++++++++++
- 2 files changed, 23 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 4aba20c..1c9d261 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -178,6 +178,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
-+	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index c9a26f1..fda7c6c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
+ SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
+ SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
+ SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
++SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
+ 
+ static struct clk *main_clks[] = {
+ 	&extal_clk,
+@@ -116,11 +117,12 @@ static struct clk *main_clks[] = {
+ 	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
++	&zx_clk,
  };
  
- void __init r7s72100_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index d4eb509..55f0b9c 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -22,6 +22,7 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r7s72100.h>
-@@ -58,6 +59,26 @@ static inline void r7s72100_register_scif(int idx)
- 				      sizeof(struct plat_sci_port));
- }
+ /* MSTP */
+ enum {
+-	MSTP721, MSTP720,
++	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+@@ -129,6 +131,9 @@ enum {
+ };
  
-+
-+static struct sh_timer_config mtu2_0_platform_data __initdata = {
-+	.name = "MTU2_0",
-+	.timer_bit = 0,
-+	.channel_offset = -0x80,
-+	.clockevent_rating = 200,
-+};
-+
-+static struct resource mtu2_0_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xfcff0300, 0x27),
-+	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
-+};
-+
-+#define r7s72100_register_mtu2(idx)					\
-+	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
-+					  idx, mtu2_##idx##_resources,	\
-+					  ARRAY_SIZE(mtu2_##idx##_resources), \
-+					  &mtu2_##idx##_platform_data,	\
-+					  sizeof(struct sh_timer_config))
-+
- void __init r7s72100_add_dt_devices(void)
- {
- 	r7s72100_register_scif(SCIF0);
-@@ -68,6 +89,7 @@ void __init r7s72100_add_dt_devices(void)
- 	r7s72100_register_scif(SCIF5);
- 	r7s72100_register_scif(SCIF6);
- 	r7s72100_register_scif(SCIF7);
-+	r7s72100_register_mtu2(0);
- }
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
++	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
++	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
+ 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP719] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 19, 0), /* SCIF2 */
+@@ -164,6 +169,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
  
- void __init r7s72100_init_early(void)
+ 	/* MSTP */
++	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7791", &mstp_clks[MSTP726]),
++	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7791", &mstp_clks[MSTP724]),
++	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7791", &mstp_clks[MSTP723]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]), /* SCIFB0 */
 -- 
 1.8.4
 
