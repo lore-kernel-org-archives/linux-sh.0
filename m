@@ -1,39 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:14 +0000
-Subject: [PATCH 07/47] serial: sh-sci: Set the UPF_FIXED_PORT flag
-Message-Id: <1386323994-12850-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:41 +0000
+Subject: [PATCH 67/69] ARM: shmobile: Use r8a7779 suffix for INTC compat string
+Message-Id: <11ef0340a8cdf9db9a5c49298f361258d090fefb.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The base address, IRQ and baud rate generator parent clock rate can't be
-changed by userspace. Mark the port as fixed.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Add "renesas,intc-irqpin-r8a7779" to the compatible string for the
+IRQ pins in case of r8a7779 INTC. This makes the INTC irqpin follow
+the same style as the other devices and also makes it more future proof.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 2 +-
+ arch/arm/boot/dts/r8a7779.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 3e5f62a..b5dd0ad 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2247,7 +2247,7 @@ static int sci_init_single(struct platform_device *dev,
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index b2b418a..8284715 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -135,7 +135,7 @@
+ 	};
  
- 	port->mapbase		= p->mapbase;
- 	port->type		= p->type;
--	port->flags		= p->flags;
-+	port->flags		= UPF_FIXED_PORT | p->flags;
- 	port->regshift		= p->regshift;
- 
- 	/*
+ 	irqpin0: irqpin@fe780010 {
+-		compatible = "renesas,intc-irqpin";
++		compatible = "renesas,intc-irqpin-r8a7779", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		status = "disabled";
+ 		interrupt-controller;
 -- 
-1.8.3.2
+1.8.4
 
