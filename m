@@ -1,50 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:33 +0000
-Subject: [PATCH 03/21] ARM: shmobile: r8a73a4: Specify PFC interrupts in DT
-Message-Id: <defc82eabf962b83ac9e112238baa895890645ea.1387893834.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:53 +0000
+Subject: [PATCH 20/33] ARM: shmobile: Select USE_OF on EMEV2
+Message-Id: <81fd1b68796aadae70751ba8805b34b20df09e1b.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Now when the legacy KZM9D board code is gone, make sure
+USE_OF is selected in case of the EMEV2 SoC.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ arch/arm/mach-shmobile/Kconfig       | 1 +
+ arch/arm/mach-shmobile/setup-emev2.c | 4 ----
+ 2 files changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 6b7ce89..62d0211 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -288,6 +288,22 @@
- 		reg = <0 0xe6050000 0 0x9000>;
- 		gpio-controller;
- 		#gpio-cells = <2>;
-+		interrupts-extended +			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
-+			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
-+			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
-+			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
-+			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
-+			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
-+			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
-+			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
-+			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
-+			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
-+			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
-+			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
-+			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
-+			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
-+			<&irqc1 24 0>, <&irqc1 25 0>;
- 	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 564e0ad..180b71f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -108,6 +108,7 @@ config ARCH_EMEV2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
++	select USE_OF
  
- 	sdhi0: sd@ee100000 {
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index e7031b0..c8f2a1a 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -48,8 +48,6 @@ void __init emev2_init_delay(void)
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+ }
+ 
+-#ifdef CONFIG_USE_OF
+-
+ static void __init emev2_add_standard_devices_dt(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+@@ -73,5 +71,3 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
+-
+-#endif /* CONFIG_USE_OF */
 -- 
 1.8.4
 
