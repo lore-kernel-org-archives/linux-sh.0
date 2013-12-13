@@ -1,64 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:44:59 +0000
-Subject: Re: [PATCH v2] v4l: sh_vou: Fix warnings due to improper casts and printk formats
-Message-Id: <6115347.uBxN6mlE0m@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:23 +0000
+Subject: [PATCH 49/69] ARM: shmobile: armadillo-reference: Use low level IRQ for ST1231
+Message-Id: <b69e4435e34df68d54e204b37d6bb256606fef5d.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385547327-13657-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385547327-13657-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-media@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 27 November 2013 11:15:27 Laurent Pinchart wrote:
-> Use the %zu printk specifier to print size_t variables, and cast
-> pointers to uintptr_t instead of unsigned int where applicable. This
-> fixes warnings on platforms where pointers and/or dma_addr_t have a
-> different size than int.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Let's drop this, I'll resend a patch based on the new %pad printk modifier to 
-print dma_addr_t.
+The device is configured to generate an active-low interrupt signal that
+needs to be acknowledged by the host. Configure the IRQ to trigger on
+low level.
 
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
-> Cc: linux-media@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/media/platform/sh_vou.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> Changes compared to v1:
-> 
-> - Cast to uintptr_t instead of unsigned long
-> 
-> diff --git a/drivers/media/platform/sh_vou.c
-> b/drivers/media/platform/sh_vou.c index 4f30341..69e2125 100644
-> --- a/drivers/media/platform/sh_vou.c
-> +++ b/drivers/media/platform/sh_vou.c
-> @@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
-> vb->size = vb->height * bytes_per_line;
->  	if (vb->baddr && vb->bsize < vb->size) {
->  		/* User buffer too small */
-> -		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
-> +		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
->  			 vb->bsize, vb->baddr);
->  		return -EINVAL;
->  	}
-> @@ -302,9 +302,9 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
-> }
-> 
->  	dev_dbg(vou_dev->v4l2_dev.dev,
-> -		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
-> +		"%s(): fmt #%d, %u bytes per line, phys 0x%lx, type %d, state %d\n",
->  		__func__, vou_dev->pix_idx, bytes_per_line,
-> -		videobuf_to_dma_contig(vb), vb->memory, vb->state);
-> +		(uintptr_t)videobuf_to_dma_contig(vb), vb->memory, vb->state);
-> 
->  	return 0;
->  }
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index aef425f..7b80f19 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -95,7 +95,7 @@
+ 		compatible = "sitronix,st1232";
+ 		reg = <0x55>;
+ 		interrupt-parent = <&irqpin1>;
+-		interrupts = <2 IRQ_TYPE_NONE>; /* IRQ10: hwirq 2 on irqpin1 */
++		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
+ 		pinctrl-0 = <&st1232_pins>;
+ 		pinctrl-names = "default";
+ 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
