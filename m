@@ -1,155 +1,123 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 06:59:39 +0000
-Subject: Re: [PATCH 1/2 v2] ARM: shmobile: lager: add gpio/fixed regulator for SDHI
-Message-Id: <20131205065937.GA29902@verge.net.au>
+From: <kevin.bracey@broadcom.com>
+Date: Fri, 13 Dec 2013 08:48:33 +0000
+Subject: RE: pinctrl - detailed gpio-mode pinconf design
+Message-Id: <EB2BCA6A838C7B4FB238C534ED5D7704223A3799@renexmb02.roe2.renesasmobile.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878uwqo2df.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878uwqo2df.wl%kuninori.morimoto.gx@renesas.com>
+References: <EB2BCA6A838C7B4FB238C534ED5D770422395F79@renexmb02.roe2.renesasmobile.com>
+ <CACRpkdbpv3Vjt-=3_1XbrGaiEYqCgtJCGppvoL48gad+7Licdg@mail.gmail.com>
+ <10664958.tMCNRkOk1E@avalon>
+ <EB2BCA6A838C7B4FB238C534ED5D77042239D2A9@renexmb02.roe2.renesasmobile.com>
+ <CACRpkdbzGokHHhR3GhLvF7KCFdAV=b0VHwUE4eHVfNFEGhx_Jg@mail.gmail.com>
+In-Reply-To: <CACRpkdbzGokHHhR3GhLvF7KCFdAV=b0VHwUE4eHVfNFEGhx_Jg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 04, 2013 at 10:11:06PM -0800, Kuninori Morimoto wrote:
-> Fixed regulator is used for SDHI0/2 Vcc.
-> We should use da9063 driver for Vccq,
-> but, it doesn't have regulator support at this point.
-> This patch uses gpio-regulator for it as quick-hack.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
-> 
->  - fixup conflict on Simon branch
->  - fixup space before > 
->  arch/arm/mach-shmobile/board-lager.c |   83 +++++++++++++++++++++++++++++++++-
->  1 file changed, 82 insertions(+), 1 deletion(-)
+Linus Walleij wrote:
+> On Thu, Dec 5, 2013 at 11:15 AM,  <kevin.bracey@broadcom.com> wrote:
+>> Laurent Pinchart wrote:
+>>> On Tuesday 03 December 2013 11:04:48 Linus Walleij wrote:
+>
+>>> Controlling GPIO through pinconf seems to be very twisted.
+>>> Usually it is the other way around.
+>>
+>> By my understanding of the general pinctrl concept, we should be converting that to the lovely:
+>>
+>> resume:
+>>     pinctrl_pm_select_default_state(dev);
+>> suspend:
+>>     pinctrl_pm_select_sleep_state(dev);
 
-Thanks, I will queue this up.
+> This observation is correct, and I agree with this reasoning. The PM states
+> are quite new and may take some time before they "sink in" in the kernel though,
+> but ideally people should be using them like that (atleast IMO).
 
-> 
-> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-> index ce0ba7df..f20c10a 100644
-> --- a/arch/arm/mach-shmobile/board-lager.c
-> +++ b/arch/arm/mach-shmobile/board-lager.c
-> @@ -31,7 +31,9 @@
->  #include <linux/platform_data/rcar-du.h>
->  #include <linux/platform_device.h>
->  #include <linux/phy.h>
-> +#include <linux/regulator/driver.h>
->  #include <linux/regulator/fixed.h>
-> +#include <linux/regulator/gpio-regulator.h>
->  #include <linux/regulator/machine.h>
->  #include <linux/sh_eth.h>
->  #include <mach/common.h>
-> @@ -146,6 +148,71 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[] >  	REGULATOR_SUPPLY("vmmc", "sh_mmcif.1"),
->  };
->  
-> +/*
-> + * SDHI regulator macro
-> + *
-> + ** FIXME**
-> + * Lager board vqmmc is provided via DA9063 PMIC chip,
-> + * and we should use ${LINK}/drivers/mfd/da9063-* driver for it.
-> + * but, it doesn't have regulator support at this point.
-> + * It uses gpio-regulator for vqmmc as quick-hack.
-> + */
-> +#define SDHI_REGULATOR(idx, vdd_pin, vccq_pin)				\
-> +static struct regulator_consumer_supply vcc_sdhi##idx##_consumer =	\
-> +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi." #idx);		\
-> +									\
-> +static struct regulator_init_data vcc_sdhi##idx##_init_data = {		\
-> +	.constraints = {						\
-> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,		\
-> +	},								\
-> +	.consumer_supplies	= &vcc_sdhi##idx##_consumer,		\
-> +	.num_consumer_supplies	= 1,					\
-> +};									\
-> +									\
-> +static const struct fixed_voltage_config vcc_sdhi##idx##_info __initconst = {\
-> +	.supply_name	= "SDHI" #idx "Vcc",				\
-> +	.microvolts	= 3300000,					\
-> +	.gpio		= vdd_pin,					\
-> +	.enable_high	= 1,						\
-> +	.init_data	= &vcc_sdhi##idx##_init_data,			\
-> +};									\
-> +									\
-> +static struct regulator_consumer_supply vccq_sdhi##idx##_consumer =	\
-> +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi." #idx);		\
-> +									\
-> +static struct regulator_init_data vccq_sdhi##idx##_init_data = {	\
-> +	.constraints = {						\
-> +		.input_uV	= 3300000,				\
-> +		.min_uV		= 1800000,				\
-> +		.max_uV		= 3300000,				\
-> +		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |		\
-> +				  REGULATOR_CHANGE_STATUS,		\
-> +	},								\
-> +	.consumer_supplies	= &vccq_sdhi##idx##_consumer,		\
-> +	.num_consumer_supplies	= 1,					\
-> +};									\
-> +									\
-> +static struct gpio vccq_sdhi##idx##_gpio =				\
-> +	{ vccq_pin, GPIOF_OUT_INIT_HIGH, "vccq-sdhi" #idx };		\
-> +									\
-> +static struct gpio_regulator_state vccq_sdhi##idx##_states[] = {	\
-> +	{ .value = 1800000, .gpios = 0 },				\
-> +	{ .value = 3300000, .gpios = 1 },				\
-> +};									\
-> +									\
-> +static const struct gpio_regulator_config vccq_sdhi##idx##_info __initconst = {\
-> +	.supply_name	= "vqmmc",					\
-> +	.gpios		= &vccq_sdhi##idx##_gpio,			\
-> +	.nr_gpios	= 1,						\
-> +	.states		= vccq_sdhi##idx##_states,			\
-> +	.nr_states	= ARRAY_SIZE(vccq_sdhi##idx##_states),		\
-> +	.type		= REGULATOR_VOLTAGE,				\
-> +	.init_data	= &vccq_sdhi##idx##_init_data,			\
-> +};
-> +
-> +SDHI_REGULATOR(0, RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 29));
-> +SDHI_REGULATOR(2, RCAR_GP_PIN(5, 25), RCAR_GP_PIN(5, 30));
-> +
->  /* MMCIF */
->  static const struct sh_mmcif_plat_data mmcif1_pdata __initconst = {
->  	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-> @@ -256,6 +323,9 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
->  
->  static void __init lager_add_standard_devices(void)
->  {
-> +	int fixed_regulator_idx = 0;
-> +	int gpio_regulator_idx = 0;
-> +
->  	r8a7790_clock_init();
->  
->  	pinctrl_register_mappings(lager_pinctrl_map,
-> @@ -269,7 +339,8 @@ static void __init lager_add_standard_devices(void)
->  	platform_device_register_data(&platform_bus, "gpio-keys", -1,
->  				      &lager_keys_pdata,
->  				      sizeof(lager_keys_pdata));
-> -	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-> +	regulator_register_always_on(fixed_regulator_idx++,
-> +				     "fixed-3.3V", fixed3v3_power_consumers,
->  				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
->  	platform_device_register_resndata(&platform_bus, "sh_mmcif", 1,
->  					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
-> @@ -287,6 +358,16 @@ static void __init lager_add_standard_devices(void)
->  					  ARRAY_SIZE(qspi_resources),
->  					  &qspi_pdata, sizeof(qspi_pdata));
->  	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
-> +
-> +	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
-> +				      &vcc_sdhi0_info, sizeof(struct fixed_voltage_config));
-> +	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
-> +				      &vcc_sdhi2_info, sizeof(struct fixed_voltage_config));
-> +
-> +	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
-> +				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
-> +	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
-> +				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
->  }
->  
->  /*
-> -- 
-> 1.7.9.5
-> 
+I strongly approve of the PM state concept, having seen the alternative. It slots in very nicely. I'm working on 3.10-based systems, but the pinctrl_pm_select is being cherry-picked in because it makes life so much easier.
+
+>>> > This looks messy. The intention with the pin config subsystem is to 
+>>> > break things apart and make them understandable that way, and to 
+>>> > handle electronic stuff in pin config whereas driving a line 
+>>> > high/low happens in the GPIO subsystem.
+>>
+>> Which is basically an argument against ever using PIN_CONFIG_OUTPUT 0, 
+>> and the whole of "GPIO mode pitfalls" in pinctrl.txt, isn't it? It 
+>> means we can't specify idle pinctrl states that drive lines. We have to do the GPIO/function shuffle.
+>
+> Well maybe. My point was that it is OK to drive GPIO lines as part of
+> a state which is only relevant for a device driver, and where using the
+> GPIO API in top would only bloat and make things hard to follow.
+
+In practice, this is the case for the majority of the code I'm looking at. We have a large number of function drivers which have to be told their pins' GPIO numbers in platform data, solely for their suspend setting. Otherwise the pins would be entirely driven as a function, and no need for the GPIO API.
+
+> > In my initial prototype, PIN_CONFIG_OUTPUT is only available if the 
+> > gpio-mode function has been selected.
+
+> That is even more careful code than most drivers write, so sounds very nice.
+
+> > But maybe this could be made hidden and implicit, as per the GPIO API. 
+> > Eg PIN_CONFIG_OUTPUT/PIN_CONFIG_LOW_POWER_MODE
+> > implicitly selects the GPIO mux (for output/input), and 
+> > PIN_CONFIG_DRIVE_PUSH_PULL/PIN_CONFIG_BIAS_HIGH_IMPEDANCE
+> > restores the previously requested?
+>
+> I'd recommend trying to keep as close to the semantics descrived in <linux/pinctrl/pinconf-generic.h> and not add any implicit semantics.
+
+Yeah, but the catch is that the semantics described are on the assumption that pinconf is totally orthogonal to pinmux. That's not true on this platform, and on many others. I think we need some sort of general policy on how to handle conflicting requests.
+
+Personally, I can see the merits of both approaches -
+
+ a) pinconf settings forcing mux to achieve the requested pin state - working to emulate orthogonality on non-orthogonal hardware;
+
+ b) pinconf settings requiring an appropriate mux to be explicitly set for them to be available - machines/DT need to know about the mux/conf interactions.
+
+Main problem with (a) - how do you get back to "normal" mux, and is emulation just obfuscation?
+Main problem with (b) - can you guarantee mux/conf ordering?
+
+It sounds like you prefer (b), and that is what my prototype does. It's what I originally decided, but I wasn't totally certain about how much pinconf-generic.h was intended to be a framework/language whose usage is always going to be very pin-driver-dependent, versus trying to make it an API trying to produce consistent behaviour.
+
+>>> > This must be some misunderstanding. DT does not specify 
+>>> > application/ordering semantics. It does not define sequences at all.
+>>> > The device driver parsing out whatever is in the device tree has to 
+>>> > take care of ordering stuff and driving the hardware.
+>
+>> Well, the pinctrl core does process its tables in order. So in the 
+>> case where a pinconf setting may interact with a pinmux setting, the 
+>> ordering that the
+>> pinconf+pinmux entries get processed could be significant. Eg if
+>> PIN_CONFIG_OUTPUT requires the "gpio-mode" function selected first.
+
+> OK so we solved the similar situation where configs had to be applied in some certain order for the pin config API by passing the array of configs down to the driver and let is handle this.
+
+Well, ordering is already preserved by the pinctrl core. As far as I can see, when you're given a table of settings through pinctrl_register_map, you keep the ordering, and when that state is selected, the settings are passed down to the driver one-by-one in original order.
+
+If that can be guaranteed, then we may not need to be do anything else.
+
+> So can we think of an API that gives the drivers the freedom to express or behave differently here?
+
+I don't think it's necessary.
+
+For DT, the driver can control ordering in its parse routines. The sh-pfc driver does already put a node's function request first in its dt_node_to_map(), which is what gpio-mode needs. If the core preserves that order, we're sorted.
+
+For non-DT, I think it's acceptable to require that the tables should be ordered correctly by the board to meet the documented requirements of the driver - so sh-pfc board files would be required to put gpio-mode mux selections before PIN_CONFIG_OUTPUT/PIN_BIAS_CONFIG_HIGH_IMPEDANCE selections.
+
+And either way, for glitch-free-handover, I'm also requiring that the configs always be specified - the mux won't be switched by the driver unless/until a config has been parsed and set. So in the driver - first pinmux "gpio-mode" primes it, and makes the output/high-impedance pinconfs legal. Then the pinconfs set the IE/OE/DATA bits in the GPIO registers and flip to GPIO mux.
+
+
+Now, going back to the pinconfs. The naming of the configs still throws me a little. Particularly all the "bias" settings. "BIAS_HIGH_IMPEDANCE" doesn't feel like a "bias" to me. What does it mean to "BIAS_DISABLE" a "BIAS_HIGH_IMPEDANCE"? Should "BIAS_HIGH_IMPEDANCE" turn off "BIAS_PULL_UP"?
+
+My feeling is that it would be better named just "CONFIG_HIGH_IMPEDANCE", making it a separate thing from all the other biases, akin to CONFIG_DRIVE_* and CONFIG_OUTPUT.
+
+In summary, I think the two independent exclusive Boolean sets in the configs seem to be:
+
+(BIAS_DISABLE | BIAS_BUS_HOLD | BIAS_PULL_DOWN | BIAS_PULL_UP | BIAS_PULL_PIN_DEFAULT)
+([BIAS_]HIGH_IMPEDANCE | DRIVE_PUSH_PULL | DRIVE_OPEN_DRAIN | DRIVE_OPEN_SOURCE | LOW_POWER_MODE | OUTPUT)
+
+And that's effectively how I'm treating them, for the 5 I'm handling for our hardware (BIAS_DISABLE|BIAS_PULL_DOWN|BIAS_PULL_UP)+(BIAS_HIGH_IMPEDANCE|OUTPUT).
+
+Does that make sense? Maybe it's hardware specific, but at least for our case, where the pulls are non-muxed and the drives are muxed, that separation seems logical.
+
+Regards,
+
+Kevin
+
