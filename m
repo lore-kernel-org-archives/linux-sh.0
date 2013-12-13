@@ -1,156 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 10:12:48 +0000
-Subject: [PATCH v5 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
-Message-Id: <20131217101248.17491.52424.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:44 +0000
+Subject: [PATCH 10/69] ARM: shmobile: bockw: remove manual PFC settings on reference
+Message-Id: <dbece02b3460dcc8f43b8c1827b9eb363c2ced36.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217101212.17491.56898.sendpatchset@w520>
-In-Reply-To: <20131217101212.17491.56898.sendpatchset@w520>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU and STI
-it is safe to remove these from mach-shmobile.
+Current Bock-W reference is calling PFC initializer manually,
+but now, it can use DTS PFC.
 
-Also select timers per SoC via SYS_SUPPORTS_xxx.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-bockw-reference.c | 12 ------------
+ 1 file changed, 12 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig |   35 +++++++++++++++++------------------
- 1 file changed, 17 insertions(+), 18 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index ae88fda..972f951 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -28,14 +28,6 @@
+  *	see board-bock.c for checking detail of dip-switch
+  */
+ 
+-static const struct pinctrl_map bockw_pinctrl_map[] = {
+-	/* SCIF0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+-				  "scif0_data_a", "scif0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a7778",
+-				  "scif0_ctrl", "scif0"),
+-};
+-
+ #define FPGA	0x18200000
+ #define IRQ0MR	0x30
+ #define COMCTLR	0x101c
+@@ -45,10 +37,6 @@ static void __init bockw_init(void)
+ 
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin_dt(1);
+-
+-	pinctrl_register_mappings(bockw_pinctrl_map,
+-				  ARRAY_SIZE(bockw_pinctrl_map));
+-	r8a7778_pinmux_init();
+ 	r8a7778_add_dt_devices();
+ 
+ 	fpga = ioremap_nocache(FPGA, SZ_1M);
+-- 
+1.8.4
 
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-12-17 18:52:58.000000000 +0900
-@@ -24,13 +24,16 @@ comment "Renesas ARM SoCs System Type"
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-+	select SYS_SUPPORTS_EM_STI
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select SYS_SUPPORTS_SH_MTU2
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -60,6 +63,8 @@ config ARCH_SH7372
- 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_SH73A0
- 	bool "SH-Mobile AG5 (R8A73A00)"
-@@ -69,6 +74,8 @@ config ARCH_SH73A0
- 	select I2C
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A73A4
- 	bool "R-Mobile APE6 (R8A73A40)"
-@@ -79,6 +86,8 @@ config ARCH_R8A73A4
- 	select RENESAS_IRQC
- 	select ARCH_HAS_CPUFREQ
- 	select ARCH_HAS_OPP
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
-@@ -87,6 +96,8 @@ config ARCH_R8A7740
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7778
- 	bool "R-Car M1A (R8A77781)"
-@@ -96,6 +107,7 @@ config ARCH_R8A7778
- 	select ARM_GIC
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
-@@ -106,6 +118,7 @@ config ARCH_R8A7779
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-@@ -115,6 +128,7 @@ config ARCH_R8A7790
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-@@ -124,6 +138,7 @@ config ARCH_R8A7791
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-@@ -133,6 +148,7 @@ config ARCH_EMEV2
- 	select MIGHT_HAVE_PCI
- 	select USE_OF
- 	select AUTO_ZRELADDR
-+	select SYS_SUPPORTS_EM_STI
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-@@ -140,6 +156,7 @@ config ARCH_R7S72100
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select SYS_SUPPORTS_SH_MTU2
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -334,24 +351,6 @@ config SHMOBILE_TIMER_HZ
- 	  want to select a HZ value such as 128 that can evenly divide RCLK.
- 	  A HZ value that does not divide evenly may cause timer drift.
- 
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	default y
--	help
--	  This enables build of the TMU timer driver.
--
--config EM_TIMER_STI
--	bool "STI timer driver"
--	default y
--	help
--	  This enables build of the STI timer driver.
--
- endmenu
- 
- endif
