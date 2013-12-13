@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:55 +0000
-Subject: [PATCH 03/13] ARM: shmobile: sh73a0: add FSI clock support for DT
-Message-Id: <e1c98c5db947cbb934b8fb0a2faf5eafd9c035cc.1387857168.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:07 +0000
+Subject: [PATCH 33/69] ARM: shmobile: bockw: enable HSPI0 on DTS
+Message-Id: <8c6639665d9771d2e84fe6e0915d46a6fbb8594e.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,21 +15,35 @@ From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index c92c023..5e6a056 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -658,6 +658,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
- 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
-+	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
- 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 9c8bd37..f488c48 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -86,6 +86,11 @@
+ 				  "sdhi0_cd", "sdhi0_wp";
+ 		renesas,function = "sdhi0";
+ 	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0_a";
++		renesas,function = "hspi0";
++	};
+ };
+ 
+ &sdhi0 {
+@@ -96,3 +101,9 @@
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
 -- 
 1.8.4
 
