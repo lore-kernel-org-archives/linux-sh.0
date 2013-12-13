@@ -1,36 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:41 +0000
-Subject: [PATCH 34/47] ARM: shmobile: r7s72100: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <1386323994-12850-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:46 +0000
+Subject: [PATCH 05/33] ARM: shmobile: Select GPIO in case of the r8a7791 SoC
+Message-Id: <cc3a17d799481c502485d8c0770b888c3b4d788d.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Make it possible to build GPIO on r8a7791.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r7s72100.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 81b995b..9c0b3a9 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -33,7 +33,6 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= PORT_SCIF,					\
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scbrr_algo_id	= SCBRR_ALGO_2,					\
- 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
- 			  SCSCR_REIE,					\
- };									\
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index ff7c4ce..4e1cc76 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -97,6 +97,7 @@ config ARCH_R8A7790
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
 -- 
-1.8.3.2
+1.8.4
 
