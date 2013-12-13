@@ -1,66 +1,44 @@
-From: Takashi YOSHII <takasi-y@ops.dti.ne.jp>
-Date: Sun, 01 Dec 2013 18:15:57 +0000
-Subject: [PATCH 00/11] ARM: shmobile: koelsch: MSIOF support
-Message-Id: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:00 +0000
+Subject: [PATCH 27/33] ARM: shmobile: r8a7790: fixup I2C clock source
+Message-Id: <d59f4be9d0c2acf6bf16b4f8361593b4bbb4490b.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Koelsch board has SPI connected on-board PMIC(r2a11302).
-These patches enable spidev interface for it using MSIOF
-(Clock-Synchronized Serial Interface with FIFO) module on SoC(r8a7791).
-This adds platform device support to Koelsh single-platform.
-(dt, -reference, multi-platform support are not included)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Summary of patches:
+I2C clock is based on P clock, not HP clock
 
-These are bug fix.
- [PATCH 01/11] pinctrl: sh-pfc: r8a7791: fix msiof groups to follow GROUP
- [PATCH 02/11] spi: spi-sh-msiof: round up div to fix freq calculation
-
-To use CS output function which the HW module has.
- [PATCH 03/11] spi: spi-sh-msiof: let it run even without GPIO
- [PATCH 04/11] spi: spi-sh-msiof: set hi/low Active for HW CS
-
-To support MSIOF variant that TX and RX are not separately controllable.
- [PATCH 05/11] spi: spi-sh-msiof: rx_need_dummy_tx variant
- [PATCH 06/11] spi: spi-sh-msiof: RMDIR1[15:0] may should be zero
- [PATCH 07/11] spi: spi-sh-msiof: RSCR register may absent
-
-r8a7791 part
- [PATCH 08/11] ARM: shmobile: r8a7791: Add MSIOF clocks
- [PATCH 09/11] ARM: shmobile: r8a7791: MSIOF platform device
-
-Koelsh part
- [PATCH 10/11] ARM: shmobile: koelsch: pinctrl map for MSIOF0
- [PATCH 11/11] ARM: shmobile: koelsch: spidev for r2a11302
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Takashi Yoshii (11):
-  pinctrl: sh-pfc: r8a7791: fix msiof groups to follow GROUP
-  spi: spi-sh-msiof: round up div to fix freq calculation
-  spi: spi-sh-msiof: let it run even without GPIO
-  spi: spi-sh-msiof: set hi/low Active for HW CS
-  spi: spi-sh-msiof: rx_need_dummy_tx variant
-  spi: spi-sh-msiof: RMDIR1[15:0] may should be zero
-  spi: spi-sh-msiof: RSCR register may absent
-  ARM: shmobile: r8a7791: Add MSIOF clocks
-  ARM: shmobile: r8a7791: MSIOF platform device
-  ARM: shmobile: koelsch: pinctrl map for MSIOF0
-  ARM: shmobile: koelsch: spidev for r2a11302
-
- arch/arm/mach-shmobile/board-koelsch.c |   20 ++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7791.c |    9 ++++++++-
- arch/arm/mach-shmobile/setup-r8a7791.c |   30 ++++++++++++++++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c   |   21 +++++++++++++++------
- drivers/spi/spi-sh-msiof.c             |   30 +++++++++++++++++++++---------
- include/linux/spi/sh_msiof.h           |    1 +
- 6 files changed, 95 insertions(+), 16 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index ecec746..3a267c2 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -196,10 +196,10 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP931] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 31, 0), /* I2C0 */
+-	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
+-	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
+-	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
++	[MSTP931] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 31, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 30, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 29, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
+ 	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
 -- 
-1.7.9.5
+1.8.4
 
