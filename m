@@ -1,162 +1,39 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 10 Dec 2013 18:20:25 +0000
-Subject: [PATCH 4/5] pinctrl: sh-pfc: pfc-r8a7790: Add missing VIN1 pins
-Message-Id: <1386699626-15803-5-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:52 +0000
+Subject: [PATCH 19/33] ARM: shmobile: r8a7778: add HSPI clock support for DT
+Message-Id: <6c334d232ab446cc6388430a019fc1072599b718.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Both VIN0 and VIN1 channels support identical input interfaces.
-Add missing VIN1 pins here and organize them in the same pin
-groups as VIN0.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 112 ++++++++++++++++++++++++++++++++---
- 1 file changed, 104 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 8206cdf..64ce10d 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -3127,15 +3127,91 @@ static const unsigned int vin0_clk_mux[] = {
- 	VI0_CLK_MARK,
- };
- /* - VIN1 ------------------------------------------------------------------- */
--static const unsigned int vin1_data_pins[] = {
--	RCAR_GP_PIN(2, 10), RCAR_GP_PIN(2, 11), RCAR_GP_PIN(2, 12),
--	RCAR_GP_PIN(2, 13), RCAR_GP_PIN(2, 14), RCAR_GP_PIN(2, 15),
-+static const union vin_data vin1_data_pins = {
-+	.data24 = {
-+		/* B */
-+		RCAR_GP_PIN(2, 10), RCAR_GP_PIN(2, 11),
-+		RCAR_GP_PIN(2, 12), RCAR_GP_PIN(2, 13),
-+		RCAR_GP_PIN(2, 14), RCAR_GP_PIN(2, 15),
-+		RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 17),
-+		/* G */
-+		RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 15),
-+		RCAR_GP_PIN(1, 17), RCAR_GP_PIN(1, 20),
-+		RCAR_GP_PIN(1, 22), RCAR_GP_PIN(1, 12),
-+		RCAR_GP_PIN(1, 9), RCAR_GP_PIN(1, 7),
-+		/* R */
-+		RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28),
-+		RCAR_GP_PIN(0, 29), RCAR_GP_PIN(1, 4),
-+		RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
-+		RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 8),
-+	},
-+};
-+static const union vin_data vin1_data_mux = {
-+	.data24 = {
-+		/* B */
-+		VI1_DATA0_VI1_B0_MARK, VI1_DATA1_VI1_B1_MARK,
-+		VI1_DATA2_VI1_B2_MARK, VI1_DATA3_VI1_B3_MARK,
-+		VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
-+		VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
-+		/* G */
-+		VI1_G0_MARK, VI1_G1_MARK,
-+		VI1_G2_MARK, VI1_G3_MARK,
-+		VI1_G4_MARK, VI1_G5_MARK,
-+		VI1_G6_MARK, VI1_G7_MARK,
-+		/* R */
-+		VI1_R0_MARK, VI1_R1_MARK,
-+		VI1_R2_MARK, VI1_R3_MARK,
-+		VI1_R4_MARK, VI1_R5_MARK,
-+		VI1_R6_MARK, VI1_R7_MARK,
-+	},
-+};
-+static const unsigned int vin1_data18_pins[] = {
-+	/* B */
-+	RCAR_GP_PIN(2, 12), RCAR_GP_PIN(2, 13),
-+	RCAR_GP_PIN(2, 14), RCAR_GP_PIN(2, 15),
- 	RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 17),
-+	/* G */
-+	RCAR_GP_PIN(1, 17), RCAR_GP_PIN(1, 20),
-+	RCAR_GP_PIN(1, 22), RCAR_GP_PIN(1, 12),
-+	RCAR_GP_PIN(1, 9), RCAR_GP_PIN(1, 7),
-+	/* R */
-+	RCAR_GP_PIN(0, 29), RCAR_GP_PIN(1, 4),
-+	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
-+	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 8),
- };
--static const unsigned int vin1_data_mux[] = {
--	VI1_DATA0_VI1_B0_MARK, VI1_DATA1_VI1_B1_MARK, VI1_DATA2_VI1_B2_MARK,
--	VI1_DATA3_VI1_B3_MARK, VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
-+static const unsigned int vin1_data18_mux[] = {
-+	/* B */
-+	VI1_DATA2_VI1_B2_MARK, VI1_DATA3_VI1_B3_MARK,
-+	VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
- 	VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
-+	/* G */
-+	VI1_G2_MARK, VI1_G3_MARK,
-+	VI1_G4_MARK, VI1_G5_MARK,
-+	VI1_G6_MARK, VI1_G7_MARK,
-+	/* R */
-+	VI1_R2_MARK, VI1_R3_MARK,
-+	VI1_R4_MARK, VI1_R5_MARK,
-+	VI1_R6_MARK, VI1_R7_MARK,
-+};
-+static const unsigned int vin1_sync_pins[] = {
-+	RCAR_GP_PIN(1, 24), /* HSYNC */
-+	RCAR_GP_PIN(1, 25), /* VSYNC */
-+};
-+static const unsigned int vin1_sync_mux[] = {
-+	VI1_HSYNC_N_MARK,
-+	VI1_VSYNC_N_MARK,
-+};
-+static const unsigned int vin1_field_pins[] = {
-+	RCAR_GP_PIN(1, 13),
-+};
-+static const unsigned int vin1_field_mux[] = {
-+	VI1_FIELD_MARK,
-+};
-+static const unsigned int vin1_clkenb_pins[] = {
-+	RCAR_GP_PIN(1, 26),
-+};
-+static const unsigned int vin1_clkenb_mux[] = {
-+	VI1_CLKENB_MARK,
- };
- static const unsigned int vin1_clk_pins[] = {
- 	RCAR_GP_PIN(2, 9),
-@@ -3329,7 +3405,17 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(vin0_field),
- 	SH_PFC_PIN_GROUP(vin0_clkenb),
- 	SH_PFC_PIN_GROUP(vin0_clk),
--	SH_PFC_PIN_GROUP(vin1_data),
-+	VIN_DATA_PIN_GROUP(vin1_data, 24),
-+	VIN_DATA_PIN_GROUP(vin1_data, 20),
-+	SH_PFC_PIN_GROUP(vin1_data18),
-+	VIN_DATA_PIN_GROUP(vin1_data, 16),
-+	VIN_DATA_PIN_GROUP(vin1_data, 12),
-+	VIN_DATA_PIN_GROUP(vin1_data, 10),
-+	VIN_DATA_PIN_GROUP(vin1_data, 8),
-+	VIN_DATA_PIN_GROUP(vin1_data, 4),
-+	SH_PFC_PIN_GROUP(vin1_sync),
-+	SH_PFC_PIN_GROUP(vin1_field),
-+	SH_PFC_PIN_GROUP(vin1_clkenb),
- 	SH_PFC_PIN_GROUP(vin1_clk),
- };
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 011564f..5406434 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -203,8 +203,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("fffc8000.spi", &mstp_clks[MSTP007]), /* HSPI1 */
+ 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
++	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP008]), /* SRU */
  
-@@ -3623,7 +3709,17 @@ static const char * const vin0_groups[] = {
- };
- 
- static const char * const vin1_groups[] = {
--	"vin1_data",
-+	"vin1_data24",
-+	"vin1_data20",
-+	"vin1_data18",
-+	"vin1_data16",
-+	"vin1_data12",
-+	"vin1_data10",
-+	"vin1_data8",
-+	"vin1_data4",
-+	"vin1_sync",
-+	"vin1_field",
-+	"vin1_clkenb",
- 	"vin1_clk",
- };
- 
+ 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP012]),
 -- 
-1.8.3.1
+1.8.4
 
