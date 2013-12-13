@@ -1,145 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 29 Dec 2013 21:41:56 +0000
-Subject: [PATCH] ARM: shmobile: dts: Remove r8a7791-koelsch-reference.dts
-Message-Id: <1388353316-3289-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:45 +0000
+Subject: [PATCH 12/33] ARM: shmobile: r8a7790: Add USBHS clock support
+Message-Id: <65779cb40f26b3b8638729a5216dad771216ce2a.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The dts file has been superseded by r8a7791-koelsch.dts and been removed
-from the ARCH_SHMOBILE_LEGACY dtb target. Remove it.
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds USBHS clock support.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 115 ------------------------
- 1 file changed, 115 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+ arch/arm/mach-shmobile/clock-r8a7790.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-deleted file mode 100644
-index 588ca17..0000000
---- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-+++ /dev/null
-@@ -1,115 +0,0 @@
--/*
-- * Device Tree Source for the Koelsch board
-- *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7791.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "Koelsch";
--	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
--
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	gpio-keys {
--		compatible = "gpio-keys";
--
--		key-a {
--			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
--			linux,code = <30>;
--			label = "SW30";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-b {
--			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
--			linux,code = <48>;
--			label = "SW31";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-c {
--			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
--			linux,code = <46>;
--			label = "SW32";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-d {
--			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
--			linux,code = <32>;
--			label = "SW33";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-e {
--			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
--			linux,code = <18>;
--			label = "SW34";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-f {
--			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
--			linux,code = <33>;
--			label = "SW35";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-g {
--			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
--			linux,code = <34>;
--			label = "SW36";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
--		};
--	};
--};
--
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data_d";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data_d";
--		renesas,function = "scif1";
--	};
--};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a64f965..161d44e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -186,6 +186,7 @@ enum {
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
++	MSTP704,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+@@ -208,6 +209,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
++	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -296,6 +298,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ };
+ 
+ #define R8A7790_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
