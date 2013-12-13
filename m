@@ -1,49 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:43 +0000
-Subject: [PATCH 69/69] ARM: shmobile: marzen: enable HSPI0 in DTS
-Message-Id: <1fd219561a4afc51b5f257692f3581546434db5b.1386901186.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:57 +0000
+Subject: [PATCH 24/33] ARM: shmobile: Add r8a7791 thermal platform device
+Message-Id: <887e8407704bac6c3d22620b7afe65dc4adbbcae.1386897180.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1386897180.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Based on work for the bockw board by Kuninori Morimoto.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a thermal platform device for the legacy case
+on the r8a7791 SoC. This keeps the r8a7791 in sync
+with the r8a7790 sister device.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7791.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 918085c..76f5eef 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -97,6 +97,11 @@
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
- 		renesas,function = "sdhi0";
- 	};
-+
-+	hspi0_pins: hspi0 {
-+		renesas,groups = "hspi0";
-+		renesas,function = "hspi0";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 59dd442..cddca99 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -189,6 +189,17 @@ static struct resource irqc0_resources[] = {
+ 					  &irqc##idx##_data,		\
+ 					  sizeof(struct renesas_irqc_config))
  
- &sdhi0 {
-@@ -107,3 +112,9 @@
- 	bus-width = <4>;
- 	status = "okay";
- };
-+
-+&hspi0 {
-+	pinctrl-0 = <&hspi0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
++static const struct resource thermal_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe61f0000, 0x14),
++	DEFINE_RES_MEM(0xe61f0100, 0x38),
++	DEFINE_RES_IRQ(gic_spi(69)),
 +};
++
++#define r8a7791_register_thermal()					\
++	platform_device_register_simple("rcar_thermal", -1,		\
++					thermal_resources,		\
++					ARRAY_SIZE(thermal_resources))
++
+ void __init r8a7791_add_dt_devices(void)
+ {
+ 	r8a7791_register_scif(SCIFA0);
+@@ -213,6 +224,7 @@ void __init r8a7791_add_standard_devices(void)
+ {
+ 	r8a7791_add_dt_devices();
+ 	r8a7791_register_irqc(0);
++	r8a7791_register_thermal();
+ }
+ 
+ void __init r8a7791_init_early(void)
 -- 
 1.8.4
 
