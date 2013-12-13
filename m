@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:41 +0000
-Subject: [PATCH 18/21] ARM: shmobile: r8a7790: Add QSPI module clock in device tree
-Message-Id: <91b56ca10a3cf4999bae5f8b8e7e2723bf4b1363.1387893834.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:30:36 +0000
+Subject: [PATCH 2/3] irqchip: renesas-intc-irqpin: Fix register bitfield shift calculation
+Message-Id: <e55bc55867585e6628359fd5496316576fe58a2f.1386899269.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1386899269.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386899269.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,49 +12,50 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
+The SENSE register bitfield position is incorrectly computed for SoCs
+that use 2-bit IRQ sense fields. Fix it.
+
+This has been tested on the Marzen (H1) and Bockw (M1) boards.
+
+This bug has been present since the renesas-intc-irqpin driver was
+introduced by 443580486e3b9657 ("irqchip: Renesas INTC External IRQ pin
+driver") in v3.10-rc1.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Tested-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 11 +++++++----
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- 2 files changed, 8 insertions(+), 4 deletions(-)
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 9c9a992..a179125 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -615,13 +615,16 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
-+			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
-+				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_I2C3
--				R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
-+				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
-+				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
-+				R8A7790_CLK_I2C0
- 			>;
--			clock-output-names = "rcan1", "rcan0", "i2c3", "i2c2", "i2c1", "i2c0";
-+			clock-output-names +				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
- 	};
- };
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index bbabb8e..859e9be 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -97,6 +97,7 @@
- #define R8A7790_CLK_GPIO0		12
- #define R8A7790_CLK_RCAN1		15
- #define R8A7790_CLK_RCAN0		16
-+#define R8A7790_CLK_QSPI_MOD		17
- #define R8A7790_CLK_IICDVFS		26
- #define R8A7790_CLK_I2C3		28
- #define R8A7790_CLK_I2C2		29
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 82cec63..3ee78f02 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -149,8 +149,9 @@ static void intc_irqpin_read_modify_write(struct intc_irqpin_priv *p,
+ static void intc_irqpin_mask_unmask_prio(struct intc_irqpin_priv *p,
+ 					 int irq, int do_mask)
+ {
+-	int bitfield_width = 4; /* PRIO assumed to have fixed bitfield width */
+-	int shift = (7 - irq) * bitfield_width; /* PRIO assumed to be 32-bit */
++	/* The PRIO register is assumed to be 32-bit with fixed 4-bit fields. */
++	int bitfield_width = 4;
++	int shift = 32 - (irq + 1) * bitfield_width;
+ 
+ 	intc_irqpin_read_modify_write(p, INTC_IRQPIN_REG_PRIO,
+ 				      shift, bitfield_width,
+@@ -159,8 +160,9 @@ static void intc_irqpin_mask_unmask_prio(struct intc_irqpin_priv *p,
+ 
+ static int intc_irqpin_set_sense(struct intc_irqpin_priv *p, int irq, int value)
+ {
++	/* The SENSE register is assumed to be 32-bit. */
+ 	int bitfield_width = p->config.sense_bitfield_width;
+-	int shift = (7 - irq) * bitfield_width; /* SENSE assumed to be 32-bit */
++	int shift = 32 - (irq + 1) * bitfield_width;
+ 
+ 	dev_dbg(&p->pdev->dev, "sense irq = %d, mode = %d\n", irq, value);
+ 
 -- 
 1.8.4
 
