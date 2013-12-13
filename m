@@ -1,37 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 14 Dec 2013 01:00:45 +0000
-Subject: Re: [PATCH 0/2] serial: sh-sci: Prepare for CCF migration
-Message-Id: <20131214010045.GD12584@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 13 Dec 2013 22:24:53 +0000
+Subject: [PATCH] irq-gic: remove file name from heading comment
+Message-Id: <201312140224.53928.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385658706-20093-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1516614.DSSr7jaai1@avalon>
- <20131203184346.GB23280@kroah.com>
-In-Reply-To: <20131203184346.GB23280@kroah.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 03, 2013 at 10:43:46AM -0800, Greg Kroah-Hartman wrote:
-> On Mon, Dec 02, 2013 at 02:36:32PM +0100, Laurent Pinchart wrote:
-> > Hi Greg,
-> > 
-> > On Thursday 28 November 2013 18:11:44 Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > This patch set prepares the driver to CCF migration by replacing
-> > > clk_enable() and clk_disable() by clk_prepare_enable() and
-> > > clk_disable_unprepare() respectively (2/2). In order to do so it first
-> > > ensures that the clk_enable() and clk_disable() calls will only take place
-> > > from non-atomic context (1/2).
-> > > 
-> > > Greg, these patches are dependencies for a bunch of ARM patches that will go
-> > > through Simon's tree. Would you be fine if Simon merged all sh-sci patches
-> > > through his tree for v3.14 ?
-> > 
-> > Ping ?
-> 
-> Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+File names in the heading comments  fell out of favor long ago, and this one
+weren't even changed when the driver was moved from arch/arm/common/, so remove
+it at last...
 
-Thanks, I will (finally) queue these up.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against the 'irq/core' branch of the 'tip.git' repo.
+
+ drivers/irqchip/irq-gic.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+Index: tip/drivers/irqchip/irq-gic.c
+=================================--- tip.orig/drivers/irqchip/irq-gic.c
++++ tip/drivers/irqchip/irq-gic.c
+@@ -1,6 +1,4 @@
+ /*
+- *  linux/arch/arm/common/gic.c
+- *
+  *  Copyright (C) 2002 ARM Limited, All Rights Reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify
