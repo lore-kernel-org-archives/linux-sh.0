@@ -1,46 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:48:50 +0000
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Fri, 13 Dec 2013 18:19:53 +0000
 Subject: Re: [PATCH 09/15] mtd: sh_flctl: Enable driver compilation with COMPILE_TEST
-Message-Id: <3651259.U0RP9jvU5Q@avalon>
+Message-Id: <20131213181953.GY27149@ld-irv-0074.broadcom.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1385515117-23664-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <3651259.U0RP9jvU5Q@avalon>
+In-Reply-To: <3651259.U0RP9jvU5Q@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi David,
-
-Could you please pick this patch up for v3.14 ?
-
-On Wednesday 27 November 2013 02:18:31 Laurent Pinchart wrote:
-> This helps increasing build testing coverage.
+On Wed, Dec 11, 2013 at 01:48:50PM +0100, Laurent Pinchart wrote:
+> Hi David,
 > 
-> Cc: David Woodhouse <dwmw2@infradead.org>
-> Cc: linux-mtd@lists.infradead.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Simon Horman <horms@verge.net.au>
-> ---
->  drivers/mtd/nand/Kconfig | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-> index 93ae6a6..cb1f2ec 100644
-> --- a/drivers/mtd/nand/Kconfig
-> +++ b/drivers/mtd/nand/Kconfig
-> @@ -458,7 +458,7 @@ config MTD_NAND_MXC
-> 
->  config MTD_NAND_SH_FLCTL
->  	tristate "Support for NAND on Renesas SuperH FLCTL"
-> -	depends on SUPERH || ARCH_SHMOBILE
-> +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
->  	help
->  	  Several Renesas SuperH CPU has FLCTL. This option enables support
->  	  for NAND Flash using FLCTL.
--- 
-Regards,
+> Could you please pick this patch up for v3.14 ?
 
-Laurent Pinchart
+I'm not David, but I pushed your patch over a week ago. I guess I forgot
+to warn you. Sorry!
 
+> On Wednesday 27 November 2013 02:18:31 Laurent Pinchart wrote:
+> > This helps increasing build testing coverage.
+> > 
+> > Cc: David Woodhouse <dwmw2@infradead.org>
+> > Cc: linux-mtd@lists.infradead.org
+> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > Acked-by: Simon Horman <horms@verge.net.au>
+
+This patch is in l2-mtd.git. Thanks!
+
+Brian
