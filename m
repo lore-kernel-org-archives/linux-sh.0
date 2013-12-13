@@ -1,63 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 03:26:30 +0000
-Subject: [PATCH 10/10] ARM: shmobile: armadillo: dts: Add gpio-keys device
-Message-Id: <1386732390-31724-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:42 +0000
+Subject: [PATCH 68/69] ARM: shmobile: r8a7779: add HSPI support to DTSI
+Message-Id: <3c3f6ad350bbeccaba5ab54a267900dcc76b9dd2.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The board had 4 buttons connected to GPIOs, add a corresponding
-gpio-keys device.
+Based on work for the r8a7778 SoC by Kuninori Morimoto.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts | 29 ++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ arch/arm/boot/dts/r8a7779.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 6d6fd3d..e67c0a5 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -63,6 +63,35 @@
- 		enable-active-high;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 8284715..d0561d4 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -42,6 +42,12 @@
+ 		};
  	};
  
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		power-key {
-+			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
-+			linux,code = <116>;
-+			label = "SW3";
-+			gpio-key,wakeup;
-+		};
-+
-+		back-key {
-+			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
-+			linux,code = <158>;
-+			label = "SW4";
-+		};
-+
-+		menu-key {
-+			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
-+			linux,code = <139>;
-+			label = "SW5";
-+		};
-+
-+		home-key {
-+			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
-+			linux,code = <102>;
-+			label = "SW6";
-+		};
++	aliases {
++		spi0 = &hspi0;
++		spi1 = &hspi1;
++		spi2 = &hspi2;
 +	};
 +
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
+         gic: interrupt-controller@f0001000 {
+                 compatible = "arm,cortex-a9-gic";
+                 #interrupt-cells = <3>;
+@@ -248,4 +254,28 @@
+ 		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
++
++	hspi0: spi@fffc7000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc7000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	hspi1: spi@fffc8000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc8000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	hspi2: spi@fffc6000 {
++		compatible = "renesas,hspi";
++		reg = <0xfffc6000 0x18>;
++		interrupt-controller = <&gic>;
++		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.3.2
+1.8.4
 
