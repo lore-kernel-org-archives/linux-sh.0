@@ -1,41 +1,40 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 20 Dec 2013 14:14:23 +0000
-Subject: [PATCH 0/5] arm: r8a7791: koelsch: Add USB support
-Message-Id: <1387548868-20943-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:34 +0000
+Subject: [PATCH 08/69] ARM: shmobile: r8a7778: Fix pin control device address in DT
+Message-Id: <80d01feec9f20e30ab7a998a120bce697bb7d935.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-This adds USBHS device and PCI USB host support to Koelsch board.
-The patches depend on the following commits:
-USBHS and PCI USB host:
-* https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?i=
-d=C8ba8115a21226fba3211085f570b128fa271e31
-* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
-d2985ef720cbbdc63546a5c545ac4450d96e
-PCI USB host:
-* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
-sb-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
-* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
-sb-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
-* https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3D=
-pci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Valentine Barshak (5):
-  pinctl: sh-pfc: r8a7791: Group USB PWEN and OVC pins together
-  arm: shmobile: r8a7791: Add USBHS clock support
-  arm: shmobile: koelsch: Add USBHS support
-  arm: shmobile: r8a7791: Add PCI USB host clock support
-  arm: shmobile: koelsch: Add internal PCI support
+The PFC device is erroneously declared at address 0xfffc000 instead of
+0xfffc0000. Fix it.
 
- arch/arm/mach-shmobile/board-koelsch.c | 164 +++++++++++++++++++++++++++++=
-++++
- arch/arm/mach-shmobile/clock-r8a7791.c |   7 ++
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c   |  40 +++-----
- 3 files changed, 183 insertions(+), 28 deletions(-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---=20
-1.8.3.1
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 7a2c433..a582211 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -114,7 +114,7 @@
+ 
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7778";
+-		reg = <0xfffc000 0x118>;
++		reg = <0xfffc0000 0x118>;
+ 	};
+ 
+ 	i2c0: i2c@ffc70000 {
+-- 
+1.8.4
 
