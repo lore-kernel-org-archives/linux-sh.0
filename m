@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:15 +0000
-Subject: [PATCH 41/69] ARM: shmobile: marzen: remove SDHI0 WP pin setting
-Message-Id: <9e5a68d2b9aba2c65112986ece1334bf72711117.1386901186.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:21 +0000
+Subject: [PATCH 47/69] ARM: shmobile: Use r8a7790 suffix for MMCIF compat string
+Message-Id: <063e85607ddf26e5ede36b7454eddc8e87544540.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1386901186.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
@@ -10,30 +10,40 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-WP pin is not implemented on Marzen
+Add "renesas,mmcif-r8a7790" to the compatible string for MMCIF
+in case of r8a7790. This makes the MMCIF follow the same style
+as the other devices and also makes it more future proof.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index da1352f..7e0395e1 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -326,8 +326,6 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
- 				  "sdhi0_ctrl", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_cd", "sdhi0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
--				  "sdhi0_wp", "sdhi0"),
- 	/* SMSC */
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
- 				  "intc_irq1_b", "intc"),
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index f844b63..fb9225f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -230,7 +230,7 @@
+ 	};
+ 
+ 	mmcif0: mmcif@ee200000 {
+-		compatible = "renesas,sh-mmcif";
++		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+@@ -239,7 +239,7 @@
+ 	};
+ 
+ 	mmcif1: mmc@ee220000 {
+-		compatible = "renesas,sh-mmcif";
++		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
 -- 
 1.8.4
 
