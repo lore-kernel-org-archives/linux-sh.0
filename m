@@ -1,51 +1,53 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 02 Dec 2013 12:48:43 +0000
-Subject: Re: [PATCH 02/11] spi: spi-sh-msiof: round up div to fix freq calculation
-Message-Id: <20131202124843.GC27568@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="XGa5gNSGTk93P04E"
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 13 Dec 2013 11:52:39 +0000
+Subject: [PATCH 1/2] arm: shmobile: r8a7790: Add PCI USB host clock support
+Message-Id: <1386935560-16739-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
- <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
- <1385921962-19843-2-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-2-git-send-email-takasi-y@ops.dti.ne.jp>
-To: takasi-y@ops.dti.ne.jp
-Cc: linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, linux-spi@vger.kernel.org
+References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+This adds internal PCI USB host clock support.
 
---XGa5gNSGTk93P04E
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-On Mon, Dec 02, 2013 at 03:19:13AM +0900, takasi-y@ops.dti.ne.jp wrote:
-> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
->=20
-> Truncation on integer division in sh_msiof_spi_set_clk_regs()
-> results in insufficient transfer frequency (> max_speed_freq).
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index c5c60ec..3e27200 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -190,7 +190,7 @@ enum {
+ 	MSTP813,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+-	MSTP704,
++	MSTP704, MSTP703,
+ 	MSTP522,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+@@ -226,6 +226,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+ 	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
++	[MSTP703] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 3, 0), /* EHCI */
+ 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+ 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -317,6 +318,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+-- 
+1.8.3.1
 
-Applied, thanks.
-
---XGa5gNSGTk93P04E
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSnIGnAAoJELSic+t+oim9JKUP/RR+dgGkloQEDCl01/bP8Sch
-FtJEvjGhNuVxVWHHri2zJqPqrobe959PQOqKhG8OPVE/JvmprFW35CK1+CgnZcX9
-ZoGsJClOraQjVA3LFnwHwNciMJxP4YOscvDzGzrN0Sl3GEsdN3tOpbFtIzRzIJTE
-RyjAwSX7hUE8sDSt+eJTlAX5e4LX1AAgWbvg/mrHXTM5Rq+rvweWKdUtxp4x+HY0
-gAYv0/ZG9pc/Ba7u8NdfkpYYP/nei9rayQLoeJ/3336126j0tZS00tMcOF8hoPzq
-l2zs/hYhFEoJMz/il2Y7zq+gKtV0l/y6TI4FUCHQaIsEtB5GsHWBnxccHou18/Yt
-jmBM+HMRTNz4ckLQ0FAzzk+zXAH5bYLZYVZkmrpviGOTmu73ihoxUjXtqLv841EN
-gFknV6XTnhvCEUfiuAkEFdjmiudqwAJBucCRIZ0VHCqX8xiLB6+f/sbN+8XOKhzz
-ZBI/7yp3fT5AsPMa65dqfb4ndYxm25Qb9aOGtP2zyX/rBjERWMeqJFyzb+MFfmBG
-/y7acphW3CvimzwtquE9GWtynfscSvY6zNHVPBHh1xHLhn0EeiehtnD0tnLRqD1n
-XHPB0W2MX3Ml1YCCY9ILSCVcRcGyOwYVq+HGFBbNy5FoPTRI2ZradEo3cq3e6kRn
-MYIAWQWd3/uwUiQFXTZ0
-=Yr0F
------END PGP SIGNATURE-----
-
---XGa5gNSGTk93P04E--
