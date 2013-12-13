@@ -1,38 +1,52 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:05 +0000
-Subject: [PATCH 03/28] ARM: shmobile: Select IRQC in case of the r8a7791 SoC
-Message-Id: <af36e59512affacf837a98718fdb02f6dcbea2f6.1385950394.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:29:02 +0000
+Subject: [PATCH] usb: r8a66597-hcd: Convert to clk_prepare/unprepare
+Message-Id: <9b547a882e9ffec67bb41a4e66b4bcc0e91a2737.1386898134.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <cover.1386898134.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386898134.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The r8a7791 contains IRQC hardware so make sure
-the driver gets built by selecting RENESAS_IRQC.
+Turn clk_enable() and clk_disable() calls into clk_prepare_enable() and
+clk_disable_unprepare() to get ready for the migration to the common
+clock framework.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: linux-usb@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/usb/host/r8a66597-hcd.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index a4a4b75..ff7c4ce 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -100,6 +100,7 @@ config ARCH_R8A7791
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select RENESAS_IRQC
+diff --git a/drivers/usb/host/r8a66597-hcd.c b/drivers/usb/host/r8a66597-hcd.c
+index 2ad004a..a2fdd85 100644
+--- a/drivers/usb/host/r8a66597-hcd.c
++++ b/drivers/usb/host/r8a66597-hcd.c
+@@ -95,7 +95,7 @@ static int r8a66597_clock_enable(struct r8a66597 *r8a66597)
+ 	int i = 0;
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
+ 	if (r8a66597->pdata->on_chip) {
+-		clk_enable(r8a66597->clk);
++		clk_prepare_enable(r8a66597->clk);
+ 		do {
+ 			r8a66597_write(r8a66597, SCKE, SYSCFG0);
+ 			tmp = r8a66597_read(r8a66597, SYSCFG0);
+@@ -139,7 +139,7 @@ static void r8a66597_clock_disable(struct r8a66597 *r8a66597)
+ 	udelay(1);
+ 
+ 	if (r8a66597->pdata->on_chip) {
+-		clk_disable(r8a66597->clk);
++		clk_disable_unprepare(r8a66597->clk);
+ 	} else {
+ 		r8a66597_bclr(r8a66597, PLLC, SYSCFG0);
+ 		r8a66597_bclr(r8a66597, XCKE, SYSCFG0);
 -- 
 1.8.4
 
