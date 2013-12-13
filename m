@@ -1,37 +1,40 @@
-From: Levente Kurusa <levex@linux.com>
-Date: Thu, 19 Dec 2013 15:03:12 +0000
-Subject: [PATCH 01/38] sh: dma-sysfs: add missing put_device call
-Message-Id: <1387465429-3568-2-git-send-email-levex@linux.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Dec 2013 02:31:13 +0000
+Subject: [PATCH 39/69] ARM: shmobile: kzm9g-reference: Use falling edge IRQ for LAN9221
+Message-Id: <72e14c051a920d9c30d6cab2aecd1699a070aebe.1386901186.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1386901186.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Levente Kurusa <levex@linux.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This is required so that we give up the last reference to the device.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Levente Kurusa <levex@linux.com>
+The device is configured to generate an active-low interrupt signal that
+is automatically deasserted without requiring any action from the host.
+Configure the IRQ to trigger on falling edge.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/drivers/dma/dma-sysfs.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
-index 4b15fed..76271e6 100644
---- a/arch/sh/drivers/dma/dma-sysfs.c
-+++ b/arch/sh/drivers/dma/dma-sysfs.c
-@@ -131,8 +131,10 @@ int dma_create_sysfs_files(struct dma_channel *chan, struct dma_info *info)
- 	dev->bus = &dma_subsys;
- 
- 	ret = device_register(dev);
--	if (ret)
-+	if (ret) {
-+		put_device(dev);
- 		return ret;
-+	}
- 
- 	ret |= device_create_file(dev, &dev_attr_dev_id);
- 	ret |= device_create_file(dev, &dev_attr_count);
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 605f6c6..12fdfaa 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -83,7 +83,7 @@
+ 		reg = <0x10000000 0x100>;
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin0>;
+-		interrupts = <3 IRQ_TYPE_NONE>;	/* active low */
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+ 		reg-io-width = <4>;
+ 		smsc,irq-push-pull;
+ 		smsc,save-mac-address;
 -- 
-1.8.3.1
+1.8.4
 
