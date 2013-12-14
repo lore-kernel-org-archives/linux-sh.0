@@ -1,57 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 19 Dec 2013 21:39:47 +0000
-Subject: [PATCH 1/2] sh_eth: add PHY IRQ to platform data
-Message-Id: <201312200139.52758.sergei.shtylyov@cogentembedded.com>
+From: Mark Salter <msalter@redhat.com>
+Date: Sat, 14 Dec 2013 16:59:32 +0000
+Subject: [PATCH 06/10] sh: select ARCH_MIGHT_HAVE_PC_SERIO
+Message-Id: <1387040376-26906-7-git-send-email-msalter@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312200138.09307.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201312200138.09307.sergei.shtylyov@cogentembedded.com>
+References: <1387040376-26906-1-git-send-email-msalter@redhat.com>
+In-Reply-To: <1387040376-26906-1-git-send-email-msalter@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Mark Salter <msalter@redhat.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-Allow the platform code to pass PHY's IRQ to the driver.  Print this IRQ along
-with the other PHY datails in sh_eth_phy_init().
+Architectures which might use an i8042 for serial IO to keyboard,
+mouse, etc should select ARCH_MIGHT_HAVE_PC_SERIO.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Mark Salter <msalter@redhat.com>
+CC: Paul Mundt <lethal@linux-sh.org>
+CC: linux-sh@vger.kernel.org
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    6 ++++--
- include/linux/sh_eth.h                |    1 +
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ arch/sh/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1685,8 +1685,8 @@ static int sh_eth_phy_init(struct net_de
- 		return PTR_ERR(phydev);
- 	}
- 
--	dev_info(&ndev->dev, "attached phy %i to driver %s\n",
--		phydev->addr, phydev->drv->name);
-+	dev_info(&ndev->dev, "attached PHY %d (IRQ %d) to driver %s\n",
-+		 phydev->addr, phydev->irq, phydev->drv->name);
- 
- 	mdp->phydev = phydev;
- 
-@@ -2544,6 +2544,8 @@ static int sh_mdio_init(struct net_devic
- 
- 	for (i = 0; i < PHY_MAX_ADDR; i++)
- 		mdp->mii_bus->irq[i] = PHY_POLL;
-+	if (pd->phy_irq > 0)
-+		mdp->mii_bus->irq[pd->phy] = pd->phy_irq;
- 
- 	/* register mdio bus */
- 	ret = mdiobus_register(mdp->mii_bus);
-Index: net-next/include/linux/sh_eth.h
-=================================--- net-next.orig/include/linux/sh_eth.h
-+++ net-next/include/linux/sh_eth.h
-@@ -8,6 +8,7 @@ enum {EDMAC_LITTLE_ENDIAN, EDMAC_BIG_END
- 
- struct sh_eth_plat_data {
- 	int phy;
-+	int phy_irq;
- 	int edmac_endian;
- 	phy_interface_t phy_interface;
- 	void (*set_mdio_gate)(void *addr);
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 9b0979f..3490fc2 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -1,6 +1,7 @@
+ config SUPERH
+ 	def_bool y
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT
++	select ARCH_MIGHT_HAVE_PC_SERIO if SH_CAYMAN
+ 	select EXPERT
+ 	select CLKDEV_LOOKUP
+ 	select HAVE_IDE if HAS_IOPORT
+-- 
+1.8.3.1
+
