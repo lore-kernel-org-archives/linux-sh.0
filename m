@@ -1,60 +1,61 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:33 +0000
-Subject: [PATCH 26/47] ARM: shmobile: r8a73a4: Declare SCIF register base and IRQ as resources
-Message-Id: <1386323994-12850-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:23:52 +0000
+Subject: [PATCH v4 2/3] ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
+Message-Id: <1387034633-3798-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+When enabling some of the module clocks by clearing stop bits in the
+MSTP control registers, the CPG requires waiting for the status
+registers to signal that the clocks have started. Failure to do so will
+result in returning from the clk_enable() call with the clock
+potentially still disabled, leading to various race conditions and
+difficult to debug errors.
+
+Enable status wait for all the r8a7779 MSTP clocks that report their
+status.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index 605298b..ef32ce2 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -43,11 +43,14 @@ void __init r8a73a4_pinmux_init(void)
- #define R8A73A4_SCIF(scif_type, _scscr, index, baseaddr, irq)	\
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
- 	.scscr		= _scscr,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+};								\
-+								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
- }
- 
- #define R8A73A4_SCIFA(index, baseaddr, irq)	\
-@@ -66,9 +69,11 @@ R8A73A4_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
- R8A73A4_SCIFB(5, 0xe6cf0000, gic_spi(151)); /* SCIFB3 */
- 
- #define r8a73a4_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- static const struct renesas_irqc_config irqc0_data = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ31 */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index f1fb89b..93a5625 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -127,16 +127,16 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
+-	[MSTP120] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 20, 0), /* VIN3 */
+-	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
+-	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
+-	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
+-	[MSTP110] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 10, 0), /* VIN0 */
+-	[MSTP109] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  9, 0), /* VIN1 */
+-	[MSTP108] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  8, 0), /* VIN2 */
+-	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
+-	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
+-	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
++	[MSTP120] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1, 20, MSTPSR1, 0), /* VIN3 */
++	[MSTP116] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 16, MSTPSR1, 0), /* PCIe */
++	[MSTP115] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 15, MSTPSR1, 0), /* SATA */
++	[MSTP114] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 14, MSTPSR1, 0), /* Ether */
++	[MSTP110] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1, 10, MSTPSR1, 0), /* VIN0 */
++	[MSTP109] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  9, MSTPSR1, 0), /* VIN1 */
++	[MSTP108] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  8, MSTPSR1, 0), /* VIN2 */
++	[MSTP103] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  3, MSTPSR1, 0), /* DU */
++	[MSTP101] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1,  1, MSTPSR1, 0), /* USB2 */
++	[MSTP100] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1,  0, MSTPSR1, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 30, 0), /* I2C0 */
+ 	[MSTP029] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 29, 0), /* I2C1 */
+ 	[MSTP028] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 28, 0), /* I2C2 */
 -- 
 1.8.3.2
 
