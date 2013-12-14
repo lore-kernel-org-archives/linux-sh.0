@@ -1,89 +1,46 @@
-From: Kevin Hilman <khilman@linaro.org>
-Date: Fri, 20 Dec 2013 19:25:40 +0000
-Subject: Re: [GIT PULL v2 00/33] Renesas ARM based SoC updates for v3.14
-Message-Id: <87mwjvgw97.fsf@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 14 Dec 2013 06:07:31 +0000
+Subject: [GIT PULL] Renesas ARM based SoC Clocksource updates for v3.14
+Message-Id: <cover.1387000863.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au> (Simon Horman's
- message of "Fri, 13 Dec 2013 11:29:33 +0900")
+References: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1381222888-4199-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Simon Horman <horms+renesas@verge.net.au> writes:
+Hi Daniel,
 
-> Hi Kevin, Hi Olof, Hi Arnd,
->
-> please consider these Renesas ARM based SoC updates for v3.14.
->
-> As discussed elsewhere, this pull-request also includes defconfig changes
-> related to renaming ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY. These are also
-> to avoid build regressions when using defconfigs
->
-> As this pull request is based on v3.12, which does not include
-> genmai_defconfig, it has not been updated. Rather, I have queued up a patch
-> in my defconfig to switch it to use ARCH_SHMOBILE_LEGACY.  This does
-> involve breaking that defconfig. However as it is new and not in
-> wide-spread use it seems better to live with that temporary breakage than
-> to have soc depend on defconfig (as was the case in the previous version of
-> this pull request).
+please consider this Renesas ARM based SoC Clocksource update for v3.14.
 
-OK, thanks for the detailed explanation.
+I would also like to request that you make a branch available
+for me to use as a base for a branch containing SoC changes
+targeted at v3.14 that depend on this clocksource update.
 
-> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
->
->   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
->
-> are available in the git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.14
->
-> for you to fetch changes up to fee05eb3d2ce4813b5e9a70ab888d2bc0047f4e1:
->
->   ARM: shmobile: r8a7779: add HSPI clock support for DT (2013-12-10 17:20:15 +0900)
->
-> ----------------------------------------------------------------
-> Renesas ARM based SoC updates for v3.14
->
-> * Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
->
-> * r8a7791 SoC (R-Car M2)
->   - Add thermal platform device
->   - Add DU and LVDS clocks
->   - GPIO platform device support
->   - PFC platform device support
->   - Select IRQC
->
-> * r8a7790 SoC (R-Car H2)
->   - Tidyup clock table order
->   - Fixup I2C clock source
->   - Correct EXTAL divider settings
->   - Add clocks for thermal devices and SSI
->
-> * r8a7779 SoC (R-Car H1)
->   - Add I2C clock for DT
->
-> * r8a7778 SoC (R-Car M1)
->   - Add HSPI clocks for DT
->   - Add I2C clock for DT
->   - Add HPBIFx DMAEngine support
->
-> * r8a7740 SoC (R-Mobile A1)
->   - Add FSI clocks for DT
->
-> * emev2 SoC (Emma Mobile)
->   - Move to Multi-platform
->   - Remove legacy board code
->
-> * r7s72100 SoC (RZ/A1H)
->   - Select GPIO
->
-> * r8a73a4 SoC (R-Mobile APE6)
->   - Don't used named IRC for DMAEngine
->
-> ----------------------------------------------------------------
+Thanks
 
-Pulled into next/soc.
 
-Kevin
+The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
+
+  Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocksource-for-v3.14
+
+for you to fetch changes up to d78e9474459768c9aaf8cfd8bc54957d44771f46:
+
+  clocksource: sh_cmt: Add clk_prepare/unprepare support (2013-12-14 12:57:36 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC Clocksource updates for v3.14
+
+* Add clk_prepare/unprepare support to sh_cmt
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      clocksource: sh_cmt: Add clk_prepare/unprepare support
+
+ drivers/clocksource/sh_cmt.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
