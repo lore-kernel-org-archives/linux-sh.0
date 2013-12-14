@@ -1,62 +1,56 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:32 +0000
-Subject: [PATCH 25/47] ARM: shmobile: r7s72100: Declare SCIF register base and IRQ as resources
-Message-Id: <1386323994-12850-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:25:40 +0000
+Subject: [PATCH v5 16/17] ARM: shmobile: r8a7790: Remove legacy clock aliases for DT devices
+Message-Id: <1387034741-3852-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+Now that the r8a7790 DT platforms use the common clock framework,
+there's no need to manually create clock aliases for devices
+instantiated through DT, as those devices will reference their clocks
+directly in the device tree. Remove those aliases.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r7s72100.c | 20 ++++++++++++++------
- 1 file changed, 14 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 11 -----------
+ 1 file changed, 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 6ae7e32..81b995b 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -36,9 +36,15 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,					\
- 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
- 			  SCSCR_REIE,					\
--	.mapbase	= baseaddr,					\
--	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
--}
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq + 1),					\
-+	DEFINE_RES_IRQ(irq + 2),					\
-+	DEFINE_RES_IRQ(irq + 3),					\
-+	DEFINE_RES_IRQ(irq),						\
-+}									\
- 
- R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
- R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-@@ -50,9 +56,11 @@ R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
- R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 
- #define r7s72100_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
- 
- 
- static struct sh_timer_config mtu2_0_platform_data __initdata = {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index c5c60ec..1e713de 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -291,28 +291,17 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+-	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+-	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+-	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
 -- 
 1.8.3.2
 
