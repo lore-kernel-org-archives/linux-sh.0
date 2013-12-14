@@ -1,213 +1,144 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 13:14:22 +0000
-Subject: [PATCH v3 2/4] ARM: shmobile: r8a7791: Add serial ports to the device tree
-Message-Id: <1386767664-20113-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:25:39 +0000
+Subject: [PATCH v5 15/17] ARM: shmobile: Remove Koelsch reference DTS
+Message-Id: <1387034741-3852-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add all serial ports marked as disabled.
+Now that the DTS file r8a7790-koelsch.dts can be used with
+board-koelsch.c and board-koelsch-reference.c, proceed with removing
+r8a7790-koelsch-reference.dts.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 180 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 180 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 115 ------------------------
+ 1 file changed, 115 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 0a82192..413e6ed 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -185,6 +185,186 @@
- 		#gpio-range-cells = <3>;
- 	};
- 
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c50000 0 64>;
-+		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c60000 0 64>;
-+		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa3: serial@e6c70000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c70000 0 64>;
-+		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7791_CLK_SCIFA3>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa4: serial@e6c78000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c78000 0 64>;
-+		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7791_CLK_SCIFA4>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa5: serial@e6c80000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c80000 0 64>;
-+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7791_CLK_SCIFA5>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb0: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c20000 0 64>;
-+		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb1: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c30000 0 64>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb2: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ce0000 0 64>;
-+		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif0: serial@e6e60000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e60000 0 64>;
-+		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@e6e68000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e68000 0 64>;
-+		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@e6e58000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e58000 0 64>;
-+		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@e6ea8000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ea8000 0 64>;
-+		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@e6ee0000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ee0000 0 64>;
-+		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@e6ee8000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ee8000 0 64>;
-+		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif0: serial@e62c0000 {
-+		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c0000 0 96>;
-+		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif1: serial@e62c8000 {
-+		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c8000 0 96>;
-+		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif2: serial@e62d0000 {
-+		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62d0000 0 96>;
-+		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+deleted file mode 100644
+index 588ca17..0000000
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/*
+- * Device Tree Source for the Koelsch board
+- *
+- * Copyright (C) 2013 Renesas Electronics Corporation
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7791.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Koelsch";
+-	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	gpio-keys {
+-		compatible = "gpio-keys";
+-
+-		key-a {
+-			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+-			linux,code = <30>;
+-			label = "SW30";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-b {
+-			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
+-			linux,code = <48>;
+-			label = "SW31";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-c {
+-			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
+-			linux,code = <46>;
+-			label = "SW32";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-d {
+-			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
+-			linux,code = <32>;
+-			label = "SW33";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-e {
+-			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
+-			linux,code = <18>;
+-			label = "SW34";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-f {
+-			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
+-			linux,code = <33>;
+-			label = "SW35";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-g {
+-			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
+-			linux,code = <34>;
+-			label = "SW36";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data_d";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data_d";
+-		renesas,function = "scif1";
+-	};
+-};
 -- 
 1.8.3.2
 
