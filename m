@@ -1,89 +1,123 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:49 +0000
-Subject: [PATCH 42/47] sh: sh772[34]: Set serial port sampling rate to 8 for SCIFA ports
-Message-Id: <1386323994-12850-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:25:26 +0000
+Subject: [PATCH v5 02/17] ARM: shmobile: Sync Koelsch DTS with Koelsch reference DTS
+Message-Id: <1387034741-3852-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
 
-SCIFA ports on sh7723 and sh7724 seem to use a sampling rate of half the
-value specified in the datasheet. This is currently handled by a custom
-baud rate calculation algorithm. The algorithm ID will be removed from
-platform data, set the sampling rate directly instead.
+Copy the device nodes from Koelsch reference into the Koeslch device
+tree file. This will allow us to use a single DTS file regarless of
+kernel configuration. In case of legacy C board code the device nodes
+may or may not be used, but in the multiplatform case all the DT device
+nodes are used.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 6 +++---
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 6 +++---
- 2 files changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 83 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 83 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-index 521a09e..079951b 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-@@ -98,7 +98,7 @@ static struct plat_sci_port scif3_platform_data = {
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index c4e8b3a..58ed169 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -11,6 +11,7 @@
  
-@@ -121,7 +121,7 @@ static struct plat_sci_port scif4_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
+ /dts-v1/;
+ #include "r8a7791.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
-@@ -144,7 +144,7 @@ static struct plat_sci_port scif5_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
+ / {
+ 	model = "Koelsch";
+@@ -29,4 +30,86 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		key-a {
++			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
++			linux,code = <30>;
++			label = "SW30";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-b {
++			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
++			linux,code = <48>;
++			label = "SW31";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-c {
++			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
++			linux,code = <46>;
++			label = "SW32";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-d {
++			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
++			linux,code = <32>;
++			label = "SW33";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-e {
++			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
++			linux,code = <18>;
++			label = "SW34";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-f {
++			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
++			linux,code = <33>;
++			label = "SW35";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-g {
++			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
++			linux,code = <34>;
++			label = "SW36";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data_d";
++		renesas,function = "scif1";
++	};
  };
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index fb0a237..59c3594 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -365,7 +365,7 @@ static struct plat_sci_port scif3_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-@@ -388,7 +388,7 @@ static struct plat_sci_port scif4_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-@@ -411,7 +411,7 @@ static struct plat_sci_port scif5_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
 -- 
 1.8.3.2
 
