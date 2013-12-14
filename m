@@ -1,37 +1,88 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 04 Dec 2013 12:05:46 +0000
-Subject: [PATCH 01/02] irqchip: renesas-irqc: Use lazy disable
-Message-Id: <20131204120546.29642.15772.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 14 Dec 2013 06:07:32 +0000
+Subject: [PATCH] clocksource: sh_cmt: Add clk_prepare/unprepare support
+Message-Id: <d78e9474459768c9aaf8cfd8bc54957d44771f46.1387000863.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131204120537.29642.942.sendpatchset@w520>
-In-Reply-To: <20131204120537.29642.942.sendpatchset@w520>
+References: <cover.1387000863.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387000863.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, rob.herring@calxeda.com, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Set the ->irq_enable() and ->irq_disable() methods to NULL
-to enable lazy disable of interrupts. This by itself provides
-some level of optimization, but is mainly enabled as ground
-work for future Suspend-to-RAM wake up support.
+Prepare the clock at probe time, as there is no other appropriate place
+in the driver where we're allowed to sleep.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/clocksource/sh_cmt.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
 
- drivers/irqchip/irq-renesas-irqc.c |    2 --
- 1 file changed, 2 deletions(-)
-
---- 0001/drivers/irqchip/irq-renesas-irqc.c
-+++ work/drivers/irqchip/irq-renesas-irqc.c	2013-12-04 18:12:45.000000000 +0900
-@@ -212,8 +212,6 @@ static int irqc_probe(struct platform_de
- 	irq_chip->name = name;
- 	irq_chip->irq_mask = irqc_irq_disable;
- 	irq_chip->irq_unmask = irqc_irq_enable;
--	irq_chip->irq_enable = irqc_irq_enable;
--	irq_chip->irq_disable = irqc_irq_disable;
- 	irq_chip->irq_set_type = irqc_irq_set_type;
- 	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 0965e98..940341a 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -634,12 +634,18 @@ static int sh_cmt_clock_event_next(unsigned long delta,
  
+ static void sh_cmt_clock_event_suspend(struct clock_event_device *ced)
+ {
+-	pm_genpd_syscore_poweroff(&ced_to_sh_cmt(ced)->pdev->dev);
++	struct sh_cmt_priv *p = ced_to_sh_cmt(ced);
++
++	pm_genpd_syscore_poweroff(&p->pdev->dev);
++	clk_unprepare(p->clk);
+ }
+ 
+ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
+ {
+-	pm_genpd_syscore_poweron(&ced_to_sh_cmt(ced)->pdev->dev);
++	struct sh_cmt_priv *p = ced_to_sh_cmt(ced);
++
++	clk_prepare(p->clk);
++	pm_genpd_syscore_poweron(&p->pdev->dev);
+ }
+ 
+ static void sh_cmt_register_clockevent(struct sh_cmt_priv *p,
+@@ -737,6 +743,10 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err2;
+ 	}
+ 
++	ret = clk_prepare(p->clk);
++	if (ret < 0)
++		goto err3;
++
+ 	if (res2 && (resource_size(res2) = 4)) {
+ 		/* assume both CMSTR and CMCSR to be 32-bit */
+ 		p->read_control = sh_cmt_read32;
+@@ -773,19 +783,21 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 			      cfg->clocksource_rating);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "registration failed\n");
+-		goto err3;
++		goto err4;
+ 	}
+ 	p->cs_enabled = false;
+ 
+ 	ret = setup_irq(irq, &p->irqaction);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
+-		goto err3;
++		goto err4;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
+ 	return 0;
++err4:
++	clk_unprepare(p->clk);
+ err3:
+ 	clk_put(p->clk);
+ err2:
+-- 
+1.8.4
+
