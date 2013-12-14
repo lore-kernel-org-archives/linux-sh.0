@@ -1,54 +1,90 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 02 Dec 2013 13:24:26 +0000
-Subject: Re: [PATCH 11/11] ARM: shmobile: koelsch: spidev for r2a11302
-Message-Id: <20131202132426.GF27568@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="EYAXRszTzQPG7bQS"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:25:30 +0000
+Subject: [PATCH v5 06/17] ARM: shmobile: lager-reference: Enable multiplaform kernel support
+Message-Id: <1387034741-3852-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
- <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
- <1385921962-19843-11-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-11-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
-To: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Enable multiplaform ARM architecture support for the Lager reference
+board. Common clock framework initialization will be handled by the
+rcar_gen2_init_timer() call, we just need to remove the legacy clock
+code initialization.
 
---EYAXRszTzQPG7bQS
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/Makefile                     | 1 +
+ arch/arm/mach-shmobile/Kconfig                 | 8 ++++++++
+ arch/arm/mach-shmobile/Makefile                | 1 +
+ arch/arm/mach-shmobile/board-lager-reference.c | 2 ++
+ 4 files changed, 12 insertions(+)
 
-On Mon, Dec 02, 2013 at 03:19:22AM +0900, takasi-y@ops.dti.ne.jp wrote:
-> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
->=20
-> Add board info for r2a11302 on-board PMIC to access with spidev.
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 33c6054..74e4186 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -236,6 +236,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
++	r8a7790-lager-reference.dtb \
+ 	r8a7791-koelsch-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index f01e878..a2a7bb4 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -28,6 +28,10 @@ config ARCH_EMEV2
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 
++config ARCH_R8A7790
++	bool "R-Car H2 (R8A77900)"
++	select RENESAS_IRQC
++
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+ 	select RENESAS_IRQC
+@@ -47,6 +51,10 @@ config MACH_KZM9D
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
++config MACH_LAGER
++	bool "Lager board"
++	depends on ARCH_R8A7790
++
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 1c13104..9daa9c1 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
++obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 51a3bcc..fc43f7c 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -27,7 +27,9 @@
+ 
+ static void __init lager_add_standard_devices(void)
+ {
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7790_clock_init();
++#endif
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+-- 
+1.8.3.2
 
-This doesn't sound clever - why is the PMIC being accessed with spidev
-and not with an MFD integrated into the relevant kernel frameworks?
-Apart from the issue of integrating in the normal way for Linus the PMIC
-typically has the ability to cause lasting physical damage to the
-system.
-
---EYAXRszTzQPG7bQS
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSnIoHAAoJELSic+t+oim9Aq8P/jT/fAQIV1FyaLAvmriW+J+/
-vHNfLp7v1QTjUcR/huauRBqgUatneNy4uZ5Lv/5LmTyUXG17lTSuQmO1XQgY7hON
-lIhMnyZEO1kYbTFIEdHDYR1mC+VIlFDPWMAL3ekUKNJ+KE4teg6sfWQmE2kvtn9P
-M3vzXQtIF2W6dCO9R6R5MnUtbCpIMS5VdjRYCTOYIJ5VG6C99SsdlnHl+Y9ej8Nc
-j1X8r0MZXZBxIANHzUxBIWQ0UiZJ/fiJNQTxEH8/fA2MG43sK75o3Y2JAcx4/nK7
-+DrMTjXnLEaG6i8WCefH3z6NqkVw/pJBvXr2QIYjUG+rPKn1pnmAnzJId79Dvx0X
-ZlUE+YL330GZzkbSoClRPjnWvUMZZPC5FkLsgY2vhzf9tcsBUGv3uX6pO+ntis8L
-PWlPzNscvcPf0+dUkwOyfa+2/vAlPEi0twKXGjoOo8cDAsTR6jRZuchVIrKAA9n/
-/kNbeYSOu6fYzNH9ls/ole60wTycq/GGOMnT1wahtgUPRsXuTnIhQzfSNCcCNr0C
-mlbQsyoNg9L308Y1FmHp25F7ReeVKUAmnXFz9eAYjXHDOxSWQFRxpk0FX/9VkhBZ
-DUm0qRaJugdRs7VrwuUl66NbB7rZ3A7PVhokCmovWjbRtS6SA0jCa+cASzthEfgk
-s0qPm5CJsA3rvOnThSUp
-=bog+
------END PGP SIGNATURE-----
-
---EYAXRszTzQPG7bQS--
