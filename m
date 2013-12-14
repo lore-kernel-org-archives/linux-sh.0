@@ -1,70 +1,79 @@
-From: Jiang Liu <liuj97@gmail.com>
-Date: Wed, 04 Dec 2013 16:13:05 +0000
-Subject: [RFC PATCH v3 14/19] smp, sh: kill SMP single function call interrupt
-Message-Id: <1386173591-28514-15-git-send-email-liuj97@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:25:32 +0000
+Subject: [PATCH v5 08/17] ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
+Message-Id: <1387034741-3852-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386173591-28514-1-git-send-email-liuj97@gmail.com>
-In-Reply-To: <1386173591-28514-1-git-send-email-liuj97@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Shaohua Li <shli@kernel.org>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, Paul Gortmaker <paul.gortmaker@windriver.com>, "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Jiang Liu <liuj97@gmail.com>, Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Steven Rostedt <rostedt@goodmis.org>, Jiri Kosina <trivial@kernel.org>, Wang YanQing <udknight@gmail.com>, linux-arch@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Commit 9a46ad6d6df3b54 "smp: make smp_call_function_many() use logic
-similar to smp_call_function_single()" has unified the way to handle
-single and multiple cross-CPU function calls. Now only one intterupt
-is needed for architecture specific code to support generic SMP function
-call interfaces, so kill the redundant single function call interrupt.
+Now that the common clock framework is supported, the clock lookup
+entries in clock-r8a7790.c are not registered anymore. Devices must
+instead reference their clocks in the device tree. However, SCIF and CMT
+devices are still instantiated through platform code, and thus need a
+clock lookup entry.
 
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Shaohua Li <shli@kernel.org>
-Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Cc: Ingo Molnar <mingo@elte.hu>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Jiri Kosina <trivial@kernel.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Signed-off-by: Jiang Liu <liuj97@gmail.com>
+Retrieve the SCIF and CMT clock entries by name and register clkdevs for
+the corresponding devices. This will be removed when the SCIF and CMT
+devices will be instantiated from the device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/include/asm/smp.h | 1 -
- arch/sh/kernel/smp.c      | 5 +----
- 2 files changed, 1 insertion(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 31 +++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/smp.h b/arch/sh/include/asm/smp.h
-index 78b0d0f4..93ce87b 100644
---- a/arch/sh/include/asm/smp.h
-+++ b/arch/sh/include/asm/smp.h
-@@ -25,7 +25,6 @@ extern int __cpu_logical_map[NR_CPUS];
- enum {
- 	SMP_MSG_FUNCTION,
- 	SMP_MSG_RESCHEDULE,
--	SMP_MSG_FUNCTION_SINGLE,
- 	SMP_MSG_TIMER,
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index fc43f7c..7e3fe37 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -18,6 +18,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- 	SMP_MSG_NR,	/* must be last */
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index 86a7936..c944d5d 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -282,7 +282,7 @@ void arch_send_call_function_ipi_mask(const struct cpumask *mask)
++#include <linux/clk.h>
++#include <linux/clkdev.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <mach/common.h>
+@@ -27,9 +29,36 @@
  
- void arch_send_call_function_single_ipi(int cpu)
+ static void __init lager_add_standard_devices(void)
  {
--	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION_SINGLE);
-+	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION);
+-#ifndef CONFIG_COMMON_CLK
++#ifdef CONFIG_COMMON_CLK
++	/*
++	 * This is a really crude hack to provide clkdev support to the SCIF
++	 * and CMT devices until they get moved to DT.
++	 */
++	static const char * const scif_names[] = {
++		"scifa0", "scifa1", "scifb0", "scifb1",
++		"scifb2", "scifa2", "scif0", "scif1",
++		"hscif0", "hscif1",
++	};
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
++		clk = clk_get(NULL, scif_names[i]);
++		if (clk) {
++			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
++			clk_put(clk);
++		}
++	}
++
++	clk = clk_get(NULL, "cmt0");
++	if (clk) {
++		clk_register_clkdev(clk, NULL, "sh_cmt.0");
++		clk_put(clk);
++	}
++#else
+ 	r8a7790_clock_init();
+ #endif
++
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
- 
- void smp_timer_broadcast(const struct cpumask *mask)
-@@ -309,9 +309,6 @@ void smp_message_recv(unsigned int msg)
- 	case SMP_MSG_RESCHEDULE:
- 		scheduler_ipi();
- 		break;
--	case SMP_MSG_FUNCTION_SINGLE:
--		generic_smp_call_function_single_interrupt();
--		break;
- 	case SMP_MSG_TIMER:
- 		ipi_timer();
- 		break;
 -- 
-1.8.1.2
+1.8.3.2
 
