@@ -1,38 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:49 +0000
-Subject: [PATCH 08/33] ARM: shmobile: Select GPIO in case of the r7s72100 SoC
-Message-Id: <091b258c325592074386e092ee3fff343458550d.1386897180.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Dec 2013 15:25:28 +0000
+Subject: [PATCH v5 04/17] ARM: shmobile: koelsch: Specify external clock frequency in DT
+Message-Id: <1387034741-3852-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The external crystal frequency is 20MHz on the Koelsch board. Specify it
+in the device tree.
 
-The r7s72100 contains GPIO controllers so make sure the GPIO
-subsystem can be built by selecting ARCH_WANT_OPTIONAL_GPIOLIB.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4e1cc76..c604ef1 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -111,6 +111,7 @@ config ARCH_EMEV2
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 58ed169..c6f5de3 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -99,6 +99,10 @@
+ 	};
+ };
  
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.8.4
+1.8.3.2
 
