@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 15 Dec 2013 13:09:04 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 15 Dec 2013 14:58:19 +0000
 Subject: Re: [PATCH v5 06/17] ARM: shmobile: lager-reference: Enable multiplaform kernel support
-Message-Id: <CAMuHMdUHciKptbXmMyTQ6gXaQs4kUKCRhb=4FXVa6Tg_htM+fQ@mail.gmail.com>
+Message-Id: <52ADC38B.9040009@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387034741-3852-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1387034741-3852-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,27 +10,27 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, Dec 14, 2013 at 4:25 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> +config ARCH_R8A7790
-> +       bool "R-Car H2 (R8A77900)"
+Hello.
 
-Is the trailing "0" intentional?
+On 15-12-2013 17:09, Geert Uytterhoeven wrote:
 
-> +       select RENESAS_IRQC
-> +
->  config ARCH_R8A7791
->         bool "R-Car M2 (R8A77910)"
+>> +config ARCH_R8A7790
+>> +       bool "R-Car H2 (R8A77900)"
 
-Same here.
+> Is the trailing "0" intentional?
 
-Gr{oetje,eeting}s,
+>> +       select RENESAS_IRQC
+>> +
+>>   config ARCH_R8A7791
+>>          bool "R-Car M2 (R8A77910)"
 
-                        Geert
+> Same here.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+    Yes, it's the full model numbers.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> Gr{oetje,eeting}s,
+>
+>                          Geert
+
+WBR, Sergei
+
