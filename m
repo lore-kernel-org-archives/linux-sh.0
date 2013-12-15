@@ -1,58 +1,64 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:26 +0000
-Subject: [PATCH 20/28] ARM: shmobile: Select USE_OF on EMEV2
-Message-Id: <4fc4e85808c9d141f8d02766ac2d9e8bf4fa6b41.1385950394.git.horms+renesas@verge.net.au>
+Date: Sun, 15 Dec 2013 08:24:00 +0000
+Subject: [PATCH RFC 2/2] ARM: shmobile: r7s72100: Add ethernet PFC node to DT
+Message-Id: <1387095840-15008-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <1387095840-15008-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1387095840-15008-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Now when the legacy KZM9D board code is gone, make sure
-USE_OF is selected in case of the EMEV2 SoC.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig       | 1 +
- arch/arm/mach-shmobile/setup-emev2.c | 4 ----
- 2 files changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 564e0ad..180b71f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -108,6 +108,7 @@ config ARCH_EMEV2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
-+	select USE_OF
+---
+
+This has not been well exercised.
+---
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 040aa0f..2ca0196 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -60,11 +60,34 @@
+ };
  
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index e7031b0..c8f2a1a 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -48,8 +48,6 @@ void __init emev2_init_delay(void)
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
- }
+ &pfc {
+-	pinctrl-0 = <&scif2_pins>;
++	pinctrl-0 = <&scif2_pins &ethernet_pins>;
+ 	pinctrl-names = "default";
  
--#ifdef CONFIG_USE_OF
--
- static void __init emev2_add_standard_devices_dt(void)
- {
- #ifdef CONFIG_COMMON_CLK
-@@ -73,5 +71,3 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
--
--#endif /* CONFIG_USE_OF */
+ 	scif2_pins: serial2 {
+ 		renesas,groups = "scif2_txd_p3_0", "scif2_rxd_p3_2";
+ 		renesas,function = "scif2";
+ 	};
++
++	ethernet_pins: ethernet {
++		renesas,groups = "ethernet_rxdv_p3_6",
++				 "ethernet_rxer_p3_5",
++				 "ethernet_rxclk_p3_4",
++				 "ethernet_mdio_p3_3",
++				 "ethernet_rxd_p2_11",
++				 "ethernet_rxd_p2_10",
++				 "ethernet_rxd_p2_9",
++				 "ethernet_rxd_p2_8",
++				 "ethernet_txd_p2_7",
++				 "ethernet_txd_p2_6",
++				 "ethernet_txd_p2_5",
++				 "ethernet_txd_p2_4",
++				 "ethernet_txcrs_p2_3",
++				 "ethernet_txen_p2_2",
++				 "ethernet_txer_p2_1",
++				 "ethernet_txclk_p2_0",
++				 "ethernet_mdc_p5_9",
++				 "ethernet_col_p1_14",
++				 "ethernet_int_p1_15";
++		renesas,function = "ethernet";
++	};
+ };
 -- 
 1.8.4
 
