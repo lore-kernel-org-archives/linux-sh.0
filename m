@@ -1,57 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:13:51 +0000
-Subject: [PATCH v4 05/16] ARM: shmobile: rcar-gen2: Initialize CCF before clock sources
-Message-Id: <1386771242-21876-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 15 Dec 2013 08:24:43 +0000
+Subject: [PATCH RFC 0/3] Add ethernet support for r7s72100
+Message-Id: <1387095886-15163-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-When CONFIG_COMMON_CLOCK is enabled, call rcar_gen2_clocks_init() in the
-timer init function to initialize the common clock framework before
-initializing the clock sources. This will take care of clock
-initialization when the r8a779[01] boards will be switched to
-multiplatform kernels.
+Hi,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+this is a first pass at adding ethernet support to sh-pfc for
+the r7s72100 SoC.
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 5734c24..367bad7 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk/shmobile.h>
- #include <linux/clocksource.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-@@ -44,8 +45,10 @@ u32 __init rcar_gen2_read_mode_pins(void)
- 
- void __init rcar_gen2_timer_init(void)
- {
--#ifdef CONFIG_ARM_ARCH_TIMER
-+#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
-+#endif
-+#ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
- 	u32 freq;
-@@ -87,5 +90,8 @@ void __init rcar_gen2_timer_init(void)
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
- 
-+#ifdef CONFIG_COMMON_CLK
-+	rcar_gen2_clocks_init(mode);
-+#endif
- 	clocksource_of_init();
- }
+It has been written with reference to the hardware documentation
+but not well tested.
+
+This series is based on the topic/r7s72100-v3.13-rc3-20131214v2
+tag in my renesas tree.
+
+The first patch, for the sh_eth driver, applies cleanly to net-next.
+
+Simon Horman (3):
+  sh_eth: Add support for r7s72100
+  ARM: shmobile: r7s72100: Add clock for r7s72100-gether
+  ARM: shmobile: genmai: Enable r7s72100-gether
+
+ arch/arm/mach-shmobile/board-genmai.c   | 20 ++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r7s72100.c |  5 ++++-
+ drivers/net/ethernet/renesas/sh_eth.c   | 37 ++++++++++++++++++++++++++++++---
+ drivers/net/ethernet/renesas/sh_eth.h   |  2 +-
+ 4 files changed, 59 insertions(+), 5 deletions(-)
+
 -- 
-1.8.3.2
+1.8.4
 
