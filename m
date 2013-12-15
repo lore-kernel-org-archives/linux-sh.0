@@ -1,111 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:06 +0000
-Subject: [PATCH 10/26] ARM: shmobile: Initial r8a7791 and Koelsch multiplatform support
-Message-Id: <6d75bc6439ec3f4ae45db1e501177382d0582591.1387763524.git.horms+renesas@verge.net.au>
+From: Jiang Liu <liuj97@gmail.com>
+Date: Sun, 15 Dec 2013 16:36:33 +0000
+Subject: [PATCH v3 [resend] 11/18] smp, sh: kill SMP single function call interrupt
+Message-Id: <1387125400-28849-12-git-send-email-liuj97@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <1387125400-28849-1-git-send-email-liuj97@gmail.com>
+In-Reply-To: <1387125400-28849-1-git-send-email-liuj97@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>, Shaohua Li <shli@kernel.org>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, Paul Gortmaker <paul.gortmaker@windriver.com>, "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Jiang Liu <liuj97@gmail.com>, Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Steven Rostedt <rostedt@goodmis.org>, Jiri Kosina <trivial@kernel.org>, Wang YanQing <udknight@gmail.com>, linux-arch@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Commit 9a46ad6d6df3b54 "smp: make smp_call_function_many() use logic
+similar to smp_call_function_single()" has unified the way to handle
+single and multiple cross-CPU function calls. Now only one interrupt
+is needed for architecture specific code to support generic SMP function
+call interfaces, so kill the redundant single function call interrupt.
 
-Add Koelsch and r8a7791 to CONFIG_SHMOBILE_MULTI. At this
-point CCF is not yet supported so you cannot run this code
-yet. For CCF support to happen several different components
-are needed, and this is one simple portion that moves us
-forward. Other patches need to build on top of this one.
-
-Koelsch board support exists in 3 flavors:
-1) SHMOBILE_MULTI, MACH_KOELSCH - board-koelsch-reference.c (CCF + DT)
-2) SHMOBILE, MACH_KOELSCH_REFERENCE - board-koelsch-reference.c (DT)
-3) SHMOBILE, MACH_KOELSCH - board-koelsch.c (legacy C code)
-
-When CCF is done then 2) will be removed. When 1) includes same features
-as 3) then 3) will be removed.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Shaohua Li <shli@kernel.org>
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Cc: Ingo Molnar <mingo@elte.hu>
+Cc: Steven Rostedt <rostedt@goodmis.org>
+Cc: Jiri Kosina <trivial@kernel.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Jiang Liu <liuj97@gmail.com>
 ---
- arch/arm/boot/dts/Makefile                       | 3 ++-
- arch/arm/mach-shmobile/Kconfig                   | 8 ++++++++
- arch/arm/mach-shmobile/Makefile                  | 1 +
- arch/arm/mach-shmobile/board-koelsch-reference.c | 5 +++++
- 4 files changed, 16 insertions(+), 1 deletion(-)
+ arch/sh/include/asm/smp.h | 1 -
+ arch/sh/kernel/smp.c      | 5 +----
+ 2 files changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 5839077..8254bfc 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -232,7 +232,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r8a73a4-ape6evm.dtb \
- 	r8a73a4-ape6evm-reference.dtb \
- 	sh7372-mackerel.dtb
--dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb
-+dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
-+	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
- 	socfpga_cyclone5_sockit.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 8eac47f..17a4f40 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -24,8 +24,16 @@ comment "SH-Mobile System Type"
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
+diff --git a/arch/sh/include/asm/smp.h b/arch/sh/include/asm/smp.h
+index 78b0d0f4..93ce87b 100644
+--- a/arch/sh/include/asm/smp.h
++++ b/arch/sh/include/asm/smp.h
+@@ -25,7 +25,6 @@ extern int __cpu_logical_map[NR_CPUS];
+ enum {
+ 	SMP_MSG_FUNCTION,
+ 	SMP_MSG_RESCHEDULE,
+-	SMP_MSG_FUNCTION_SINGLE,
+ 	SMP_MSG_TIMER,
  
-+config ARCH_R8A7791
-+	bool "R-Car M2 (R8A77910)"
-+	select RENESAS_IRQC
-+
- comment "SH-Mobile Board Type"
+ 	SMP_MSG_NR,	/* must be last */
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index 86a7936..c944d5d 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -282,7 +282,7 @@ void arch_send_call_function_ipi_mask(const struct cpumask *mask)
  
-+config MACH_KOELSCH
-+	bool "Koelsch board"
-+	depends on ARCH_R8A7791
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 8bca9b5..021775d 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -56,6 +56,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
- 
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
-+obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index beecc8b..25b558f 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <mach/rcar-gen2.h>
-@@ -27,7 +28,11 @@
- 
- static void __init koelsch_add_standard_devices(void)
+ void arch_send_call_function_single_ipi(int cpu)
  {
-+#ifdef CONFIG_COMMON_CLK
-+	of_clk_init(NULL);
-+#else
- 	r8a7791_clock_init();
-+#endif
- 	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION_SINGLE);
++	mp_ops->send_ipi(cpu, SMP_MSG_FUNCTION);
  }
+ 
+ void smp_timer_broadcast(const struct cpumask *mask)
+@@ -309,9 +309,6 @@ void smp_message_recv(unsigned int msg)
+ 	case SMP_MSG_RESCHEDULE:
+ 		scheduler_ipi();
+ 		break;
+-	case SMP_MSG_FUNCTION_SINGLE:
+-		generic_smp_call_function_single_interrupt();
+-		break;
+ 	case SMP_MSG_TIMER:
+ 		ipi_timer();
+ 		break;
 -- 
-1.8.4
+1.8.1.2
 
