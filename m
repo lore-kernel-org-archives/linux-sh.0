@@ -1,97 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 22:34:11 +0000
-Subject: Re: [PATCH 03/05 v2] pinctrl: sh-pfc: r7s72100 single pin macros
-Message-Id: <CANqRtoR-AF2HSdNiBHK7eFkxp1ZRSr++rRfBo773wfXoaU3qOw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 15 Dec 2013 08:24:45 +0000
+Subject: [PATCH RFC 2/3] [RFC] ARM: shmobile: r7s72100: Add clock for r7s72100-gether
+Message-Id: <1387095886-15163-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217023745.24573.3660.sendpatchset@w520>
-	<20131217023814.24573.91649.sendpatchset@w520>
-	<4641687.OeSyoZmW7s@avalon>
-In-Reply-To: <4641687.OeSyoZmW7s@avalon>
+References: <1387095886-15163-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1387095886-15163-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Linus Walleij <linus.walleij@linaro.org>, Wolfram Sang <wsa@the-dreams.de>, "Simon Horman [Horms]" <horms@verge.net.au>
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-Hi Laurent,
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r7s72100.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Thanks for your feedback.
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 7b457ae..7bce0c1 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -27,6 +27,7 @@
+ #define FRQCR2		0xfcfe0014
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
++#define STBCR7		0xfcfe0430
+ 
+ #define PLL_RATE 30
+ 
+@@ -145,9 +146,10 @@ struct clk div4_clks[DIV4_NR] = {
+ };
+ 
+ enum { MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+-	MSTP33,	MSTP_NR };
++	MSTP33,	MSTP74, MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* GEther */
+ 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
+ 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
+ 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
+@@ -170,6 +172,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("r7s72100-gether", &mstp_clks[MSTP74]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
+-- 
+1.8.4
 
-On Wed, Dec 18, 2013 at 1:01 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patches.
->
-> On Tuesday 17 December 2013 11:38:14 Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Introduce macros that allow description of one pin per line.
->> Compared to the other ways of doing this, using this style
->> we can compresses the description of each pin from 9 to 1 line.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->>  This patch uses RZ_PMX_GROUP and RZ_GROUPS, thanks Laurent!
->>
->>  drivers/pinctrl/sh-pfc/pfc-r7s72100.c |   21 +++++++++++++++++++++
->>  1 file changed, 21 insertions(+)
->>
->> --- 0003/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
->> +++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c        2013-12-16
-> 19:14:30.000000000
->> +0900 @@ -98,9 +98,30 @@ static struct sh_pfc_pin pinmux_pins[] >>
->>  #define RZ_PORT_PIN(bank, pin) (((bank) * 16) + (pin))
->>
->> +#define __RZ_STR(pfx, hw, bank, pin, sfx)            \
->> +     pfx##_##hw##_p##bank##_##pin####sfx
->
-> Do you mean s/####sfx/##sfx/ ?
-
-Yes, thanks for catching that.
-
->> +
->> +#define RZ_PIN_AND_MUX(pfx, hw, bank, pin, fn)                               \
->> +static const unsigned int __RZ_STR(pfx, hw, bank, pin, _pins)[] = {  \
->> +     RZ_PORT_PIN(bank, pin),                                         \
->> +};                                                                   \
->> +static const unsigned int __RZ_STR(pfx, hw, bank, pin, _mux)[] = {   \
->> +     P_##bank##_##pin##_MARK_FN##fn,                                 \
->> +};
->
-> I would have preferred keeping the trailing semicolon (and comma in the
-> RZ_GROUPS macro) out of the macro, but that won't be possible as the
-> RZ_PIN_AND_MUX and RZ_GROUPS macros are used as arguments to the SCIF macros
-> in the next patch.
-
-That's correct. As much as I like semicolons, having a
-single-line-per-pin must be better than duplicating stuff and use
-semicolons.
-
->> +
->> +#define RZ_PMX_GROUP(pfx, hw, bank, pin, fn) \
->> +     SH_PFC_PIN_GROUP(pfx##_##hw##_p##bank##_##pin),
->> +
->> +#define __RZ_GROUPS(x) #x
->
-> Can't you replace __RZ_GROUPS() by __stringify() ?
-
-I'll try!
-
->> +#define RZ_GROUPS(pfx, hw, bank, pin, fn) \
->> +     __RZ_GROUPS(pfx##_##hw##_p##bank##_##pin),
->> +
->>  static const struct sh_pfc_pin_group pinmux_groups[] = {
->>  };
->>
->> +static const char * const scif2_groups[] = {
->> +};
->
-> I think this should be part of patch 04/05.
-
-Yes, so it seems.
-
-Thanks,
-
-/ magnus
