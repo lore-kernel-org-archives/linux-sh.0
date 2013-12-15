@@ -1,71 +1,108 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Dec 2013 20:34:35 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: r8a7791: Add SSI clocks in device tree
-Message-Id: <1388003675-26554-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 15 Dec 2013 08:23:59 +0000
+Subject: [PATCH RFC 1/2] pinctl: sh-pfc: r7s72100: Ethernet support
+Message-Id: <1387095840-15008-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387095840-15008-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1387095840-15008-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 18 ++++++++++++++++++
- include/dt-bindings/clock/r8a7791-clock.h | 13 +++++++++++++
- 2 files changed, 31 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 450fdd1..089838d 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -675,6 +675,24 @@
- 				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c4", "i2c3",
- 				"i2c2", "i2c1", "i2c0";
- 		};
-+		mstp10_clks: mstp10_clks@e6150998 {
-+			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-+			clocks = <&p_clk>, <&mstp10_clks 0>, <&mstp10_clks 0>,
-+				 <&mstp10_clks 0>, <&mstp10_clks 0>, <&mstp10_clks 0>,
-+				 <&mstp10_clks 0>, <&mstp10_clks 0>, <&mstp10_clks 0>,
-+				 <&mstp10_clks 0>, <&mstp10_clks 0>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7791_CLK_SSI R8A7791_CLK_SSI9 R8A7791_CLK_SSI8
-+				R8A7791_CLK_SSI7 R8A7791_CLK_SSI6 R8A7791_CLK_SSI5
-+				R8A7791_CLK_SSI4 R8A7791_CLK_SSI3 R8A7791_CLK_SSI2
-+				R8A7791_CLK_SSI1 R8A7791_CLK_SSI0
-+			>;
-+			clock-output-names +				"ssi", "ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
-+				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0";
-+		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 30f82f2..1c8f00d 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -103,6 +103,19 @@
- #define R8A7791_CLK_I2C1		30
- #define R8A7791_CLK_I2C0		31
+This has not been well exercised.
+---
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c | 64 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+index c5bb533..77b4ce7 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+@@ -141,15 +141,79 @@ static const unsigned int __RZ_STR(pfx, hw, bank, pin, _mux)[] = {	\
  
-+/* MSTP10 */
-+#define R8A7791_CLK_SSI			5
-+#define R8A7791_CLK_SSI9		6
-+#define R8A7791_CLK_SSI8		7
-+#define R8A7791_CLK_SSI7		8
-+#define R8A7791_CLK_SSI6		9
-+#define R8A7791_CLK_SSI5		10
-+#define R8A7791_CLK_SSI4		11
-+#define R8A7791_CLK_SSI3		12
-+#define R8A7791_CLK_SSI2		13
-+#define R8A7791_CLK_SSI1		14
-+#define R8A7791_CLK_SSI0		15
+ SCIF2(RZ_PIN_AND_MUX)
+ 
++#define ETHERNET(fn)			\
++	fn(ethernet, col,    1,  3, 3)		\
++	fn(ethernet, col,    1, 14, 4)		\
++	fn(ethernet, int,    1, 15, 1)		\
++	fn(ethernet, txclk,  2,  0, 2)		\
++	fn(ethernet, txer,   2,  1, 2)		\
++	fn(ethernet, txen,   2,  2, 2)		\
++	fn(ethernet, txcrs,  2,  3, 2)		\
++	fn(ethernet, txd,    2,  4, 2)		\
++	fn(ethernet, txd,    2,  5, 2)		\
++	fn(ethernet, txd,    2,  6, 2)		\
++	fn(ethernet, txd,    2,  7, 2)		\
++	fn(ethernet, rxd,    2,  8, 2)		\
++	fn(ethernet, rxd,    2,  9, 2)		\
++	fn(ethernet, rxd,    2, 10, 2)		\
++	fn(ethernet, rxd,    2, 11, 2)		\
++	fn(ethernet, txclk,  3,  0, 2)		\
++	fn(ethernet, txer,   3,  1, 2)		\
++	fn(ethernet, txen,   3,  2, 2)		\
++	fn(ethernet, mdio,   3,  3, 2)		\
++	fn(ethernet, rxclk,  3,  4, 2)		\
++	fn(ethernet, rxer,   3,  5, 2)		\
++	fn(ethernet, rxdv,   3,  6, 2)		\
++	fn(ethernet, mdc,    5,  9, 2)		\
++	fn(ethernet, mdc,    7,  0, 3)		\
++	fn(ethernet, txclk,  7,  1, 3)		\
++	fn(ethernet, txer,   7,  2, 3)		\
++	fn(ethernet, txen,   7,  3, 3)		\
++	fn(ethernet, txd,    7,  4, 3)		\
++	fn(ethernet, txd,    7,  5, 3)		\
++	fn(ethernet, txd,    7,  6, 3)		\
++	fn(ethernet, txd,    7,  7, 3)		\
++	fn(ethernet, rxd,    7,  9, 3)		\
++	fn(ethernet, rxd,    7, 10, 3)		\
++	fn(ethernet, rxd,    7, 11, 2)		\
++	fn(ethernet, rxd,    7, 12, 3)		\
++	fn(ethernet, mdio,   7, 13, 3)		\
++	fn(ethernet, crs,    7, 14, 3)		\
++	fn(ethernet, rxclk,  7, 15, 3)		\
++	fn(ethernet, rxer,   8,  0, 3)		\
++	fn(ethernet, rxd,    8,  1, 3)		\
++	fn(ethernet, col,    8,  7, 5)		\
++	fn(ethernet, txclk, 10,  0, 4)		\
++	fn(ethernet, txer,  10,  1, 4)		\
++	fn(ethernet, txen,  10,  2, 4)		\
++	fn(ethernet, crs,   10,  3, 4)		\
++	fn(ethernet, txd,   10,  4, 4)		\
++	fn(ethernet, txd,   10,  5, 4)		\
++	fn(ethernet, txd,   10,  6, 4)		\
++	fn(ethernet, txd,   10,  7, 4)		\
++	fn(ethernet, txd,   10,  8, 4)		\
++	fn(ethernet, txd,   10,  9, 4)		\
++	fn(ethernet, txd,   10, 10, 4)		\
++	fn(ethernet, txd,   10, 11, 4)		\
 +
- /* MSTP11 */
- #define R8A7791_CLK_SCIFA3		6
- #define R8A7791_CLK_SCIFA4		7
++ETHERNET(RZ_PIN_AND_MUX)
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SCIF2(RZ_PMX_GRP)
++	ETHERNET(RZ_PMX_GRP)
+ };
+ 
+ static const char * const scif2_groups[] = {
+ 	SCIF2(RZ_GRPS)
+ };
++
++static const char * const ethernet_groups[] = {
++	ETHERNET(RZ_GRPS)
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scif2),
++	SH_PFC_FUNCTION(ethernet),
+ };
+ 
+ #define PFC_REG(idx, name, reg)						\
 -- 
-1.8.3.2
+1.8.4
 
