@@ -1,38 +1,32 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:22 +0000
-Subject: [PATCH 16/28] ARM: shmobile: Use ->init_late() in shared EMEV2 case
-Message-Id: <26532aff60c8a008ccc48685a42b78145d6bd31b.1385950394.git.horms+renesas@verge.net.au>
+Date: Sun, 15 Dec 2013 08:23:58 +0000
+Subject: [PATCH RFC 0/2] pinctl: sh-pfc: r7s72100: Ethernet support
+Message-Id: <1387095840-15008-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi,
 
-Hook up shmobile_init_late() to enable various
-code such as suspend-to-RAM and CPUIdle.
+this is a first pass at adding ethernet support to sh-pfc for
+the r7s72100 SoC.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-emev2.c | 1 +
- 1 file changed, 1 insertion(+)
+It has been written with reference to the hardware documentation
+but not well tested.
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 2d64b95..4d39bf4 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -218,6 +218,7 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
- 	.init_machine	= emev2_add_standard_devices_dt,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
- 
--- 
+This series is based on the topic/r7s72100-v3.13-rc3-20131214v2
+tag in my renesas tree.
+
+Simon Horman (2):
+  pinctl: sh-pfc: r7s72100: Ethernet support
+  ARM: shmobile: r7s72100: Add ethernet PFC node to DT
+
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 25 +++++++++-
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c           | 64 +++++++++++++++++++++++++
+ 2 files changed, 88 insertions(+), 1 deletion(-)
+
+- 
 1.8.4
 
