@@ -1,298 +1,158 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:55 +0000
-Subject: [PATCH 22/33] ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
-Message-Id: <bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187.1386897180.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Dec 2013 19:25:17 +0000
+Subject: [PATCH 4/4] pinctrl: sh-pfc: ARM: Constify pins and cfg_regs arrays
+Message-Id: <1387221917-15437-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-SH-Mobile platforms are transitioning from non-multiplatform to
-multiplatform kernel. A new ARCH_SHMOBILE_MULTI configuration symbol has
-been created to group all multiplatform-enabled SH-Mobile SoCs. The
-existing ARCH_SHMOBILE configuration symbol groups SoCs that haven't
-been converted yet.
-
-This arrangement works fine for the arch/ code, but lots of drivers
-needed on both ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI depend on
-ARCH_SHMOBILE only. In order to avoid changing them, rename
-ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY, and create a new boolean
-ARCH_SHMOBILE configuration symbol that is selected by both
-ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI.
+The arrays are never modified, declare them as const.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/Kconfig                           | 14 ++++++++------
- arch/arm/Makefile                          |  1 -
- arch/arm/boot/compressed/Makefile          |  2 +-
- arch/arm/boot/dts/Makefile                 |  2 +-
- arch/arm/configs/ape6evm_defconfig         |  2 +-
- arch/arm/configs/armadillo800eva_defconfig |  2 +-
- arch/arm/configs/bockw_defconfig           |  2 +-
- arch/arm/configs/koelsch_defconfig         |  2 +-
- arch/arm/configs/kzm9d_defconfig           |  2 +-
- arch/arm/configs/kzm9g_defconfig           |  2 +-
- arch/arm/configs/lager_defconfig           |  2 +-
- arch/arm/configs/mackerel_defconfig        |  2 +-
- arch/arm/configs/marzen_defconfig          |  2 +-
- arch/arm/mach-shmobile/Kconfig             |  8 ++++++--
- drivers/Makefile                           |  2 +-
- 15 files changed, 26 insertions(+), 21 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 4 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 4 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 4 ++--
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 2 +-
+ 8 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index c1f1a7e..483d316 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -644,8 +644,9 @@ config ARCH_MSM
- 	  stack and controls some vital subsystems
- 	  (clock and power control, etc).
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+index 32dd478..d39ca87 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+@@ -1272,7 +1272,7 @@ static const u16 pinmux_data[] = {
+ #define R8A73A4_PIN_IO_PU_PD(pin)       SH_PFC_PIN_CFG(pin, __IO | __PUD)
+ #define R8A73A4_PIN_O(pin)              SH_PFC_PIN_CFG(pin, __O)
  
--config ARCH_SHMOBILE
--	bool "Renesas SH-Mobile / R-Mobile"
-+config ARCH_SHMOBILE_LEGACY
-+	bool "Renesas SH-Mobile / R-Mobile (non-multiplatform)"
-+	select ARCH_SHMOBILE
- 	select ARM_PATCH_PHYS_VIRT
- 	select CLKDEV_LOOKUP
- 	select GENERIC_CLOCKEVENTS
-@@ -660,7 +661,8 @@ config ARCH_SHMOBILE
- 	select PM_GENERIC_DOMAINS if PM
- 	select SPARSE_IRQ
- 	help
--	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms.
-+	  Support for Renesas's SH-Mobile and R-Mobile ARM platforms using
-+	  a non-multiplatform kernel.
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	R8A73A4_PIN_IO_PU_PD(0), R8A73A4_PIN_IO_PU_PD(1),
+ 	R8A73A4_PIN_IO_PU_PD(2), R8A73A4_PIN_IO_PU_PD(3),
+ 	R8A73A4_PIN_IO_PU_PD(4), R8A73A4_PIN_IO_PU_PD(5),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index a189b96..f4d3024 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1543,7 +1543,7 @@ static const u16 pinmux_data[] = {
+ #define R8A7740_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
+ #define R8A7740_PIN_O_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __O | __PUD)
  
- config ARCH_RPC
- 	bool "RiscPC"
-@@ -1611,7 +1613,7 @@ config HZ_FIXED
- 	default 200 if ARCH_EBSA110 || ARCH_S3C24XX || ARCH_S5P64X0 || \
- 		ARCH_S5PV210 || ARCH_EXYNOS4
- 	default AT91_TIMER_HZ if ARCH_AT91
--	default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE
-+	default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE_LEGACY
- 	default 0
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	/* Table 56-1 (I/O and Pull U/D) */
+ 	R8A7740_PIN_IO_PD(0),		R8A7740_PIN_IO_PD(1),
+ 	R8A7740_PIN_IO_PD(2),		R8A7740_PIN_IO_PD(3),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 8b1881c..c7d610d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -1260,7 +1260,7 @@ static const u16 pinmux_data[] = {
+  */
+ #define PIN_NUMBER(row, col)		(1000+((row)-1)*25+(col)-1)
  
- choice
-@@ -1796,8 +1798,8 @@ config ARCH_WANT_GENERAL_HUGETLB
- source "mm/Kconfig"
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
  
- config FORCE_MAX_ZONEORDER
--	int "Maximum zone order" if ARCH_SHMOBILE
--	range 11 64 if ARCH_SHMOBILE
-+	int "Maximum zone order" if ARCH_SHMOBILE_LEGACY
-+	range 11 64 if ARCH_SHMOBILE_LEGACY
- 	default "12" if SOC_AM33XX
- 	default "9" if SA1111
- 	default "11"
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index c99b108..1edf8eb 100644
---- a/arch/arm/Makefile
-+++ b/arch/arm/Makefile
-@@ -190,7 +190,6 @@ machine-$(CONFIG_ARCH_S5PC100)		+= s5pc100
- machine-$(CONFIG_ARCH_S5PV210)		+= s5pv210
- machine-$(CONFIG_ARCH_SA1100)		+= sa1100
- machine-$(CONFIG_ARCH_SHMOBILE) 	+= shmobile
--machine-$(CONFIG_ARCH_SHMOBILE_MULTI) 	+= shmobile
- machine-$(CONFIG_ARCH_SIRF)		+= prima2
- machine-$(CONFIG_ARCH_SOCFPGA)		+= socfpga
- machine-$(CONFIG_ARCH_STI)		+= sti
-diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
-index e7190bb..f54d5a2 100644
---- a/arch/arm/boot/compressed/Makefile
-+++ b/arch/arm/boot/compressed/Makefile
-@@ -64,7 +64,7 @@ else
- endif
- endif
+ 	/* Pins not associated with a GPIO port */
+@@ -2104,7 +2104,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(vin1),
+ };
  
--ifeq ($(CONFIG_ARCH_SHMOBILE),y)
-+ifeq ($(CONFIG_ARCH_SHMOBILE_LEGACY),y)
- OBJS		+= head-shmobile.o
- endif
+-static struct pinmux_cfg_reg pinmux_config_regs[] = {
++static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	{ PINMUX_CFG_REG("GPSR0", 0xfffc0004, 32, 1) {
+ 		GP_0_31_FN,	FN_IP1_14_11,
+ 		GP_0_30_FN,	FN_IP1_10_8,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index d3e94e3..f5c01e1 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1410,7 +1410,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP12_17_15, SCK4_B, SEL_SCIF4_1),
+ };
  
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index d57c1a6..5839077 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -216,7 +216,7 @@ dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
- dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
- dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
- 	s3c6410-smdk6410.dtb
--dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
-+dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index 1ce3994..cb26c62 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -13,7 +13,7 @@ CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- # CONFIG_BLOCK is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A73A4=y
- CONFIG_MACH_APE6EVM=y
- # CONFIG_ARM_THUMB is not set
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index fae939d..5abf1a2 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -15,7 +15,7 @@ CONFIG_MODULE_FORCE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7740=y
- CONFIG_MACH_ARMADILLO800EVA=y
- # CONFIG_SH_TIMER_TMU is not set
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index b38cd10..1dd3971 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -8,7 +8,7 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7778=y
- CONFIG_MACH_BOCKW=y
- CONFIG_MEMORY_START=0x60000000
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 825c16d..7fd65a0 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -9,7 +9,7 @@ CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- # CONFIG_BLOCK is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_MACH_KOELSCH=y
- # CONFIG_SWP_EMULATE is not set
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index 6c37f4a..217f1dd 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -13,7 +13,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_MACH_KZM9D=y
- CONFIG_MEMORY_START=0x40000000
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 1ad0280..9934dbc2 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -22,7 +22,7 @@ CONFIG_MODULE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_SH73A0=y
- CONFIG_MACH_KZM9G=y
- CONFIG_MEMORY_START=0x41000000
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 35bff5e..35dc8b2 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -12,7 +12,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_MACH_LAGER=y
- # CONFIG_SH_TIMER_TMU is not set
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index 9fb1189..a61e165 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -14,7 +14,7 @@ CONFIG_MODULE_UNLOAD=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_SH7372=y
- CONFIG_MACH_MACKEREL=y
- CONFIG_MEMORY_SIZE=0x10000000
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 5cc6360..6981338 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -9,7 +9,7 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
- CONFIG_MEMORY_START=0x60000000
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 180b71f..1b7df17 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -1,6 +1,10 @@
-+config ARCH_SHMOBILE
-+	bool
-+
- config ARCH_SHMOBILE_MULTI
- 	bool "SH-Mobile Series" if ARCH_MULTI_V7
- 	depends on MMU
-+	select ARCH_SHMOBILE
- 	select CPU_V7
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU if SMP
-@@ -30,7 +34,7 @@ config MACH_KZM9D
- comment "SH-Mobile System Configuration"
- endif
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ };
  
--if ARCH_SHMOBILE
-+if ARCH_SHMOBILE_LEGACY
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 293a51a..a8ba257 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -1731,7 +1731,7 @@ static const u16 pinmux_data[] = {
+ #define PIN_NUMBER(r, c) (((r) - 'A') * 31 + (c) + 200)
+ #define PIN_A_NUMBER(r, c) PIN_NUMBER(ROW_GROUP_A(r), c)
  
- comment "SH-Mobile System Type"
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
  
-@@ -272,7 +276,7 @@ source "drivers/sh/Kconfig"
+ 	/* Pins not associated with a GPIO port */
+@@ -4237,7 +4237,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(vin3),
+ };
  
- endif
+-static struct pinmux_cfg_reg pinmux_config_regs[] = {
++static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	{ PINMUX_CFG_REG("GPSR0", 0xE6060004, 32, 1) {
+ 		GP_0_31_FN, FN_IP3_17_15,
+ 		GP_0_30_FN, FN_IP3_14_12,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index ea02d37..d73a5f3 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -1674,7 +1674,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP16_11_10, CAN1_RX_B, SEL_CAN1_1),
+ };
  
--if ARCH_SHMOBILE || ARCH_SHMOBILE_MULTI
-+if ARCH_SHMOBILE
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ };
  
- menu "Timer and clock configuration"
+@@ -3056,7 +3056,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(usb1),
+ };
  
-diff --git a/drivers/Makefile b/drivers/Makefile
-index 3cc8214..8e3b8b0 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -118,7 +118,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
-+obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
+-static struct pinmux_cfg_reg pinmux_config_regs[] = {
++static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	{ PINMUX_CFG_REG("GPSR0", 0xE6060004, 32, 1) {
+ 		GP_0_31_FN, FN_IP1_22_20,
+ 		GP_0_30_FN, FN_IP1_19_17,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index bcdd5c3..e9c522b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -844,7 +844,7 @@ static const u16 pinmux_data[] = {
+ #define SH7372_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
+ #define SH7372_PIN_O_PU_PD(pin)		SH_PFC_PIN_CFG(pin, __O | __PUD)
+ 
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	/* Table 57-1 (I/O and Pull U/D) */
+ 	SH7372_PIN_IO_PD(0),		SH7372_PIN_IO_PD(1),
+ 	SH7372_PIN_O(2),		SH7372_PIN_I_PD(3),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index dc7c7fb..6f6ba10 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1179,7 +1179,7 @@ static const u16 pinmux_data[] = {
+  */
+ #define PIN_NUMBER(row, col)		(1000+((row)-1)*34+(col)-1)
+ 
+-static struct sh_pfc_pin pinmux_pins[] = {
++static const struct sh_pfc_pin pinmux_pins[] = {
+ 	/* Table 25-1 (I/O and Pull U/D) */
+ 	SH73A0_PIN_I_PD(0),
+ 	SH73A0_PIN_I_PU(1),
 -- 
-1.8.4
+1.8.3.2
 
