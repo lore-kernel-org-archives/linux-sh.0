@@ -1,42 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 08 Dec 2013 10:16:02 +0000
-Subject: Re: [PATCH/RFC] sh: Always link in helper functions extracted from libgcc
-Message-Id: <CAMuHMdVLjruEChvHjzTLuNqaR9YpDG7hQ7Ukbwrm4phmm6HfNA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Dec 2013 18:16:07 +0000
+Subject: [PATCH 1/3] ARM: shmobile: armadillo: Fix coherent DMA mask
+Message-Id: <1387217769-22751-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369815408-12719-1-git-send-email-geert@linux-m68k.org>
-	<CABMQnV+mYYmSKK6ayeDbaiOnNSOgUhN4TjZV50eYmQwaQ3rHhQ@mail.gmail.com>
-In-Reply-To: <CABMQnV+mYYmSKK6ayeDbaiOnNSOgUhN4TjZV50eYmQwaQ3rHhQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Cc: Paul Mundt <lethal@linux-sh.org>, Linux-sh <linux-sh@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, stable <stable@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Iwamatsu-san,
+Commit 4dcfa60071b3d23f0181f27d8519f12e37cefbb9 ("ARM: DMA-API: better
+handing of DMA masks for coherent allocations") added an additional
+check to the coherent DMA mask that results in an error when the mask is
+larger than what dma_addr_t can address.
 
-On Thu, Dec 5, 2013 at 7:49 AM, Nobuhiro Iwamatsu
-<nobuhiro.iwamatsu.yj@renesas.com> wrote:
-> I was just creating a patch as your patch.... I noticed your patch by chance.
-> I think your proposal is good.
->
-> But Paul does not maintain the SH tree.
-> Andrew, Could you pickup this patch ?
+Set the LCDC coherent DMA mask to DMA_BIT_MASK(32) instead of ~0 to fix
+the problem.
 
-As Andrew wasn't CCed on the original submission, I forwarded the original
-patch to him.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> Tested-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> Reviewed-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d9e28c7a..82d027c 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -483,7 +483,7 @@ static struct platform_device lcdc0_device = {
+ 	.id		= 0,
+ 	.dev	= {
+ 		.platform_data	= &lcdc0_info,
+-		.coherent_dma_mask = ~0,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
+ 	},
+ };
+ 
+@@ -580,7 +580,7 @@ static struct platform_device hdmi_lcdc_device = {
+ 	.id		= 1,
+ 	.dev	= {
+ 		.platform_data	= &hdmi_lcdc_info,
+-		.coherent_dma_mask = ~0,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
+ 	},
+ };
+ 
+-- 
+1.8.3.2
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
