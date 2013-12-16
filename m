@@ -1,75 +1,127 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 26 Dec 2013 14:35:07 +0000
-Subject: Re: [PATCH 2/5] arm: shmobile: r8a7790: Add SATA clock
-Message-Id: <52BC3E9B.7020401@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 16 Dec 2013 04:50:28 +0000
+Subject: [PATCH 5/6][RFC] ARM: shmobile: lager: add SDHI0/2 support
+Message-Id: <8738lt1jsf.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 12/26/2013 06:16 PM, Laurent Pinchart wrote:
-> Hi Valentine,
->
-> On Tuesday 24 December 2013 01:24:14 Valentine wrote:
->> On 12/19/2013 08:58 AM, Kuninori Morimoto wrote:
->>> Hi Valentine, Laurent
->>> Cc Magnus
->>>
->>>>>> On Wednesday 18 December 2013 16:44:17 Valentine Barshak wrote:
->>>>>>> This adds SATA 0/1 clock support. External 100MHz SATA 0/1
->>>>>>>
->>>>>>> reference clock is supposed to be applied to the following pins:
->>>>>>>      CICREFP0_SATA/CICREFP1_SATA;
->>>>>>>      CICREFN0_SATA/CICREFN1_SATA.
->>>>>>>
->>>>>>> Signed-off-by: Valentine Barshak
->>>>>>> <valentine.barshak@cogentembedded.com>
->>>>>>> ---
->>>
->>> (snip)
->>>
->>>>> If understand the h/w manual correctly, the external clock is connected
->>>>> directly to the SATA module:
->>>>>
->>>>> "Pin Name: CICREFP0_SATA CICREFN0_SATA CICREFP1_SATA CICREFN1_SATA
->>>>> Description: Reference clock input to the PLL circuit in the Serial-ATA
->>>>> module (differential input). Apply a 100-MHz clock."
->>>>
->>>> That's my understanding as well, but I suspect that clock to be the PHY
->>>> clock only, not the SATA module functional clock.
->>>
->>> I have same opinion with Laurent.
->>>
->>> But I'm not sure detail of module parent clock,
->>> since R-Car series datasheet seems doesn't have module clock relationship
->>> map. # SH-mobile series had "Clock Assignment to Modules" in datasheet.
->>>
->>> I will ask this to HW people, but maybe p_clk is fine here.
->>
->> Morimoto-san,
->> is there any news?
->>
->> It says "PLL in the Serial-ATA module" not the "Serial-ATA phy", but without
->> the clock map it's hard to say.
->>
->>> If you need to control CICREFN1_SATAx clocks,
->>> it should be defined as CLKDEV_ICK_ID() and use clk_xx() function
->>
->> If MSTP814/MSTP815 controls the internal SATA clocks, then I'm not sure how
->> to control the external CICREF[PN][01]_SATA ones.
->
-> If my guess is correct the CICREF[PN][01]_SATA clock doesn't need to be
-> controlled.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I agree. Still the question remains whether it's OK to use p_clk here.
+SDHI0 (CN8) needs JP/SW settings
 
->
->>> But, hmm...
->>> Current some clock-r8a7790 MSTP clocks have strange parent...
->
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
-Thanks,
-Val.
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f20c10a..e3122a8 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -24,8 +24,10 @@
+ #include <linux/interrupt.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+@@ -47,6 +49,19 @@
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
+ 
++/*
++ * SDHI0 (CN8)
++ *
++ * JP3:  pin1
++ * SW20: pin1
++
++ * GP5_24:	1:  VDD  3.3V (defult)
++ *		0:  VDD  0.0V
++ * GP5_29:	1:  VccQ 3.3V (defult)
++ *		0:  VccQ 1.8V
++ *
++ */
++
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+ 	{
+@@ -291,6 +306,34 @@ static const struct resource qspi_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(184)),
+ };
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee100000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI2 */
++static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee140000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(167)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -299,6 +342,20 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 				  "du_sync_1", "du"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+ 				  "du_clk_out_0", "du"),
++	/* SDHI */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_cd", "sdhi0"),
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_ctrl", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_cd", "sdhi2"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
+ 				  "scif0_data", "scif0"),
+@@ -368,6 +425,13 @@ static void __init lager_add_standard_devices(void)
+ 				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
+ 	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
+ 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
++					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
++					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
+ }
+ 
+ /*
+-- 
+1.7.9.5
+
