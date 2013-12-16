@@ -1,48 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 10 Dec 2013 19:42:54 +0000
-Subject: Re: [PATCH V2 0/5] pinctrl: sh-pfc: pfc-r8a7790: Update VIN groups
-Message-Id: <1780188.hNGucXYrGQ@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 16 Dec 2013 04:47:14 +0000
+Subject: [PATCH 0/6][RFC] ARM: shmobile: lager: SDHI support
+Message-Id: <87a9g11jxt.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386699626-15803-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1386699626-15803-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Valentine,
 
-The patches are much easier to review split this way. Thank you for the great 
-work.
+Hi Simon
 
-On Tuesday 10 December 2013 22:20:21 Valentine Barshak wrote:
-> This adds missing VIN pins to the pfc-r8a7790 driver, and reorganizes
-> the VIN groups to cover all possible configurations of VIN data pins.
-> This also groups hsync and vsync pins together and renames "field_signal"
-> and "data_enable" groups to "field" and "clkenb" respectively.
-> 
-> Changes in version 2:
-> * Split big patches into smaller series.
-> * Reorganized the existing pin groups before adding new ones.
-> 
-> Valentine Barshak (5):
->   pinctrl: sh-pfc: pfc-r8a7790: Rename VIN pin groups
->   pinctrl: sh-pfc: pfc-r8a7790: Group VIN0 HSYNC and VSYNC together
->   pinctrl: sh-pfc: pfc-r8a7790: Reorganize VIN0 data pins
->   pinctrl: sh-pfc: pfc-r8a7790: Add missing VIN1 pins
->   pinctrl: sh-pfc: pfc-r8a7790: Add VIN2 and VIN3 pins
+These adds SDHI support on Lager.
+But, these need mmc/mmc-next branch
+with renesas-devel-v3.13-rc3-20131214v2
 
-For the whole series,
+git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git :: mmc-next
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+especially, commit
+60eafa0fc4fbddcc1280389746fd5a36acdb3952
+(mmc: SDHI: add SoC specific workaround via HW version)
 
-I've applied the patches to my tree and will send a pull request for v3.14.
+#1 - #4 patches are for mmc ML,
+but, mmc-next branch doesn't have latest arch/arm/mach-shmobile.
+So these are still [RFC], and I didn't Cc to mmc ML this time.
+I will post #1 - #4 patches to mmc ML after merge.
 
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 441 +++++++++++++++++++++++++++-----
->  1 file changed, 382 insertions(+), 59 deletions(-)
+#1 - #4 : for mmc ML, for DT
+          based on mmc-next branch,
+          but, it needs latest Simon's branch.
+          I will re-post these to mmc ML after merge
 
--- 
-Regards,
+#5      : for SH ML, for legacy code
+          based on renesas-devel-v3.13-rc3-20131214v2
+          it needs mmc-next branch
 
-Laurent Pinchart
+#6      : for SH ML, for DT
+          based on renesas-devel-v3.13-rc3-20131214v2
+          it needs mmc-next branch, and #1 - #5
 
+Simon, if you can base mmc-next branch,
+only #5 can be applied without #1 - #4.
+
+Additionally, #6 needs Ben's sdhi fixup patches
+
+Kuninori Morimoto (6):
+      1) mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
+      2) mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7778
+      3) mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
+      4) mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7790
+      5) ARM: shmobile: lager: add SDHI0/2 support
+      6) ARM: shmobile: lager: add SDHI0/2 support on DTS
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +-
+ arch/arm/boot/dts/r8a7778.dtsi                |    6 --
+ arch/arm/boot/dts/r8a7779.dtsi                |    8 ---
+ arch/arm/boot/dts/r8a7790-lager-reference.dts |   76 +++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                |    4 --
+ arch/arm/mach-shmobile/board-lager.c          |   64 +++++++++++++++++++++
+ drivers/mmc/host/sh_mobile_sdhi.c             |   41 ++++++++-----
+ 7 files changed, 171 insertions(+), 32 deletions(-)
+)
+
+Best regards
+---
+Kuninori Morimoto
