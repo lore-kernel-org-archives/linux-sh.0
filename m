@@ -1,68 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Dec 2013 02:36:02 +0000
-Subject: Re: [PATCH V2 0/3] arm: shmobile: koelsch: Add VIN1 camera support
-Message-Id: <20131227023602.GG9184@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Dec 2013 19:25:15 +0000
+Subject: [PATCH 2/4] pinctrl: sh-pfc: Constify IRQ GPIOs arrays
+Message-Id: <1387221917-15437-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388072279-12508-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1388072279-12508-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Dec 26, 2013 at 07:37:56PM +0400, Valentine Barshak wrote:
-> This adds VIN pins and clocks to R8A7791 SoC along with
-> VIN1 camera support to Koelsch board.
-> 
-> This is probably a bit early since it depends on
-> the following pending patches:
-> http://marc.info/?l=linux-sh&m8807191506999&w=2
-> ([PATCH V2] media: soc_camera: rcar_vin: Add preliminary R-Car M2 support)
-> http://marc.info/?l=linux-sh&m8799873528360&w=2
-> ([PATCH 0/3] arm: shmobile: koelsch: Add I2C support)
-> 
-> Changes in V2:
-> * made koelsch_add_vin_device function static.
-> 
-> Valentine Barshak (3):
->   pinctrl: sh-pfc: r8a7791: Add VIN pins
->   arm: shmobile: r8a7791: Add VIN clocks
->   arm: shmobile: koelsch: Add VIN1 SoC camera support
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |  76 +++++++
->  arch/arm/mach-shmobile/clock-r8a7791.c |  10 +
->  drivers/pinctrl/sh-pfc/pfc-r8a7791.c   | 360 +++++++++++++++++++++++++++++++++
->  3 files changed, 446 insertions(+)
+The arrays are never modified, make them const.
 
-Hi Valentine,
-
-a few minor points about the posting of these patches.
-
-1. I believe that ARM: is usually in capitals in changelog subjects.
-
-2. When posting a revised patch series please consistently number the
-version of all the patches.
-
-In this series I see something like:
-	[PATCH V2 0/3]
-	[PATCH 1/3]
-	[PATCH 2/3]
-	[PATCH V2 3/3]
-
-Which is rather confusing (to me). Please increment the version for all
-patches even if they are not changed. If you want to clarify that
-they have not been changed then you can add something like the following to
-their changelogs
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/gpio.c   | 2 +-
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-v2
-* No change
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 6348081..a9288ab 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -207,7 +207,7 @@ static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
+ 	unsigned int i, k;
+ 
+ 	for (i = 0; i < pfc->info->gpio_irq_size; i++) {
+-		short *gpios = pfc->info->gpio_irq[i].gpios;
++		const short *gpios = pfc->info->gpio_irq[i].gpios;
+ 
+ 		for (k = 0; gpios[k] >= 0; k++) {
+ 			if (gpios[k] = offset)
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index cdd0338..25496c4 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -95,11 +95,11 @@ struct pinmux_data_reg {
+ 
+ struct pinmux_irq {
+ 	int irq;
+-	short *gpios;
++	const short *gpios;
+ };
+ 
+ #define PINMUX_IRQ(irq_nr, ids...)			   \
+-	{ .irq = irq_nr, .gpios = (short []) { ids, -1 } }
++	{ .irq = irq_nr, .gpios = (const short []) { ids, -1 } }
+ 
+ struct pinmux_range {
+ 	u16 begin;
+-- 
+1.8.3.2
 
-And then send something like:
-	[PATCH V2 0/3]
-	[PATCH V2 1/3]
-	[PATCH V2 2/3]
-	[PATCH V2 3/3]
-
-Thanks.
