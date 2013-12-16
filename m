@@ -1,38 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 18 Dec 2013 10:35:40 +0000
-Subject: Re: [PATCH 02/05 v2] pinctrl: sh-pfc: r7s72100 base support
-Message-Id: <CANqRtoTXKkNvX3eq7NTZepn64XcRr9vj_EavLrk6HxKuTwv4-A@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 16 Dec 2013 00:34:07 +0000
+Subject: [PATCH 0/2] ARM: shmobile: koelsch: defconfig updates
+Message-Id: <1387154049-9105-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217023745.24573.3660.sendpatchset@w520>
-	<20131217023804.24573.82351.sendpatchset@w520>
-	<20131217210403.GA1196@katana>
-	<CANqRtoRn--Ze3ayoag71iYTKXEG1eNa8qyXEAJ7vCZhRo5yHPw@mail.gmail.com>
-	<20131218100553.GB3314@katana>
-In-Reply-To: <20131218100553.GB3314@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, Linus Walleij <linus.walleij@linaro.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 18, 2013 at 7:05 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->
->> >> +#define _P_DATA(bank, pin, name, sfx)                                        \
->> >> +     PINMUX_DATA(name##_DATA, name##_PMC_0, name##_PIPC_0,           \
->> >> +                 name##_PIBC_1, name##_PBDC_1)
->> >> +
->> >> +#define _P_FN(n, fn, pfcae, pfce, pfc)                                       \
->> >> +     PINMUX_DATA(n##_MARK_FN##fn, n##_PMC_1, n##_PIPC_1,             \
->> >> +                 n##_PFCAE_##pfcae, n##_PFCE_##pfce, n##_PFC_##pfc)
->> >
->> > I need to apply this patch, otherwise my i2c pinmuxing fails?
->>
->> Thanks. It looks to me like the _P_FN() bits would be mainly needed.
->> Can you try to omit the _P_DATA() portion and check if it is still
->> behaving as expected?
->
-> Nope, doesn't work.
+Updates for Koelsch defconfig to allow it to boot
+a Debian armhf userspace and to bring it into line
+with other shmobile defconfigs.
 
-Ok, thanks for checking!
+Based on the renesas-devel-v3.13-rc3-20131214v2 tag
+of my renesas tree.
 
-/ magnus
+Simon Horman (2):
+  ARM: shmobile: koelsch: Enable CONFIG_PACKET in defconfig
+  ARM: shmobile: koelsch: Do not disable CONFIG_{INOTIFY_USER,UNIX} in
+    defconfig
+
+ arch/arm/configs/koelsch_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+-- 
+1.8.4
+
