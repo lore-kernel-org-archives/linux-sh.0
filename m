@@ -1,70 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:21 +0000
-Subject: [PATCH 15/28] ARM: shmobile: Add shared EMEV2 code for ->init_machine()
-Message-Id: <39337fbedb336b98eb03fc89d40cffc909ef8723.1385950394.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 16 Dec 2013 04:49:22 +0000
+Subject: [PATCH 1/6][RFC] mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
+Message-Id: <878uvl1ju9.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add a SoC specific function that initializes
-clocks and starts DT probing in case of EMEV2.
+it is easy to read if sh_mobile_sdhi_of_cfg and
+sh_mobile_sdhi_of_match are closer
 
-This EMEV2 SoC support code may be built for
-either legacy SHMOBILE or SMOBILE_MULTI.
-
-The change allows us to support existing board
-specific KZM9D DTB with these SoC specific
-DT_MACHINE_START() callbacks.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-emev2.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |   26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 3ad531c..2d64b95 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -16,6 +16,7 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -197,6 +198,16 @@ void __init emev2_init_delay(void)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 2d6ce25..8901acd 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -45,6 +45,19 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ 	},
+ };
  
- #ifdef CONFIG_USE_OF
- 
-+static void __init emev2_add_standard_devices_dt(void)
-+{
-+#ifdef CONFIG_COMMON_CLK
-+	of_clk_init(NULL);
-+#else
-+	emev2_clock_init();
-+#endif
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
++static const struct of_device_id sh_mobile_sdhi_of_match[] = {
++	{ .compatible = "renesas,sdhi-shmobile" },
++	{ .compatible = "renesas,sdhi-sh7372" },
++	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{},
++};
++MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
 +
- static const char *emev2_boards_compat_dt[] __initdata = {
- 	"renesas,emev2",
- 	NULL,
-@@ -206,6 +217,7 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
-+	.init_machine	= emev2_add_standard_devices_dt,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
+ struct sh_mobile_sdhi {
+ 	struct clk *clk;
+ 	struct tmio_mmc_data mmc_data;
+@@ -114,19 +127,6 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
+ 	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+ };
  
--- 
-1.8.4
+-static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+-	{ .compatible = "renesas,sdhi-shmobile" },
+-	{ .compatible = "renesas,sdhi-sh7372" },
+-	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+-
+ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *of_id -- 
+1.7.9.5
 
