@@ -1,48 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 16 Dec 2013 00:31:12 +0000
-Subject: [PATCH] ARM: shmobile: koelsch: Conditionally select MICREL_PHY
-Message-Id: <1387153872-8387-1-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 16 Dec 2013 13:25:42 +0000
+Subject: Re: [PATCH] ARM: shmobile: koelsch: Conditionally select MICREL_PHY
+Message-Id: <52AEFF56.5010602@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387153872-8387-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1387153872-8387-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The koelsch board uses has an SH ethernet controller which uses a Micrel
-phy. Select MICREL_PHY for koelsch if SH_ETH is enabled to make use of the
-Micrel-specific phy driver rather than relying on the generic phy driver.
+Hello.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 3 +++
- 1 file changed, 3 insertions(+)
+On 16-12-2013 4:31, Simon Horman wrote:
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f01e878..670238a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -41,6 +41,7 @@ config MACH_GENMAI
- config MACH_KOELSCH
- 	bool "Koelsch board"
- 	depends on ARCH_R8A7791
-+	select MICREL_PHY if SH_ETH
- 
- config MACH_KZM9D
- 	bool "KZM9D board"
-@@ -269,11 +270,13 @@ config MACH_KOELSCH
- 	bool "Koelsch board"
- 	depends on ARCH_R8A7791
- 	select USE_OF
-+	select MICREL_PHY if SH_ETH
- 
- config MACH_KOELSCH_REFERENCE
- 	bool "Koelsch board - Reference Device Tree Implementation"
- 	depends on ARCH_R8A7791
- 	select USE_OF
-+	select MICREL_PHY if SH_ETH
- 	---help---
- 	   Use reference implementation of Koelsch board support
- 	   which makes use of device tree at the expense
--- 
-1.8.4
+> The koelsch board uses has an SH ethernet controller which uses a Micrel
+> phy. Select MICREL_PHY for koelsch if SH_ETH is enabled to make use of the
+> Micrel-specific phy driver rather than relying on the generic phy driver.
+
+    Frankly speaking, I'm seeing no advantages to doing that.
+
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+    Analogous changes are needed for BOCK-W and Lager boards since they all 
+use the same KSZ8041RNLI PHY chip. I was going to submit such changes with the 
+PHY IRQ patches but since no IRQ is generated still, this got delayed...
+
+WBR, Sergei
 
