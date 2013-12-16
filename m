@@ -1,51 +1,36 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:02 +0000
-Subject: [PATCH 28/69] ARM: shmobile: marzen: tidyup DT node naming
-Message-Id: <6220c5197eb0820d9fd75595efa73c56a2162689.1386901186.git.horms+renesas@verge.net.au>
+Date: Mon, 16 Dec 2013 00:34:08 +0000
+Subject: [PATCH 1/2] ARM: shmobile: koelsch: Enable CONFIG_PACKET in defconfig
+Message-Id: <1387154049-9105-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <1387154049-9105-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1387154049-9105-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+CONFIG_PACKET is required for the ISC dhcpd daemon function.
+This change brings the koelsch defconfig into line with
+other shmobile defconfigs.
 
-According to ePAPR spec,
-this patch tidies up DT node name.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/configs/koelsch_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index f7578d5..ce3fe9e 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -82,17 +82,17 @@
- 		};
- 	};
- 
--	scif2_pins: scif2 {
-+	scif2_pins: serial2 {
- 		renesas,groups = "scif2_data_c";
- 		renesas,function = "scif2";
- 	};
- 
--	scif4_pins: scif4 {
-+	scif4_pins: serial4 {
- 		renesas,groups = "scif4_data";
- 		renesas,function = "scif4";
- 	};
- 
--	sdhi0_pins: sdhi0 {
-+	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd",
- 				 "sdhi0_wp";
- 		renesas,function = "sdhi0";
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 284846e..4971acd 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -30,6 +30,7 @@ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
++CONFIG_PACKET=y
+ CONFIG_INET=y
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
 -- 
 1.8.4
 
