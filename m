@@ -1,41 +1,57 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 16 Dec 2013 10:59:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sies
-Message-Id: <52AEDD12.3090306@codethink.co.uk>
+Date: Mon, 16 Dec 2013 12:38:48 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790 - fix shdi resource sizes
+Message-Id: <1387197528-1177-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386869040-20849-1-git-send-email-ben.dooks@codethink.co.uk>
- <871u1hsd44.wl%kuninori.morimoto.gx@gmail.com>
- <CANqRtoT86xdh-c73f-_59sD3E=90yW1wOp5Bobmi4qJywA72uA@mail.gmail.com>
- <52AAE9AF.6010704@codethink.co.uk> <20131214002752.GA12173@verge.net.au>
- <87bo0h1l9w.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bo0h1l9w.wl%kuninori.morimoto.gx@gmail.com>
+References: <1387197528-1177-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1387197528-1177-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 16/12/13 04:18, Kuninori Morimoto wrote:
->
-> Hi Ben, Magnus, Simon
->
->> Morimoto-san, could you help me to create a topic branch for R-Car Gen2
->> SDHI by sending me a list of patches and/or brances in other people's
->> trees?
->
-> First of all, I need to say sorry to Ben.
-> The SDHI resource size fix was correct, but only for CH0/CH1.
->
-> CH0 0x200
-> CH1 0x200
-> CH2 0x100
-> CH3 0x100
->
-> are correct size.
-> Ben, could you please send v2 patch ?
+The r8a7790.dtsi file has four sdhi nodes which the first two have the wrong
+resource size for their register block. This causes the sh_modbile_sdhi driver
+to fail to communicate with card at-all.
 
-Yes, I will sort out posting a branch later. I will do a new test with
-Simon's latest devel branch to check.
+Change sdhi{0,1} node size from 0x100 to 0x200 to correct these nodes
+as per Kuninori Morimoto's response to the original patch where all four
+nodes where changed. sdhi{2,3} are the correct size.
 
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Linux SH <linux-sh@vger.kernel.org>
+Cc: Linux ARM <linux-arm-kernel@lists.infradead.org>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Tested-by: William Towle <william.towle@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 68b7b87..c600103 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -254,7 +254,7 @@
+ 
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee100000 0 0x100>;
++		reg = <0 0xee100000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
+@@ -263,7 +263,7 @@
+ 
+ 	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee120000 0 0x100>;
++		reg = <0 0xee120000 0 0x200>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		cap-sd-highspeed;
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.5.1
+
