@@ -1,46 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:43 +0000
-Subject: [PATCH 02/33] ARM: shmobile: r8a7779: add I2C clock for DT
-Message-Id: <b918b68123718f262abcac6509dc8c05ee47e851.1386897180.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Dec 2013 19:25:13 +0000
+Subject: [PATCH 0/4] pinctrl: sh-pfc: Constify const data
+Message-Id: <1387221917-15437-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello,
 
-10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
-(ARM: mach-shmobile: r8a7779: Minimal setup using DT)
-added I2C driver for DT, but it didn't add clock.
-This patch adds missing clock for I2C
+This patch set makes sure that const data is stored in .rodata. The first
+patch and part of the second patch seem to require gcc 4.8 to have an effect,
+as gcc 4.7.3 stores the compound literals in .data in this case.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c | 4 ++++
- 1 file changed, 4 insertions(+)
+Simon, should I split patch 4/4 or is it fine as-is ?
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 1f7080f..badb8b7 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -184,9 +184,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP016]), /* TMU02 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-+	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-+	CLKDEV_DEV_ID("ffc71000.i2c", &mstp_clks[MSTP029]), /* I2C1 */
- 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
-+	CLKDEV_DEV_ID("ffc72000.i2c", &mstp_clks[MSTP028]), /* I2C2 */
- 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
-+	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+Laurent Pinchart (4):
+  pinctrl: sh-pfc: Constify enum_ids and var_field_width compound
+    literals
+  pinctrl: sh-pfc: Constify IRQ GPIOs arrays
+  pinctrl: sh-pfc: sh: Constify pins and cfg_regs arrays
+  pinctrl: sh-pfc: ARM: Constify pins and cfg_regs arrays
+
+ drivers/pinctrl/sh-pfc/gpio.c        |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a73a4.c |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  4 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  4 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  4 ++--
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c  |  2 +-
+ drivers/pinctrl/sh-pfc/pfc-shx3.c    |  2 +-
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 13 +++++++------
+ 22 files changed, 31 insertions(+), 30 deletions(-)
+
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
