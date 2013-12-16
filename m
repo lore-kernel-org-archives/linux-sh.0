@@ -1,41 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:01 +0000
-Subject: [PATCH 2/3] irqchip: renesas-irqc: Enable mask on suspend
-Message-Id: <6a7e3b3007b5396a9e812ca0ceddc7915f8768dd.1387855444.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 16 Dec 2013 04:50:04 +0000
+Subject: [PATCH 3/6][RFC] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
+Message-Id: <8761qp1jt3.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387855444.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387855444.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Now when lazy interrupt disable has been enabled in the driver
-then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
-the core that only IRQs marked as wakeups need to stay enabled
-during Suspend-to-RAM.
+This patch updates r8a7779 DT data to have SoC specific settings.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch disables it as default,
+but we can use wp-gpios property to enable it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/irqchip/irq-renesas-irqc.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7779.dtsi    |    8 --------
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ 2 files changed, 1 insertion(+), 9 deletions(-)
 
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index 8fdd7d6..082d95c 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -213,7 +213,7 @@ static int irqc_probe(struct platform_device *pdev)
- 	irq_chip->irq_mask = irqc_irq_disable;
- 	irq_chip->irq_unmask = irqc_irq_enable;
- 	irq_chip->irq_set_type = irqc_irq_set_type;
--	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
-+	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index d0561d4..2105059 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -220,8 +220,6 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
  
- 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
- 					      p->number_of_irqs,
+@@ -230,8 +228,6 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -240,8 +236,6 @@
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -250,8 +244,6 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 6442286..322cd35 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+ };
 -- 
-1.8.4
+1.7.9.5
 
