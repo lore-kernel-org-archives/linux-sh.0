@@ -1,25 +1,48 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 12 Dec 2013 19:44:34 +0000
-Subject: Re: [PATCH 07/10] ARM: shmobile: r8a73a4: Specify PFC interrupts in DT
-Message-Id: <CACRpkdZ_AyJnDHaVCcjy7weJyutUf76MqS_xUuPs4mQARXLxvQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 16 Dec 2013 00:31:12 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: Conditionally select MICREL_PHY
+Message-Id: <1387153872-8387-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1386732390-31724-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386732390-31724-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 11, 2013 at 4:26 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+The koelsch board uses has an SH ethernet controller which uses a Micrel
+phy. Select MICREL_PHY for koelsch if SH_ETH is enabled to make use of the
+Micrel-specific phy driver rather than relying on the generic phy driver.
 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-for patches 7 thru 10.
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index f01e878..670238a 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -41,6 +41,7 @@ config MACH_GENMAI
+ config MACH_KOELSCH
+ 	bool "Koelsch board"
+ 	depends on ARCH_R8A7791
++	select MICREL_PHY if SH_ETH
+ 
+ config MACH_KZM9D
+ 	bool "KZM9D board"
+@@ -269,11 +270,13 @@ config MACH_KOELSCH
+ 	bool "Koelsch board"
+ 	depends on ARCH_R8A7791
+ 	select USE_OF
++	select MICREL_PHY if SH_ETH
+ 
+ config MACH_KOELSCH_REFERENCE
+ 	bool "Koelsch board - Reference Device Tree Implementation"
+ 	depends on ARCH_R8A7791
+ 	select USE_OF
++	select MICREL_PHY if SH_ETH
+ 	---help---
+ 	   Use reference implementation of Koelsch board support
+ 	   which makes use of device tree at the expense
+-- 
+1.8.4
 
-I expect these to go in through the shmobile tree.
-
-Yours,
-Linus Walleij
