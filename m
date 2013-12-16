@@ -1,83 +1,43 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 13 Dec 2013 11:52:40 +0000
-Subject: [PATCH 2/2] arm: shmobile: r8a7790: Add SATA clock support
-Message-Id: <1386935560-16739-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 16 Dec 2013 08:16:52 +0000
+Subject: [PATCH] ARM: shmobile: bockw: fixup DMA mask
+Message-Id: <87vbypyzv3.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
-In-Reply-To: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This adds SATA 0/1 clock support. External 100MHz SATA 0/1
-reference clock is supposed to be applied to the following pins:
-  CICREFP0_SATA/CICREFP1_SATA;
-  CICREFN0_SATA/CICREFN1_SATA.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+4dcfa60071b3d23f0181f27d8519f12e37cefbb9
+(ARM: DMA-API: better handing of DMA masks for coherent allocations)
+exchanged DMA mask check method.
+Below warning will appear without this patch
+
+asoc-simple-card asoc-simple-card.0: \
+  Coherent DMA mask 0xffffffffffffffff is larger than dma_addr_t allows
+asoc-simple-card asoc-simple-card.0: \
+  Driver did not use or check the return value from dma_set_coherent_mask()?
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 3e27200..c4b567b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -73,6 +73,18 @@ static struct clk extal_clk = {
- 	.mapping	= &cpg_mapping,
- };
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index fd9ab9f..24b4161 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -693,7 +693,7 @@ static void __init bockw_init(void)
+ 			.id             = i,
+ 			.data           = &rsnd_card_info[i],
+ 			.size_data      = sizeof(struct asoc_simple_card_info),
+-			.dma_mask       = ~0,
++			.dma_mask	= DMA_BIT_MASK(32),
+ 		};
  
-+/* External SATA0 reference clock: 100MHz fixed */
-+static struct clk sata0_clk = {
-+	.rate		= 100000000,
-+	.mapping	= &cpg_mapping,
-+};
-+
-+/* External SATA1 reference clock: 100MHz fixed */
-+static struct clk sata1_clk = {
-+	.rate		= 100000000,
-+	.mapping	= &cpg_mapping,
-+};
-+
- static struct sh_clk_ops followparent_clk_ops = {
- 	.recalc	= followparent_recalc,
- };
-@@ -140,6 +152,8 @@ static struct clk *main_clks[] = {
- 	&ddr_clk,
- 	&mp_clk,
- 	&cp_clk,
-+	&sata0_clk,
-+	&sata1_clk,
- };
- 
- /* SDHI (DIV4) clock */
-@@ -187,6 +201,7 @@ enum {
- 	MSTP1009, MSTP1008, MSTP1007, MSTP1006, MSTP1005,
- 	MSTP931, MSTP930, MSTP929, MSTP928,
- 	MSTP917,
-+	MSTP815, MSTP814,
- 	MSTP813,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
-@@ -215,6 +230,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP929] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 29, 0), /* I2C2 */
- 	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
- 	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
-+	[MSTP815] = SH_CLK_MSTP32(&sata0_clk, SMSTPCR8, 15, 0), /* SATA0 */
-+	[MSTP814] = SH_CLK_MSTP32(&sata1_clk, SMSTPCR8, 14, 0),	/* SATA1 */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
-@@ -321,6 +338,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
- 	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
- 	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("sata-r8a7790.0", &mstp_clks[MSTP815]),
-+	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
- 
- 	/* ICK */
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ 		platform_device_register_full(&cardinfo);
 -- 
-1.8.3.1
+1.7.9.5
 
