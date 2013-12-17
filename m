@@ -1,105 +1,159 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Dec 2013 13:15:21 +0000
-Subject: Re: [PATCH v3] serial: sh-sci: Fix warnings due to improper casts and printk formats
-Message-Id: <20131212131520.GF30624@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 17 Dec 2013 21:44:36 +0000
+Subject: [PATCH 3/5] arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
+Message-Id: <1387316678-10174-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386765631-1840-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386765631-1840-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 11, 2013 at 01:40:31PM +0100, Laurent Pinchart wrote:
-> Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
-> variables, and cast pointers to uintptr_t instead of unsigned int where
-> applicable. This fixes warnings on platforms where pointers and/or
-> dma_addr_t have a different size than int.
-> 
-> Cc: linux-serial@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Thanks, I will queue this up.
+I decided to put the pinmuxing into the dtsi file since there is only
+one pinmux posiibility which one probably wants to have when using the
+bus.
 
-> ---
->  drivers/tty/serial/sh-sci.c | 19 ++++++++++---------
->  1 file changed, 10 insertions(+), 9 deletions(-)
-> 
-> This patch depends on "vsprintf: add %pad extension for dma_addr_t use" that
-> should make it to v3.14.
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 7d8103c..6e5ce62 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -557,7 +557,7 @@ static inline int sci_rxd_in(struct uart_port *port)
->  		return 1;
->  
->  	/* Cast for ARM damage */
-> -	return !!__raw_readb((void __iomem *)s->cfg->port_reg);
-> +	return !!__raw_readb((void __iomem *)(uintptr_t)s->cfg->port_reg);
->  }
->  
->  /* ********************************************************************** *
-> @@ -1309,7 +1309,7 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
->  	}
->  
->  	if (room < count)
-> -		dev_warn(port->dev, "Rx overrun: dropping %u bytes\n",
-> +		dev_warn(port->dev, "Rx overrun: dropping %zu bytes\n",
->  			 count - room);
->  	if (!room)
->  		return room;
-> @@ -1442,7 +1442,7 @@ static void work_fn_rx(struct work_struct *work)
->  		int count;
->  
->  		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
-> -		dev_dbg(port->dev, "Read %u bytes with cookie %d\n",
-> +		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
->  			sh_desc->partial, sh_desc->cookie);
->  
->  		spin_lock_irqsave(&port->lock, flags);
-> @@ -1691,16 +1691,17 @@ static void sci_request_dma(struct uart_port *port)
->  		s->chan_tx = chan;
->  		sg_init_table(&s->sg_tx, 1);
->  		/* UART circular tx buffer is an aligned page. */
-> -		BUG_ON((int)port->state->xmit.buf & ~PAGE_MASK);
-> +		BUG_ON((uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
->  		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
-> -			    UART_XMIT_SIZE, (int)port->state->xmit.buf & ~PAGE_MASK);
-> +			    UART_XMIT_SIZE,
-> +			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
->  		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
->  		if (!nent)
->  			sci_tx_dma_release(s, false);
->  		else
-> -			dev_dbg(port->dev, "%s: mapped %d@%p to %x\n", __func__,
-> -				sg_dma_len(&s->sg_tx),
-> -				port->state->xmit.buf, sg_dma_address(&s->sg_tx));
-> +			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n", __func__,
-> +				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
-> +				&sg_dma_address(&s->sg_tx));
->  
->  		s->sg_len_tx = nent;
->  
-> @@ -1740,7 +1741,7 @@ static void sci_request_dma(struct uart_port *port)
->  
->  			sg_init_table(sg, 1);
->  			sg_set_page(sg, virt_to_page(buf[i]), s->buf_len_rx,
-> -				    (int)buf[i] & ~PAGE_MASK);
-> +				    (uintptr_t)buf[i] & ~PAGE_MASK);
->  			sg_dma_address(sg) = dma[i];
->  		}
->  
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 102 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 102 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index d396b38..ff0bd6b 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -8,6 +8,8 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/interrupt-controller/irq.h>
++
+ / {
+ 	compatible = "renesas,r7s72100";
+ 	interrupt-parent = <&gic>;
+@@ -15,6 +17,10 @@
+ 	#size-cells = <1>;
+ 
+ 	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
+ 		gpio0 = &port0;
+ 		gpio1 = &port1;
+ 		gpio2 = &port2;
+@@ -58,6 +64,26 @@
+ 			  <0xfcfe7b40 0x04>, /* JPMC */
+ 			  <0xfcfe7b90 0x04>, /* JPMCSR */
+ 			  <0xfcfe7f00 0x04>; /* JPIBC */
++
++		riic0_pins: i2c0 {
++			renesas,groups = "riic0_scl_p1_0", "riic0_sda_p1_1";
++			renesas,function = "riic0";
++		};
++
++		riic1_pins: i2c1 {
++			renesas,groups = "riic1_scl_p1_2", "riic1_sda_p1_3";
++			renesas,function = "riic1";
++		};
++
++		riic2_pins: i2c2 {
++			renesas,groups = "riic2_scl_p1_4", "riic2_sda_p1_5";
++			renesas,function = "riic2";
++		};
++
++		riic3_pins: i2c3 {
++			renesas,groups = "riic3_scl_p1_6", "riic3_sda_p1_7";
++			renesas,function = "riic3";
++		};
+ 	};
+ 
+ 	port0: gpio@fcfe3100 {
+@@ -187,4 +213,80 @@
+ 		gpio-controller;
+ 		gpio-ranges = <&pfc 0 192 2>;
+ 	};
++
++	i2c0: i2c@fcfee000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfee000 0x44>;
++		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 158 IRQ_TYPE_EDGE_RISING>,
++			     <0 159 IRQ_TYPE_EDGE_RISING>,
++			     <0 160 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 161 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
++		pinctrl-0 = <&riic0_pins>;
++		pinctrl-names = "default";
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@fcfee400 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfee400 0x44>;
++		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 166 IRQ_TYPE_EDGE_RISING>,
++			     <0 167 IRQ_TYPE_EDGE_RISING>,
++			     <0 168 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 169 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
++		pinctrl-0 = <&riic1_pins>;
++		pinctrl-names = "default";
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@fcfee800 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfee800 0x44>;
++		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 174 IRQ_TYPE_EDGE_RISING>,
++			     <0 175 IRQ_TYPE_EDGE_RISING>,
++			     <0 176 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 177 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
++		pinctrl-0 = <&riic2_pins>;
++		pinctrl-names = "default";
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@fcfeec00 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfeec00 0x44>;
++		interrupts = <0 181 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 182 IRQ_TYPE_EDGE_RISING>,
++			     <0 183 IRQ_TYPE_EDGE_RISING>,
++			     <0 184 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 185 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		pinctrl-0 = <&riic3_pins>;
++		pinctrl-names = "default";
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
+ };
+-- 
+1.8.4.2
+
