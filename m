@@ -1,192 +1,233 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:21 +0000
-Subject: [PATCH 14/47] ARM: shmobile: sh7372: Use macros to declare SCIF devices
-Message-Id: <1386323994-12850-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 10:13:19 +0000
+Subject: [PATCH v5 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
+Message-Id: <20131217101319.17491.50953.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20131217101212.17491.56898.sendpatchset@w520>
+In-Reply-To: <20131217101212.17491.56898.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Now when drivers/clocksource/Kconfig has been
+updated with entires for CMT, TMU and MTU2
+it is safe to remove these from SH.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 156 ++++++----------------------------
- 1 file changed, 25 insertions(+), 131 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 3118783..77627dd 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -86,138 +86,32 @@ void __init sh7372_pinmux_init(void)
- 	platform_device_register(&sh7372_pfc_device);
- }
- 
--/* SCIFA0 */
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xe6c40000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c00), evt2irq(0x0c00),
--			    evt2irq(0x0c00), evt2irq(0x0c00) },
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--/* SCIFA1 */
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xe6c50000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c20), evt2irq(0x0c20),
--			    evt2irq(0x0c20), evt2irq(0x0c20) },
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--/* SCIFA2 */
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xe6c60000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c40), evt2irq(0x0c40),
--			    evt2irq(0x0c40), evt2irq(0x0c40) },
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--/* SCIFA3 */
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xe6c70000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0c60), evt2irq(0x0c60),
--			    evt2irq(0x0c60), evt2irq(0x0c60) },
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--/* SCIFA4 */
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xe6c80000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0d20), evt2irq(0x0d20),
--			    evt2irq(0x0d20), evt2irq(0x0d20) },
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--/* SCIFA5 */
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xe6cb0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { evt2irq(0x0d40), evt2irq(0x0d40),
--			    evt2irq(0x0d40), evt2irq(0x0d40) },
--};
--
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
--
--/* SCIFB */
--static struct plat_sci_port scif6_platform_data = {
--	.mapbase	= 0xe6c30000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFB,
--	.irqs		= { evt2irq(0x0d60), evt2irq(0x0d60),
--			    evt2irq(0x0d60), evt2irq(0x0d60) },
--};
-+/* SCIF */
-+#define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF,			\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE,			\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
- 
--static struct platform_device scif6_device = {
--	.name		= "sh-sci",
--	.id		= 6,
--	.dev		= {
--		.platform_data	= &scif6_platform_data,
--	},
--};
-+SH7372_SCIF(PORT_SCIFA, 0, 0xe6c40000, evt2irq(0x0c00));
-+SH7372_SCIF(PORT_SCIFA, 1, 0xe6c50000, evt2irq(0x0c20));
-+SH7372_SCIF(PORT_SCIFA, 2, 0xe6c60000, evt2irq(0x0c40));
-+SH7372_SCIF(PORT_SCIFA, 3, 0xe6c70000, evt2irq(0x0c60));
-+SH7372_SCIF(PORT_SCIFA, 4, 0xe6c80000, evt2irq(0x0d20));
-+SH7372_SCIF(PORT_SCIFA, 5, 0xe6cb0000, evt2irq(0x0d40));
-+SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
- 
- /* CMT */
- static struct sh_timer_config cmt2_platform_data = {
--- 
-1.8.3.2
+ arch/sh/Kconfig |   76 ++++++++++++++++---------------------------------------
+ 1 file changed, 23 insertions(+), 53 deletions(-)
 
+--- 0001/arch/sh/Kconfig
++++ work/arch/sh/Kconfig	2013-12-17 18:56:15.000000000 +0900
+@@ -122,15 +122,6 @@ config SYS_SUPPORTS_NUMA
+ config SYS_SUPPORTS_PCI
+ 	bool
+ 
+-config SYS_SUPPORTS_CMT
+-	bool
+-
+-config SYS_SUPPORTS_MTU2
+-	bool
+-
+-config SYS_SUPPORTS_TMU
+-	bool
+-
+ config STACKTRACE_SUPPORT
+ 	def_bool y
+ 
+@@ -190,14 +181,14 @@ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 
+ config CPU_SH4
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+ 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SH4A
+@@ -212,7 +203,7 @@ config CPU_SH4AL_DSP
+ config CPU_SH5
+ 	bool
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SHX2
+@@ -249,7 +240,7 @@ choice
+ config CPU_SUBTYPE_SH7619
+ 	bool "Support SH7619 processor"
+ 	select CPU_SH2
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ # SH-2A Processor Support
+ 
+@@ -257,50 +248,50 @@ config CPU_SUBTYPE_SH7201
+ 	bool "Support SH7201 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_MTU2
+  
+ config CPU_SUBTYPE_SH7203
+ 	bool "Support SH7203 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7206
+ 	bool "Support SH7206 processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ config CPU_SUBTYPE_SH7263
+ 	bool "Support SH7263 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ config CPU_SUBTYPE_SH7264
+ 	bool "Support SH7264 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7269
+ 	bool "Support SH7269 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_MXG
+ 	bool "Support MX-G processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_MTU2
+ 	help
+ 	  Select MX-G if running on an R8A03022BG part.
+ 
+@@ -353,7 +344,7 @@ config CPU_SUBTYPE_SH7720
+ 	bool "Support SH7720 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+@@ -365,7 +356,7 @@ config CPU_SUBTYPE_SH7721
+ 	bool "Support SH7721 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+ 	help
+@@ -421,7 +412,7 @@ config CPU_SUBTYPE_SH7723
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -433,7 +424,7 @@ config CPU_SUBTYPE_SH7724
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -513,7 +504,7 @@ config CPU_SUBTYPE_SH7343
+ 	bool "Support SH7343 processor"
+ 	select CPU_SH4AL_DSP
+ 	select ARCH_SHMOBILE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ config CPU_SUBTYPE_SH7722
+ 	bool "Support SH7722 processor"
+@@ -522,7 +513,7 @@ config CPU_SUBTYPE_SH7722
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+@@ -533,7 +524,7 @@ config CPU_SUBTYPE_SH7366
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ endchoice
+ 
+@@ -566,27 +557,6 @@ source "arch/sh/boards/Kconfig"
+ 
+ menu "Timer and clock configuration"
+ 
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	depends on SYS_SUPPORTS_TMU
+-	default y
+-	help
+-	  This enables the build of the TMU timer driver.
+-
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	depends on SYS_SUPPORTS_CMT
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_MTU2
+-	bool "MTU2 timer driver"
+-	depends on SYS_SUPPORTS_MTU2
+-	default y
+-	help
+-	  This enables build of the MTU2 timer driver.
+-
+ config SH_PCLK_FREQ
+ 	int "Peripheral clock frequency (in Hz)"
+ 	depends on SH_CLK_CPG_LEGACY
