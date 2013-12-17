@@ -1,34 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 23 Dec 2013 00:27:32 +0000
-Subject: Re: [PATCH] irq-renesas-irqc: simplify irq_set_type() method
-Message-Id: <20131223002729.GB25868@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 17 Dec 2013 17:18:49 +0000
+Subject: [PATCH 1/2] iommu/shmobile: Allocate archdata with kzalloc()
+Message-Id: <1387300730-28783-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312140309.31407.sergei.shtylyov@cogentembedded.com>
- <20131219082453.GA12239@verge.net.au>
- <CANqRtoT9-Pp+6p4gWa=uOh9Wdw8JmxXcduqTiqBApaPbr3YYng@mail.gmail.com>
-In-Reply-To: <CANqRtoT9-Pp+6p4gWa=uOh9Wdw8JmxXcduqTiqBApaPbr3YYng@mail.gmail.com>
+References: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Thomas Gleixner <tglx@linutronix.de>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Nguyen Viet Dung <nv-dung-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, Dec 19, 2013 at 06:53:32PM +0900, Magnus Damm wrote:
-> On Thu, Dec 19, 2013 at 5:24 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Sat, Dec 14, 2013 at 03:09:31AM +0300, Sergei Shtylyov wrote:
-> >> Value 0 of the sense  selection field of CONFIG_n register means "disable event
-> >> detection" and serves in irqc_sense[] for marking the invalid values of the IRQ
-> >> type (by just omitting initializers). There is no need for INTC_IRQ_SENSE_VALID
-> >> and hence INTC_IRQ_SENSE() as all field values matching to the  valid IRQ types
-> >> are non-zero anyway.
-> >>
-> >> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >
-> > Magnus, could you review this?
-> 
-> The patch is IMO only cosmetic so I can't say I care that much. But
-> since you ask. =)
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+The archdata attached_list field isn't initialized, leading to random
+crashes when accessed. Use kzalloc() to allocate the whole structure and
+make sure all fields get initialized properly.
 
-Thanks, I have queued this up.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/iommu/shmobile-iommu.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/iommu/shmobile-iommu.c b/drivers/iommu/shmobile-iommu.c
+index d572863..7a3b928 100644
+--- a/drivers/iommu/shmobile-iommu.c
++++ b/drivers/iommu/shmobile-iommu.c
+@@ -380,14 +380,13 @@ int ipmmu_iommu_init(struct shmobile_ipmmu *ipmmu)
+ 		kmem_cache_destroy(l1cache);
+ 		return -ENOMEM;
+ 	}
+-	archdata = kmalloc(sizeof(*archdata), GFP_KERNEL);
++	archdata = kzalloc(sizeof(*archdata), GFP_KERNEL);
+ 	if (!archdata) {
+ 		kmem_cache_destroy(l1cache);
+ 		kmem_cache_destroy(l2cache);
+ 		return -ENOMEM;
+ 	}
+ 	spin_lock_init(&archdata->attach_lock);
+-	archdata->attached = NULL;
+ 	archdata->ipmmu = ipmmu;
+ 	ipmmu_archdata = archdata;
+ 	bus_set_iommu(&platform_bus_type, &shmobile_iommu_ops);
+-- 
+1.8.3.2
+
