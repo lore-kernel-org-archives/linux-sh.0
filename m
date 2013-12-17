@@ -1,77 +1,261 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 11 Dec 2013 11:59:08 +0000
-Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
-Message-Id: <20131211115908.GA2564@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="W/nzBZO5zC0uMSeA"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 02:38:04 +0000
+Subject: [PATCH 02/05 v2] pinctrl: sh-pfc: r7s72100 base support
+Message-Id: <20131217023804.24573.82351.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk>
- <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk>
- <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk>
- <20130905060429.GJ14960@verge.net.au>
- <20130925044503.GA24243@verge.net.au>
- <52A23916.40507@codethink.co.uk>
- <20131211020904.GK19992@verge.net.au>
-In-Reply-To: <20131211020904.GK19992@verge.net.au>
-To: Simon Horman <horms@verge.net.au>
-Cc: Ian Molton <ian.molton@codethink.co.uk>, magnus.damm@gmail.com, grant.likely@linaro.org, rob.herring@calxeda.com, devicetree@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, ben.dooks@codethink.co.uk
+References: <20131217023745.24573.3660.sendpatchset@w520>
+In-Reply-To: <20131217023745.24573.3660.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: wsa@the-dreams.de, linus.walleij@linaro.org, linux-sh@vger.kernel.org, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
+From: Magnus Damm <damm@opensource.se>
 
---W/nzBZO5zC0uMSeA
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Add r7s72100 PINCTRL support via sh-pfc V2. At this point the code
+provides enough support to allow use together with the gpio-rz
+driver. Incremental per-device patches will in the future be
+submitted on top of this base patch to allow PINCTRL enablement
+for each individual device.
 
-On Wed, Dec 11, 2013 at 11:09:04AM +0900, Simon Horman wrote:
-> On Fri, Dec 06, 2013 at 08:52:38PM +0000, Ian Molton wrote:
-> > On 25/09/13 05:45, Simon Horman wrote:
-> >=20
-> > >Hi Ian,
-> > >
-> > >I spoke with Magnus and in turn Ben about this at LinuxCon in New Orle=
-ans
-> > >last week.
-> > >
-> > >Basically the position of Magnus and I is that any support for this
-> > >hardware is an incremental improvement on the current situation: no
-> > >support.
-> > >
-> > >With this in mind from an shmobile point of view I am happy for this c=
-ode.
-> > >And there is no need to wait for a review from Magnus.
-> >=20
-> > Has anyone merged this for upstream yet? If not, where should I send it?
->=20
-> I don't believe it has been merged.
->=20
-> My suggestion is to re-post it with my Ack with
-> Wolfram Sang <wsa@the-dreams.de> CCed.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-No need to resend. I have it on my todo-list. Yet, by glimpsing at it I
-found some issues which need a proper review for which I didn't have the
-time so far. I hope to have it done by this week.
+ Changes since V1:
+ - Moved RZ_PORT_PIN() macro
+ - Make use of _GP_GPIO() for 16-bit bank support
+ - Updated _P_DATA() and _P_FN() to control PIPC
 
+ Thanks to Laurent for the review.
 
---W/nzBZO5zC0uMSeA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ drivers/pinctrl/sh-pfc/Kconfig        |    5 +
+ drivers/pinctrl/sh-pfc/Makefile       |    1 
+ drivers/pinctrl/sh-pfc/core.c         |    9 +
+ drivers/pinctrl/sh-pfc/core.h         |    1 
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c |  161 +++++++++++++++++++++++++++++++++
+ 5 files changed, 177 insertions(+)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSqFOLAAoJEBQN5MwUoCm2g8EQAKLaVHmD70LiNCZc8G72nwOk
-bn32/mjbLGT3+XoPgfnyD6BibJKYcqGXx9SAUsvNCUca27b8r668jLrs2XLNx9M+
-tqQl9hsrPttszrW9hDwhab3M1dtuURxQ7YDwrBK9gFhR4pGUAlJw4Kq1KgSp9r68
-05LAJBHD9ilDS9iLAt6OZMUjX6PBNjgNySpiKtyDLMSnxjhAN2mOfZbwUogfwgxI
-NsqKy19d4qDOIkve+M9q+rU5Zi2NNkqkx0e9kDR0rYDoAITHb61z7NNHmvuViqyH
-u4p7JVrX6DsfohQqeOfOe9bMi3eZBzCZN7drh0PIk32rLOxnzylTByDFSvcRhpc9
-JejNuE+Q9zE3c+pp0uUaJ8eEQ2LW+TlgjMfAac1Il3yqR8UAYVSe1/XODntxSxn0
-BxMAsQzJJ2peHH99QyoPmeJGnxgYu4wsEsmcy3oPf7uCIot+LVGXqLOtAa4FLR5F
-K8creWTo1BTM4Y67+rOj3P9069aFbAer77FtWl04osZJZJBCWc76YnX+TzdLTALu
-bx8lattyXSLTCjkJCGJAO+2aH/FbamfoM5DKyrpYjRMdcG1A6ffT4m3hdGV4fJXG
-vwSh4vpToxurjruuYHDRC7v5RhA0FelQ1mrUAexxwlNhDsRJEbiW0PdQ6NtT5NMb
-V76QLBoncd6r7nOvXSAF
-=iQyL
------END PGP SIGNATURE-----
-
---W/nzBZO5zC0uMSeA--
+--- 0001/drivers/pinctrl/sh-pfc/Kconfig
++++ work/drivers/pinctrl/sh-pfc/Kconfig	2013-12-17 01:31:14.000000000 +0900
+@@ -20,6 +20,11 @@ config GPIO_SH_PFC
+ 	  This enables support for GPIOs within the SoC's pin function
+ 	  controller.
+ 
++config PINCTRL_PFC_R7S72100
++	def_bool y
++	depends on ARCH_R7S72100
++	select PINCTRL_SH_PFC
++
+ config PINCTRL_PFC_R8A73A4
+ 	def_bool y
+ 	depends on ARCH_R8A73A4
+--- 0001/drivers/pinctrl/sh-pfc/Makefile
++++ work/drivers/pinctrl/sh-pfc/Makefile	2013-12-17 01:31:14.000000000 +0900
+@@ -3,6 +3,7 @@ ifeq ($(CONFIG_GPIO_SH_PFC),y)
+ sh-pfc-objs			+= gpio.o
+ endif
+ obj-$(CONFIG_PINCTRL_SH_PFC)	+= sh-pfc.o
++obj-$(CONFIG_PINCTRL_PFC_R7S72100)	+= pfc-r7s72100.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A73A4)	+= pfc-r8a73a4.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7740)	+= pfc-r8a7740.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7778)	+= pfc-r8a7778.o
+--- 0001/drivers/pinctrl/sh-pfc/core.c
++++ work/drivers/pinctrl/sh-pfc/core.c	2013-12-17 01:31:14.000000000 +0900
+@@ -401,6 +401,12 @@ static int sh_pfc_init_ranges(struct sh_
+ 
+ #ifdef CONFIG_OF
+ static const struct of_device_id sh_pfc_of_table[] = {
++#ifdef CONFIG_PINCTRL_PFC_R7S72100
++	{
++		.compatible = "renesas,pfc-r7s72100",
++		.data = &r7s72100_pinmux_info,
++	},
++#endif
+ #ifdef CONFIG_PINCTRL_PFC_R8A73A4
+ 	{
+ 		.compatible = "renesas,pfc-r8a73a4",
+@@ -549,6 +555,9 @@ static int sh_pfc_remove(struct platform
+ }
+ 
+ static const struct platform_device_id sh_pfc_id_table[] = {
++#ifdef CONFIG_PINCTRL_PFC_R7S72100
++	{ "pfc-r7s72100", (kernel_ulong_t)&r7s72100_pinmux_info },
++#endif
+ #ifdef CONFIG_PINCTRL_PFC_R8A73A4
+ 	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
+ #endif
+--- 0001/drivers/pinctrl/sh-pfc/core.h
++++ work/drivers/pinctrl/sh-pfc/core.h	2013-12-17 01:31:14.000000000 +0900
+@@ -64,6 +64,7 @@ void sh_pfc_write_raw_reg(void __iomem *
+ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin);
+ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type);
+ 
++extern const struct sh_pfc_soc_info r7s72100_pinmux_info;
+ extern const struct sh_pfc_soc_info r8a73a4_pinmux_info;
+ extern const struct sh_pfc_soc_info r8a7740_pinmux_info;
+ extern const struct sh_pfc_soc_info r8a7778_pinmux_info;
+--- /dev/null
++++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c	2013-12-17 10:47:26.000000000 +0900
+@@ -0,0 +1,161 @@
++/*
++ * R7S72100 processor support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; version 2 of the
++ * License.
++ */
++
++#include <linux/kernel.h>
++
++#include "core.h"
++#include "sh_pfc.h"
++
++#define PORT_P_1(bank, pin, fn, sfx) fn(bank, pin, P_##bank##_##pin, sfx)
++
++#define PORT_P_16(bank, fn, sfx)					\
++	PORT_P_1(bank, 0,  fn, sfx), PORT_P_1(bank, 1,  fn, sfx),	\
++	PORT_P_1(bank, 2,  fn, sfx), PORT_P_1(bank, 3,  fn, sfx),	\
++	PORT_P_1(bank, 4,  fn, sfx), PORT_P_1(bank, 5,  fn, sfx),	\
++	PORT_P_1(bank, 6,  fn, sfx), PORT_P_1(bank, 7,  fn, sfx),	\
++	PORT_P_1(bank, 8,  fn, sfx), PORT_P_1(bank, 9,  fn, sfx),	\
++	PORT_P_1(bank, 10, fn, sfx), PORT_P_1(bank, 11, fn, sfx),	\
++	PORT_P_1(bank, 12, fn, sfx), PORT_P_1(bank, 13, fn, sfx),	\
++	PORT_P_1(bank, 14, fn, sfx), PORT_P_1(bank, 15, fn, sfx)
++
++#define CPU_ALL_PORT(fn, sfx)						\
++	PORT_P_16(0, fn, sfx), PORT_P_16(1, fn, sfx),			\
++	PORT_P_16(2, fn, sfx), PORT_P_16(3, fn, sfx),			\
++	PORT_P_16(4, fn, sfx), PORT_P_16(5, fn, sfx),			\
++	PORT_P_16(6, fn, sfx), PORT_P_16(7, fn, sfx),			\
++	PORT_P_16(8, fn, sfx), PORT_P_16(9, fn, sfx),			\
++	PORT_P_16(10, fn, sfx), PORT_P_16(11, fn, sfx),			\
++	PORT_P_16(12, fn, sfx)
++
++#define P_ALL(n) GP_ALL(n)
++
++enum {
++	PINMUX_RESERVED = 0,
++
++	PINMUX_DATA_BEGIN,
++	P_ALL(DATA),
++	PINMUX_DATA_END,
++
++	PINMUX_FUNCTION_BEGIN,
++	P_ALL(PMC_0), P_ALL(PMC_1),
++	P_ALL(PFC_0), P_ALL(PFC_1),
++	P_ALL(PFCE_0), P_ALL(PFCE_1),
++	P_ALL(PFCAE_0), P_ALL(PFCAE_1),
++	P_ALL(PIBC_0), P_ALL(PIBC_1),
++	P_ALL(PBDC_0), P_ALL(PBDC_1),
++	P_ALL(PIPC_0), P_ALL(PIPC_1),
++	PINMUX_FUNCTION_END,
++
++	PINMUX_MARK_BEGIN,
++	P_ALL(MARK_FN1), P_ALL(MARK_FN2), P_ALL(MARK_FN3), P_ALL(MARK_FN4),
++	P_ALL(MARK_FN5), P_ALL(MARK_FN6), P_ALL(MARK_FN7), P_ALL(MARK_FN8),
++	PINMUX_MARK_END,
++};
++
++#define _P_ALL(n) CPU_ALL_PORT(n, unused)
++
++#define _P_GPIO(bank, _pin, _name, sfx) _GP_GPIO(16, bank, _pin, _name, sfx)
++
++#define _P_DATA(bank, pin, name, sfx)					\
++	PINMUX_DATA(name##_DATA, name##_PMC_0, name##_PIPC_0,		\
++		    name##_PIBC_1, name##_PBDC_1)
++
++#define _P_FN(n, fn, pfcae, pfce, pfc)					\
++	PINMUX_DATA(n##_MARK_FN##fn, n##_PMC_1,	n##_PIPC_1,		\
++		    n##_PFCAE_##pfcae, n##_PFCE_##pfce, n##_PFC_##pfc)
++
++#define _P_MARK_FN1(bank, pin, name, sfx) _P_FN(name, 1, 0, 0, 0)
++#define _P_MARK_FN2(bank, pin, name, sfx) _P_FN(name, 2, 0, 0, 1)
++#define _P_MARK_FN3(bank, pin, name, sfx) _P_FN(name, 3, 0, 1, 0)
++#define _P_MARK_FN4(bank, pin, name, sfx) _P_FN(name, 4, 0, 1, 1)
++#define _P_MARK_FN5(bank, pin, name, sfx) _P_FN(name, 5, 1, 0, 0)
++#define _P_MARK_FN6(bank, pin, name, sfx) _P_FN(name, 6, 1, 0, 1)
++#define _P_MARK_FN7(bank, pin, name, sfx) _P_FN(name, 7, 1, 1, 0)
++#define _P_MARK_FN8(bank, pin, name, sfx) _P_FN(name, 8, 1, 1, 1)
++
++static const u16 pinmux_data[] = {
++	_P_ALL(_P_DATA), /* PINMUX_DATA(P_M_N_DATA, P_M_N_PMC_0)... */
++	_P_ALL(_P_MARK_FN1), _P_ALL(_P_MARK_FN2),
++	_P_ALL(_P_MARK_FN3), _P_ALL(_P_MARK_FN4),
++	_P_ALL(_P_MARK_FN5), _P_ALL(_P_MARK_FN6),
++	_P_ALL(_P_MARK_FN7), _P_ALL(_P_MARK_FN8),
++};
++
++static struct sh_pfc_pin pinmux_pins[] = {
++	_P_ALL(_P_GPIO),
++};
++
++#define RZ_PORT_PIN(bank, pin) (((bank) * 16) + (pin))
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++};
++
++#define PFC_REG(idx, name, reg)						\
++	{ PINMUX_CFG_REG(__stringify(name), reg, 16, 1) {		\
++		P_##idx##_15_##name##_0, P_##idx##_15_##name##_1,	\
++		P_##idx##_14_##name##_0, P_##idx##_14_##name##_1,	\
++		P_##idx##_13_##name##_0, P_##idx##_13_##name##_1,	\
++		P_##idx##_12_##name##_0, P_##idx##_12_##name##_1,	\
++		P_##idx##_11_##name##_0, P_##idx##_11_##name##_1,	\
++		P_##idx##_10_##name##_0, P_##idx##_10_##name##_1,	\
++		P_##idx##_9_##name##_0, P_##idx##_9_##name##_1,		\
++		P_##idx##_8_##name##_0, P_##idx##_8_##name##_1,		\
++		P_##idx##_7_##name##_0, P_##idx##_7_##name##_1,		\
++		P_##idx##_6_##name##_0, P_##idx##_6_##name##_1,		\
++		P_##idx##_5_##name##_0, P_##idx##_5_##name##_1,		\
++		P_##idx##_4_##name##_0, P_##idx##_4_##name##_1,		\
++		P_##idx##_3_##name##_0, P_##idx##_3_##name##_1,		\
++		P_##idx##_2_##name##_0, P_##idx##_2_##name##_1,		\
++		P_##idx##_1_##name##_0, P_##idx##_1_##name##_1,		\
++		P_##idx##_0_##name##_0, P_##idx##_0_##name##_1 }	\
++	}
++
++#define PFC_REGS(idx)						\
++	PFC_REG(idx, PMC, (0xfcfe3400 + (idx * 4))),		\
++	PFC_REG(idx, PFC, (0xfcfe3500 + (idx * 4))),		\
++	PFC_REG(idx, PFCE, (0xfcfe3600 + (idx * 4))),		\
++	PFC_REG(idx, PFCAE, (0xfcfe3a00 + (idx * 4))),		\
++	PFC_REG(idx, PIBC, (0xfcfe7000 + (idx * 4))),		\
++	PFC_REG(idx, PBDC, (0xfcfe7100 + (idx * 4))),		\
++	PFC_REG(idx, PIPC, (0xfcfe7200 + (idx * 4)))
++
++static struct pinmux_cfg_reg pinmux_config_regs[] = {
++	PFC_REGS(0), PFC_REGS(1), PFC_REGS(2), PFC_REGS(3),
++	PFC_REGS(4), PFC_REGS(5), PFC_REGS(6), PFC_REGS(7),
++	PFC_REGS(8), PFC_REGS(9), PFC_REGS(10), PFC_REGS(11),
++	PFC_REG(12, PMC, 0xfcfe7b40),
++	PFC_REG(12, PIBC, 0xfcfe7f00),
++	{ },
++};
++
++const struct sh_pfc_soc_info r7s72100_pinmux_info = {
++	.name = "r7s72100_pfc",
++
++	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
++
++	.pins = pinmux_pins,
++	.nr_pins = ARRAY_SIZE(pinmux_pins),
++	.groups = pinmux_groups,
++	.nr_groups = ARRAY_SIZE(pinmux_groups),
++	.functions = pinmux_functions,
++	.nr_functions = ARRAY_SIZE(pinmux_functions),
++
++	.cfg_regs = pinmux_config_regs,
++
++	.gpio_data = pinmux_data,
++	.gpio_data_size = ARRAY_SIZE(pinmux_data),
++};
