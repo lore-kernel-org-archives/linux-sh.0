@@ -1,54 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 29 Dec 2013 23:35:27 +0000
-Subject: Re: [PATCH 00/05 v2] pinctrl: sh-pfc: r7s72100 support V2
-Message-Id: <3087157.CQigdn8Dqq@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 10:12:12 +0000
+Subject: [PATCH v5 00/03] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+Message-Id: <20131217101212.17491.56898.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217023745.24573.3660.sendpatchset@w520>
-In-Reply-To: <20131217023745.24573.3660.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, wsa@the-dreams.de, linus.walleij@linaro.org, linux-sh@vger.kernel.org, horms@verge.net.au
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Hi Magnus,
+clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits (v5)
 
-I have pending PFC patches for v3.14. Do you plan to resubmit this series with 
-the problem pointed out by Wolfram fixed for v3.14, or will you push it back 
-to v3.15 ?
+[PATCH v5 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+[PATCH v5 02/03] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+[PATCH v5 03/03] sh: Remove Kconfig entries for TMU, CMT and MTU2
 
-On Tuesday 17 December 2013 11:37:45 Magnus Damm wrote:
-> pinctrl: sh-pfc: r7s72100 support V2
-> 
-> [PATCH 01/05 v2] pinctrl: sh-pfc: Rework _GP_GPIO, introduce _GP_GPIO32
-> [PATCH 02/05 v2] pinctrl: sh-pfc: r7s72100 base support
-> [PATCH 03/05 v2] pinctrl: sh-pfc: r7s72100 single pin macros
-> [PATCH 04/05 v2] pinctrl: sh-pfc: r7s72100 SCIF support
-> [PATCH 05/05 v2] pinctrl: sh-pfc: r8a7791 and r7s72100 binding docs
-> 
-> This is V2 of r7s72100 PFC support. Included this time is:
-> - Some slight rework of shared sh-pfc macros
-> - Complete r7s72100 SCIF support
-> - Binding documentation
-> 
-> If you prefer me to adjust this code somehow then please let me know.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas.git tag renesas-devel-v3.13-rc3-20131214v2
-> 
->  Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    2
->  drivers/pinctrl/sh-pfc/Kconfig                                    |    5
->  drivers/pinctrl/sh-pfc/Makefile                                   |    1
->  drivers/pinctrl/sh-pfc/core.c                                     |    9
->  drivers/pinctrl/sh-pfc/core.h                                     |    1
->  drivers/pinctrl/sh-pfc/pfc-r7s72100.c                             |  340 ++
->  drivers/pinctrl/sh-pfc/sh_pfc.h                                   |    9
->  7 files changed, 363 insertions(+), 4 deletions(-)
+This is V5 of the SH and ARM mach-shmobile clocksource Kconfig
+consolidation series.
 
--- 
-Regards,
+By sharing Kconfig entires in drivers/clocksource/Kconfig we
+can get rid of duplicated bits that do not belong under arch/.
 
-Laurent Pinchart
+With this series applied it is possible to build the timer
+drivers for CMT, MTU2, TMU and STI in case of SH or ARM. The timer
+drivers are automatically selected by default. It is also possible
+to select and/or deselect freely when COMPILE_TEST has been selected.
 
+Many thanks to Olof, John, Daniel and Arnd for feedback!
+
+Changes since V4:
+ - Use SYS_SUPPORTS_SH/EM to avoid name space pollution, thanks Olof!
+ - Remove old SH entries for SYS_SUPPORTS_xxx, use above SH prefix instead
+
+Changes since V3:
+ - Updated patch 1/3 with more detailed help texts
+ - Updated patch 2/3 to fit latest renesas-devel tag, see below
+ - Included acks from John Stultz for patch 2/3 and 3/3
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git tag renesas-devel-v3.13-rc3-20131214v2
+
+ arch/arm/mach-shmobile/Kconfig |   35 ++++++++----------
+ arch/sh/Kconfig                |   76 ++++++++++++----------------------------
+ drivers/clocksource/Kconfig    |   44 +++++++++++++++++++++++
+ 3 files changed, 84 insertions(+), 71 deletions(-)
