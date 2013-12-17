@@ -1,24 +1,39 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 12 Dec 2013 19:16:56 +0000
-Subject: Re: [PATCH 01/10] sh-pfc: Turn unsigned indices into unsigned int
-Message-Id: <CACRpkda3OX8rVkFLmMPi_D_OKNaYC_CdFYPnH6M6viTdN=QLPw@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 02:37:45 +0000
+Subject: [PATCH 00/05 v2] pinctrl: sh-pfc: r7s72100 support V2
+Message-Id: <20131217023745.24573.3660.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1386732390-31724-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386732390-31724-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: wsa@the-dreams.de, linus.walleij@linaro.org, linux-sh@vger.kernel.org, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Dec 11, 2013 at 4:26 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+pinctrl: sh-pfc: r7s72100 support V2
 
-> Some indices take positive values only, make them unsigned.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[PATCH 01/05 v2] pinctrl: sh-pfc: Rework _GP_GPIO, introduce _GP_GPIO32
+[PATCH 02/05 v2] pinctrl: sh-pfc: r7s72100 base support
+[PATCH 03/05 v2] pinctrl: sh-pfc: r7s72100 single pin macros
+[PATCH 04/05 v2] pinctrl: sh-pfc: r7s72100 SCIF support
+[PATCH 05/05 v2] pinctrl: sh-pfc: r8a7791 and r7s72100 binding docs
 
-Patch applied.
+This is V2 of r7s72100 PFC support. Included this time is:
+- Some slight rework of shared sh-pfc macros
+- Complete r7s72100 SCIF support
+- Binding documentation
 
-Yours,
-Linus Walleij
+If you prefer me to adjust this code somehow then please let me know.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas.git tag renesas-devel-v3.13-rc3-20131214v2
+
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    2 
+ drivers/pinctrl/sh-pfc/Kconfig                                    |    5 
+ drivers/pinctrl/sh-pfc/Makefile                                   |    1 
+ drivers/pinctrl/sh-pfc/core.c                                     |    9 
+ drivers/pinctrl/sh-pfc/core.h                                     |    1 
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c                             |  340 ++++++++++
+ drivers/pinctrl/sh-pfc/sh_pfc.h                                   |    9 
+ 7 files changed, 363 insertions(+), 4 deletions(-)
