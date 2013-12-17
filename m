@@ -1,7 +1,7 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 02:37:55 +0000
-Subject: [PATCH 01/05 v2] pinctrl: sh-pfc: Rework _GP_GPIO, introduce _GP_GPIO32
-Message-Id: <20131217023755.24573.96747.sendpatchset@w520>
+Date: Tue, 17 Dec 2013 02:38:33 +0000
+Subject: [PATCH 05/05 v2] pinctrl: sh-pfc: r8a7791 and r7s72100 binding docs
+Message-Id: <20131217023833.24573.83149.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20131217023745.24573.3660.sendpatchset@w520>
 In-Reply-To: <20131217023745.24573.3660.sendpatchset@w520>
@@ -13,35 +13,27 @@ Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, wsa@the-dreams.de, horms
 
 From: Magnus Damm <damm@opensource.se>
 
-Rework _GP_GPIO to take banksize as argument, introduce
-_GP_GPIO32 for SoCs with 32-bit GPIO banks.
+Add compatible strings for r7s72100 and r8a7791.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Developed on top of renesas git tag renesas-devel-v3.13-rc3-20131214v2
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    2 ++
+ 1 file changed, 2 insertions(+)
 
- drivers/pinctrl/sh-pfc/sh_pfc.h |    9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
---- 0001/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ work/drivers/pinctrl/sh-pfc/sh_pfc.h	2013-12-16 19:35:12.000000000 +0900
-@@ -214,13 +214,14 @@ struct sh_pfc_soc_info {
- #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
+--- 0001/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ work/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt	2013-12-16 19:55:12.000000000 +0900
+@@ -10,11 +10,13 @@ Pin Control
+ Required Properties:
  
- /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
--#define _GP_GPIO(bank, _pin, _name, sfx)				\
--	[(bank * 32) + _pin] = {					\
--		.pin = (bank * 32) + _pin,				\
-+#define _GP_GPIO(banksize, bank, _pin, _name, sfx)			\
-+	[(bank * banksize) + _pin] = {					\
-+		.pin = (bank * banksize) + _pin,			\
- 		.name = __stringify(_name),				\
- 		.enum_id = _name##_DATA,				\
- 	}
--#define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO, unused)
-+#define _GP_GPIO32(bank, _pin, _name, sfx) _GP_GPIO(32, bank, _pin, _name, sfx)
-+#define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO32, unused)
+   - compatible: should be one of the following.
++    - "renesas,pfc-r7s72100": for R7S72100 (RZ/A1H) compatible pin-controller.
+     - "renesas,pfc-r8a73a4": for R8A73A4 (R-Mobile APE6) compatible pin-controller.
+     - "renesas,pfc-r8a7740": for R8A7740 (R-Mobile A1) compatible pin-controller.
+     - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
+     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
++    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
+     - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
+     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
  
- /* PINMUX_DATA_GP_ALL -  Expand to a list of name_DATA, name_FN marks */
- #define _GP_DATA(bank, pin, name, sfx)	PINMUX_DATA(name##_DATA, name##_FN)
