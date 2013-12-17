@@ -1,62 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:06 +0000
-Subject: [PATCH 04/28] ARM: shmobile: r8a7791 PFC platform device support
-Message-Id: <0a6e176094532bd62870988333c8b275f3cac0a4.1385950394.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 17 Dec 2013 17:18:48 +0000
+Subject: [PATCH 0/2] SH Mobile IOMMU fixes
+Message-Id: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Nguyen Viet Dung <nv-dung-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Magnus Damm <damm@opensource.se>
+Hello,
 
-Add a platform device for the r8a7791 PFC device.
+These two small patches fix bugs in the SH Mobile IOMMU driver that result in
+crashes at runtime. Given that the bugs have been present in the driver since
+v3.9 there's no urgency to push the fixes to v3.13.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/r8a7791.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7791.c        | 13 +++++++++++++
- 2 files changed, 14 insertions(+)
+Laurent Pinchart (2):
+  iommu/shmobile: Allocate archdata with kzalloc()
+  iommu/shmobile: Turn the flush_lock mutex into a spinlock
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 051ead3..200fa69 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -4,6 +4,7 @@
- void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
-+void r8a7791_pinmux_init(void);
- void r8a7791_init_early(void);
- extern struct smp_operations r8a7791_smp_ops;
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index d9393d6..84cad8c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -31,6 +31,19 @@
- #include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
- 
-+static const struct resource pfc_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6060000, 0x250),
-+};
-+
-+#define r8a7791_register_pfc()						\
-+	platform_device_register_simple("pfc-r8a7791", -1, pfc_resources, \
-+					ARRAY_SIZE(pfc_resources))
-+
-+void __init r8a7791_pinmux_init(void)
-+{
-+	r8a7791_register_pfc();
-+}
-+
- #define SCIF_COMMON(scif_type, baseaddr, irq)			\
- 	.type		= scif_type,				\
- 	.mapbase	= baseaddr,				\
+ drivers/iommu/shmobile-iommu.c |  3 +--
+ drivers/iommu/shmobile-ipmmu.c | 10 +++++-----
+ drivers/iommu/shmobile-ipmmu.h |  2 +-
+ 3 files changed, 7 insertions(+), 8 deletions(-)
+
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
