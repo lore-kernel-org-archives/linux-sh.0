@@ -1,62 +1,59 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 27 Dec 2013 11:44:03 +0000
-Subject: [PATCH V3 1/2] ARM: shmobile: r8a7790: Add VIN clock support
-Message-Id: <1388144644-9000-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 02:38:14 +0000
+Subject: [PATCH 03/05 v2] pinctrl: sh-pfc: r7s72100 single pin macros
+Message-Id: <20131217023814.24573.91649.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372297984-9315-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372297984-9315-2-git-send-email-horms+renesas@verge.net.au>
+References: <20131217023745.24573.3660.sendpatchset@w520>
+In-Reply-To: <20131217023745.24573.3660.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, wsa@the-dreams.de, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-This adds VIN[0-3] clock support to R8A7790 SoC.
+From: Magnus Damm <damm@opensource.se>
 
-Changes in V2:
-* none.
+Introduce macros that allow description of one pin per line.
+Compared to the other ways of doing this, using this style
+we can compresses the description of each pin from 9 to 1 line.
 
-Changes in V3:
-* capitalized ARM in the subject.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index c5c60ec..81f45a0 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -188,6 +188,7 @@ enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928,
- 	MSTP917,
- 	MSTP813,
-+	MSTP811, MSTP810, MSTP809, MSTP808,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
- 	MSTP704,
-@@ -216,6 +217,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
- 	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
-+	[MSTP811] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 11, 0), /* VIN0 */
-+	[MSTP810] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 10, 0), /* VIN1 */
-+	[MSTP809] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  9, 0), /* VIN2 */
-+	[MSTP808] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  8, 0), /* VIN3 */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
- 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
-@@ -300,6 +305,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
-+	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
-+	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
-+	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
-+	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
--- 
-1.8.3.1
+ This patch uses RZ_PMX_GROUP and RZ_GROUPS, thanks Laurent!
 
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- 0003/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
++++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c	2013-12-16 19:14:30.000000000 +0900
+@@ -98,9 +98,30 @@ static struct sh_pfc_pin pinmux_pins[]  
+ #define RZ_PORT_PIN(bank, pin) (((bank) * 16) + (pin))
+ 
++#define __RZ_STR(pfx, hw, bank, pin, sfx)		\
++	pfx##_##hw##_p##bank##_##pin####sfx
++
++#define RZ_PIN_AND_MUX(pfx, hw, bank, pin, fn)				\
++static const unsigned int __RZ_STR(pfx, hw, bank, pin, _pins)[] = {	\
++	RZ_PORT_PIN(bank, pin),						\
++};									\
++static const unsigned int __RZ_STR(pfx, hw, bank, pin, _mux)[] = {	\
++	P_##bank##_##pin##_MARK_FN##fn,					\
++};
++
++#define RZ_PMX_GROUP(pfx, hw, bank, pin, fn) \
++	SH_PFC_PIN_GROUP(pfx##_##hw##_p##bank##_##pin),
++
++#define __RZ_GROUPS(x) #x
++
++#define RZ_GROUPS(pfx, hw, bank, pin, fn) \
++	__RZ_GROUPS(pfx##_##hw##_p##bank##_##pin),
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ };
+ 
++static const char * const scif2_groups[] = {
++};
+ static const struct sh_pfc_function pinmux_functions[] = {
+ };
+ 
