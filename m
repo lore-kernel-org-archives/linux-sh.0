@@ -1,87 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Dec 2013 00:07:04 +0000
-Subject: Re: [GIT PULL] Renesas ARM based SoC Clocksource updates for v3.14
-Message-Id: <20131219000704.GB11060@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 17 Dec 2013 21:44:37 +0000
+Subject: [PATCH 4/5] arm: shmobile: genmai: adapt dts to use native i2c driver
+Message-Id: <1387316678-10174-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387000863.git.horms+renesas@verge.net.au>
- <20131218010815.GA2430@verge.net.au> <52B1B11D.7080904@linaro.org>
-In-Reply-To: <52B1B11D.7080904@linaro.org>
+References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 18, 2013 at 03:28:45PM +0100, Daniel Lezcano wrote:
-> On 12/18/2013 02:08 AM, Simon Horman wrote:
-> >On Sat, Dec 14, 2013 at 03:07:31PM +0900, Simon Horman wrote:
-> >>Hi Daniel,
-> >>
-> >>please consider this Renesas ARM based SoC Clocksource update for v3.14.
-> >>
-> >>I would also like to request that you make a branch available
-> >>for me to use as a base for a branch containing SoC changes
-> >>targeted at v3.14 that depend on this clocksource update.
->=20
-> Hi Simon,
->=20
-> patch applied for 3.14.
->=20
-> The branch is available at:
->=20
-> git://git.linaro.org/people/daniel.lezcano/linux.git
-> clockevents/for-Simon-3.13-rc2
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Great, thanks!
+Switch from the gpio-driver to the shiny new native driver. Tested by
+accessing the eeprom on the genmai board.
 
->=20
-> Thanks
->   -- Daniel
->=20
-> >>
-> >>Thanks
-> >
-> >Hi Daniel,
-> >
-> >sorry to bother you about this, but if you could take a moment
-> >to look at this pull request I would be most grateful. Its
-> >rather important for us.
-> >
-> >>
-> >>
-> >>The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e=
-42ae:
-> >>
-> >>   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
-> >>
-> >>are available in the git repository at:
-> >>
-> >>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags=
-/renesas-clocksource-for-v3.14
-> >>
-> >>for you to fetch changes up to d78e9474459768c9aaf8cfd8bc54957d44771f46:
-> >>
-> >>   clocksource: sh_cmt: Add clk_prepare/unprepare support (2013-12-14 1=
-2:57:36 +0900)
-> >>
-> >>----------------------------------------------------------------
-> >>Renesas ARM based SoC Clocksource updates for v3.14
-> >>
-> >>* Add clk_prepare/unprepare support to sh_cmt
-> >>
-> >>----------------------------------------------------------------
-> >>Laurent Pinchart (1):
-> >>       clocksource: sh_cmt: Add clk_prepare/unprepare support
-> >>
-> >>  drivers/clocksource/sh_cmt.c | 20 ++++++++++++++++----
-> >>  1 file changed, 16 insertions(+), 4 deletions(-)
-> >>
->=20
->=20
-> --=20
->  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for A=
-RM SoCs
->=20
-> Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-> <http://twitter.com/#!/linaroorg> Twitter |
-> <http://www.linaro.org/linaro-blog/> Blog
->=20
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+---
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 29 ++++++++++---------------
+ 1 file changed, 11 insertions(+), 18 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index ce5da0b..739448a 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -39,24 +39,6 @@
+ 			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
+-
+-	i2c@0 {
+-		compatible = "i2c-gpio";
+-		gpios = <&port1 5 GPIO_ACTIVE_HIGH /* sda */
+-			 &port1 4 GPIO_ACTIVE_HIGH /* scl */
+-			>;
+-		i2c-gpio,sda-open-drain;
+-		i2c-gpio,scl-open-drain;
+-		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		flash@50 {
+-			compatible = "renesas,24c128";
+-			reg = <0x50>;
+-			pagesize = <64>;
+-		};
+-	};
+ };
+ 
+ &pfc {
+@@ -68,3 +50,14 @@
+ 		renesas,function = "scif2";
+ 	};
+ };
++
++&i2c2 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	eeprom: 24c128@50 {
++		compatible = "renesas,24c128";
++		reg = <0x50>;
++		pagesize = <64>;
++	};
++};
+-- 
+1.8.4.2
+
