@@ -1,39 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:09 +0000
-Subject: [PATCH 07/28] ARM: shmobile: r8a73a4: don't use named irq for DMAEngine
-Message-Id: <3a47b0a1a26d70f391bb42fa8c70afc6bbd8e5a1.1385950394.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 05:03:14 +0000
+Subject: [PATCH 03/04] ARM: shmobile: Genmai LED1 and LED2 support
+Message-Id: <20131217050314.727.29564.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <20131217050232.727.9552.sendpatchset@w520>
+In-Reply-To: <20131217050232.727.9552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-sh-dma-engine driver doesn't care irq name.
+Add support for Genmai board LED1 and LED2 via gpio-leds.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index b0f2749..cc94b64 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -275,7 +275,7 @@ static const struct sh_dmae_pdata dma_pdata = {
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-11-27 15:49:27.000000000 +0900
+@@ -9,7 +9,8 @@
+  */
  
- static struct resource dma_resources[] = {
- 	DEFINE_RES_MEM(0xe6700020, 0x89e0),
--	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
-+	DEFINE_RES_IRQ(gic_spi(220)),
- 	{
- 		/* IRQ for channels 0-19 */
- 		.start  = gic_spi(200),
--- 
-1.8.4
-
+ /dts-v1/;
+-/include/ "r7s72100.dtsi"
++#include "r7s72100.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Genmai";
+@@ -28,4 +29,14 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&port4 10 GPIO_ACTIVE_LOW>;
++		};
++		led2 {
++			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
++		};
++	};
+ };
