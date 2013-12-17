@@ -1,91 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:29:31 +0000
-Subject: [PATCH 2/3] sh: sh772[34]: Set serial port sampling rate to 8 for SCIFA ports
-Message-Id: <64c535e942af6cfe59ceceeb9bc6ba5f437a2fc9.1387889858.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 10:12:22 +0000
+Subject: [PATCH v5 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+Message-Id: <20131217101222.17491.98178.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387889858.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387889858.git.horms+renesas@verge.net.au>
+References: <20131217101212.17491.56898.sendpatchset@w520>
+In-Reply-To: <20131217101212.17491.56898.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-SCIFA ports on sh7723 and sh7724 seem to use a sampling rate of half the
-value specified in the datasheet. This is currently handled by a custom
-baud rate calculation algorithm. The algorithm ID will be removed from
-platform data, set the sampling rate directly instead.
+Add Kconfig entries for CMT, MTU2, TMU and STI to
+drivers/clocksource/Kconfig. This will allow us to
+get rid of duplicated entires in architecture code
+such as arch/sh and arch/arm/mach-shmobile.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c | 6 +++---
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 6 +++---
- 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-index 521a09e..079951b 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
-@@ -98,7 +98,7 @@ static struct plat_sci_port scif3_platform_data = {
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-@@ -121,7 +121,7 @@ static struct plat_sci_port scif4_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-@@ -144,7 +144,7 @@ static struct plat_sci_port scif5_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-index fb0a237..59c3594 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-@@ -365,7 +365,7 @@ static struct plat_sci_port scif3_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-@@ -388,7 +388,7 @@ static struct plat_sci_port scif4_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
-@@ -411,7 +411,7 @@ static struct plat_sci_port scif5_platform_data = {
- 	.port_reg	= SCIx_NOT_SUPPORTED,
- 	.flags          = UPF_BOOT_AUTOCONF,
- 	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_3,
-+	.sampling_rate	= 8,
- 	.type           = PORT_SCIFA,
- };
- 
--- 
-1.8.4
+ drivers/clocksource/Kconfig |   44 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
+--- 0001/drivers/clocksource/Kconfig
++++ work/drivers/clocksource/Kconfig	2013-12-17 18:50:30.000000000 +0900
+@@ -135,3 +135,47 @@ config VF_PIT_TIMER
+ 	bool
+ 	help
+ 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
++
++config SYS_SUPPORTS_SH_CMT
++        bool
++
++config SYS_SUPPORTS_SH_MTU2
++        bool
++
++config SYS_SUPPORTS_SH_TMU
++        bool
++
++config SYS_SUPPORTS_EM_STI
++        bool
++
++config SH_TIMER_CMT
++	bool "Renesas CMT timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_SH_CMT
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the Compare Match Timer (CMT) hardware available in 16/32/48-bit
++	  variants on a wide range of Mobile and Automotive SoCs from Renesas.
++
++config SH_TIMER_MTU2
++	bool "Renesas MTU2 timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_SH_MTU2
++	help
++	  This enables build of a clockevent driver for the Multi-Function
++	  Timer Pulse Unit 2 (TMU2) hardware available on SoCs from Renesas.
++	  This hardware comes with 16 bit-timer registers.
++
++config SH_TIMER_TMU
++	bool "Renesas TMU timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_SH_TMU
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the 32-bit Timer Unit (TMU) hardware available on a wide range
++	  SoCs from Renesas.
++
++config EM_TIMER_STI
++	bool "Renesas STI timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_EM_STI
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the 48-bit System Timer (STI) hardware available on a SoCs
++	  such as EMEV2 from former NEC Electronics.
