@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Dec 2013 05:11:02 +0000
+From: WANG Chao <chaowang@redhat.com>
+Date: Tue, 17 Dec 2013 05:37:30 +0000
 Subject: Re: [PATCH 0/4] Minor fixes and improvements for kexec
-Message-Id: <20131212051102.GC497@verge.net.au>
+Message-Id: <20131217053730.GA13848@dhcp-17-89.nay.redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1386807069.git.geoff@infradead.org>
 In-Reply-To: <cover.1386807069.git.geoff@infradead.org>
@@ -11,15 +11,10 @@ Content-Transfer-Encoding: 7bit
 To: Geoff Levand <geoff@infradead.org>
 Cc: linux-sh@vger.kernel.org, kexec@lists.infradead.org, Paul Mundt <lethal@linux-sh.org>, Paul Mackerras <paulus@samba.org>, Eric Biederman <ebiederm@xmission.com>, linuxppc-dev@lists.ozlabs.org
 
-On Thu, Dec 12, 2013 at 12:18:56AM +0000, Geoff Levand wrote:
+On 12/12/13 at 12:18am, Geoff Levand wrote:
 > Hi Eric,
 > 
 > Here are a few minor fixes and improvements for kexec.  Please consider.
-
-FWIW,
-
-Reviewed-by: Simon Horman <horms@verge.net.au>
-
 > 
 > -Geoff
 > 
@@ -41,6 +36,11 @@ Reviewed-by: Simon Horman <horms@verge.net.au>
 >       kexec: Add IND_FLAGS macro
 >       powerpc/kexec: Use global IND_FLAGS macro
 >       sh/kexec: Fix kexec build warning
+
+For this series (besides 4/4 v2):
+
+Acked-by: WANG Chao <chaowang@redhat.com>
+
 > 
 >  arch/powerpc/kernel/machine_kexec_64.c |  2 --
 >  arch/sh/kernel/machine_kexec.c         |  2 +-
@@ -56,4 +56,3 @@ Reviewed-by: Simon Horman <horms@verge.net.au>
 > kexec mailing list
 > kexec@lists.infradead.org
 > http://lists.infradead.org/mailman/listinfo/kexec
-> 
