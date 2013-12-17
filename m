@@ -1,91 +1,191 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 18 Dec 2013 21:49:44 +0000
-Subject: Re: [PATCH V2 1/5] pinctrl: r7s72100: add riic groups
-Message-Id: <20131218214943.GC18645@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ZmUaFz6apKcXQszQ"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Dec 2013 05:02:42 +0000
+Subject: [PATCH 01/04] ARM: shmobile: r7s72100 GPIO and PINCTRL device nodes
+Message-Id: <20131217050242.727.69737.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
- <1387402321-21866-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387402321-21866-2-git-send-email-wsa@the-dreams.de>
+References: <20131217050232.727.9552.sendpatchset@w520>
+In-Reply-To: <20131217050232.727.9552.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
---ZmUaFz6apKcXQszQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Add support for r7s72100 PFC and GPIO device nodes port0 -> port11
+and jtagport0.
 
-On Wed, Dec 18, 2013 at 10:31:57PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
->=20
-> Tested RIIC2 on a genmai board. Other riic groups are untested but seem
-> trivial enough to be added.
->=20
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> ---
->=20
-> V2: keep sorting alphabetical
->=20
-> Note: With the current PFC driver as posted by Magnus, it needs another p=
-atch
-> to work. Yet, I think this is a seperate PFC issue which needs to be sort=
-ed out
-> seperately and shouldn't affect these declarations. I'll add the needed p=
-atch
-> as a response to this mail.
-
-=46rom: Wolfram Sang <wsa@the-dreams.de>
-Subject: [PATCH] HACK: make magnus new driver work
-
-Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/pinctrl/sh-pfc/pfc-r7s72100.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c b/drivers/pinctrl/sh-pfc=
-/pfc-r7s72100.c
-index 00f67e8..a662876 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-@@ -68,11 +68,11 @@ enum {
- #define _P_GPIO(bank, _pin, _name, sfx) _GP_GPIO(16, bank, _pin, _name, sf=
-x)
-=20
- #define _P_DATA(bank, pin, name, sfx)					\
--	PINMUX_DATA(name##_DATA, name##_PMC_0, name##_PIPC_0,		\
-+	PINMUX_DATA(name##_DATA, name##_PMC_0,		\
- 		    name##_PIBC_1, name##_PBDC_1)
-=20
- #define _P_FN(n, fn, pfcae, pfce, pfc)					\
--	PINMUX_DATA(n##_MARK_FN##fn, n##_PMC_1,	n##_PIPC_1,		\
-+	PINMUX_DATA(n##_MARK_FN##fn, n##_PMC_1,		\
- 		    n##_PFCAE_##pfcae, n##_PFCE_##pfce, n##_PFC_##pfc)
-=20
- #define _P_MARK_FN1(bank, pin, name, sfx) _P_FN(name, 1, 0, 0, 0)
+ arch/arm/boot/dts/r7s72100.dtsi |  154 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 154 insertions(+)
 
-
---ZmUaFz6apKcXQszQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSshh3AAoJEBQN5MwUoCm2IhIP/jlWEyUpo5GAvLLjGMBNcwPx
-g5WtgnsUDqVt8EVuXocqRF8+nCBviEWsqUopm/Gg7RFj0ARwsV+s3O4TNq5Tl4xV
-3LzWnYbN+xNulVhMAdjmcewEDkUWLhN+lqAT3Ven4W2d9hW8zhx8g7OQ5YBC07fx
-bfKema0r51ws5zzRvR/xelfPL+qMNQXiGUl2BhlNRCQQYXPbO/XngIoCNr0qs5D3
-l3fBJwBHDKkjRwK6FUZ61ZDblLXnUfhUe8hoOnwKhMQ+mA9x0vfZi3FuAyAs75/K
-Bvag2eKmr0FbxeUq14WG1XXtOcFbiCdbeAGWurTpYhdjH+OblJUbdhIXBKEWHLIr
-frYeI6zt0Nnspqde3RK4n6MkNHTzxf23Z+R26RVJ1BTkPiNeVIzwX1keLcm0SWrb
-iTfql8OuirfWKqdLRBFKfZZpdVDEiMEXmrWQMnKG4XOdMPRv+TrpRRtmY8DtRGrn
-teW/EAzFSTuiT728imYCnIn/3Ahqa4U74layws8+mLNJKlZGBtRqe4H/ztta/sG0
-vXfTK0I9QuCRG/aez/feS0Ly3jX06TQeqzxOl5IR8HA3+FIklxREDE2R6sHteAvJ
-Qee4OL6IVS51q34KIO4LtTwQoCarNy8UauB2QZ3RYdlJ5HR+uo2CfPiBGAb4cQwF
-GNGut3wZNZPl0Wc/l2Ei
-=mbxq
------END PGP SIGNATURE-----
-
---ZmUaFz6apKcXQszQ--
+--- 0001/arch/arm/boot/dts/r7s72100.dtsi
++++ work/arch/arm/boot/dts/r7s72100.dtsi	2013-11-27 16:06:36.000000000 +0900
+@@ -14,6 +14,22 @@
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 
++	aliases {
++		gpio0 = &port0;
++		gpio1 = &port1;
++		gpio2 = &port2;
++		gpio3 = &port3;
++		gpio4 = &port4;
++		gpio5 = &port5;
++		gpio6 = &port6;
++		gpio7 = &port7;
++		gpio8 = &port8;
++		gpio9 = &port9;
++		gpio10 = &port10;
++		gpio11 = &port11;
++		gpio12 = &jtagport0;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -33,4 +49,142 @@
+ 		reg = <0xe8201000 0x1000>,
+ 			<0xe8202000 0x1000>;
+ 	};
++
++	pfc: pfc@fcfe3300 {
++		compatible = "renesas,pfc-r7s72100";
++		reg = <0xfcfe3300 0x400>, /* PM, PMC, PFC, PFCE */
++		  	  <0xfcfe3a00 0x100>, /* PFCAE */
++			  <0xfcfe7000 0x300>, /* PIBC, PBDC, PIPC */
++			  <0xfcfe7b40 0x04>, /* JPMC */
++			  <0xfcfe7b90 0x04>, /* JPMCSR */
++			  <0xfcfe7f00 0x04>; /* JPIBC */
++	};
++
++	port0: gpio@fcfe3100 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3100 0x4>, /* PSR */
++		  	  <0xfcfe3200 0x2>, /* PPR */
++			  <0xfcfe3800 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 6>;
++	};
++
++	port1: gpio@fcfe3104 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3104 0x4>, /* PSR */
++		  	  <0xfcfe3204 0x2>, /* PPR */
++			  <0xfcfe3804 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 16 16>;
++	};
++
++	port2: gpio@fcfe3108 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3108 0x4>, /* PSR */
++		  	  <0xfcfe3208 0x2>, /* PPR */
++			  <0xfcfe3808 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 16>;
++	};
++
++	port3: gpio@fcfe310c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe310c 0x4>, /* PSR */
++		  	  <0xfcfe320c 0x2>, /* PPR */
++			  <0xfcfe380c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 48 16>;
++	};
++
++	port4: gpio@fcfe3110 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3110 0x4>, /* PSR */
++		  	  <0xfcfe3210 0x2>, /* PPR */
++			  <0xfcfe3810 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 16>;
++	};
++
++	port5: gpio@fcfe3114 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3114 0x4>, /* PSR */
++		  	  <0xfcfe3214 0x2>, /* PPR */
++			  <0xfcfe3814 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 80 11>;
++	};
++
++	port6: gpio@fcfe3118 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3118 0x4>, /* PSR */
++		  	  <0xfcfe3218 0x2>, /* PPR */
++			  <0xfcfe3818 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 16>;
++	};
++
++	port7: gpio@fcfe311c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe311c 0x4>, /* PSR */
++		  	  <0xfcfe321c 0x2>, /* PPR */
++			  <0xfcfe381c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 112 16>;
++	};
++
++	port8: gpio@fcfe3120 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3120 0x4>, /* PSR */
++		  	  <0xfcfe3220 0x2>, /* PPR */
++			  <0xfcfe3820 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 16>;
++	};
++
++	port9: gpio@fcfe3124 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3124 0x4>, /* PSR */
++		  	  <0xfcfe3224 0x2>, /* PPR */
++			  <0xfcfe3824 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 144 8>;
++	};
++
++	port10: gpio@fcfe3128 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe3128 0x4>, /* PSR */
++		  	  <0xfcfe3228 0x2>, /* PPR */
++			  <0xfcfe3828 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 16>;
++	};
++
++	port11: gpio@fcfe312c {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe312c 0x4>, /* PSR */
++		  	  <0xfcfe322c 0x2>, /* PPR */
++			  <0xfcfe382c 0x4>; /* PMSR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 176 16>;
++	};
++
++	jtagport0: gpio@fcfe7b20 {
++		compatible = "renesas,gpio-r7s72100", "renesas,gpio-rz";
++		reg = <0xfcfe7b20 0x2>; /* JPPR */
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 2>;
++	};
+ };
