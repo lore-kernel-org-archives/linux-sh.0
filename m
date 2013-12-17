@@ -1,50 +1,69 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Mon, 02 Dec 2013 10:07:24 +0000
-Subject: Re: [PATCH V3 1/2] sata_rcar: Add R-Car Gen2 SATA PHY support
-Message-Id: <529C5BDC.7080006@cogentembedded.com>
+From: Mark Salter <msalter@redhat.com>
+Date: Tue, 17 Dec 2013 15:48:43 +0000
+Subject: [PATCH v2 00/10] Kconfig: cleanup SERIO_I8042 dependencies
+Message-Id: <1387295333-24684-1-git-send-email-msalter@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383912570-8393-1-git-send-email-valentine.barshak@cogentembedded.com> <1383912570-8393-2-git-send-email-valentine.barshak@cogentembedded.com> <52951B4D.3030205@cogentembedded.com> <20131129201406.GD21755@mtj.dyndns.org> <5298FAA8.2050300@cogentembedded.com> <20131129204231.GE21755@mtj.dyndns.org> <20131202000201.GA14523@verge.net.au>
-In-Reply-To: <20131202000201.GA14523@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Tejun Heo <tj@kernel.org>
-Cc: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kumar Gala <galak@codeaurora.org>, Vladimir Barinov <vladimir.barinov@cogentembedded.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Mark Rutland <mark.rutland@arm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 12/02/2013 04:02 AM, Simon Horman wrote:
-> On Fri, Nov 29, 2013 at 03:42:31PM -0500, Tejun Heo wrote:
->> On Sat, Nov 30, 2013 at 12:35:52AM +0400, Valentine wrote:
->>> On 11/30/2013 12:14 AM, Tejun Heo wrote:
->>>> Hello,
->>>>
->>>> On Wed, Nov 27, 2013 at 02:06:05AM +0400, Valentine wrote:
->>>>> On 11/08/2013 04:09 PM, Valentine Barshak wrote:
->>>>>
->>>>> Tejun,
->>>>> are you OK with taking this?
->>>>
->>>> Yeah, the stat part looks okay to me.  How the two should be routed?
->>>> Both through libata or should I just take the first one?
->>>
->>> I'm not sure about that. I'm more concerned about the first one.
->>> But I wouldn't mind if you take both.
->>
->> Applied the first one to libata/for-3.14.  Are people happy with the
->> second one?  If so, I'll put route that through libata/for-3.14 too.
->
-> Hi,
->
-> Assuming that the second one is " [PATCH V3 2/2] dt: Document sata_rcar
-> bindings" then from my point of view it would be ideal if you took it.
-> However, it seems that there is still some discussion on the contents
-> between Valentine and Kumar Gala.
->
+This patch series removes the messy dependencies from SERIO_I8042
+by having it depend on one variable (ARCH_MAY_HAVE_PC_SERIO) and
+having architectures which need it select that variable in
+arch/*/Kconfig.
 
-Thanks, Simon.
-Actually between Laurent and Kumar.
-Since the R-Car Gen2 DTS file have been updated to include the IRQ macros,
-I don't see any issues with applying the binding documentation from this
-series.
+New architectures are unlikely to need SERIO_I8042, so this avoids
+having an ever growing list of architectures to exclude. If an
+architecture without i8042 support isn't excluded through the
+dependency list for SERIO_I8042 or through explicit disabling in
+a config, it will likely panic on boot with something similar to
+this (from arm64):
 
-Thanks,
-Val.
+[   27.426181] [<ffffffc000403b1c>] i8042_flush+0x88/0x10c
+[   27.426251] [<ffffffc00084cc2c>] i8042_init+0x58/0xe8
+[   27.426320] [<ffffffc000080bec>] do_one_initcall+0xc4/0x14c
+[   27.426404] [<ffffffc000820970>] kernel_init_freeable+0x1a4/0x244
+[   27.426480] [<ffffffc0005a894c>] kernel_init+0x18/0x148
+[   27.426561] Code: d2800c82 f2bf7c02 f2dff7e2 f2ffffe2 (39400042) 
+[   27.426789] ---[ end trace ac076843cf0f383e ]---
+[   27.426875] Kernel panic - not syncing: Attempted to kill init! exitcode=0x0000000b
+
+This is v2 of the patch series. Changes from version 1:
+
+  o Added acks. arm, ia64, and sh are only ones without acks.
+  o Moved select of ARCH_MIGHT_HAVE_PC_SERIO to board-specific
+    Kconfigs for arm and sh.
+    
+A tree with these patches is at:
+
+   git://github.com/mosalter/linux.git (serio-i8042-v2 branch)
+
+
+Mark Salter (10):
+  alpha: select ARCH_MIGHT_HAVE_PC_SERIO
+  arm: select ARCH_MIGHT_HAVE_PC_SERIO
+  ia64: select ARCH_MIGHT_HAVE_PC_SERIO
+  mips: select ARCH_MIGHT_HAVE_PC_SERIO
+  powerpc: select ARCH_MIGHT_HAVE_PC_SERIO
+  sh: select ARCH_MIGHT_HAVE_PC_SERIO for SH_CAYMAN
+  sparc: select ARCH_MIGHT_HAVE_PC_SERIO
+  unicore32: select ARCH_MIGHT_HAVE_PC_SERIO
+  x86: select ARCH_MIGHT_HAVE_PC_SERIO
+  Kconfig: cleanup SERIO_I8042 dependencies
+
+ arch/alpha/Kconfig               |  1 +
+ arch/arm/mach-footbridge/Kconfig |  1 +
+ arch/ia64/Kconfig                |  1 +
+ arch/mips/Kconfig                |  1 +
+ arch/powerpc/Kconfig             |  1 +
+ arch/sh/boards/Kconfig           |  1 +
+ arch/sparc/Kconfig               |  1 +
+ arch/unicore32/Kconfig           |  1 +
+ arch/x86/Kconfig                 |  1 +
+ drivers/input/serio/Kconfig      | 11 ++++++++---
+ 10 files changed, 17 insertions(+), 3 deletions(-)
+
+-- 
+1.8.3.1
+
