@@ -1,42 +1,109 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 30 Dec 2013 01:36:42 +0000
-Subject: [ANNOUNCE] Renesas Tree is Closed for v3.14
-Message-Id: <20131230013640.GA1944@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 17 Dec 2013 21:44:34 +0000
+Subject: [PATCH 1/5] pinctrl: r7s72100: add riic groups
+Message-Id: <1387316678-10174-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-The Renesas tree is now closed for v3.14.
+Tested RIIC2 on a genmai board. Other riic groups are untested but seem
+trivial enough to be added.
 
-I am not planning to accept any more patches for v3.14 other than fixes.
-And I am not planning to send any more pull-request for v3.14 other than
-fixes.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+---
 
-I have tagged renesas-next-v3.13-rc5-20131230-next-20131230 with the
-branches that I have either already sent pull requests for or fixes that I
-have queued up.
+Note: With the current PFC driver as posted by Magnus, it needs another patch
+to work. Yet, I think this is a seperate PFC issue which needs to be sorted out
+seperately and shouldn't affect these declarations. I'll add the needed patch
+as a response to this mail.
 
-I do not plan to update this again until after v3.14-rc1 is released.
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c | 45 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+index a662876..2b716d1 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+@@ -229,6 +229,27 @@ SCIF5(RZ_PIN_AND_MUX)
+ SCIF6(RZ_PIN_AND_MUX)
+ SCIF7(RZ_PIN_AND_MUX)
+ 
++#define RIIC0(fn)			\
++	fn(riic0, scl, 1, 0, 1)		\
++	fn(riic0, sda, 1, 1, 1)
++
++#define RIIC1(fn)			\
++	fn(riic1, scl, 1, 2, 1)		\
++	fn(riic1, sda, 1, 3, 1)
++
++#define RIIC2(fn)			\
++	fn(riic2, scl, 1, 4, 1)		\
++	fn(riic2, sda, 1, 5, 1)
++
++#define RIIC3(fn)			\
++	fn(riic3, scl, 1, 6, 1)		\
++	fn(riic3, sda, 1, 7, 1)
++
++RIIC0(RZ_PIN_AND_MUX)
++RIIC1(RZ_PIN_AND_MUX)
++RIIC2(RZ_PIN_AND_MUX)
++RIIC3(RZ_PIN_AND_MUX)
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SCIF0(RZ_PMX_GROUP)
+ 	SCIF1(RZ_PMX_GROUP)
+@@ -238,6 +259,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SCIF5(RZ_PMX_GROUP)
+ 	SCIF6(RZ_PMX_GROUP)
+ 	SCIF7(RZ_PMX_GROUP)
++	RIIC0(RZ_PMX_GROUP)
++	RIIC1(RZ_PMX_GROUP)
++	RIIC2(RZ_PMX_GROUP)
++	RIIC3(RZ_PMX_GROUP)
+ };
+ 
+ static const char * const scif0_groups[] = {
+@@ -272,6 +297,22 @@ static const char * const scif7_groups[] = {
+ 	SCIF7(RZ_GROUPS)
+ };
+ 
++static const char * const riic0_groups[] = {
++	RIIC0(RZ_GROUPS)
++};
++
++static const char * const riic1_groups[] = {
++	RIIC1(RZ_GROUPS)
++};
++
++static const char * const riic2_groups[] = {
++	RIIC2(RZ_GROUPS)
++};
++
++static const char * const riic3_groups[] = {
++	RIIC3(RZ_GROUPS)
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+@@ -281,6 +322,10 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scif5),
+ 	SH_PFC_FUNCTION(scif6),
+ 	SH_PFC_FUNCTION(scif7),
++	SH_PFC_FUNCTION(riic0),
++	SH_PFC_FUNCTION(riic1),
++	SH_PFC_FUNCTION(riic2),
++	SH_PFC_FUNCTION(riic3),
+ };
+ 
+ #define PFC_REG(idx, name, reg)						\
+-- 
+1.8.4.2
 
-I have tagged renesas-devel-v3.13-rc5-20131230 which is based on
-renesas-next-v3.13-rc5-20131230. It includes a small number of patches
-queued up for v3.15.
-
-I will continue queuing up patches for v3.15, including the
-patches people have recently pinged me about queuing up.
-
-
-I realise that there are patches that people anticipated would
-make it into v3.14 but have not made the cut. I sympathise with this
-but arm-soc has a cut-off of v3.13-rc6 and this means I have to have
-things queued up well before then. Your understanding is appreciated.
-
-
-Lastly, this week is a holiday in Japan and I am taking a holiday too.
-I will try to check the list for urgent matters and I look forward
-to working with you all in the new year.
