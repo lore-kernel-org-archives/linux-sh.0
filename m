@@ -1,41 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:11 +0000
-Subject: [PATCH 37/69] ARM: shmobile: marzen-reference: Use falling edge IRQ for LAN9221
-Message-Id: <e60038eda492460c46833f4a54bebd256018a912.1386901186.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Wed, 18 Dec 2013 12:44:20 +0000
+Subject: [PATCH 5/5] arm: shmobile: lager: Add SATA support
+Message-Id: <1387370660-20481-6-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds SATA support to Lager board. Only SATA1 port is available.
 
-The device is configured to generate an active-low interrupt signal that
-is automatically deasserted without requiring any action from the host.
-Use falling edge trigger as that is the configuration currently used on
-the board.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-lager.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index 0f5c614..13fa8be 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -44,7 +44,7 @@
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index af00f1d..287a0a1 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -466,6 +466,21 @@ static void __init lager_add_usb_devices(void)
+ 	lager_add_usb2_device();
+ }
  
- 		phy-mode = "mii";
- 		interrupt-parent = <&irqpin0>;
--		interrupts = <1 IRQ_TYPE_NONE>; /* IRQ1: hwirq 1 on irqpin0 */
-+		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
++/* SATA1 */
++static const struct resource sata1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xee500000, 0x2000),
++	DEFINE_RES_IRQ(gic_spi(106)),
++};
++
++static const struct platform_device_info sata1_info __initconst = {
++	.parent		= &platform_bus,
++	.name		= "sata-r8a7790",
++	.id		= 1,
++	.res		= sata1_resources,
++	.num_res	= ARRAY_SIZE(sata1_resources),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -554,6 +569,8 @@ static void __init lager_add_standard_devices(void)
+ 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
+ 
+ 	lager_add_usb_devices();
++
++	platform_device_register_full(&sata1_info);
+ }
+ 
+ /*
 -- 
-1.8.4
+1.8.3.1
 
