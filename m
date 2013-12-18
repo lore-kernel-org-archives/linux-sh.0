@@ -1,7 +1,7 @@
 From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Wed, 18 Dec 2013 08:21:12 +0000
+Date: Wed, 18 Dec 2013 14:28:45 +0000
 Subject: Re: [GIT PULL] Renesas ARM based SoC Clocksource updates for v3.14
-Message-Id: <52B15AF8.2040105@linaro.org>
+Message-Id: <52B1B11D.7080904@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1387000863.git.horms+renesas@verge.net.au>
  <20131218010815.GA2430@verge.net.au>
@@ -20,6 +20,19 @@ On 12/18/2013 02:08 AM, Simon Horman wrote:
 >> I would also like to request that you make a branch available
 >> for me to use as a base for a branch containing SoC changes
 >> targeted at v3.14 that depend on this clocksource update.
+
+Hi Simon,
+
+patch applied for 3.14.
+
+The branch is available at:
+
+git://git.linaro.org/people/daniel.lezcano/linux.git=20
+clockevents/for-Simon-3.13-rc2
+
+Thanks
+   -- Daniel
+
 >>
 >> Thanks
 >
@@ -28,10 +41,9 @@ On 12/18/2013 02:08 AM, Simon Horman wrote:
 > sorry to bother you about this, but if you could take a moment
 > to look at this pull request I would be most grateful. Its
 > rather important for us.
-
-Yes, I will take care of it in a moment.
-
-
+>
+>>
+>>
 >> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e4=
 2ae:
 >>
@@ -59,7 +71,7 @@ renesas-clocksource-for-v3.14
 >>   drivers/clocksource/sh_cmt.c | 20 ++++++++++++++++----
 >>   1 file changed, 16 insertions(+), 4 deletions(-)
 >>
-w
+
 
 --=20
   <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
