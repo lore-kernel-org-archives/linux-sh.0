@@ -1,70 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 18 Dec 2013 15:13:18 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 18 Dec 2013 21:00:28 +0000
 Subject: Re: [PATCH 2/5] arm: shmobile: r7s72100: add i2c clocks
-Message-Id: <52B1BB8E.9000008@cogentembedded.com>
+Message-Id: <20131218210028.GA18645@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="MGYHOYXEY6WxJCY8"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>	<1387316678-10174-3-git-send-email-wsa@the-dreams.de>	<52B1892B.1020806@cogentembedded.com>	<20131218114351.GD3314@katana>	<52B18CC9.8090200@cogentembedded.com>	<20131218121541.GE3314@katana>	<20131218134914.GA32664@verge.net.au>	<52B1AAE6.2020400@cogentembedded.com>
- <CANqRtoQ953DA-=DFXvkuLMJ6SBvobQdg5LByScPb+x84TJKkCA@mail.gmail.com>
-In-Reply-To: <CANqRtoQ953DA-=DFXvkuLMJ6SBvobQdg5LByScPb+x84TJKkCA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
+ <1387316678-10174-3-git-send-email-wsa@the-dreams.de>
+ <52B1892B.1020806@cogentembedded.com>
+ <20131218114351.GD3314@katana>
+ <52B18CC9.8090200@cogentembedded.com>
+ <20131218121541.GE3314@katana>
+ <20131218134914.GA32664@verge.net.au>
+In-Reply-To: <20131218134914.GA32664@verge.net.au>
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
 
-On 18-12-2013 18:44, Magnus Damm wrote:
+--MGYHOYXEY6WxJCY8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->>>>>>>> @@ -173,6 +179,10 @@ static struct clk_lookup lookups[] = {
->>>>>>>>          CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+> I am unsure of the historical reason for this but it does
+> seem to be consistent.
 
->>>>>>>>          /* ICK */
->>>>>>>> +       CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
->>>>>>>> +       CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
->>>>>>>> +       CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
->>>>>>>> +       CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+Okay, I'll follow that.
 
->>>>>>>      These belong to some other place, the group marked by /* ICK */
->>>>>>> is only for CLKDEV_ICK_ID().
 
->>>>>> So, I'll create a /* DEV */ prefix?
+--MGYHOYXEY6WxJCY8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
->>>>>      I really don't know. Other places have /* MSTP */ comment in this
->>>>> case despite all clocks, CLKDEV_DEV_ID() and CLKDEV_ICK_ID() are
->>>>> really MSTP clocks. I considered the idea of separating
->>>>> CLKDEV_ICK_ID() under /* ICK */ comment silly from the very start
->>>>> but Simon didn't listen to me.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
 
->>>> I am puzzled, too. ICK is a type of registration and not a clock domain.
->>>> Also, there is 'mtu2_fck' which is under ICK as well as MSTP? Looks
->>>> wrong. From what I understand now, removing the /* ICK */ comment would
->>>> be easiest and proper?
+iQIcBAEBAgAGBQJSsgzsAAoJEBQN5MwUoCm2ohoQALSPa6Q3wujMvR9P1VGGs4Ag
+TdVQVD0xBRMQ7xtEN6M+m/lhqtqOG0+nlpV/ZUgXZFQScXUlnv6lqgPf/s3fhNf4
+uBBQxzPALj6PPIqc46bCxAxfusAEdOAImu9NfY/1k3LErJRymBkh+j8UJiY9hHQt
+syK4VyFwbevoqosoZGhjLsp+uq6Q2TyxwPOsWPsXOl/NOR7OaPzvpO9IZnAWDnil
+1vteM35+ms/2zhEsn4F8hkBgMeF4OB+zbqQ9+PFGxVUSAsTOjD21kkVVnOdJ6RWp
+MQcO/2COylSJXz7PQRWK43myt8ZsDeIekDHVdCrC4ElECMRbZ9/EJla6ghbwIKKI
+aTYNgnvRDKbeKKSIym4j2LeT7vU0bUBc6U6tc0yNBL1oCptA3rRb2jU+uVBKPkd1
+cC1BXfpiBfjZ5k9R7NIPlLZS2EMtha1D5oY6S3QZ3Mf4HvsKX67DR9qD6v+8UM4J
+SinPGhLXvAM+y42ku6AIXZTjpwb1R8GPclz7WikZQ7+nuE6E7lw8EGUfq/0TJct2
+/LDDnuO4N4vghbWM0OsAEs0gnjZOV7vkzQWkgz9TOvIwqr9rJBDcZdnF3/p8fpID
+2m1xr419EGMkpq/8THT6Fj4X3c4FyxWQR2adBSfDazwho3OaOcp8QGQOi1TJfeo7
+SGW42AVXTJd53vWkR224
+=q0yh
+-----END PGP SIGNATURE-----
 
->>> I'm not sure that I really understand what all the fuss is about.
-
->>> As I understand things the convention that prevails for
->>> MSTP clocks under mach-shmobile is as follows:
-
->>> 1. Clocks not registered by CLKDEV_ICK_ID() are grouped together
->>>      under /* MSTP */ followed by:
->>> 2. Clocks registered using CLKDEV_ICK_ID() are grouped together
->>>      under /* ICK */
-
->>> I am unsure of the historical reason for this
-
->>     Recent patches by Morimoto-san.
-
->>> but it does seem to be consistent.
-
->>     No, it doesn't. These comments are *clearly* not consistent and should be
->> removed at least.
-
-> Feel free to contribute patches!
-
-    Of course, in my copious free time. I was against these ICKy comments (and 
-the patches introducing them) in the first place but my opinion didn't count. 
-I'm not sure it will count if I go and submit the patches (but the time will 
-be lost).
-
-WBR, Sergei
-
+--MGYHOYXEY6WxJCY8--
