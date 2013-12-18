@@ -1,159 +1,290 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:28 +0000
-Subject: [PATCH 21/47] ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
-Message-Id: <1386323994-12850-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kees Cook <keescook@chromium.org>
+Date: Wed, 18 Dec 2013 18:19:55 +0000
+Subject: [PATCH v4 1/2] create HAVE_CC_STACKPROTECTOR for centralized use
+Message-Id: <1387390796-5860-2-git-send-email-keescook@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1387390796-5860-1-git-send-email-keescook@chromium.org>
+In-Reply-To: <1387390796-5860-1-git-send-email-keescook@chromium.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
+Instead of duplicating the CC_STACKPROTECTOR Kconfig and Makefile logic
+in each architecture, switch to using HAVE_CC_STACKPROTECTOR and keep
+everything in one place. This retains the x86-specific bug verification
+scripts.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- arch/arm/mach-shmobile/setup-r8a7790.c | 112 +++++++++++++++------------------
- 1 file changed, 49 insertions(+), 63 deletions(-)
+ Makefile           |   14 +++++++++++---
+ arch/Kconfig       |   22 ++++++++++++++++++++++
+ arch/arm/Kconfig   |   13 +------------
+ arch/arm/Makefile  |    4 ----
+ arch/mips/Kconfig  |   14 +-------------
+ arch/mips/Makefile |    4 ----
+ arch/sh/Kconfig    |   15 +--------------
+ arch/sh/Makefile   |    4 ----
+ arch/x86/Kconfig   |   17 +----------------
+ arch/x86/Makefile  |    8 +++-----
+ 10 files changed, 40 insertions(+), 75 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 3543c3b..8344743 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -78,61 +78,47 @@ void __init r8a7790_pinmux_init(void)
- 	r8a7790_register_gpio(5);
- }
+diff --git a/Makefile b/Makefile
+index 858a147fd836..27ed3ff7cf4c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -595,10 +595,18 @@ ifneq ($(CONFIG_FRAME_WARN),0)
+ KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+ endif
  
--#define SCIF_COMMON(scif_type, baseaddr, irq)			\
--	.type		= scif_type,				\
--	.mapbase	= baseaddr,				\
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
--	.irqs		= SCIx_IRQ_MUXED(irq)
--
--#define SCIFA_DATA(index, baseaddr, irq)		\
--[index] = {						\
--	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
--	.scbrr_algo_id	= SCBRR_ALGO_4,			\
--	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
-+static struct plat_sci_port scif##index##_platform_data = {		\
-+	.type		= scif_type,					\
-+	.mapbase	= baseaddr,					\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-+	.scbrr_algo_id	= algo,						\
-+	.scscr		= _scscr,					\
-+	.irqs		= SCIx_IRQ_MUXED(irq),				\
- }
+-# Force gcc to behave correct even for buggy distributions
+-ifndef CONFIG_CC_STACKPROTECTOR
+-KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
++# Handle stack protector mode.
++ifdef CONFIG_CC_STACKPROTECTOR
++  stackp-flag := $(call cc-option, -fstack-protector)
++  ifeq ($(stackp-flag),)
++   $(error Cannot use CONFIG_CC_STACKPROTECTOR: \
++	   -fstack-protector not supported by compiler))
++  endif
++else
++  # Force off for distro compilers that enable stack protector by default.
++  stackp-flag := $(call cc-option, -fno-stack-protector)
+ endif
++KBUILD_CFLAGS += $(stackp-flag)
  
--#define SCIFB_DATA(index, baseaddr, irq)	\
--[index] = {					\
--	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
--	.scbrr_algo_id	= SCBRR_ALGO_4,		\
--	.scscr = SCSCR_RE | SCSCR_TE,		\
--}
--
--#define SCIF_DATA(index, baseaddr, irq)		\
--[index] = {						\
--	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
--	.scbrr_algo_id	= SCBRR_ALGO_2,			\
--	.scscr = SCSCR_RE | SCSCR_TE,	\
--}
--
--#define HSCIF_DATA(index, baseaddr, irq)		\
--[index] = {						\
--	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
--	.scbrr_algo_id	= SCBRR_ALGO_6,			\
--	.scscr = SCSCR_RE | SCSCR_TE,	\
--}
--
--enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
--       HSCIF0, HSCIF1 };
--
--static const struct plat_sci_port scif[] __initconst = {
--	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
--	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
--	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
--	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
--	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
--	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
--	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
--	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
--	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
--	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
--};
--
--static inline void r8a7790_register_scif(int idx)
--{
--	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
--				      sizeof(struct plat_sci_port));
--}
-+#define R8A7790_SCIF(index, baseaddr, irq)				\
-+	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
-+		       SCBRR_ALGO_2, index, baseaddr, irq)
-+
-+#define R8A7790_SCIFA(index, baseaddr, irq)				\
-+	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
-+		       SCBRR_ALGO_4, index, baseaddr, irq)
-+
-+#define R8A7790_SCIFB(index, baseaddr, irq)				\
-+	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
-+		       SCBRR_ALGO_4, index, baseaddr, irq)
-+
-+#define R8A7790_HSCIF(index, baseaddr, irq)				\
-+	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
-+		       SCBRR_ALGO_6, index, baseaddr, irq)
-+
-+R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
-+R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
-+R8A7790_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
-+R8A7790_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
-+R8A7790_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
-+R8A7790_SCIFA(5, 0xe6c60000, gic_spi(151)); /* SCIFA2 */
-+R8A7790_SCIF(6,  0xe6e60000, gic_spi(152)); /* SCIF0 */
-+R8A7790_SCIF(7,  0xe6e68000, gic_spi(153)); /* SCIF1 */
-+R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
-+R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
-+
-+#define r8a7790_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
+ # This warning generated too much noise in a regular build.
+ # Use make W=1 to enable this warning (see scripts/Makefile.build)
+diff --git a/arch/Kconfig b/arch/Kconfig
+index f1cf895c040f..24e026d83072 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -336,6 +336,28 @@ config SECCOMP_FILTER
  
- static const struct renesas_irqc_config irqc0_data __initconst = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
-@@ -185,16 +171,16 @@ static const struct resource cmt00_resources[] __initconst = {
+ 	  See Documentation/prctl/seccomp_filter.txt for details.
  
- void __init r8a7790_add_dt_devices(void)
- {
--	r8a7790_register_scif(SCIFA0);
--	r8a7790_register_scif(SCIFA1);
--	r8a7790_register_scif(SCIFB0);
--	r8a7790_register_scif(SCIFB1);
--	r8a7790_register_scif(SCIFB2);
--	r8a7790_register_scif(SCIFA2);
--	r8a7790_register_scif(SCIF0);
--	r8a7790_register_scif(SCIF1);
--	r8a7790_register_scif(HSCIF0);
--	r8a7790_register_scif(HSCIF1);
-+	r8a7790_register_scif(0);
-+	r8a7790_register_scif(1);
-+	r8a7790_register_scif(2);
-+	r8a7790_register_scif(3);
-+	r8a7790_register_scif(4);
-+	r8a7790_register_scif(5);
-+	r8a7790_register_scif(6);
-+	r8a7790_register_scif(7);
-+	r8a7790_register_scif(8);
-+	r8a7790_register_scif(9);
- 	r8a7790_register_cmt(00);
- }
++config HAVE_CC_STACKPROTECTOR
++	bool
++	help
++	  An arch should select this symbol if:
++	  - its compiler supports the -fstack-protector option
++	  - it has implemented a stack canary (e.g. __stack_chk_guard)
++
++config CC_STACKPROTECTOR
++	bool "Enable -fstack-protector buffer overflow detection"
++	depends on HAVE_CC_STACKPROTECTOR
++	help
++	  This option turns on the -fstack-protector GCC feature. This
++	  feature puts, at the beginning of functions, a canary value on
++	  the stack just before the return address, and validates
++	  the value just before actually returning.  Stack based buffer
++	  overflows (that need to overwrite this return address) now also
++	  overwrite the canary, which gets detected and the attack is then
++	  neutralized via a kernel panic.
++
++	  This feature requires gcc version 4.2 or above, or a distribution
++	  gcc with the feature backported.
++
+ config HAVE_CONTEXT_TRACKING
+ 	bool
+ 	help
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index c1f1a7eee953..9c909fc29272 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -30,6 +30,7 @@ config ARM
+ 	select HAVE_BPF_JIT
+ 	select HAVE_CONTEXT_TRACKING
+ 	select HAVE_C_RECORDMCOUNT
++	select HAVE_CC_STACKPROTECTOR
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_ATTRS
+@@ -1856,18 +1857,6 @@ config SECCOMP
+ 	  and the task is only allowed to execute a few safe syscalls
+ 	  defined by each seccomp mode.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
+-	help
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-	  This feature requires gcc version 4.2 or above.
+-
+ config SWIOTLB
+ 	def_bool y
+ 
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index c99b1086d83d..55b4255ad6ed 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -40,10 +40,6 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
+ KBUILD_CFLAGS	+=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
+ endif
+ 
+-ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
+-KBUILD_CFLAGS	+=-fstack-protector
+-endif
+-
+ ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
+ KBUILD_CPPFLAGS	+= -mbig-endian
+ AS		+= -EB
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 650de3976e7a..c93d92beb3d6 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -47,6 +47,7 @@ config MIPS
+ 	select MODULES_USE_ELF_RELA if MODULES && 64BIT
+ 	select CLONE_BACKWARDS
+ 	select HAVE_DEBUG_STACKOVERFLOW
++	select HAVE_CC_STACKPROTECTOR
+ 
+ menu "Machine selection"
+ 
+@@ -2322,19 +2323,6 @@ config SECCOMP
+ 
+ 	  If unsure, say Y. Only embedded should say N here.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
+-	help
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-
+-	  This feature requires gcc version 4.2 or above.
+-
+ config USE_OF
+ 	bool
+ 	select OF
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index de300b993607..efe50787cd89 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -232,10 +232,6 @@ bootvars-y	= VMLINUX_LOAD_ADDRESS=$(load-y) \
+ 
+ LDFLAGS			+= -m $(ld-emul)
+ 
+-ifdef CONFIG_CC_STACKPROTECTOR
+-  KBUILD_CFLAGS += -fstack-protector
+-endif
+-
+ ifdef CONFIG_MIPS
+ CHECKFLAGS += $(shell $(CC) $(KBUILD_CFLAGS) -dM -E -x c /dev/null | \
+ 	egrep -vw '__GNUC_(|MINOR_|PATCHLEVEL_)_' | \
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 9b0979f4df7a..ce298317a73e 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -66,6 +66,7 @@ config SUPERH32
+ 	select PERF_EVENTS
+ 	select ARCH_HIBERNATION_POSSIBLE if MMU
+ 	select SPARSE_IRQ
++	select HAVE_CC_STACKPROTECTOR
+ 
+ config SUPERH64
+ 	def_bool ARCH = "sh64"
+@@ -695,20 +696,6 @@ config SECCOMP
+ 
+ 	  If unsure, say N.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
+-	depends on SUPERH32
+-	help
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-
+-	  This feature requires gcc version 4.2 or above.
+-
+ config SMP
+ 	bool "Symmetric multi-processing support"
+ 	depends on SYS_SUPPORTS_SMP
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index aed701c7b11b..d4d16e4be07c 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -199,10 +199,6 @@ ifeq ($(CONFIG_DWARF_UNWINDER),y)
+   KBUILD_CFLAGS += -fasynchronous-unwind-tables
+ endif
+ 
+-ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
+-  KBUILD_CFLAGS += -fstack-protector
+-endif
+-
+ libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
+ libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
+ 
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index e903c71f7e69..4a814e6c526b 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -124,6 +124,7 @@ config X86
+ 	select RTC_LIB
+ 	select HAVE_DEBUG_STACKOVERFLOW
+ 	select HAVE_IRQ_EXIT_ON_IRQ_STACK if X86_64
++	select HAVE_CC_STACKPROTECTOR
+ 
+ config INSTRUCTION_DECODER
+ 	def_bool y
+@@ -1616,22 +1617,6 @@ config SECCOMP
+ 
+ 	  If unsure, say Y. Only embedded should say N here.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection"
+-	---help---
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-
+-	  This feature requires gcc version 4.2 or above, or a distribution
+-	  gcc with the feature backported. Older versions are automatically
+-	  detected and for those versions, this configuration option is
+-	  ignored. (and a warning is printed during bootup)
+-
+ source kernel/Kconfig.hz
+ 
+ config KEXEC
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 57d021507120..66d126ab9942 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -89,13 +89,11 @@ else
+         KBUILD_CFLAGS += -maccumulate-outgoing-args
+ endif
+ 
++# Make sure compiler does not have buggy stackprotector support.
+ ifdef CONFIG_CC_STACKPROTECTOR
+ 	cc_has_sp := $(srctree)/scripts/gcc-x86_$(BITS)-has-stack-protector.sh
+-        ifeq ($(shell $(CONFIG_SHELL) $(cc_has_sp) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
+-                stackp-y := -fstack-protector
+-                KBUILD_CFLAGS += $(stackp-y)
+-        else
+-                $(warning stack protector enabled but no compiler support)
++        ifneq ($(shell $(CONFIG_SHELL) $(cc_has_sp) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
++                $(error stack protector enabled but compiler support is broken)
+         endif
+ endif
  
 -- 
-1.8.3.2
+1.7.9.5
 
