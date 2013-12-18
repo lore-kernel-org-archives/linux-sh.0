@@ -1,49 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:07 +0000
-Subject: [PATCH 33/69] ARM: shmobile: bockw: enable HSPI0 on DTS
-Message-Id: <8c6639665d9771d2e84fe6e0915d46a6fbb8594e.1386901186.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 18 Dec 2013 21:32:00 +0000
+Subject: [PATCH V2 4/5] arm: shmobile: genmai: adapt dts to use native i2c driver
+Message-Id: <1387402321-21866-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Switch from the gpio-driver to the shiny new native driver. Tested by
+accessing the eeprom on the genmai board.
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 11 +++++++++++
- 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 9c8bd37..f488c48 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -86,6 +86,11 @@
- 				  "sdhi0_cd", "sdhi0_wp";
- 		renesas,function = "sdhi0";
+V2: fixed the eeprom label
+
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 29 ++++++++++---------------
+ 1 file changed, 11 insertions(+), 18 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index ce5da0b..5e9f41d 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -39,24 +39,6 @@
+ 			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
+ 		};
  	};
-+
-+	hspi0_pins: hspi0 {
-+		renesas,groups = "hspi0_a";
-+		renesas,function = "hspi0";
-+	};
+-
+-	i2c@0 {
+-		compatible = "i2c-gpio";
+-		gpios = <&port1 5 GPIO_ACTIVE_HIGH /* sda */
+-			 &port1 4 GPIO_ACTIVE_HIGH /* scl */
+-			>;
+-		i2c-gpio,sda-open-drain;
+-		i2c-gpio,scl-open-drain;
+-		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		flash@50 {
+-			compatible = "renesas,24c128";
+-			reg = <0x50>;
+-			pagesize = <64>;
+-		};
+-	};
  };
  
- &sdhi0 {
-@@ -96,3 +101,9 @@
- 	bus-width = <4>;
- 	status = "okay";
+ &pfc {
+@@ -68,3 +50,14 @@
+ 		renesas,function = "scif2";
+ 	};
  };
 +
-+&hspi0 {
-+	pinctrl-0 = <&hspi0_pins>;
-+	pinctrl-names = "default";
++&i2c2 {
 +	status = "okay";
++	clock-frequency = <400000>;
++
++	eeprom@50 {
++		compatible = "renesas,24c128";
++		reg = <0x50>;
++		pagesize = <64>;
++	};
 +};
 -- 
-1.8.4
+1.8.4.2
 
