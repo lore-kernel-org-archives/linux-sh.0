@@ -1,54 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:52 +0000
-Subject: [PATCH 12/29] ARM: shmobile: sh73a0: Declare SCIF register base and IRQ as resources
-Message-Id: <31e1ee86b16b2f0e3c7237582c1f10886189d3c2.1387888861.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 18 Dec 2013 21:31:56 +0000
+Subject: [PATCH V2 0/5] arm: shmobile: r7s72100: add native i2c support
+Message-Id: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Here is a series to support the I2C core of the r7s72100 natively. It has been
+tested with a genmai board where an eeprom is connected. The series can be
+found here:
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/riic
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-sh73a0.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+It is based on the latest r7s72100 topic branch from Simon and the latest patch
+series from Magnus. Note there is one issue with the current PFC driver which
+needs to be sorted out. Check patch 1/5 for details.
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index ba9b741..3c2d4ee 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -75,16 +75,21 @@ void __init sh73a0_pinmux_init(void)
- #define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF,			\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
- 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
- 	.scscr		= SCSCR_RE | SCSCR_TE,			\
- };								\
- 								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
-+};								\
-+								\
- static struct platform_device scif##index##_device = {		\
- 	.name		= "sh-sci",				\
- 	.id		= index,				\
-+	.resource	= scif##index##_resources,		\
-+	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
- 	.dev		= {					\
- 		.platform_data	= &scif##index##_platform_data,	\
- 	},							\
+I've addressed all comments from V1. See patches for details.
+
+Comments welcome. Thanks,
+
+   Wolfram
+
+
+Wolfram Sang (5):
+  pinctrl: r7s72100: add riic groups
+  arm: shmobile: r7s72100: add i2c clocks
+  arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
+  arm: shmobile: genmai: adapt dts to use native i2c driver
+  i2c: riic: add driver
+
+ Documentation/devicetree/bindings/i2c/i2c-riic.txt |  29 ++
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  29 +-
+ arch/arm/boot/dts/r7s72100.dtsi                    | 102 +++++
+ arch/arm/mach-shmobile/clock-r7s72100.c            |  12 +-
+ drivers/i2c/busses/Kconfig                         |  10 +
+ drivers/i2c/busses/Makefile                        |   1 +
+ drivers/i2c/busses/i2c-riic.c                      | 426 +++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c              |  45 +++
+ 8 files changed, 635 insertions(+), 19 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-riic.txt
+ create mode 100644 drivers/i2c/busses/i2c-riic.c
+
 -- 
-1.8.4
+1.8.4.2
 
