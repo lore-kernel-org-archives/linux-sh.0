@@ -1,68 +1,69 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 27 Dec 2013 10:58:08 +0000
-Subject: [PATCH V2] ARM: shmobile: r8a7790: Fix I2C controller names
-Message-Id: <1388141888-5424-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 18 Dec 2013 21:31:58 +0000
+Subject: [PATCH V2 2/5] arm: shmobile: r7s72100: add i2c clocks
+Message-Id: <1387402321-21866-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This fixes the issue introduced by the following commit:
-b448c904f5058b6c "ARM: shmobile: r8a7790: add I2C support"
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-The R8A7790 is an R-Car Gen2 SoC. The clock division factor
-(CDF) width is 3 bits on Gen2 as opposed to 2 bits on Gen1.
-Fix the device names for R8A7790 SoC to make the R-Car I2C
-driver configure the hardware properly.
+Tested with RIIC2 on a genmai board. Others untested but hopefully
+trivial enough to be added.
 
-Changes in V2:
-* rebased on top of the latest branch;
-* capitalized ARM in the subject line;
-* noted the commit that caused the issue in the log.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
- arch/arm/mach-shmobile/setup-r8a7790.c | 2 +-
- 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index c5c60ec..f44987a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -292,13 +292,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
- 	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
--	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
--	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
--	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
--	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 7800cec..6ab37aa 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -85,7 +85,7 @@ static struct resource i2c_resources[] __initdata = {
+V2: adapt to established sorting
+
+ arch/arm/mach-shmobile/clock-r7s72100.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 7b457ae..9cda215 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -27,6 +27,7 @@
+ #define FRQCR2		0xfcfe0014
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
++#define STBCR9		0xfcfe0438
  
- #define r8a7790_register_i2c(idx)		\
- 	platform_device_register_simple(	\
--		"i2c-rcar", idx,		\
-+		"i2c-rcar_gen2", idx,		\
- 		i2c_resources + (2 * idx), 2);	\
+ #define PLL_RATE 30
  
- void __init r8a7790_pinmux_init(void)
+@@ -144,10 +145,15 @@ struct clk div4_clks[DIV4_NR] = {
+ 					| CLK_ENABLE_ON_INIT),
+ };
+ 
+-enum { MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
++enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+ 	MSTP33,	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
++	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
++	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
++	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
+ 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
+ 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
+ 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
+@@ -170,6 +176,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
++	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
++	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
++	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
 -- 
-1.8.3.1
+1.8.4.2
 
