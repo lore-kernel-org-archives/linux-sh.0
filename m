@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 09 Dec 2013 21:14:07 +0000
+Date: Wed, 18 Dec 2013 20:23:41 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: Koelsch: add Ether support
-Message-Id: <52A640AB.9000105@cogentembedded.com>
+Message-Id: <52B2125F.2010404@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201310310216.28673.sergei.shtylyov@cogentembedded.com>	<201310310219.58963.sergei.shtylyov@cogentembedded.com>
  <CANqRtoTa6-UP88146KPy9zNXNTRynBVqWZYb1k=0MK03NMJqhw@mail.gmail.com>
@@ -11,6 +11,8 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+
+Hello.
 
 On 12/09/2013 10:57 PM, Sergei Shtylyov wrote:
 
@@ -37,12 +39,20 @@ On 12/09/2013 10:57 PM, Sergei Shtylyov wrote:
 > the INTC driver issue); that's bad news. Good news is that even this doesn't
 > prevent phylib from working properly as it still polls the PHY once a second.
 
-    Forgot to note that using PHY IRQ on Lager/Koelsch seems quite pointless 
-to me as we're using ETH_LINK signal on these boards and Ether core generates 
-interrupts on the change of this signal using which the driver actually 
-controls packet Rx/Tx; Micrel PHY driver also only enables interrupts on link 
-up/down -- so it seems only useful on BOCK-W where we ignore ETH_LINK and so 
-the driver controls packet Rx/Tx from the phylib's adjust_link() callback.
+    Oh yes, it does: phylib fails to recognize link down/up after you 
+disconnect/reconnect the cable since it relies solely on IRQ for the link 
+changes if it's specified.
+    Now for the really good news: I was able to get the PHY IRQs on Koelsch 
+board when I set the trigger mode to falling-edge; that seemed strange as the 
+PHY interrupts are level-sensitive, according to the documentation. And only 
+after we commented out the wild PHY reset done by the 'sh_eth' driver on each 
+open, I was able to get the IRQs in the low-level trigger mode.
+    So, I'm expecting to be able to finally resolve this issue on top of the 
+net-next tree which now contains 2 patchsets that should enable me to finally 
+remove that wild PHY reset for good:
+
+http://marc.info/?l=linux-netdev&m8636384109141
+http://marc.info/?l=linux-netdev&m8692649110301
 
 >>> Best,
 
