@@ -1,51 +1,58 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 18 Dec 2013 11:38:19 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 18 Dec 2013 11:43:51 +0000
 Subject: Re: [PATCH 2/5] arm: shmobile: r7s72100: add i2c clocks
-Message-Id: <52B1892B.1020806@cogentembedded.com>
+Message-Id: <20131218114351.GD3314@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="X3gaHHMYHkYqP6yf"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
  <1387316678-10174-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387316678-10174-3-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <52B1892B.1020806@cogentembedded.com>
+In-Reply-To: <52B1892B.1020806@cogentembedded.com>
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
 
-On 18-12-2013 1:44, Wolfram Sang wrote:
+--X3gaHHMYHkYqP6yf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> From: Wolfram Sang <wsa@sang-engineering.com>
 
-> Tested with RIIC2 on a genmai board. Others untested but hopefully
-> trivial enough to be added.
+> >@@ -173,6 +179,10 @@ static struct clk_lookup lookups[] =3D {
+> >  	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+> >
+> >  	/* ICK */
+> >+	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+> >+	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+> >+	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+> >+	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+>=20
+>    These belong to some other place, the group marked by /* ICK */
+> is only for CLKDEV_ICK_ID().
 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> ---
->   arch/arm/mach-shmobile/clock-r7s72100.c | 12 +++++++++++-
->   1 file changed, 11 insertions(+), 1 deletion(-)
+So, I'll create a /* DEV */ prefix?
 
-> diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-> index 7b457ae..770316d 100644
-> --- a/arch/arm/mach-shmobile/clock-r7s72100.c
-> +++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-[...]
-> @@ -173,6 +179,10 @@ static struct clk_lookup lookups[] = {
->   	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
->
->   	/* ICK */
-> +	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
-> +	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
-> +	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
-> +	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
 
-    These belong to some other place, the group marked by /* ICK */ is only 
-for CLKDEV_ICK_ID().
+--X3gaHHMYHkYqP6yf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
->   	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
->   	CLKDEV_ICK_ID("sci_fck", "sh-sci.1", &mstp_clks[MSTP46]),
->   	CLKDEV_ICK_ID("sci_fck", "sh-sci.2", &mstp_clks[MSTP45]),
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
 
-WBR, Sergei
+iQIcBAEBAgAGBQJSsYp3AAoJEBQN5MwUoCm2HgcQAIP+HmSC++wJZEzIIgswyERG
+e9IhI3B1oo22km/V9wYlD0iWJYXbjJigYYRF3oVPjKlR0cM7OSFPdLxL1vinqzxi
+n+V1qNRE7NtE9mfQcqtYExdnm3BeNVOjIv2RjovQaEIz8t07C1E8JV1hPKj+qOtQ
+cSDAIaLNYObkw9x9njCKktid2ZmyS5JJqo/nWLowk7HCRGOri24CzNOT8SDsEN2K
+DgQnoFADpydtu1YXUA/wPrrSFm/byV/K+hkL8fCU3f8S6cge/7yulAbxKN9XYu7f
+mqTLymxcnrf69pi3c5n/9z5OrNfXC7yQp0b6k2NK8xjaVVMRR399tguaX7yInbJC
+5R6vi4PWuuLEvPFWLtLfudpbGucwOTm87cCacGq18VJid36zE2JnuLWuWeHLDzkN
+FFlTK/MOaWCUPcZF8g0f0ZV641R+LQox+yvdvdDbKUUoy1sVnK8cP6ICsfwEkdsa
+EQBe9fxQm9EM3C4v+G4/egIryll9z4UuYKVqdlmO8qhLdxJ87FgoTJ1ts6WIk1qm
+OkWsVjKcypEX3WBY6CXoaTJdRhk6UdbS/rTsWnvpw0dwvV5gn3zhgFMsdNk8gXXm
+anDZ8bUccnb0aHFfyI4RFUd3aJ17PuyI/FKp6Vb51UElp1Mvr2oE9cyTM5mSFloP
+VjGnX/QkSF595w3i1fDt
+=DurW
+-----END PGP SIGNATURE-----
 
+--X3gaHHMYHkYqP6yf--
