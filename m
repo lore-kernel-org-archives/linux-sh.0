@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 17 Dec 2013 21:57:06 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 18 Dec 2013 11:41:38 +0000
 Subject: Re: [PATCH 4/5] arm: shmobile: genmai: adapt dts to use native i2c driver
-Message-Id: <3877089.dstf8Ijntd@avalon>
+Message-Id: <52B189F2.3080604@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
  <1387316678-10174-5-git-send-email-wsa@the-dreams.de>
@@ -11,31 +11,29 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+Hello.
 
-Thank you for the patch.
+On 18-12-2013 1:44, Wolfram Sang wrote:
 
-On Tuesday 17 December 2013 22:44:37 Wolfram Sang wrote:
 > From: Wolfram Sang <wsa@sang-engineering.com>
-> 
+
 > Switch from the gpio-driver to the shiny new native driver. Tested by
 > accessing the eeprom on the genmai board.
-> 
+
 > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 > Acked-by: Magnus Damm <damm@opensource.se>
 > ---
->  arch/arm/boot/dts/r7s72100-genmai-reference.dts | 29 +++++++++-------------
->  1 file changed, 11 insertions(+), 18 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> b/arch/arm/boot/dts/r7s72100-genmai-reference.dts index ce5da0b..739448a
-> 100644
+>   arch/arm/boot/dts/r7s72100-genmai-reference.dts | 29 ++++++++++---------------
+>   1 file changed, 11 insertions(+), 18 deletions(-)
+
+> diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+> index ce5da0b..739448a 100644
 > --- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
 > +++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
 > @@ -39,24 +39,6 @@
->  			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
->  		};
->  	};
+>   			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
+>   		};
+>   	};
 > -
 > -	i2c@0 {
 > -		compatible = "i2c-gpio";
@@ -54,13 +52,13 @@ On Tuesday 17 December 2013 22:44:37 Wolfram Sang wrote:
 > -			pagesize = <64>;
 > -		};
 > -	};
->  };
-> 
->  &pfc {
+>   };
+>
+>   &pfc {
 > @@ -68,3 +50,14 @@
->  		renesas,function = "scif2";
->  	};
->  };
+>   		renesas,function = "scif2";
+>   	};
+>   };
 > +
 > +&i2c2 {
 > +	status = "okay";
@@ -68,8 +66,8 @@ On Tuesday 17 December 2013 22:44:37 Wolfram Sang wrote:
 > +
 > +	eeprom: 24c128@50 {
 
-That should be "24c128: eeprom@50". You can actually omit the "24c128:" alias 
-until it gets needed.
+    The node was called "flash@50" for a reason: according to ePAPR spec,  for 
+node names the generic device names should be used, not chip-specific.
 
 > +		compatible = "renesas,24c128";
 > +		reg = <0x50>;
@@ -77,8 +75,5 @@ until it gets needed.
 > +	};
 > +};
 
--- 
-Regards,
-
-Laurent Pinchart
+WBR, Sergei
 
