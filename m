@@ -1,44 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 30 Dec 2013 00:58:07 +0000
-Subject: [PATCH 2/3] ARM: shmobile: kzm9g: Fix coherent DMA mask
-Message-Id: <4f387323853c495ac589210832fad4503f75a0e7.1388364591.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Wed, 18 Dec 2013 15:08:22 +0000
+Subject: [PATCH] arm: shmobile: r8a7790: Fix I2C controller names
+Message-Id: <1387379302-20223-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1388364591.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1388364591.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The R8A7790 is an R-Car Gen2 SoC. The clock division factor
+(CDF) width is 3 bits on Gen2 as opposed to 2 bits on Gen1.
+Fix the device names for R8A7790 SoC to make the R-Car I2C
+driver configure the hardware properly.
 
-Commit 4dcfa60071b3d23f0181f27d8519f12e37cefbb9 ("ARM: DMA-API: better
-handing of DMA masks for coherent allocations") added an additional
-check to the coherent DMA mask that results in an error when the mask is
-larger than what dma_addr_t can address.
-
-Set the LCDC coherent DMA mask to DMA_BIT_MASK(32) instead of ~0 to fix
-the problem.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
+ arch/arm/mach-shmobile/setup-r8a7790.c | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index fe689b7..bc40b85 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -334,7 +334,7 @@ static struct platform_device lcdc_device = {
- 	.resource	= lcdc_resources,
- 	.dev	= {
- 		.platform_data	= &lcdc_info,
--		.coherent_dma_mask = ~0,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 81f45a0..18d836b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -297,13 +297,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+ 	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+-	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
+ 	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 8474818..77fd7ed 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -85,7 +85,7 @@ static struct resource i2c_resources[] __initdata = {
  
+ #define r8a7790_register_i2c(idx)		\
+ 	platform_device_register_simple(	\
+-		"i2c-rcar", idx,		\
++		"i2c-rcar_gen2", idx,		\
+ 		i2c_resources + (2 * idx), 2);	\
+ 
+ void __init r8a7790_pinmux_init(void)
 -- 
-1.8.4
+1.8.3.1
 
