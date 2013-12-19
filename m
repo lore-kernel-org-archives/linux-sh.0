@@ -1,40 +1,28 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 02 Dec 2013 01:29:43 +0000
-Subject: Re: [PATCH 2/4] sh-pfc: r8a7790: Add Audio pin support
-Message-Id: <87k3foca63.wl%kuninori.morimoto.gx@renesas.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 19 Dec 2013 17:57:21 +0000
+Subject: [PATCH 0/2] arm: shmobile: Add SATA support for Lager board
+Message-Id: <1387475843-25849-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mwkn52sx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mwkn52sx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
+This adds SATA0/1 clocks to R8A7790 SoC and adds SATA1 to Lager board.
+SATA0 is not available on Lager since MD23 selection is fixed to USB3.
 
-Hi Laurent
+It depends on the following commit available in the libata git tree:
+https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Dfor-=
+3.14&id=E67adb4e669db834c1f95cbdf99bb4e9ec8455b3
 
-> On Thursday 28 November 2013 19:01:37 Kuninori Morimoto wrote:
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> I've applied the patch to my tree and will send a pull request to Linus 
-> Walleij for v3.14.
-> 
-> Please see below for one small comment.
-(snip)
-> > +static const unsigned int audio_clkout_d_mux[] = {
-> > +	AUDIO_CLKOUT_D_MARK,
-> > +};
-> > +
-> 
-> The file has no blank line after all the other groups, I've thus removed this 
-> blank line. Please let me know if you're fine with that.
+Valentine Barshak (2):
+  arm: shmobile: r8a7790: Add SATA clock
+  arm: shmobile: lager: Add SATA support
 
-Thank you.
-I have no objection about it.
+ arch/arm/mach-shmobile/board-lager.c   | 17 +++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c | 19 +++++++++++++++++++
+ 2 files changed, 36 insertions(+)
 
+--=20
+1.8.3.1
 
-Best regards
----
-Kuninori Morimoto
