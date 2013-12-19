@@ -1,41 +1,293 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:03 +0000
-Subject: [PATCH 01/28] ARM: shmobile: r8a7778: add I2C clock for DT
-Message-Id: <807dd3dcb5c3871e778540485b9c4c00535ed66e.1385950394.git.horms+renesas@verge.net.au>
+From: Kees Cook <keescook@chromium.org>
+Date: Thu, 19 Dec 2013 19:35:58 +0000
+Subject: [PATCH v5 1/2] create HAVE_CC_STACKPROTECTOR for centralized use
+Message-Id: <1387481759-14535-2-git-send-email-keescook@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <1387481759-14535-1-git-send-email-keescook@chromium.org>
+In-Reply-To: <1387481759-14535-1-git-send-email-keescook@chromium.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Instead of duplicating the CC_STACKPROTECTOR Kconfig and Makefile logic
+in each architecture, switch to using HAVE_CC_STACKPROTECTOR and keep
+everything in one place. This retains the x86-specific bug verification
+scripts.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 4 ++++
- 1 file changed, 4 insertions(+)
+v5:
+ - switch from Makefile error to warning to not kill silentoldconfig
+---
+ Makefile           |   14 +++++++++++---
+ arch/Kconfig       |   22 ++++++++++++++++++++++
+ arch/arm/Kconfig   |   13 +------------
+ arch/arm/Makefile  |    4 ----
+ arch/mips/Kconfig  |   14 +-------------
+ arch/mips/Makefile |    4 ----
+ arch/sh/Kconfig    |   15 +--------------
+ arch/sh/Makefile   |    4 ----
+ arch/x86/Kconfig   |   17 +----------------
+ arch/x86/Makefile  |    8 +++-----
+ 10 files changed, 40 insertions(+), 75 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index fb6af83..a77089f 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -183,9 +183,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("ohci-platform", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP100]), /* USB FUNC */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-+	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-+	CLKDEV_DEV_ID("ffc71000.i2c", &mstp_clks[MSTP029]), /* I2C1 */
- 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
-+	CLKDEV_DEV_ID("ffc72000.i2c", &mstp_clks[MSTP028]), /* I2C2 */
- 	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
-+	CLKDEV_DEV_ID("ffc73000.i2c", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+diff --git a/Makefile b/Makefile
+index 858a147fd836..84fb5cd092d2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -595,10 +595,18 @@ ifneq ($(CONFIG_FRAME_WARN),0)
+ KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+ endif
+ 
+-# Force gcc to behave correct even for buggy distributions
+-ifndef CONFIG_CC_STACKPROTECTOR
+-KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
++# Handle stack protector mode.
++ifdef CONFIG_CC_STACKPROTECTOR
++  stackp-flag := -fstack-protector
++  ifeq ($(call cc-option, $(stackp-flag)),)
++    $(warning Cannot use CONFIG_CC_STACKPROTECTOR: \
++	      -fstack-protector not supported by compiler))
++  endif
++else
++  # Force off for distro compilers that enable stack protector by default.
++  stackp-flag := $(call cc-option, -fno-stack-protector)
+ endif
++KBUILD_CFLAGS += $(stackp-flag)
+ 
+ # This warning generated too much noise in a regular build.
+ # Use make W=1 to enable this warning (see scripts/Makefile.build)
+diff --git a/arch/Kconfig b/arch/Kconfig
+index f1cf895c040f..24e026d83072 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -336,6 +336,28 @@ config SECCOMP_FILTER
+ 
+ 	  See Documentation/prctl/seccomp_filter.txt for details.
+ 
++config HAVE_CC_STACKPROTECTOR
++	bool
++	help
++	  An arch should select this symbol if:
++	  - its compiler supports the -fstack-protector option
++	  - it has implemented a stack canary (e.g. __stack_chk_guard)
++
++config CC_STACKPROTECTOR
++	bool "Enable -fstack-protector buffer overflow detection"
++	depends on HAVE_CC_STACKPROTECTOR
++	help
++	  This option turns on the -fstack-protector GCC feature. This
++	  feature puts, at the beginning of functions, a canary value on
++	  the stack just before the return address, and validates
++	  the value just before actually returning.  Stack based buffer
++	  overflows (that need to overwrite this return address) now also
++	  overwrite the canary, which gets detected and the attack is then
++	  neutralized via a kernel panic.
++
++	  This feature requires gcc version 4.2 or above, or a distribution
++	  gcc with the feature backported.
++
+ config HAVE_CONTEXT_TRACKING
+ 	bool
+ 	help
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index c1f1a7eee953..9c909fc29272 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -30,6 +30,7 @@ config ARM
+ 	select HAVE_BPF_JIT
+ 	select HAVE_CONTEXT_TRACKING
+ 	select HAVE_C_RECORDMCOUNT
++	select HAVE_CC_STACKPROTECTOR
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DMA_API_DEBUG
+ 	select HAVE_DMA_ATTRS
+@@ -1856,18 +1857,6 @@ config SECCOMP
+ 	  and the task is only allowed to execute a few safe syscalls
+ 	  defined by each seccomp mode.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
+-	help
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-	  This feature requires gcc version 4.2 or above.
+-
+ config SWIOTLB
+ 	def_bool y
+ 
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index c99b1086d83d..55b4255ad6ed 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -40,10 +40,6 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
+ KBUILD_CFLAGS	+=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
+ endif
+ 
+-ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
+-KBUILD_CFLAGS	+=-fstack-protector
+-endif
+-
+ ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
+ KBUILD_CPPFLAGS	+= -mbig-endian
+ AS		+= -EB
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 650de3976e7a..c93d92beb3d6 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -47,6 +47,7 @@ config MIPS
+ 	select MODULES_USE_ELF_RELA if MODULES && 64BIT
+ 	select CLONE_BACKWARDS
+ 	select HAVE_DEBUG_STACKOVERFLOW
++	select HAVE_CC_STACKPROTECTOR
+ 
+ menu "Machine selection"
+ 
+@@ -2322,19 +2323,6 @@ config SECCOMP
+ 
+ 	  If unsure, say Y. Only embedded should say N here.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
+-	help
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-
+-	  This feature requires gcc version 4.2 or above.
+-
+ config USE_OF
+ 	bool
+ 	select OF
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index de300b993607..efe50787cd89 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -232,10 +232,6 @@ bootvars-y	= VMLINUX_LOAD_ADDRESS=$(load-y) \
+ 
+ LDFLAGS			+= -m $(ld-emul)
+ 
+-ifdef CONFIG_CC_STACKPROTECTOR
+-  KBUILD_CFLAGS += -fstack-protector
+-endif
+-
+ ifdef CONFIG_MIPS
+ CHECKFLAGS += $(shell $(CC) $(KBUILD_CFLAGS) -dM -E -x c /dev/null | \
+ 	egrep -vw '__GNUC_(|MINOR_|PATCHLEVEL_)_' | \
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 9b0979f4df7a..ce298317a73e 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -66,6 +66,7 @@ config SUPERH32
+ 	select PERF_EVENTS
+ 	select ARCH_HIBERNATION_POSSIBLE if MMU
+ 	select SPARSE_IRQ
++	select HAVE_CC_STACKPROTECTOR
+ 
+ config SUPERH64
+ 	def_bool ARCH = "sh64"
+@@ -695,20 +696,6 @@ config SECCOMP
+ 
+ 	  If unsure, say N.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection (EXPERIMENTAL)"
+-	depends on SUPERH32
+-	help
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-
+-	  This feature requires gcc version 4.2 or above.
+-
+ config SMP
+ 	bool "Symmetric multi-processing support"
+ 	depends on SYS_SUPPORTS_SMP
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index aed701c7b11b..d4d16e4be07c 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -199,10 +199,6 @@ ifeq ($(CONFIG_DWARF_UNWINDER),y)
+   KBUILD_CFLAGS += -fasynchronous-unwind-tables
+ endif
+ 
+-ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
+-  KBUILD_CFLAGS += -fstack-protector
+-endif
+-
+ libs-$(CONFIG_SUPERH32)		:= arch/sh/lib/	$(libs-y)
+ libs-$(CONFIG_SUPERH64)		:= arch/sh/lib64/ $(libs-y)
+ 
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index e903c71f7e69..4a814e6c526b 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -124,6 +124,7 @@ config X86
+ 	select RTC_LIB
+ 	select HAVE_DEBUG_STACKOVERFLOW
+ 	select HAVE_IRQ_EXIT_ON_IRQ_STACK if X86_64
++	select HAVE_CC_STACKPROTECTOR
+ 
+ config INSTRUCTION_DECODER
+ 	def_bool y
+@@ -1616,22 +1617,6 @@ config SECCOMP
+ 
+ 	  If unsure, say Y. Only embedded should say N here.
+ 
+-config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection"
+-	---help---
+-	  This option turns on the -fstack-protector GCC feature. This
+-	  feature puts, at the beginning of functions, a canary value on
+-	  the stack just before the return address, and validates
+-	  the value just before actually returning.  Stack based buffer
+-	  overflows (that need to overwrite this return address) now also
+-	  overwrite the canary, which gets detected and the attack is then
+-	  neutralized via a kernel panic.
+-
+-	  This feature requires gcc version 4.2 or above, or a distribution
+-	  gcc with the feature backported. Older versions are automatically
+-	  detected and for those versions, this configuration option is
+-	  ignored. (and a warning is printed during bootup)
+-
+ source kernel/Kconfig.hz
+ 
+ config KEXEC
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 57d021507120..13b22e0f681d 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -89,13 +89,11 @@ else
+         KBUILD_CFLAGS += -maccumulate-outgoing-args
+ endif
+ 
++# Make sure compiler does not have buggy stack-protector support.
+ ifdef CONFIG_CC_STACKPROTECTOR
+ 	cc_has_sp := $(srctree)/scripts/gcc-x86_$(BITS)-has-stack-protector.sh
+-        ifeq ($(shell $(CONFIG_SHELL) $(cc_has_sp) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
+-                stackp-y := -fstack-protector
+-                KBUILD_CFLAGS += $(stackp-y)
+-        else
+-                $(warning stack protector enabled but no compiler support)
++        ifneq ($(shell $(CONFIG_SHELL) $(cc_has_sp) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
++                $(warning stack-protector enabled but compiler support broken)
+         endif
+ endif
+ 
 -- 
-1.8.4
+1.7.9.5
 
