@@ -1,41 +1,20 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:36 +0000
-Subject: [PATCH 13/21] ARM: shmobile: koelsch: Specify external clock frequency in DT
-Message-Id: <fcf0c725cb38f7d55a89e6f87183afee90a3846d.1387893834.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Dec 2013 22:26:32 +0000
+Subject: [PATCH 0/1] Add Ether's PHY IRQ support for R8A7791/Koelsch board
+Message-Id: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hello.
 
-The external crystal frequency is 20MHz on the Koelsch board. Specify it
-in the device tree.
+   Here's the patch against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.13-rc4-20131219' tag. Here we add support for the Ether's PHY
+IRQ to the R8A7791/Koelsch board. The patchset depends on the two 'sh_eth' driver
+patches posted earlier in order to compile and work.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+[1/1] ARM: shmobile: Koelsch: pass Ether PHY IRQ
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index d431f31..fd556c3 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -45,6 +45,10 @@
- 	};
- };
- 
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
--- 
-1.8.4
-
+WBR, Sergei
