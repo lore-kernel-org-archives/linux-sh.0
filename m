@@ -1,52 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:16 +0000
-Subject: [PATCH 10/12] ARM: shmobile: Let Lager multiplatform boot with Lager DTB
-Message-Id: <1fb68146d5fa7656f48bc5caaa74312b7fc7257e.1387891831.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Dec 2013 21:41:07 +0000
+Subject: [PATCH 2/2] sh_eth: do not reset PHY needlessly
+Message-Id: <201312200141.12586.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <201312200138.09307.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201312200138.09307.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+There's no need anymore to call phy_init_hw() to reset/resume the PHY from the
+driver, as the call chain in phylib already has reached it, and so reset/resumed
+the PHY (even resuming it twice). This duplicate reset is not only  needless, it
+e.g. clears the PHY's interrupt enables just setup by phylib and so prevents the
+expected IRQs from the PHY.
 
-Let the multiplatform Lager support boot with the legacy DTS for Lager
-as well as the Lager reference DTS.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                     | 2 +-
- arch/arm/mach-shmobile/board-lager-reference.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/renesas/sh_eth.c |    5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 37aefa2..f28b4ef 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -234,7 +234,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
--	r8a7790-lager-reference.dtb \
-+	r8a7790-lager.dtb \
- 	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 7e3fe37..a6e271d 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -64,6 +64,7 @@ static void __init lager_add_standard_devices(void)
- }
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1703,11 +1703,6 @@ static int sh_eth_phy_start(struct net_d
+ 	if (ret)
+ 		return ret;
  
- static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager",
- 	"renesas,lager-reference",
- 	NULL,
- };
--- 
-1.8.4
-
+-	/* reset phy - this also wakes it from PDOWN */
+-	ret = phy_init_hw(mdp->phydev);
+-	if (ret)
+-		return ret;
+-
+ 	phy_start(mdp->phydev);
+ 
+ 	return 0;
