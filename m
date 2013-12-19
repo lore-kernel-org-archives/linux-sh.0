@@ -1,98 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 31 Dec 2013 17:29:29 +0000
-Subject: Re: [PATCH 04/05 v2] pinctrl: sh-pfc: r7s72100 SCIF support
-Message-Id: <3543969.B4d78GADQA@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 19 Dec 2013 15:51:01 +0000
+Subject: [PATCH 1/6] ARM: shmobile: r8a7790: Add MSIOF clocks in device tree
+Message-Id: <1387468266-13625-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131217023745.24573.3660.sendpatchset@w520> <1746928.Q6f1iPMsKL@avalon> <CANqRtoSJAik-QV9WFfgsVGPAVBCRasuQz9kOHOueDM562PwJMg@mail.gmail.com>
-In-Reply-To: <CANqRtoSJAik-QV9WFfgsVGPAVBCRasuQz9kOHOueDM562PwJMg@mail.gmail.com>
+References: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Linus Walleij <linus.walleij@linaro.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 17 +++++++++++++----
+ include/dt-bindings/clock/r8a7790-clock.h |  6 ++++++
+ 2 files changed, 19 insertions(+), 4 deletions(-)
 
-On Wednesday 18 December 2013 07:26:15 Magnus Damm wrote:
-> On Wed, Dec 18, 2013 at 1:08 AM, Laurent Pinchart wrote:
-> > On Tuesday 17 December 2013 11:38:23 Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >> 
-> >> Add support for SCIF functions SCK, TXD, RXD, CTS and RTS to the
-> >> r7s72100 PINCTRL code. There are two possible pins that can be used
-> >> for TXD (Port 3 Pin 0 Function 6 and Port 3 Pin 1 Function 4) and
-> >> because of that are pins broken out into separate functions.
-> >> 
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >> 
-> >>  drivers/pinctrl/sh-pfc/pfc-r7s72100.c |  158 +++++++++++++++++++++++++++
-> >>  1 file changed, 158 insertions(+)
-> >> 
-> >> --- 0006/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
-> >> +++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c        2013-12-17
-> > 
-> > 01:09:20.000000000
-> > 
-> >> +0900 @@ -117,12 +117,170 @@ static const unsigned int __RZ_STR(pfx,
-> >> 
-> >>  #define RZ_GROUPS(pfx, hw, bank, pin, fn) \
-> >>       __RZ_GROUPS(pfx##_##hw##_p##bank##_##pin),
-> >> 
-> >> +#define SCIF0(fn)                    \
-> >> +     fn(scif0, clk, 2, 13, 6)        \
-> >> +     fn(scif0, txd, 2, 14, 6)        \
-> >> +     fn(scif0, rxd, 2, 15, 6)        \
-> >> +     fn(scif0, clk, 4, 8, 7)         \
-> >> +     fn(scif0, txd, 4, 9, 7)         \
-> >> +     fn(scif0, rxd, 4, 10, 7)        \
-> >> +     fn(scif0, clk, 6, 8, 5)         \
-> >> +     fn(scif0, txd, 6, 9, 5)         \
-> >> +     fn(scif0, rxd, 6, 10, 5)
-> > 
-> > The SCIF0 SCK, TXD and RXD pins are grouped together with three options to
-> > choose from. Unlike the PFC devices we support so far, the driver allows
-> > picking pins individually. This allows greater flexibility, at the cost of
-> > a more verbose PFC DT node.
-> 
-> You need more detailed PFC data, yes, but I'm not sure if "Unlike the
-> PFC devices we support so far" is a correct statement. =)
-> 
-> > I assume that this is correct, but could you please confirm that the SoC
-> > really allows picking pins individually (for instance using P2.14 as SCIF0
-> > TXD together with P6.10 as SCIF0 RXD) ?
-> 
-> Your example would work just fine, yes. I don't have any hardware to
-> test that though. I suspect the same would be fine on all of our SoCs
-> actually, unless
-> 
-> > I also wonder whether other currently supported SoCs wouldn't happen to
-> > also support picking pins from different groups, even though they name
-> > the groups differently.
-> 
-> It seems to me that in general the hardware has much more flexibility
-> than what the PINCTRL groups actually expose today. In the end it
-> depends on the actual hardware, so its a case by case thing:
-> 
-> A) RZ series: Individual per-pin settings always available
-> 
-> B) R-Mobile series (PORTnCR + MSELnCR): Individual per-pin settings
-> usually available
-> 
-> C) R-Car series (IPSRnn + MOD_SEL): Shared to some degree, but often
-> still allows individual control.
-> 
-> So with the current PINCTRL interface it looks like we have introduced
-> some artificial limitation based on software grouping even though the
-> actual hardware often can handle per-pin settings.
-
-That's probably true for some devices, yes. We've started by limiting the 
-possibilities on R-Car either rightfully (when IPSR would allow individidual 
-control but MODSEL would forbid it) or incorrectly, and have probably carried 
-that on to new SoCs. We should carefully review the pin groups in the future.
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 28e9460..fb9d4f4 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -524,6 +524,14 @@
+ 		};
+ 
+ 		/* Gate clocks */
++		mstp0_clks: mstp0_clks@e6150130 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
++			clocks = <&mp_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R8A7790_CLK_MSIOF0>;
++			clock-output-names = "msiof0";
++		};
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+@@ -544,15 +552,16 @@
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
+-				R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1 R8A7790_CLK_SCIFB2
++				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
++				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
+ 			>;
+ 			clock-output-names -				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
+-				"scifb2";
++				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
++				"scifb1", "msiof1", "msiof3", "scifb2";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 420f0b0..bbabb8e 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -22,6 +22,9 @@
+ #define R8A7790_CLK_SD1			8
+ #define R8A7790_CLK_Z			9
+ 
++/* MSTP0 */
++#define R8A7790_CLK_MSIOF0		0
++
+ /* MSTP1 */
+ #define R8A7790_CLK_TMU1		11
+ #define R8A7790_CLK_TMU3		21
+@@ -37,8 +40,11 @@
+ #define R8A7790_CLK_SCIFA2		2
+ #define R8A7790_CLK_SCIFA1		3
+ #define R8A7790_CLK_SCIFA0		4
++#define R8A7790_CLK_MSIOF2		5
+ #define R8A7790_CLK_SCIFB0		6
+ #define R8A7790_CLK_SCIFB1		7
++#define R8A7790_CLK_MSIOF1		8
++#define R8A7790_CLK_MSIOF3		15
+ #define R8A7790_CLK_SCIFB2		16
+ #define R8A7790_CLK_SYS_DMAC0		18
+ #define R8A7790_CLK_SYS_DMAC1		19
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
