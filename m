@@ -1,171 +1,218 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:50 +0000
-Subject: [PATCH 17/33] ARM: shmobile: Remove legacy KZM9D board code
-Message-Id: <786deb29e7b7c356342f9f3566a6eafae2ce0c81.1386897180.git.horms+renesas@verge.net.au>
+From: Kees Cook <keescook@chromium.org>
+Date: Thu, 19 Dec 2013 19:35:59 +0000
+Subject: [PATCH v5 2/2] provide -fstack-protector-strong build option
+Message-Id: <1387481759-14535-3-git-send-email-keescook@chromium.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <1387481759-14535-1-git-send-email-keescook@chromium.org>
+In-Reply-To: <1387481759-14535-1-git-send-email-keescook@chromium.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This changes the stack protector config option into a choice of "None",
+"Regular", and "Strong". For "Strong", the kernel is built with
+-fstack-protector-strong (gcc 4.9 and later). This options increases
+the coverage of the stack protector without the heavy performance hit
+of -fstack-protector-all.
 
-Remove the C and platform device version of KZM9D.
+For reference, the stack protector options available in gcc are:
 
-The DT version of KZM9D board support can now instead
-directly be used with SoC specific code in setup-emev2.c.
+-fstack-protector-all:
+Adds the stack-canary saving prefix and stack-canary checking suffix to
+_all_ function entry and exit. Results in substantial use of stack space
+for saving the canary for deep stack users (e.g. historically xfs), and
+measurable (though shockingly still low) performance hit due to all the
+saving/checking. Really not suitable for sane systems, and was entirely
+removed as an option from the kernel many years ago.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+-fstack-protector:
+Adds the canary save/check to functions that define an 8
+(--param=ssp-buffer-size=N, N=8 by default) or more byte local char
+array. Traditionally, stack overflows happened with string-based
+manipulations, so this was a way to find those functions. Very few
+total functions actually get the canary; no measurable performance or
+size overhead.
+
+-fstack-protector-strong
+Adds the canary for a wider set of functions, since it's not just those
+with strings that have ultimately been vulnerable to stack-busting. With
+this superset, more functions end up with a canary, but it still
+remains small compared to all functions with no measurable change in
+performance. Based on the original design document, a function gets the
+canary when it contains any of:
+- local variable's address used as part of the RHS of an assignment or
+  function argument
+- local variable is an array (or union containing an array), regardless
+  of array type or length
+- uses register local variables
+https://docs.google.com/a/google.com/document/d/1xXBH6rRZue4f296vGt9YQcuLVQHeE516stHwt8M9xyU
+
+Comparison of "size" and "objdump" output when built with gcc-4.9 in
+three configurations:
+- defconfig
+	11430641 text size
+	36110 function bodies
+- defconfig + CONFIG_CC_STACKPROTECTOR
+	11468490 text size (+0.33%)
+	1015 of 36110 functions stack-protected (2.81%)
+- defconfig + CONFIG_CC_STACKPROTECTOR_STRONG via this patch
+	11692790 text size (+2.24%)
+	7401 of 36110 functions stack-protected (20.5%)
+
+With -strong, ARM's compressed boot code now triggers stack protection,
+so a static guard was added. Since this is only used during decompression
+and was never used before, the exposure here is very small. Once it
+switches to the full kernel, the stack guard is back to normal.
+
+Chrome OS has been using -fstack-protector-strong for its kernel builds
+for the last 8 months with no problems.
+
+Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- arch/arm/mach-shmobile/Kconfig       |  6 ---
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- arch/arm/mach-shmobile/board-kzm9d.c | 92 ------------------------------------
- 4 files changed, 100 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-kzm9d.c
+v5:
+ - add function counts to help text
+ - switch from Makefile error to warning to not kill silentoldconfig
+v4:
+ - add objdump analysis to comparison
+v3:
+ - split off type of stack protection as a distinct config
+v2:
+ - added description of all stack protector options
+ - added size comparisons for Ubuntu and defconfig
+---
+ Makefile                        |    8 ++++++-
+ arch/Kconfig                    |   50 ++++++++++++++++++++++++++++++++++++---
+ arch/arm/boot/compressed/misc.c |   14 +++++++++++
+ 3 files changed, 68 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c604ef1..564e0ad 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -234,12 +234,6 @@ config MACH_KOELSCH
- 	depends on ARCH_R8A7791
- 	select USE_OF
- 
--config MACH_KZM9D
--	bool "KZM9D board"
--	depends on ARCH_EMEV2
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 51db2bc..c7e8774 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -71,7 +71,6 @@ obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
--obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+diff --git a/Makefile b/Makefile
+index 84fb5cd092d2..5271b9623aa3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -596,12 +596,18 @@ KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
  endif
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 391d72a..4f30e3d 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -8,7 +8,6 @@ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
--loadaddr-$(CONFIG_MACH_KZM9D) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
-deleted file mode 100644
-index 30c2cc6..0000000
---- a/arch/arm/mach-shmobile/board-kzm9d.c
-+++ /dev/null
-@@ -1,92 +0,0 @@
--/*
-- * kzm9d board support
-- *
-- * Copyright (C) 2012  Renesas Solutions Corp.
-- * Copyright (C) 2012  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#include <linux/kernel.h>
--#include <linux/interrupt.h>
--#include <linux/platform_device.h>
--#include <linux/regulator/fixed.h>
--#include <linux/regulator/machine.h>
--#include <linux/smsc911x.h>
--#include <mach/common.h>
--#include <mach/emev2.h>
--#include <asm/mach-types.h>
--#include <asm/mach/arch.h>
--
--/* Dummy supplies, where voltage doesn't matter */
--static struct regulator_consumer_supply dummy_supplies[] = {
--	REGULATOR_SUPPLY("vddvario", "smsc911x"),
--	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
--};
--
--/* Ether */
--static struct resource smsc911x_resources[] = {
--	[0] = {
--		.start	= 0x20000000,
--		.end	= 0x2000ffff,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= EMEV2_GPIO_IRQ(1),
--		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
--	},
--};
--
--static struct smsc911x_platform_config smsc911x_platdata = {
--	.flags		= SMSC911X_USE_32BIT,
--	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
--	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
--};
--
--static struct platform_device smsc91x_device = {
--	.name	= "smsc911x",
--	.id	= -1,
--	.dev	= {
--		  .platform_data = &smsc911x_platdata,
--		},
--	.num_resources	= ARRAY_SIZE(smsc911x_resources),
--	.resource	= smsc911x_resources,
--};
--
--static struct platform_device *kzm9d_devices[] __initdata = {
--	&smsc91x_device,
--};
--
--void __init kzm9d_add_standard_devices(void)
--{
--	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
--
--	emev2_add_standard_devices();
--
--	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
--}
--
--static const char *kzm9d_boards_compat_dt[] __initdata = {
--	"renesas,kzm9d",
--	NULL,
--};
--
--DT_MACHINE_START(KZM9D_DT, "kzm9d")
--	.smp		= smp_ops(emev2_smp_ops),
--	.map_io		= emev2_map_io,
--	.init_early	= emev2_init_delay,
--	.init_machine	= kzm9d_add_standard_devices,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= kzm9d_boards_compat_dt,
--MACHINE_END
+ 
+ # Handle stack protector mode.
+-ifdef CONFIG_CC_STACKPROTECTOR
++ifdef CONFIG_CC_STACKPROTECTOR_REGULAR
+   stackp-flag := -fstack-protector
+   ifeq ($(call cc-option, $(stackp-flag)),)
+     $(warning Cannot use CONFIG_CC_STACKPROTECTOR: \
+ 	      -fstack-protector not supported by compiler))
+   endif
++else ifdef CONFIG_CC_STACKPROTECTOR_STRONG
++  stackp-flag := -fstack-protector-strong
++  ifeq ($(call cc-option, $(stackp-flag)),)
++    $(warning Cannot use CONFIG_CC_STACKPROTECTOR_STRONG: \
++	      -fstack-protector-strong not supported by compiler)
++  endif
+ else
+   # Force off for distro compilers that enable stack protector by default.
+   stackp-flag := $(call cc-option, -fno-stack-protector)
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 24e026d83072..d6411a3af71e 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -344,10 +344,17 @@ config HAVE_CC_STACKPROTECTOR
+ 	  - it has implemented a stack canary (e.g. __stack_chk_guard)
+ 
+ config CC_STACKPROTECTOR
+-	bool "Enable -fstack-protector buffer overflow detection"
++	def_bool n
++	help
++	  Set when a stack-protector mode is enabled, so that the build
++	  can enable kernel-side support for the GCC feature.
++
++choice
++	prompt "Stack Protector buffer overflow detection"
+ 	depends on HAVE_CC_STACKPROTECTOR
++	default CC_STACKPROTECTOR_NONE
+ 	help
+-	  This option turns on the -fstack-protector GCC feature. This
++	  This option turns on the "stack-protector" GCC feature. This
+ 	  feature puts, at the beginning of functions, a canary value on
+ 	  the stack just before the return address, and validates
+ 	  the value just before actually returning.  Stack based buffer
+@@ -355,8 +362,45 @@ config CC_STACKPROTECTOR
+ 	  overwrite the canary, which gets detected and the attack is then
+ 	  neutralized via a kernel panic.
+ 
++config CC_STACKPROTECTOR_NONE
++	bool "None"
++	help
++	  Disable "stack-protector" GCC feature.
++
++config CC_STACKPROTECTOR_REGULAR
++	bool "Regular"
++	select CC_STACKPROTECTOR
++	help
++	  Functions will have the stack-protector canary logic added if they
++	  have an 8-byte or larger character array on the stack.
++
+ 	  This feature requires gcc version 4.2 or above, or a distribution
+-	  gcc with the feature backported.
++	  gcc with the feature backported ("-fstack-protector").
++
++	  On an x86 "defconfig" build, this feature adds canary checks to
++	  about 3% of all kernel functions, which increases kernel code size
++	  by about 0.3%.
++
++config CC_STACKPROTECTOR_STRONG
++	bool "Strong"
++	select CC_STACKPROTECTOR
++	help
++	  Functions will have the stack-protector canary logic added in any
++	  of the following conditions:
++	  - local variable's address used as part of the RHS of an
++	    assignment or function argument
++	  - local variable is an array (or union containing an array),
++	    regardless of array type or length
++	  - uses register local variables
++
++	  This feature requires gcc version 4.9 or above, or a distribution
++	  gcc with the feature backported ("-fstack-protector-strong").
++
++	  On an x86 "defconfig" build, this feature adds canary checks to
++	  about 20% of all kernel functions, which increases the kernel code
++	  size by about 2%.
++
++endchoice
+ 
+ config HAVE_CONTEXT_TRACKING
+ 	bool
+diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
+index 31bd43b82095..d4f891f56996 100644
+--- a/arch/arm/boot/compressed/misc.c
++++ b/arch/arm/boot/compressed/misc.c
+@@ -127,6 +127,18 @@ asmlinkage void __div0(void)
+ 	error("Attempting division by 0!");
+ }
+ 
++unsigned long __stack_chk_guard;
++
++void __stack_chk_guard_setup(void)
++{
++	__stack_chk_guard = 0x000a0dff;
++}
++
++void __stack_chk_fail(void)
++{
++	error("stack-protector: Kernel stack is corrupted\n");
++}
++
+ extern int do_decompress(u8 *input, int len, u8 *output, void (*error)(char *x));
+ 
+ 
+@@ -137,6 +149,8 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
+ {
+ 	int ret;
+ 
++	__stack_chk_guard_setup();
++
+ 	output_data		= (unsigned char *)output_start;
+ 	free_mem_ptr		= free_mem_ptr_p;
+ 	free_mem_end_ptr	= free_mem_ptr_end_p;
 -- 
-1.8.4
+1.7.9.5
 
