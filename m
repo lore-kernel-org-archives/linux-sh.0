@@ -1,93 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 18 Dec 2013 01:16:32 +0000
-Subject: Re: [PATCH 2/2] iommu/shmobile: Turn the flush_lock mutex into a spinlock
-Message-Id: <20131218011632.GJ18992@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 19 Dec 2013 15:28:42 +0000
+Subject: [PATCH v6 15.1/17] ARM: shmobile: Add GPIO keys to Koelsch DTS
+Message-Id: <1387466923-8800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1387300730-28783-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1387300730-28783-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, Nguyen Viet Dung <nv-dung@jinso.co.jp>
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 17, 2013 at 06:18:50PM +0100, Laurent Pinchart wrote:
-> The lock is taken in atomic context, replace it with a spinlock.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The Koelsh reference device tree is going away, copy the missing GPIO
+keys device node to the Koeslch device tree file.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 54 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
 
-> ---
->  drivers/iommu/shmobile-ipmmu.c | 10 +++++-----
->  drivers/iommu/shmobile-ipmmu.h |  2 +-
->  2 files changed, 6 insertions(+), 6 deletions(-)
-> 
-> diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
-> index 8321f89..e3bc2e1 100644
-> --- a/drivers/iommu/shmobile-ipmmu.c
-> +++ b/drivers/iommu/shmobile-ipmmu.c
-> @@ -35,12 +35,12 @@ void ipmmu_tlb_flush(struct shmobile_ipmmu *ipmmu)
->  	if (!ipmmu)
->  		return;
->  
-> -	mutex_lock(&ipmmu->flush_lock);
-> +	spin_lock(&ipmmu->flush_lock);
->  	if (ipmmu->tlb_enabled)
->  		ipmmu_reg_write(ipmmu, IMCTR1, IMCTR1_FLUSH | IMCTR1_TLBEN);
->  	else
->  		ipmmu_reg_write(ipmmu, IMCTR1, IMCTR1_FLUSH);
-> -	mutex_unlock(&ipmmu->flush_lock);
-> +	spin_unlock(&ipmmu->flush_lock);
->  }
->  
->  void ipmmu_tlb_set(struct shmobile_ipmmu *ipmmu, unsigned long phys, int size,
-> @@ -49,7 +49,7 @@ void ipmmu_tlb_set(struct shmobile_ipmmu *ipmmu, unsigned long phys, int size,
->  	if (!ipmmu)
->  		return;
->  
-> -	mutex_lock(&ipmmu->flush_lock);
-> +	spin_lock(&ipmmu->flush_lock);
->  	switch (size) {
->  	default:
->  		ipmmu->tlb_enabled = 0;
-> @@ -85,7 +85,7 @@ void ipmmu_tlb_set(struct shmobile_ipmmu *ipmmu, unsigned long phys, int size,
->  	}
->  	ipmmu_reg_write(ipmmu, IMTTBR, phys);
->  	ipmmu_reg_write(ipmmu, IMASID, asid);
-> -	mutex_unlock(&ipmmu->flush_lock);
-> +	spin_unlock(&ipmmu->flush_lock);
->  }
->  
->  static int ipmmu_probe(struct platform_device *pdev)
-> @@ -104,7 +104,7 @@ static int ipmmu_probe(struct platform_device *pdev)
->  		dev_err(&pdev->dev, "cannot allocate device data\n");
->  		return -ENOMEM;
->  	}
-> -	mutex_init(&ipmmu->flush_lock);
-> +	spin_lock_init(&ipmmu->flush_lock);
->  	ipmmu->dev = &pdev->dev;
->  	ipmmu->ipmmu_base = devm_ioremap_nocache(&pdev->dev, res->start,
->  						resource_size(res));
-> diff --git a/drivers/iommu/shmobile-ipmmu.h b/drivers/iommu/shmobile-ipmmu.h
-> index 4d53684..9524743 100644
-> --- a/drivers/iommu/shmobile-ipmmu.h
-> +++ b/drivers/iommu/shmobile-ipmmu.h
-> @@ -14,7 +14,7 @@ struct shmobile_ipmmu {
->  	struct device *dev;
->  	void __iomem *ipmmu_base;
->  	int tlb_enabled;
-> -	struct mutex flush_lock;
-> +	spinlock_t flush_lock;
->  	const char * const *dev_names;
->  	unsigned int num_dev_names;
->  };
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Hi Simon,
+
+This patch contains the differences between v4 (which you have queued up) and
+v5 of "ARM: shmobile: Sync Koelsch DTS with Koelsch reference DTS". Feel free
+to apply it on top of your dt branch, or alternatively rebase the branch to
+replace v4 with v5.
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index fd556c3..c6f5de3 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -31,6 +31,60 @@
+ 		#size-cells = <1>;
+ 	};
+ 
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		key-a {
++			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
++			linux,code = <30>;
++			label = "SW30";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-b {
++			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
++			linux,code = <48>;
++			label = "SW31";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-c {
++			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
++			linux,code = <46>;
++			label = "SW32";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-d {
++			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
++			linux,code = <32>;
++			label = "SW33";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-e {
++			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
++			linux,code = <18>;
++			label = "SW34";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-f {
++			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
++			linux,code = <33>;
++			label = "SW35";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-g {
++			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
++			linux,code = <34>;
++			label = "SW36";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led6 {
+-- 
+1.8.3.2
+
