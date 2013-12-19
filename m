@@ -1,79 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 18 Dec 2013 08:42:22 +0000
-Subject: Re: [PATCH 5/5] i2c: riic: add driver
-Message-Id: <CAMuHMdV0X6ZUN4YOnCHOGGFTtMWJ5s1D1fOene04KzbMg+nWFQ@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Dec 2013 22:20:47 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Lager: conditionally select CONFIG_MICREL_PHY
+Message-Id: <201312200220.54747.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
- <1387316678-10174-6-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387316678-10174-6-git-send-email-wsa@the-dreams.de>
+References: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CC devicetree@vger.kernel.org for the bindings part.
+Now that support for KSZ8041RNLI is added to the Micrel PHY driver and we intend
+to support PHY IRQs on the Lager board, we have to enable the Micrel driver.
+Do this by selecting CONFIG_MICREL_PHY for Lager if CONFIG_SH_ETH is enabled.
 
-On Tue, Dec 17, 2013 at 10:44 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
->
-> Tested with a r7s72100 genmai board acessing an eeprom.
->
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> ---
->  Documentation/devicetree/bindings/i2c/i2c-riic.txt |  29 ++
->  drivers/i2c/busses/Kconfig                         |  10 +
->  drivers/i2c/busses/Makefile                        |   1 +
->  drivers/i2c/busses/i2c-riic.c                      | 426 +++++++++++++++++++++
->  4 files changed, 466 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-riic.txt
->  create mode 100644 drivers/i2c/busses/i2c-riic.c
->
-> diff --git a/Documentation/devicetree/bindings/i2c/i2c-riic.txt b/Documentation/devicetree/bindings/i2c/i2c-riic.txt
-> new file mode 100644
-> index 0000000..900d129
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/i2c/i2c-riic.txt
-> @@ -0,0 +1,29 @@
-> +Device tree configuration for i2c-ocores
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-(e.g.) ... for Renesas RIIC SPI
+---
+ arch/arm/mach-shmobile/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
-> +
-> +Required properties:
-> +- compatible      : "renesas,riic-<soctype>". "renesas,riic-rz" as fallback
-> +- reg             : address start and address range size of device
-> +- interrupts      : 8 interrupts (TEI, RI, TI, SPI, STI, NAKI, ALI, TMOI)
-> +- clock-frequency : frequency of bus clock in Hz
-> +- #address-cells  : should be <1>
-> +- #size-cells     : should be <0>
-> +
-> +Pinctrl properties might be needed, too. See there.
-> +
-> +Example:
-> +
-> +       i2c0: i2c@fcfee000 {
-> +               compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-> +               reg = <0xfcfee000 0x44>;
-> +               interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 158 IRQ_TYPE_EDGE_RISING>,
-> +                            <0 159 IRQ_TYPE_EDGE_RISING>,
-> +                            <0 160 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 161 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 162 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 163 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 164 IRQ_TYPE_LEVEL_HIGH>;
-> +               clock-frequency = <100000>;
-> +               #address-cells = <1>;
-> +               #size-cells = <0>;
-> +       };
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Index: renesas/arch/arm/mach-shmobile/Kconfig
+=================================--- renesas.orig/arch/arm/mach-shmobile/Kconfig
++++ renesas/arch/arm/mach-shmobile/Kconfig
+@@ -54,6 +54,7 @@ config MACH_KZM9D
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
++	select MICREL_PHY if SH_ETH
+ 
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+@@ -261,6 +262,7 @@ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+ 	select USE_OF
++	select MICREL_PHY if SH_ETH
+ 
+ config MACH_KOELSCH
+ 	bool "Koelsch board"
