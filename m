@@ -1,107 +1,55 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:05:15 +0000
-Subject: [PATCH v4 4/5] ARM: shmobile: r8a7790: Reference clocks
-Message-Id: <1386770716-21610-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 19 Dec 2013 15:51:03 +0000
+Subject: [PATCH 3/6] ARM: shmobile: r8a7790: Add QSPI module clock in device tree
+Message-Id: <1387468266-13625-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi            | 11 +++++++----
+ include/dt-bindings/clock/r8a7790-clock.h |  1 +
+ 2 files changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d14c855..8ed48de 100644
+index fb9d4f4..f48487c 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -197,6 +197,7 @@
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
- 		status = "disabled";
+@@ -615,13 +615,16 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
++				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_I2C3
+-				R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
++				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
++				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
++				R8A7790_CLK_I2C0
+ 			>;
+-			clock-output-names = "rcan1", "rcan0", "i2c3", "i2c2", "i2c1", "i2c0";
++			clock-output-names +				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
  	};
- 
-@@ -207,6 +208,7 @@
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
- 		status = "disabled";
- 	};
- 
-@@ -217,6 +219,7 @@
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
- 		status = "disabled";
- 	};
- 
-@@ -227,6 +230,7 @@
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
- 		status = "disabled";
- 	};
- 
-@@ -235,6 +239,7 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -244,6 +249,7 @@
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -258,6 +264,7 @@
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -267,6 +274,7 @@
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -276,6 +284,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -285,6 +294,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index bbabb8e..859e9be 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -97,6 +97,7 @@
+ #define R8A7790_CLK_GPIO0		12
+ #define R8A7790_CLK_RCAN1		15
+ #define R8A7790_CLK_RCAN0		16
++#define R8A7790_CLK_QSPI_MOD		17
+ #define R8A7790_CLK_IICDVFS		26
+ #define R8A7790_CLK_I2C3		28
+ #define R8A7790_CLK_I2C2		29
 -- 
 1.8.3.2
 
