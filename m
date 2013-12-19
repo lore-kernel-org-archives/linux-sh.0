@@ -1,42 +1,34 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Sun, 01 Dec 2013 18:19:18 +0000
-Subject: [PATCH 07/11] spi: spi-sh-msiof: RSCR register may absent
-Message-Id: <1385921962-19843-7-git-send-email-takasi-y@ops.dti.ne.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 19 Dec 2013 15:51:00 +0000
+Subject: [PATCH 0/6] ARM: shmobile: r8a779x: Add more clocks to DT
+Message-Id: <1387468266-13625-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
- <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-1-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Hello,
 
-On Ape6, Rcar-H2, and Rcar-M2,
-MSIOF lacks RSCR(Receive Clock Select Register).
-I guess this is a part of .rx_need_dummy_tx case, and use same flag.
+This patch set adds the MSIOF, QSPI and SSI clocks to DT for the r8a7790 and
+r8a7791 SoCs.
 
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
----
- drivers/spi/spi-sh-msiof.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Laurent Pinchart (6):
+  ARM: shmobile: r8a7790: Add MSIOF clocks in device tree
+  ARM: shmobile: r8a7791: Add MSIOF clocks in device tree
+  ARM: shmobile: r8a7790: Add QSPI module clock in device tree
+  ARM: shmobile: r8a7791: Add QSPI module clock in device tree
+  ARM: shmobile: r8a7790: Add SSI clocks in device tree
+  ARM: shmobile: r8a7791: Add SSI clocks in device tree
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index b0334b6..bbd989f 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -164,7 +164,8 @@ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
- 	k = min_t(int, k, ARRAY_SIZE(sh_msiof_spi_clk_table) - 1);
- 
- 	sh_msiof_write(p, TSCR, sh_msiof_spi_clk_table[k].scr);
--	sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
-+	if (!p->info->rx_need_dummy_tx)
-+		sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
- }
- 
- static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
+ arch/arm/boot/dts/r8a7790.dtsi            | 48 +++++++++++++++++++++++-----
+ arch/arm/boot/dts/r8a7791.dtsi            | 52 ++++++++++++++++++++++++-------
+ include/dt-bindings/clock/r8a7790-clock.h | 20 ++++++++++++
+ include/dt-bindings/clock/r8a7791-clock.h | 19 +++++++++++
+ 4 files changed, 120 insertions(+), 19 deletions(-)
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
