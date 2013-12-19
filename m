@@ -1,51 +1,25 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 20 Dec 2013 14:13:23 +0000
-Subject: [PATCH 2/3] arm: shmobile: r8a7790: Add PCI USB host clock support
-Message-Id: <1387548804-20829-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Dec 2013 22:18:01 +0000
+Subject: [PATCH 0/2] Add Ether's PHY IRQ support for R8A7790/Lager board
+Message-Id: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host clock support.
+Hello.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-v3.13-rc4-20131219' tag. Here we add support for the Ether's PHY
+IRQ to the R8A7790/Lager board. The patchset depends on the two 'sh_eth' driver
+patches posted earlier in order to compile and work. It would be good if Dave Miller
+could merge these patches thru his tree, along with 'sh_eth' patches as this
+would have prevented delaying these patches to 3.15 which seems inevitable
+otherwise (well, unless Simon merges net-next to his tree?). I'll rebase the
+patches to the 'net-next.git' repo if Dave consents to merging them...
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index c5c60ec..3e27200 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -190,7 +190,7 @@ enum {
- 	MSTP813,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
-@@ -226,6 +226,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
- 	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
- 	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 3, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
- 	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
- 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
-@@ -317,6 +318,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
- 
- 	/* ICK */
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
--- 
-1.8.3.1
+[1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
+[2/2] ARM: shmobile: Lager: conditionally select CONFIG_MICREL_PHY
 
+WBR, Sergei
