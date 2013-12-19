@@ -1,54 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:17 +0000
-Subject: [PATCH 11/12] ARM: shmobile: Let Koelsch multiplatform boot with Koelsch DTB
-Message-Id: <1d2bdbc3a8f93b8c1dfc95b2df89c266dd6ce9d0.1387891831.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 19 Dec 2013 17:57:23 +0000
+Subject: [PATCH 2/2] arm: shmobile: lager: Add SATA support
+Message-Id: <1387475843-25849-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds SATA support to Lager board. Only SATA1 port is available.
 
-Let the multiplatform Koelsch support boot with the legacy DTS for
-Koelsch as well as the Koelsch reference DTS.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/boot/dts/Makefile                       | 4 ++--
- arch/arm/mach-shmobile/board-koelsch-reference.c | 1 +
- 2 files changed, 3 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index f28b4ef..ee0f2bd 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -234,8 +234,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
--	r8a7790-lager.dtb \
--	r8a7791-koelsch-reference.dtb
-+	r8a7791-koelsch.dtb \
-+	r8a7790-lager.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
- 	socfpga_cyclone5_sockit.dtb \
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index e1c787e..652b592 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -64,6 +64,7 @@ static void __init koelsch_add_standard_devices(void)
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f20c10a..9756038 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -291,6 +291,21 @@ static const struct resource qspi_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(184)),
+ };
+ 
++/* SATA1 */
++static const struct resource sata1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xee500000, 0x2000),
++	DEFINE_RES_IRQ(gic_spi(106)),
++};
++
++static const struct platform_device_info sata1_info __initconst = {
++	.parent		= &platform_bus,
++	.name		= "sata-r8a7790",
++	.id		= 1,
++	.res		= sata1_resources,
++	.num_res	= ARRAY_SIZE(sata1_resources),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -368,6 +383,8 @@ static void __init lager_add_standard_devices(void)
+ 				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
+ 	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
+ 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
++
++	platform_device_register_full(&sata1_info);
  }
  
- static const char * const koelsch_boards_compat_dt[] __initconst = {
-+	"renesas,koelsch",
- 	"renesas,koelsch-reference",
- 	NULL,
- };
+ /*
 -- 
-1.8.4
+1.8.3.1
 
