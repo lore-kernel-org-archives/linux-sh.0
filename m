@@ -1,63 +1,77 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:58 +0000
-Subject: [PATCH 18/29] ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as resources
-Message-Id: <23399a6ff8e2070e7695fa6c1283212d1d69b372.1387888861.git.horms+renesas@verge.net.au>
+From: Levente Kurusa <levex@linux.com>
+Date: Thu, 19 Dec 2013 15:03:40 +0000
+Subject: [PATCH 29/38] superhyway: maple: add missing put_device call
+Message-Id: <1387465429-3568-30-git-send-email-levex@linux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <1387465429-3568-2-git-send-email-levex@linux.com>
+In-Reply-To: <1387465429-3568-2-git-send-email-levex@linux.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Levente Kurusa <levex@linux.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is required so that we give up the last reference to the device.
+Also rework maple_release_device to use maple_free_dev instead, avoiding
+same code being in two functions at the same time.
 
-Passing the register base address and IRQ through platform data is
-deprecated. Use resources instead.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Levente Kurusa <levex@linux.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ drivers/sh/maple/maple.c | 23 +++++++++--------------
+ 1 file changed, 9 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 210c663..3e583cd 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -46,12 +46,15 @@
- /* SCIF */
- #define R8A7778_SCIF(index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {	\
--	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
- 	.type		= PORT_SCIF,				\
--	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+};								\
-+								\
-+static struct resource scif##index##_resources[] = {		\
-+	DEFINE_RES_MEM(baseaddr, 0x100),			\
-+	DEFINE_RES_IRQ(irq),					\
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index bec81c2..c4afb7e 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -134,16 +134,18 @@ static int maple_dma_done(void)
+ 	return (__raw_readl(MAPLE_STATE) & 1) = 0;
  }
  
- R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
-@@ -62,9 +65,11 @@ R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
- R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
++static void maple_free_dev(struct maple_device *mdev)
++{
++	kmem_cache_free(maple_queue_cache, mdev->mq->recvbuf);
++	kfree(mdev->mq);
++	kfree(mdev);
++}
++
+ static void maple_release_device(struct device *dev)
+ {
+ 	struct maple_device *mdev;
+-	struct mapleq *mq;
+-
+ 	mdev = to_maple_dev(dev);
+-	mq = mdev->mq;
+-	kmem_cache_free(maple_queue_cache, mq->recvbuf);
+-	kfree(mq);
+-	kfree(mdev);
++	maple_free_dev(mdev);
+ }
  
- #define r8a7778_register_scif(index)					       \
--	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
--				      &scif##index##_platform_data,	       \
--				      sizeof(scif##index##_platform_data))
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
+ /**
+@@ -234,13 +236,6 @@ static struct maple_device *maple_alloc_dev(int port, int unit)
+ 	return mdev;
+ }
  
- /* TMU */
- static struct resource sh_tmu0_resources[] __initdata = {
+-static void maple_free_dev(struct maple_device *mdev)
+-{
+-	kmem_cache_free(maple_queue_cache, mdev->mq->recvbuf);
+-	kfree(mdev->mq);
+-	kfree(mdev);
+-}
+-
+ /* process the command queue into a maple command block
+  * terminating command has bit 32 of first long set to 0
+  */
+@@ -393,7 +388,7 @@ static void maple_attach_driver(struct maple_device *mdev)
+ 		dev_warn(&mdev->dev, "could not register device at"
+ 			" (%d, %d), with error 0x%X\n", mdev->unit,
+ 			mdev->port, error);
+-		maple_free_dev(mdev);
++		put_device(&mdev->dev);
+ 		mdev = NULL;
+ 		return;
+ 	}
 -- 
-1.8.4
+1.8.3.1
 
