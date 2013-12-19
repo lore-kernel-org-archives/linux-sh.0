@@ -1,28 +1,49 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 20 Dec 2013 00:11:18 +0000
-Subject: Re: [PATCH 0/2] Add PHY IRQ support to the 'sh_eth' driver
-Message-Id: <20131219.191118.2238735452700839030.davem@davemloft.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Dec 2013 22:19:24 +0000
+Subject: [PATCH 1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
+Message-Id: <201312200219.31121.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312200138.09307.sergei.shtylyov@cogentembedded.com>
-	<52B37684.5030206@cogentembedded.com>
-In-Reply-To: <52B37684.5030206@cogentembedded.com>
+References: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 20 Dec 2013 01:43:16 +0300
+Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+trigger type to be low-level as per the Micrel PHY driver's setup.
 
-> On 12/20/2013 01:38 AM, Sergei Shtylyov wrote:
-> 
->>     This patchset adds support for passing PHY's IRQ to the 'sh_eth'
->>     driver from
->> the platform code and removes now useless code that hinders the PHY
->> IRQ handing
->> by philib.
-> 
->    Ugh, forgot to mention it's against DaveM's 'net-next.git' repo.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-No need, series applied, thanks.
+---
+ arch/arm/mach-shmobile/board-lager.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-lager.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-lager.c
++++ renesas/arch/arm/mach-shmobile/board-lager.c
+@@ -22,6 +22,7 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/mmc/host.h>
+@@ -228,6 +229,7 @@ static const struct resource mmcif1_reso
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+ 	.phy			= 0x1,
++	.phy_irq		= irq_pin(0),
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+@@ -391,6 +393,8 @@ static void __init lager_init(void)
+ {
+ 	lager_add_standard_devices();
+ 
++	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++
+ 	if (IS_ENABLED(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
+ 					  lager_ksz8041_fixup);
