@@ -1,31 +1,49 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 26 Dec 2013 15:35:55 +0000
-Subject: [PATCH V2 0/2] arm: shmobile: lager: Add VIN1 support
-Message-Id: <1388072157-12325-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Dec 2013 22:27:54 +0000
+Subject: [PATCH 1/1] ARM: shmobile: Koelsch: pass Ether PHY IRQ
+Message-Id: <201312200228.00555.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1372645120-27256-1-git-send-email-horms+renesas@verge.net.au>
+References: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds VIN clocks to R8A7790 SoC and VIN1 camera support to Lager.
-VIN1 uses I2C ADV7180 decoder device that is also added.
-The board also has VIN0 wired up to the I2C ADV7612 decoder, but it's
-not enabled yet due to the lack of ADV7612 support in the kernel.
+Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+trigger type to be low-level as per the Micrel PHY driver's setup.
 
-Changes in V2:
-* made lager_add_vin_device function static.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Valentine Barshak (2):
-  arm: shmobile: r8a7790: Add VIN clock support
-  arm: shmobile: lager: Add VIN1 SoC camera support
+---
+ arch/arm/mach-shmobile/board-koelsch.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
- arch/arm/mach-shmobile/board-lager.c   | 76 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c |  9 ++++
- 2 files changed, 85 insertions(+)
-
--- 
-1.8.3.1
-
+Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
++++ renesas/arch/arm/mach-shmobile/board-koelsch.c
+@@ -23,6 +23,7 @@
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
++#include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/phy.h>
+@@ -92,6 +93,7 @@ static void __init koelsch_add_du_device
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+ 	.phy			= 0x1,
++	.phy_irq		= irq_pin(0),
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+@@ -215,6 +217,8 @@ static void __init koelsch_init(void)
+ {
+ 	koelsch_add_standard_devices();
+ 
++	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++
+ 	if (IS_ENABLED(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7791-ether-ff:01",
+ 					  koelsch_ksz8041_fixup);
