@@ -1,38 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:16:05 +0000
-Subject: [PATCH 25/29] ARM: shmobile: r8a7740: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <52613951a600207df9d75185b677d91bbde44a9e.1387888861.git.horms+renesas@verge.net.au>
+From: Levente Kurusa <levex@linux.com>
+Date: Thu, 19 Dec 2013 15:03:12 +0000
+Subject: [PATCH 01/38] sh: dma-sysfs: add missing put_device call
+Message-Id: <1387465429-3568-2-git-send-email-levex@linux.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Levente Kurusa <levex@linux.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is required so that we give up the last reference to the device.
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Levente Kurusa <levex@linux.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/sh/drivers/dma/dma-sysfs.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 81a4366..8f3c681 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -208,7 +208,6 @@ static struct platform_device irqpin3_device = {
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= scif_type,				\
- 	.flags		= UPF_BOOT_AUTOCONF,			\
--	.scbrr_algo_id	= SCBRR_ALGO_4,				\
- 	.scscr		= SCSCR_RE | SCSCR_TE,			\
- };								\
- 								\
+diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
+index 4b15fed..76271e6 100644
+--- a/arch/sh/drivers/dma/dma-sysfs.c
++++ b/arch/sh/drivers/dma/dma-sysfs.c
+@@ -131,8 +131,10 @@ int dma_create_sysfs_files(struct dma_channel *chan, struct dma_info *info)
+ 	dev->bus = &dma_subsys;
+ 
+ 	ret = device_register(dev);
+-	if (ret)
++	if (ret) {
++		put_device(dev);
+ 		return ret;
++	}
+ 
+ 	ret |= device_create_file(dev, &dev_attr_dev_id);
+ 	ret |= device_create_file(dev, &dev_attr_count);
 -- 
-1.8.4
+1.8.3.1
 
