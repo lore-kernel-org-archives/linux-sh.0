@@ -1,69 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:42 +0000
-Subject: [PATCH 68/69] ARM: shmobile: r8a7779: add HSPI support to DTSI
-Message-Id: <3c3f6ad350bbeccaba5ab54a267900dcc76b9dd2.1386901186.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 20 Dec 2013 14:14:23 +0000
+Subject: [PATCH 0/5] arm: r8a7791: koelsch: Add USB support
+Message-Id: <1387548868-20943-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-Based on work for the r8a7778 SoC by Kuninori Morimoto.
+This adds USBHS device and PCI USB host support to Koelsch board.
+The patches depend on the following commits:
+USBHS and PCI USB host:
+* https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?i=
+d=C8ba8115a21226fba3211085f570b128fa271e31
+* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
+d2985ef720cbbdc63546a5c545ac4450d96e
+PCI USB host:
+* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
+sb-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
+* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
+sb-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
+* https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3D=
+pci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
 
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+Valentine Barshak (5):
+  pinctl: sh-pfc: r8a7791: Group USB PWEN and OVC pins together
+  arm: shmobile: r8a7791: Add USBHS clock support
+  arm: shmobile: koelsch: Add USBHS support
+  arm: shmobile: r8a7791: Add PCI USB host clock support
+  arm: shmobile: koelsch: Add internal PCI support
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 8284715..d0561d4 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -42,6 +42,12 @@
- 		};
- 	};
- 
-+	aliases {
-+		spi0 = &hspi0;
-+		spi1 = &hspi1;
-+		spi2 = &hspi2;
-+	};
-+
-         gic: interrupt-controller@f0001000 {
-                 compatible = "arm,cortex-a9-gic";
-                 #interrupt-cells = <3>;
-@@ -248,4 +254,28 @@
- 		cap-sdio-irq;
- 		status = "disabled";
- 	};
-+
-+	hspi0: spi@fffc7000 {
-+		compatible = "renesas,hspi";
-+		reg = <0xfffc7000 0x18>;
-+		interrupt-controller = <&gic>;
-+		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	hspi1: spi@fffc8000 {
-+		compatible = "renesas,hspi";
-+		reg = <0xfffc8000 0x18>;
-+		interrupt-controller = <&gic>;
-+		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	hspi2: spi@fffc6000 {
-+		compatible = "renesas,hspi";
-+		reg = <0xfffc6000 0x18>;
-+		interrupt-controller = <&gic>;
-+		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
- };
--- 
-1.8.4
+ arch/arm/mach-shmobile/board-koelsch.c | 164 +++++++++++++++++++++++++++++=
+++++
+ arch/arm/mach-shmobile/clock-r8a7791.c |   7 ++
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c   |  40 +++-----
+ 3 files changed, 183 insertions(+), 28 deletions(-)
+
+--=20
+1.8.3.1
 
