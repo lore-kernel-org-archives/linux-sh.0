@@ -1,128 +1,171 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 16 Dec 2013 04:49:47 +0000
-Subject: [PATCH 2/6][RFC] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7778
-Message-Id: <877gb51jtk.wl%kuninori.morimoto.gx@gmail.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 20 Dec 2013 14:14:26 +0000
+Subject: [PATCH 3/5] arm: shmobile: koelsch: Add USBHS support
+Message-Id: <1387548868-20943-4-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This adds USBHS PHY and registers USBHS device if the driver is enabled.
 
-This patch updates r8a7778 DT data to have SoC specific settings.
-Latest Renesas Chip has some SDHI channels and the WP pin
-availability depends on its channel or HW implementation.
-Thus, this patch disables it as default,
-but we can use wp-gpios property to enable it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
- arch/arm/boot/dts/r8a7778.dtsi                |    6 ------
- drivers/mmc/host/sh_mobile_sdhi.c             |    9 ++++++++-
- 3 files changed, 11 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 117 +++++++++++++++++++++++++++++++++
+ 1 file changed, 117 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index bb62c7a..06cda19 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -17,6 +17,7 @@
- /dts-v1/;
- #include "r8a7778.dtsi"
- #include <dt-bindings/interrupt-controller/irq.h>
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "bockw";
-@@ -84,7 +85,7 @@
- 
- 	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
--				  "sdhi0_cd", "sdhi0_wp";
-+				  "sdhi0_cd";
- 		renesas,function = "sdhi0";
- 	};
- 
-@@ -101,6 +102,7 @@
- 	vmmc-supply = <&fixedregulator3v3>;
- 	bus-width = <4>;
- 	status = "okay";
-+	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index de7cc64..957f364 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -29,8 +29,11 @@
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <linux/platform_data/usb-rcar-gen2-phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_eth.h>
++#include <linux/usb/phy.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+@@ -148,6 +151,110 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
  };
  
- &hspi0 {
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index ddb3bd7..c309430 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -178,8 +178,6 @@
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -188,8 +186,6 @@
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -198,8 +194,6 @@
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 8901acd..6442286 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -37,6 +37,7 @@
- 
- struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
-+	unsigned long capabilities;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -45,13 +46,18 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
- 	},
- };
- 
-+static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++/* USBHS */
++#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
++static const struct resource usbhs_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6590000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(107)),
 +};
 +
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-shmobile" },
- 	{ .compatible = "renesas,sdhi-sh7372" },
- 	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
-@@ -212,6 +218,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-+		mmc_data->capabilities |= of_data->capabilities;
- 	}
++struct usbhs_private {
++	struct renesas_usbhs_platform_info info;
++	struct usb_phy *phy;
++};
++
++#define usbhs_get_priv(pdev) \
++	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
++
++static int usbhs_power_ctrl(struct platform_device *pdev,
++				void __iomem *base, int enable)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++
++	if (!priv->phy)
++		return -ENODEV;
++
++	if (enable) {
++		int retval = usb_phy_init(priv->phy);
++
++		if (!retval)
++			retval = usb_phy_set_suspend(priv->phy, 0);
++		return retval;
++	}
++
++	usb_phy_set_suspend(priv->phy, 1);
++	usb_phy_shutdown(priv->phy);
++	return 0;
++}
++
++static int usbhs_hardware_init(struct platform_device *pdev)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++	struct usb_phy *phy;
++
++	phy = usb_get_phy_dev(&pdev->dev, 0);
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
++
++	priv->phy = phy;
++	return 0;
++}
++
++static int usbhs_hardware_exit(struct platform_device *pdev)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++
++	if (!priv->phy)
++		return 0;
++
++	usb_put_phy(priv->phy);
++	priv->phy = NULL;
++	return 0;
++}
++
++static int usbhs_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++static struct usbhs_private usbhs_priv __initdata = {
++	.info = {
++		.platform_callback = {
++			.power_ctrl	= usbhs_power_ctrl,
++			.hardware_init	= usbhs_hardware_init,
++			.hardware_exit	= usbhs_hardware_exit,
++			.get_id		= usbhs_get_id,
++		},
++		.driver_param = {
++			.buswait_bwait	= 4,
++		},
++	}
++};
++
++static void __init koelsch_register_usbhs(void)
++{
++	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
++	platform_device_register_resndata(&platform_bus,
++					  "renesas_usbhs", -1,
++					  usbhs_resources,
++					  ARRAY_SIZE(usbhs_resources),
++					  &usbhs_priv.info,
++					  sizeof(usbhs_priv.info));
++}
++#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
++static inline void koelsch_register_usbhs(void) { }
++#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
++
++/* USBHS PHY */
++static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
++	.chan0_pci = 0,	/* Channel 0 is USBHS */
++	.chan2_pci = 1,	/* Channel 2 is PCI USB */
++};
++
++static const struct resource usbhs_phy_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6590100, 0x100),
++};
++
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* DU */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
+@@ -171,6 +278,9 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
+ 				  "scif1_data_d", "scif1"),
++	/* USB0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7791",
++				  "usb0", "usb0"),
+ };
  
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+ static void __init koelsch_add_standard_devices(void)
+@@ -192,6 +302,13 @@ static void __init koelsch_add_standard_devices(void)
+ 				      sizeof(koelsch_keys_pdata));
+ 
+ 	koelsch_add_du_device();
++
++	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
++					  -1, usbhs_phy_resources,
++					  ARRAY_SIZE(usbhs_phy_resources),
++					  &usbhs_phy_pdata,
++					  sizeof(usbhs_phy_pdata));
++	koelsch_register_usbhs();
+ }
+ 
+ /*
 -- 
-1.7.9.5
+1.8.3.1
 
