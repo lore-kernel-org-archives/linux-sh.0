@@ -1,55 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:04:59 +0000
-Subject: [PATCH 1/3] ARM: shmobile: armadillo: Add PWM backlight power supply
-Message-Id: <9fb444f22f09cfad3798e3610f7dc62f8a385ee8.1387856124.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 20 Dec 2013 14:13:21 +0000
+Subject: [PATCH 0/3] arm: r8a7790: lager: Add USB support
+Message-Id: <1387548804-20829-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387856124.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387856124.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds USBHS device and PCI USB host support to Lager board.
+The patches depend on the following commits:
+USBHS and PCI USB host:
+* https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?i=
+d=C8ba8115a21226fba3211085f570b128fa271e31
+* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
+d2985ef720cbbdc63546a5c545ac4450d96e
+PCI USB host:
+* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
+sb-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
+* https://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Du=
+sb-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
+* https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3D=
+pci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
 
-Commit 22ceeee16eb8f0d04de3ef43a5174fb30ec18af9 ("pwm-backlight: Add
-power supply support") added a mandatory power supply for the PWM
-backlight. Add a fixed 5V regulator to board code with a consumer supply
-entry for the backlight device.
+Valentine Barshak (3):
+  arm: shmobile: lager: Add USBHS support
+  arm: shmobile: r8a7790: Add PCI USB host clock support
+  arm: shmobile: lager: Add internal PCI support
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-(cherry picked from commit ad11cb9a5cf96346f1240995c672cdbb5501785c)
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c   | 185 +++++++++++++++++++++++++++++=
+++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |   6 +-
+ 2 files changed, 190 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 958e3cb..c186891 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -614,6 +614,11 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
- 	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
- };
- 
-+/* Fixed 3.3V regulator used by LCD backlight */
-+static struct regulator_consumer_supply fixed5v0_power_consumers[] = {
-+	REGULATOR_SUPPLY("power", "pwm-backlight.0"),
-+};
-+
- /* Fixed 3.3V regulator to be used by SDHI0 */
- static struct regulator_consumer_supply vcc_sdhi0_consumers[] = {
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-@@ -1196,6 +1201,8 @@ static void __init eva_init(void)
- 
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	regulator_register_always_on(3, "fixed-5.0V", fixed5v0_power_consumers,
-+				     ARRAY_SIZE(fixed5v0_power_consumers), 5000000);
- 
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
- 	pwm_add_table(pwm_lookup, ARRAY_SIZE(pwm_lookup));
--- 
-1.8.4
+--=20
+1.8.3.1
 
