@@ -1,90 +1,67 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 17 Dec 2013 05:32:38 +0000
-Subject: Re: [PATCH v4 01/03] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
-Message-Id: <CAOesGMivkshW-9gtSxO+eymQ-QXuTrmf1+uS5hzr7NO9gbaPgw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 20 Dec 2013 02:09:34 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: add sound SCU clock support
+Message-Id: <87mwjwuvc7.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131211235616.12661.19702.sendpatchset@w520>
-	<20131211235626.12661.8865.sendpatchset@w520>
-	<20131212010503.GI21531@quad.lixom.net>
-	<CANqRtoTGuXnGT0LW+et0w6U6QOC8x8xx0OEEqxQH8X6EtWrEcg@mail.gmail.com>
-	<20131216053950.GA5822@quad.lixom.net>
-	<CANqRtoSH88L9riQNodA6qBbfvU6DYJc2U-=4KhsjBu-qAjPFjQ@mail.gmail.com>
-In-Reply-To: <CANqRtoSH88L9riQNodA6qBbfvU6DYJc2U-=4KhsjBu-qAjPFjQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@linaro.org>, Arnd Bergmann <arnd@arndb.de>, SH-Linux <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, "Simon Horman [Horms]" <horms@verge.net.au>, John Stultz <john.stultz@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 16, 2013 at 9:28 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> Hi Olof,
->
-> On Mon, Dec 16, 2013 at 2:39 PM, Olof Johansson <olof@lixom.net> wrote:
->> On Fri, Dec 13, 2013 at 07:12:58PM +0900, Magnus Damm wrote:
->>> Hi Olof,
->>>
->>> On Thu, Dec 12, 2013 at 10:05 AM, Olof Johansson <olof@lixom.net> wrote:
->>> > Hi,
->>> >
->>> > A couple of small comments below.
->>>
->>> Thanks for your feedback!
->>>
->>> > On Thu, Dec 12, 2013 at 08:56:26AM +0900, Magnus Damm wrote:
->>> >> From: Magnus Damm <damm@opensource.se>
->>> >>
->>> >> Add Kconfig entries for CMT, MTU2, TMU and STI to
->>> >> drivers/clocksource/Kconfig. This will allow us to
->>> >> get rid of duplicated entires in architecture code
->>> >> such as arch/sh and arch/arm/mach-shmobile.
->>> >>
->>> >> Signed-off-by: Magnus Damm <damm@opensource.se>
->>> >> ---
->>> >>
->>> >>  drivers/clocksource/Kconfig |   44 +++++++++++++++++++++++++++++++++++++++++++
->>> >>  1 file changed, 44 insertions(+)
->>> >>
->>> >> --- 0001/drivers/clocksource/Kconfig
->>> >> +++ work/drivers/clocksource/Kconfig  2013-12-12 08:41:55.000000000 +0900
->>> >> @@ -134,3 +134,47 @@ config VF_PIT_TIMER
->>> >>       bool
->>> >>       help
->>> >>         Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
->>> >> +
->>> >> +config SYS_SUPPORTS_CMT
->>> >> +        bool
->>> >> +
->>> >> +config SYS_SUPPORTS_TMU
->>> >> +        bool
->>> >> +
->>> >> +config SYS_SUPPORTS_MTU2
->>> >> +        bool
->>> >> +
->>> >> +config SYS_SUPPORTS_STI
->>> >> +        bool
->>> >
->>> > Maybe a prefix to avoid namespace collissions here?
->>>
->>> Sure, that is fine with me. I based the ones above on already existing
->>> ones used by SH but I don't mind reworking those.
->>>
->>> How about SYS_SUPPORTS_CLKSRC_xxx?
->>
->> Oh, I was hoping for something shmobile-specific. Other platforms might have
->> some other clock source that they name STI or MTU, for example.
->
-> Thanks for the clarification. So how about the following?
->
-> SYS_SUPPORTS_SH_CMT
-> SYS_SUPPORTS_SH_MTU2
-> SYS_SUPPORTS_SH_TMU
-> SYS_SUPPORTS_EM_STI
->
-> The above match the style of the existing CONFIG_ SH/EM _TIMER_
-> CMT/MTU2/TMU/STI. Regarding the SH vs EM prefix, the SH ones are
-> present on arch/sh while EM_STI is only present on Emma Mobile SoCs.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Yep, that sounds good.
+This is needed to use SRC (= Sampling Rate Converter)
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
--Olof
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 4b601bf..9783945 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -115,6 +115,8 @@ static struct clk *main_clks[] = {
+ };
+ 
+ enum {
++	MSTP531, MSTP530,
++	MSTP529, MSTP528, MSTP527, MSTP526, MSTP525, MSTP524, MSTP523,
+ 	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP311, MSTP310,
+@@ -129,6 +131,15 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP531] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 31, 0), /* SCU0 */
++	[MSTP530] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 30, 0), /* SCU1 */
++	[MSTP529] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 29, 0), /* SCU2 */
++	[MSTP528] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 28, 0), /* SCU3 */
++	[MSTP527] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 27, 0), /* SCU4 */
++	[MSTP526] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 26, 0), /* SCU5 */
++	[MSTP525] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 25, 0), /* SCU6 */
++	[MSTP524] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 24, 0), /* SCU7 */
++	[MSTP523] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 23, 0), /* SCU8 */
+ 	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+@@ -219,6 +230,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP309]),
+ 	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP308]),
+ 	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP307]),
++	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP531]),
++	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP530]),
++	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP529]),
++	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP528]),
++	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP527]),
++	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP526]),
++	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
++	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
++	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
+ };
+ 
+ void __init r8a7778_clock_init(void)
+-- 
+1.7.9.5
+
