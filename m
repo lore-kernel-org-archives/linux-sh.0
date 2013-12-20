@@ -1,68 +1,96 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 24 Dec 2013 20:45:19 +0000
-Subject: Re: [PATCH RFC 3/3] [RFC] ARM: shmobile: genmai: Enable r7s72100-gether
-Message-Id: <52BA006E.205@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 20 Dec 2013 14:14:24 +0000
+Subject: [PATCH 1/5] pinctl: sh-pfc: r8a7791: Group USB PWEN and OVC pins together
+Message-Id: <1387548868-20943-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387095886-15163-1-git-send-email-horms+renesas@verge.net.au> <1387095886-15163-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1387095886-15163-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>, "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hello.
+This groups USB PWEN and OVC pins together on R8A7791 SoC,
+the same way it's done on R8A7790, since both are needed
+for a USB device.
 
-On 12/15/2013 11:24 AM, Simon Horman wrote:
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 40 +++++++++++-------------------------
+ 1 file changed, 12 insertions(+), 28 deletions(-)
 
-> ---
->   arch/arm/mach-shmobile/board-genmai.c | 20 ++++++++++++++++++++
->   1 file changed, 20 insertions(+)
-
-> diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-> index 3e92e3c..838325b 100644
-> --- a/arch/arm/mach-shmobile/board-genmai.c
-> +++ b/arch/arm/mach-shmobile/board-genmai.c
-> @@ -20,15 +20,35 @@
->
->   #include <linux/kernel.h>
->   #include <linux/platform_device.h>
-> +#include <linux/sh_eth.h>
->   #include <mach/common.h>
-> +#include <mach/irqs.h>
->   #include <mach/r7s72100.h>
->   #include <asm/mach-types.h>
->   #include <asm/mach/arch.h>
->
-> +/* GEther */
-
-    Just Ether.
-
-> +static const struct sh_eth_plat_data gether_pdata __initconst = {
-> +	.phy			= 0x00, /* PD60610 */
-> +	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-> +	.phy_interface		= PHY_INTERFACE_MODE_MII,
-
-    I think .no_ether_link should be set to 1 -- I don't see the LINK signal 
-in the manual.
-
-> +};
-> +
-> +static const struct resource gether_resources[] __initconst = {
-> +	DEFINE_RES_MEM(0xe8203000, 0x800),
-> +	DEFINE_RES_MEM(0xe8204800, 0x200),
-> +	DEFINE_RES_IRQ(gic_iid(359)),
-> +};
-> +
->   static void __init genmai_add_standard_devices(void)
->   {
->   	r7s72100_clock_init();
->   	r7s72100_add_dt_devices();
-> +
-> +	platform_device_register_resndata(&platform_bus, "r7s72100-gether", -1,
-
-    We can't call it "-gether" if it lacks 1000 Mbps support. And the manual 
-explicitly calls it ETHER.
-
-WBR, Sergei
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index ea02d37..894dd61 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -2649,33 +2649,21 @@ static const unsigned int sdhi2_wp_mux[] = {
+ 	SD2_WP_MARK,
+ };
+ /* - USB0 ------------------------------------------------------------------- */
+-static const unsigned int usb0_pwen_pins[] = {
+-	/* PWEN */
+-	RCAR_GP_PIN(7, 23),
++static const unsigned int usb0_pins[] = {
++	RCAR_GP_PIN(7, 23), /* PWEN */
++	RCAR_GP_PIN(7, 24), /* OVC */
+ };
+-static const unsigned int usb0_pwen_mux[] = {
++static const unsigned int usb0_mux[] = {
+ 	USB0_PWEN_MARK,
+-};
+-static const unsigned int usb0_ovc_pins[] = {
+-	/* OVC */
+-	RCAR_GP_PIN(7, 24),
+-};
+-static const unsigned int usb0_ovc_mux[] = {
+ 	USB0_OVC_MARK,
+ };
+ /* - USB1 ------------------------------------------------------------------- */
+-static const unsigned int usb1_pwen_pins[] = {
+-	/* PWEN */
+-	RCAR_GP_PIN(7, 25),
++static const unsigned int usb1_pins[] = {
++	RCAR_GP_PIN(7, 25), /* PWEN */
++	RCAR_GP_PIN(6, 30), /* OVC */
+ };
+-static const unsigned int usb1_pwen_mux[] = {
++static const unsigned int usb1_mux[] = {
+ 	USB1_PWEN_MARK,
+-};
+-static const unsigned int usb1_ovc_pins[] = {
+-	/* OVC */
+-	RCAR_GP_PIN(6, 30),
+-};
+-static const unsigned int usb1_ovc_mux[] = {
+ 	USB1_OVC_MARK,
+ };
+ 
+@@ -2810,10 +2798,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
+ 	SH_PFC_PIN_GROUP(sdhi2_cd),
+ 	SH_PFC_PIN_GROUP(sdhi2_wp),
+-	SH_PFC_PIN_GROUP(usb0_pwen),
+-	SH_PFC_PIN_GROUP(usb0_ovc),
+-	SH_PFC_PIN_GROUP(usb1_pwen),
+-	SH_PFC_PIN_GROUP(usb1_ovc),
++	SH_PFC_PIN_GROUP(usb0),
++	SH_PFC_PIN_GROUP(usb1),
+ };
+ 
+ static const char * const du_groups[] = {
+@@ -3016,12 +3002,10 @@ static const char * const sdhi2_groups[] = {
+ };
+ 
+ static const char * const usb0_groups[] = {
+-	"usb0_pwen",
+-	"usb0_ovc",
++	"usb0",
+ };
+ static const char * const usb1_groups[] = {
+-	"usb1_pwen",
+-	"usb1_ovc",
++	"usb1",
+ };
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
+-- 
+1.8.3.1
 
