@@ -1,56 +1,111 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:31 +0000
-Subject: [PATCH 01/21] ARM: shmobile: armadillo: dts: Add PWM backlight power supply
-Message-Id: <aeb193606d44bd37b2178c6b2b6f25ff679656a3.1387893834.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:06 +0000
+Subject: [PATCH 10/26] ARM: shmobile: Initial r8a7791 and Koelsch multiplatform support
+Message-Id: <6d75bc6439ec3f4ae45db1e501177382d0582591.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Commit 22ceeee16eb8f0d04de3ef43a5174fb30ec18af9 ("pwm-backlight: Add
-power supply support") added a mandatory power supply for the PWM
-backlight. Add a fixed 5V regulator and reference it for the backlight
-power supply.
+Add Koelsch and r8a7791 to CONFIG_SHMOBILE_MULTI. At this
+point CCF is not yet supported so you cannot run this code
+yet. For CCF support to happen several different components
+are needed, and this is one simple portion that moves us
+forward. Other patches need to build on top of this one.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Koelsch board support exists in 3 flavors:
+1) SHMOBILE_MULTI, MACH_KOELSCH - board-koelsch-reference.c (CCF + DT)
+2) SHMOBILE, MACH_KOELSCH_REFERENCE - board-koelsch-reference.c (DT)
+3) SHMOBILE, MACH_KOELSCH - board-koelsch.c (legacy C code)
+
+When CCF is done then 2) will be removed. When 1) includes same features
+as 3) then 3) will be removed.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/boot/dts/Makefile                       | 3 ++-
+ arch/arm/mach-shmobile/Kconfig                   | 8 ++++++++
+ arch/arm/mach-shmobile/Makefile                  | 1 +
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 5 +++++
+ 4 files changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 6d6fd3d..4705759 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -63,6 +63,15 @@
- 		enable-active-high;
- 	};
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 5839077..8254bfc 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -232,7 +232,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	r8a73a4-ape6evm.dtb \
+ 	r8a73a4-ape6evm-reference.dtb \
+ 	sh7372-mackerel.dtb
+-dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb
++dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
++	r8a7791-koelsch-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 8eac47f..17a4f40 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -24,8 +24,16 @@ comment "SH-Mobile System Type"
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
  
-+	reg_5p0v: regulator@3 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-5.0V";
-+		regulator-min-microvolt = <5000000>;
-+		regulator-max-microvolt = <5000000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
++config ARCH_R8A7791
++	bool "R-Car M2 (R8A77910)"
++	select RENESAS_IRQC
 +
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -86,6 +95,7 @@
- 		default-brightness-level = <9>;
- 		pinctrl-0 = <&backlight_pins>;
- 		pinctrl-names = "default";
-+		power-supply = <&reg_5p0v>;
- 	};
+ comment "SH-Mobile Board Type"
  
- 	sound {
++config MACH_KOELSCH
++	bool "Koelsch board"
++	depends on ARCH_R8A7791
++
+ config MACH_KZM9D
+ 	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 8bca9b5..021775d 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -56,6 +56,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
++obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index beecc8b..25b558f 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <mach/rcar-gen2.h>
+@@ -27,7 +28,11 @@
+ 
+ static void __init koelsch_add_standard_devices(void)
+ {
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
+ 	r8a7791_clock_init();
++#endif
+ 	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
 -- 
 1.8.4
 
