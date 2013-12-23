@@ -1,134 +1,62 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 20 Dec 2013 14:14:28 +0000
-Subject: [PATCH 5/5] arm: shmobile: koelsch: Add internal PCI support
-Message-Id: <1387548868-20943-6-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:14 +0000
+Subject: [PATCH 18/26] ARM: shmobile: Use ->init_late() on Lager
+Message-Id: <3fbbcbdf57a5172318d10d0f16a4e2d2c595fd75.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host devices to R-Car M2 Koelsch board.
-If USBHS device is disabled, channel 0 is configured as PCI USB host.
-Otherwise, it is configured as USBHS. The USB phy is bound bound to
-either USB host or USBHS device respectively.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Hook in shmobile_init_late() on Lager V2. This enables some PM
+related things like CPUIdle and Suspend-to-RAM.
+
+With this patch applied it is possible to use Suspend-to-RAM:
+# echo enabled > /sys/class/tty/ttySC6/power/wakeup
+# echo mem > /sys/power/state
+(wake by sending a character on the serial console)
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 67 +++++++++++++++++++++++++++++-----
- 1 file changed, 57 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 2 ++
+ arch/arm/mach-shmobile/board-lager.c           | 1 +
+ 2 files changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 957f364..ab83cec 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -231,7 +231,11 @@ static struct usbhs_private usbhs_priv __initdata = {
- 	}
- };
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 7df9ea0..51a3bcc 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -20,6 +20,7 @@
  
--static void __init koelsch_register_usbhs(void)
-+/* Channel 0 is USBHS */
-+#define KOELSCH_USB0_PCI	0
-+#define KOELSCH_USB0_NAME	"renesas_usbhs"
-+
-+static void __init koelsch_add_usb0_device(void)
- {
- 	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
- 	platform_device_register_resndata(&platform_bus,
-@@ -242,12 +246,45 @@ static void __init koelsch_register_usbhs(void)
- 					  sizeof(usbhs_priv.info));
- }
- #else	/* CONFIG_USB_RENESAS_USBHS_UDC */
--static inline void koelsch_register_usbhs(void) { }
-+
-+/* Channel 0 is PCI USB host */
-+#define KOELSCH_USB0_PCI	1
-+#define KOELSCH_USB0_NAME	"pci-rcar-gen2.0"
-+
-+/* Internal PCI0 */
-+static const struct resource pci0_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee090000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee080000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(108)),
-+};
-+
-+static void __init koelsch_add_usb0_device(void)
-+{
-+	usb_bind_phy("0000:00:01.0", 0, "usb_phy_rcar_gen2");
-+	usb_bind_phy("0000:00:02.0", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_simple("pci-rcar-gen2",
-+					0, pci0_resources,
-+					ARRAY_SIZE(pci0_resources));
-+}
- #endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
- 
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static void __init koelsch_add_usb1_device(void)
-+{
-+	platform_device_register_simple("pci-rcar-gen2",
-+					1, pci1_resources,
-+					ARRAY_SIZE(pci1_resources));
-+}
-+
- /* USBHS PHY */
- static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
--	.chan0_pci = 0,	/* Channel 0 is USBHS */
-+	.chan0_pci = KOELSCH_USB0_PCI,
- 	.chan2_pci = 1,	/* Channel 2 is PCI USB */
- };
- 
-@@ -255,6 +292,18 @@ static const struct resource usbhs_phy_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6590100, 0x100),
- };
- 
-+/* Add all available USB devices */
-+static void __init koelsch_add_usb_devices(void)
-+{
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	koelsch_add_usb0_device();
-+	koelsch_add_usb1_device();
-+}
-+
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -279,8 +328,11 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
- 				  "scif1_data_d", "scif1"),
- 	/* USB0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7791",
-+	PIN_MAP_MUX_GROUP_DEFAULT(KOELSCH_USB0_NAME, "pfc-r8a7791",
- 				  "usb0", "usb0"),
-+	/* USB1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7791",
-+				  "usb1", "usb1"),
- };
- 
- static void __init koelsch_add_standard_devices(void)
-@@ -303,12 +355,7 @@ static void __init koelsch_add_standard_devices(void)
- 
- 	koelsch_add_du_device();
- 
--	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
--					  -1, usbhs_phy_resources,
--					  ARRAY_SIZE(usbhs_phy_resources),
--					  &usbhs_phy_pdata,
--					  sizeof(usbhs_phy_pdata));
--	koelsch_register_usbhs();
-+	koelsch_add_usb_devices();
- }
- 
- /*
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <mach/common.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+@@ -41,5 +42,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_add_standard_devices,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f5dab34..d47052e 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -259,5 +259,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= lager_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= lager_boards_compat_dt,
+ MACHINE_END
 -- 
-1.8.3.1
+1.8.4
 
