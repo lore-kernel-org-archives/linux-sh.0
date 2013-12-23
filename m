@@ -1,63 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 06:55:36 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: armadillo: Set vccq_sdhi0 regulator type in DT
-Message-Id: <20131205065535.GB6817@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:08:24 +0000
+Subject: [PATCH 2/3] ARM: shmobile: kzm9g: add FSI support for DTS
+Message-Id: <3c2a87c85391272b098827e432813c9437e93992.1387764079.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385653493-9952-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131205034554.GB20388@verge.net.au> <9848623.yKHAtIGPld@avalon>
-In-Reply-To: <9848623.yKHAtIGPld@avalon>
+References: <cover.1387764079.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387764079.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Dec 05, 2013 at 06:56:48AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 05 December 2013 12:45:54 Simon Horman wrote:
-> > On Thu, Nov 28, 2013 at 04:44:53PM +0100, Laurent Pinchart wrote:
-> > > The mandatory regulator-type property is missing, add it.
-> > 
-> > Thanks, I will queue this up.
-> 
-> Mark has rightfully commented on patch 1/2 in this series that the regulator-
-> type property shouldn't be mandatory but should default to voltage. We could 
-> then drop this patch.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I will drop it, thanks.
+This patch support FSI-AK4648 with simple audio card
 
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > > 
-> > >  arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 ++
-> > >  1 file changed, 2 insertions(+)
-> > > 
-> > > diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> > > b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts index
-> > > 7b80f19..013a7cd 100644
-> > > --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> > > +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> > > @@ -53,6 +53,8 @@
-> > > 
-> > >  		regulator-name = "SDHI0 VccQ";
-> > >  		regulator-min-microvolt = <1800000>;
-> > >  		regulator-max-microvolt = <3300000>;
-> > > 
-> > > +		regulator-type = "voltage";
-> > > +
-> > > 
-> > >  		vin-supply = <&vcc_sdhi0>;
-> > >  		
-> > >  		enable-gpio = <&pfc 74 GPIO_ACTIVE_HIGH>;
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 33 ++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 5bb593d..eb8886b 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -152,6 +152,20 @@
+ 			label = "SW1";
+ 		};
+ 	};
++
++	sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "left_j";
++		simple-audio-card,cpu {
++			sound-dai = <&sh_fsi2 0>;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4648>;
++			bitclock-master;
++			frame-master;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &i2c0 {
+@@ -226,6 +240,12 @@
+ 			};
+ 		};
+ 	};
++
++	ak4648: ak4648@0x12 {
++		#sound-dai-cells = <0>;
++		compatible = "asahi-kasei,ak4648";
++		reg = <0x12>;
++	};
+ };
+ 
+ &i2c3 {
+@@ -289,6 +309,12 @@
+ 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
+ 	};
++
++	fsia_pins: sounda {
++		renesas,groups = "fsia_mclk_in", "fsia_sclk_in",
++				 "fsia_data_in", "fsia_data_out";
++		renesas,function = "fsia";
++	};
+ };
+ 
+ &sdhi0 {
+@@ -309,3 +335,10 @@
+ 	broken-cd;
+ 	status = "okay";
+ };
++
++&sh_fsi2 {
++	pinctrl-0 = <&fsia_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
+-- 
+1.8.4
+
