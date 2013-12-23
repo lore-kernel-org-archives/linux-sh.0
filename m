@@ -1,50 +1,127 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 20 Dec 2013 14:14:27 +0000
-Subject: [PATCH 4/5] arm: shmobile: r8a7791: Add PCI USB host clock support
-Message-Id: <1387548868-20943-5-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:06:53 +0000
+Subject: [GIT PULL 00/26] Renesas ARM based SoC board updates for v3.14
+Message-Id: <cover.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host clock support to R-Car M2 SoC.
+The following changes since commit ea8d8a911f4850312834a0ff45c3d5ebc31fb1f1:
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
----
- arch/arm/mach-shmobile/clock-r8a7791.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+  Merge tag 'renesas-cleanup-for-v3.14' into boards-base (2013-12-10 17:22:55 +0900)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 966a7e2..c9b72ca 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -125,7 +125,7 @@ enum {
- 	MSTP813,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
-@@ -145,6 +145,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
- 	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 3, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
- 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
-@@ -199,6 +200,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
- };
- 
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
--- 
-1.8.3.1
+are available in the git repository at:
 
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.14
+
+for you to fetch changes up to be0647d556985ae58a42e7fc3751a293c418c41e:
+
+  ARM: shmobile: lager: add gpio/fixed regulator for SDHI (2013-12-10 17:24:50 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC board updates for v3.14
+
+* Global
+  - Kconfig: Mention Renesas ARM SoCs instead of SH-Mobile
+
+* r7s72100 SoC (RZ/A1H) based Genmai Board
+  - Add Multiplatform support
+  - Add Reference DT
+
+* r8a7791 (R-Car M2) based Koelsch board
+  - Add pinctrl_register_mappings() for Koelsch
+  - Hook up SW30-SW36 on Koelsch
+  - Mark GPIO keys as wake-up sources
+  - Use ->init_late()
+  - Add Multiplatform support
+  - Set .debounce_interval for GPIO keys
+  - Add SW2 to GPIO keys
+  - Add Led 6, 7 and 8 support
+  - Add reference DT
+  - Enable PFC/GPIO
+
+* r8a7790 (R-Car H2) based Lager board
+  - Add gpio/fixed regulator for SDHI
+  - Add SPI FLASH support on QSPI
+  - Mark GPIO keys as wake-up sources
+  - Use ->init_late()
+  - Set .debounce_interval for GPIO keys
+
+* r8a7778 (R-Car M1) based Bock-W board
+  - bockw: remove unused RSND_SSI_CLK_FROM_ADG
+  - Set .debounce_interval for GPIO keys
+  - Correct FPGA ioremap area
+  - Use regulator for MMCIF
+
+* r8a7740 (R-Mobile A1) based Armadillo board
+  - Correct FSI address size
+
+* sh7374 (SH-Mobile AP4) based Mackerel board
+  - Use pinconf API to configure pin pull-down
+  - clk_round_rate() can return a zero to indicate an error
+
+----------------------------------------------------------------
+Hiep Cao Minh (1):
+      ARM: shmobile: Lager:add SPI FLASH support on QSPI
+
+Kuninori Morimoto (6):
+      ARM: shmobile: bockw: use regulator for MMCIF
+      ARM: shmobile: bockw: fixup FPGA ioremap area
+      ARM: shmobile: bockw: add pin pull-up setting for SDHI
+      ARM: shmobile: armadillo: fixup FSI address size
+      ARM: shmobile: bockw: remove unused RSND_SSI_CLK_FROM_ADG
+      ARM: shmobile: lager: add gpio/fixed regulator for SDHI
+
+Laurent Pinchart (2):
+      ARM: shmobile: mackerel: Use pinconf API to configure pin pull-down
+      ARM: Kconfig: Mention Renesas ARM SoCs instead of SH-Mobile
+
+Magnus Damm (13):
+      ARM: shmobile: Enable PFC/GPIO on the Koelsch board
+      ARM: shmobile: Add Koelsch LED6, LED7 and LED8 support
+      ARM: shmobile: Add Koelsch SW2 support
+      ARM: shmobile: r8a7791 Koelsch DT reference C bits
+      ARM: shmobile: Initial r8a7791 and Koelsch multiplatform support
+      ARM: shmobile: r7s72100 Genmai DT reference DTS bits
+      ARM: shmobile: r7s72100 Genmai DT reference C bits
+      ARM: shmobile: r7s72100 Genmai Multiplatform
+      ARM: shmobile: Use ->init_late() on Koelsch
+      ARM: shmobile: koelsch: mark GPIO keys as wake-up sources
+      ARM: shmobile: Hook up SW30-SW36 on Koelsch
+      ARM: shmobile: Use ->init_late() on Lager
+      ARM: shmobile: Add pinctrl_register_mappings() for Koelsch
+
+Paul Walmsley (1):
+      ARM: shmobile: mackerel: clk_round_rate() can return a zero to indicate an error
+
+Shinya Kuribayashi (2):
+      ARM: shmobile: lager: set .debounce_interval
+      ARM: shmobile: lager: mark GPIO keys as wake-up sources
+
+Simon Horman (1):
+      ARM: shmobile: koelsch: set .debounce_interval
+
+ arch/arm/Kconfig                                 |   7 +-
+ arch/arm/boot/dts/Makefile                       |   5 +-
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts  |  31 +++++
+ arch/arm/mach-shmobile/Kconfig                   |  55 +++++++--
+ arch/arm/mach-shmobile/Makefile                  |   4 +
+ arch/arm/mach-shmobile/Makefile.boot             |   4 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c   |   2 +-
+ arch/arm/mach-shmobile/board-bockw-reference.c   |  19 ++-
+ arch/arm/mach-shmobile/board-bockw.c             |  17 ++-
+ arch/arm/mach-shmobile/board-genmai-reference.c  |  49 ++++++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  53 ++++++++
+ arch/arm/mach-shmobile/board-koelsch.c           |  73 ++++++++++-
+ arch/arm/mach-shmobile/board-lager-reference.c   |   2 +
+ arch/arm/mach-shmobile/board-lager.c             | 151 ++++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-mackerel.c          |  21 ++--
+ arch/arm/mach-shmobile/sh-gpio.h                 |  19 ---
+ include/sound/rcar_snd.h                         |   1 -
+ 17 files changed, 458 insertions(+), 55 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r7s72100-genmai-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
+ create mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
