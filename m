@@ -1,27 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Dec 2013 23:31:09 +0000
-Subject: Re: [PATCH 1/8] spi: rspi: Add more RSPI register documentation
-Message-Id: <4495323.N6fkk9DOtQ@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:08:12 +0000
+Subject: [GIT PULL 0/3] Second Round of Renesas ARM Based SoC DT Updates for v3.13
+Message-Id: <cover.1387764079.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org> <1387885248-28425-2-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387885248-28425-2-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <cover.1375839719.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375839719.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Kevin, Hi Olof, Hi Arnd,
 
-Thank you for the patch.
+Please consider this second round of Renesas ARM Based SoC DT Updates for
+v3.13. It is based on the first round, tagged as renesas-dt-for-v3.14,
+which you have already pulled.
 
-On Tuesday 24 December 2013 12:40:41 Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The following changes since commit 1fd219561a4afc51b5f257692f3581546434db5b:
 
--- 
-Regards,
+  ARM: shmobile: marzen: enable HSPI0 in DTS (2013-12-10 17:27:25 +0900)
 
-Laurent Pinchart
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.14
+
+for you to fetch changes up to bd0609896eabe2e64b75d7955ae5ecec528cf860:
+
+  ARM: shmobile: koelsch: dts: Add gpio-keys device (2013-12-12 22:22:04 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC DT Updates for v3.13
+
+* r8a7791 (R-Car M2) based Koelsch board
+- Add GPIO keys
+
+* sh73a0 (SH-Mobile AG5) based kzm9g board
+  - Add FSI support
+
+----------------------------------------------------------------
+Kuninori Morimoto (2):
+      ARM: shmobile: sh73a0: add FSI support via DTSI
+      ARM: shmobile: kzm9g: add FSI support for DTS
+
+Laurent Pinchart (1):
+      ARM: shmobile: koelsch: dts: Add gpio-keys device
+
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 54 +++++++++++++++++++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    | 33 +++++++++++++++
+ arch/arm/boot/dts/sh73a0.dtsi                   |  9 +++++
+ 3 files changed, 96 insertions(+)
