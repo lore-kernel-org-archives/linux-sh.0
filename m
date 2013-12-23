@@ -1,31 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 17 Dec 2013 17:18:48 +0000
-Subject: [PATCH 0/2] SH Mobile IOMMU fixes
-Message-Id: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:20 +0000
+Subject: [PATCH 24/26] ARM: shmobile: armadillo: fixup FSI address size
+Message-Id: <4a4783a30c92a5ee1752d33af3bea2bf79f64197.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Nguyen Viet Dung <nv-dung-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-These two small patches fix bugs in the SH Mobile IOMMU driver that result in
-crashes at runtime. Given that the bugs have been present in the driver since
-v3.9 there's no urgency to push the fixes to v3.13.
+FSI address size is 0x400, not 0x8400
 
-Laurent Pinchart (2):
-  iommu/shmobile: Allocate archdata with kzalloc()
-  iommu/shmobile: Turn the flush_lock mutex into a spinlock
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- drivers/iommu/shmobile-iommu.c |  3 +--
- drivers/iommu/shmobile-ipmmu.c | 10 +++++-----
- drivers/iommu/shmobile-ipmmu.h |  2 +-
- 3 files changed, 7 insertions(+), 8 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 958e3cb..d9e28c7a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -958,7 +958,7 @@ static struct resource fsi_resources[] = {
+ 	[0] = {
+ 		.name	= "FSI",
+ 		.start	= 0xfe1f0000,
+-		.end	= 0xfe1f8400 - 1,
++		.end	= 0xfe1f0400 - 1,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
