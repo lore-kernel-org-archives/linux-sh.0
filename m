@@ -1,130 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:05:12 +0000
-Subject: [PATCH v4 1/5] ARM: shmobile: r8a7790: Add clock index macros for DT sources
-Message-Id: <1386770716-21610-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:21 +0000
+Subject: [PATCH 25/26] ARM: shmobile: bockw: remove unused RSND_SSI_CLK_FROM_ADG
+Message-Id: <c653033bae957ee141b2d27881c22e46ff26c651.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386770716-21610-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add macros usable by device tree sources to reference r8a7790 clocks by
-index.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+92eba04e4bcd469518cc759ac1bf1a49acaa5cc1
+(ASoC: rcar: remove RSND_SSI_CLK_FROM_ADG) removed
+RSND_SSI_CLK_FROM_ADG, it is no longer needed
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Mark Brown <broonie@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/r8a7790-clock.h | 100 ++++++++++++++++++++++++++++++
- 1 file changed, 100 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a7790-clock.h
+ arch/arm/mach-shmobile/board-bockw.c | 4 ++--
+ include/sound/rcar_snd.h             | 1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-new file mode 100644
-index 0000000..420f0b0
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -0,0 +1,100 @@
-+/*
-+ * Copyright 2013 Ideas On Board SPRL
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A7790_H__
-+#define __DT_BINDINGS_CLOCK_R8A7790_H__
-+
-+/* CPG */
-+#define R8A7790_CLK_MAIN		0
-+#define R8A7790_CLK_PLL0		1
-+#define R8A7790_CLK_PLL1		2
-+#define R8A7790_CLK_PLL3		3
-+#define R8A7790_CLK_LB			4
-+#define R8A7790_CLK_QSPI		5
-+#define R8A7790_CLK_SDH			6
-+#define R8A7790_CLK_SD0			7
-+#define R8A7790_CLK_SD1			8
-+#define R8A7790_CLK_Z			9
-+
-+/* MSTP1 */
-+#define R8A7790_CLK_TMU1		11
-+#define R8A7790_CLK_TMU3		21
-+#define R8A7790_CLK_TMU2		22
-+#define R8A7790_CLK_CMT0		24
-+#define R8A7790_CLK_TMU0		25
-+#define R8A7790_CLK_VSP1_DU1		27
-+#define R8A7790_CLK_VSP1_DU0		28
-+#define R8A7790_CLK_VSP1_RT		30
-+#define R8A7790_CLK_VSP1_SY		31
-+
-+/* MSTP2 */
-+#define R8A7790_CLK_SCIFA2		2
-+#define R8A7790_CLK_SCIFA1		3
-+#define R8A7790_CLK_SCIFA0		4
-+#define R8A7790_CLK_SCIFB0		6
-+#define R8A7790_CLK_SCIFB1		7
-+#define R8A7790_CLK_SCIFB2		16
-+#define R8A7790_CLK_SYS_DMAC0		18
-+#define R8A7790_CLK_SYS_DMAC1		19
-+
-+/* MSTP3 */
-+#define R8A7790_CLK_TPU0		4
-+#define R8A7790_CLK_MMCIF1		5
-+#define R8A7790_CLK_SDHI3		11
-+#define R8A7790_CLK_SDHI2		12
-+#define R8A7790_CLK_SDHI1		13
-+#define R8A7790_CLK_SDHI0		14
-+#define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_SSUSB		28
-+#define R8A7790_CLK_CMT1		29
-+#define R8A7790_CLK_USBDMAC0		30
-+#define R8A7790_CLK_USBDMAC1		31
-+
-+/* MSTP5 */
-+#define R8A7790_CLK_THERMAL		22
-+#define R8A7790_CLK_PWM			23
-+
-+/* MSTP7 */
-+#define R8A7790_CLK_EHCI		3
-+#define R8A7790_CLK_HSUSB		4
-+#define R8A7790_CLK_HSCIF1		16
-+#define R8A7790_CLK_HSCIF0		17
-+#define R8A7790_CLK_SCIF1		20
-+#define R8A7790_CLK_SCIF0		21
-+#define R8A7790_CLK_DU2			22
-+#define R8A7790_CLK_DU1			23
-+#define R8A7790_CLK_DU0			24
-+#define R8A7790_CLK_LVDS1		25
-+#define R8A7790_CLK_LVDS0		26
-+
-+/* MSTP8 */
-+#define R8A7790_CLK_VIN3		8
-+#define R8A7790_CLK_VIN2		9
-+#define R8A7790_CLK_VIN1		10
-+#define R8A7790_CLK_VIN0		11
-+#define R8A7790_CLK_ETHER		13
-+#define R8A7790_CLK_SATA1		14
-+#define R8A7790_CLK_SATA0		15
-+
-+/* MSTP9 */
-+#define R8A7790_CLK_GPIO5		7
-+#define R8A7790_CLK_GPIO4		8
-+#define R8A7790_CLK_GPIO3		9
-+#define R8A7790_CLK_GPIO2		10
-+#define R8A7790_CLK_GPIO1		11
-+#define R8A7790_CLK_GPIO0		12
-+#define R8A7790_CLK_RCAN1		15
-+#define R8A7790_CLK_RCAN0		16
-+#define R8A7790_CLK_IICDVFS		26
-+#define R8A7790_CLK_I2C3		28
-+#define R8A7790_CLK_I2C2		29
-+#define R8A7790_CLK_I2C1		30
-+#define R8A7790_CLK_I2C0		31
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 540f0dc..eb5b54f 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -332,11 +332,11 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_UNUSED, /* SSI 1 */
+ 	RSND_SSI_UNUSED, /* SSI 2 */
+ 	RSND_SSI_SET(1, 0, gic_iid(0x85), RSND_SSI_PLAY),
+-	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
++	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
+ 	RSND_SSI_SET(0, 0, gic_iid(0x86), RSND_SSI_PLAY),
+ 	RSND_SSI_SET(0, 0, gic_iid(0x86), 0),
+ 	RSND_SSI_SET(3, 0, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
++	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
+ };
+ 
+ static struct rsnd_scu_platform_info rsnd_scu[9] = {
+diff --git a/include/sound/rcar_snd.h b/include/sound/rcar_snd.h
+index 12afab1..6ce506b 100644
+--- a/include/sound/rcar_snd.h
++++ b/include/sound/rcar_snd.h
+@@ -34,7 +34,6 @@
+  * B : SSI direction
+  */
+ #define RSND_SSI_CLK_PIN_SHARE		(1 << 31)
+-#define RSND_SSI_CLK_FROM_ADG		(1 << 30) /* clock parent is master */
+ #define RSND_SSI_SYNC			(1 << 29) /* SSI34_sync etc */
+ 
+ #define RSND_SSI_PLAY			(1 << 24)
 -- 
-1.8.3.2
+1.8.4
 
