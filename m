@@ -1,249 +1,127 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:08 +0000
-Subject: [PATCH 34/69] ARM: shmobile: Use #include in device tree sources
-Message-Id: <31c46cbf5b8bab87e89028977521c84f2d871040.1386901186.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:08 +0000
+Subject: [PATCH 12/26] ARM: shmobile: r7s72100 Genmai DT reference C bits
+Message-Id: <c4e337fc0cd5aebda6849fbbecd6cfd645d1bae6.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-In order to allow usage of the preprocessor in the SoC device tree
-sources, switch from /include/ to #include.
+Add C code support for r7s72100 Genmai DT reference.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r7s72100-genmai.dts                   | 2 +-
- arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts         | 2 +-
- arch/arm/boot/dts/r8a73a4-ape6evm.dts                   | 2 +-
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts           | 2 +-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts           | 2 +-
- arch/arm/boot/dts/r8a7778-bockw.dts                     | 2 +-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts          | 2 +-
- arch/arm/boot/dts/r8a7779-marzen.dts                    | 2 +-
- arch/arm/boot/dts/r8a7790-lager-reference.dts           | 2 +-
- arch/arm/boot/dts/r8a7790-lager.dts                     | 2 +-
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts         | 2 +-
- arch/arm/boot/dts/r8a7791-koelsch.dts                   | 2 +-
- arch/arm/boot/dts/sh7372-mackerel.dts                   | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts            | 2 +-
- arch/arm/boot/dts/sh73a0-kzm9g.dts                      | 2 +-
- 16 files changed, 16 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/Kconfig                  | 11 +++++++
+ arch/arm/mach-shmobile/Makefile                 |  1 +
+ arch/arm/mach-shmobile/Makefile.boot            |  3 +-
+ arch/arm/mach-shmobile/board-genmai-reference.c | 44 +++++++++++++++++++++++++
+ 4 files changed, 58 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-shmobile/board-genmai-reference.c
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
-index 1fb20f2..b1deaf7 100644
---- a/arch/arm/boot/dts/r7s72100-genmai.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai.dts
-@@ -9,7 +9,7 @@
-  */
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 17a4f40..8bc7308 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -207,6 +207,17 @@ config MACH_GENMAI
+ 	depends on ARCH_R7S72100
+ 	select USE_OF
  
- /dts-v1/;
--/include/ "r7s72100.dtsi"
-+#include "r7s72100.dtsi"
- 
- / {
- 	model = "Genmai";
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-index 25dbc1c..338f0cb 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm-reference.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a73a4.dtsi"
-+#include "r8a73a4.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 91436b5..7db8d79 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a73a4.dtsi"
-+#include "r8a73a4.dtsi"
- 
- / {
- 	model = "APE6EVM";
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 6a54219..c7c5bcb 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7740.dtsi"
-+#include "r8a7740.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- #include <dt-bindings/pwm/pwm.h>
- 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index 426cd9c..a06a11e 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7740.dtsi"
-+#include "r8a7740.dtsi"
- 
- / {
- 	model = "armadillo 800 eva";
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index f488c48..be9b753 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -15,7 +15,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7778.dtsi"
-+#include "r8a7778.dtsi"
- 
- / {
- 	model = "bockw";
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 12bbebc..46a884d 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -15,7 +15,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7778.dtsi"
-+#include "r8a7778.dtsi"
- 
- / {
- 	model = "bockw";
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-index ce3fe9e..08b9ee37 100644
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-@@ -10,7 +10,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7779.dtsi"
-+#include "r8a7779.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index f3f7f79..a7af2c2 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -10,7 +10,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7779.dtsi"
-+#include "r8a7779.dtsi"
- 
- / {
- 	model = "marzen";
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index ec82674..cce7dbf 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7790.dtsi"
-+#include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 203bd08..8799dfb 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7790.dtsi"
-+#include "r8a7790.dtsi"
- 
- / {
- 	model = "Lager";
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-index b8a374a..1a0f082 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-@@ -10,7 +10,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7791.dtsi"
-+#include "r8a7791.dtsi"
- 
- / {
- 	model = "Koelsch";
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 1ce5250..c4e8b3a 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -10,7 +10,7 @@
-  */
- 
- /dts-v1/;
--/include/ "r8a7791.dtsi"
-+#include "r8a7791.dtsi"
- 
- / {
- 	model = "Koelsch";
-diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
-index 8acf51e..a759a27 100644
---- a/arch/arm/boot/dts/sh7372-mackerel.dts
-+++ b/arch/arm/boot/dts/sh7372-mackerel.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "sh7372.dtsi"
-+#include "sh7372.dtsi"
- 
- / {
- 	model = "Mackerel (AP4 EVM 2nd)";
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index df75aea..d5a6d74 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -12,7 +12,7 @@
-  */
- 
- /dts-v1/;
--/include/ "sh73a0.dtsi"
-+#include "sh73a0.dtsi"
- #include <dt-bindings/gpio/gpio.h>
- 
- / {
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 0f1ca77..27c5f42 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "sh73a0.dtsi"
-+#include "sh73a0.dtsi"
- 
- / {
- 	model = "KZM-A9-GT";
++config MACH_GENMAI_REFERENCE
++	bool "Genmai board - Reference Device Tree Implementation"
++	depends on ARCH_R7S72100
++	select USE_OF
++	---help---
++	   Use reference implementation of Genmai board support
++	   which makes use of device tree at the expense
++	   of not supporting a number of devices.
++
++	   This is intended to aid developers
++
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 021775d..d2b8342 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -65,6 +65,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
++obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 892d4ab..759e4f8f 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -6,7 +6,8 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
++loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
++loadaddr-$(CONFIG_MACH_GENMAI_REFERENCE) += 0x08008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
+new file mode 100644
+index 0000000..34c9881
+--- /dev/null
++++ b/arch/arm/mach-shmobile/board-genmai-reference.c
+@@ -0,0 +1,44 @@
++/*
++ * Genmai board support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/of_platform.h>
++#include <mach/common.h>
++#include <mach/r7s72100.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static void __init genmai_add_standard_devices(void)
++{
++	r7s72100_clock_init();
++	r7s72100_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
++static const char * const genmai_boards_compat_dt[] __initconst = {
++	"renesas,genmai-reference",
++	NULL,
++};
++
++DT_MACHINE_START(GENMAI_DT, "genmai")
++	.init_early	= r7s72100_init_early,
++	.init_machine	= genmai_add_standard_devices,
++	.dt_compat	= genmai_boards_compat_dt,
++MACHINE_END
 -- 
 1.8.4
 
