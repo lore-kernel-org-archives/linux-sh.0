@@ -1,90 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:13:52 +0000
-Subject: [PATCH v4 06/16] ARM: shmobile: lager-reference: Enable multiplaform kernel support
-Message-Id: <1386771242-21876-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:07 +0000
+Subject: [PATCH 11/26] ARM: shmobile: r7s72100 Genmai DT reference DTS bits
+Message-Id: <495e06d1daff7f59b511c27c95d2601c1d9dad49.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Enable multiplaform ARM architecture support for the Lager reference
-board. Common clock framework initialization will be handled by the
-rcar_gen2_init_timer() call, we just need to remove the legacy clock
-code initialization.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add the DT bits for r7s72100 Genmai DT reference support.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                     | 1 +
- arch/arm/mach-shmobile/Kconfig                 | 8 ++++++++
- arch/arm/mach-shmobile/Makefile                | 1 +
- arch/arm/mach-shmobile/board-lager-reference.c | 2 ++
- 4 files changed, 12 insertions(+)
+ arch/arm/boot/dts/Makefile                      |  1 +
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 31 +++++++++++++++++++++++++
+ 2 files changed, 32 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r7s72100-genmai-reference.dts
 
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 33c6054..74e4186 100644
+index 8254bfc..b17de79 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -236,6 +236,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
-+	r8a7790-lager-reference.dtb \
- 	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 3e57d45..b7c0969 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -27,6 +27,10 @@ config ARCH_EMEV2
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
- 
-+config ARCH_R8A7790
-+	bool "R-Car H2 (R8A77900)"
-+	select RENESAS_IRQC
+@@ -218,6 +218,7 @@ dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
+ 	s3c6410-smdk6410.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
++	r7s72100-genmai-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+new file mode 100644
+index 0000000..da19c70
+--- /dev/null
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -0,0 +1,31 @@
++/*
++ * Device Tree Source for the Genmai board
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
-@@ -46,6 +50,10 @@ config MACH_KZM9D
- 	depends on ARCH_EMEV2
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 
-+config MACH_LAGER
-+	bool "Lager board"
-+	depends on ARCH_R8A7790
++/dts-v1/;
++/include/ "r7s72100.dtsi"
 +
- comment "Renesas ARM SoCs System Configuration"
- endif
- 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 1c13104..9daa9c1 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
-+obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 51a3bcc..fc43f7c 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -27,7 +27,9 @@
- 
- static void __init lager_add_standard_devices(void)
- {
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7790_clock_init();
-+#endif
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
++/ {
++	model = "Genmai";
++	compatible = "renesas,genmai-reference", "renesas,r7s72100";
++
++	chosen {
++		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x08000000 0x08000000>;
++	};
++
++	lbsc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++};
 -- 
-1.8.3.2
+1.8.4
 
