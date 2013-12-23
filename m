@@ -1,27 +1,61 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Tue, 03 Dec 2013 18:45:57 +0000
-Subject: Re: [PATCH] serial: sh-sci: Fix warnings due to improper casts and printk formats
-Message-Id: <20131203184557.GF23280@kroah.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:12 +0000
+Subject: [PATCH 07/26] ARM: shmobile: bockw: add pin pull-up setting for SDHI
+Message-Id: <79990c164dcc7514398ca824a609c74cb5f563da.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385512118-10219-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385512118-10219-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 27, 2013 at 01:28:38AM +0100, Laurent Pinchart wrote:
-> Use the %zu printk specifier to print size_t variables, and cast
-> pointers to unsigned long instead of unsigned int where applicable. This
-> fixes warnings on platforms where pointers and/or dma_addr_t have a
-> different size than int.
-> 
-> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> Cc: linux-serial@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/tty/serial/sh-sci.c | 19 ++++++++++---------
->  1 file changed, 10 insertions(+), 9 deletions(-)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+SDHI CD/WP pin needs pull-up
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-bockw-reference.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index c7b217d..6586f5c 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -38,9 +38,13 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
+ #define FPGA	0x18200000
+ #define IRQ0MR	0x30
+ #define COMCTLR	0x101c
++
++#define PFC	0xfffc0000
++#define PUPR4	0x110
+ static void __init bockw_init(void)
+ {
+ 	void __iomem *fpga;
++	void __iomem *pfc;
+ 
+ 	r8a7778_clock_init();
+ 	r8a7778_init_irq_extpin_dt(1);
+@@ -66,6 +70,17 @@ static void __init bockw_init(void)
+ 		iounmap(fpga);
+ 	}
+ 
++	pfc = ioremap_nocache(PFC, 0x200);
++	if (pfc) {
++		/*
++		 * FIXME
++		 *
++		 * SDHI CD/WP pin needs pull-up
++		 */
++		iowrite32(ioread32(pfc + PUPR4) | (3 << 26), pfc + PUPR4);
++		iounmap(pfc);
++	}
++
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-- 
+1.8.4
+
