@@ -1,60 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Dec 2013 02:16:39 +0000
-Subject: Re: [PATCH 2/2] spi: rspi: Fix typo when clearing SPSR_OVRF
-Message-Id: <20131227021639.GD9184@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Mon, 23 Dec 2013 18:34:23 +0000
+Subject: [PATCH 1/2] spi: rspi: Fix NULL pointer dereference on SH7757
+Message-Id: <1387823664-32318-1-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387823664-32318-1-git-send-email-geert+renesas@linux-m68k.org>
- <1387823664-32318-2-git-send-email-geert+renesas@linux-m68k.org>
- <20131224025936.GF22401@verge.net.au>
- <CAMuHMdWiJPF2NU+ME=CLMygvABZ_fcTyr7ggdQtFKbOGhCA0+w@mail.gmail.com>
-In-Reply-To: <CAMuHMdWiJPF2NU+ME=CLMygvABZ_fcTyr7ggdQtFKbOGhCA0+w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-On Tue, Dec 24, 2013 at 10:26:17AM +0100, Geert Uytterhoeven wrote:
-> On Tue, Dec 24, 2013 at 3:59 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Dec 23, 2013 at 07:34:24PM +0100, Geert Uytterhoeven wrote:
-> >> The overrun flag should be cleared in the SPI Status Register, not in the
-> >> SPI Control Register, based on the SDK sample code.
-> >>
-> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> >
-> > I don't believe that I have access to the sample code,
-> > but I do trust your judgement.
-> 
-> It's in the public RZLSP-V1.0.1 for RZ/A1H, available from
-> https://oss.renesas.com/. Oh, today a new version got released.
+SH7757 doesn't pass platform data, in which case spi-rspi uses default
+parameters.
 
-Thanks, I was not aware of that.
+However, commit 5ce0ba88650f2606244a761d92e2b725f4ab3583 ("spi: rcar: add
+Renesas QSPI support on RSPI") added a new user of the platform data, but
+forgot to check for its validity first, causing a NULL pointer dereference
+on SH7757.
 
-> 
-> The issue is quite obvious: after clearing the bit, the new value should
-> be written back to the same register.
-> 
-> However, the fix is not in a v3.10-rc6 version I saw, so this may matter
-> for LTSI.
+Add the missing check to fix this.
 
-I believe that the LTSI-3.10 work from Renesas (so far mainly me) is
-independent of the sample code at the link above. So unless this fix ends
-up in v3.10 -stable, which should feed into LTSI-3.10, then it will need to
-be submitted to LTSI (probably be me or you) if we want it to be in LTSI.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+---
+This fixes a regression introduced in v3.13-rc1
 
-> 
-> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Thanks!
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+ drivers/spi/spi-rspi.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index cfdbb422a40a..9e0301014f48 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -948,8 +948,9 @@ static int rspi_probe(struct platform_device *pdev)
+ 	INIT_WORK(&rspi->ws, rspi_work);
+ 	init_waitqueue_head(&rspi->wait);
+ 
+-	master->num_chipselect = rspi_pd->num_chipselect;
+-	if (!master->num_chipselect)
++	if (rspi_pd && rspi_pd->num_chipselect)
++		master->num_chipselect = rspi_pd->num_chipselect;
++	else
+ 		master->num_chipselect = 2; /* default */
+ 
+ 	master->bus_num = pdev->id;
+-- 
+1.7.9.5
+
