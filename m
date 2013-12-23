@@ -1,49 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:13:59 +0000
-Subject: [PATCH v4 13/16] ARM: shmobile: Let Koelsch multiplatform boot with Koelsch DTB
-Message-Id: <1386771242-21876-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 01:10:23 +0000
+Subject: [GIT PULL] Renesas ARM based SoC Clock updates for v3.14
+Message-Id: <1387761024-10114-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Let the multiplatform Koelsch support boot with the legacy DTS for
-Koelsch as well as the Koelsch reference DTS.
+Hi Mike,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/Makefile                       | 4 ++--
- arch/arm/mach-shmobile/board-koelsch-reference.c | 1 +
- 2 files changed, 3 insertions(+), 2 deletions(-)
+please consider the following
+Renesas ARM based SoC Clock updates for v3.14.
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index f28b4ef..ee0f2bd 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -234,8 +234,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
--	r8a7790-lager.dtb \
--	r8a7791-koelsch-reference.dtb
-+	r8a7791-koelsch.dtb \
-+	r8a7790-lager.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
- 	socfpga_cyclone5_sockit.dtb \
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index e1c787e..652b592 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -64,6 +64,7 @@ static void __init koelsch_add_standard_devices(void)
- }
- 
- static const char * const koelsch_boards_compat_dt[] __initconst = {
-+	"renesas,koelsch",
- 	"renesas,koelsch-reference",
- 	NULL,
- };
--- 
-1.8.3.2
+This pull request is based on your clk-next-shmobile branch.
 
+
+The following changes since commit f94859c215b6d977794108a1a9a101239e393c09:
+
+  clk: shmobile: Add MSTP clock support (2013-12-12 19:23:59 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.14
+
+for you to fetch changes up to 92ca6a8ce97e07206d474da5477d8da4e41bad6c:
+
+  clk: emev2: Add support for emev2 SMU clocks with DT (2013-12-14 13:17:55 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC Clock updates for v3.14
+
+Add support for using emev2 SMU clocks with DT
+
+----------------------------------------------------------------
+Takashi Yoshii (1):
+      clk: emev2: Add support for emev2 SMU clocks with DT
+
+ .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
+ drivers/clk/shmobile/Makefile                      |   2 +-
+ drivers/clk/shmobile/clk-emev2.c                   | 104 +++++++++++++++++++++
+ 3 files changed, 203 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/emev2-clock.txt
+ create mode 100644 drivers/clk/shmobile/clk-emev2.c
