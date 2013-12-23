@@ -1,38 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:56 +0000
-Subject: [PATCH 23/33] ARM: shmobile: Add r8a7790 clocks for thermal devices
-Message-Id: <9654fd7322c378d5955b179c49bbedb3e1de55f3.1386897180.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:10 +0000
+Subject: [PATCH 14/26] ARM: shmobile: lager: mark GPIO keys as wake-up sources
+Message-Id: <e0554d90b076da1c543b42599c1d6636286ca47f.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Add the r8a7790 DT thermal device to the legacy clocks.
+Enable wakeup for the GPIO keys on the Lager board.
 
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/board-lager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 5269640..33e80b10 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -286,6 +286,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
-+	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index fcf06fd..f5dab34 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -121,7 +121,7 @@ static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
+-	  .debounce_interval = 20 }
++	  .wakeup = 1, .debounce_interval = 20 }
+ 
+ static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
 -- 
 1.8.4
 
