@@ -1,95 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:27 +0000
-Subject: [PATCH 20/47] ARM: shmobile: r8a7778: Don't define SCIF platform data in an array
-Message-Id: <1386323994-12850-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:15 +0000
+Subject: [PATCH 19/26] ARM: shmobile: Add pinctrl_register_mappings() for Koelsch
+Message-Id: <85ef14da7337ba2c9b9fc489637e3db3b956b5a0.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add code to setup the r8a7791 PFC for the Koelsch board.
+
+At this point serial consoles are added, and in the near
+future other platform-device-only devices will be added
+here like for instance the r8a7791 DU.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 36 ++++++++++++++++++----------------
- 1 file changed, 19 insertions(+), 17 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 81701cf..676257e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -44,8 +44,8 @@
- #include <asm/hardware/cache-l2x0.h>
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 412e153..6e12914 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -24,6 +24,7 @@
+ #include <linux/input.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
+@@ -78,9 +79,20 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ };
  
- /* SCIF */
--#define SCIF_INFO(baseaddr, irq)				\
--{								\
-+#define R8A7778_SCIF(index, baseaddr, irq)			\
-+static struct plat_sci_port scif##index##_platform_data = {	\
- 	.mapbase	= baseaddr,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
-@@ -54,14 +54,17 @@
- 	.irqs		= SCIx_IRQ_MUXED(irq),			\
- }
- 
--static struct plat_sci_port scif_platform_data[] __initdata = {
--	SCIF_INFO(0xffe40000, gic_iid(0x66)),
--	SCIF_INFO(0xffe41000, gic_iid(0x67)),
--	SCIF_INFO(0xffe42000, gic_iid(0x68)),
--	SCIF_INFO(0xffe43000, gic_iid(0x69)),
--	SCIF_INFO(0xffe44000, gic_iid(0x6a)),
--	SCIF_INFO(0xffe45000, gic_iid(0x6b)),
--};
-+R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
-+R8A7778_SCIF(1, 0xffe41000, gic_iid(0x67));
-+R8A7778_SCIF(2, 0xffe42000, gic_iid(0x68));
-+R8A7778_SCIF(3, 0xffe43000, gic_iid(0x69));
-+R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
-+R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
++static const struct pinctrl_map koelsch_pinctrl_map[] = {
++	/* SCIF0 (CN19: DEBUG SERIAL0) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
++				  "scif0_data_d", "scif0"),
++	/* SCIF1 (CN20: DEBUG SERIAL1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
++				  "scif1_data_d", "scif1"),
++};
 +
-+#define r8a7778_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
- 
- /* TMU */
- static struct resource sh_tmu0_resources[] __initdata = {
-@@ -287,8 +290,6 @@ static void __init r8a7778_register_hspi(int id)
- 
- void __init r8a7778_add_dt_devices(void)
+ static void __init koelsch_add_standard_devices(void)
  {
--	int i;
--
- #ifdef CONFIG_CACHE_L2X0
- 	void __iomem *base = ioremap_nocache(0xf0100000, 0x1000);
- 	if (base) {
-@@ -300,11 +301,12 @@ void __init r8a7778_add_dt_devices(void)
- 	}
- #endif
- 
--	for (i = 0; i < ARRAY_SIZE(scif_platform_data); i++)
--		platform_device_register_data(&platform_bus, "sh-sci", i,
--					      &scif_platform_data[i],
--					      sizeof(struct plat_sci_port));
--
-+	r8a7778_register_scif(0);
-+	r8a7778_register_scif(1);
-+	r8a7778_register_scif(2);
-+	r8a7778_register_scif(3);
-+	r8a7778_register_scif(4);
-+	r8a7778_register_scif(5);
- 	r8a7778_register_tmu(0);
- 	r8a7778_register_tmu(1);
- }
+ 	r8a7791_clock_init();
++	pinctrl_register_mappings(koelsch_pinctrl_map,
++				  ARRAY_SIZE(koelsch_pinctrl_map));
+ 	r8a7791_pinmux_init();
+ 	r8a7791_add_standard_devices();
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
 -- 
-1.8.3.2
+1.8.4
 
