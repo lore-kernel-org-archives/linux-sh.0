@@ -1,30 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Dec 2013 01:32:42 +0000
-Subject: [PATCH 1/3] ARM: shmobile: sh73a0: add FSI clock support for DT
-Message-Id: <878uw0qdzc.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:08:23 +0000
+Subject: [PATCH 1/3] ARM: shmobile: sh73a0: add FSI support via DTSI
+Message-Id: <63b1303d1922f7660bd9e90da56dfbf93134c5aa.1387764079.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387764079.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387764079.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |    1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/sh73a0.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 30d8868..23edf83 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -652,6 +652,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
- 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
-+	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
- 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 241c8cd..c460dd2 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -243,4 +243,13 @@
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+ 	};
++
++	sh_fsi2: sound@ec230000 {
++		#sound-dai-cells = <1>;
++		compatible = "renesas,sh_fsi2";
++		reg = <0xec230000 0x400>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 146 0x4>;
++		status = "disabled";
++	};
+ };
 -- 
-1.7.9.5
+1.8.4
 
