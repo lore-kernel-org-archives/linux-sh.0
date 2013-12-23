@@ -1,66 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:36 +0000
-Subject: [PATCH 06/21] ARM: shmobile: armadillo: dts: Add gpio-keys device
-Message-Id: <90c2434daa0b8c7ec2b75fcb182436813e9120bd.1387893834.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:13 +0000
+Subject: [PATCH 08/26] ARM: shmobile: lager: set .debounce_interval
+Message-Id: <c9fd77d48a72d4210c992c4ee27ef8217a44da03.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1387763524.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-The board had 4 buttons connected to GPIOs, add a corresponding
-gpio-keys device.
+In R-Car GPIO hardware block, 'chattering removal' feature can be
+enabled on GPIO-n-[3:0] pins, but it's not supported on rest of pins
+GPIO-n-[31:4].
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Set an appropriate debounce interval, instead.  We could confirm that
+spurious/unnecessary GPIO interrupts are prevented by this settings.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts | 29 ++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index e916aae..95a849b 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -72,6 +72,35 @@
- 		regulator-boot-on;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 78a31b6..fcf06fd 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -120,7 +120,8 @@ static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
  
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		power-key {
-+			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
-+			linux,code = <116>;
-+			label = "SW3";
-+			gpio-key,wakeup;
-+		};
-+
-+		back-key {
-+			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
-+			linux,code = <158>;
-+			label = "SW4";
-+		};
-+
-+		menu-key {
-+			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
-+			linux,code = <139>;
-+			label = "SW5";
-+		};
-+
-+		home-key {
-+			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
-+			linux,code = <102>;
-+			label = "SW6";
-+		};
-+	};
-+
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+-	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
++	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
++	  .debounce_interval = 20 }
+ 
+ static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
 -- 
 1.8.4
 
