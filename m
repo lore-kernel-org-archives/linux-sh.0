@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:15 +0000
-Subject: [PATCH 19/26] ARM: shmobile: Add pinctrl_register_mappings() for Koelsch
-Message-Id: <85ef14da7337ba2c9b9fc489637e3db3b956b5a0.1387763524.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:07:13 +0000
+Subject: [PATCH 17/26] ARM: shmobile: Hook up SW30-SW36 on Koelsch
+Message-Id: <159a282dc3a1bcc9a0cc3a41304c41eef229add1.1387763524.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1387763524.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
@@ -12,51 +12,32 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add code to setup the r8a7791 PFC for the Koelsch board.
-
-At this point serial consoles are added, and in the near
-future other platform-device-only devices will be added
-here like for instance the r8a7791 DU.
+Add support for Koelsch SW30-SW36 using GPIO keys.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 412e153..6e12914 100644
+index f0fe5d4..412e153 100644
 --- a/arch/arm/mach-shmobile/board-koelsch.c
 +++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -24,6 +24,7 @@
- #include <linux/input.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_device.h>
- #include <mach/common.h>
-@@ -78,9 +79,20 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+@@ -64,6 +64,13 @@ static struct gpio_keys_button gpio_buttons[] = {
+ 	GPIO_KEY(KEY_3,		RCAR_GP_PIN(5, 2),	"SW2-pin3"),
+ 	GPIO_KEY(KEY_2,		RCAR_GP_PIN(5, 1),	"SW2-pin2"),
+ 	GPIO_KEY(KEY_1,		RCAR_GP_PIN(5, 0),	"SW2-pin1"),
++	GPIO_KEY(KEY_G,		RCAR_GP_PIN(7, 6),	"SW36"),
++	GPIO_KEY(KEY_F,		RCAR_GP_PIN(7, 5),	"SW35"),
++	GPIO_KEY(KEY_E,		RCAR_GP_PIN(7, 4),	"SW34"),
++	GPIO_KEY(KEY_D,		RCAR_GP_PIN(7, 3),	"SW33"),
++	GPIO_KEY(KEY_C,		RCAR_GP_PIN(7, 2),	"SW32"),
++	GPIO_KEY(KEY_B,		RCAR_GP_PIN(7, 1),	"SW31"),
++	GPIO_KEY(KEY_A,		RCAR_GP_PIN(7, 0),	"SW30"),
  };
  
-+static const struct pinctrl_map koelsch_pinctrl_map[] = {
-+	/* SCIF0 (CN19: DEBUG SERIAL0) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
-+				  "scif0_data_d", "scif0"),
-+	/* SCIF1 (CN20: DEBUG SERIAL1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
-+				  "scif1_data_d", "scif1"),
-+};
-+
- static void __init koelsch_add_standard_devices(void)
- {
- 	r8a7791_clock_init();
-+	pinctrl_register_mappings(koelsch_pinctrl_map,
-+				  ARRAY_SIZE(koelsch_pinctrl_map));
- 	r8a7791_pinmux_init();
- 	r8a7791_add_standard_devices();
- 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
 -- 
 1.8.4
 
