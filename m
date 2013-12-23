@@ -1,42 +1,74 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:30 +0000
-Subject: [PATCH 56/69] ARM: shmobile: Include all 4 GiB of memory on Lager
-Message-Id: <62bc32a2573c421926a292e13b71ad9cc3ebf6e4.1386901186.git.horms+renesas@verge.net.au>
+Date: Mon, 23 Dec 2013 02:08:47 +0000
+Subject: [PATCH 2/3] serial: sh-sci: Don't enable/disable port from within break timer
+Message-Id: <caec70381b469d6ed1bd3d0441a19aa6de0bbff3.1387761495.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387761495.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387761495.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add 2GiB of DRAM at 0x1_8000_0000 to support the full 4GiB
-of Lager system memory.
+The break timer accesses hardware registers and thus requires the port
+to be enabled. It currently ensures this by enabling the port at the
+beginning of the timer handler, and disabling it at the end. However,
+the enable/disable operations call the runtime PM sync functions, which
+are not allowed in atomic context. The current situation is thus broken.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+This change relies on non-atomic code to enable/disable the port. The
+break timer will only be started from the IRQ handler, which already
+runs with the port enabled. We just need to ensure that the port won't
+be disabled with the timer running, and that's easily done by just
+cancelling the timer in the port disable function.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/tty/serial/sh-sci.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 8799dfb..10e6a08 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -24,6 +24,11 @@
- 		reg = <0 0x40000000 0 0x80000000>;
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 6e5ce62..1ebac3e 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -431,6 +431,14 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	if (!sci_port->port.dev)
+ 		return;
  
-+	memory@180000000 {
-+		device_type = "memory";
-+		reg = <1 0x80000000 0 0x80000000>;
-+	};
++	/* Cancel the break timer to ensure that the timer handler will not try
++	 * to access the hardware with clocks and power disabled. Reset the
++	 * break flag to make the break debouncing state machine ready for the
++	 * next break.
++	 */
++	del_timer_sync(&sci_port->break_timer);
++	sci_port->break_flag = 0;
 +
- 	lbsc {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
+ 	clk_disable(sci_port->fclk);
+ 	clk_disable(sci_port->iclk);
+ 
+@@ -733,8 +741,6 @@ static void sci_break_timer(unsigned long data)
+ {
+ 	struct sci_port *port = (struct sci_port *)data;
+ 
+-	sci_port_enable(port);
+-
+ 	if (sci_rxd_in(&port->port) = 0) {
+ 		port->break_flag = 1;
+ 		sci_schedule_break_timer(port);
+@@ -744,8 +750,6 @@ static void sci_break_timer(unsigned long data)
+ 		sci_schedule_break_timer(port);
+ 	} else
+ 		port->break_flag = 0;
+-
+-	sci_port_disable(port);
+ }
+ 
+ static int sci_handle_errors(struct uart_port *port)
 -- 
 1.8.4
 
