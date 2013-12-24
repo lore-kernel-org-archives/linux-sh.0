@@ -1,80 +1,67 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Wed, 18 Dec 2013 09:59:05 +0000
-Subject: Re: [PATCH v3 2/2] provide -fstack-protector-strong build option
-Message-Id: <20131218095905.GB19319@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:16:06 +0000
+Subject: [PATCH 26/29] ARM: shmobile: r8a7790: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <6319ea5089a267b3a1cbd1d745ecc7cdae9a0a7e.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387320194-24185-1-git-send-email-keescook@chromium.org>
- <1387320194-24185-3-git-send-email-keescook@chromium.org>
-In-Reply-To: <1387320194-24185-3-git-send-email-keescook@chromium.org>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-* Kees Cook <keescook@chromium.org> wrote:
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-> This changes the stack protector config option into a choice of "None",
-> "Regular", and "Strong". For "Strong", the kernel is built with
-> -fstack-protector-strong (gcc 4.9 and later). This options increases
-> the coverage of the stack protector without the heavy performance hit
-> of -fstack-protector-all.
-> 
-> For reference, the stack protector options available in gcc are:
-> 
-> -fstack-protector-all:
-> Adds the stack-canary saving prefix and stack-canary checking suffix to
-> _all_ function entry and exit. Results in substantial use of stack space
-> for saving the canary for deep stack users (e.g. historically xfs), and
-> measurable (though shockingly still low) performance hit due to all the
-> saving/checking. Really not suitable for sane systems, and was entirely
-> removed as an option from the kernel many years ago.
-> 
-> -fstack-protector:
-> Adds the canary save/check to functions that define an 8
-> (--param=ssp-buffer-size=N, N=8 by default) or more byte local char
-> array. Traditionally, stack overflows happened with string-based
-> manipulations, so this was a way to find those functions. Very few
-> total functions actually get the canary; no measurable performance or
-> size overhead.
-> 
-> -fstack-protector-strong
-> Adds the canary for a wider set of functions, since it's not just those
-> with strings that have ultimately been vulnerable to stack-busting. With
-> this superset, more functions end up with a canary, but it still
-> remains small compared to all functions with no measurable change in
-> performance. Based on the original design document, a function gets the
-> canary when it contains any of:
-> - local variable's address used as part of the RHS of an assignment or
->   function argument
-> - local variable is an array (or union containing an array), regardless
->   of array type or length
-> - uses register local variables
-> https://docs.google.com/a/google.com/document/d/1xXBH6rRZue4f296vGt9YQcuLVQHeE516stHwt8M9xyU
-> 
-> Comparison of "size" output when built with gcc-4.9 in three configurations:
-> - defconfig
-> - defconfig + CONFIG_CC_STACKPROTECTOR (+0.33%)
-> - defconfig + CONFIG_CC_STACKPROTECTOR_STRONG via this patch (+2.24%)
-> 
-> text      data     bss      dec       hex     filename
-> 11430641  1457584  1191936  14080161  d6d8a1  vmlinux
-> 11468490  1457584  1191936  14118010  d76c7a  vmlinux.stackprotector
-> 11692790  1457584  1191936  14342310  dad8a6  vmlinux.stackprotector-strong
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-Beyond the kernel size calculation, could you please also provide an 
-estimation about the _number_ of functions affected, out of N kernel 
-functions, so that the user has a rough picture about the scope and 
-distribution of these variants?
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 8bfdc36..66476d2 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -100,11 +100,10 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_i2c(3);
+ }
+ 
+-#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
++#define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scbrr_algo_id	= algo,						\
+ 	.scscr		= _scscr,					\
+ };									\
+ 									\
+@@ -115,19 +114,19 @@ static struct resource scif##index##_resources[] = {			\
+ 
+ #define R8A7790_SCIF(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
+-		       SCBRR_ALGO_2, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ #define R8A7790_SCIFA(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
+-		       SCBRR_ALGO_4, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ #define R8A7790_SCIFB(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
+-		       SCBRR_ALGO_4, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ #define R8A7790_HSCIF(index, baseaddr, irq)				\
+ 	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
+-		       SCBRR_ALGO_6, index, baseaddr, irq)
++		       index, baseaddr, irq)
+ 
+ R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
+ R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
+-- 
+1.8.4
 
-I.e. something like:
-
-                                                 # of canary checks
- ..................................................................................
- - defconfig                                     0 functions out of 100k functions
- - defconfig + STACKPROTECTOR                   1k functions out of 100k functions  
- - defconfig + STACKPROTECTOR_STRONG           20k functions out of 100k functions
-	
-Thanks,
-
-	Ingo
