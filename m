@@ -1,66 +1,55 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 11:56:50 +0000
-Subject: [PATCH 6/6] [RFC] arm: shmobile: genmai reference: Add RSPI nodes
-Message-Id: <1387886210-3634-7-git-send-email-geert+renesas@linux-m68k.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 24 Dec 2013 15:45:03 +0000
+Subject: Re: [PATCH 6/6] [RFC] arm: shmobile: genmai reference: Add RSPI nodes
+Message-Id: <52B9ABFF.90902@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
+ <1387886210-3634-7-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387886210-3634-7-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add pinctrl and SPI devices for RSPI on Genmai.
+Hello.
 
-On this board, only rspi4 is in use. It's bus contains a single device
-(a wm8978 audio codec), for which no bindings are defined yet.
+On 24-12-2013 15:56, Geert Uytterhoeven wrote:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
----
- arch/arm/boot/dts/r7s72100-genmai-reference.dts |   18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
+> Add pinctrl and SPI devices for RSPI on Genmai.
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index 114510f8bf09..6d99630627e4 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -43,7 +43,7 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&scif2_pins &ethernet_pins>;
-+	pinctrl-0 = <&scif2_pins &ethernet_pins &rspi4_pins>;
- 	pinctrl-names = "default";
- 
- 	scif2_pins: serial2 {
-@@ -73,6 +73,12 @@
- 				 "ethernet_int_p1_15";
- 		renesas,function = "ethernet";
- 	};
-+
-+	rspi4_pins: spi4 {
-+		renesas,groups = "rspi4_rspck_p4_0", "rspi4_ssl0_p4_1",
-+				 "rspi4_mosi_p4_2", "rspi4_miso_p4_3";
-+		renesas,function = "rspi4";
-+	};
- };
- 
- &i2c2 {
-@@ -85,3 +91,13 @@
- 		pagesize = <64>;
- 	};
- };
-+
-+&spi4 {
-+	status = "okay";
-+
-+	codec: wm8978@0 {
-+		compatible = "wlf,wm8978";
-+		reg = <0>;
-+		spi-max-frequency = <5000000>;
-+	};
-+};
--- 
-1.7.9.5
+> On this board, only rspi4 is in use. It's bus contains a single device
+> (a wm8978 audio codec), for which no bindings are defined yet.
+
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> Cc: devicetree@vger.kernel.org
+> ---
+>   arch/arm/boot/dts/r7s72100-genmai-reference.dts |   18 +++++++++++++++++-
+>   1 file changed, 17 insertions(+), 1 deletion(-)
+
+> diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+> index 114510f8bf09..6d99630627e4 100644
+> --- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+> +++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+[...]
+> @@ -85,3 +91,13 @@
+>   		pagesize = <64>;
+>   	};
+>   };
+> +
+> +&spi4 {
+> +	status = "okay";
+> +
+> +	codec: wm8978@0 {
+
+    Do not give chip names to device nodes, please use somewhat generic names 
+instead, like "sound-codec@0". That's to comply with ePAPR spec.
+
+> +		compatible = "wlf,wm8978";
+> +		reg = <0>;
+> +		spi-max-frequency = <5000000>;
+> +	};
+> +};
+
+WBR, Sergei
+
 
