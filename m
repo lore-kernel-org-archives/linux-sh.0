@@ -1,72 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 02 Dec 2013 13:33:34 +0000
-Subject: [PATCH v4 0/3] Renesas R-Car Gen2 Common Clock Framework drivers
-Message-Id: <1385991214-28003-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:19 +0000
+Subject: [PATCH 02/11] serial: sh-sci: Remove baud rate calculation algorithm 5
+Message-Id: <6db201da2522d7dd231982ff7b83916cf4db3e41.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This is the fourth and hopefully final version of the CCF clock drivers for
-the Renesas R-Car R8A7790 (H2) and R8A7791 (M2) SoCs. I plan to send a pull
-request on Wednesday to Mike Turquette and have thus rebased the patches on
-top of v3.13-rc1 and removed the arch/ specific changes.
+The algorithm isn't used, remove it.
 
-The patches are pretty self-explanatory and described in their respective
-commit message. The R8A7790 and R8A7791 datasheets are unfortunately not
-publicly available.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/tty/serial/sh-sci.c | 2 --
+ include/linux/serial_sci.h  | 1 -
+ 2 files changed, 3 deletions(-)
 
-Changes compared to v3:
-
-- Clarified the usage of the reg and clocks DT properties for the MSTP driver
-- Rebased on top of v3.13-rc1
-- Dropped the arch/ specific changes
-
-Changes compared to v2:
-
-- Fixed I2C MSTP clocks parents (hp -> p)
-- Added Z and Z2 clocks
-- Added r8a7791 clocks to DT
-
-Changes compared to v1:
-
-- The core CPG clocks driver now supports the r8a7791 SoC in addition to the
-r8a7790. They are collectively refered to as 'R-Car Gen2'. The driver has thus
-been renamed to clk-rcar-gen2.c. The DT bindings have been updated accordingly.
-- Several MSTP clocks have been added to the r8a7790-clock.h header and a new
-header has been added for the r8a7791
-- The r8a7790 dtsi patches that add and reference clocks have been added to
-this series.
-
-Laurent Pinchart (3):
-  clk: shmobile: Add R-Car Gen2 clocks support
-  clk: shmobile: Add DIV6 clock support
-  clk: shmobile: Add MSTP clock support
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |  28 ++
- .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  51 ++++
- .../clock/renesas,rcar-gen2-cpg-clocks.txt         |  32 +++
- drivers/clk/Makefile                               |   1 +
- drivers/clk/shmobile/Makefile                      |   7 +
- drivers/clk/shmobile/clk-div6.c                    | 185 +++++++++++++
- drivers/clk/shmobile/clk-mstp.c                    | 229 ++++++++++++++++
- drivers/clk/shmobile/clk-rcar-gen2.c               | 298 +++++++++++++++++++++
- include/linux/clk/shmobile.h                       |  19 ++
- 9 files changed, 850 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/Makefile
- create mode 100644 drivers/clk/shmobile/clk-div6.c
- create mode 100644 drivers/clk/shmobile/clk-mstp.c
- create mode 100644 drivers/clk/shmobile/clk-rcar-gen2.c
- create mode 100644 include/linux/clk/shmobile.h
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e98a217..eb59bb2 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1825,8 +1825,6 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+ 		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
+ 	case SCBRR_ALGO_4:
+ 		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
+-	case SCBRR_ALGO_5:
+-		return (((freq * 1000 / 32) / bps) - 1);
+ 	}
+ 
+ 	/* Warn, but use a safe default */
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 50fe651..babc5fe 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -15,7 +15,6 @@ enum {
+ 	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
+ 	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
+ 	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
+-	SCBRR_ALGO_5,		/* (((clk * 1000 / 32) / bps) - 1) */
+ 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+ };
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
