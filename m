@@ -1,34 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 09:49:30 +0000
-Subject: [PATCH 1/5] spi: rspi: Use dev_get_platdata() instead of raw dev.platform_data access
-Message-Id: <1387878574-21445-2-git-send-email-geert+renesas@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:16:03 +0000
+Subject: [PATCH 23/29] ARM: shmobile: r8a7778: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <938ed60f7a0698a27f40369f3f89e0f07f570959.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-rspi.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index b04835d809f5..08861b5db893 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -899,7 +899,7 @@ static int rspi_probe(struct platform_device *pdev)
- 	struct rspi_data *rspi;
- 	int ret, irq;
- 	char clk_name[16];
--	struct rspi_plat_data *rspi_pd = pdev->dev.platform_data;
-+	struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
- 	const struct spi_ops *ops;
- 	const struct platform_device_id *id_entry = pdev->id_entry;
- 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 3e583cd..6d69452 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -48,7 +48,6 @@
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.type		= PORT_SCIF,				\
+ };								\
+ 								\
 -- 
-1.7.9.5
+1.8.4
 
