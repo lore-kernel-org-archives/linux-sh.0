@@ -1,69 +1,132 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:07:00 +0000
-Subject: [PATCH 08/13] ARM: shmobile: Add select MIGHT_HAVE_PCI for PCI-AHB bridge code
-Message-Id: <7e429989b68533ee3896c96264a1cce99b95d218.1387857168.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:18:06 +0000
+Subject: [PATCH 02/12] ARM: shmobile: Koelsch: add Ether support
+Message-Id: <974faba70550409049ee349939f4479ad98908ae.1387891831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <cover.1387891831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-The PCI sub-system is not enabled by default on ARM and on certain
-Renesas devices the build does not select it. This means that there
-are configurations that do not allow the AHB-PCI bridge used for the
-USB sub-systems to be built.
+Register Ether platform device and pin data on  the  Koelsch board.
+Register platform fixup for Micrel KSZ8041 PHY, just like on the Lager board.
 
-For the R8A7790, R8A7791 and EMEV-2 select MIGHT_HAVE_PCI to allow the
-PCI drivers to be built. Also select MIGHT_HAVE_PCI for the multi-config
-where there may be many Reneasas devices selected.
-
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch.c | 56 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 55 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index aa9017b..8a1364e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -12,6 +12,7 @@ config ARCH_SHMOBILE_MULTI
- 	select HAVE_SMP
- 	select ARM_GIC
- 	select MIGHT_HAVE_CACHE_L2X0
-+	select MIGHT_HAVE_PCI
- 	select NO_IOPORT
- 	select PINCTRL
- 	select ARCH_REQUIRE_GPIOLIB
-@@ -96,6 +97,7 @@ config ARCH_R8A7790
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
-+	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 5d84fb6..de7cc64 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -25,10 +25,12 @@
+ #include <linux/input.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/phy.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
++#include <linux/sh_eth.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+@@ -87,6 +89,19 @@ static void __init koelsch_add_du_device(void)
+ 	platform_device_register_full(&info);
+ }
  
-@@ -104,6 +106,7 @@ config ARCH_R8A7791
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
-+	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
++/* Ether */
++static const struct sh_eth_plat_data ether_pdata __initconst = {
++	.phy			= 0x1,
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.phy_interface		= PHY_INTERFACE_MODE_RMII,
++	.ether_link_active_low	= 1,
++};
++
++static const struct resource ether_resources[] __initconst = {
++	DEFINE_RES_MEM(0xee700000, 0x400),
++	DEFINE_RES_IRQ(gic_spi(162)),
++};
++
+ /* LEDS */
+ static struct gpio_led koelsch_leds[] = {
+ 	{
+@@ -141,6 +156,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 				  "du_sync", "du"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
+ 				  "du_clk_out_0", "du"),
++	/* Ether */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
++				  "eth_link", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
++				  "eth_mdio", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
++				  "eth_rmii", "eth"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
++				  "intc_irq0", "intc"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
+ 				  "scif0_data_d", "scif0"),
+@@ -156,6 +180,10 @@ static void __init koelsch_add_standard_devices(void)
+ 				  ARRAY_SIZE(koelsch_pinctrl_map));
+ 	r8a7791_pinmux_init();
+ 	r8a7791_add_standard_devices();
++	platform_device_register_resndata(&platform_bus, "r8a7791-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  &ether_pdata, sizeof(ether_pdata));
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ 				      &koelsch_leds_pdata,
+ 				      sizeof(koelsch_leds_pdata));
+@@ -166,6 +194,32 @@ static void __init koelsch_add_standard_devices(void)
+ 	koelsch_add_du_device();
+ }
  
-@@ -112,6 +115,7 @@ config ARCH_EMEV2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
-+	select MIGHT_HAVE_PCI
- 	select USE_OF
- 	select AUTO_ZRELADDR
- 
++/*
++ * Ether LEDs on the Koelsch board are named LINK and ACTIVE which corresponds
++ * to non-default 01 setting of the Micrel KSZ8041 PHY control register 1 bits
++ * 14-15. We have to set them back to 01 from the default 00 value each time
++ * the PHY is reset. It's also important because the PHY's LED0 signal is
++ * connected to SoC's ETH_LINK signal and in the PHY's default mode it will
++ * bounce on and off after each packet, which we apparently want to avoid.
++ */
++static int koelsch_ksz8041_fixup(struct phy_device *phydev)
++{
++	u16 phyctrl1 = phy_read(phydev, 0x1e);
++
++	phyctrl1 &= ~0xc000;
++	phyctrl1 |= 0x4000;
++	return phy_write(phydev, 0x1e, phyctrl1);
++}
++
++static void __init koelsch_init(void)
++{
++	koelsch_add_standard_devices();
++
++	if (IS_ENABLED(CONFIG_PHYLIB))
++		phy_register_fixup_for_id("r8a7791-ether-ff:01",
++					  koelsch_ksz8041_fixup);
++}
++
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
+ 	"renesas,koelsch",
+ 	NULL,
+@@ -175,7 +229,7 @@ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+ 	.init_early	= r8a7791_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
+-	.init_machine	= koelsch_add_standard_devices,
++	.init_machine	= koelsch_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= koelsch_boards_compat_dt,
+ MACHINE_END
 -- 
 1.8.4
 
