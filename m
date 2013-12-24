@@ -1,62 +1,51 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:45 +0000
-Subject: [PATCH 04/33] ARM: shmobile: r8a7791 PFC platform device support
-Message-Id: <35040127be095487ce1e2f6a487a65b92d794b7f.1386897180.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:06:56 +0000
+Subject: [PATCH 04/13] ARM: shmobile: r8a7778: camera-rcar header cleanup
+Message-Id: <02d39132e75410633c637be006b9b772a6116da3.1387857168.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <cover.1387857168.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add a platform device for the r8a7791 PFC device.
+<linux/platform_data/camera-rcar.h> is needed on BockW,
+not setup-r8a7778.c
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7791.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7791.c        | 13 +++++++++++++
- 2 files changed, 14 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c          | 1 +
+ arch/arm/mach-shmobile/include/mach/r8a7778.h | 1 -
+ 2 files changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 051ead3..200fa69 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -4,6 +4,7 @@
- void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
-+void r8a7791_pinmux_init(void);
- void r8a7791_init_early(void);
- extern struct smp_operations r8a7791_smp_ops;
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 3861152..44b55ef 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -25,6 +25,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/usb-rcar-phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index a3440e5..72c9d37 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -20,7 +20,6 @@
+ #define __ASM_R8A7778_H__
  
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index d9393d6..84cad8c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -31,6 +31,19 @@
- #include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
+ #include <linux/sh_eth.h>
+-#include <linux/platform_data/camera-rcar.h>
  
-+static const struct resource pfc_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6060000, 0x250),
-+};
-+
-+#define r8a7791_register_pfc()						\
-+	platform_device_register_simple("pfc-r8a7791", -1, pfc_resources, \
-+					ARRAY_SIZE(pfc_resources))
-+
-+void __init r8a7791_pinmux_init(void)
-+{
-+	r8a7791_register_pfc();
-+}
-+
- #define SCIF_COMMON(scif_type, baseaddr, irq)			\
- 	.type		= scif_type,				\
- 	.mapbase	= baseaddr,				\
+ /* HPB-DMA slave IDs */
+ enum {
 -- 
 1.8.4
 
