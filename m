@@ -1,63 +1,62 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:30 +0000
-Subject: [PATCH 04/69] ARM: shmobile: lager: add MMCIF support on DTS
-Message-Id: <02b4a748c7ef37c2852478e67251a86e36d87152.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:07:04 +0000
+Subject: [PATCH 11/13] ARM: shmobile: rcar-gen2: Initialize CCF before clock sources
+Message-Id: <4b5c211f9f93c3919f23c88d808a4eda104ec8b2.1387857168.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387857168.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+When CONFIG_COMMON_CLOCK is enabled, call rcar_gen2_clocks_init() in the
+timer init function to initialize the common clock framework before
+initializing the clock sources. This will take care of clock
+initialization when the r8a779[01] boards will be switched to
+multiplatform kernels.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index 0a3f0c6..75730f5 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -42,6 +42,15 @@
- 			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index b6275ab..69ccc6c 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- &pfc {
-@@ -57,4 +66,19 @@
- 		renesas,groups = "scif1_data";
- 		renesas,function = "scif1";
- 	};
-+
-+	mmc1_pins: mmc1 {
-+		renesas,groups = "mmc1_data8", "mmc1_ctrl";
-+		renesas,function = "mmc1";
-+	};
-+};
-+
-+&mmcif1 {
-+	pinctrl-0 = <&mmc1_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
- };
++#include <linux/clk/shmobile.h>
+ #include <linux/clocksource.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+@@ -44,8 +45,10 @@ u32 __init rcar_gen2_read_mode_pins(void)
+ 
+ void __init rcar_gen2_timer_init(void)
+ {
+-#ifdef CONFIG_ARM_ARCH_TIMER
++#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
++#endif
++#ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
+@@ -98,5 +101,8 @@ void __init rcar_gen2_timer_init(void)
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
++#ifdef CONFIG_COMMON_CLK
++	rcar_gen2_clocks_init(mode);
++#endif
+ 	clocksource_of_init();
+ }
 -- 
 1.8.4
 
