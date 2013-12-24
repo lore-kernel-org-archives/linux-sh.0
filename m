@@ -1,42 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 05:09:08 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: r8a7740: add FSI support via DTSI
-Message-Id: <20131205050906.GE12774@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:40:46 +0000
+Subject: [PATCH 6/8] spi: rspi: Add support for missing SPCR2 register
+Message-Id: <1387885248-28425-7-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y541z9o9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y541z9o9.wl%kuninori.morimoto.gx@renesas.com>
+References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-spi@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Tue, Dec 03, 2013 at 05:28:41PM -0800, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/boot/dts/r8a7740.dtsi |    9 +++++++++
->  1 file changed, 9 insertions(+)
+Add support for RSPI variants lacking the RSPI Control Register 2, based on
+the SDK reference code. This is needed for RZ/A1H.
 
-Thanks, I will queue this up.
+The availability of this register is passed using platform data, defaulting
+to true for legacy RSPI. QSPI never has this register.
 
-> 
-> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> index b1c2ed9..52255bf 100644
-> --- a/arch/arm/boot/dts/r8a7740.dtsi
-> +++ b/arch/arm/boot/dts/r8a7740.dtsi
-> @@ -208,4 +208,13 @@
->  		cap-sdio-irq;
->  		status = "disabled";
->  	};
-> +
-> +	sh_fsi2: sound@fe1f0000 {
-> +		#sound-dai-cells = <1>;
-> +		compatible = "renesas,sh_fsi2";
-> +		reg = <0xfe1f0000 0x400>;
-> +		interrupt-parent = <&gic>;
-> +		interrupts = <0 9 0x4>;
-> +		status = "disabled";
-> +	};
->  };
-> -- 
-> 1.7.9.5
-> 
+If the register is not available, it should not be touched.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-rspi.c   |   17 ++++++++++++-----
+ include/linux/spi/rspi.h |    1 +
+ 2 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 92aaa1eac5a9..34674fe6df5d 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -192,6 +192,7 @@ struct rspi_data {
+ 	unsigned dma_width_16bit:1;
+ 	unsigned dma_callbacked:1;
+ 	unsigned txmode:1;
++	unsigned spcr2:1;
+ };
+ 
+ static void rspi_write8(const struct rspi_data *rspi, u8 data, u16 offset)
+@@ -290,10 +291,14 @@ static int rspi_parse_platform_data(struct rspi_data *rspi,
+ 		rspi->spdcr = 0;
+ 	}
+ 
+-	if (rspi_pd)
++	if (rspi_pd) {
+ 		rspi->txmode = rspi_pd->txmode;
+-	else
+-		rspi->txmode = 1;	/* legacy RSPI defaults to true */
++		rspi->spcr2 = rspi_pd->spcr2;
++	} else {
++		/* legacy RSPI defaults to true */
++		rspi->txmode = 1;
++		rspi->spcr2 = 1;
++	}
+ 
+ 	return 0;
+ }
+@@ -319,7 +324,8 @@ static int rspi_set_config_register(const struct rspi_data *rspi,
+ 	rspi_write8(rspi, 0x00, RSPI_SPND);
+ 
+ 	/* Sets parity, interrupt mask */
+-	rspi_write8(rspi, 0x00, RSPI_SPCR2);
++	if (rspi->spcr2)
++		rspi_write8(rspi, 0x00, RSPI_SPCR2);
+ 
+ 	/* Sets SPCMD */
+ 	rspi_write16(rspi, SPCMD_SPB_8_TO_16(access_size) | SPCMD_SSLKP,
+@@ -341,8 +347,9 @@ static int qspi_parse_platform_data(struct rspi_data *rspi,
+ 	rspi->data_width = 8;
+ 	rspi->spdcr = 0;
+ 
+-	/* No TX only mode */
++	/* No TX only mode, no parity register */
+ 	rspi->txmode = 0;
++	rspi->spcr2 = 0;
+ 
+ 	return 0;
+ }
+diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
+index 0f5f612f0092..08d217f25413 100644
+--- a/include/linux/spi/rspi.h
++++ b/include/linux/spi/rspi.h
+@@ -29,6 +29,7 @@ struct rspi_plat_data {
+ 
+ 	unsigned dma_width_16bit:1;	/* DMAC read/write width = 16-bit */
+ 	unsigned txmode:1;		/* TX only mode */
++	unsigned spcr2:1;		/* Set parity register */
+ 
+ 	u16 num_chipselect;
+ };
+-- 
+1.7.9.5
+
