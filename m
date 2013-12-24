@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:51 +0000
-Subject: [PATCH 07/29] ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
-Message-Id: <a958a31eb021a2c8ce24c718fcbf00d915f38e78.1387888861.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:43 +0000
+Subject: [PATCH 20/21] ARM: shmobile: r8a7790: Add SSI clocks in device tree
+Message-Id: <6dea2c1ebc6fc43852fd6125d75a75da223ff707.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,93 +12,63 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The SCIF driver is transitioning to platform resources. Board code will
-thus need to define an array of resources for each SCIF device. This is
-incompatible with the macro-based SCIF platform data definition as an
-array. Rework the macro to define platform data as individual
-structures.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r7s72100.c | 49 +++++++++++++++------------------
- 1 file changed, 22 insertions(+), 27 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 20 ++++++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h | 13 +++++++++++++
+ 2 files changed, 33 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 55f0b9c..6ae7e32 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -28,8 +28,8 @@
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a179125..c5417da 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -626,5 +626,25 @@
+ 			clock-output-names  				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
++		mstp10_clks: mstp10_clks@e6150998 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
++			clocks = <&p_clk>, <&mstp10_clks R8A7790_CLK_SSI>,
++				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks R8A7790_CLK_SSI>,
++				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks R8A7790_CLK_SSI>,
++				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks R8A7790_CLK_SSI>,
++				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks R8A7790_CLK_SSI>,
++				 <&mstp10_clks R8A7790_CLK_SSI>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7790_CLK_SSI R8A7790_CLK_SSI9 R8A7790_CLK_SSI8
++				R8A7790_CLK_SSI7 R8A7790_CLK_SSI6 R8A7790_CLK_SSI5
++				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2
++				R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
++			>;
++			clock-output-names +				"ssi", "ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
++				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0";
++		};
+ 	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 859e9be..dbb262a 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -104,4 +104,17 @@
+ #define R8A7790_CLK_I2C1		30
+ #define R8A7790_CLK_I2C0		31
  
--#define SCIF_DATA(index, baseaddr, irq)					\
--[index] = {								\
-+#define R7S72100_SCIF(index, baseaddr, irq)				\
-+static const struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= PORT_SCIF,					\
- 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-@@ -40,24 +40,19 @@
- 	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
- }
- 
--enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
-+R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
-+R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-+R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
-+R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
-+R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
-+R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
-+R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
-+R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 
--static const struct plat_sci_port scif[] __initconst = {
--	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
--	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
--	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
--	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
--	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
--	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
--	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
--	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
--};
--
--static inline void r7s72100_register_scif(int idx)
--{
--	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
--				      sizeof(struct plat_sci_port));
--}
-+#define r7s72100_register_scif(index)					       \
-+	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
-+				      &scif##index##_platform_data,	       \
-+				      sizeof(scif##index##_platform_data))
- 
- 
- static struct sh_timer_config mtu2_0_platform_data __initdata = {
-@@ -81,14 +76,14 @@ static struct resource mtu2_0_resources[] __initdata = {
- 
- void __init r7s72100_add_dt_devices(void)
- {
--	r7s72100_register_scif(SCIF0);
--	r7s72100_register_scif(SCIF1);
--	r7s72100_register_scif(SCIF2);
--	r7s72100_register_scif(SCIF3);
--	r7s72100_register_scif(SCIF4);
--	r7s72100_register_scif(SCIF5);
--	r7s72100_register_scif(SCIF6);
--	r7s72100_register_scif(SCIF7);
-+	r7s72100_register_scif(0);
-+	r7s72100_register_scif(1);
-+	r7s72100_register_scif(2);
-+	r7s72100_register_scif(3);
-+	r7s72100_register_scif(4);
-+	r7s72100_register_scif(5);
-+	r7s72100_register_scif(6);
-+	r7s72100_register_scif(7);
- 	r7s72100_register_mtu2(0);
- }
- 
++/* MSTP10 */
++#define R8A7790_CLK_SSI			5
++#define R8A7790_CLK_SSI9		6
++#define R8A7790_CLK_SSI8		7
++#define R8A7790_CLK_SSI7		8
++#define R8A7790_CLK_SSI6		9
++#define R8A7790_CLK_SSI5		10
++#define R8A7790_CLK_SSI4		11
++#define R8A7790_CLK_SSI3		12
++#define R8A7790_CLK_SSI2		13
++#define R8A7790_CLK_SSI1		14
++#define R8A7790_CLK_SSI0		15
++
+ #endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
 -- 
 1.8.4
 
