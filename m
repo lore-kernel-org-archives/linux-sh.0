@@ -1,32 +1,60 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 27 Dec 2013 11:44:02 +0000
-Subject: [PATCH V3 0/2] ARM: shmobile: lager: Add VIN1 support
-Message-Id: <1388144644-9000-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:41 +0000
+Subject: [PATCH 18/21] ARM: shmobile: r8a7790: Add QSPI module clock in device tree
+Message-Id: <91b56ca10a3cf4999bae5f8b8e7e2723bf4b1363.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds VIN clocks to R8A7790 SoC and VIN1 camera support to Lager.
-VIN1 uses I2C ADV7180 decoder device that is also added.
-The board also has VIN0 wired up to the I2C ADV7612 decoder, but it's
-not enabled yet due to the lack of ADV7612 support in the kernel.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Changes in V2:
-* made lager_add_vin_device function static.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 11 +++++++----
+ include/dt-bindings/clock/r8a7790-clock.h |  1 +
+ 2 files changed, 8 insertions(+), 4 deletions(-)
 
-Changes in V3:
-* capitalized ARM in the subject.
-
-Valentine Barshak (2):
-  ARM: shmobile: r8a7790: Add VIN clock support
-  ARM: shmobile: lager: Add VIN1 SoC camera support
-
- arch/arm/mach-shmobile/board-lager.c   | 76 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c |  9 ++++
- 2 files changed, 85 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 9c9a992..a179125 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -615,13 +615,16 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
++				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_I2C3
+-				R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
++				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
++				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
++				R8A7790_CLK_I2C0
+ 			>;
+-			clock-output-names = "rcan1", "rcan0", "i2c3", "i2c2", "i2c1", "i2c0";
++			clock-output-names +				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index bbabb8e..859e9be 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -97,6 +97,7 @@
+ #define R8A7790_CLK_GPIO0		12
+ #define R8A7790_CLK_RCAN1		15
+ #define R8A7790_CLK_RCAN0		16
++#define R8A7790_CLK_QSPI_MOD		17
+ #define R8A7790_CLK_IICDVFS		26
+ #define R8A7790_CLK_I2C3		28
+ #define R8A7790_CLK_I2C2		29
 -- 
-1.8.3.1
+1.8.4
 
