@@ -1,62 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:48 +0000
-Subject: [PATCH 14/69] ARM: shmobile: r8a7778: add SDHI support on DTSI
-Message-Id: <04cbd88902dd16a8f20db808ab444035be2557ac.1386901186.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:56:44 +0000
+Subject: [PATCH 0/6] Preliminary SoC and board integration for RSPI on RZ/A1H
+Message-Id: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch series contains preliminary support to integrate Renesas RSPI on
+the RZ/A1H aka R7S72100 SoC, and the Genmai development board.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7778.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+Note that the prosed DT bindings also talk about QSPI on the R8A779x, as
+those SoC use the same driver. The actual driver doesn't use DT yet, but
+conversion to DT is planned.
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 0ff38e6..873eeb9 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -164,4 +164,34 @@
- 		interrupts = <0 61 4>;
- 		status = "disabled";
- 	};
-+
-+	sdhi0: sdhi@ffe4c000 {
-+		compatible = "renesas,sdhi-r8a7778";
-+		reg = <0xffe4c000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 87 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sdhi@ffe4d000 {
-+		compatible = "renesas,sdhi-r8a7778";
-+		reg = <0xffe4d000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 88 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi2: sdhi@ffe4f000 {
-+		compatible = "renesas,sdhi-r8a7778";
-+		reg = <0xffe4f000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 86 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
- };
--- 
-1.8.4
+The series is based on renesas-devel-v3.13-rc5-20131223, with Magnus'
+pinctrl, Wolfram's riic, and Simon's gether work applied on top.
+It hasn't received much testing, so please don't apply yet.
 
+    [1/6] pinctrl: sh-pfc: r7s72100: Add RSPI support
+    [2/6] ARM: shmobile: r7s72100: Add RSPI clocks
+    [3/6] ARM: shmobile: r7s72100: Add RSPI resources
+    [4/6] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+    [5/6] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+    [6/6] [RFC] arm: shmobile: genmai reference: Add RSPI nodes
+
+Thanks for your comments, and Merry Christmas!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
