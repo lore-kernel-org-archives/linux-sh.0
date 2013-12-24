@@ -1,47 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:11 +0000
-Subject: [PATCH 06/26] ARM: shmobile: bockw: fixup FPGA ioremap area
-Message-Id: <b6d3eba338b4a24e49947fc45542fca7b76dda9a.1387763524.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:57 +0000
+Subject: [PATCH 17/29] ARM: shmobile: sh7372: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <d910224928058b6632010987dfed5ca72022e4b4.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Don't keep FPGA ioremap area.
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh7372.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index 1687df9..c7b217d 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -40,7 +40,7 @@ static const struct pinctrl_map bockw_pinctrl_map[] = {
- #define COMCTLR	0x101c
- static void __init bockw_init(void)
- {
--	static void __iomem *fpga;
-+	void __iomem *fpga;
- 
- 	r8a7778_clock_init();
- 	r8a7778_init_irq_extpin_dt(1);
-@@ -62,6 +62,8 @@ static void __init bockw_init(void)
- 		u16 val = ioread16(fpga + IRQ0MR);
- 		val &= ~(1 << 4); /* enable SMSC911x */
- 		iowrite16(val, fpga + IRQ0MR);
-+
-+		iounmap(fpga);
- 	}
- 
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 798f8ac..2730127 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -91,7 +91,6 @@ void __init sh7372_pinmux_init(void)
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+ 	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,			\
+ };								\
+ 								\
 -- 
 1.8.4
 
