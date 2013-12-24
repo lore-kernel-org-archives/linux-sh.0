@@ -1,31 +1,19 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 09:49:29 +0000
-Subject: [PATCH 0/5] spi: rspi: cleanups
-Message-Id: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 24 Dec 2013 13:20:39 +0000
+Subject: Re: [PATCH 0/5] spi: rspi: cleanups
+Message-Id: <20131224132039.GH30815@sirena.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-	Hi Mark,
+On Tue, Dec 24, 2013 at 10:49:29AM +0100, Geert Uytterhoeven wrote:
+> 	Hi Mark,
+> 
+> This is a series of small cleanups for the Renesas RSPI driver:
 
-This is a series of small cleanups for the Renesas RSPI driver:
-
-    [1/5] spi: rspi: Use dev_get_platdata() instead of raw
-    [2/5] spi: rspi: Remove casts
-    [3/5] spi: rspi: Make more pointers const
-    [4/5] spi: rspi: Use DUMMY_DATA macro instead of hardcoded
-    [5/5] spi: rspi: Use u8 for 8-bit register values
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Applied all, thanks.
