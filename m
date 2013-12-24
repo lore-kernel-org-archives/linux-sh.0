@@ -1,62 +1,91 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:14 +0000
-Subject: [PATCH 18/26] ARM: shmobile: Use ->init_late() on Lager
-Message-Id: <3fbbcbdf57a5172318d10d0f16a4e2d2c595fd75.1387763524.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:31 +0000
+Subject: [PATCH 10/11] serial: sh-sci: Compute overrun_bit without using baud rate algo
+Message-Id: <b545e4f40613be708ad660517f10c87423a09e8d.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Hook in shmobile_init_late() on Lager V2. This enables some PM
-related things like CPUIdle and Suspend-to-RAM.
+The overrun bit index is a property of the hardware. It's currently
+computed based on a different and unrelated hardware property, the baud
+rate calculation algorithm. Compute it using hardware identification
+information only.
 
-With this patch applied it is possible to use Suspend-to-RAM:
-# echo enabled > /sys/class/tty/ttySC6/power/wakeup
-# echo mem > /sys/power/state
-(wake by sending a character on the serial console)
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 2 ++
- arch/arm/mach-shmobile/board-lager.c           | 1 +
- 2 files changed, 3 insertions(+)
+ drivers/tty/serial/sh-sci.c | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 7df9ea0..51a3bcc 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -20,6 +20,7 @@
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 99a64fd..d5239d5 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2133,30 +2133,38 @@ static int sci_init_single(struct platform_device *dev,
+ 			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
+ 	}
  
- #include <linux/init.h>
- #include <linux/of_platform.h>
-+#include <mach/common.h>
- #include <mach/rcar-gen2.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
-@@ -41,5 +42,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
- 	.init_early	= r8a7790_init_early,
- 	.init_time	= rcar_gen2_timer_init,
- 	.init_machine	= lager_add_standard_devices,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= lager_boards_compat_dt,
- MACHINE_END
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f5dab34..d47052e 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -259,5 +259,6 @@ DT_MACHINE_START(LAGER_DT, "lager")
- 	.init_early	= r8a7790_init_early,
- 	.init_time	= rcar_gen2_timer_init,
- 	.init_machine	= lager_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= lager_boards_compat_dt,
- MACHINE_END
++	if (p->regtype = SCIx_PROBE_REGTYPE) {
++		ret = sci_probe_regmap(p);
++		if (unlikely(ret))
++			return ret;
++	}
++
+ 	switch (p->type) {
+ 	case PORT_SCIFB:
+ 		port->fifosize = 256;
++		sci_port->overrun_bit = 9;
+ 		break;
+ 	case PORT_HSCIF:
+ 		port->fifosize = 128;
++		sci_port->overrun_bit = 0;
+ 		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
++		sci_port->overrun_bit = 9;
+ 		break;
+ 	case PORT_SCIF:
+ 		port->fifosize = 16;
++		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
++			sci_port->overrun_bit = 9;
++		else
++			sci_port->overrun_bit = 0;
+ 		break;
+ 	default:
+ 		port->fifosize = 1;
++		sci_port->overrun_bit = 5;
+ 		break;
+ 	}
+ 
+-	if (p->regtype = SCIx_PROBE_REGTYPE) {
+-		ret = sci_probe_regmap(p);
+-		if (unlikely(ret))
+-			return ret;
+-	}
+-
+ 	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ 		if (IS_ERR(sci_port->iclk)) {
+@@ -2194,12 +2202,6 @@ static int sci_init_single(struct platform_device *dev,
+ 	 * Establish sensible defaults for the overrun detection, unless
+ 	 * the part has explicitly disabled support for it.
+ 	 */
+-	if (p->type = PORT_SCI)
+-		sci_port->overrun_bit = 5;
+-	else if (p->scbrr_algo_id = SCBRR_ALGO_4)
+-		sci_port->overrun_bit = 9;
+-	else
+-		sci_port->overrun_bit = 0;
+ 
+ 	/*
+ 	 * Make the error mask inclusive of overrun detection, if
 -- 
 1.8.4
 
