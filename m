@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:23 +0000
-Subject: [PATCH 06/11] serial: sh-sci: Don't check IRQ in verify port operation
-Message-Id: <bc14e00672b563f41a1ac1d421b5c78c94868983.1387887969.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:16:00 +0000
+Subject: [PATCH 20/29] ARM: shmobile: r8a7790: Declare SCIF register base and IRQ as resources
+Message-Id: <c0a384f5ed28031315e5f61220982d31d517e672.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,32 +12,51 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The IRQ number can't be modified by the user as the port is fixed.
-There's no need to check the new IRQ number as it will be ignored by the
-core.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 4 ----
- 1 file changed, 4 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 67dadbd..b3d0e00 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2118,10 +2118,6 @@ static void sci_config_port(struct uart_port *port, int flags)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index b6deb19..8bfdc36 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -103,11 +103,14 @@ void __init r8a7790_pinmux_init(void)
+ #define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+-	.mapbase	= baseaddr,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+ 	.scbrr_algo_id	= algo,						\
+ 	.scscr		= _scscr,					\
+-	.irqs		= SCIx_IRQ_MUXED(irq),				\
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq),						\
+ }
  
- static int sci_verify_port(struct uart_port *port, struct serial_struct *ser)
- {
--	struct sci_port *s = to_sci_port(port);
--
--	if (ser->irq != s->cfg->irqs[SCIx_TXI_IRQ])
--		return -EINVAL;
- 	if (ser->baud_base < 2400)
- 		/* No paper tape reader for Mitch.. */
- 		return -EINVAL;
+ #define R8A7790_SCIF(index, baseaddr, irq)				\
+@@ -138,9 +141,11 @@ R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
+ R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
+ 
+ #define r8a7790_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
+ 
+ static const struct renesas_irqc_config irqc0_data __initconst = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
 -- 
 1.8.4
 
