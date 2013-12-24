@@ -1,118 +1,87 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 16 Dec 2013 04:50:38 +0000
-Subject: [PATCH 6/6][RFC] ARM: shmobile: lager: add SDHI0/2 support on DTS
-Message-Id: <871u1d1js5.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:18 +0000
+Subject: [PATCH 01/11] serial: sh-sci: Sort headers alphabetically
+Message-Id: <8fb9631c517b862267590e7af93615a6ef03394d.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This helps locating duplicates.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts |   76 +++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
+ 1 file changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index dfedc0e..4fb0caa 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -56,6 +56,54 @@
- 		regulator-boot-on;
- 		regulator-always-on;
- 	};
-+
-+	vcc_sdhi0: regulator@1 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio5 24 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi0: regulator@2 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI0 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio5 29 GPIO_ACTIVE_HIGH>;
-+		states = <3300000 1
-+			  1800000 0>;
-+		enable-active-high;
-+	};
-+
-+	vcc_sdhi2: regulator@3 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio5 25 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi2: regulator@4 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI0 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio5 30 GPIO_ACTIVE_HIGH>;
-+		states = <3300000 1
-+			  1800000 0>;
-+		enable-active-high;
-+	};
- };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 1a3fc7a..e98a217 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -23,35 +23,35 @@
  
- &pfc {
-@@ -76,6 +124,16 @@
- 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
- 		renesas,function = "mmc1";
- 	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl", "sdhi2_cd";
-+		renesas,function = "sdhi2";
-+	};
- };
+ #undef DEBUG
  
- &mmcif1 {
-@@ -87,3 +145,21 @@
- 	non-removable;
- 	status = "okay";
- };
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi0>;
-+	vqmmc-supply = <&vccq_sdhi0>;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi2>;
-+	vqmmc-supply = <&vccq_sdhi2>;
-+	status = "okay";
-+};
+-#include <linux/module.h>
++#include <linux/clk.h>
++#include <linux/console.h>
++#include <linux/ctype.h>
++#include <linux/cpufreq.h>
++#include <linux/delay.h>
++#include <linux/dmaengine.h>
++#include <linux/dma-mapping.h>
++#include <linux/err.h>
+ #include <linux/errno.h>
+-#include <linux/sh_dma.h>
+-#include <linux/timer.h>
++#include <linux/gpio.h>
++#include <linux/init.h>
+ #include <linux/interrupt.h>
+-#include <linux/tty.h>
+-#include <linux/tty_flip.h>
+-#include <linux/serial.h>
+-#include <linux/major.h>
+-#include <linux/string.h>
+-#include <linux/sysrq.h>
+ #include <linux/ioport.h>
++#include <linux/major.h>
++#include <linux/module.h>
+ #include <linux/mm.h>
+-#include <linux/init.h>
+-#include <linux/delay.h>
+-#include <linux/console.h>
+-#include <linux/platform_device.h>
+-#include <linux/serial_sci.h>
+ #include <linux/notifier.h>
++#include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+-#include <linux/cpufreq.h>
+-#include <linux/clk.h>
+-#include <linux/ctype.h>
+-#include <linux/err.h>
+-#include <linux/dmaengine.h>
+-#include <linux/dma-mapping.h>
+ #include <linux/scatterlist.h>
++#include <linux/serial.h>
++#include <linux/serial_sci.h>
++#include <linux/sh_dma.h>
+ #include <linux/slab.h>
+-#include <linux/gpio.h>
++#include <linux/string.h>
++#include <linux/sysrq.h>
++#include <linux/timer.h>
++#include <linux/tty.h>
++#include <linux/tty_flip.h>
+ 
+ #ifdef CONFIG_SUPERH
+ #include <asm/sh_bios.h>
 -- 
-1.7.9.5
+1.8.4
 
