@@ -1,145 +1,148 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:06:53 +0000
-Subject: [PATCH 01/13] ARM: shmobile: r8a7778: add SSIx DMAEngine support
-Message-Id: <a91be22c9222061281a380bd3f38ec9281919a2c.1387857168.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:25 +0000
+Subject: [PATCH 08/11] serial: sh-sci: Move overrun_bit and error_mask fields out of pdata
+Message-Id: <3ae988d97b160c07463b980ccf26ed9226660fef.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+None of the fields is ever set by board code, and both of them are set
+in the driver at probe time. Move them out of struct plat_sci_port to
+struct sci_port.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h | 18 ++++++++++
- arch/arm/mach-shmobile/setup-r8a7778.c        | 51 +++++++++++++++++++++++++++
- 2 files changed, 69 insertions(+)
+ drivers/tty/serial/sh-sci.c | 50 +++++++++++++++++++++------------------------
+ drivers/tty/serial/sh-sci.h |  2 +-
+ include/linux/serial_sci.h  |  3 ---
+ 3 files changed, 24 insertions(+), 31 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index b497f93..a3440e5 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -27,6 +27,24 @@ enum {
- 	HPBDMA_SLAVE_DUMMY,
- 	HPBDMA_SLAVE_SDHI0_TX,
- 	HPBDMA_SLAVE_SDHI0_RX,
-+	HPBDMA_SLAVE_SSI0_TX,
-+	HPBDMA_SLAVE_SSI0_RX,
-+	HPBDMA_SLAVE_SSI1_TX,
-+	HPBDMA_SLAVE_SSI1_RX,
-+	HPBDMA_SLAVE_SSI2_TX,
-+	HPBDMA_SLAVE_SSI2_RX,
-+	HPBDMA_SLAVE_SSI3_TX,
-+	HPBDMA_SLAVE_SSI3_RX,
-+	HPBDMA_SLAVE_SSI4_TX,
-+	HPBDMA_SLAVE_SSI4_RX,
-+	HPBDMA_SLAVE_SSI5_TX,
-+	HPBDMA_SLAVE_SSI5_RX,
-+	HPBDMA_SLAVE_SSI6_TX,
-+	HPBDMA_SLAVE_SSI6_RX,
-+	HPBDMA_SLAVE_SSI7_TX,
-+	HPBDMA_SLAVE_SSI7_RX,
-+	HPBDMA_SLAVE_SSI8_TX,
-+	HPBDMA_SLAVE_SSI8_RX,
- 	HPBDMA_SLAVE_HPBIF0_TX,
- 	HPBDMA_SLAVE_HPBIF0_RX,
- 	HPBDMA_SLAVE_HPBIF1_TX,
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 81701cf..e786338 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -319,6 +319,29 @@ void __init r8a7778_add_dt_devices(void)
- #define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
- #define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e9c6e23..98b8e3c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -64,6 +64,9 @@ struct sci_port {
  
-+#define HPBDMA_SSI(_id)				\
-+{						\
-+	.id	= HPBDMA_SLAVE_SSI## _id ##_TX,	\
-+	.addr	= 0xffd91008 + (_id * 0x40),	\
-+	.dcr	= HPB_DMAE_DCR_CT |		\
-+		  HPB_DMAE_DCR_DIP |		\
-+		  HPB_DMAE_DCR_SPDS_32BIT |	\
-+		  HPB_DMAE_DCR_DMDL |		\
-+		  HPB_DMAE_DCR_DPDS_32BIT,	\
-+	.port   = _id + (_id << 8),		\
-+	.dma_ch = (28 + _id),			\
-+}, {						\
-+	.id	= HPBDMA_SLAVE_SSI## _id ##_RX,	\
-+	.addr	= 0xffd9100c + (_id * 0x40),	\
-+	.dcr	= HPB_DMAE_DCR_CT |		\
-+		  HPB_DMAE_DCR_DIP |		\
-+		  HPB_DMAE_DCR_SMDL |		\
-+		  HPB_DMAE_DCR_SPDS_32BIT |	\
-+		  HPB_DMAE_DCR_DPDS_32BIT,	\
-+	.port   = _id + (_id << 8),		\
-+	.dma_ch = (28 + _id),			\
-+}
+ 	/* Platform configuration */
+ 	struct plat_sci_port	*cfg;
++	int			overrun_bit;
++	unsigned int		error_mask;
 +
- #define HPBDMA_HPBIF(_id)				\
- {							\
- 	.id	= HPBDMA_SLAVE_HPBIF## _id ##_TX,	\
-@@ -373,6 +396,16 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
- 		.dma_ch	= 22,
- 	},
  
-+	HPBDMA_SSI(0),
-+	HPBDMA_SSI(1),
-+	HPBDMA_SSI(2),
-+	HPBDMA_SSI(3),
-+	HPBDMA_SSI(4),
-+	HPBDMA_SSI(5),
-+	HPBDMA_SSI(6),
-+	HPBDMA_SSI(7),
-+	HPBDMA_SSI(8),
-+
- 	HPBDMA_HPBIF(0),
- 	HPBDMA_HPBIF(1),
- 	HPBDMA_HPBIF(2),
-@@ -387,22 +420,40 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
- static const struct hpb_dmae_channel hpb_dmae_channels[] = {
- 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
- 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_TX),   /* ch. 28 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_RX),   /* ch. 28 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_TX), /* ch. 28 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_RX), /* ch. 28 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_TX),   /* ch. 29 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_RX),   /* ch. 29 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_TX), /* ch. 29 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_RX), /* ch. 29 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_TX),   /* ch. 30 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_RX),   /* ch. 30 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_TX), /* ch. 30 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_RX), /* ch. 30 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_TX),   /* ch. 31 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_RX),   /* ch. 31 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_TX), /* ch. 31 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_RX), /* ch. 31 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_TX),   /* ch. 32 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_RX),   /* ch. 32 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_TX), /* ch. 32 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_RX), /* ch. 32 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_TX),   /* ch. 33 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_RX),   /* ch. 33 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_TX), /* ch. 33 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_RX), /* ch. 33 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_TX),   /* ch. 34 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_RX),   /* ch. 34 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_TX), /* ch. 34 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_RX), /* ch. 34 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_TX),   /* ch. 35 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_RX),   /* ch. 35 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_TX), /* ch. 35 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_RX), /* ch. 35 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_TX),   /* ch. 36 */
-+	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_RX),   /* ch. 36 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_TX), /* ch. 36 */
- 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_RX), /* ch. 36 */
- };
+ 	/* Break timer */
+ 	struct timer_list	break_timer;
+@@ -760,19 +763,15 @@ static int sci_handle_errors(struct uart_port *port)
+ 	struct tty_port *tport = &port->state->port;
+ 	struct sci_port *s = to_sci_port(port);
+ 
+-	/*
+-	 * Handle overruns, if supported.
+-	 */
+-	if (s->cfg->overrun_bit != SCIx_NOT_SUPPORTED) {
+-		if (status & (1 << s->cfg->overrun_bit)) {
+-			port->icount.overrun++;
++	/* Handle overruns */
++	if (status & (1 << s->overrun_bit)) {
++		port->icount.overrun++;
+ 
+-			/* overrun error */
+-			if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
+-				copied++;
++		/* overrun error */
++		if (tty_insert_flip_char(tport, 0, TTY_OVERRUN))
++			copied++;
+ 
+-			dev_notice(port->dev, "overrun error");
+-		}
++		dev_notice(port->dev, "overrun error");
+ 	}
+ 
+ 	if (status & SCxSR_FER(port)) {
+@@ -834,7 +833,7 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
+ 	if (!reg->size)
+ 		return 0;
+ 
+-	if ((serial_port_in(port, SCLSR) & (1 << s->cfg->overrun_bit))) {
++	if ((serial_port_in(port, SCLSR) & (1 << s->overrun_bit))) {
+ 		serial_port_out(port, SCLSR, 0);
+ 
+ 		port->icount.overrun++;
+@@ -2253,28 +2252,25 @@ static int sci_init_single(struct platform_device *dev,
+ 	/*
+ 	 * Establish some sensible defaults for the error detection.
+ 	 */
+-	if (!p->error_mask)
+-		p->error_mask = (p->type = PORT_SCI) ?
++	sci_port->error_mask = (p->type = PORT_SCI) ?
+ 			SCI_DEFAULT_ERROR_MASK : SCIF_DEFAULT_ERROR_MASK;
+ 
+ 	/*
+ 	 * Establish sensible defaults for the overrun detection, unless
+ 	 * the part has explicitly disabled support for it.
+ 	 */
+-	if (p->overrun_bit != SCIx_NOT_SUPPORTED) {
+-		if (p->type = PORT_SCI)
+-			p->overrun_bit = 5;
+-		else if (p->scbrr_algo_id = SCBRR_ALGO_4)
+-			p->overrun_bit = 9;
+-		else
+-			p->overrun_bit = 0;
++	if (p->type = PORT_SCI)
++		sci_port->overrun_bit = 5;
++	else if (p->scbrr_algo_id = SCBRR_ALGO_4)
++		sci_port->overrun_bit = 9;
++	else
++		sci_port->overrun_bit = 0;
+ 
+-		/*
+-		 * Make the error mask inclusive of overrun detection, if
+-		 * supported.
+-		 */
+-		p->error_mask |= (1 << p->overrun_bit);
+-	}
++	/*
++	 * Make the error mask inclusive of overrun detection, if
++	 * supported.
++	 */
++	sci_port->error_mask |= 1 << sci_port->overrun_bit;
+ 
+ 	port->type		= p->type;
+ 	port->flags		= UPF_FIXED_PORT | p->flags;
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 5aca736..d5db81a 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -9,7 +9,7 @@
+ #define SCxSR_PER(port)		(((port)->type = PORT_SCI) ? SCI_PER    : SCIF_PER)
+ #define SCxSR_BRK(port)		(((port)->type = PORT_SCI) ? 0x00       : SCIF_BRK)
+ 
+-#define SCxSR_ERRORS(port)	(to_sci_port(port)->cfg->error_mask)
++#define SCxSR_ERRORS(port)	(to_sci_port(port)->error_mask)
+ 
+ #if defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 42620f1..af9834b 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -152,9 +152,6 @@ struct plat_sci_port {
+ 	/*
+ 	 * Platform overrides if necessary, defaults otherwise.
+ 	 */
+-	int		overrun_bit;
+-	unsigned int	error_mask;
+-
+ 	int		port_reg;
+ 	unsigned char	regshift;
+ 	unsigned char	regtype;
 -- 
 1.8.4
 
