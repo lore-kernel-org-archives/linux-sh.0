@@ -1,118 +1,79 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:38 +0000
-Subject: [PATCH v5 14/17] ARM: shmobile: Remove Lager reference DTS
-Message-Id: <1387034741-3852-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:28:56 +0000
+Subject: [GIT PULL 0/3] Renesas SH based SoC Updates for v3.14
+Message-Id: <cover.1387889858.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
-and board-lager-reference.c, proceed with removing
-r8a7790-lager-reference.dts.
+Hi Kevin, Hi Olof, Hi Arnd,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790-lager-reference.dts | 89 ---------------------------
- 1 file changed, 89 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
+Please consider these Renesas SH based SoC Updates for v3.14.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-deleted file mode 100644
-index dfedc0e..0000000
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ /dev/null
-@@ -1,89 +0,0 @@
--/*
-- * Device Tree Source for the Lager board
-- *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7790.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "Lager";
--	compatible = "renesas,lager-reference", "renesas,r8a7790";
--
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
--
--	memory@180000000 {
--		device_type = "memory";
--		reg = <1 0x80000000 0 0x80000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
--		};
--	};
--
--	fixedregulator3v3: fixedregulator@0 {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-3.3V";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--};
--
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data";
--		renesas,function = "scif1";
--	};
--
--	mmc1_pins: mmc1 {
--		renesas,groups = "mmc1_data8", "mmc1_ctrl";
--		renesas,function = "mmc1";
--	};
--};
--
--&mmcif1 {
--	pinctrl-0 = <&mmc1_pins>;
--	pinctrl-names = "default";
--
--	vmmc-supply = <&fixedregulator3v3>;
--	bus-width = <8>;
--	non-removable;
--	status = "okay";
--};
--- 
-1.8.3.2
+I am routing these changes through my tree as they are
+dependencies for updates to the SH SCI driver.
 
+This pull-request is based on the second round of Renesas SH SCI updates
+for v3.14, tagged as renesas-sh-sci2-for-v3.14, which I will
+also send a pull-request for today.
+
+
+The following changes since commit ec09c5eb491834d4011c72538e58d8b7096076bd:
+
+  serial: sh-sci: Rework baud rate calculation (2013-12-24 11:17:53 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-soc-for-v3.14
+
+for you to fetch changes up to d5917ef318b850fc72bd10db438580f7d1c406d9:
+
+  sh: Don't set plat_sci_port scbrr_algo_id field (2013-12-24 21:49:43 +0900)
+
+----------------------------------------------------------------
+Renesas SH based SoC Updates for v3.14
+
+* Global
+  - Don't set plat_sci_port scbrr_algo_id field
+  - Declare SCIF register base and IRQ as resources
+
+* sh772[34] SoCs
+  - Set serial port sampling rate to 8 for SCIFA ports
+
+----------------------------------------------------------------
+Laurent Pinchart (3):
+      sh: Declare SCIF register base and IRQ as resources
+      sh: sh772[34]: Set serial port sampling rate to 8 for SCIFA ports
+      sh: Don't set plat_sci_port scbrr_algo_id field
+
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |  30 +++++++---
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    |  10 +++-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c |  80 +++++++++++++++++--------
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |  40 +++++++++----
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |  40 +++++++++----
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c | 104 +++++++++++++++++++++++++--------
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c | 104 +++++++++++++++++++++++++--------
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c  |  20 +++++--
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c  |  30 +++++++---
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c  |  20 +++++--
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |  20 +++++--
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c |  16 +++--
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c  |  20 +++++--
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c  |  62 ++++++++++++--------
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  40 +++++++++----
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  10 +++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  30 +++++++---
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  63 ++++++++++++++------
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  63 ++++++++++++++------
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c |  72 +++++++++++++++--------
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  30 +++++++---
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |  30 +++++++---
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c | 100 +++++++++++++++++++++----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c |  22 ++++---
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c |  60 +++++++++++++------
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |  88 +++++++++++++++++++---------
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c   |  48 +++++++++------
+ arch/sh/kernel/cpu/sh5/setup-sh5.c     |  12 +++-
+ 28 files changed, 889 insertions(+), 375 deletions(-)
