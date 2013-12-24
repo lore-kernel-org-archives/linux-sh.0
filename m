@@ -1,49 +1,41 @@
-From: Levente Kurusa <levex@linux.com>
-Date: Thu, 19 Dec 2013 15:03:38 +0000
-Subject: [PATCH 27/38] superhyway: add missing put_device call
-Message-Id: <1387465429-3568-28-git-send-email-levex@linux.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:36 +0000
+Subject: [PATCH 13/21] ARM: shmobile: koelsch: Specify external clock frequency in DT
+Message-Id: <fcf0c725cb38f7d55a89e6f87183afee90a3846d.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387465429-3568-2-git-send-email-levex@linux.com>
-In-Reply-To: <1387465429-3568-2-git-send-email-levex@linux.com>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Levente Kurusa <levex@linux.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This is required so that we give up the last reference to the device.
-Also, this makes superhyway_device_release actually used.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Levente Kurusa <levex@linux.com>
+The external crystal frequency is 20MHz on the Koelsch board. Specify it
+in the device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/superhyway/superhyway.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
-index 2d9e7f3..765cf7d 100644
---- a/drivers/sh/superhyway/superhyway.c
-+++ b/drivers/sh/superhyway/superhyway.c
-@@ -54,6 +54,7 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
- 			  struct superhyway_bus *bus)
- {
- 	struct superhyway_device *dev = sdev;
-+	int rc = 0;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index d431f31..fd556c3 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -45,6 +45,10 @@
+ 	};
+ };
  
- 	if (!dev) {
- 		dev = kzalloc(sizeof(struct superhyway_device), GFP_KERNEL);
-@@ -86,8 +87,11 @@ int superhyway_add_device(unsigned long base, struct superhyway_device *sdev,
- 	dev_set_name(&dev->dev, "%02x", superhyway_devices);
- 
- 	superhyway_devices++;
-+	rc = device_register(&dev->dev);
-+	if (rc)
-+		put_device(&dev->dev);
- 
--	return device_register(&dev->dev);
-+	return rc;
- }
- 
- int superhyway_add_devices(struct superhyway_bus *bus,
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.8.3.1
+1.8.4
 
