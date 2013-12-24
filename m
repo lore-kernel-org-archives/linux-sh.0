@@ -1,35 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:05 +0000
-Subject: [PATCH 32/33] ARM: shmobile: r8a7740: add FSI clock support for DT
-Message-Id: <605dfb0b5fd75d3255360e7ee3e701bf5aeda7b4.1386897180.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:56:49 +0000
+Subject: [PATCH 5/6] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+Message-Id: <1387886210-3634-6-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r7s72100.dtsi |   65 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index c826bca..e9a3c64 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -585,6 +585,7 @@ static struct clk_lookup lookups[] = {
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ff0bd6be454f..42e9b423476c 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -34,6 +34,11 @@
+ 		gpio10 = &port10;
+ 		gpio11 = &port11;
+ 		gpio12 = &jtagport0;
++		spi0 = &spi0;
++		spi1 = &spi1;
++		spi2 = &spi2;
++		spi3 = &spi3;
++		spi4 = &spi4;
+ 	};
  
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
-+	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("e6c20000.i2c",		&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	cpus {
+@@ -289,4 +294,64 @@
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi1: spi@e800d000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d000 0x24>;
++		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi2: spi@e800d800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d800 0x24>;
++		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi3: spi@e800e000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e000 0x24>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi4: spi@e800e800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e800 0x24>;
++		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.4
+1.7.9.5
 
