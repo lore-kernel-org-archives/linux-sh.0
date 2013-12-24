@@ -1,45 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 01:10:23 +0000
-Subject: [GIT PULL] Renesas ARM based SoC Clock updates for v3.14
-Message-Id: <1387761024-10114-1-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:34 +0000
+Subject: [PATCH 04/21] ARM: shmobile: r8a7740: Specify PFC interrupts in DT
+Message-Id: <778de006538d932b96c58dd3a43f9e4ef5060940.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mike,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-please consider the following
-Renesas ARM based SoC Clock updates for v3.14.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-This pull request is based on your clk-next-shmobile branch.
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 2782f64..8280884 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -155,6 +155,15 @@
+ 		      <0xe605800c 0x20>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		interrupts-extended +			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
++			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
++			<&irqpin1 0 0>, <&irqpin1 1 0>, <&irqpin1 2 0>, <&irqpin1 3 0>,
++			<&irqpin1 4 0>, <&irqpin1 5 0>, <&irqpin1 6 0>, <&irqpin1 7 0>,
++			<&irqpin2 0 0>, <&irqpin2 1 0>, <&irqpin2 2 0>, <&irqpin2 3 0>,
++			<&irqpin2 4 0>, <&irqpin2 5 0>, <&irqpin2 6 0>, <&irqpin2 7 0>,
++			<&irqpin3 0 0>, <&irqpin3 1 0>, <&irqpin3 2 0>, <&irqpin3 3 0>,
++			<&irqpin3 4 0>, <&irqpin3 5 0>, <&irqpin3 6 0>, <&irqpin3 7 0>;
+ 	};
+ 
+ 	tpu: pwm@e6600000 {
+-- 
+1.8.4
 
-
-The following changes since commit f94859c215b6d977794108a1a9a101239e393c09:
-
-  clk: shmobile: Add MSTP clock support (2013-12-12 19:23:59 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.14
-
-for you to fetch changes up to 92ca6a8ce97e07206d474da5477d8da4e41bad6c:
-
-  clk: emev2: Add support for emev2 SMU clocks with DT (2013-12-14 13:17:55 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based SoC Clock updates for v3.14
-
-Add support for using emev2 SMU clocks with DT
-
-----------------------------------------------------------------
-Takashi Yoshii (1):
-      clk: emev2: Add support for emev2 SMU clocks with DT
-
- .../devicetree/bindings/clock/emev2-clock.txt      |  98 +++++++++++++++++++
- drivers/clk/shmobile/Makefile                      |   2 +-
- drivers/clk/shmobile/clk-emev2.c                   | 104 +++++++++++++++++++++
- 3 files changed, 203 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/devicetree/bindings/clock/emev2-clock.txt
- create mode 100644 drivers/clk/shmobile/clk-emev2.c
