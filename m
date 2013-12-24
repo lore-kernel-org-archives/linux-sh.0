@@ -1,45 +1,47 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:13 +0000
-Subject: [PATCH 08/26] ARM: shmobile: lager: set .debounce_interval
-Message-Id: <c9fd77d48a72d4210c992c4ee27ef8217a44da03.1387763524.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:05:00 +0000
+Subject: [PATCH 2/3] ARM: shmobile: bockw: fixup DMA mask
+Message-Id: <4799e310caf0fb9078389766d0210d1c6133ad51.1387856124.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1387856124.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387856124.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-In R-Car GPIO hardware block, 'chattering removal' feature can be
-enabled on GPIO-n-[3:0] pins, but it's not supported on rest of pins
-GPIO-n-[31:4].
+4dcfa60071b3d23f0181f27d8519f12e37cefbb9
+(ARM: DMA-API: better handing of DMA masks for coherent allocations)
+exchanged DMA mask check method.
+Below warning will appear without this patch
 
-Set an appropriate debounce interval, instead.  We could confirm that
-spurious/unnecessary GPIO interrupts are prevented by this settings.
+asoc-simple-card asoc-simple-card.0: \
+  Coherent DMA mask 0xffffffffffffffff is larger than dma_addr_t allows
+asoc-simple-card asoc-simple-card.0: \
+  Driver did not use or check the return value from dma_set_coherent_mask()?
 
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-bockw.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 78a31b6..fcf06fd 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -120,7 +120,8 @@ static const struct gpio_led_platform_data lager_leds_pdata __initconst = {
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 3861152..3c4995a 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -679,7 +679,7 @@ static void __init bockw_init(void)
+ 			.id             = i,
+ 			.data           = &rsnd_card_info[i],
+ 			.size_data      = sizeof(struct asoc_simple_card_info),
+-			.dma_mask       = ~0,
++			.dma_mask	= DMA_BIT_MASK(32),
+ 		};
  
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d, ...) \
--	{ .code = c, .gpio = g, .desc = d, .active_low = 1 }
-+	{ .code = c, .gpio = g, .desc = d, .active_low = 1, \
-+	  .debounce_interval = 20 }
- 
- static struct gpio_keys_button gpio_buttons[] = {
- 	GPIO_KEY(KEY_4,		RCAR_GP_PIN(1, 28),	"SW2-pin4"),
+ 		platform_device_register_full(&cardinfo);
 -- 
 1.8.4
 
