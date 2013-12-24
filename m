@@ -1,167 +1,164 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 11:40:45 +0000
-Subject: [PATCH 5/8] spi: rspi: Add support for no TX only mode
-Message-Id: <1387885248-28425-6-git-send-email-geert+renesas@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:26 +0000
+Subject: [PATCH 09/11] serial: sh-sci: Remove unused GPIO request code
+Message-Id: <520402bbc6fe328ae28e08bfc87a2b1eb7f10b2c.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-spi@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add support for RSPI variants lacking TX only mode, based on the SDK
-reference code. This is needed for RZ/A1H.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The TX only mode flag is passed using platform data, defaulting to true for
-legacy RSPI. QSPI nevers has TX only mode.
+The driver requests at initialization time GPIOs passed through platform
+data. No platform makes use of this feature, remove it.
 
-If TX only mode is not available, we have to wait for the receive interrupt
-bit to become set, and perform a dummy read, in the transmit path.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-rspi.c   |   50 ++++++++++++++++++++++++++++++++++++++++------
- include/linux/spi/rspi.h |    1 +
- 2 files changed, 45 insertions(+), 6 deletions(-)
+ drivers/tty/serial/sh-sci.c | 67 ---------------------------------------------
+ include/linux/serial_sci.h  | 12 --------
+ 2 files changed, 79 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 00788091fc16..92aaa1eac5a9 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -191,6 +191,7 @@ struct rspi_data {
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 98b8e3c..99a64fd 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -32,7 +32,6 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/err.h>
+ #include <linux/errno.h>
+-#include <linux/gpio.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+@@ -79,7 +78,6 @@ struct sci_port {
  
- 	unsigned dma_width_16bit:1;
- 	unsigned dma_callbacked:1;
-+	unsigned txmode:1;
- };
+ 	int			irqs[SCIx_NR_IRQS];
+ 	char			*irqstr[SCIx_NR_IRQS];
+-	char			*gpiostr[SCIx_NR_FNS];
  
- static void rspi_write8(const struct rspi_data *rspi, u8 data, u16 offset)
-@@ -251,6 +252,20 @@ struct spi_ops {
- /*
-  * functions for RSPI
-  */
-+static void rspi_set_txmode(const struct rspi_data *rspi)
-+{
-+	if (rspi->txmode)
-+		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
-+			    RSPI_SPCR);
-+}
-+
-+static void rspi_clear_txmode(const struct rspi_data *rspi)
-+{
-+	if (rspi->txmode)
-+		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
-+			    RSPI_SPCR);
-+}
-+
- static int rspi_parse_platform_data(struct rspi_data *rspi,
- 				    const struct rspi_plat_data *rspi_pd)
+ 	struct dma_chan			*chan_tx;
+ 	struct dma_chan			*chan_rx;
+@@ -1153,67 +1151,6 @@ static void sci_free_irq(struct sci_port *port)
+ 	}
+ }
+ 
+-static const char *sci_gpio_names[SCIx_NR_FNS] = {
+-	"sck", "rxd", "txd", "cts", "rts",
+-};
+-
+-static const char *sci_gpio_str(unsigned int index)
+-{
+-	return sci_gpio_names[index];
+-}
+-
+-static void sci_init_gpios(struct sci_port *port)
+-{
+-	struct uart_port *up = &port->port;
+-	int i;
+-
+-	if (!port->cfg)
+-		return;
+-
+-	for (i = 0; i < SCIx_NR_FNS; i++) {
+-		const char *desc;
+-		int ret;
+-
+-		if (!port->cfg->gpios[i])
+-			continue;
+-
+-		desc = sci_gpio_str(i);
+-
+-		port->gpiostr[i] = kasprintf(GFP_KERNEL, "%s:%s",
+-					     dev_name(up->dev), desc);
+-
+-		/*
+-		 * If we've failed the allocation, we can still continue
+-		 * on with a NULL string.
+-		 */
+-		if (!port->gpiostr[i])
+-			dev_notice(up->dev, "%s string allocation failure\n",
+-				   desc);
+-
+-		ret = gpio_request(port->cfg->gpios[i], port->gpiostr[i]);
+-		if (unlikely(ret != 0)) {
+-			dev_notice(up->dev, "failed %s gpio request\n", desc);
+-
+-			/*
+-			 * If we can't get the GPIO for whatever reason,
+-			 * no point in keeping the verbose string around.
+-			 */
+-			kfree(port->gpiostr[i]);
+-		}
+-	}
+-}
+-
+-static void sci_free_gpios(struct sci_port *port)
+-{
+-	int i;
+-
+-	for (i = 0; i < SCIx_NR_FNS; i++)
+-		if (port->cfg->gpios[i]) {
+-			gpio_free(port->cfg->gpios[i]);
+-			kfree(port->gpiostr[i]);
+-		}
+-}
+-
+ static unsigned int sci_tx_empty(struct uart_port *port)
  {
-@@ -275,6 +290,11 @@ static int rspi_parse_platform_data(struct rspi_data *rspi,
- 		rspi->spdcr = 0;
+ 	unsigned short status = serial_port_in(port, SCxSR);
+@@ -2240,8 +2177,6 @@ static int sci_init_single(struct platform_device *dev,
+ 
+ 		port->dev = &dev->dev;
+ 
+-		sci_init_gpios(sci_port);
+-
+ 		pm_runtime_enable(&dev->dev);
  	}
  
-+	if (rspi_pd)
-+		rspi->txmode = rspi_pd->txmode;
-+	else
-+		rspi->txmode = 1;	/* legacy RSPI defaults to true */
-+
- 	return 0;
- }
+@@ -2298,8 +2233,6 @@ static int sci_init_single(struct platform_device *dev,
  
-@@ -321,6 +341,9 @@ static int qspi_parse_platform_data(struct rspi_data *rspi,
- 	rspi->data_width = 8;
- 	rspi->spdcr = 0;
+ static void sci_cleanup_single(struct sci_port *port)
+ {
+-	sci_free_gpios(port);
+-
+ 	clk_put(port->iclk);
+ 	clk_put(port->fclk);
  
-+	/* No TX only mode */
-+	rspi->txmode = 0;
-+
- 	return 0;
- }
- 
-@@ -414,8 +437,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	int remain = t->len;
- 	const u8 *data = t->tx_buf;
- 	while (remain > 0) {
--		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
--			    RSPI_SPCR);
-+		rspi_set_txmode(rspi);
- 
- 		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
- 			dev_err(&rspi->master->dev,
-@@ -423,6 +445,15 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 			return -ETIMEDOUT;
- 		}
- 
-+		if (!rspi->txmode && remain != t->len) {
-+			if (rspi_wait_for_interrupt(rspi, SPSR_SPRF,
-+						    SPCR_SPRIE) < 0) {
-+				dev_err(&rspi->master->dev,
-+					"%s: receive timeout\n", __func__);
-+				return -ETIMEDOUT;
-+			}
-+			rspi_read_data(rspi);	/* dummy read */
-+		}
- 		rspi_write_data(rspi, *data);
- 		data++;
- 		remain--;
-@@ -431,6 +462,14 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	/* Waiting for the last transmition */
- 	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
- 
-+	if (!rspi->txmode) {
-+		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
-+			dev_err(&rspi->master->dev,
-+				"%s: receive timeout\n", __func__);
-+			return -ETIMEDOUT;
-+		}
-+		rspi_read_data(rspi);	/* dummy read */
-+	}
- 	return 0;
- }
- 
-@@ -562,7 +601,7 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 	for (i = 0; i < rspi->numirq; i++)
- 		disable_irq(rspi->irq[i]);
- 
--	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD, RSPI_SPCR);
-+	rspi_set_txmode(rspi);
- 	rspi_enable_irq(rspi, SPCR_SPTIE);
- 	rspi->dma_callbacked = 0;
- 
-@@ -613,8 +652,7 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 
- 	data = t->rx_buf;
- 	while (remain > 0) {
--		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
--			    RSPI_SPCR);
-+		rspi_clear_txmode(rspi);
- 
- 		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
- 			dev_err(&rspi->master->dev,
-@@ -748,7 +786,7 @@ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 	for (i = 0; i < rspi->numirq; i++)
- 		disable_irq(rspi->irq[i]);
- 
--	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD, RSPI_SPCR);
-+	rspi_clear_txmode(rspi);
- 	rspi_enable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
- 	rspi->dma_callbacked = 0;
- 
-diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
-index 7316dd9c7ba9..0f5f612f0092 100644
---- a/include/linux/spi/rspi.h
-+++ b/include/linux/spi/rspi.h
-@@ -28,6 +28,7 @@ struct rspi_plat_data {
- 	unsigned int dma_rx_id;
- 
- 	unsigned dma_width_16bit:1;	/* DMAC read/write width = 16-bit */
-+	unsigned txmode:1;		/* TX only mode */
- 
- 	u16 num_chipselect;
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index af9834b..e9c3021 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -69,17 +69,6 @@ enum {
+ 	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
  };
+ 
+-/* Offsets into the sci_port->gpios array */
+-enum {
+-	SCIx_SCK,
+-	SCIx_RXD,
+-	SCIx_TXD,
+-	SCIx_CTS,
+-	SCIx_RTS,
+-
+-	SCIx_NR_FNS,
+-};
+-
+ enum {
+ 	SCIx_PROBE_REGTYPE,
+ 
+@@ -141,7 +130,6 @@ struct plat_sci_port_ops {
+ struct plat_sci_port {
+ 	unsigned long	mapbase;		/* resource base */
+ 	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
+-	unsigned int	gpios[SCIx_NR_FNS];	/* SCK, RXD, TXD, CTS, RTS */
+ 	unsigned int	type;			/* SCI / SCIF / IRDA / HSCIF */
+ 	upf_t		flags;			/* UPF_* flags */
+ 	unsigned long	capabilities;		/* Port features/capabilities */
 -- 
-1.7.9.5
+1.8.4
 
