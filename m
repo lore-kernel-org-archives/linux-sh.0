@@ -1,39 +1,88 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:52 +0000
-Subject: [PATCH 19/33] ARM: shmobile: r8a7778: add HSPI clock support for DT
-Message-Id: <6c334d232ab446cc6388430a019fc1072599b718.1386897180.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:40 +0000
+Subject: [PATCH 17/21] ARM: shmobile: r8a7791: Add MSIOF clocks in device tree
+Message-Id: <cded80f869aef94853e056ab9c21e305b0c26138.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 17 +++++++++++++----
+ include/dt-bindings/clock/r8a7791-clock.h |  5 +++++
+ 2 files changed, 18 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 011564f..5406434 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -203,8 +203,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
-+	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-+	CLKDEV_DEV_ID("fffc8000.spi", &mstp_clks[MSTP007]), /* HSPI1 */
- 	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
-+	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
- 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP008]), /* SRU */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 0a82192..6a29341 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -394,6 +394,14 @@
+ 		};
  
- 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP012]),
+ 		/* Gate clocks */
++		mstp0_clks: mstp0_clks@e6150130 {
++			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
++			clocks = <&mp_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R8A7791_CLK_MSIOF0>;
++			clock-output-names = "msiof0";
++		};
+ 		mstp1_clks: mstp1_clks@e6150134 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150134 0 4>, <0 0xe6150038 0 4>;
+@@ -413,15 +421,16 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
+-				R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1 R8A7791_CLK_SCIFB2
++				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
++				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
+ 			>;
+ 			clock-output-names -				"scifa2", "scifa1", "scifa0", "scifb0", "scifb1",
+-				"scifb2";
++				"scifa2", "scifa1", "scifa0", "misof2", "scifb0",
++				"scifb1", "msiof1", "scifb2";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index df1715b..a69e090 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -21,6 +21,9 @@
+ #define R8A7791_CLK_SD0			7
+ #define R8A7791_CLK_Z			8
+ 
++/* MSTP0 */
++#define R8A7791_CLK_MSIOF0		0
++
+ /* MSTP1 */
+ #define R8A7791_CLK_TMU1		11
+ #define R8A7791_CLK_TMU3		21
+@@ -35,8 +38,10 @@
+ #define R8A7791_CLK_SCIFA2		2
+ #define R8A7791_CLK_SCIFA1		3
+ #define R8A7791_CLK_SCIFA0		4
++#define R8A7791_CLK_MSIOF2		5
+ #define R8A7791_CLK_SCIFB0		6
+ #define R8A7791_CLK_SCIFB1		7
++#define R8A7791_CLK_MSIOF1		8
+ #define R8A7791_CLK_SCIFB2		16
+ #define R8A7791_CLK_DMAC		18
+ 
 -- 
 1.8.4
 
