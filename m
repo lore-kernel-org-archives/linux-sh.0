@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:19:38 +0000
-Subject: [PATCH 08/21] ARM: shmobile: r8a7790: Reference clocks
-Message-Id: <72197ca7a1cb1cea5615c879f638d5d457c0b2e2.1387893834.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:50 +0000
+Subject: [PATCH 10/29] ARM: shmobile: r8a7790: Don't define SCIF platform data in an array
+Message-Id: <302d8898ade1ad5f84cfedc7e8d43ff7720f3f25.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,99 +12,150 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7790.c | 112 +++++++++++++++------------------
+ 1 file changed, 49 insertions(+), 63 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 8dccbe7..71ec31c 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -197,6 +197,7 @@
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 1a11e26..b6deb19 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -100,61 +100,47 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_i2c(3);
+ }
  
-@@ -207,6 +208,7 @@
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
- 		status = "disabled";
- 	};
+-#define SCIF_COMMON(scif_type, baseaddr, irq)			\
+-	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+-	.irqs		= SCIx_IRQ_MUXED(irq)
+-
+-#define SCIFA_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,			\
+-	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
++static struct plat_sci_port scif##index##_platform_data = {		\
++	.type		= scif_type,					\
++	.mapbase	= baseaddr,					\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
++	.scbrr_algo_id	= algo,						\
++	.scscr		= _scscr,					\
++	.irqs		= SCIx_IRQ_MUXED(irq),				\
+ }
  
-@@ -217,6 +219,7 @@
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
- 		status = "disabled";
- 	};
+-#define SCIFB_DATA(index, baseaddr, irq)	\
+-[index] = {					\
+-	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
+-	.scbrr_algo_id	= SCBRR_ALGO_4,		\
+-	.scscr = SCSCR_RE | SCSCR_TE,		\
+-}
+-
+-#define SCIF_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIF, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
+-}
+-
+-#define HSCIF_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_HSCIF, baseaddr, irq),		\
+-	.scbrr_algo_id	= SCBRR_ALGO_6,			\
+-	.scscr = SCSCR_RE | SCSCR_TE,	\
+-}
+-
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFA2, SCIF0, SCIF1,
+-       HSCIF0, HSCIF1 };
+-
+-static const struct plat_sci_port scif[] __initconst = {
+-	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+-	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+-	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+-	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
+-	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
+-	SCIFA_DATA(SCIFA2, 0xe6c60000, gic_spi(151)), /* SCIFA2 */
+-	SCIF_DATA(SCIF0, 0xe6e60000, gic_spi(152)), /* SCIF0 */
+-	SCIF_DATA(SCIF1, 0xe6e68000, gic_spi(153)), /* SCIF1 */
+-	HSCIF_DATA(HSCIF0, 0xe62c0000, gic_spi(154)), /* HSCIF0 */
+-	HSCIF_DATA(HSCIF1, 0xe62c8000, gic_spi(155)), /* HSCIF1 */
+-};
+-
+-static inline void r8a7790_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define R8A7790_SCIF(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
++		       SCBRR_ALGO_2, index, baseaddr, irq)
++
++#define R8A7790_SCIFA(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++		       SCBRR_ALGO_4, index, baseaddr, irq)
++
++#define R8A7790_SCIFB(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
++		       SCBRR_ALGO_4, index, baseaddr, irq)
++
++#define R8A7790_HSCIF(index, baseaddr, irq)				\
++	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
++		       SCBRR_ALGO_6, index, baseaddr, irq)
++
++R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
++R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
++R8A7790_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
++R8A7790_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
++R8A7790_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
++R8A7790_SCIFA(5, 0xe6c60000, gic_spi(151)); /* SCIFA2 */
++R8A7790_SCIF(6,  0xe6e60000, gic_spi(152)); /* SCIF0 */
++R8A7790_SCIF(7,  0xe6e68000, gic_spi(153)); /* SCIF1 */
++R8A7790_HSCIF(8, 0xe62c0000, gic_spi(154)); /* HSCIF0 */
++R8A7790_HSCIF(9, 0xe62c8000, gic_spi(155)); /* HSCIF1 */
++
++#define r8a7790_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
  
-@@ -227,6 +230,7 @@
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
- 		status = "disabled";
- 	};
+ static const struct renesas_irqc_config irqc0_data __initconst = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+@@ -207,16 +193,16 @@ static const struct resource cmt00_resources[] __initconst = {
  
-@@ -235,6 +239,7 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -244,6 +249,7 @@
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
- 		reg-io-width = <4>;
- 		status = "disabled";
- 	};
-@@ -258,6 +264,7 @@
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -267,6 +274,7 @@
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -276,6 +284,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
-@@ -285,6 +294,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		status = "disabled";
- 	};
+ void __init r8a7790_add_dt_devices(void)
+ {
+-	r8a7790_register_scif(SCIFA0);
+-	r8a7790_register_scif(SCIFA1);
+-	r8a7790_register_scif(SCIFB0);
+-	r8a7790_register_scif(SCIFB1);
+-	r8a7790_register_scif(SCIFB2);
+-	r8a7790_register_scif(SCIFA2);
+-	r8a7790_register_scif(SCIF0);
+-	r8a7790_register_scif(SCIF1);
+-	r8a7790_register_scif(HSCIF0);
+-	r8a7790_register_scif(HSCIF1);
++	r8a7790_register_scif(0);
++	r8a7790_register_scif(1);
++	r8a7790_register_scif(2);
++	r8a7790_register_scif(3);
++	r8a7790_register_scif(4);
++	r8a7790_register_scif(5);
++	r8a7790_register_scif(6);
++	r8a7790_register_scif(7);
++	r8a7790_register_scif(8);
++	r8a7790_register_scif(9);
+ 	r8a7790_register_cmt(00);
+ }
+ 
 -- 
 1.8.4
 
