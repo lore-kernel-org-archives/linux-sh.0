@@ -1,130 +1,157 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:10 +0000
-Subject: [PATCH 05/26] ARM: shmobile: r8a7791 Koelsch DT reference C bits
-Message-Id: <a2baf1912f399c0fbb9ec8064b88a1809f5a5b0a.1387763524.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:32 +0000
+Subject: [PATCH 11/11] serial: sh-sci: Rework baud rate calculation
+Message-Id: <ec09c5eb491834d4011c72538e58d8b7096076bd.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add DT reference support for the r8a7791 Koelsch board.
+Computing the baud rate register value requires knowledge of the
+hardware sampling rate. This information is currently encoded in a baud
+rate calculation algorithm ID passed through platform data. However, it
+can be derived from the port type directly in most cases.
 
-This board support file will be used together with common
-clocks and multiplatform in the future.
+Compute the sampling rate internally in the driver if the baud rate
+calculation algorithm ID isn't specified, and allow platforms to
+override the sampling rate through platform data in special cases (this
+is only required for SCIFA ports on sh7723 and sh7724, the reason needs
+to be investigated).
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig                   | 11 ++++++
- arch/arm/mach-shmobile/Makefile                  |  1 +
- arch/arm/mach-shmobile/Makefile.boot             |  1 +
- arch/arm/mach-shmobile/board-koelsch-reference.c | 46 ++++++++++++++++++++++++
- 4 files changed, 59 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/board-koelsch-reference.c
+ drivers/tty/serial/sh-sci.c | 37 ++++++++++++++++++++++++++++++-------
+ include/linux/serial_sci.h  |  2 ++
+ 2 files changed, 32 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index aa9017b..8eac47f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -240,6 +240,17 @@ config MACH_KOELSCH
- 	depends on ARCH_R8A7791
- 	select USE_OF
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d5239d5..e4bf0e4 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -65,6 +65,7 @@ struct sci_port {
+ 	struct plat_sci_port	*cfg;
+ 	int			overrun_bit;
+ 	unsigned int		error_mask;
++	unsigned int		sampling_rate;
  
-+config MACH_KOELSCH_REFERENCE
-+	bool "Koelsch board - Reference Device Tree Implementation"
-+	depends on ARCH_R8A7791
-+	select USE_OF
-+	---help---
-+	   Use reference implementation of Koelsch board support
-+	   which makes use of device tree at the expense
-+	   of not supporting a number of devices.
+ 
+ 	/* Break timer */
+@@ -1750,10 +1751,13 @@ static void sci_shutdown(struct uart_port *port)
+ 	sci_free_irq(s);
+ }
+ 
+-static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
++static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 				   unsigned long freq)
+ {
+-	switch (algo_id) {
++	if (s->sampling_rate)
++		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
 +
-+	   This is intended to aid developers
++	switch (s->cfg->scbrr_algo_id) {
+ 	case SCBRR_ALGO_1:
+ 		return freq / (16 * bps);
+ 	case SCBRR_ALGO_2:
+@@ -1843,12 +1847,11 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk)) {
+-		if (s->cfg->scbrr_algo_id = SCBRR_ALGO_6) {
++		if (s->cfg->type = PORT_HSCIF) {
+ 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
+ 					    &cks);
+ 		} else {
+-			t = sci_scbrr_calc(s->cfg->scbrr_algo_id, baud,
+-					   port->uartclk);
++			t = sci_scbrr_calc(s, baud, port->uartclk);
+ 			for (cks = 0; t >= 256 && cks <= 3; cks++)
+ 				t >>= 2;
+ 		}
+@@ -2092,6 +2095,7 @@ static int sci_init_single(struct platform_device *dev,
+ {
+ 	struct uart_port *port = &sci_port->port;
+ 	const struct resource *res;
++	unsigned int sampling_rate;
+ 	unsigned int i;
+ 	int ret;
+ 
+@@ -2143,28 +2147,47 @@ static int sci_init_single(struct platform_device *dev,
+ 	case PORT_SCIFB:
+ 		port->fifosize = 256;
+ 		sci_port->overrun_bit = 9;
++		sampling_rate = 16;
+ 		break;
+ 	case PORT_HSCIF:
+ 		port->fifosize = 128;
++		sampling_rate = 0;
+ 		sci_port->overrun_bit = 0;
+ 		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
+ 		sci_port->overrun_bit = 9;
++		sampling_rate = 16;
+ 		break;
+ 	case PORT_SCIF:
+ 		port->fifosize = 16;
+-		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
++		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
+ 			sci_port->overrun_bit = 9;
+-		else
++			sampling_rate = 16;
++		} else {
+ 			sci_port->overrun_bit = 0;
++			sampling_rate = 32;
++		}
+ 		break;
+ 	default:
+ 		port->fifosize = 1;
+ 		sci_port->overrun_bit = 5;
++		sampling_rate = 32;
+ 		break;
+ 	}
+ 
++	/* Set the sampling rate if the baud rate calculation algorithm isn't
++	 * specified.
++	 */
++	if (p->scbrr_algo_id = SCBRR_ALGO_NONE) {
++		/* SCIFA on sh7723 and sh7724 need a custom sampling rate that
++		 * doesn't match the SoC datasheet, this should be investigated.
++		 * Let platform data override the sampling rate for now.
++		 */
++		sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
++					: sampling_rate;
++	}
 +
- config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index c7e8774..8bca9b5 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -71,6 +71,7 @@ obj-$(CONFIG_MACH_LAGER_REFERENCE)	+= board-lager-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch.o
-+obj-$(CONFIG_MACH_KOELSCH_REFERENCE)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
- endif
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 4f30e3d..892d4ab 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -8,6 +8,7 @@ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
- loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- loadaddr-$(CONFIG_MACH_GENMAI) += 0x8008000
- loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
-+loadaddr-$(CONFIG_MACH_KOELSCH_REFERENCE) += 0x40008000
- loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
- loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-new file mode 100644
-index 0000000..beecc8b
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -0,0 +1,46 @@
-+/*
-+ * Koelsch board support - Reference DT implementation
-+ *
-+ * Copyright (C) 2013  Renesas Electronics Corporation
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/of_platform.h>
-+#include <mach/rcar-gen2.h>
-+#include <mach/r8a7791.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init koelsch_add_standard_devices(void)
-+{
-+	r8a7791_clock_init();
-+	r8a7791_add_dt_devices();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
-+
-+static const char * const koelsch_boards_compat_dt[] __initconst = {
-+	"renesas,koelsch-reference",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(KOELSCH_DT, "koelsch")
-+	.smp		= smp_ops(r8a7791_smp_ops),
-+	.init_early	= r8a7791_init_early,
-+	.init_time	= rcar_gen2_timer_init,
-+	.init_machine	= koelsch_add_standard_devices,
-+	.dt_compat	= koelsch_boards_compat_dt,
-+MACHINE_END
+ 	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ 		if (IS_ERR(sci_port->iclk)) {
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index e9c3021..af414e1 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -11,6 +11,7 @@
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+ enum {
++	SCBRR_ALGO_NONE,	/* Compute sampling rate in the driver */
+ 	SCBRR_ALGO_1,		/* clk / (16 * bps) */
+ 	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
+ 	SCBRR_ALGO_3,		/* clk / (8 * bps) */
+@@ -134,6 +135,7 @@ struct plat_sci_port {
+ 	upf_t		flags;			/* UPF_* flags */
+ 	unsigned long	capabilities;		/* Port features/capabilities */
+ 
++	unsigned int	sampling_rate;
+ 	unsigned int	scbrr_algo_id;		/* SCBRR calculation algo */
+ 	unsigned int	scscr;			/* SCSCR initialization */
+ 
 -- 
 1.8.4
 
