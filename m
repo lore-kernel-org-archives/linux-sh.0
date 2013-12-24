@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:19 +0000
-Subject: [PATCH 02/11] serial: sh-sci: Remove baud rate calculation algorithm 5
-Message-Id: <6db201da2522d7dd231982ff7b83916cf4db3e41.1387887969.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:16:07 +0000
+Subject: [PATCH 27/29] ARM: shmobile: r8a7779: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <0bb075cea8b527a1f33d965f6c891cea9261e9bf.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,41 +12,27 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The algorithm isn't used, remove it.
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 2 --
- include/linux/serial_sci.h  | 1 -
- 2 files changed, 3 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e98a217..eb59bb2 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1825,8 +1825,6 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
- 		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
- 	case SCBRR_ALGO_4:
- 		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
--	case SCBRR_ALGO_5:
--		return (((freq * 1000 / 32) / bps) - 1);
- 	}
- 
- 	/* Warn, but use a safe default */
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 50fe651..babc5fe 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -15,7 +15,6 @@ enum {
- 	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
- 	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
- 	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
--	SCBRR_ALGO_5,		/* (((clk * 1000 / 32) / bps) - 1) */
- 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
- };
- 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 35c2268..339292e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -193,7 +193,6 @@ void __init r8a7779_pinmux_init(void)
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+ };								\
+ 								\
 -- 
 1.8.4
 
