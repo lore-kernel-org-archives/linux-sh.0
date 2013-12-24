@@ -1,92 +1,64 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 10 Dec 2013 18:20:22 +0000
-Subject: [PATCH 1/5] pinctrl: sh-pfc: pfc-r8a7790: Rename VIN pin groups
-Message-Id: <1386699626-15803-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 09:49:34 +0000
+Subject: [PATCH 5/5] spi: rspi: Use u8 for 8-bit register values
+Message-Id: <1387878574-21445-6-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-This drops superfluous "signal" word from the pin group names
-and renames data_enable group to clkenb as in the h/w manual.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 32 ++++++++++++++++----------------
- 1 file changed, 16 insertions(+), 16 deletions(-)
+ drivers/spi/spi-rspi.c |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 72786fc..21d41f8 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -3045,28 +3045,28 @@ static const unsigned int vin0_data_b_mux[] = {
- 	VI0_DATA3_VI0_B3_MARK, VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
- 	VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
- };
--static const unsigned int vin0_hsync_signal_pins[] = {
-+static const unsigned int vin0_hsync_pins[] = {
- 	RCAR_GP_PIN(0, 12),
- };
--static const unsigned int vin0_hsync_signal_mux[] = {
-+static const unsigned int vin0_hsync_mux[] = {
- 	VI0_HSYNC_N_MARK,
- };
--static const unsigned int vin0_vsync_signal_pins[] = {
-+static const unsigned int vin0_vsync_pins[] = {
- 	RCAR_GP_PIN(0, 13),
- };
--static const unsigned int vin0_vsync_signal_mux[] = {
-+static const unsigned int vin0_vsync_mux[] = {
- 	VI0_VSYNC_N_MARK,
- };
--static const unsigned int vin0_field_signal_pins[] = {
-+static const unsigned int vin0_field_pins[] = {
- 	RCAR_GP_PIN(0, 15),
- };
--static const unsigned int vin0_field_signal_mux[] = {
-+static const unsigned int vin0_field_mux[] = {
- 	VI0_FIELD_MARK,
- };
--static const unsigned int vin0_data_enable_pins[] = {
-+static const unsigned int vin0_clkenb_pins[] = {
- 	RCAR_GP_PIN(0, 14),
- };
--static const unsigned int vin0_data_enable_mux[] = {
-+static const unsigned int vin0_clkenb_mux[] = {
- 	VI0_CLKENB_MARK,
- };
- static const unsigned int vin0_clk_pins[] = {
-@@ -3269,10 +3269,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(vin0_data_g),
- 	SH_PFC_PIN_GROUP(vin0_data_r),
- 	SH_PFC_PIN_GROUP(vin0_data_b),
--	SH_PFC_PIN_GROUP(vin0_hsync_signal),
--	SH_PFC_PIN_GROUP(vin0_vsync_signal),
--	SH_PFC_PIN_GROUP(vin0_field_signal),
--	SH_PFC_PIN_GROUP(vin0_data_enable),
-+	SH_PFC_PIN_GROUP(vin0_hsync),
-+	SH_PFC_PIN_GROUP(vin0_vsync),
-+	SH_PFC_PIN_GROUP(vin0_field),
-+	SH_PFC_PIN_GROUP(vin0_clkenb),
- 	SH_PFC_PIN_GROUP(vin0_clk),
- 	SH_PFC_PIN_GROUP(vin1_data),
- 	SH_PFC_PIN_GROUP(vin1_clk),
-@@ -3556,10 +3556,10 @@ static const char * const vin0_groups[] = {
- 	"vin0_data_g",
- 	"vin0_data_r",
- 	"vin0_data_b",
--	"vin0_hsync_signal",
--	"vin0_vsync_signal",
--	"vin0_field_signal",
--	"vin0_data_enable",
-+	"vin0_hsync",
-+	"vin0_vsync",
-+	"vin0_field",
-+	"vin0_clkenb",
- 	"vin0_clk",
- };
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 51fe3bdacb18..239354618eac 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -160,7 +160,7 @@ struct rspi_data {
+ 	wait_queue_head_t wait;
+ 	spinlock_t lock;
+ 	struct clk *clk;
+-	unsigned char spsr;
++	u8 spsr;
+ 	const struct spi_ops *ops;
  
+ 	/* for dmaengine */
+@@ -514,7 +514,7 @@ end_nomap:
+ 
+ static void rspi_receive_init(const struct rspi_data *rspi)
+ {
+-	unsigned char spsr;
++	u8 spsr;
+ 
+ 	spsr = rspi_read8(rspi, RSPI_SPSR);
+ 	if (spsr & SPSR_SPRF)
+@@ -562,7 +562,7 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 
+ static void qspi_receive_init(const struct rspi_data *rspi)
+ {
+-	unsigned char spsr;
++	u8 spsr;
+ 
+ 	spsr = rspi_read8(rspi, RSPI_SPSR);
+ 	if (spsr & SPSR_SPRF)
+@@ -807,9 +807,9 @@ static void rspi_cleanup(struct spi_device *spi)
+ static irqreturn_t rspi_irq(int irq, void *_sr)
+ {
+ 	struct rspi_data *rspi = _sr;
+-	unsigned long spsr;
++	u8 spsr;
+ 	irqreturn_t ret = IRQ_NONE;
+-	unsigned char disable_irq = 0;
++	u8 disable_irq = 0;
+ 
+ 	rspi->spsr = spsr = rspi_read8(rspi, RSPI_SPSR);
+ 	if (spsr & SPSR_SPRF)
 -- 
-1.8.3.1
+1.7.9.5
 
