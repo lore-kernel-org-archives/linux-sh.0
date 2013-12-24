@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:28 +0000
-Subject: [PATCH 02/69] ARM: shmobile: r8a7779: tidyup I2C driver name on DTSI
-Message-Id: <6363070ef7744ad8b6af2ef37afc913c41e82547.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:06:53 +0000
+Subject: [PATCH 01/13] ARM: shmobile: r8a7778: add SSIx DMAEngine support
+Message-Id: <a91be22c9222061281a380bd3f38ec9281919a2c.1387857168.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387857168.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,57 +12,134 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-10e8d4f6dddb0f9dc408c2f2bde8399b243a42ca
-(ARM: mach-shmobile: r8a7779: Minimal setup using DT)
-added I2C driver, but it was SH-Mobile I2C.
-R-Car H1 needs R-Car I2C driver.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7778.h | 18 ++++++++++
+ arch/arm/mach-shmobile/setup-r8a7778.c        | 51 +++++++++++++++++++++++++++
+ 2 files changed, 69 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 19faeac..da61d27 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -153,7 +153,7 @@
- 	i2c0: i2c@ffc70000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc70000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 79 0x4>;
-@@ -163,7 +163,7 @@
- 	i2c1: i2c@ffc71000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc71000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 82 0x4>;
-@@ -173,7 +173,7 @@
- 	i2c2: i2c@ffc72000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc72000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 80 0x4>;
-@@ -183,7 +183,7 @@
- 	i2c3: i2c@ffc73000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc73000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 81 0x4>;
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+index b497f93..a3440e5 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
+@@ -27,6 +27,24 @@ enum {
+ 	HPBDMA_SLAVE_DUMMY,
+ 	HPBDMA_SLAVE_SDHI0_TX,
+ 	HPBDMA_SLAVE_SDHI0_RX,
++	HPBDMA_SLAVE_SSI0_TX,
++	HPBDMA_SLAVE_SSI0_RX,
++	HPBDMA_SLAVE_SSI1_TX,
++	HPBDMA_SLAVE_SSI1_RX,
++	HPBDMA_SLAVE_SSI2_TX,
++	HPBDMA_SLAVE_SSI2_RX,
++	HPBDMA_SLAVE_SSI3_TX,
++	HPBDMA_SLAVE_SSI3_RX,
++	HPBDMA_SLAVE_SSI4_TX,
++	HPBDMA_SLAVE_SSI4_RX,
++	HPBDMA_SLAVE_SSI5_TX,
++	HPBDMA_SLAVE_SSI5_RX,
++	HPBDMA_SLAVE_SSI6_TX,
++	HPBDMA_SLAVE_SSI6_RX,
++	HPBDMA_SLAVE_SSI7_TX,
++	HPBDMA_SLAVE_SSI7_RX,
++	HPBDMA_SLAVE_SSI8_TX,
++	HPBDMA_SLAVE_SSI8_RX,
+ 	HPBDMA_SLAVE_HPBIF0_TX,
+ 	HPBDMA_SLAVE_HPBIF0_RX,
+ 	HPBDMA_SLAVE_HPBIF1_TX,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 81701cf..e786338 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -319,6 +319,29 @@ void __init r8a7778_add_dt_devices(void)
+ #define HPB_DMAE_ASYNCMDR_ASMD21_SINGLE	BIT(1)	/* SDHI0 */
+ #define HPB_DMAE_ASYNCMDR_ASMD21_MULTI	0	/* SDHI0 */
+ 
++#define HPBDMA_SSI(_id)				\
++{						\
++	.id	= HPBDMA_SLAVE_SSI## _id ##_TX,	\
++	.addr	= 0xffd91008 + (_id * 0x40),	\
++	.dcr	= HPB_DMAE_DCR_CT |		\
++		  HPB_DMAE_DCR_DIP |		\
++		  HPB_DMAE_DCR_SPDS_32BIT |	\
++		  HPB_DMAE_DCR_DMDL |		\
++		  HPB_DMAE_DCR_DPDS_32BIT,	\
++	.port   = _id + (_id << 8),		\
++	.dma_ch = (28 + _id),			\
++}, {						\
++	.id	= HPBDMA_SLAVE_SSI## _id ##_RX,	\
++	.addr	= 0xffd9100c + (_id * 0x40),	\
++	.dcr	= HPB_DMAE_DCR_CT |		\
++		  HPB_DMAE_DCR_DIP |		\
++		  HPB_DMAE_DCR_SMDL |		\
++		  HPB_DMAE_DCR_SPDS_32BIT |	\
++		  HPB_DMAE_DCR_DPDS_32BIT,	\
++	.port   = _id + (_id << 8),		\
++	.dma_ch = (28 + _id),			\
++}
++
+ #define HPBDMA_HPBIF(_id)				\
+ {							\
+ 	.id	= HPBDMA_SLAVE_HPBIF## _id ##_TX,	\
+@@ -373,6 +396,16 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ 		.dma_ch	= 22,
+ 	},
+ 
++	HPBDMA_SSI(0),
++	HPBDMA_SSI(1),
++	HPBDMA_SSI(2),
++	HPBDMA_SSI(3),
++	HPBDMA_SSI(4),
++	HPBDMA_SSI(5),
++	HPBDMA_SSI(6),
++	HPBDMA_SSI(7),
++	HPBDMA_SSI(8),
++
+ 	HPBDMA_HPBIF(0),
+ 	HPBDMA_HPBIF(1),
+ 	HPBDMA_HPBIF(2),
+@@ -387,22 +420,40 @@ static const struct hpb_dmae_slave_config hpb_dmae_slaves[] = {
+ static const struct hpb_dmae_channel hpb_dmae_channels[] = {
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_TX), /* ch. 21 */
+ 	HPB_DMAE_CHANNEL(0x7e, HPBDMA_SLAVE_SDHI0_RX), /* ch. 22 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_TX),   /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI0_RX),   /* ch. 28 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_TX), /* ch. 28 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF0_RX), /* ch. 28 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_TX),   /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI1_RX),   /* ch. 29 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_TX), /* ch. 29 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF1_RX), /* ch. 29 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_TX),   /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI2_RX),   /* ch. 30 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_TX), /* ch. 30 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF2_RX), /* ch. 30 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_TX),   /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI3_RX),   /* ch. 31 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_TX), /* ch. 31 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF3_RX), /* ch. 31 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_TX),   /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI4_RX),   /* ch. 32 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_TX), /* ch. 32 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF4_RX), /* ch. 32 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_TX),   /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI5_RX),   /* ch. 33 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_TX), /* ch. 33 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF5_RX), /* ch. 33 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_TX),   /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI6_RX),   /* ch. 34 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_TX), /* ch. 34 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF6_RX), /* ch. 34 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_TX),   /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI7_RX),   /* ch. 35 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_TX), /* ch. 35 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF7_RX), /* ch. 35 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_TX),   /* ch. 36 */
++	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_SSI8_RX),   /* ch. 36 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_TX), /* ch. 36 */
+ 	HPB_DMAE_CHANNEL(0x7f, HPBDMA_SLAVE_HPBIF8_RX), /* ch. 36 */
+ };
 -- 
 1.8.4
 
