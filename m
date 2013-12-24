@@ -1,38 +1,41 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:16:07 +0000
-Subject: [PATCH 27/29] ARM: shmobile: r8a7779: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <0bb075cea8b527a1f33d965f6c891cea9261e9bf.1387888861.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:06:01 +0000
+Subject: [PATCH 2/3] irqchip: renesas-irqc: Enable mask on suspend
+Message-Id: <6a7e3b3007b5396a9e812ca0ceddc7915f8768dd.1387855444.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <cover.1387855444.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387855444.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
+Now when lazy interrupt disable has been enabled in the driver
+then extend the code to set IRQCHIP_MASK_ON_SUSPEND which tells
+the core that only IRQs marked as wakeups need to stay enabled
+during Suspend-to-RAM.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/irqchip/irq-renesas-irqc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 35c2268..339292e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -193,7 +193,6 @@ void __init r8a7779_pinmux_init(void)
- static struct plat_sci_port scif##index##_platform_data = {	\
- 	.type		= PORT_SCIF,				\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
--	.scbrr_algo_id	= SCBRR_ALGO_2,				\
- 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
- };								\
- 								\
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 8fdd7d6..082d95c 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -213,7 +213,7 @@ static int irqc_probe(struct platform_device *pdev)
+ 	irq_chip->irq_mask = irqc_irq_disable;
+ 	irq_chip->irq_unmask = irqc_irq_enable;
+ 	irq_chip->irq_set_type = irqc_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
++	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
+ 
+ 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+ 					      p->number_of_irqs,
 -- 
 1.8.4
 
