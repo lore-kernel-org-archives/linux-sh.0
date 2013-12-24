@@ -1,49 +1,167 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 22 Dec 2013 10:14:49 +0000
-Subject: Failure to bring up secondary CPU on koelsch
-Message-Id: <CAMuHMdUJYLQ7gcatTKNqgSCT33KT5KBxsu4VwrPGfutMPWLRpA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:40:45 +0000
+Subject: [PATCH 5/8] spi: rspi: Add support for no TX only mode
+Message-Id: <1387885248-28425-6-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-spi@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-When cold-booting koelsch, it sometimes locks up after printing
+Add support for RSPI variants lacking TX only mode, based on the SDK
+reference code. This is needed for RZ/A1H.
 
-    Starting kernel ...
+The TX only mode flag is passed using platform data, defaulting to true for
+legacy RSPI. QSPI nevers has TX only mode.
 
-Resetting the board and trying again usually helps (sometimes a few tries
-are needed).
+If TX only mode is not available, we have to wait for the receive interrupt
+bit to become set, and perform a dummy read, in the transmit path.
 
-As koelsch doesn't have early printk support, I made printk() save all
-messages to a buffer in RAM, to be inspected by uboot after a reset.
-The last lines are:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-rspi.c   |   50 ++++++++++++++++++++++++++++++++++++++++------
+ include/linux/spi/rspi.h |    1 +
+ 2 files changed, 45 insertions(+), 6 deletions(-)
 
-    CPU0: update cpu_power 1024
-    CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
-    Setting up static identity map for 0x4028e1b8 - 0x4028e210
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 00788091fc16..92aaa1eac5a9 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -191,6 +191,7 @@ struct rspi_data {
+ 
+ 	unsigned dma_width_16bit:1;
+ 	unsigned dma_callbacked:1;
++	unsigned txmode:1;
+ };
+ 
+ static void rspi_write8(const struct rspi_data *rspi, u8 data, u16 offset)
+@@ -251,6 +252,20 @@ struct spi_ops {
+ /*
+  * functions for RSPI
+  */
++static void rspi_set_txmode(const struct rspi_data *rspi)
++{
++	if (rspi->txmode)
++		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
++			    RSPI_SPCR);
++}
++
++static void rspi_clear_txmode(const struct rspi_data *rspi)
++{
++	if (rspi->txmode)
++		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
++			    RSPI_SPCR);
++}
++
+ static int rspi_parse_platform_data(struct rspi_data *rspi,
+ 				    const struct rspi_plat_data *rspi_pd)
+ {
+@@ -275,6 +290,11 @@ static int rspi_parse_platform_data(struct rspi_data *rspi,
+ 		rspi->spdcr = 0;
+ 	}
+ 
++	if (rspi_pd)
++		rspi->txmode = rspi_pd->txmode;
++	else
++		rspi->txmode = 1;	/* legacy RSPI defaults to true */
++
+ 	return 0;
+ }
+ 
+@@ -321,6 +341,9 @@ static int qspi_parse_platform_data(struct rspi_data *rspi,
+ 	rspi->data_width = 8;
+ 	rspi->spdcr = 0;
+ 
++	/* No TX only mode */
++	rspi->txmode = 0;
++
+ 	return 0;
+ }
+ 
+@@ -414,8 +437,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 	int remain = t->len;
+ 	const u8 *data = t->tx_buf;
+ 	while (remain > 0) {
+-		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
+-			    RSPI_SPCR);
++		rspi_set_txmode(rspi);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+@@ -423,6 +445,15 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 
++		if (!rspi->txmode && remain != t->len) {
++			if (rspi_wait_for_interrupt(rspi, SPSR_SPRF,
++						    SPCR_SPRIE) < 0) {
++				dev_err(&rspi->master->dev,
++					"%s: receive timeout\n", __func__);
++				return -ETIMEDOUT;
++			}
++			rspi_read_data(rspi);	/* dummy read */
++		}
+ 		rspi_write_data(rspi, *data);
+ 		data++;
+ 		remain--;
+@@ -431,6 +462,14 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 	/* Waiting for the last transmition */
+ 	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
+ 
++	if (!rspi->txmode) {
++		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
++			dev_err(&rspi->master->dev,
++				"%s: receive timeout\n", __func__);
++			return -ETIMEDOUT;
++		}
++		rspi_read_data(rspi);	/* dummy read */
++	}
+ 	return 0;
+ }
+ 
+@@ -562,7 +601,7 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
+ 	for (i = 0; i < rspi->numirq; i++)
+ 		disable_irq(rspi->irq[i]);
+ 
+-	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD, RSPI_SPCR);
++	rspi_set_txmode(rspi);
+ 	rspi_enable_irq(rspi, SPCR_SPTIE);
+ 	rspi->dma_callbacked = 0;
+ 
+@@ -613,8 +652,7 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 
+ 	data = t->rx_buf;
+ 	while (remain > 0) {
+-		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
+-			    RSPI_SPCR);
++		rspi_clear_txmode(rspi);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+@@ -748,7 +786,7 @@ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
+ 	for (i = 0; i < rspi->numirq; i++)
+ 		disable_irq(rspi->irq[i]);
+ 
+-	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD, RSPI_SPCR);
++	rspi_clear_txmode(rspi);
+ 	rspi_enable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
+ 	rspi->dma_callbacked = 0;
+ 
+diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
+index 7316dd9c7ba9..0f5f612f0092 100644
+--- a/include/linux/spi/rspi.h
++++ b/include/linux/spi/rspi.h
+@@ -28,6 +28,7 @@ struct rspi_plat_data {
+ 	unsigned int dma_rx_id;
+ 
+ 	unsigned dma_width_16bit:1;	/* DMAC read/write width = 16-bit */
++	unsigned txmode:1;		/* TX only mode */
+ 
+ 	u16 num_chipselect;
+ };
+-- 
+1.7.9.5
 
-On success, the next lines are:
-
-    CPU1: Booted secondary processor
-    CPU1: update cpu_power 1024
-    CPU1: thread -1, cpu 1, socket 0, mpidr 80000001
-    Brought up 2 CPUs
-
-Anyone else seeing this, or knowing what's wrong?
-
-I'm using U-Boot 2013.01.01-gb6af5fc (Nov 12 2013 - 14:33:51) and a
-kernel based on renesas-devel-v3.13-rc4-20131219.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
