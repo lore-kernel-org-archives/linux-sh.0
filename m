@@ -1,113 +1,147 @@
-From: Kevin Hilman <khilman@linaro.org>
-Date: Fri, 20 Dec 2013 20:22:04 +0000
-Subject: Re: [GIT PULL 00/69] Renesas ARM based SoC DT updates for v3.14
-Message-Id: <878uvfgtn7.fsf@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:56:45 +0000
+Subject: [PATCH 1/6] pinctrl: sh-pfc: r7s72100: Add RSPI support
+Message-Id: <1387886210-3634-2-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au> (Simon Horman's
- message of "Fri, 13 Dec 2013 11:31:12 +0900")
+References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Simon Horman <horms+renesas@verge.net.au> writes:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c |   94 +++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
 
-> Hi Olof, Hi Kevin, Hi Arnd,
->
-> Please consider these Renesas ARM based SoC DT updates for v3.14.
->
-> This pull request is based on renesas-soc-for-v3.14 (v2) which I
-> also sent a pull request for today.
->
-> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
->
->   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
->
-> are available in the git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v3.14
->
-> for you to fetch changes up to 1fd219561a4afc51b5f257692f3581546434db5b:
->
->   ARM: shmobile: marzen: enable HSPI0 in DTS (2013-12-10 17:27:25 +0900)
->
-> ----------------------------------------------------------------
-> Renesas ARM based SoC DT updates for v3.14
->
-> * Global
->   - Use interrupt macros
->   - Use #include in device tree sources
->   - Tidyup DT node naming
->
-> * emev2 (Emma Mobile EV2) SoC
->   - Setup internal peripheral interrupts as level high
->   - Use interrupt macros in DT files
->   - Add clock tree description in DT
->
-> * r8a7791 (R-Car M2) SoC
->   - Correct GPIO resources
->
-> * r8a7791 (R-Car M2) based Koelsch board
->   - Configure PFC and GPO
->   - Use r8a7791 suffix for IRQC compat string
->   - Add DT reference
->
-> * r8a7790 (R-Car H2) based Lager board
->   - Include all 4 GiB of memory
->   - Use r8a7790 suffix for IRQC and MMCIF compat strings
->   - Enable MMCIF
->   - Add default PFC settings
->
-> * r8a7778 (R-Car M1) SoC
->   - Suffix for INTC compat string
->   - Add HSPI, MMCIF, SDHI and I2C suppport on DTSI
->   - Correct pin control device addresses
->
-> * r8a7778 (R-Car M1) based Bock-W board
->   - Use falling edge IRQ for LAN9221 in DT reference
->   - Enable I2C, HSPI0, MMCIF and SDHI
->   - Correct MMC pin conflict
->   - Remove manual PFC settings from DT reference
->   - Add default PFC settings
->
-> * r8a7779 (R-Car H1) SoC
->   - Add HSPI and SDHI support
->   - Suffix for INTC compat string
->
-> * r8a7779 (R-Car H1) based Marzen board
->   - Enable HSPI0 and SDHI in DTS
->   - Remove SDHI0 WP pin setting
->   - Use falling edge IRQ for LAN9221 in DT reference
->   - Add SDHI support
->
-> * r8a7740 (R-Mobile A1) SoC
->   - Suffix for INTC compat string
->   - Add FSI support via DTSI
->   - Use interrupt macros
->
-> * r8a7740 based Armadillo board
->   - Add FSI support for DTS
->   - Use low level IRQ for ST1231 in DT reference
->
-> * r8a73a4 (SH-Mobile APE6) SoC
->   - Use interrupt macros in DT files
->
-> * r8a73a4 (R-Mobile APE6) based ape6evm board
->   - Include all 2 GiB of memory
->
-> * r8a73a0 (SH-Mobile AG5) SoC
->   - Correct SDHI compat string
->
-> * r8a73a0 (SH-Mobile AG5) based kzm9d board
->   - Add GPIO keys and Add PCF8575 GPIO extender to DT
->   - Enable DSW2 with gpio-keys
->   - Use falling edge IRQ for LAN9221 in DT reference
->
-> ----------------------------------------------------------------
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+index 267677c683c5..5e0f03c14fcc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+@@ -138,6 +138,70 @@ RIIC1(RZ_PIN_AND_MUX)
+ RIIC2(RZ_PIN_AND_MUX)
+ RIIC3(RZ_PIN_AND_MUX)
+ 
++#define RSPI0(fn)			\
++	fn(rspi0, rspck,  2, 12, 2)	\
++	fn(rspi0, ssl0,   2, 13, 2)	\
++	fn(rspi0, mosi,   2, 14, 2)	\
++	fn(rspi0, miso,   2, 15, 2)	\
++	fn(rspi0, rspck,  7, 15, 2)	\
++	fn(rspi0, ssl0,   8,  0, 2)	\
++	fn(rspi0, mosi,   8,  1, 2)	\
++	fn(rspi0, miso,   8,  2, 2)	\
++	fn(rspi0, rspck, 10, 12, 4)	\
++	fn(rspi0, ssl0,  10, 13, 4)	\
++	fn(rspi0, mosi,  10, 14, 4)	\
++	fn(rspi0, miso,  10, 15, 4)	\
++
++#define RSPI1(fn)			\
++	fn(rspi1, rspck,  4,  4, 2)	\
++	fn(rspi1, ssl0,   4,  5, 2)	\
++	fn(rspi1, mosi,   4,  6, 2)	\
++	fn(rspi1, miso,   4,  7, 2)	\
++	fn(rspi1, rspck,  6,  4, 7)	\
++	fn(rspi1, ssl0,   6,  5, 7)	\
++	fn(rspi1, mosi,   6,  6, 7)	\
++	fn(rspi1, miso,   6,  7, 7)	\
++	fn(rspi1, rspck, 11, 12, 2)	\
++	fn(rspi1, ssl0,  11, 13, 2)	\
++	fn(rspi1, mosi,  11, 14, 2)	\
++	fn(rspi1, miso,  11, 15, 2)	\
++
++#define RSPI2(fn)			\
++	fn(rspi2, rspck,  8,  3, 3)	\
++	fn(rspi2, ssl0,   8,  4, 3)	\
++	fn(rspi2, mosi,   8,  5, 3)	\
++	fn(rspi2, miso,   8,  6, 3)	\
++	fn(rspi2, rspck,  8, 14, 5)	\
++	fn(rspi2, ssl0,   8, 15, 5)	\
++	fn(rspi2, mosi,   9,  0, 5)	\
++	fn(rspi2, miso,   9,  1, 5)	\
++
++#define RSPI3(fn)			\
++	fn(rspi3, rspck,  3,  0, 8)	\
++	fn(rspi3, ssl0,   3,  1, 8)	\
++	fn(rspi3, mosi,   3,  2, 8)	\
++	fn(rspi3, miso,   3,  3, 8)	\
++	fn(rspi3, rspck,  5,  0, 8)	\
++	fn(rspi3, ssl0,   5,  1, 8)	\
++	fn(rspi3, mosi,   5,  2, 8)	\
++	fn(rspi3, miso,   5,  3, 8)	\
++
++#define RSPI4(fn)			\
++	fn(rspi4, rspck,  2,  8, 8)	\
++	fn(rspi4, ssl0,   2,  9, 8)	\
++	fn(rspi4, mosi,   2, 10, 8)	\
++	fn(rspi4, miso,   2, 11, 8)	\
++	fn(rspi4, rspck,  4,  0, 7)	\
++	fn(rspi4, ssl0,   4,  1, 7)	\
++	fn(rspi4, mosi,   4,  2, 7)	\
++	fn(rspi4, miso,   4,  3, 7)	\
++
++RSPI0(RZ_PIN_AND_MUX)
++RSPI1(RZ_PIN_AND_MUX)
++RSPI2(RZ_PIN_AND_MUX)
++RSPI3(RZ_PIN_AND_MUX)
++RSPI4(RZ_PIN_AND_MUX)
++
+ #define SCIF0(fn)			\
+ 	fn(scif0, clk, 2, 13, 6)	\
+ 	fn(scif0, txd, 2, 14, 6)	\
+@@ -312,6 +376,11 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	RIIC1(RZ_PMX_GROUP)
+ 	RIIC2(RZ_PMX_GROUP)
+ 	RIIC3(RZ_PMX_GROUP)
++	RSPI0(RZ_PMX_GROUP)
++	RSPI1(RZ_PMX_GROUP)
++	RSPI2(RZ_PMX_GROUP)
++	RSPI3(RZ_PMX_GROUP)
++	RSPI4(RZ_PMX_GROUP)
+ 	SCIF0(RZ_PMX_GROUP)
+ 	SCIF1(RZ_PMX_GROUP)
+ 	SCIF2(RZ_PMX_GROUP)
+@@ -339,6 +408,26 @@ static const char * const riic3_groups[] = {
+ 	RIIC3(RZ_GROUPS)
+ };
+ 
++static const char * const rspi0_groups[] = {
++	RSPI0(RZ_GROUPS)
++};
++
++static const char * const rspi1_groups[] = {
++	RSPI1(RZ_GROUPS)
++};
++
++static const char * const rspi2_groups[] = {
++	RSPI2(RZ_GROUPS)
++};
++
++static const char * const rspi3_groups[] = {
++	RSPI3(RZ_GROUPS)
++};
++
++static const char * const rspi4_groups[] = {
++	RSPI4(RZ_GROUPS)
++};
++
+ static const char * const scif0_groups[] = {
+ 	SCIF0(RZ_GROUPS)
+ };
+@@ -380,6 +469,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(riic1),
+ 	SH_PFC_FUNCTION(riic2),
+ 	SH_PFC_FUNCTION(riic3),
++	SH_PFC_FUNCTION(rspi0),
++	SH_PFC_FUNCTION(rspi1),
++	SH_PFC_FUNCTION(rspi2),
++	SH_PFC_FUNCTION(rspi3),
++	SH_PFC_FUNCTION(rspi4),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+ 	SH_PFC_FUNCTION(scif2),
+-- 
+1.7.9.5
 
-Pulled into next/dt,
-
-Thanks,
-
-Kevin
