@@ -1,48 +1,70 @@
-From: takasi-y@ops.dti.ne.jp
-Date: Sun, 22 Dec 2013 09:27:22 +0000
-Subject: [PATCH 0/2] ARM: shmobile: koelsch: (1+1)GiB memory in DT
-Message-Id: <1387704444-750-1-git-send-email-takasi-y@ops.dti.ne.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:30:07 +0000
+Subject: [GIT PULL 0/4] Third Round of Renesas SH SCI Updates for v3.14
+Message-Id: <cover.1387890410.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Hi Kevin, Hi Olof, Hi Arnd,
 
-According to Koelsch hardware manual, it has memory
- 1GiB DDR0 at 1_0000_0000
- 1GiB DDR1 at 2_0000_0000
-And, with its default configuration,
- 0_4000_0000..0_7fff_0000 is mirror of 1_0000_0000..1_3fff_ffff.
+please consider this third round of Renesas SH SCI updates for v3.14.
 
-So, defining
- 1GiB at 0_4000_0000 (mirror of DDR0)
- 1GiB at 2_0000_0000 (DDR1)
-is suitable to support full 2GiB of memory with LPAE, retaining
-compatibility to 32bit case.
+This pull request is based on a merge of the following:
 
-Confirmed to boot and to see memory size of
-750MiB with LPAE=n, HIGHMEM=n
-  1GiB with LPAE=n, HIGHMEM=y
-  2GiB with LPAE=y, HIGHMEM=y
+* Renesas SH based SoC updates for v3.14,
+  tagged as renesas-sh-soc-for-v3.14, which I will
+  also send a pull-request for today.
 
-Two patches are to be applied to each
- arch/arm/boot/dts/r8a7791-koelsch.dts
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-and will lexically conflict with Laurent's dts consolidation for
-multi-platform support. Please arrange them manually. > Simon.
+* Third Round of Renesas ARM based SoC updates for v3.14,
+  tagged as renesas-soc3-for-v3.14, which I will
+  also send a pull-request for today.
 
----
+Both of the above branches are based on
 
-Takashi Yoshii (2):
-  ARM: shmobile: koelsch: (1+1)GiB memory in DT
-  ARM: shmobile: koelsch-reference: (1+1)GiB memory in DT
+* Second Round of Renesas SH SCI Updates for v3.14
+  tagged as renesas-sh-sci2-for-v3.14, which I will
+  also send a pull-request for today.
 
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts |    7 ++++++-
- arch/arm/boot/dts/r8a7791-koelsch.dts           |    7 ++++++-
- 2 files changed, 12 insertions(+), 2 deletions(-)
+The reason for this merge is to provide dependencies for the
+patches in this series. In a nutshell there was a round of
+driver updates, followed by SoC updates to use the new driver code,
+followed by more driver updates.
 
--- 
-1.7.9.5
 
+The following changes since commit 20f4e334272dc191e475039d68a3bf3eb46ec66e:
+
+  Merge branch 'sh-soc' into sh-sci2-base (2013-12-24 21:50:13 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-sci3-for-v3.14
+
+for you to fetch changes up to 20bdcab8268cb05702e12ae9013be96ecc7ec3a6:
+
+  serial: sh-sci: Add OF support (2013-12-24 21:50:54 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas SH SCI Updates for v3.14
+
+* Add Device Tree Support
+* Remove platform data mapbase and irqs fields
+* Remove platform data scbrr_algo_id field
+
+----------------------------------------------------------------
+Bastian Hecht (1):
+      serial: sh-sci: Add OF support
+
+Laurent Pinchart (3):
+      serial: sh-sci: Remove platform data scbrr_algo_id field
+      serial: sh-sci: Remove platform data mapbase and irqs fields
+      serial: sh-sci: Add device tree bindings documentation
+
+ .../bindings/serial/renesas,sci-serial.txt         |  46 +++++
+ drivers/tty/serial/sh-sci.c                        | 187 +++++++++++++++------
+ include/linux/serial_sci.h                         |  36 ----
+ 3 files changed, 183 insertions(+), 86 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
