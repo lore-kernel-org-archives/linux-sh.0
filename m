@@ -1,39 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Dec 2013 05:06:13 +0000
-Subject: Re: [PATCH] ARM: shmobile: armadillo: fixup FSI address size
-Message-Id: <20131205050611.GC12774@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 09:49:33 +0000
+Subject: [PATCH 4/5] spi: rspi: Use DUMMY_DATA macro instead of hardcoded value
+Message-Id: <1387878574-21445-5-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvtnsxr9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvtnsxr9.wl%kuninori.morimoto.gx@renesas.com>
+References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-On Tue, Dec 03, 2013 at 12:07:03AM -0800, Kuninori Morimoto wrote:
-> FSI address size is 0x400, not 0x8400
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+Make it more obvious that this value is dummy data.
 
-Thanks, I will queue this up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-rspi.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-> 
-> diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> index 958e3cb..d9e28c7a 100644
-> --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-> +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> @@ -958,7 +958,7 @@ static struct resource fsi_resources[] = {
->  	[0] = {
->  		.name	= "FSI",
->  		.start	= 0xfe1f0000,
-> -		.end	= 0xfe1f8400 - 1,
-> +		.end	= 0xfe1f0400 - 1,
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -- 
-> 1.7.9.5
-> 
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 4e376db1ca4f..51fe3bdacb18 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -149,6 +149,8 @@
+ #define SPBFCR_TXRST		0x80	/* qspi only */
+ #define SPBFCR_RXRST		0x40	/* qspi only */
+ 
++#define DUMMY_DATA		0x00
++
+ struct rspi_data {
+ 	void __iomem *addr;
+ 	u32 max_speed_hz;
+@@ -541,7 +543,7 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 		/* dummy write for generate clock */
+-		rspi_write16(rspi, 0x00, RSPI_SPDR);
++		rspi_write16(rspi, DUMMY_DATA, RSPI_SPDR);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+@@ -586,7 +588,7 @@ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 		/* dummy write for generate clock */
+-		rspi_write8(rspi, 0x00, RSPI_SPDR);
++		rspi_write8(rspi, DUMMY_DATA, RSPI_SPDR);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+-- 
+1.7.9.5
+
