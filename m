@@ -1,54 +1,123 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 12:33:03 +0000
-Subject: [PATCH v3] v4l: sh_vou: Fix warnings due to improper casts and printk formats
-Message-Id: <1386765183-1522-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:37 +0000
+Subject: [PATCH 14/21] ARM: shmobile: Remove Lager reference DTS
+Message-Id: <2b4baad03854ab23ce9a4c073e3795ac29985132.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-media@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
-variables. This fixes warnings on platforms where dma_addr_t has a
-different size than int.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>
-Cc: linux-media@vger.kernel.org
+Now that the DTS file r8a7790-lager.dts can be used with board-lager.c
+and board-lager-reference.c, proceed with removing
+r8a7790-lager-reference.dts.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/sh_vou.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager-reference.dts | 89 ---------------------------
+ 1 file changed, 89 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7790-lager-reference.dts
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 4f30341..65c9f18 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -286,7 +286,7 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
- 	vb->size = vb->height * bytes_per_line;
- 	if (vb->baddr && vb->bsize < vb->size) {
- 		/* User buffer too small */
--		dev_warn(vq->dev, "User buffer too small: [%u] @ %lx\n",
-+		dev_warn(vq->dev, "User buffer too small: [%zu] @ %lx\n",
- 			 vb->bsize, vb->baddr);
- 		return -EINVAL;
- 	}
-@@ -302,9 +302,10 @@ static int sh_vou_buf_prepare(struct videobuf_queue *vq,
- 	}
- 
- 	dev_dbg(vou_dev->v4l2_dev.dev,
--		"%s(): fmt #%d, %u bytes per line, phys 0x%x, type %d, state %d\n",
-+		"%s(): fmt #%d, %u bytes per line, phys %pad, type %d, state %d\n",
- 		__func__, vou_dev->pix_idx, bytes_per_line,
--		videobuf_to_dma_contig(vb), vb->memory, vb->state);
-+		({ dma_addr_t addr = videobuf_to_dma_contig(vb); &addr; }),
-+		vb->memory, vb->state);
- 
- 	return 0;
- }
+diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
+deleted file mode 100644
+index dfedc0e..0000000
+--- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
++++ /dev/null
+@@ -1,89 +0,0 @@
+-/*
+- * Device Tree Source for the Lager board
+- *
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7790.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Lager";
+-	compatible = "renesas,lager-reference", "renesas,r8a7790";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	memory@180000000 {
+-		device_type = "memory";
+-		reg = <1 0x80000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio4 22 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio4 23 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-
+-	fixedregulator3v3: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "fixed-3.3V";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-boot-on;
+-		regulator-always-on;
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data";
+-		renesas,function = "scif1";
+-	};
+-
+-	mmc1_pins: mmc1 {
+-		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+-		renesas,function = "mmc1";
+-	};
+-};
+-
+-&mmcif1 {
+-	pinctrl-0 = <&mmc1_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&fixedregulator3v3>;
+-	bus-width = <8>;
+-	non-removable;
+-	status = "okay";
+-};
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
