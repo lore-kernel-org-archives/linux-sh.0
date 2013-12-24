@@ -1,272 +1,104 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 10 Dec 2013 15:50:10 +0000
-Subject: [PATCH 1/2] pinctrl: sh-pfc: pfc-r8a7790: Add full VIN1/2/3 support
-Message-Id: <1386690611-2014-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:51 +0000
+Subject: [PATCH 07/29] ARM: shmobile: r7s72100: Don't define SCIF platform data in an array
+Message-Id: <a958a31eb021a2c8ce24c718fcbf00d915f38e78.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds missing VIN1/2/3 pin configuration to pfc-r8a7790.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 202 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 198 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/setup-r7s72100.c | 49 +++++++++++++++------------------
+ 1 file changed, 22 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index 72786fc..d6c446f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -3076,22 +3076,168 @@ static const unsigned int vin0_clk_mux[] = {
- 	VI0_CLK_MARK,
- };
- /* - VIN1 ------------------------------------------------------------------- */
--static const unsigned int vin1_data_pins[] = {
-+static const unsigned int vin1_data_g_pins[] = {
-+	RCAR_GP_PIN(1, 14), RCAR_GP_PIN(1, 15), RCAR_GP_PIN(1, 17),
-+	RCAR_GP_PIN(1, 20), RCAR_GP_PIN(1, 22), RCAR_GP_PIN(1, 12),
-+	RCAR_GP_PIN(1, 9), RCAR_GP_PIN(1, 7),
-+};
-+static const unsigned int vin1_data_g_mux[] = {
-+	VI1_G0_MARK, VI1_G1_MARK, VI1_G2_MARK,
-+	VI1_G3_MARK, VI1_G4_MARK, VI1_G5_MARK,
-+	VI1_G6_MARK, VI1_G7_MARK,
-+};
-+static const unsigned int vin1_data_r_pins[] = {
-+	RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28), RCAR_GP_PIN(0, 29),
-+	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
-+	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 8),
-+};
-+static const unsigned int vin1_data_r_mux[] = {
-+	VI1_R0_MARK, VI1_R1_MARK, VI1_R2_MARK,
-+	VI1_R3_MARK, VI1_R4_MARK, VI1_R5_MARK,
-+	VI1_R6_MARK, VI1_R7_MARK,
-+};
-+static const unsigned int vin1_data_b_pins[] = {
- 	RCAR_GP_PIN(2, 10), RCAR_GP_PIN(2, 11), RCAR_GP_PIN(2, 12),
- 	RCAR_GP_PIN(2, 13), RCAR_GP_PIN(2, 14), RCAR_GP_PIN(2, 15),
- 	RCAR_GP_PIN(2, 16), RCAR_GP_PIN(2, 17),
- };
--static const unsigned int vin1_data_mux[] = {
-+static const unsigned int vin1_data_b_mux[] = {
- 	VI1_DATA0_VI1_B0_MARK, VI1_DATA1_VI1_B1_MARK, VI1_DATA2_VI1_B2_MARK,
- 	VI1_DATA3_VI1_B3_MARK, VI1_DATA4_VI1_B4_MARK, VI1_DATA5_VI1_B5_MARK,
- 	VI1_DATA6_VI1_B6_MARK, VI1_DATA7_VI1_B7_MARK,
- };
-+static const unsigned int vin1_hsync_signal_pins[] = {
-+	RCAR_GP_PIN(1, 24),
-+};
-+static const unsigned int vin1_hsync_signal_mux[] = {
-+	VI1_HSYNC_N_MARK,
-+};
-+static const unsigned int vin1_vsync_signal_pins[] = {
-+	RCAR_GP_PIN(1, 25),
-+};
-+static const unsigned int vin1_vsync_signal_mux[] = {
-+	VI1_VSYNC_N_MARK,
-+};
-+static const unsigned int vin1_field_signal_pins[] = {
-+	RCAR_GP_PIN(1, 13),
-+};
-+static const unsigned int vin1_field_signal_mux[] = {
-+	VI1_FIELD_MARK,
-+};
-+static const unsigned int vin1_data_enable_pins[] = {
-+	RCAR_GP_PIN(1, 26),
-+};
-+static const unsigned int vin1_data_enable_mux[] = {
-+	VI1_CLKENB_MARK,
-+};
- static const unsigned int vin1_clk_pins[] = {
- 	RCAR_GP_PIN(2, 9),
- };
- static const unsigned int vin1_clk_mux[] = {
- 	VI1_CLK_MARK,
- };
-+/* - VIN2 ----------------------------------------------------------------- */
-+static const unsigned int vin2_data_g_pins[] = {
-+	RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28), RCAR_GP_PIN(0, 29),
-+	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5),
-+	RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
-+};
-+static const unsigned int vin2_data_g_mux[] = {
-+	VI2_G0_MARK, VI2_G1_MARK, VI2_G2_MARK,
-+	VI2_G3_MARK, VI2_G4_MARK, VI2_G5_MARK,
-+	VI2_G6_MARK, VI2_G7_MARK,
-+};
-+static const unsigned int vin2_data_r_pins[] = {
-+	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 13), RCAR_GP_PIN(1, 14),
-+	RCAR_GP_PIN(1, 15), RCAR_GP_PIN(1, 17), RCAR_GP_PIN(1, 20),
-+	RCAR_GP_PIN(1, 22), RCAR_GP_PIN(1, 24),
-+};
-+static const unsigned int vin2_data_r_mux[] = {
-+	VI2_R0_MARK, VI2_R1_MARK, VI2_R2_MARK,
-+	VI2_R3_MARK, VI2_R4_MARK, VI2_R5_MARK,
-+	VI2_R6_MARK, VI2_R7_MARK,
-+};
-+static const unsigned int vin2_data_b_pins[] = {
-+	RCAR_GP_PIN(0, 8), RCAR_GP_PIN(0, 9), RCAR_GP_PIN(0, 10),
-+	RCAR_GP_PIN(0, 11), RCAR_GP_PIN(0, 12), RCAR_GP_PIN(0, 13),
-+	RCAR_GP_PIN(0, 14), RCAR_GP_PIN(0, 15),
-+};
-+static const unsigned int vin2_data_b_mux[] = {
-+	VI2_DATA0_VI2_B0_MARK, VI2_DATA1_VI2_B1_MARK, VI2_DATA2_VI2_B2_MARK,
-+	VI2_DATA3_VI2_B3_MARK, VI2_DATA4_VI2_B4_MARK, VI2_DATA5_VI2_B5_MARK,
-+	VI2_DATA6_VI2_B6_MARK, VI2_DATA7_VI2_B7_MARK,
-+};
-+static const unsigned int vin2_hsync_signal_pins[] = {
-+	RCAR_GP_PIN(1, 16),
-+};
-+static const unsigned int vin2_hsync_signal_mux[] = {
-+	VI2_HSYNC_N_MARK,
-+};
-+static const unsigned int vin2_vsync_signal_pins[] = {
-+	RCAR_GP_PIN(1, 21),
-+};
-+static const unsigned int vin2_vsync_signal_mux[] = {
-+	VI2_VSYNC_N_MARK,
-+};
-+static const unsigned int vin2_field_signal_pins[] = {
-+	RCAR_GP_PIN(1, 9),
-+};
-+static const unsigned int vin2_field_signal_mux[] = {
-+	VI2_FIELD_MARK,
-+};
-+static const unsigned int vin2_data_enable_pins[] = {
-+	RCAR_GP_PIN(1, 8),
-+};
-+static const unsigned int vin2_data_enable_mux[] = {
-+	VI2_CLKENB_MARK,
-+};
-+static const unsigned int vin2_clk_pins[] = {
-+	RCAR_GP_PIN(1, 11),
-+};
-+static const unsigned int vin2_clk_mux[] = {
-+	VI2_CLK_MARK,
-+};
-+/* - VIN3 ----------------------------------------------------------------- */
-+static const unsigned int vin3_data_pins[] = {
-+	RCAR_GP_PIN(0, 0), RCAR_GP_PIN(0, 1), RCAR_GP_PIN(0, 2),
-+	RCAR_GP_PIN(0, 3), RCAR_GP_PIN(0, 4), RCAR_GP_PIN(0, 5),
-+	RCAR_GP_PIN(0, 6), RCAR_GP_PIN(0, 7),
-+};
-+static const unsigned int vin3_data_mux[] = {
-+	VI3_DATA0_MARK, VI3_DATA1_MARK, VI3_DATA2_MARK,
-+	VI3_DATA3_MARK, VI3_DATA4_MARK, VI3_DATA5_MARK,
-+	VI3_DATA6_MARK, VI3_DATA7_MARK,
-+};
-+static const unsigned int vin3_hsync_signal_pins[] = {
-+	RCAR_GP_PIN(1, 16),
-+};
-+static const unsigned int vin3_hsync_signal_mux[] = {
-+	VI3_HSYNC_N_MARK,
-+};
-+static const unsigned int vin3_vsync_signal_pins[] = {
-+	RCAR_GP_PIN(1, 17),
-+};
-+static const unsigned int vin3_vsync_signal_mux[] = {
-+	VI2_VSYNC_N_MARK,
-+};
-+static const unsigned int vin3_field_signal_pins[] = {
-+	RCAR_GP_PIN(1, 15),
-+};
-+static const unsigned int vin3_field_signal_mux[] = {
-+	VI3_FIELD_MARK,
-+};
-+static const unsigned int vin3_data_enable_pins[] = {
-+	RCAR_GP_PIN(1, 14),
-+};
-+static const unsigned int vin3_data_enable_mux[] = {
-+	VI3_CLKENB_MARK,
-+};
-+static const unsigned int vin3_clk_pins[] = {
-+	RCAR_GP_PIN(1, 23),
-+};
-+static const unsigned int vin3_clk_mux[] = {
-+	VI3_CLK_MARK,
-+};
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 55f0b9c..6ae7e32 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -28,8 +28,8 @@
+ #include <mach/r7s72100.h>
+ #include <asm/mach/arch.h>
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du_rgb666),
-@@ -3274,8 +3420,28 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(vin0_field_signal),
- 	SH_PFC_PIN_GROUP(vin0_data_enable),
- 	SH_PFC_PIN_GROUP(vin0_clk),
--	SH_PFC_PIN_GROUP(vin1_data),
-+	SH_PFC_PIN_GROUP(vin1_data_g),
-+	SH_PFC_PIN_GROUP(vin1_data_r),
-+	SH_PFC_PIN_GROUP(vin1_data_b),
-+	SH_PFC_PIN_GROUP(vin1_hsync_signal),
-+	SH_PFC_PIN_GROUP(vin1_vsync_signal),
-+	SH_PFC_PIN_GROUP(vin1_field_signal),
-+	SH_PFC_PIN_GROUP(vin1_data_enable),
- 	SH_PFC_PIN_GROUP(vin1_clk),
-+	SH_PFC_PIN_GROUP(vin2_data_g),
-+	SH_PFC_PIN_GROUP(vin2_data_r),
-+	SH_PFC_PIN_GROUP(vin2_data_b),
-+	SH_PFC_PIN_GROUP(vin2_hsync_signal),
-+	SH_PFC_PIN_GROUP(vin2_vsync_signal),
-+	SH_PFC_PIN_GROUP(vin2_field_signal),
-+	SH_PFC_PIN_GROUP(vin2_data_enable),
-+	SH_PFC_PIN_GROUP(vin2_clk),
-+	SH_PFC_PIN_GROUP(vin3_data),
-+	SH_PFC_PIN_GROUP(vin3_hsync_signal),
-+	SH_PFC_PIN_GROUP(vin3_vsync_signal),
-+	SH_PFC_PIN_GROUP(vin3_field_signal),
-+	SH_PFC_PIN_GROUP(vin3_data_enable),
-+	SH_PFC_PIN_GROUP(vin3_clk),
- };
+-#define SCIF_DATA(index, baseaddr, irq)					\
+-[index] = {								\
++#define R7S72100_SCIF(index, baseaddr, irq)				\
++static const struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,					\
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+@@ -40,24 +40,19 @@
+ 	.irqs		= { irq + 1, irq + 2, irq + 3, irq },		\
+ }
  
- static const char * const du_groups[] = {
-@@ -3564,10 +3730,36 @@ static const char * const vin0_groups[] = {
- };
+-enum { SCIF0, SCIF1, SCIF2, SCIF3, SCIF4, SCIF5, SCIF6, SCIF7 };
++R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
++R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
++R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
++R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
++R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
++R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
++R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
++R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
  
- static const char * const vin1_groups[] = {
--	"vin1_data",
-+	"vin1_data_g",
-+	"vin1_data_r",
-+	"vin1_data_b",
-+	"vin1_hsync_signal",
-+	"vin1_vsync_signal",
-+	"vin1_field_signal",
-+	"vin1_data_enable",
- 	"vin1_clk",
- };
+-static const struct plat_sci_port scif[] __initconst = {
+-	SCIF_DATA(SCIF0, 0xe8007000, gic_iid(221)), /* SCIF0 */
+-	SCIF_DATA(SCIF1, 0xe8007800, gic_iid(225)), /* SCIF1 */
+-	SCIF_DATA(SCIF2, 0xe8008000, gic_iid(229)), /* SCIF2 */
+-	SCIF_DATA(SCIF3, 0xe8008800, gic_iid(233)), /* SCIF3 */
+-	SCIF_DATA(SCIF4, 0xe8009000, gic_iid(237)), /* SCIF4 */
+-	SCIF_DATA(SCIF5, 0xe8009800, gic_iid(241)), /* SCIF5 */
+-	SCIF_DATA(SCIF6, 0xe800a000, gic_iid(245)), /* SCIF6 */
+-	SCIF_DATA(SCIF7, 0xe800a800, gic_iid(249)), /* SCIF7 */
+-};
+-
+-static inline void r7s72100_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define r7s72100_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
  
-+static const char * const vin2_groups[] = {
-+	"vin2_data_g",
-+	"vin2_data_r",
-+	"vin2_data_b",
-+	"vin2_hsync_signal",
-+	"vin2_vsync_signal",
-+	"vin2_field_signal",
-+	"vin2_data_enable",
-+	"vin2_clk",
-+};
-+
-+static const char * const vin3_groups[] = {
-+	"vin3_data",
-+	"vin3_hsync_signal",
-+	"vin3_vsync_signal",
-+	"vin3_field_signal",
-+	"vin3_data_enable",
-+	"vin3_clk",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(du),
- 	SH_PFC_FUNCTION(du0),
-@@ -3605,6 +3797,8 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(usb2),
- 	SH_PFC_FUNCTION(vin0),
- 	SH_PFC_FUNCTION(vin1),
-+	SH_PFC_FUNCTION(vin2),
-+	SH_PFC_FUNCTION(vin3),
- };
  
- static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ static struct sh_timer_config mtu2_0_platform_data __initdata = {
+@@ -81,14 +76,14 @@ static struct resource mtu2_0_resources[] __initdata = {
+ 
+ void __init r7s72100_add_dt_devices(void)
+ {
+-	r7s72100_register_scif(SCIF0);
+-	r7s72100_register_scif(SCIF1);
+-	r7s72100_register_scif(SCIF2);
+-	r7s72100_register_scif(SCIF3);
+-	r7s72100_register_scif(SCIF4);
+-	r7s72100_register_scif(SCIF5);
+-	r7s72100_register_scif(SCIF6);
+-	r7s72100_register_scif(SCIF7);
++	r7s72100_register_scif(0);
++	r7s72100_register_scif(1);
++	r7s72100_register_scif(2);
++	r7s72100_register_scif(3);
++	r7s72100_register_scif(4);
++	r7s72100_register_scif(5);
++	r7s72100_register_scif(6);
++	r7s72100_register_scif(7);
+ 	r7s72100_register_mtu2(0);
+ }
+ 
 -- 
-1.8.3.1
+1.8.4
 
