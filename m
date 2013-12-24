@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:15:45 +0000
-Subject: [PATCH 01/29] ARM: shmobile: r8a7778: add sound SCU clock support
-Message-Id: <950c4477f7804174338fb32c8cc6f9d228eef833.1387888861.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:59 +0000
+Subject: [PATCH 19/29] ARM: shmobile: r8a7791: Declare SCIF register base and IRQ as resources
+Message-Id: <d95a95a85bb2ebb628f2d1667e7e45ad8fdf0297.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1387888861.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
@@ -10,61 +10,53 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This is needed to use SRC (= Sampling Rate Converter)
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7791.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 5406434..dfb0fff 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -115,6 +115,8 @@ static struct clk *main_clks[] = {
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 3fe0d7d..f15b537 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -87,11 +87,14 @@ void __init r8a7791_pinmux_init(void)
+ #define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {		\
+ 	.type		= scif_type,					\
+-	.mapbase	= baseaddr,					\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+ 	.scbrr_algo_id	= algo,						\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq),				\
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq),						\
+ }
  
- enum {
-+	MSTP531, MSTP530,
-+	MSTP529, MSTP528, MSTP527, MSTP526, MSTP525, MSTP524, MSTP523,
- 	MSTP331,
- 	MSTP323, MSTP322, MSTP321,
- 	MSTP311, MSTP310,
-@@ -129,6 +131,15 @@ enum {
- 	MSTP_NR };
+ #define R8A7791_SCIF(index, baseaddr, irq)				\
+@@ -120,9 +123,11 @@ R8A7791_SCIFA(13, 0xe6c78000, gic_spi(30)); /* SCIFA4 */
+ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP531] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 31, 0), /* SCU0 */
-+	[MSTP530] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 30, 0), /* SCU1 */
-+	[MSTP529] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 29, 0), /* SCU2 */
-+	[MSTP528] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 28, 0), /* SCU3 */
-+	[MSTP527] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 27, 0), /* SCU4 */
-+	[MSTP526] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 26, 0), /* SCU5 */
-+	[MSTP525] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 25, 0), /* SCU6 */
-+	[MSTP524] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 24, 0), /* SCU7 */
-+	[MSTP523] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 23, 0), /* SCU8 */
- 	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
- 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
- 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
-@@ -219,6 +230,15 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP309]),
- 	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP308]),
- 	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP307]),
-+	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP531]),
-+	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP530]),
-+	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP529]),
-+	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP528]),
-+	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP527]),
-+	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP526]),
-+	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
-+	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
-+	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
- };
+ #define r8a7791_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
  
- void __init r8a7778_clock_init(void)
+ static const struct sh_timer_config cmt00_platform_data __initconst = {
+ 	.name = "CMT00",
 -- 
 1.8.4
 
