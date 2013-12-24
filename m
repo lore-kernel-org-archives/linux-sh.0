@@ -1,72 +1,220 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:50 +0000
-Subject: [PATCH 16/69] ARM: shmobile: r8a7779: add SDHI support on DTSI
-Message-Id: <c4866e70a92d8d5fd8ea7ad2c64ddf0efa7a0700.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:24 +0000
+Subject: [PATCH 07/11] serial: sh-sci: Support resources passed through platform resources
+Message-Id: <1fcc91a607de0bf72d3a6073dfe459f7e9145ac5.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Memory and IRQ resources are currently passed to the driver through
+platform data. Support passing them through the standard platform
+resources mechanism instead. This deprecates platform data resources.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+ drivers/tty/serial/sh-sci.c | 65 ++++++++++++++++++++++++++++++++++-----------
+ include/linux/serial_sci.h  |  8 +++---
+ 2 files changed, 53 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index da61d27..be737ef 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -206,4 +206,44 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 100 0x4>;
- 	};
-+
-+	sdhi0: sdhi@ffe4c000 {
-+		compatible = "renesas,sdhi-r8a7779";
-+		reg = <0xffe4c000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 104 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sdhi@ffe4d000 {
-+		compatible = "renesas,sdhi-r8a7779";
-+		reg = <0xffe4d000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 105 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi2: sdhi@ffe4e000 {
-+		compatible = "renesas,sdhi-r8a7779";
-+		reg = <0xffe4e000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 107 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
-+
-+	sdhi3: sdhi@ffe4f000 {
-+		compatible = "renesas,sdhi-r8a7779";
-+		reg = <0xffe4f000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 106 4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		status = "disabled";
-+	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b3d0e00..e9c6e23 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -74,6 +74,7 @@ struct sci_port {
+ 	/* Function clock */
+ 	struct clk		*fclk;
+ 
++	int			irqs[SCIx_NR_IRQS];
+ 	char			*irqstr[SCIx_NR_IRQS];
+ 	char			*gpiostr[SCIx_NR_FNS];
+ 
+@@ -1079,19 +1080,19 @@ static int sci_request_irq(struct sci_port *port)
+ 
+ 	for (i = j = 0; i < SCIx_NR_IRQS; i++, j++) {
+ 		struct sci_irq_desc *desc;
+-		unsigned int irq;
++		int irq;
+ 
+ 		if (SCIx_IRQ_IS_MUXED(port)) {
+ 			i = SCIx_MUX_IRQ;
+ 			irq = up->irq;
+ 		} else {
+-			irq = port->cfg->irqs[i];
++			irq = port->irqs[i];
+ 
+ 			/*
+ 			 * Certain port types won't support all of the
+ 			 * available interrupt sources.
+ 			 */
+-			if (unlikely(!irq))
++			if (unlikely(irq < 0))
+ 				continue;
+ 		}
+ 
+@@ -1116,7 +1117,7 @@ static int sci_request_irq(struct sci_port *port)
+ 
+ out_noirq:
+ 	while (--i >= 0)
+-		free_irq(port->cfg->irqs[i], port);
++		free_irq(port->irqs[i], port);
+ 
+ out_nomem:
+ 	while (--j >= 0)
+@@ -1134,16 +1135,16 @@ static void sci_free_irq(struct sci_port *port)
+ 	 * IRQ first.
+ 	 */
+ 	for (i = 0; i < SCIx_NR_IRQS; i++) {
+-		unsigned int irq = port->cfg->irqs[i];
++		int irq = port->irqs[i];
+ 
+ 		/*
+ 		 * Certain port types won't support all of the available
+ 		 * interrupt sources.
+ 		 */
+-		if (unlikely(!irq))
++		if (unlikely(irq < 0))
+ 			continue;
+ 
+-		free_irq(port->cfg->irqs[i], port);
++		free_irq(port->irqs[i], port);
+ 		kfree(port->irqstr[i]);
+ 
+ 		if (SCIx_IRQ_IS_MUXED(port)) {
+@@ -1659,7 +1660,7 @@ static void rx_timer_fn(unsigned long arg)
+ 
+ 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		scr &= ~0x4000;
+-		enable_irq(s->cfg->irqs[1]);
++		enable_irq(s->irqs[SCIx_RXI_IRQ]);
+ 	}
+ 	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
+ 	dev_dbg(port->dev, "DMA Rx timed out\n");
+@@ -2150,11 +2151,12 @@ static struct uart_ops sci_uart_ops = {
  };
+ 
+ static int sci_init_single(struct platform_device *dev,
+-				     struct sci_port *sci_port,
+-				     unsigned int index,
+-				     struct plat_sci_port *p)
++			   struct sci_port *sci_port, unsigned int index,
++			   struct plat_sci_port *p, bool early)
+ {
+ 	struct uart_port *port = &sci_port->port;
++	const struct resource *res;
++	unsigned int i;
+ 	int ret;
+ 
+ 	sci_port->cfg	= p;
+@@ -2163,6 +2165,38 @@ static int sci_init_single(struct platform_device *dev,
+ 	port->iotype	= UPIO_MEM;
+ 	port->line	= index;
+ 
++	if (dev->num_resources) {
++		/* Device has resources, use them. */
++		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
++		if (res = NULL)
++			return -ENOMEM;
++
++		port->mapbase = res->start;
++
++		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
++			sci_port->irqs[i] = platform_get_irq(dev, i);
++
++		/* The SCI generates several interrupts. They can be muxed
++		 * together or connected to different interrupt lines. In the
++		 * muxed case only one interrupt resource is specified. In the
++		 * non-muxed case three or four interrupt resources are
++		 * specified, as the BRI interrupt is optional.
++		 */
++		if (sci_port->irqs[0] < 0)
++			return -ENXIO;
++
++		if (sci_port->irqs[1] < 0) {
++			sci_port->irqs[1] = sci_port->irqs[0];
++			sci_port->irqs[2] = sci_port->irqs[0];
++			sci_port->irqs[3] = sci_port->irqs[0];
++		}
++	} else {
++		/* No resources, use old-style platform data. */
++		port->mapbase = p->mapbase;
++		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
++			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
++	}
++
+ 	switch (p->type) {
+ 	case PORT_SCIFB:
+ 		port->fifosize = 256;
+@@ -2187,7 +2221,7 @@ static int sci_init_single(struct platform_device *dev,
+ 			return ret;
+ 	}
+ 
+-	if (dev) {
++	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ 		if (IS_ERR(sci_port->iclk)) {
+ 			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
+@@ -2242,7 +2276,6 @@ static int sci_init_single(struct platform_device *dev,
+ 		p->error_mask |= (1 << p->overrun_bit);
+ 	}
+ 
+-	port->mapbase		= p->mapbase;
+ 	port->type		= p->type;
+ 	port->flags		= UPF_FIXED_PORT | p->flags;
+ 	port->regshift		= p->regshift;
+@@ -2254,7 +2287,7 @@ static int sci_init_single(struct platform_device *dev,
+ 	 *
+ 	 * For the muxed case there's nothing more to do.
+ 	 */
+-	port->irq		= p->irqs[SCIx_RXI_IRQ];
++	port->irq		= sci_port->irqs[SCIx_RXI_IRQ];
+ 	port->irqflags		= 0;
+ 
+ 	port->serial_in		= sci_serial_in;
+@@ -2386,7 +2419,7 @@ static int sci_probe_earlyprintk(struct platform_device *pdev)
+ 
+ 	early_serial_console.index = pdev->id;
+ 
+-	sci_init_single(NULL, &sci_ports[pdev->id], pdev->id, cfg);
++	sci_init_single(pdev, &sci_ports[pdev->id], pdev->id, cfg, true);
+ 
+ 	serial_console_setup(&early_serial_console, early_serial_buf);
+ 
+@@ -2453,7 +2486,7 @@ static int sci_probe_single(struct platform_device *dev,
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = sci_init_single(dev, sciport, index, p);
++	ret = sci_init_single(dev, sciport, index, p, false);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 12cf50c..42620f1 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -107,10 +107,10 @@ enum {
+ }
+ 
+ #define SCIx_IRQ_IS_MUXED(port)			\
+-	((port)->cfg->irqs[SCIx_ERI_IRQ] =	\
+-	 (port)->cfg->irqs[SCIx_RXI_IRQ]) ||	\
+-	((port)->cfg->irqs[SCIx_ERI_IRQ] &&	\
+-	 !(port)->cfg->irqs[SCIx_RXI_IRQ])
++	((port)->irqs[SCIx_ERI_IRQ] =	\
++	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
++	((port)->irqs[SCIx_ERI_IRQ] &&	\
++	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
+ /*
+  * SCI register subset common for all port types.
+  * Not all registers will exist on all parts.
 -- 
 1.8.4
 
