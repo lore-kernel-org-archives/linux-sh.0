@@ -1,106 +1,110 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 20:16:01 +0000
-Subject: [PATCH v2 7/8] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
-Message-Id: <1388175362-17132-8-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:38 +0000
+Subject: [PATCH 08/21] ARM: shmobile: r8a7790: Reference clocks
+Message-Id: <72197ca7a1cb1cea5615c879f638d5d457c0b2e2.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Reference clocks using a "clocks" property in all nodes corresponding to
+devices that require a clock.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2: No changes
+ arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
- arch/arm/boot/dts/r7s72100.dtsi |   65 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 65 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index ff0bd6be454f..42e9b423476c 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -34,6 +34,11 @@
- 		gpio10 = &port10;
- 		gpio11 = &port11;
- 		gpio12 = &jtagport0;
-+		spi0 = &spi0;
-+		spi1 = &spi1;
-+		spi2 = &spi2;
-+		spi3 = &spi3;
-+		spi4 = &spi4;
- 	};
- 
- 	cpus {
-@@ -289,4 +294,64 @@
- 		clock-frequency = <100000>;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 8dccbe7..71ec31c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -197,6 +197,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
  		status = "disabled";
  	};
-+
-+	spi0: spi@e800c800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800c800 0x24>;
-+		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi1: spi@e800d000 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800d000 0x24>;
-+		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi2: spi@e800d800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800d800 0x24>;
-+		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi3: spi@e800e000 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800e000 0x24>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi4: spi@e800e800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800e800 0x24>;
-+		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
+ 
+@@ -207,6 +208,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +219,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -227,6 +230,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -235,6 +239,7 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -244,6 +249,7 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -258,6 +264,7 @@
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -267,6 +274,7 @@
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -276,6 +284,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -285,6 +294,7 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
 -- 
-1.7.9.5
+1.8.4
 
