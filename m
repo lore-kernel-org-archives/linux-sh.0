@@ -1,39 +1,69 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:48 +0000
-Subject: [PATCH 07/33] ARM: shmobile: r8a73a4: don't use named irq for DMAEngine
-Message-Id: <1a936a38561b6b12c5075f704d97688ae56ceb05.1386897180.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:14:20 +0000
+Subject: [PATCH 03/11] serial: sh-sci: Simplify baud rate calculation algorithms
+Message-Id: <6557b1f69ea0961efde7ab33bfe0cb7e3bfed54e.1387887969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <cover.1387887969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-sh-dma-engine driver doesn't care irq name.
+Rewrite the baud rate register value calculations in easier to read
+forms. The computed value isn't modified.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a73a4.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 8 ++++----
+ include/linux/serial_sci.h  | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index b0f2749..cc94b64 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -275,7 +275,7 @@ static const struct sh_dmae_pdata dma_pdata = {
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index eb59bb2..f2fad4d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1818,13 +1818,13 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+ {
+ 	switch (algo_id) {
+ 	case SCBRR_ALGO_1:
+-		return ((freq + 16 * bps) / (16 * bps) - 1);
++		return freq / (16 * bps);
+ 	case SCBRR_ALGO_2:
+-		return ((freq + 16 * bps) / (32 * bps) - 1);
++		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
+ 	case SCBRR_ALGO_3:
+-		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
++		return freq / (8 * bps);
+ 	case SCBRR_ALGO_4:
+-		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
++		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
+ 	}
  
- static struct resource dma_resources[] = {
- 	DEFINE_RES_MEM(0xe6700020, 0x89e0),
--	DEFINE_RES_IRQ_NAMED(gic_spi(220), "error_irq"),
-+	DEFINE_RES_IRQ(gic_spi(220)),
- 	{
- 		/* IRQ for channels 0-19 */
- 		.start  = gic_spi(200),
+ 	/* Warn, but use a safe default */
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index babc5fe..12cf50c 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -11,10 +11,10 @@
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+ enum {
+-	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
+-	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
+-	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
+-	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
++	SCBRR_ALGO_1,		/* clk / (16 * bps) */
++	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
++	SCBRR_ALGO_3,		/* clk / (8 * bps) */
++	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
+ 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+ };
+ 
 -- 
 1.8.4
 
