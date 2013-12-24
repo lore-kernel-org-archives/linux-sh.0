@@ -1,94 +1,34 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 11 Dec 2013 14:29:15 +0000
-Subject: [PATCH v3.1 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <1386772155-24725-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 09:49:30 +0000
+Subject: [PATCH 1/5] spi: rspi: Use dev_get_platdata() instead of raw dev.platform_data access
+Message-Id: <1387878574-21445-2-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
-variables, and cast pointers to uintptr_t instead of unsigned int where
-applicable. This fixes warnings on platforms where pointers and/or
-dma_addr_t have a different size than int
-
-Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-Cc: Vinod Koul <vinod.koul@intel.com>
-Cc: dmaengine@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/dma/sh/shdma-base.c | 10 +++++-----
- drivers/dma/sh/shdma-of.c   |  3 ++-
- drivers/dma/sh/sudmac.c     |  4 ++--
- 3 files changed, 9 insertions(+), 8 deletions(-)
+ drivers/spi/spi-rspi.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 2e7b394..5239677 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- 	struct shdma_chan *schan = to_shdma_chan(chan);
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
--	int match = (int)arg;
-+	int match = (long)arg;
- 	int ret;
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index b04835d809f5..08861b5db893 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -899,7 +899,7 @@ static int rspi_probe(struct platform_device *pdev)
+ 	struct rspi_data *rspi;
+ 	int ret, irq;
+ 	char clk_name[16];
+-	struct rspi_plat_data *rspi_pd = pdev->dev.platform_data;
++	struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
+ 	const struct spi_ops *ops;
+ 	const struct platform_device_id *id_entry = pdev->id_entry;
  
- 	if (match < 0)
-@@ -491,8 +491,8 @@ static struct shdma_desc *shdma_add_desc(struct shdma_chan *schan,
- 	}
- 
- 	dev_dbg(schan->dev,
--		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
--		copy_size, *len, *src, *dst, &new->async_tx,
-+		"chaining (%zu/%zu)@%pad -> %pad with %p, cookie %d\n",
-+		copy_size, *len, src, dst, &new->async_tx,
- 		new->async_tx.cookie);
- 
- 	new->mark = DESC_PREPARED;
-@@ -555,8 +555,8 @@ static struct dma_async_tx_descriptor *shdma_prep_sg(struct shdma_chan *schan,
- 			goto err_get_desc;
- 
- 		do {
--			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
--				i, sg, len, (unsigned long long)sg_addr);
-+			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %pad\n",
-+				i, sg, len, &sg_addr);
- 
- 			if (direction = DMA_DEV_TO_MEM)
- 				new = shdma_add_desc(schan, flags,
-diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-index 06473a0..b4ff9d3 100644
---- a/drivers/dma/sh/shdma-of.c
-+++ b/drivers/dma/sh/shdma-of.c
-@@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct of_phandle_args *dma_spec,
- 	/* Only slave DMA channels can be allocated via DT */
- 	dma_cap_set(DMA_SLAVE, mask);
- 
--	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
-+	chan = dma_request_channel(mask, shdma_chan_filter,
-+				   (void *)(uintptr_t)id);
- 	if (chan)
- 		to_shdma_chan(chan)->hw_req = id;
- 
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-index c7e9cdf..4e7df43 100644
---- a/drivers/dma/sh/sudmac.c
-+++ b/drivers/dma/sh/sudmac.c
-@@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan *schan,
- 	struct sudmac_chan *sc = to_chan(schan);
- 	struct sudmac_desc *sd = to_desc(sdesc);
- 
--	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
--		__func__, src, dst, *len);
-+	dev_dbg(sc->shdma_chan.dev, "%s: src=%pad, dst=%pad, len=%zu\n",
-+		__func__, &src, &dst, *len);
- 
- 	if (*len > schan->max_xfer_len)
- 		*len = schan->max_xfer_len;
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
