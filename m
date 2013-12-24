@@ -1,75 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:08 +0000
-Subject: [PATCH 03/26] ARM: shmobile: Add Koelsch LED6, LED7 and LED8 support
-Message-Id: <87a2934ecff1e054b5d2b7cb6dea2ee0eb649ff3.1387763524.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:18:18 +0000
+Subject: [PATCH 12/12] ARM: shmobile: mackerel: Fix USBHS pinconf entry
+Message-Id: <b58c8e7b43ad804ad18b30f882b16da2e3d4ed9d.1387891831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1387891831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Enable Koelsch LEDs for GPIO output testing purpose.
+Fix a typo in the USBHS1 pinconf entry that prevented the pull-down from
+being enabled.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ arch/arm/mach-shmobile/board-mackerel.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index d099eaf..2299d65 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -20,6 +20,8 @@
-  */
- 
- #include <linux/kernel.h>
-+#include <linux/leds.h>
-+#include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_device.h>
- #include <mach/common.h>
- #include <mach/r8a7791.h>
-@@ -27,11 +29,36 @@
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* LEDS */
-+static struct gpio_led koelsch_leds[] = {
-+	{
-+		.name		= "led8",
-+		.gpio		= RCAR_GP_PIN(2, 21),
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "led7",
-+		.gpio		= RCAR_GP_PIN(2, 20),
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "led6",
-+		.gpio		= RCAR_GP_PIN(2, 19),
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	},
-+};
-+
-+static const struct gpio_led_platform_data koelsch_leds_pdata __initconst = {
-+	.leds		= koelsch_leds,
-+	.num_leds	= ARRAY_SIZE(koelsch_leds),
-+};
-+
- static void __init koelsch_add_standard_devices(void)
- {
- 	r8a7791_clock_init();
- 	r8a7791_pinmux_init();
- 	r8a7791_add_standard_devices();
-+	platform_device_register_data(&platform_bus, "leds-gpio", -1,
-+				      &koelsch_leds_pdata,
-+				      sizeof(koelsch_leds_pdata));
- }
- 
- static const char * const koelsch_boards_compat_dt[] __initconst = {
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 207acf0..b3ee96e 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1406,7 +1406,7 @@ static const struct pinctrl_map mackerel_pinctrl_map[] = {
+ 	/* USBHS1 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
+ 				  "usb1_vbus", "usb1"),
+-	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.&", "pfc-sh7372",
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
+ 				      "usb1_vbus", pin_pulldown_conf),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs.1", "pfc-sh7372",
+ 				  "usb1_otg_id_0", "usb1"),
 -- 
 1.8.4
 
