@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:16:08 +0000
-Subject: [PATCH 28/29] ARM: shmobile: r8a7791: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <f72ed4beb198eb25c8532e76addc0034ae2aa8c7.1387888861.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:34 +0000
+Subject: [PATCH 11/21] ARM: shmobile: Sync Koelsch DTS with Koelsch reference DTS
+Message-Id: <f8e2535d988a7945fa2c11214d55c20c73c60840.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,49 +12,63 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
+Copy the device nodes from Koelsch reference into the Koeslch device
+tree file. This will allow us to use a single DTS file regarless of
+kernel configuration. In case of legacy C board code the device nodes
+may or may not be used, but in the multiplatform case all the DT device
+nodes are used.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index f15b537..e28404e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -84,11 +84,10 @@ void __init r8a7791_pinmux_init(void)
- 	r8a7791_register_gpio(7);
- }
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index c4e8b3a..d431f31 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -11,6 +11,7 @@
  
--#define __R8A7791_SCIF(scif_type, algo, index, baseaddr, irq)		\
-+#define __R8A7791_SCIF(scif_type, index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scbrr_algo_id	= algo,						\
- 	.scscr		= SCSCR_RE | SCSCR_TE,				\
- };									\
- 									\
-@@ -98,13 +97,13 @@ static struct resource scif##index##_resources[] = {			\
- }
+ /dts-v1/;
+ #include "r8a7791.dtsi"
++#include <dt-bindings/gpio/gpio.h>
  
- #define R8A7791_SCIF(index, baseaddr, irq)				\
--	__R8A7791_SCIF(PORT_SCIF, SCBRR_ALGO_2, index, baseaddr, irq)
-+	__R8A7791_SCIF(PORT_SCIF, index, baseaddr, irq)
- 
- #define R8A7791_SCIFA(index, baseaddr, irq)				\
--	__R8A7791_SCIF(PORT_SCIFA, SCBRR_ALGO_4, index, baseaddr, irq)
-+	__R8A7791_SCIF(PORT_SCIFA, index, baseaddr, irq)
- 
- #define R8A7791_SCIFB(index, baseaddr, irq)				\
--	__R8A7791_SCIF(PORT_SCIFB, SCBRR_ALGO_4, index, baseaddr, irq)
-+	__R8A7791_SCIF(PORT_SCIFB, index, baseaddr, irq)
- 
- R8A7791_SCIFA(0,  0xe6c40000, gic_spi(144)); /* SCIFA0 */
- R8A7791_SCIFA(1,  0xe6c50000, gic_spi(145)); /* SCIFA1 */
+ / {
+ 	model = "Koelsch";
+@@ -29,4 +30,32 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		};
++		led7 {
++			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++		};
++		led8 {
++			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&pfc {
++	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-names = "default";
++
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data_d";
++		renesas,function = "scif1";
++	};
+ };
 -- 
 1.8.4
 
