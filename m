@@ -1,162 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:23:53 +0000
-Subject: [PATCH v4 3/3] ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-Message-Id: <1387034633-3798-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:51 +0000
+Subject: [PATCH 11/29] ARM: shmobile: sh7372: Declare SCIF register base and IRQ as resources
+Message-Id: <d39f98b3bb1f56180997442ee59e0d60ef2b71b8.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-When enabling a module clock by clearing its bit in the MSTP control
-register, the CPG requires waiting for the status register to signal
-that the clock has started. Failure to do so will result in returning
-from the clk_enable() call with the clock potentially still disabled,
-leading to various race conditions and difficult to debug errors.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Enable status wait for all MSTP clocks on the r8a7790.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 115 ++++++++++++++++++---------------
- 1 file changed, 62 insertions(+), 53 deletions(-)
+ arch/arm/mach-shmobile/setup-sh7372.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index c5c60ec..9b1332c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -43,17 +43,26 @@
-  *	see "p1 / 2" on R8A7790_CLOCK_ROOT() below
-  */
- 
--#define CPG_BASE 0xe6150000
--#define CPG_LEN 0x1000
--
--#define SMSTPCR1 0xe6150134
--#define SMSTPCR2 0xe6150138
--#define SMSTPCR3 0xe615013c
--#define SMSTPCR5 0xe6150144
--#define SMSTPCR7 0xe615014c
--#define SMSTPCR8 0xe6150990
--#define SMSTPCR9 0xe6150994
--#define SMSTPCR10 0xe6150998
-+#define CPG_BASE	0xe6150000
-+#define CPG_LEN		0x1000
-+
-+#define SMSTPCR1	0xe6150134
-+#define SMSTPCR2	0xe6150138
-+#define SMSTPCR3	0xe615013c
-+#define SMSTPCR5	0xe6150144
-+#define SMSTPCR7	0xe615014c
-+#define SMSTPCR8	0xe6150990
-+#define SMSTPCR9	0xe6150994
-+#define SMSTPCR10	0xe6150998
-+
-+#define MSTPSR1		IOMEM(0xe6150038)
-+#define MSTPSR2		IOMEM(0xe6150040)
-+#define MSTPSR3		IOMEM(0xe6150048)
-+#define MSTPSR5		IOMEM(0xe615003c)
-+#define MSTPSR7		IOMEM(0xe61501c4)
-+#define MSTPSR8		IOMEM(0xe61509a0)
-+#define MSTPSR9		IOMEM(0xe61509a4)
-+#define MSTPSR10	IOMEM(0xe61509a8)
- 
- #define SDCKCR		0xE6150074
- #define SD2CKCR		0xE6150078
-@@ -199,48 +208,48 @@ enum {
- };
- 
- static struct clk mstp_clks[MSTP_NR] = {
--	[MSTP1015] = SH_CLK_MSTP32(&p_clk, SMSTPCR10, 15, 0), /* SSI0 */
--	[MSTP1014] = SH_CLK_MSTP32(&p_clk, SMSTPCR10, 14, 0), /* SSI1 */
--	[MSTP1013] = SH_CLK_MSTP32(&p_clk, SMSTPCR10, 13, 0), /* SSI2 */
--	[MSTP1012] = SH_CLK_MSTP32(&p_clk, SMSTPCR10, 12, 0), /* SSI3 */
--	[MSTP1011] = SH_CLK_MSTP32(&p_clk, SMSTPCR10, 11, 0), /* SSI4 */
--	[MSTP1010] = SH_CLK_MSTP32(&p_clk, SMSTPCR10, 10, 0), /* SSI5 */
--	[MSTP1009] = SH_CLK_MSTP32(&p_clk, SMSTPCR10,  9, 0), /* SSI6 */
--	[MSTP1008] = SH_CLK_MSTP32(&p_clk, SMSTPCR10,  8, 0), /* SSI7 */
--	[MSTP1007] = SH_CLK_MSTP32(&p_clk, SMSTPCR10,  7, 0), /* SSI8 */
--	[MSTP1006] = SH_CLK_MSTP32(&p_clk, SMSTPCR10,  6, 0), /* SSI9 */
--	[MSTP1005] = SH_CLK_MSTP32(&p_clk, SMSTPCR10,  5, 0), /* SSI ALL */
--	[MSTP931] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 31, 0), /* I2C0 */
--	[MSTP930] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 30, 0), /* I2C1 */
--	[MSTP929] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 29, 0), /* I2C2 */
--	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
--	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
--	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
--	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
--	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
--	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
--	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
--	[MSTP722] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 22, 0), /* DU2 */
--	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
--	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
--	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
--	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
--	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
--	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
--	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
--	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
--	[MSTP313] = SH_CLK_MSTP32(&div4_clks[DIV4_SD1], SMSTPCR3, 13, 0), /* SDHI1 */
--	[MSTP312] = SH_CLK_MSTP32(&div6_clks[DIV6_SD2], SMSTPCR3, 12, 0), /* SDHI2 */
--	[MSTP311] = SH_CLK_MSTP32(&div6_clks[DIV6_SD3], SMSTPCR3, 11, 0), /* SDHI3 */
--	[MSTP305] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC1], SMSTPCR3, 5, 0), /* MMC1 */
--	[MSTP304] = SH_CLK_MSTP32(&cp_clk, SMSTPCR3, 4, 0), /* TPU0 */
--	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
--	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
--	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
--	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
--	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
--	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
--	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
-+	[MSTP1015] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 15, MSTPSR10, 0), /* SSI0 */
-+	[MSTP1014] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 14, MSTPSR10, 0), /* SSI1 */
-+	[MSTP1013] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 13, MSTPSR10, 0), /* SSI2 */
-+	[MSTP1012] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 12, MSTPSR10, 0), /* SSI3 */
-+	[MSTP1011] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 11, MSTPSR10, 0), /* SSI4 */
-+	[MSTP1010] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 10, MSTPSR10, 0), /* SSI5 */
-+	[MSTP1009] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 9, MSTPSR10, 0), /* SSI6 */
-+	[MSTP1008] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 8, MSTPSR10, 0), /* SSI7 */
-+	[MSTP1007] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 7, MSTPSR10, 0), /* SSI8 */
-+	[MSTP1006] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 6, MSTPSR10, 0), /* SSI9 */
-+	[MSTP1005] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 5, MSTPSR10, 0), /* SSI ALL */
-+	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
-+	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
-+	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
-+	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
-+	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
-+	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
-+	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
-+	[MSTP725] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 25, MSTPSR7, 0), /* LVDS1 */
-+	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
-+	[MSTP723] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 23, MSTPSR7, 0), /* DU1 */
-+	[MSTP722] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 22, MSTPSR7, 0), /* DU2 */
-+	[MSTP721] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 21, MSTPSR7, 0), /* SCIF0 */
-+	[MSTP720] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 20, MSTPSR7, 0), /* SCIF1 */
-+	[MSTP717] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 17, MSTPSR7, 0), /* HSCIF0 */
-+	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
-+	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
-+	[MSTP315] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, MSTPSR3, 0), /* MMC0 */
-+	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
-+	[MSTP313] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD1], SMSTPCR3, 13, MSTPSR3, 0), /* SDHI1 */
-+	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI2 */
-+	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD3], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI3 */
-+	[MSTP305] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC1], SMSTPCR3, 5, MSTPSR3, 0), /* MMC1 */
-+	[MSTP304] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR3, 4, MSTPSR3, 0), /* TPU0 */
-+	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
-+	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
-+	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
-+	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
-+	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
-+	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
- };
- 
- static struct clk_lookup lookups[] = {
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 77627dd..798f8ac 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -90,16 +90,21 @@ void __init sh7372_pinmux_init(void)
+ #define SH7372_SCIF(scif_type, index, baseaddr, irq)		\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE,			\
+ };								\
+ 								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
++};								\
++								\
+ static struct platform_device scif##index##_device = {		\
+ 	.name		= "sh-sci",				\
+ 	.id		= index,				\
++	.resource	= scif##index##_resources,		\
++	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+ 	.dev		= {					\
+ 		.platform_data	= &scif##index##_platform_data,	\
+ 	},							\
 -- 
-1.8.3.2
+1.8.4
 
