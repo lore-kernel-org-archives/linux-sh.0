@@ -1,35 +1,66 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:07:06 +0000
-Subject: [PATCH 13/13] arm: shmobile: clks: remove duplicated clock from r7s72100
-Message-Id: <250d829f68ecb5e775a99deb03c56832acec28f4.1387857168.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:36 +0000
+Subject: [PATCH 06/21] ARM: shmobile: armadillo: dts: Add gpio-keys device
+Message-Id: <90c2434daa0b8c7ec2b75fcb182436813e9120bd.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+The board had 4 buttons connected to GPIOs, add a corresponding
+gpio-keys device.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 1 -
- 1 file changed, 1 deletion(-)
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts | 29 ++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 1c9d261..4aba20c 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -178,7 +178,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
--	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- };
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index e916aae..95a849b 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -72,6 +72,35 @@
+ 		regulator-boot-on;
+ 	};
  
- void __init r7s72100_clock_init(void)
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		power-key {
++			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
++			linux,code = <116>;
++			label = "SW3";
++			gpio-key,wakeup;
++		};
++
++		back-key {
++			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
++			linux,code = <158>;
++			label = "SW4";
++		};
++
++		menu-key {
++			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
++			linux,code = <139>;
++			label = "SW5";
++		};
++
++		home-key {
++			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
++			linux,code = <102>;
++			label = "SW6";
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
 -- 
 1.8.4
 
