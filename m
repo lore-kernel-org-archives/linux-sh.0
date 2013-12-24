@@ -1,62 +1,138 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 05 Dec 2013 12:20:06 +0000
-Subject: Re: [PATCH] ARM: shmobile: Genmai SPI over GPIO support
-Message-Id: <52A06F76.1010105@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:07:03 +0000
+Subject: [PATCH 10/13] ARM: shmobile: r8a7791: Add clock index macros for DT sources
+Message-Id: <4d8864c9e94ec727f1c675b9f6921525c360334b.1387857168.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131204212915.24243.27225.sendpatchset@w520>
-In-Reply-To: <20131204212915.24243.27225.sendpatchset@w520>
+References: <cover.1387857168.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On 05-12-2013 1:29, Magnus Damm wrote:
+Add macros usable by device tree sources to reference r8a7791 clocks by
+index.
 
-> From: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ include/dt-bindings/clock/r8a7791-clock.h | 105 ++++++++++++++++++++++++++++++
+ 1 file changed, 105 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
 
-> Hook up the serial flash memory to bit bang SPI on the Genmai board.
-
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-
->   Written on to of renesas git tag renesas-devel-v3.13-rc2-20131202 and
->   [PATCH 00/04] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL support
-
->   arch/arm/boot/dts/r7s72100-genmai-reference.dts |   15 +++++++++++++++
->   1 file changed, 15 insertions(+)
-
-> --- 0010/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> +++ work/arch/arm/boot/dts/r7s72100-genmai-reference.dts	2013-12-05 06:23:57.000000000 +0900
-> @@ -56,5 +56,20 @@
->   			reg = <0x50>;
->   		};
->   	};
-> +	spi0 {
-
-    Maybe just "spi"?
-
-> +		compatible = "spi-gpio";
-> +		gpio-sck = <&port9 2 0>;
-> +		gpio-mosi = <&port9 4 0>;
-> +		gpio-miso = <&port9 5 0>;
-> +		cs-gpios = <&port9 3 0>;
-> +		num-chipselects = <1>;
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
->
-> +		s25fl512s: s25fl512s0 {
-
-    The node should probably be named "flash", according to ePAPR spec. And 
-why you didn't specify "@0"?
-
-> +			compatible = "s25fl512s";
-> +			reg = <0>;
-> +			spi-max-frequency = <104000000>;
-> +                };
-> +        };
->   };
-
-WBR, Sergei
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+new file mode 100644
+index 0000000..df1715b
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -0,0 +1,105 @@
++/*
++ * Copyright 2013 Ideas On Board SPRL
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
++#define __DT_BINDINGS_CLOCK_R8A7791_H__
++
++/* CPG */
++#define R8A7791_CLK_MAIN		0
++#define R8A7791_CLK_PLL0		1
++#define R8A7791_CLK_PLL1		2
++#define R8A7791_CLK_PLL3		3
++#define R8A7791_CLK_LB			4
++#define R8A7791_CLK_QSPI		5
++#define R8A7791_CLK_SDH			6
++#define R8A7791_CLK_SD0			7
++#define R8A7791_CLK_Z			8
++
++/* MSTP1 */
++#define R8A7791_CLK_TMU1		11
++#define R8A7791_CLK_TMU3		21
++#define R8A7791_CLK_TMU2		22
++#define R8A7791_CLK_CMT0		24
++#define R8A7791_CLK_TMU0		25
++#define R8A7791_CLK_VSP1_DU1		27
++#define R8A7791_CLK_VSP1_DU0		28
++#define R8A7791_CLK_VSP1_SY		31
++
++/* MSTP2 */
++#define R8A7791_CLK_SCIFA2		2
++#define R8A7791_CLK_SCIFA1		3
++#define R8A7791_CLK_SCIFA0		4
++#define R8A7791_CLK_SCIFB0		6
++#define R8A7791_CLK_SCIFB1		7
++#define R8A7791_CLK_SCIFB2		16
++#define R8A7791_CLK_DMAC		18
++
++/* MSTP3 */
++#define R8A7791_CLK_TPU0		4
++#define R8A7791_CLK_SDHI2		11
++#define R8A7791_CLK_SDHI1		12
++#define R8A7791_CLK_SDHI0		14
++#define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_SSUSB		28
++#define R8A7791_CLK_CMT1		29
++#define R8A7791_CLK_USBDMAC0		30
++#define R8A7791_CLK_USBDMAC1		31
++
++/* MSTP5 */
++#define R8A7791_CLK_THERMAL		22
++#define R8A7791_CLK_PWM			23
++
++/* MSTP7 */
++#define R8A7791_CLK_HSUSB		4
++#define R8A7791_CLK_HSCIF2		13
++#define R8A7791_CLK_SCIF5		14
++#define R8A7791_CLK_SCIF4		15
++#define R8A7791_CLK_HSCIF1		16
++#define R8A7791_CLK_HSCIF0		17
++#define R8A7791_CLK_SCIF3		18
++#define R8A7791_CLK_SCIF2		19
++#define R8A7791_CLK_SCIF1		20
++#define R8A7791_CLK_SCIF0		21
++#define R8A7791_CLK_DU1			23
++#define R8A7791_CLK_DU0			24
++#define R8A7791_CLK_LVDS0		26
++
++/* MSTP8 */
++#define R8A7791_CLK_VIN2		9
++#define R8A7791_CLK_VIN1		10
++#define R8A7791_CLK_VIN0		11
++#define R8A7791_CLK_ETHER		13
++#define R8A7791_CLK_SATA1		14
++#define R8A7791_CLK_SATA0		15
++
++/* MSTP9 */
++#define R8A7791_CLK_GPIO7		4
++#define R8A7791_CLK_GPIO6		5
++#define R8A7791_CLK_GPIO5		7
++#define R8A7791_CLK_GPIO4		8
++#define R8A7791_CLK_GPIO3		9
++#define R8A7791_CLK_GPIO2		10
++#define R8A7791_CLK_GPIO1		11
++#define R8A7791_CLK_GPIO0		12
++#define R8A7791_CLK_RCAN1		15
++#define R8A7791_CLK_RCAN0		16
++#define R8A7791_CLK_I2C5		25
++#define R8A7791_CLK_IICDVFS		26
++#define R8A7791_CLK_I2C4		27
++#define R8A7791_CLK_I2C3		28
++#define R8A7791_CLK_I2C2		29
++#define R8A7791_CLK_I2C1		30
++#define R8A7791_CLK_I2C0		31
++
++/* MSTP11 */
++#define R8A7791_CLK_SCIFA3		6
++#define R8A7791_CLK_SCIFA4		7
++#define R8A7791_CLK_SCIFA5		8
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
+-- 
+1.8.4
 
