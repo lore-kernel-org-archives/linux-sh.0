@@ -1,57 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:16 +0000
-Subject: [PATCH 42/69] ARM: shmobile: sh73a0: fixup sdhi compatible name
-Message-Id: <e8a8b8a3cd6e09209a9c253a22673836ef794f58.1386901186.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 24 Dec 2013 04:44:23 +0000
+Subject: [PATCH 2/3] ARM: shmobile: bockw: use HPBIF DMAEngine for sound
+Message-Id: <8738lig8nv.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-sh73a0 != r8a7740
+R-Car sound driver is supporting Mem <-> SRU <-> SSI
+transfer via DMAEngine.
+The sound will be less noise if it uses SRU path
+since it has FIFO.
+This patch supports it.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c |   22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index aef8a61..29d2ee6 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -203,7 +203,7 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index bdb78a7..24b4161 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -332,16 +332,24 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_UNUSED, /* SSI 0 */
+ 	RSND_SSI_UNUSED, /* SSI 1 */
+ 	RSND_SSI_UNUSED, /* SSI 2 */
+-	RSND_SSI_SET(1, HPBDMA_SLAVE_SSI3_TX, gic_iid(0x85), RSND_SSI_PLAY),
+-	RSND_SSI_SET(2, HPBDMA_SLAVE_SSI4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
+-	RSND_SSI_SET(0, HPBDMA_SLAVE_SSI5_TX, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, HPBDMA_SLAVE_SSI6_RX, gic_iid(0x86), 0),
+-	RSND_SSI_SET(3, HPBDMA_SLAVE_SSI7_TX, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(4, HPBDMA_SLAVE_SSI8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
++	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
++	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
++	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
++	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
+ };
  
- 	sdhi0: sd@ee100000 {
--		compatible = "renesas,sdhi-r8a7740";
-+		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee100000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 83 IRQ_TYPE_LEVEL_HIGH
-@@ -215,7 +215,7 @@
+ static struct rsnd_scu_platform_info rsnd_scu[9] = {
+-	/* no member at this point */
++	{ .flags = 0, }, /* SRU 0 */
++	{ .flags = 0, }, /* SRU 1 */
++	{ .flags = 0, }, /* SRU 2 */
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
+ };
  
- 	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
- 	sdhi1: sd@ee120000 {
--		compatible = "renesas,sdhi-r8a7740";
-+		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee120000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH
-@@ -226,7 +226,7 @@
- 	};
- 
- 	sdhi2: sd@ee140000 {
--		compatible = "renesas,sdhi-r8a7740";
-+		compatible = "renesas,sdhi-sh73a0";
- 		reg = <0xee140000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH
+ enum {
 -- 
-1.8.4
+1.7.9.5
 
