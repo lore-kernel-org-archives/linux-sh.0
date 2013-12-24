@@ -1,223 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:22 +0000
-Subject: [PATCH 15/47] ARM: shmobile: sh73a0: Use macros to declare SCIF devices
-Message-Id: <1386323994-12850-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:04:59 +0000
+Subject: [PATCH 1/3] ARM: shmobile: armadillo: Add PWM backlight power supply
+Message-Id: <9fb444f22f09cfad3798e3610f7dc62f8a385ee8.1387856124.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1387856124.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387856124.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Replace copy-n-paste SCIF platform data and device declaration with a
-macro. This reduces the amount of code and improves readability.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Commit 22ceeee16eb8f0d04de3ef43a5174fb30ec18af9 ("pwm-backlight: Add
+power supply support") added a mandatory power supply for the PWM
+backlight. Add a fixed 5V regulator to board code with a consumer supply
+entry for the backlight device.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+(cherry picked from commit ad11cb9a5cf96346f1240995c672cdbb5501785c)
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 187 +++++-----------------------------
- 1 file changed, 27 insertions(+), 160 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 65151c4..9c94f34 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -71,167 +71,34 @@ void __init sh73a0_pinmux_init(void)
- 					ARRAY_SIZE(pfc_resources));
- }
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 958e3cb..c186891 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -614,6 +614,11 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+ 	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
+ };
  
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xe6c40000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(72), gic_spi(72),
--			    gic_spi(72), gic_spi(72) },
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xe6c50000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(73), gic_spi(73),
--			    gic_spi(73), gic_spi(73) },
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xe6c60000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(74), gic_spi(74),
--			    gic_spi(74), gic_spi(74) },
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xe6c70000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(75), gic_spi(75),
--			    gic_spi(75), gic_spi(75) },
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xe6c80000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(78), gic_spi(78),
--			    gic_spi(78), gic_spi(78) },
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xe6cb0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(79), gic_spi(79),
--			    gic_spi(79), gic_spi(79) },
--};
--
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
--
--static struct plat_sci_port scif6_platform_data = {
--	.mapbase	= 0xe6cc0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(156), gic_spi(156),
--			    gic_spi(156), gic_spi(156) },
--};
--
--static struct platform_device scif6_device = {
--	.name		= "sh-sci",
--	.id		= 6,
--	.dev		= {
--		.platform_data	= &scif6_platform_data,
--	},
--};
--
--static struct plat_sci_port scif7_platform_data = {
--	.mapbase	= 0xe6cd0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= { gic_spi(143), gic_spi(143),
--			    gic_spi(143), gic_spi(143) },
--};
--
--static struct platform_device scif7_device = {
--	.name		= "sh-sci",
--	.id		= 7,
--	.dev		= {
--		.platform_data	= &scif7_platform_data,
--	},
--};
--
--static struct plat_sci_port scif8_platform_data = {
--	.mapbase	= 0xe6c30000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFB,
--	.irqs		= { gic_spi(80), gic_spi(80),
--			    gic_spi(80), gic_spi(80) },
--};
-+/* SCIF */
-+#define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
-+static struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= scif_type,				\
-+	.mapbase	= baseaddr,				\
-+	.flags		= UPF_BOOT_AUTOCONF,			\
-+	.irqs		= SCIx_IRQ_MUXED(irq),			\
-+	.scbrr_algo_id	= SCBRR_ALGO_4,				\
-+	.scscr		= SCSCR_RE | SCSCR_TE,			\
-+};								\
-+								\
-+static struct platform_device scif##index##_device = {		\
-+	.name		= "sh-sci",				\
-+	.id		= index,				\
-+	.dev		= {					\
-+		.platform_data	= &scif##index##_platform_data,	\
-+	},							\
-+}
++/* Fixed 3.3V regulator used by LCD backlight */
++static struct regulator_consumer_supply fixed5v0_power_consumers[] = {
++	REGULATOR_SUPPLY("power", "pwm-backlight.0"),
++};
++
+ /* Fixed 3.3V regulator to be used by SDHI0 */
+ static struct regulator_consumer_supply vcc_sdhi0_consumers[] = {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+@@ -1196,6 +1201,8 @@ static void __init eva_init(void)
  
--static struct platform_device scif8_device = {
--	.name		= "sh-sci",
--	.id		= 8,
--	.dev		= {
--		.platform_data	= &scif8_platform_data,
--	},
--};
-+SH73A0_SCIF(PORT_SCIFA, 0, 0xe6c40000, gic_spi(72));
-+SH73A0_SCIF(PORT_SCIFA, 1, 0xe6c50000, gic_spi(73));
-+SH73A0_SCIF(PORT_SCIFA, 2, 0xe6c60000, gic_spi(74));
-+SH73A0_SCIF(PORT_SCIFA, 3, 0xe6c70000, gic_spi(75));
-+SH73A0_SCIF(PORT_SCIFA, 4, 0xe6c80000, gic_spi(78));
-+SH73A0_SCIF(PORT_SCIFA, 5, 0xe6cb0000, gic_spi(79));
-+SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
-+SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
-+SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_always_on(3, "fixed-5.0V", fixed5v0_power_consumers,
++				     ARRAY_SIZE(fixed5v0_power_consumers), 5000000);
  
- static struct sh_timer_config cmt10_platform_data = {
- 	.name = "CMT10",
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+ 	pwm_add_table(pwm_lookup, ARRAY_SIZE(pwm_lookup));
 -- 
-1.8.3.2
+1.8.4
 
