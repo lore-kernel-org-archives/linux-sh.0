@@ -1,85 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Dec 2013 02:19:20 +0000
-Subject: [PATCH 14/28] ARM: shmobile: Enable MTU2 on r7s72100
-Message-Id: <9e2b4e8b5a82659e3ddd785f6b59417f408a933d.1385950394.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:56 +0000
+Subject: [PATCH 16/29] ARM: shmobile: r8a7779: Declare SCIF register base and IRQ as resources
+Message-Id: <aa61ee2ee3bdeee17242bb7357f3edc19d417f41.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1385950394.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1385950394.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add MTU2 as r7s72100 system timer.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c |  1 +
- arch/arm/mach-shmobile/setup-r7s72100.c | 22 ++++++++++++++++++++++
- 2 files changed, 23 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 4aba20c..1c9d261 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -178,6 +178,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
-+	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- };
- 
- void __init r7s72100_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index d4eb509..55f0b9c 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -22,6 +22,7 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r7s72100.h>
-@@ -58,6 +59,26 @@ static inline void r7s72100_register_scif(int idx)
- 				      sizeof(struct plat_sci_port));
- }
- 
-+
-+static struct sh_timer_config mtu2_0_platform_data __initdata = {
-+	.name = "MTU2_0",
-+	.timer_bit = 0,
-+	.channel_offset = -0x80,
-+	.clockevent_rating = 200,
-+};
-+
-+static struct resource mtu2_0_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xfcff0300, 0x27),
-+	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
-+};
-+
-+#define r7s72100_register_mtu2(idx)					\
-+	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
-+					  idx, mtu2_##idx##_resources,	\
-+					  ARRAY_SIZE(mtu2_##idx##_resources), \
-+					  &mtu2_##idx##_platform_data,	\
-+					  sizeof(struct sh_timer_config))
-+
- void __init r7s72100_add_dt_devices(void)
- {
- 	r7s72100_register_scif(SCIF0);
-@@ -68,6 +89,7 @@ void __init r7s72100_add_dt_devices(void)
- 	r7s72100_register_scif(SCIF5);
- 	r7s72100_register_scif(SCIF6);
- 	r7s72100_register_scif(SCIF7);
-+	r7s72100_register_mtu2(0);
- }
- 
- void __init r7s72100_init_early(void)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index ceb5bb8..35c2268 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -192,16 +192,21 @@ void __init r8a7779_pinmux_init(void)
+ #define R8A7779_SCIF(index, baseaddr, irq)			\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,				\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+ };								\
+ 								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
++};								\
++								\
+ static struct platform_device scif##index##_device = {		\
+ 	.name		= "sh-sci",				\
+ 	.id		= index,				\
++	.resource	= scif##index##_resources,		\
++	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+ 	.dev		= {					\
+ 		.platform_data	= &scif##index##_platform_data,	\
+ 	},							\
 -- 
 1.8.4
 
