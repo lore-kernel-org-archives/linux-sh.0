@@ -1,41 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:08:23 +0000
-Subject: [PATCH 1/3] ARM: shmobile: sh73a0: add FSI support via DTSI
-Message-Id: <63b1303d1922f7660bd9e90da56dfbf93134c5aa.1387764079.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:56:48 +0000
+Subject: [PATCH 4/6] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+Message-Id: <1387886210-3634-5-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387764079.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387764079.git.horms+renesas@verge.net.au>
+References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |   27 ++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/spi-rspi.txt
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 241c8cd..c460dd2 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -243,4 +243,13 @@
- 		gpio-controller;
- 		#gpio-cells = <2>;
- 	};
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+new file mode 100644
+index 000000000000..06ec17fce4c6
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -0,0 +1,27 @@
++Device tree configuration for Renesas RSPI/QSPI driver
 +
-+	sh_fsi2: sound@ec230000 {
-+		#sound-dai-cells = <1>;
-+		compatible = "renesas,sh_fsi2";
-+		reg = <0xec230000 0x400>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 146 0x4>;
-+		status = "disabled";
++Required properties:
++- compatible      : "renesas,rspi-<soctype>". "renesas,rspi-rz" as fallback,
++                    or
++                    "renesas,qspi-<soctype>", "renesas,qspi-rcar" as fallback.
++- reg             : address start and address range size of device
++- interrupts      : 3 interrupts for RSPI (SPEI, SPRI, SPTI),
++                    1 interrupt for QSPI
++- num-cs	  : Number of chip selects
++- #address-cells  : should be <1>
++- #size-cells     : should be <0>
++
++Pinctrl properties might be needed, too. See there.
++
++Example:
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
 +	};
- };
 -- 
-1.8.4
+1.7.9.5
 
