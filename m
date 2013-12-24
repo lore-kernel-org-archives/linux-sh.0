@@ -1,162 +1,114 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 09:49:32 +0000
-Subject: [PATCH 3/5] spi: rspi: Make more pointers const
-Message-Id: <1387878574-21445-4-git-send-email-geert+renesas@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:50 +0000
+Subject: [PATCH 06/29] ARM: shmobile: r8a73a4: Don't define SCIF platform data in an array
+Message-Id: <4d32e834e19c34dcb510a7645ee8139c7e87bce4.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The SCIF driver is transitioning to platform resources. Board code will
+thus need to define an array of resources for each SCIF device. This is
+incompatible with the macro-based SCIF platform data definition as an
+array. Rework the macro to define platform data as individual
+structures.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-rspi.c |   37 ++++++++++++++++++++-----------------
- 1 file changed, 20 insertions(+), 17 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 58 +++++++++++++++-------------------
+ 1 file changed, 26 insertions(+), 32 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index a0038687a8fd..4e376db1ca4f 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -170,34 +170,35 @@ struct rspi_data {
- 	unsigned dma_callbacked:1;
- };
- 
--static void rspi_write8(struct rspi_data *rspi, u8 data, u16 offset)
-+static void rspi_write8(const struct rspi_data *rspi, u8 data, u16 offset)
- {
- 	iowrite8(data, rspi->addr + offset);
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index cc94b64..605298b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -40,41 +40,35 @@ void __init r8a73a4_pinmux_init(void)
+ 					ARRAY_SIZE(pfc_resources));
  }
  
--static void rspi_write16(struct rspi_data *rspi, u16 data, u16 offset)
-+static void rspi_write16(const struct rspi_data *rspi, u16 data, u16 offset)
- {
- 	iowrite16(data, rspi->addr + offset);
+-#define SCIF_COMMON(scif_type, baseaddr, irq)			\
++#define R8A73A4_SCIF(scif_type, _scscr, index, baseaddr, irq)	\
++static struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= scif_type,				\
+ 	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scbrr_algo_id	= SCBRR_ALGO_4,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq)
+-
+-#define SCIFA_DATA(index, baseaddr, irq)		\
+-[index] = {						\
+-	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
+-	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++	.scscr		= _scscr,				\
++	.irqs		= SCIx_IRQ_MUXED(irq),			\
  }
  
--static void rspi_write32(struct rspi_data *rspi, u32 data, u16 offset)
-+static void rspi_write32(const struct rspi_data *rspi, u32 data, u16 offset)
+-#define SCIFB_DATA(index, baseaddr, irq)	\
+-[index] = {					\
+-	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
+-	.scscr = SCSCR_RE | SCSCR_TE,		\
+-}
++#define R8A73A4_SCIFA(index, baseaddr, irq)	\
++	R8A73A4_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0, \
++		     index, baseaddr, irq)
+ 
+-enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
++#define R8A73A4_SCIFB(index, baseaddr, irq)	\
++	R8A73A4_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE, \
++		     index, baseaddr, irq)
+ 
+-static const struct plat_sci_port scif[] = {
+-	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
+-	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
+-	SCIFB_DATA(SCIFB0, 0xe6c20000, gic_spi(148)), /* SCIFB0 */
+-	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
+-	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
+-	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
+-};
++R8A73A4_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
++R8A73A4_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
++R8A73A4_SCIFB(2, 0xe6c20000, gic_spi(148)); /* SCIFB0 */
++R8A73A4_SCIFB(3, 0xe6c30000, gic_spi(149)); /* SCIFB1 */
++R8A73A4_SCIFB(4, 0xe6ce0000, gic_spi(150)); /* SCIFB2 */
++R8A73A4_SCIFB(5, 0xe6cf0000, gic_spi(151)); /* SCIFB3 */
+ 
+-static inline void r8a73a4_register_scif(int idx)
+-{
+-	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
+-				      sizeof(struct plat_sci_port));
+-}
++#define r8a73a4_register_scif(index)					       \
++	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
++				      &scif##index##_platform_data,	       \
++				      sizeof(scif##index##_platform_data))
+ 
+ static const struct renesas_irqc_config irqc0_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ31 */
+@@ -192,12 +186,12 @@ static struct resource cmt10_resources[] = {
+ 
+ void __init r8a73a4_add_dt_devices(void)
  {
- 	iowrite32(data, rspi->addr + offset);
+-	r8a73a4_register_scif(SCIFA0);
+-	r8a73a4_register_scif(SCIFA1);
+-	r8a73a4_register_scif(SCIFB0);
+-	r8a73a4_register_scif(SCIFB1);
+-	r8a73a4_register_scif(SCIFB2);
+-	r8a73a4_register_scif(SCIFB3);
++	r8a73a4_register_scif(0);
++	r8a73a4_register_scif(1);
++	r8a73a4_register_scif(2);
++	r8a73a4_register_scif(3);
++	r8a73a4_register_scif(4);
++	r8a73a4_register_scif(5);
+ 	r8a7790_register_cmt(10);
  }
- 
--static u8 rspi_read8(struct rspi_data *rspi, u16 offset)
-+static u8 rspi_read8(const struct rspi_data *rspi, u16 offset)
- {
- 	return ioread8(rspi->addr + offset);
- }
- 
--static u16 rspi_read16(struct rspi_data *rspi, u16 offset)
-+static u16 rspi_read16(const struct rspi_data *rspi, u16 offset)
- {
- 	return ioread16(rspi->addr + offset);
- }
- 
- /* optional functions */
- struct spi_ops {
--	int (*set_config_register)(struct rspi_data *rspi, int access_size);
-+	int (*set_config_register)(const struct rspi_data *rspi,
-+				   int access_size);
- 	int (*send_pio)(struct rspi_data *rspi, struct spi_message *mesg,
- 			struct spi_transfer *t);
- 	int (*receive_pio)(struct rspi_data *rspi, struct spi_message *mesg,
-@@ -208,7 +209,8 @@ struct spi_ops {
- /*
-  * functions for RSPI
-  */
--static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
-+static int rspi_set_config_register(const struct rspi_data *rspi,
-+				    int access_size)
- {
- 	int spbr;
- 
-@@ -243,7 +245,8 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
- /*
-  * functions for QSPI
-  */
--static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
-+static int qspi_set_config_register(const struct rspi_data *rspi,
-+				    int access_size)
- {
- 	u16 spcmd;
- 	int spbr;
-@@ -292,12 +295,12 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
- 
- #define set_config_register(spi, n) spi->ops->set_config_register(spi, n)
- 
--static void rspi_enable_irq(struct rspi_data *rspi, u8 enable)
-+static void rspi_enable_irq(const struct rspi_data *rspi, u8 enable)
- {
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | enable, RSPI_SPCR);
- }
- 
--static void rspi_disable_irq(struct rspi_data *rspi, u8 disable)
-+static void rspi_disable_irq(const struct rspi_data *rspi, u8 disable)
- {
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~disable, RSPI_SPCR);
- }
-@@ -316,12 +319,12 @@ static int rspi_wait_for_interrupt(struct rspi_data *rspi, u8 wait_mask,
- 	return 0;
- }
- 
--static void rspi_assert_ssl(struct rspi_data *rspi)
-+static void rspi_assert_ssl(const struct rspi_data *rspi)
- {
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_SPE, RSPI_SPCR);
- }
- 
--static void rspi_negate_ssl(struct rspi_data *rspi)
-+static void rspi_negate_ssl(const struct rspi_data *rspi)
- {
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_SPE, RSPI_SPCR);
- }
-@@ -507,7 +510,7 @@ end_nomap:
- 	return ret;
- }
- 
--static void rspi_receive_init(struct rspi_data *rspi)
-+static void rspi_receive_init(const struct rspi_data *rspi)
- {
- 	unsigned char spsr;
- 
-@@ -555,7 +558,7 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	return 0;
- }
- 
--static void qspi_receive_init(struct rspi_data *rspi)
-+static void qspi_receive_init(const struct rspi_data *rspi)
- {
- 	unsigned char spsr;
- 
-@@ -703,7 +706,7 @@ end_nomap:
- 	return ret;
- }
- 
--static int rspi_is_dma(struct rspi_data *rspi, struct spi_transfer *t)
-+static int rspi_is_dma(const struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	if (t->tx_buf && rspi->chan_tx)
- 		return 1;
-@@ -824,7 +827,7 @@ static irqreturn_t rspi_irq(int irq, void *_sr)
- static int rspi_request_dma(struct rspi_data *rspi,
- 				      struct platform_device *pdev)
- {
--	struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
-+	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	dma_cap_mask_t mask;
- 	struct dma_slave_config cfg;
-@@ -898,7 +901,7 @@ static int rspi_probe(struct platform_device *pdev)
- 	struct rspi_data *rspi;
- 	int ret, irq;
- 	char clk_name[16];
--	struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
-+	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
- 	const struct spi_ops *ops;
- 	const struct platform_device_id *id_entry = pdev->id_entry;
  
 -- 
-1.7.9.5
+1.8.4
 
