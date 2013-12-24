@@ -1,69 +1,70 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:20 +0000
-Subject: [PATCH 03/11] serial: sh-sci: Simplify baud rate calculation algorithms
-Message-Id: <6557b1f69ea0961efde7ab33bfe0cb7e3bfed54e.1387887969.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:45 +0000
+Subject: [PATCH 01/29] ARM: shmobile: r8a7778: add sound SCU clock support
+Message-Id: <950c4477f7804174338fb32c8cc6f9d228eef833.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Rewrite the baud rate register value calculations in easier to read
-forms. The computed value isn't modified.
+This is needed to use SRC (= Sampling Rate Converter)
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 8 ++++----
- include/linux/serial_sci.h  | 8 ++++----
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index eb59bb2..f2fad4d 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1818,13 +1818,13 @@ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
- {
- 	switch (algo_id) {
- 	case SCBRR_ALGO_1:
--		return ((freq + 16 * bps) / (16 * bps) - 1);
-+		return freq / (16 * bps);
- 	case SCBRR_ALGO_2:
--		return ((freq + 16 * bps) / (32 * bps) - 1);
-+		return DIV_ROUND_CLOSEST(freq, 32 * bps) - 1;
- 	case SCBRR_ALGO_3:
--		return (((freq * 2) + 16 * bps) / (16 * bps) - 1);
-+		return freq / (8 * bps);
- 	case SCBRR_ALGO_4:
--		return (((freq * 2) + 16 * bps) / (32 * bps) - 1);
-+		return DIV_ROUND_CLOSEST(freq, 16 * bps) - 1;
- 	}
- 
- 	/* Warn, but use a safe default */
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index babc5fe..12cf50c 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -11,10 +11,10 @@
- #define SCIx_NOT_SUPPORTED	(-1)
- 
- enum {
--	SCBRR_ALGO_1,		/* ((clk + 16 * bps) / (16 * bps) - 1) */
--	SCBRR_ALGO_2,		/* ((clk + 16 * bps) / (32 * bps) - 1) */
--	SCBRR_ALGO_3,		/* (((clk * 2) + 16 * bps) / (16 * bps) - 1) */
--	SCBRR_ALGO_4,		/* (((clk * 2) + 16 * bps) / (32 * bps) - 1) */
-+	SCBRR_ALGO_1,		/* clk / (16 * bps) */
-+	SCBRR_ALGO_2,		/* DIV_ROUND_CLOSEST(clk, 32 * bps) - 1 */
-+	SCBRR_ALGO_3,		/* clk / (8 * bps) */
-+	SCBRR_ALGO_4,		/* DIV_ROUND_CLOSEST(clk, 16 * bps) - 1 */
- 	SCBRR_ALGO_6,		/* HSCIF variable sample rate algorithm */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 5406434..dfb0fff 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -115,6 +115,8 @@ static struct clk *main_clks[] = {
  };
  
+ enum {
++	MSTP531, MSTP530,
++	MSTP529, MSTP528, MSTP527, MSTP526, MSTP525, MSTP524, MSTP523,
+ 	MSTP331,
+ 	MSTP323, MSTP322, MSTP321,
+ 	MSTP311, MSTP310,
+@@ -129,6 +131,15 @@ enum {
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP531] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 31, 0), /* SCU0 */
++	[MSTP530] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 30, 0), /* SCU1 */
++	[MSTP529] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 29, 0), /* SCU2 */
++	[MSTP528] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 28, 0), /* SCU3 */
++	[MSTP527] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 27, 0), /* SCU4 */
++	[MSTP526] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 26, 0), /* SCU5 */
++	[MSTP525] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 25, 0), /* SCU6 */
++	[MSTP524] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 24, 0), /* SCU7 */
++	[MSTP523] = SH_CLK_MSTP32(&p_clk, MSTPCR5, 23, 0), /* SCU8 */
+ 	[MSTP331] = SH_CLK_MSTP32(&s4_clk, MSTPCR3, 31, 0), /* MMC */
+ 	[MSTP323] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 23, 0), /* SDHI0 */
+ 	[MSTP322] = SH_CLK_MSTP32(&p_clk, MSTPCR3, 22, 0), /* SDHI1 */
+@@ -219,6 +230,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP309]),
+ 	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP308]),
+ 	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP307]),
++	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP531]),
++	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP530]),
++	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP529]),
++	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP528]),
++	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP527]),
++	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP526]),
++	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
++	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
++	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
+ };
+ 
+ void __init r8a7778_clock_init(void)
 -- 
 1.8.4
 
