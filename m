@@ -1,47 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:49 +0000
-Subject: [PATCH 15/69] ARM: shmobile: bockw: add SDHI support on DTS
-Message-Id: <9d0395a5e1de5a1ea14298774006f3f285040848.1386901186.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 24 Dec 2013 18:55:32 +0000
+Subject: [PATCH 0/2] arm: shmobile: lager: Add VIN1 support
+Message-Id: <1387911334-27117-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This adds VIN clocks to R8A7790 SoC and VIN1 camera support to Lager.
+VIN1 uses I2C ADV7180 decoder device that is also added.
+The board also has VIN0 wired up to the I2C ADV7612 decoder, but it's
+not enabled yet due to the lack of ADV7612 support in the kernel.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+Valentine Barshak (2):
+  arm: shmobile: r8a7790: Add VIN clock support
+  arm: shmobile: lager: Add VIN1 SoC camera support
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 4d997f8..8b8208e 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -80,4 +80,19 @@
- 		renesas,groups = "mmc_data8", "mmc_ctrl";
- 		renesas,function = "mmc";
- 	};
-+
-+	sdhi0_pins: sdhi0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
-+				  "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
- };
+ arch/arm/mach-shmobile/board-lager.c   | 76 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |  9 ++++
+ 2 files changed, 85 insertions(+)
+
 -- 
-1.8.4
+1.8.3.1
 
