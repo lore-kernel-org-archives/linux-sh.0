@@ -1,32 +1,51 @@
-From: Brian Norris <computersforpeace@gmail.com>
-Date: Fri, 13 Dec 2013 18:22:15 +0000
-Subject: Re: [PATCH v2] mtd: sh_flctl: Fix warnings due to improper casts
-Message-Id: <20131213182215.GZ27149@ld-irv-0074.broadcom.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:18:07 +0000
+Subject: [PATCH 03/12] ARM: shmobile: armadillo: Set backlight enable GPIO
+Message-Id: <9a3beb04ec32cab91a8e562ae068433387b84547.1387891831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385547448-13747-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385547448-13747-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1387891831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: David Woodhouse <dwmw2@infradead.org>, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 27, 2013 at 11:17:28AM +0100, Laurent Pinchart wrote:
-> Cast pointers to uintptr_t instead of unsigned int. This fixes warnings
-> on platforms where pointers have a different size than int.
-> 
-> Cc: David Woodhouse <dwmw2@infradead.org>
-> Cc: linux-mtd@lists.infradead.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  drivers/mtd/nand/sh_flctl.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> Changes compared to v1:
-> 
-> - Cast to uintptr_t instead of unsigned long
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch has been in l2-mtd.git, but I forgot to alert you. Thanks for
-the patch!
+The Armadillo 800 EVA panel module has a backlight enable signal
+connected to GPIO 61. Instead of requesting the GPIO in board code and
+setting it to a high level unconditionally, pass the GPIO number to the
+PWM backlight driver as the backlight enable GPIO.
 
-Brian
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d9e28c7a..2ea8935 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -423,7 +423,7 @@ static struct platform_pwm_backlight_data pwm_backlight_data = {
+ 	.max_brightness = 255,
+ 	.dft_brightness = 255,
+ 	.pwm_period_ns = 33333, /* 30kHz */
+-	.enable_gpio = -1,
++	.enable_gpio = 61,
+ };
+ 
+ static struct platform_device pwm_backlight_device = {
+@@ -1203,9 +1203,6 @@ static void __init eva_init(void)
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+-	/* LCDC0 */
+-	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-
+ 	/* GETHER */
+ 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 
+-- 
+1.8.4
+
