@@ -1,100 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:09 +0000
-Subject: [PATCH 13/26] ARM: shmobile: r7s72100 Genmai Multiplatform
-Message-Id: <7d91c4691207a302c50308ab38706b8a3d6039cd.1387763524.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:03:37 +0000
+Subject: [PATCH 4/7] ARM: shmobile: Koelsch: enable Ether in defconfig
+Message-Id: <9b408ca5885a46a0940aaf88be203b595c9aad85.1387854925.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
+References: <cover.1387854925.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Add r7s72100 Genmai to SHMOBILE_MULTI.
+Enable the Ether driver in 'koelsch_defconfig' along with DHCP autoconfiguration
+and NFS root.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                      | 1 +
- arch/arm/mach-shmobile/Kconfig                  | 7 +++++++
- arch/arm/mach-shmobile/Makefile                 | 1 +
- arch/arm/mach-shmobile/board-genmai-reference.c | 5 +++++
- 4 files changed, 14 insertions(+)
+ arch/arm/configs/koelsch_defconfig | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index b17de79..5ef42fc 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -234,6 +234,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r8a73a4-ape6evm-reference.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
-+	r7s72100-genmai-reference.dtb \
- 	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 8bc7308..bb0837b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -24,12 +24,19 @@ comment "SH-Mobile System Type"
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
- 
-+config ARCH_R7S72100
-+	bool "RZ/A1H (R7S72100)"
-+
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
- 
- comment "SH-Mobile Board Type"
- 
-+config MACH_GENMAI
-+	bool "Genmai board"
-+	depends on ARCH_R7S72100
-+
- config MACH_KOELSCH
- 	bool "Koelsch board"
- 	depends on ARCH_R8A7791
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index d2b8342..1c13104 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -56,6 +56,7 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
- 
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
-+obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
- else
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 34c9881..7630c10 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <mach/common.h>
-@@ -27,7 +28,11 @@
- 
- static void __init genmai_add_standard_devices(void)
- {
-+#ifdef CONFIG_COMMON_CLK
-+	of_clk_init(NULL);
-+#else
- 	r7s72100_clock_init();
-+#endif
- 	r7s72100_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 825c16d..c59eab1 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -29,7 +29,27 @@ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM_RUNTIME=y
++CONFIG_NET=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_NETDEVICES=y
++# CONFIG_NET_VENDOR_ARC is not set
++# CONFIG_NET_CADENCE is not set
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CIRRUS is not set
++# CONFIG_NET_VENDOR_FARADAY is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++CONFIG_SH_ETH=y
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_SMSC is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_NET_VENDOR_VIA is not set
++# CONFIG_NET_VENDOR_WIZNET is not set
+ # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+ # CONFIG_INPUT_MOUSE is not set
+ # CONFIG_LEGACY_PTYS is not set
+@@ -49,6 +69,8 @@ CONFIG_LEDS_CLASS=y
+ CONFIG_TMPFS=y
+ CONFIG_CONFIGFS_FS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_ROOT_NFS=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
 -- 
 1.8.4
 
