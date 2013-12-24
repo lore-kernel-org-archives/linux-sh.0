@@ -1,56 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Dec 2013 03:45:41 +0000
-Subject: Re: [GIT PULL 0/3] Second Round of Renesas ARM Based SoC DT Updates for v3.14
-Message-Id: <20131224034541.GA7267@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:04:43 +0000
+Subject: [GIT PULL 0/3] Second Round of Renesas ARM based SoC Fixes for v3.13
+Message-Id: <cover.1387856124.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387764079.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387764079.git.horms+renesas@verge.net.au>
+References: <cover.1375839719.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1375839719.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-[ Corrected subject: s/3.13.3.14 ]
+Hi Kevin, Hi Olof, Hi Arnd,
 
-On Mon, Dec 23, 2013 at 11:08:12AM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
-> 
-> Please consider this second round of Renesas ARM Based SoC DT Updates for
-> v3.13. It is based on the first round, tagged as renesas-dt-for-v3.14,
-> which you have already pulled.
-> 
-> 
-> The following changes since commit 1fd219561a4afc51b5f257692f3581546434db5b:
-> 
->   ARM: shmobile: marzen: enable HSPI0 in DTS (2013-12-10 17:27:25 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.14
-> 
-> for you to fetch changes up to bd0609896eabe2e64b75d7955ae5ecec528cf860:
-> 
->   ARM: shmobile: koelsch: dts: Add gpio-keys device (2013-12-12 22:22:04 +0900)
-> 
-> ----------------------------------------------------------------
-> Second Round of Renesas ARM Based SoC DT Updates for v3.13
-> 
-> * r8a7791 (R-Car M2) based Koelsch board
-> - Add GPIO keys
-> 
-> * sh73a0 (SH-Mobile AG5) based kzm9g board
->   - Add FSI support
-> 
-> ----------------------------------------------------------------
-> Kuninori Morimoto (2):
->       ARM: shmobile: sh73a0: add FSI support via DTSI
->       ARM: shmobile: kzm9g: add FSI support for DTS
-> 
-> Laurent Pinchart (1):
->       ARM: shmobile: koelsch: dts: Add gpio-keys device
-> 
->  arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 54 +++++++++++++++++++++++++
->  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    | 33 +++++++++++++++
->  arch/arm/boot/dts/sh73a0.dtsi                   |  9 +++++
->  3 files changed, 96 insertions(+)
-> 
+please consider this second round of Renesas ARM based SoC fixes for v3.13.
+It is based on the first round of fixes, tagged as renesas-fixes-for-v3.13,
+which you have previously pulled.
+
+
+The following changes since commit 23de2278ebc3a2f971ce45ca5e5e35c9d5a74040:
+
+  ARM: shmobile: r8a7790: Fix GPIO resources in DTS (2013-11-28 17:04:39 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.13
+
+for you to fetch changes up to d721a15c300c5f638a11573a6dd492158e737d6a:
+
+  ARM: shmobile: r8a7790: fix shdi resource sizes (2013-12-19 18:14:48 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM based SoC Fixes for v3.13
+
+* r8a7790 (R-Car H2) based Lager board
+
+  - Correct SHDI resource sizes
+
+    This bug has been present since sdhi resources were added to the r8a7790 by
+    8c9b1aa41853272a ("ARM: shmobile: r8a7790: add MMCIF and SDHI DT
+    templates") in v3.11-rc2.
+
+* r8a7778 (R-Car M1) based Bock-W board
+
+  - Correct DMA mask
+
+    This resolves a regression introduced by 4dcfa60071b3d23f
+    ("ARM: DMA-API: better handing of DMA masks for coherent allocations")
+    in v3.12-rc1.
+
+* r8a7740 (R-Mobile A1) based Armadillo board
+
+  - Add PWM backlight power supply
+
+    This resolves a regression introduced by 22ceeee16eb8f0d0
+    ("pwm-backlight: Add power supply support") in v3.12.
+
+----------------------------------------------------------------
+Ben Dooks (1):
+      ARM: shmobile: r8a7790: fix shdi resource sizes
+
+Kuninori Morimoto (1):
+      ARM: shmobile: bockw: fixup DMA mask
+
+Laurent Pinchart (1):
+      ARM: shmobile: armadillo: Add PWM backlight power supply
+
+ arch/arm/boot/dts/r8a7790.dtsi                 | 4 ++--
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +++++++
+ arch/arm/mach-shmobile/board-bockw.c           | 2 +-
+ 3 files changed, 10 insertions(+), 3 deletions(-)
