@@ -1,54 +1,72 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 30 Dec 2013 11:54:20 +0000
-Subject: Re: [PATCH 4/5] spi: rspi: Use DUMMY_DATA macro instead of hardcoded value
-Message-Id: <20131230115420.GI31886@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="vFj1JTFBn4Zx1dEI"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:23 +0000
+Subject: [GIT PULL 00/21] Third Round of Renesas ARM Based SoC DT Updates for v3.14
+Message-Id: <cover.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
- <1387878574-21445-5-git-send-email-geert+renesas@linux-m68k.org>
- <51418828.lCh7RnWjxA@avalon>
-In-Reply-To: <51418828.lCh7RnWjxA@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@linux-m68k.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Kevin, Hi Olof, Hi Arnd,
+
+please consider this third round of Renesas ARM based SoC DT updates for v3.14.
+
+This is based on a merge of:
+
+* The second round of Renesas ARM based SoC DT updates for v3.14,
+  tagged as renesas-dt2-for-v3.14, which I have previously sent a
+  pull-request for.
+
+* The second round of Renesas ARM based SoC updates for v3.14,
+  tagged as renesas-soc2-for-v3.14, which I have previously sent a
+  pull-request for.
+
+* The clk-next-shmobile branch of Mike Turquette's tree
+
+* The clockevents/for-Simon-3.13-rc2 branch of Daniel Lezcano's tree
+
+* The pinctl/for-next branch of Linus Walleij's tree
+
+* v3.13-rc3
 
 
---vFj1JTFBn4Zx1dEI
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The reason for these merges is to provide dependencies for
+the clock updates for the r8a7791 (R-Car M2) based Koelsch and r8a7790
+(R-Car H2) based Lager boards.
 
-On Fri, Dec 27, 2013 at 03:36:12PM +0100, Laurent Pinchart wrote:
-> On Tuesday 24 December 2013 10:49:33 Geert Uytterhoeven wrote:
 
-> >  		/* dummy write for generate clock */
-> > -		rspi_write16(rspi, 0x00, RSPI_SPDR);
-> > +		rspi_write16(rspi, DUMMY_DATA, RSPI_SPDR);
+The following changes since commit b652896b02df3dfde3a68957cce01f2aa4585842:
 
-> Doesn't the comment make it obvious already ?
+  ARM: shmobile: r8a7791: Add SSI clocks in device tree (2013-12-24 23:01:13 +0900)
 
-To be honest that had been my thought as well but if it makes the people
-working on the driver happy...
+are available in the git repository at:
 
---vFj1JTFBn4Zx1dEI
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v3.14
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+for you to fetch changes up to b652896b02df3dfde3a68957cce01f2aa4585842:
 
-iQIcBAEBAgAGBQJSwV7pAAoJELSic+t+oim9PoIQAJim3XPTYKDnDY7Nhp2IAN09
-v5VFsY462ouZFes7GNSzBoVgMGLPSIolUemDkqm3ir78vYWsfzWU8qPCFLNVBoyy
-LudQghkkQbgqMX/YPH2xuSGNhn0GPYvkyj2Bx15m9mlqwtm8OGKH7VuYgEFRn1iP
-cco4ZFv4rV6S1AJOHvJNFG+P1QRsDadCFot1sKTJQZpwCz0KLeSehBqHGQ62I+P8
-gyjLis5ZPNn5qZxgJV6Lyt0EcpV3iRchvKJotXQkLMo8wkbSG/Z/8ZTlqA9dmhER
-u6d8Sn9uklL1TkMawer8dk60U3mmCO7TMrvmim7hbsBRMsNNX499BBxapdBXUNk5
-WkCG2+GDFyTp+1nGgQ1uB1AiCF6nj7OEuDU55ane2oUBaME0BMR/z9WO/rwagz0A
-kfaITG1HQ5WeqR4Es+SzNz7q8Tr+AUtYZ6/pVCGfk3Aw7JK7+VNDD+G1ZTXGc6Y0
-o82cBiu/9X5wVIuCjq8N8EbDaQxDnmxZz1dLkZF4gRC1aQPALYAOW5H8XeZ8O8wB
-N0OaMT5td3JjcTyPZw/ZAth8bzbzHqmjefxvRUpZ4xAfp6aqmaHCnD/5+//qFf/O
-XeXZTDkRVVwFKzmR+Mx3yBSi/FBgtyrH0pkW7XtfM0H2VXMlqcpojZkhQv5sRbVj
-3beqctbVG4R2AAIravvO
-=o13H
------END PGP SIGNATURE-----
+  ARM: shmobile: r8a7791: Add SSI clocks in device tree (2013-12-24 23:01:13 +0900)
 
---vFj1JTFBn4Zx1dEI--
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC DT Updates for v3.14
+
+* r8a7791 (R-Car M2) and r8a7790 (R-Car H2) SoCSs
+  - Add SSI, QSPI and MSIOF  clocks in device tree
+
+r8a7791 (R-Car M2) based Koelsch and r8a7790 (R-Car H2) based Lager boards
+  - Remove reference DTS
+  - Specify external clock frequency in DT
+  - Sync non-reference DTS with referene DTS
+  - Add clocks to DTS
+
+* r8a7740 (R-Mobile A1) based Armadillo board
+  - Add gpio-keys device
+  - Add PWM backlight enable GPIO
+  - Add PWM backlight power supply
+
+* r8a73a0 (SH-Mobile AG5), r8a7740 (R-Mobile A1) and
+  r8a73a4 (SH-Mobile APE6) SoCs
+  - Specify PFC interrupts in DT
+
+----------------------------------------------------------------
