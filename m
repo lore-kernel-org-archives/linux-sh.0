@@ -1,99 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Dec 2013 13:23:01 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: dts: Add gpio-keys device
-Message-Id: <20131212132300.GG30624@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:40:40 +0000
+Subject: [PATCH 0/8] spi: rspi: Add prelimary support for RZ/A1H
+Message-Id: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386776571-12979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386776571-12979-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-spi@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Wed, Dec 11, 2013 at 04:42:51PM +0100, Laurent Pinchart wrote:
-> The board has 7 buttons connected to GPIOs, add a corresponding
-> gpio-keys device.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 54 +++++++++++++++++++++++++
->  1 file changed, 54 insertions(+)
+This patch series adds preliminary support for RSPI in the RZ/A1H aka
+R7S72100 SoC, which is found on the Genmai development board.
 
-Thanks, I will queue this up.
+It hasn't received much testing, so please don't apply yet.
 
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-> index 1919273..588ca17 100644
-> --- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-> @@ -31,6 +31,60 @@
->  		#size-cells = <1>;
->  	};
->  
-> +	gpio-keys {
-> +		compatible = "gpio-keys";
-> +
-> +		key-a {
-> +			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
-> +			linux,code = <30>;
-> +			label = "SW30";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +		key-b {
-> +			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
-> +			linux,code = <48>;
-> +			label = "SW31";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +		key-c {
-> +			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
-> +			linux,code = <46>;
-> +			label = "SW32";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +		key-d {
-> +			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
-> +			linux,code = <32>;
-> +			label = "SW33";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +		key-e {
-> +			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
-> +			linux,code = <18>;
-> +			label = "SW34";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +		key-f {
-> +			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
-> +			linux,code = <33>;
-> +			label = "SW35";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +		key-g {
-> +			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
-> +			linux,code = <34>;
-> +			label = "SW36";
-> +			gpio-key,wakeup;
-> +			debounce-interval = <20>;
-> +		};
-> +	};
-> +
->  	leds {
->  		compatible = "gpio-leds";
->  		led6 {
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+    [1/8] spi: rspi: Add more RSPI register documentation
+    [2/8] spi: rspi: Add more QSPI register documentation
+    [3/8] spi: rspi: Add support for more than one interrupt
+    [4/8] spi: rspi: Add support for 8-bit Data Register access
+    [5/8] spi: rspi: Add support for no TX only mode
+    [6/8] spi: rspi: Add support for missing SPCR2 register
+    [7/8] spi: rspi: Add support for specifying CPHA/CPOL
+    [8/8] spi: rspi: Add support for loopback mode
+
+Thanks for your comments, and Merry Christmas!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
+
