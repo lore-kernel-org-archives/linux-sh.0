@@ -1,91 +1,128 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:37 +0000
-Subject: [PATCH 63/69] ARM: shmobile: armadillo: add FSI support for DTS
-Message-Id: <6a3549d464bf8dc05ab87eab0f3ed2da0dbc5379.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:18:05 +0000
+Subject: [PATCH 01/12] ARM: shmobile: koelsch: Add DU device
+Message-Id: <784c33a0c9b509f09cb69bc93f3863ed20338462.1387891831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387891831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch support FSI-WM8978 with simple audio card
+Only the LVDS output is currently supported.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts | 37 ++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch.c | 63 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 7b80f19..6d6fd3d 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -87,6 +87,24 @@
- 		pinctrl-0 = <&backlight_pins>;
- 		pinctrl-names = "default";
- 	};
-+
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "i2s";
-+
-+		simple-audio-card,cpu {
-+			sound-dai = <&sh_fsi2 0>;
-+			bitclock-inversion;
-+		};
-+
-+		simple-audio-card,codec {
-+			sound-dai = <&wm8978>;
-+			bitclock-master;
-+			frame-master;
-+			system-clock-frequency = <12288000>;
-+		};
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 6e12914..5d84fb6 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
- &i2c0 {
-@@ -100,6 +118,12 @@
- 		pinctrl-names = "default";
- 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
- 	};
-+
-+	wm8978: wm8978@1a {
-+		#sound-dai-cells = <0>;
-+		compatible = "wlf,wm8978";
-+		reg = <0x1a>;
-+	};
- };
++#include <linux/dma-mapping.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+@@ -26,13 +27,66 @@
+ #include <linux/leds.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
- &pfc {
-@@ -130,6 +154,12 @@
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
- 		renesas,function = "sdhi0";
- 	};
-+
-+	fsia_pins: sounda {
-+		renesas,groups = "fsia_sclk_in", "fsia_mclk_out",
-+				 "fsia_data_in_1", "fsia_data_out_0";
-+		renesas,function = "fsia";
-+	};
- };
- 
- &tpu {
-@@ -156,3 +186,10 @@
- 	cd-gpios = <&pfc 167 GPIO_ACTIVE_LOW>;
- 	status = "okay";
- };
-+
-+&sh_fsi2 {
-+	pinctrl-0 = <&fsia_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
++/* DU */
++static struct rcar_du_encoder_data koelsch_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS0,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
 +};
++
++static const struct rcar_du_platform_data koelsch_du_pdata __initconst = {
++	.encoders = koelsch_du_encoders,
++	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
++};
++
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfeb00000, 0x40000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++};
++
++static void __init koelsch_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7791",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &koelsch_du_pdata,
++		.size_data = sizeof(koelsch_du_pdata),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ /* LEDS */
+ static struct gpio_led koelsch_leds[] = {
+ 	{
+@@ -80,6 +134,13 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
+ };
+ 
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
++	/* DU */
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
++				  "du_rgb666", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
++				  "du_sync", "du"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
++				  "du_clk_out_0", "du"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
+ 				  "scif0_data_d", "scif0"),
+@@ -101,6 +162,8 @@ static void __init koelsch_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &koelsch_keys_pdata,
+ 				      sizeof(koelsch_keys_pdata));
++
++	koelsch_add_du_device();
+ }
+ 
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
 -- 
 1.8.4
 
