@@ -1,172 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:30:25 +0000
-Subject: [PATCH 4/4] serial: sh-sci: Add OF support
-Message-Id: <20bdcab8268cb05702e12ae9013be96ecc7ec3a6.1387890410.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:16:02 +0000
+Subject: [PATCH 22/29] ARM: shmobile: r7s72100: Don't set plat_sci_port scbrr_algo_id field
+Message-Id: <79fb5b4c6fc2222e5cf3899454b8c669a9f5c485.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387890410.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387890410.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Extend the driver to with support for SCIx device tree bindings. A
-minimal set of features is supported, additional properties can be added
-later should the need to describe more device features arise.
+The field will be removed from the sh-sci driver. Don't set it and let
+the driver handle baud rate calculation internally.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 101 ++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 98 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/setup-r7s72100.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index c411116..be33d2b 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -39,6 +39,7 @@
- #include <linux/module.h>
- #include <linux/mm.h>
- #include <linux/notifier.h>
-+#include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/scatterlist.h>
-@@ -2415,6 +2416,83 @@ static int sci_remove(struct platform_device *dev)
- 	return 0;
- }
- 
-+struct sci_port_info {
-+	unsigned int type;
-+	unsigned int regtype;
-+};
-+
-+static const struct of_device_id of_sci_match[] = {
-+	{
-+		.compatible = "renesas,scif",
-+		.data = (void *)&(const struct sci_port_info) {
-+			.type = PORT_SCIF,
-+			.regtype = SCIx_SH4_SCIF_REGTYPE,
-+		},
-+	}, {
-+		.compatible = "renesas,scifa",
-+		.data = (void *)&(const struct sci_port_info) {
-+			.type = PORT_SCIFA,
-+			.regtype = SCIx_SCIFA_REGTYPE,
-+		},
-+	}, {
-+		.compatible = "renesas,scifb",
-+		.data = (void *)&(const struct sci_port_info) {
-+			.type = PORT_SCIFB,
-+			.regtype = SCIx_SCIFB_REGTYPE,
-+		},
-+	}, {
-+		.compatible = "renesas,hscif",
-+		.data = (void *)&(const struct sci_port_info) {
-+			.type = PORT_HSCIF,
-+			.regtype = SCIx_HSCIF_REGTYPE,
-+		},
-+	}, {
-+		/* Terminator */
-+	},
-+};
-+MODULE_DEVICE_TABLE(of, of_sci_match);
-+
-+static struct plat_sci_port *
-+sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
-+{
-+	struct device_node *np = pdev->dev.of_node;
-+	const struct of_device_id *match;
-+	const struct sci_port_info *info;
-+	struct plat_sci_port *p;
-+	int id;
-+
-+	if (!IS_ENABLED(CONFIG_OF) || !np)
-+		return NULL;
-+
-+	match = of_match_node(of_sci_match, pdev->dev.of_node);
-+	if (!match)
-+		return NULL;
-+
-+	info = match->data;
-+
-+	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
-+	if (!p) {
-+		dev_err(&pdev->dev, "failed to allocate DT config data\n");
-+		return NULL;
-+	}
-+
-+	/* Get the line number for the aliases node. */
-+	id = of_alias_get_id(np, "serial");
-+	if (id < 0) {
-+		dev_err(&pdev->dev, "failed to get alias id (%d)\n", id);
-+		return NULL;
-+	}
-+
-+	*dev_id = id;
-+
-+	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
-+	p->type = info->type;
-+	p->regtype = info->regtype;
-+	p->scscr = SCSCR_RE | SCSCR_TE;
-+
-+	return p;
-+}
-+
- static int sci_probe_single(struct platform_device *dev,
- 				      unsigned int index,
- 				      struct plat_sci_port *p,
-@@ -2447,8 +2525,9 @@ static int sci_probe_single(struct platform_device *dev,
- 
- static int sci_probe(struct platform_device *dev)
- {
--	struct plat_sci_port *p = dev_get_platdata(&dev->dev);
--	struct sci_port *sp = &sci_ports[dev->id];
-+	struct plat_sci_port *p;
-+	struct sci_port *sp;
-+	unsigned int dev_id;
- 	int ret;
- 
- 	/*
-@@ -2459,9 +2538,24 @@ static int sci_probe(struct platform_device *dev)
- 	if (is_early_platform_device(dev))
- 		return sci_probe_earlyprintk(dev);
- 
-+	if (dev->dev.of_node) {
-+		p = sci_parse_dt(dev, &dev_id);
-+		if (p = NULL)
-+			return -EINVAL;
-+	} else {
-+		p = dev->dev.platform_data;
-+		if (p = NULL) {
-+			dev_err(&dev->dev, "no platform data supplied\n");
-+			return -EINVAL;
-+		}
-+
-+		dev_id = dev->id;
-+	}
-+
-+	sp = &sci_ports[dev_id];
- 	platform_set_drvdata(dev, sp);
- 
--	ret = sci_probe_single(dev, dev->id, p, sp);
-+	ret = sci_probe_single(dev, dev_id, p, sp);
- 	if (ret)
- 		return ret;
- 
-@@ -2513,6 +2607,7 @@ static struct platform_driver sci_driver = {
- 		.name	= "sh-sci",
- 		.owner	= THIS_MODULE,
- 		.pm	= &sci_dev_pm_ops,
-+		.of_match_table = of_match_ptr(of_sci_match),
- 	},
- };
- 
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 81b995b..9c0b3a9 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -33,7 +33,6 @@ static const struct plat_sci_port scif##index##_platform_data = {	\
+ 	.type		= PORT_SCIF,					\
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scbrr_algo_id	= SCBRR_ALGO_2,					\
+ 	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
+ 			  SCSCR_REIE,					\
+ };									\
 -- 
 1.8.4
 
