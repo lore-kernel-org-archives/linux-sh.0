@@ -1,138 +1,259 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:07:03 +0000
-Subject: [PATCH 10/13] ARM: shmobile: r8a7791: Add clock index macros for DT sources
-Message-Id: <4d8864c9e94ec727f1c675b9f6921525c360334b.1387857168.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 11:40:44 +0000
+Subject: [PATCH 4/8] spi: rspi: Add support for 8-bit Data Register access
+Message-Id: <1387885248-28425-5-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
+References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387885248-28425-1-git-send-email-geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add support for accessing the RSPI Data Register using 8-bit operations,
+based on the SDK reference code.  This is needed for RZ/A1H.
 
-Add macros usable by device tree sources to reference r8a7791 clocks by
-index.
+The data width is passed using platform data, defaulting to 16-bit for
+legacy RSPI. QSPI always uses 8-bit accesses.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- include/dt-bindings/clock/r8a7791-clock.h | 105 ++++++++++++++++++++++++++++++
- 1 file changed, 105 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a7791-clock.h
+ drivers/spi/spi-rspi.c   |   90 +++++++++++++++++++++++++++++++++++++++-------
+ include/linux/spi/rspi.h |    2 ++
+ 2 files changed, 79 insertions(+), 13 deletions(-)
 
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-new file mode 100644
-index 0000000..df1715b
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -0,0 +1,105 @@
-+/*
-+ * Copyright 2013 Ideas On Board SPRL
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index c7bbc54ef785..00788091fc16 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -179,6 +179,8 @@ struct rspi_data {
+ 	spinlock_t lock;
+ 	struct clk *clk;
+ 	u8 spsr;
++	u8 spdcr;
++	u8 data_width;
+ 	int irq[MAX_NUM_IRQ];
+ 	unsigned int numirq;
+ 	const struct spi_ops *ops;
+@@ -216,8 +218,27 @@ static u16 rspi_read16(const struct rspi_data *rspi, u16 offset)
+ 	return ioread16(rspi->addr + offset);
+ }
+ 
++static void rspi_write_data(const struct rspi_data *rspi, u16 data)
++{
++	if (rspi->data_width = 8)
++		rspi_write8(rspi, data, RSPI_SPDR);
++	else if (rspi->data_width = 16)
++		rspi_write16(rspi, data, RSPI_SPDR);
++}
 +
-+#ifndef __DT_BINDINGS_CLOCK_R8A7791_H__
-+#define __DT_BINDINGS_CLOCK_R8A7791_H__
++static u16 rspi_read_data(const struct rspi_data *rspi)
++{
++	if (rspi->data_width = 8)
++		return rspi_read8(rspi, RSPI_SPDR);
++	else if (rspi->data_width = 16)
++		return rspi_read16(rspi, RSPI_SPDR);
++	return 0;
++}
 +
-+/* CPG */
-+#define R8A7791_CLK_MAIN		0
-+#define R8A7791_CLK_PLL0		1
-+#define R8A7791_CLK_PLL1		2
-+#define R8A7791_CLK_PLL3		3
-+#define R8A7791_CLK_LB			4
-+#define R8A7791_CLK_QSPI		5
-+#define R8A7791_CLK_SDH			6
-+#define R8A7791_CLK_SD0			7
-+#define R8A7791_CLK_Z			8
+ /* optional functions */
+ struct spi_ops {
++	int (*parse_platform_data)(struct rspi_data *rspi,
++				   const struct rspi_plat_data *rspi_pd);
+ 	int (*set_config_register)(const struct rspi_data *rspi,
+ 				   int access_size);
+ 	int (*send_pio)(struct rspi_data *rspi, struct spi_message *mesg,
+@@ -230,6 +251,33 @@ struct spi_ops {
+ /*
+  * functions for RSPI
+  */
++static int rspi_parse_platform_data(struct rspi_data *rspi,
++				    const struct rspi_plat_data *rspi_pd)
++{
++	if (rspi_pd && rspi_pd->data_width) {
++		rspi->data_width = rspi_pd->data_width;
++		switch (rspi_pd->data_width) {
++		case 8:
++			rspi->spdcr = SPDCR_SPLBYTE;
++			break;
++		case 16:
++			rspi->spdcr = SPDCR_SPLWORD;
++			break;
++		default:
++			return -1;
++		}
++	} else {
++		/*
++		 * Use legacy 16-bit width data access if a data_width value
++		 * isn't defined in the platform data.
++		 */
++		rspi->data_width = 16;
++		rspi->spdcr = 0;
++	}
 +
-+/* MSTP1 */
-+#define R8A7791_CLK_TMU1		11
-+#define R8A7791_CLK_TMU3		21
-+#define R8A7791_CLK_TMU2		22
-+#define R8A7791_CLK_CMT0		24
-+#define R8A7791_CLK_TMU0		25
-+#define R8A7791_CLK_VSP1_DU1		27
-+#define R8A7791_CLK_VSP1_DU0		28
-+#define R8A7791_CLK_VSP1_SY		31
++	return 0;
++}
 +
-+/* MSTP2 */
-+#define R8A7791_CLK_SCIFA2		2
-+#define R8A7791_CLK_SCIFA1		3
-+#define R8A7791_CLK_SCIFA0		4
-+#define R8A7791_CLK_SCIFB0		6
-+#define R8A7791_CLK_SCIFB1		7
-+#define R8A7791_CLK_SCIFB2		16
-+#define R8A7791_CLK_DMAC		18
+ static int rspi_set_config_register(const struct rspi_data *rspi,
+ 				    int access_size)
+ {
+@@ -243,7 +291,7 @@ static int rspi_set_config_register(const struct rspi_data *rspi,
+ 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+ 
+ 	/* Sets number of frames to be used: 1 frame */
+-	rspi_write8(rspi, 0x00, RSPI_SPDCR);
++	rspi_write8(rspi, rspi->spdcr, RSPI_SPDCR);
+ 
+ 	/* Sets RSPCK, SSL, next-access delay value */
+ 	rspi_write8(rspi, 0x00, RSPI_SPCKD);
+@@ -266,6 +314,16 @@ static int rspi_set_config_register(const struct rspi_data *rspi,
+ /*
+  * functions for QSPI
+  */
++static int qspi_parse_platform_data(struct rspi_data *rspi,
++				    const struct rspi_plat_data *rspi_pd)
++{
++	/* Fixed 8-bit for now */
++	rspi->data_width = 8;
++	rspi->spdcr = 0;
 +
-+/* MSTP3 */
-+#define R8A7791_CLK_TPU0		4
-+#define R8A7791_CLK_SDHI2		11
-+#define R8A7791_CLK_SDHI1		12
-+#define R8A7791_CLK_SDHI0		14
-+#define R8A7791_CLK_MMCIF0		15
-+#define R8A7791_CLK_SSUSB		28
-+#define R8A7791_CLK_CMT1		29
-+#define R8A7791_CLK_USBDMAC0		30
-+#define R8A7791_CLK_USBDMAC1		31
++	return 0;
++}
 +
-+/* MSTP5 */
-+#define R8A7791_CLK_THERMAL		22
-+#define R8A7791_CLK_PWM			23
+ static int qspi_set_config_register(const struct rspi_data *rspi,
+ 				    int access_size)
+ {
+@@ -280,7 +338,7 @@ static int qspi_set_config_register(const struct rspi_data *rspi,
+ 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+ 
+ 	/* Sets number of frames to be used: 1 frame */
+-	rspi_write8(rspi, 0x00, RSPI_SPDCR);
++	rspi_write8(rspi, rspi->spdcr, RSPI_SPDCR);
+ 
+ 	/* Sets RSPCK, SSL, next-access delay value */
+ 	rspi_write8(rspi, 0x00, RSPI_SPCKD);
+@@ -365,7 +423,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 
+-		rspi_write16(rspi, *data, RSPI_SPDR);
++		rspi_write_data(rspi, *data);
+ 		data++;
+ 		remain--;
+ 	}
+@@ -392,14 +450,14 @@ static int qspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 				"%s: tx empty timeout\n", __func__);
+ 			return -ETIMEDOUT;
+ 		}
+-		rspi_write8(rspi, *data++, RSPI_SPDR);
++		rspi_write_data(rspi, *data++);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+ 				"%s: receive timeout\n", __func__);
+ 			return -ETIMEDOUT;
+ 		}
+-		rspi_read8(rspi, RSPI_SPDR);
++		rspi_read_data(rspi);
+ 
+ 		remain--;
+ 	}
+@@ -539,7 +597,7 @@ static void rspi_receive_init(const struct rspi_data *rspi)
+ 
+ 	spsr = rspi_read8(rspi, RSPI_SPSR);
+ 	if (spsr & SPSR_SPRF)
+-		rspi_read16(rspi, RSPI_SPDR);	/* dummy read */
++		rspi_read_data(rspi);	/* dummy read */
+ 	if (spsr & SPSR_OVRF)
+ 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPSR) & ~SPSR_OVRF,
+ 			    RSPI_SPSR);
+@@ -564,15 +622,14 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 		/* dummy write for generate clock */
+-		rspi_write16(rspi, DUMMY_DATA, RSPI_SPDR);
++		rspi_write_data(rspi, DUMMY_DATA);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+ 				"%s: receive timeout\n", __func__);
+ 			return -ETIMEDOUT;
+ 		}
+-		/* SPDR allows 16 or 32-bit access only */
+-		*data = (u8)rspi_read16(rspi, RSPI_SPDR);
++		*data = rspi_read_data(rspi);
+ 
+ 		data++;
+ 		remain--;
+@@ -587,7 +644,7 @@ static void qspi_receive_init(const struct rspi_data *rspi)
+ 
+ 	spsr = rspi_read8(rspi, RSPI_SPSR);
+ 	if (spsr & SPSR_SPRF)
+-		rspi_read8(rspi, RSPI_SPDR);   /* dummy read */
++		rspi_read_data(rspi);   /* dummy read */
+ 	rspi_write8(rspi, SPBFCR_TXRST | SPBFCR_RXRST, QSPI_SPBFCR);
+ 	rspi_write8(rspi, 0x00, QSPI_SPBFCR);
+ }
+@@ -609,15 +666,14 @@ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 		/* dummy write for generate clock */
+-		rspi_write8(rspi, DUMMY_DATA, RSPI_SPDR);
++		rspi_write_data(rspi, DUMMY_DATA);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+ 				"%s: receive timeout\n", __func__);
+ 			return -ETIMEDOUT;
+ 		}
+-		/* SPDR allows 8, 16 or 32-bit access */
+-		*data++ = rspi_read8(rspi, RSPI_SPDR);
++		*data++ = rspi_read_data(rspi);
+ 		remain--;
+ 	}
+ 
+@@ -1002,6 +1058,12 @@ static int rspi_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
++	ret = ops->parse_platform_data(rspi, rspi_pd);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "rspi invalid platform data.\n");
++		goto error1;
++	}
 +
-+/* MSTP7 */
-+#define R8A7791_CLK_HSUSB		4
-+#define R8A7791_CLK_HSCIF2		13
-+#define R8A7791_CLK_SCIF5		14
-+#define R8A7791_CLK_SCIF4		15
-+#define R8A7791_CLK_HSCIF1		16
-+#define R8A7791_CLK_HSCIF0		17
-+#define R8A7791_CLK_SCIF3		18
-+#define R8A7791_CLK_SCIF2		19
-+#define R8A7791_CLK_SCIF1		20
-+#define R8A7791_CLK_SCIF0		21
-+#define R8A7791_CLK_DU1			23
-+#define R8A7791_CLK_DU0			24
-+#define R8A7791_CLK_LVDS0		26
+ 	ret = rspi_request_dma(rspi, pdev);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
+@@ -1027,12 +1089,14 @@ error1:
+ }
+ 
+ static struct spi_ops rspi_ops = {
++	.parse_platform_data =		rspi_parse_platform_data,
+ 	.set_config_register =		rspi_set_config_register,
+ 	.send_pio =			rspi_send_pio,
+ 	.receive_pio =			rspi_receive_pio,
+ };
+ 
+ static struct spi_ops qspi_ops = {
++	.parse_platform_data =		qspi_parse_platform_data,
+ 	.set_config_register =		qspi_set_config_register,
+ 	.send_pio =			qspi_send_pio,
+ 	.receive_pio =			qspi_receive_pio,
+diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
+index 3f55232f74ff..7316dd9c7ba9 100644
+--- a/include/linux/spi/rspi.h
++++ b/include/linux/spi/rspi.h
+@@ -22,6 +22,8 @@
+ #define __LINUX_SPI_RENESAS_SPI_H__
+ 
+ struct rspi_plat_data {
++	u8 data_width;			/* Data register access width */
 +
-+/* MSTP8 */
-+#define R8A7791_CLK_VIN2		9
-+#define R8A7791_CLK_VIN1		10
-+#define R8A7791_CLK_VIN0		11
-+#define R8A7791_CLK_ETHER		13
-+#define R8A7791_CLK_SATA1		14
-+#define R8A7791_CLK_SATA0		15
-+
-+/* MSTP9 */
-+#define R8A7791_CLK_GPIO7		4
-+#define R8A7791_CLK_GPIO6		5
-+#define R8A7791_CLK_GPIO5		7
-+#define R8A7791_CLK_GPIO4		8
-+#define R8A7791_CLK_GPIO3		9
-+#define R8A7791_CLK_GPIO2		10
-+#define R8A7791_CLK_GPIO1		11
-+#define R8A7791_CLK_GPIO0		12
-+#define R8A7791_CLK_RCAN1		15
-+#define R8A7791_CLK_RCAN0		16
-+#define R8A7791_CLK_I2C5		25
-+#define R8A7791_CLK_IICDVFS		26
-+#define R8A7791_CLK_I2C4		27
-+#define R8A7791_CLK_I2C3		28
-+#define R8A7791_CLK_I2C2		29
-+#define R8A7791_CLK_I2C1		30
-+#define R8A7791_CLK_I2C0		31
-+
-+/* MSTP11 */
-+#define R8A7791_CLK_SCIFA3		6
-+#define R8A7791_CLK_SCIFA4		7
-+#define R8A7791_CLK_SCIFA5		8
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A7791_H__ */
+ 	unsigned int dma_tx_id;
+ 	unsigned int dma_rx_id;
+ 
 -- 
-1.8.4
+1.7.9.5
 
