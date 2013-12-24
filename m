@@ -1,26 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Dec 2013 06:47:30 +0000
-Subject: Re: [PATCH 00/10] sh-pfc: Fix GPIO to IRQ mapping
-Message-Id: <20131224064730.GE27167@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:05:35 +0000
+Subject: [GIT PULL 0/3] Renesas ARM based SoC IRQC Driver Updates for v3.14
+Message-Id: <cover.1387855444.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386732390-31724-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131212131139.GE30624@verge.net.au>
- <CACRpkdZnqzAWdnmjo6cNakwOZcLjZ2Mt_LtM1Vf-L9=b_0_p4g@mail.gmail.com>
- <20131213001456.GB32101@verge.net.au>
- <20131219064052.GE10230@verge.net.au>
- <CACRpkdavs4mrtVO32ONja_g=zmz78+u5i_97Zp0UaoEzSxnaig@mail.gmail.com>
-In-Reply-To: <CACRpkdavs4mrtVO32ONja_g=zmz78+u5i_97Zp0UaoEzSxnaig@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 23, 2013 at 06:27:57PM +0100, Linus Walleij wrote:
-> On Thu, Dec 19, 2013 at 7:40 AM, Simon Horman <horms@verge.net.au> wrote:
-> 
-> > just to let you know I am planning to use
-> > 70c8f01a357ac74d ("sh-pfc: Support GPIO to IRQ mapping specified IRQ resources")
-> 
-> OK go ahead and pull that to your tree.
+Hi Kevin, Hi Olof, Hi Arnd,
 
-Thanks, done.
+please consider these Renesas ARM based SoC IRQC driver updates for v3.14.
+
+The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
+
+  Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-irqc-for-v3.14
+
+for you to fetch changes up to ce70af18801fd8dac6e9f85308294948916e84d6:
+
+  irq-renesas-irqc: simplify irq_set_type() method (2013-12-23 09:27:17 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC IRQC Driver Updates for v3.14
+
+* Simplify irq_set_type() method
+* Enable mask on suspend
+* Use lazy disable
+
+----------------------------------------------------------------
+Magnus Damm (2):
+      irqchip: renesas-irqc: Use lazy disable
+      irqchip: renesas-irqc: Enable mask on suspend
+
+Sergei Shtylyov (1):
+      irq-renesas-irqc: simplify irq_set_type() method
+
+ drivers/irqchip/irq-renesas-irqc.c | 21 ++++++++-------------
+ 1 file changed, 8 insertions(+), 13 deletions(-)
