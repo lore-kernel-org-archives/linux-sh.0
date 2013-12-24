@@ -1,38 +1,84 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:03:35 +0000
-Subject: [PATCH 2/7] ARM: shmobile: lager: fixup I2C device on defconfig
-Message-Id: <d0523925902cf363fc7b217c9873517e98093e32.1387854925.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:18:10 +0000
+Subject: [PATCH 06/12] ARM: shmobile: lager-reference: Instantiate clkdevs for SCIF and CMT
+Message-Id: <4a606af20d930dc1a8b62b0f753cdc018914e5de.1387891831.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387854925.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
+References: <cover.1387891831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-R-Car H2 needs I2C_CAR, not I2C_SH_MOBILE
+Now that the common clock framework is supported, the clock lookup
+entries in clock-r8a7790.c are not registered anymore. Devices must
+instead reference their clocks in the device tree. However, SCIF and CMT
+devices are still instantiated through platform code, and thus need a
+clock lookup entry.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Retrieve the SCIF and CMT clock entries by name and register clkdevs for
+the corresponding devices. This will be removed when the SCIF and CMT
+devices will be instantiated from the device tree.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/lager_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 31 +++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 064b7cc..d97ac5e 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -80,7 +80,7 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_I2C=y
- CONFIG_I2C_GPIO=y
--CONFIG_I2C_SH_MOBILE=y
-+CONFIG_I2C_RCAR=y
- CONFIG_GPIO_SH_PFC=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index fc43f7c..7e3fe37 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -18,6 +18,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk.h>
++#include <linux/clkdev.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <mach/common.h>
+@@ -27,9 +29,36 @@
+ 
+ static void __init lager_add_standard_devices(void)
+ {
+-#ifndef CONFIG_COMMON_CLK
++#ifdef CONFIG_COMMON_CLK
++	/*
++	 * This is a really crude hack to provide clkdev support to the SCIF
++	 * and CMT devices until they get moved to DT.
++	 */
++	static const char * const scif_names[] = {
++		"scifa0", "scifa1", "scifb0", "scifb1",
++		"scifb2", "scifa2", "scif0", "scif1",
++		"hscif0", "hscif1",
++	};
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
++		clk = clk_get(NULL, scif_names[i]);
++		if (clk) {
++			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
++			clk_put(clk);
++		}
++	}
++
++	clk = clk_get(NULL, "cmt0");
++	if (clk) {
++		clk_register_clkdev(clk, NULL, "sh_cmt.0");
++		clk_put(clk);
++	}
++#else
+ 	r8a7790_clock_init();
+ #endif
++
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
 -- 
 1.8.4
 
