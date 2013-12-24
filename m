@@ -1,47 +1,160 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 17 Dec 2013 21:44:33 +0000
-Subject: [PATCH 0/5] arm: shmobile: r7s72100: add native i2c support
-Message-Id: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:30:23 +0000
+Subject: [PATCH 2/4] serial: sh-sci: Remove platform data mapbase and irqs fields
+Message-Id: <89b5c1ab94a1cea921d8a280de0a483d71af5091.1387890410.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387890410.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387890410.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Here is a series to support the I2C core of the r7s72100 natively. It has been
-tested with a genmai board where an eeprom is connected. The series can be
-found here:
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/riic
+The fields are not used anymore by board files, remove them.
 
-It is based on the latest r7s72100 topic branch from Simon and the latest patch
-series from Magnus. Note there is one issue with the current PFC driver which
-needs to be sorted out. Check patch 1/5 for details.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/tty/serial/sh-sci.c | 60 +++++++++++++++++++++++++--------------------
+ include/linux/serial_sci.h  | 26 --------------------
+ 2 files changed, 34 insertions(+), 52 deletions(-)
 
-Comments welcome. Thanks,
-
-   Wolfram
-
-
-Wolfram Sang (5):
-  pinctrl: r7s72100: add riic groups
-  arm: shmobile: r7s72100: add i2c clocks
-  arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-  arm: shmobile: genmai: adapt dts to use native i2c driver
-  i2c: riic: add driver
-
- Documentation/devicetree/bindings/i2c/i2c-riic.txt |  29 ++
- arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  29 +-
- arch/arm/boot/dts/r7s72100.dtsi                    | 102 +++++
- arch/arm/mach-shmobile/clock-r7s72100.c            |  12 +-
- drivers/i2c/busses/Kconfig                         |  10 +
- drivers/i2c/busses/Makefile                        |   1 +
- drivers/i2c/busses/i2c-riic.c                      | 426 +++++++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-r7s72100.c              |  45 +++
- 8 files changed, 635 insertions(+), 19 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-riic.txt
- create mode 100644 drivers/i2c/busses/i2c-riic.c
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 96d26d7..c411116 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -58,6 +58,23 @@
+ 
+ #include "sh-sci.h"
+ 
++/* Offsets into the sci_port->irqs array */
++enum {
++	SCIx_ERI_IRQ,
++	SCIx_RXI_IRQ,
++	SCIx_TXI_IRQ,
++	SCIx_BRI_IRQ,
++	SCIx_NR_IRQS,
++
++	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
++};
++
++#define SCIx_IRQ_IS_MUXED(port)			\
++	((port)->irqs[SCIx_ERI_IRQ] =	\
++	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
++	((port)->irqs[SCIx_ERI_IRQ] &&	\
++	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
++
+ struct sci_port {
+ 	struct uart_port	port;
+ 
+@@ -2094,36 +2111,27 @@ static int sci_init_single(struct platform_device *dev,
+ 	port->iotype	= UPIO_MEM;
+ 	port->line	= index;
+ 
+-	if (dev->num_resources) {
+-		/* Device has resources, use them. */
+-		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
+-		if (res = NULL)
+-			return -ENOMEM;
++	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
++	if (res = NULL)
++		return -ENOMEM;
+ 
+-		port->mapbase = res->start;
++	port->mapbase = res->start;
+ 
+-		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
+-			sci_port->irqs[i] = platform_get_irq(dev, i);
++	for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
++		sci_port->irqs[i] = platform_get_irq(dev, i);
+ 
+-		/* The SCI generates several interrupts. They can be muxed
+-		 * together or connected to different interrupt lines. In the
+-		 * muxed case only one interrupt resource is specified. In the
+-		 * non-muxed case three or four interrupt resources are
+-		 * specified, as the BRI interrupt is optional.
+-		 */
+-		if (sci_port->irqs[0] < 0)
+-			return -ENXIO;
++	/* The SCI generates several interrupts. They can be muxed together or
++	 * connected to different interrupt lines. In the muxed case only one
++	 * interrupt resource is specified. In the non-muxed case three or four
++	 * interrupt resources are specified, as the BRI interrupt is optional.
++	 */
++	if (sci_port->irqs[0] < 0)
++		return -ENXIO;
+ 
+-		if (sci_port->irqs[1] < 0) {
+-			sci_port->irqs[1] = sci_port->irqs[0];
+-			sci_port->irqs[2] = sci_port->irqs[0];
+-			sci_port->irqs[3] = sci_port->irqs[0];
+-		}
+-	} else {
+-		/* No resources, use old-style platform data. */
+-		port->mapbase = p->mapbase;
+-		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
+-			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
++	if (sci_port->irqs[1] < 0) {
++		sci_port->irqs[1] = sci_port->irqs[0];
++		sci_port->irqs[2] = sci_port->irqs[0];
++		sci_port->irqs[3] = sci_port->irqs[0];
+ 	}
+ 
+ 	if (p->regtype = SCIx_PROBE_REGTYPE) {
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index fd7f9da..22b3640 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -50,17 +50,6 @@
+ /* HSSRR HSCIF */
+ #define HSCIF_SRE	0x8000
+ 
+-/* Offsets into the sci_port->irqs array */
+-enum {
+-	SCIx_ERI_IRQ,
+-	SCIx_RXI_IRQ,
+-	SCIx_TXI_IRQ,
+-	SCIx_BRI_IRQ,
+-	SCIx_NR_IRQS,
+-
+-	SCIx_MUX_IRQ = SCIx_NR_IRQS,	/* special case */
+-};
+-
+ enum {
+ 	SCIx_PROBE_REGTYPE,
+ 
+@@ -79,19 +68,6 @@ enum {
+ 	SCIx_NR_REGTYPES,
+ };
+ 
+-#define SCIx_IRQ_MUXED(irq)		\
+-{					\
+-	[SCIx_ERI_IRQ]	= (irq),	\
+-	[SCIx_RXI_IRQ]	= (irq),	\
+-	[SCIx_TXI_IRQ]	= (irq),	\
+-	[SCIx_BRI_IRQ]	= (irq),	\
+-}
+-
+-#define SCIx_IRQ_IS_MUXED(port)			\
+-	((port)->irqs[SCIx_ERI_IRQ] =	\
+-	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
+-	((port)->irqs[SCIx_ERI_IRQ] &&	\
+-	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
+ /*
+  * SCI register subset common for all port types.
+  * Not all registers will exist on all parts.
+@@ -120,8 +96,6 @@ struct plat_sci_port_ops {
+  * Platform device specific platform_data struct
+  */
+ struct plat_sci_port {
+-	unsigned long	mapbase;		/* resource base */
+-	unsigned int	irqs[SCIx_NR_IRQS];	/* ERI, RXI, TXI, BRI */
+ 	unsigned int	type;			/* SCI / SCIF / IRDA / HSCIF */
+ 	upf_t		flags;			/* UPF_* flags */
+ 	unsigned long	capabilities;		/* Port features/capabilities */
 -- 
-1.8.4.2
+1.8.4
 
