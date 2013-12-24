@@ -1,95 +1,35 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:24 +0000
-Subject: [PATCH 50/69] ARM: shmobile: Enable DSW2 with gpio-keys on KZM9D
-Message-Id: <cef20af093fc018009ed7f7fde38f9fb8b445e6b.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:03:34 +0000
+Subject: [PATCH 1/7] ARM: shmobile: lager: add gpio regulator support on defconfig
+Message-Id: <081aaf4ab3ddaf66083b2fcd17b563a48112a232.1387854925.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387854925.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Use the gpio-keys driver to support the 4 pins on the
-dip switch DSW2 which is mounted on the KZM9D board.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 39 ++++++++++++++++++++++++++++++++++++++-
- arch/arm/boot/dts/emev2.dtsi      |  2 +-
- 2 files changed, 39 insertions(+), 2 deletions(-)
+ arch/arm/configs/lager_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index 861aa7d..baaa66c 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -9,7 +9,9 @@
-  */
- /dts-v1/;
- 
--/include/ "emev2.dtsi"
-+#include "emev2.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- 
- / {
- 	model = "EMEV2 KZM9D Board";
-@@ -54,4 +56,39 @@
- 		vddvario-supply = <&reg_1p8v>;
- 		vdd33a-supply = <&reg_3p3v>;
- 	};
-+
-+	gpio_keys {
-+		compatible = "gpio-keys";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		button@1 {
-+			debounce_interval = <50>;
-+			wakeup = <1>;
-+			label = "DSW2-1";
-+			linux,code = <KEY_1>;
-+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
-+		};
-+		button@2 {
-+			debounce_interval = <50>;
-+			wakeup = <1>;
-+			label = "DSW2-2";
-+			linux,code = <KEY_2>;
-+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
-+		};
-+		button@3 {
-+			debounce_interval = <50>;
-+			wakeup = <1>;
-+			label = "DSW2-3";
-+			linux,code = <KEY_3>;
-+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
-+		};
-+		button@4 {
-+			debounce_interval = <50>;
-+			wakeup = <1>;
-+			label = "DSW2-4";
-+			linux,code = <KEY_4>;
-+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
- };
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index df1d4cd..256c2f8 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -8,7 +8,7 @@
-  * kind, whether express or implied.
-  */
- 
--/include/ "skeleton.dtsi"
-+#include "skeleton.dtsi"
- 
- / {
- 	compatible = "renesas,emev2";
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 35bff5e..064b7cc 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -89,6 +89,7 @@ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
++CONFIG_REGULATOR_GPIO=y
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=y
+ # CONFIG_USB_SUPPORT is not set
 -- 
 1.8.4
 
