@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:08 +0000
-Subject: [PATCH 04/12] ARM: shmobile: lager-reference: Enable multiplaform kernel support
-Message-Id: <0ef3cde4d906041a497bfc585568a45ae84b4a8f.1387891831.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:19:42 +0000
+Subject: [PATCH 19/21] ARM: shmobile: r8a7791: Add QSPI module clock in device tree
+Message-Id: <ec71f55216db1b3da68e284840cb3ac3d5ed4965.1387893834.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,84 +12,54 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Enable multiplaform ARM architecture support for the Lager reference
-board. Common clock framework initialization will be handled by the
-rcar_gen2_init_timer() call, we just need to remove the legacy clock
-code initialization.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                     | 1 +
- arch/arm/mach-shmobile/Kconfig                 | 8 ++++++++
- arch/arm/mach-shmobile/Makefile                | 1 +
- arch/arm/mach-shmobile/board-lager-reference.c | 2 ++
- 4 files changed, 12 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 15 ++++++++-------
+ include/dt-bindings/clock/r8a7791-clock.h |  1 +
+ 2 files changed, 9 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 5ef42fc..9e22bd4 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -235,6 +235,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
-+	r8a7790-lager-reference.dtb \
- 	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index cd89d63..e7033a8 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -28,6 +28,10 @@ config ARCH_EMEV2
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
- 
-+config ARCH_R8A7790
-+	bool "R-Car H2 (R8A77900)"
-+	select RENESAS_IRQC
-+
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
-@@ -47,6 +51,10 @@ config MACH_KZM9D
- 	depends on ARCH_EMEV2
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 
-+config MACH_LAGER
-+	bool "Lager board"
-+	depends on ARCH_R8A7790
-+
- comment "Renesas ARM SoCs System Configuration"
- endif
- 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 1c13104..9daa9c1 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
-+obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 51a3bcc..fc43f7c 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -27,7 +27,9 @@
- 
- static void __init lager_add_standard_devices(void)
- {
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7790_clock_init();
-+#endif
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 6a29341..19c6550 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -482,17 +482,18 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+-				 <&p_clk>, <&p_clk>, <&p_clk>;
++			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>,
++				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				 <&p_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_I2C4
+-				R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
+-				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
++				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD
++				R8A7791_CLK_I2C4 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
++				R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+ 			>;
+ 			clock-output-names -				"rcan1", "rcan0", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1",
+-				"i2c0";
++				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c4", "i2c3",
++				"i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index a69e090..30f82f2 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -94,6 +94,7 @@
+ #define R8A7791_CLK_GPIO0		12
+ #define R8A7791_CLK_RCAN1		15
+ #define R8A7791_CLK_RCAN0		16
++#define R8A7791_CLK_QSPI_MOD		17
+ #define R8A7791_CLK_I2C5		25
+ #define R8A7791_CLK_IICDVFS		26
+ #define R8A7791_CLK_I2C4		27
 -- 
 1.8.4
 
