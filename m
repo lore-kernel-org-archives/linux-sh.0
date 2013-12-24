@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:08:25 +0000
-Subject: [PATCH 3/3] ARM: shmobile: koelsch: dts: Add gpio-keys device
-Message-Id: <bd0609896eabe2e64b75d7955ae5ecec528cf860.1387764079.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 14:15:58 +0000
+Subject: [PATCH 18/29] ARM: shmobile: r8a7778: Declare SCIF register base and IRQ as resources
+Message-Id: <23399a6ff8e2070e7695fa6c1283212d1d69b372.1387888861.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387764079.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387764079.git.horms+renesas@verge.net.au>
+References: <cover.1387888861.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,80 +12,52 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The board has 7 buttons connected to GPIOs, add a corresponding
-gpio-keys device.
+Passing the register base address and IRQ through platform data is
+deprecated. Use resources instead.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 54 +++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7778.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-index 1919273..588ca17 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-@@ -31,6 +31,60 @@
- 		#size-cells = <1>;
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 210c663..3e583cd 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -46,12 +46,15 @@
+ /* SCIF */
+ #define R8A7778_SCIF(index, baseaddr, irq)			\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+-	.mapbase	= baseaddr,				\
+ 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,	\
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,				\
+ 	.type		= PORT_SCIF,				\
+-	.irqs		= SCIx_IRQ_MUXED(irq),			\
++};								\
++								\
++static struct resource scif##index##_resources[] = {		\
++	DEFINE_RES_MEM(baseaddr, 0x100),			\
++	DEFINE_RES_IRQ(irq),					\
+ }
  
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		key-a {
-+			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
-+			linux,code = <30>;
-+			label = "SW30";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-b {
-+			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
-+			linux,code = <48>;
-+			label = "SW31";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-c {
-+			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
-+			linux,code = <46>;
-+			label = "SW32";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-d {
-+			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
-+			linux,code = <32>;
-+			label = "SW33";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-e {
-+			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
-+			linux,code = <18>;
-+			label = "SW34";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-f {
-+			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
-+			linux,code = <33>;
-+			label = "SW35";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-g {
-+			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
-+			linux,code = <34>;
-+			label = "SW36";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+	};
-+
- 	leds {
- 		compatible = "gpio-leds";
- 		led6 {
+ R8A7778_SCIF(0, 0xffe40000, gic_iid(0x66));
+@@ -62,9 +65,11 @@ R8A7778_SCIF(4, 0xffe44000, gic_iid(0x6a));
+ R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
+ 
+ #define r8a7778_register_scif(index)					       \
+-	platform_device_register_data(&platform_bus, "sh-sci", index,	       \
+-				      &scif##index##_platform_data,	       \
+-				      sizeof(scif##index##_platform_data))
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
+ 
+ /* TMU */
+ static struct resource sh_tmu0_resources[] __initdata = {
 -- 
 1.8.4
 
