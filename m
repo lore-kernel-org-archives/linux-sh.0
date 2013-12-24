@@ -1,79 +1,31 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 18 Dec 2013 11:41:38 +0000
-Subject: Re: [PATCH 4/5] arm: shmobile: genmai: adapt dts to use native i2c driver
-Message-Id: <52B189F2.3080604@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Tue, 24 Dec 2013 09:49:29 +0000
+Subject: [PATCH 0/5] spi: rspi: cleanups
+Message-Id: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387316678-10174-1-git-send-email-wsa@the-dreams.de>
- <1387316678-10174-5-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387316678-10174-5-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hello.
+	Hi Mark,
 
-On 18-12-2013 1:44, Wolfram Sang wrote:
+This is a series of small cleanups for the Renesas RSPI driver:
 
-> From: Wolfram Sang <wsa@sang-engineering.com>
+    [1/5] spi: rspi: Use dev_get_platdata() instead of raw
+    [2/5] spi: rspi: Remove casts
+    [3/5] spi: rspi: Make more pointers const
+    [4/5] spi: rspi: Use DUMMY_DATA macro instead of hardcoded
+    [5/5] spi: rspi: Use u8 for 8-bit register values
 
-> Switch from the gpio-driver to the shiny new native driver. Tested by
-> accessing the eeprom on the genmai board.
+Gr{oetje,eeting}s,
 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> ---
->   arch/arm/boot/dts/r7s72100-genmai-reference.dts | 29 ++++++++++---------------
->   1 file changed, 11 insertions(+), 18 deletions(-)
+						Geert
 
-> diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> index ce5da0b..739448a 100644
-> --- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> +++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> @@ -39,24 +39,6 @@
->   			gpios = <&port4 11 GPIO_ACTIVE_LOW>;
->   		};
->   	};
-> -
-> -	i2c@0 {
-> -		compatible = "i2c-gpio";
-> -		gpios = <&port1 5 GPIO_ACTIVE_HIGH /* sda */
-> -			 &port1 4 GPIO_ACTIVE_HIGH /* scl */
-> -			>;
-> -		i2c-gpio,sda-open-drain;
-> -		i2c-gpio,scl-open-drain;
-> -		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
-> -		#address-cells = <1>;
-> -		#size-cells = <0>;
-> -
-> -		flash@50 {
-> -			compatible = "renesas,24c128";
-> -			reg = <0x50>;
-> -			pagesize = <64>;
-> -		};
-> -	};
->   };
->
->   &pfc {
-> @@ -68,3 +50,14 @@
->   		renesas,function = "scif2";
->   	};
->   };
-> +
-> +&i2c2 {
-> +	status = "okay";
-> +	clock-frequency = <400000>;
-> +
-> +	eeprom: 24c128@50 {
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-    The node was called "flash@50" for a reason: according to ePAPR spec,  for 
-node names the generic device names should be used, not chip-specific.
-
-> +		compatible = "renesas,24c128";
-> +		reg = <0x50>;
-> +		pagesize = <64>;
-> +	};
-> +};
-
-WBR, Sergei
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
