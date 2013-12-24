@@ -1,101 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:30:53 +0000
-Subject: [PATCH 19/69] ARM: shmobile: r8a73a4: tidyup DT node naming
-Message-Id: <43304a5f51066a7ef851732c35b4582a8d6a5bc0.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:03:40 +0000
+Subject: [PATCH 7/7] ARM: shmobile: koelsch: Do not disable CONFIG_{INOTIFY_USER,UNIX} in defconfig
+Message-Id: <559cec66f1a2620bc85bb79191512a569a404cb8.1387854925.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387854925.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+CONFIG_INOTIFY_USER and CONFIG_UNIX are required for udev to function.
+This change brings the koelsch defconfig into line with
+other shmobile defconfigs.
 
-According to ePAPR spec,
-this patch tidies up DT node name and related clock.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi         | 10 +++++-----
- arch/arm/mach-shmobile/clock-r8a73a4.c | 10 +++++-----
- 2 files changed, 10 insertions(+), 10 deletions(-)
+ arch/arm/configs/koelsch_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 287e047..e079c99 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -219,7 +219,7 @@
- 		status = "disabled";
- 	};
- 
--	mmcif0: mmcif@ee200000 {
-+	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupt-parent = <&gic>;
-@@ -228,7 +228,7 @@
- 		status = "disabled";
- 	};
- 
--	mmcif1: mmcif@ee220000 {
-+	mmcif1: mmc@ee220000 {
- 		compatible = "renesas,sh-mmcif";
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupt-parent = <&gic>;
-@@ -244,7 +244,7 @@
- 		#gpio-cells = <2>;
- 	};
- 
--	sdhi0: sdhi@ee100000 {
-+	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee100000 0 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -253,7 +253,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi1: sdhi@ee120000 {
-+	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee120000 0 0x100>;
- 		interrupt-parent = <&gic>;
-@@ -262,7 +262,7 @@
- 		status = "disabled";
- 	};
- 
--	sdhi2: sdhi@ee140000 {
-+	sdhi2: sd@ee140000 {
- 		compatible = "renesas,sdhi-r8a73a4";
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupt-parent = <&gic>;
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 571409b..7348d58 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -584,15 +584,15 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("e6520000.i2c", &mstp_clks[MSTP300]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
--	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
-+	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("ee200000.mmcif", &mstp_clks[MSTP315]),
-+	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("e6550000.i2c", &mstp_clks[MSTP316]),
- 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index ef79cbf..acec6b8 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -31,6 +31,7 @@ CONFIG_NEON=y
+ CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
++CONFIG_UNIX=y
+ CONFIG_INET=y
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
+@@ -66,7 +67,6 @@ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ # CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ CONFIG_CONFIGFS_FS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
 -- 
 1.8.4
 
