@@ -1,45 +1,63 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:31:03 +0000
-Subject: [PATCH 29/69] ARM: shmobile: lager: tidyup DT node naming
-Message-Id: <f56d51fcafcb222b7cf8cdd17eedb516f3197639.1386901186.git.horms+renesas@verge.net.au>
+Date: Tue, 24 Dec 2013 06:06:58 +0000
+Subject: [PATCH 06/13] ARM: rcar-gen2: Do not setup timer in non-secure mode
+Message-Id: <0fe35077a92ce45acfa2b7259bba516757fb0c3f.1387857168.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386901186.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386901186.git.horms+renesas@verge.net.au>
+References: <cover.1387857168.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-According to ePAPR spec,
-this patch tidies up DT node name.
+If the system has been started in non-secure mode, then the ARM generic
+timer is not configurable during the kernel initialisation. Currently
+the only thing we can check for is if the timer has been correctly
+configured during the boot process.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager-reference.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager-reference.dts b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-index 75730f5..ec82674 100644
---- a/arch/arm/boot/dts/r8a7790-lager-reference.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager-reference.dts
-@@ -57,12 +57,12 @@
- 	pinctrl-0 = <&scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 5734c24..b6275ab 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -78,12 +78,23 @@ void __init rcar_gen2_timer_init(void)
+ 	/* Remap "armgcnt address map" space */
+ 	base = ioremap(0xe6080000, PAGE_SIZE);
  
--	scif0_pins: scif0 {
-+	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data";
- 		renesas,function = "scif0";
- 	};
+-	/* Update registers with correct frequency */
+-	iowrite32(freq, base + CNTFID0);
+-	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
++	/*
++	 * Update the timer if it is either not running, or is not at the
++	 * right frequency. The timer is only configurable in secure mode
++	 * so this avoids an abort if the loader started the timer and
++	 * entered the kernel in non-secure mode.
++	 */
++
++	if ((ioread32(base + CNTCR) & 1) = 0 ||
++	    ioread32(base + CNTFID0) != freq) {
++		/* Update registers with correct frequency */
++		iowrite32(freq, base + CNTFID0);
++		asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
++
++		/* make sure arch timer is started by setting bit 0 of CNTCR */
++		iowrite32(1, base + CNTCR);
++	}
  
--	scif1_pins: scif1 {
-+	scif1_pins: serial1 {
- 		renesas,groups = "scif1_data";
- 		renesas,function = "scif1";
- 	};
+-	/* make sure arch timer is started by setting bit 0 of CNTCR */
+-	iowrite32(1, base + CNTCR);
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
 -- 
 1.8.4
 
