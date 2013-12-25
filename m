@@ -1,76 +1,28 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Tue, 24 Dec 2013 11:56:46 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r7s72100: Add RSPI clocks
-Message-Id: <1387886210-3634-3-git-send-email-geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 25 Dec 2013 00:51:23 +0000
+Subject: Re: [PATCH 2/6] ARM: shmobile: r7s72100: Add RSPI clocks
+Message-Id: <87ioudhhx9.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
+ <1387886210-3634-3-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1387886210-3634-3-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+
+Hi Geert
+
+>  	/* MSTP clocks */
+> +	CLKDEV_DEV_ID("rspi0", &mstp_clks[MSTP107]),
+> +	CLKDEV_DEV_ID("rspi1", &mstp_clks[MSTP106]),
+> +	CLKDEV_DEV_ID("rspi2", &mstp_clks[MSTP105]),
+> +	CLKDEV_DEV_ID("rspi3", &mstp_clks[MSTP104]),
+> +	CLKDEV_DEV_ID("rspi4", &mstp_clks[MSTP103]),
+
+I think "rspi.x" is correct name ?
+
+Best regards
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c |   21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 1ba578337b27..0f67a1b20118 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -22,13 +22,15 @@
- #include <mach/common.h>
- #include <mach/r7s72100.h>
- 
--/* registers */
-+/* Frequency Control Registers */
- #define FRQCR		0xfcfe0010
- #define FRQCR2		0xfcfe0014
-+/* Standby Control Registers */
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
- #define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
-+#define STBCR10		0xfcfe043c
- 
- #define PLL_RATE 30
- 
-@@ -146,12 +148,20 @@ struct clk div4_clks[DIV4_NR] = {
- 					| CLK_ENABLE_ON_INIT),
- };
- 
--enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+enum {
-+	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
-+	MSTP97, MSTP96, MSTP95, MSTP94,
- 	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
--	MSTP33,	MSTP_NR };
-+	MSTP33,	MSTP_NR
-+};
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
-+	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
-+	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
-+	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
-+	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
- 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
-@@ -179,6 +189,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
- 
- 	/* MSTP clocks */
-+	CLKDEV_DEV_ID("rspi0", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("rspi1", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("rspi2", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("rspi3", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("rspi4", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
--- 
-1.7.9.5
-
+Kuninori Morimoto
