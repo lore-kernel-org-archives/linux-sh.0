@@ -1,62 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:07:04 +0000
-Subject: [PATCH 11/13] ARM: shmobile: rcar-gen2: Initialize CCF before clock sources
-Message-Id: <4b5c211f9f93c3919f23c88d808a4eda104ec8b2.1387857168.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Dec 2013 20:34:33 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: r8a779[01]: Add SSI clocks in device tree
+Message-Id: <1388003675-26554-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387857168.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387857168.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hello,
 
-When CONFIG_COMMON_CLOCK is enabled, call rcar_gen2_clocks_init() in the
-timer init function to initialize the common clock framework before
-initializing the clock sources. This will take care of clock
-initialization when the r8a779[01] boards will be switched to
-multiplatform kernels.
+These two patches add the SSI clocks to the r8a7790 and r8a7791 device tree.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+Compared to v1, the SSIn clocks now reference their parent using index 0
+instead of index R8A779[01]_CLK_SSI (which is equal to 5). The clocks property
+is used to look up the clock parent name (possibly before the clock parent is
+even registered), not the clock parent itself. As clock parent names are
+always looked up directly by index, replace the clock provider index by the
+parent index in the clock-output-names list.
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index b6275ab..69ccc6c 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk/shmobile.h>
- #include <linux/clocksource.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-@@ -44,8 +45,10 @@ u32 __init rcar_gen2_read_mode_pins(void)
- 
- void __init rcar_gen2_timer_init(void)
- {
--#ifdef CONFIG_ARM_ARCH_TIMER
-+#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
-+#endif
-+#ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
- 	u32 freq;
-@@ -98,5 +101,8 @@ void __init rcar_gen2_timer_init(void)
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
- 
-+#ifdef CONFIG_COMMON_CLK
-+	rcar_gen2_clocks_init(mode);
-+#endif
- 	clocksource_of_init();
- }
+Mike, is this the correct thing to do ? The different meanings of the clocks
+property depending on whether it's located in a clock provider node or a clock
+consumer node are not really intuitive. This should probably be documented in
+Documentation/devicetree/bindings/clock/clock-bindings.txt.
+
+Laurent Pinchart (2):
+  ARM: shmobile: r8a7790: Add SSI clocks in device tree
+  ARM: shmobile: r8a7791: Add SSI clocks in device tree
+
+ arch/arm/boot/dts/r8a7790.dtsi            | 18 ++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi            | 18 ++++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h | 13 +++++++++++++
+ include/dt-bindings/clock/r8a7791-clock.h | 13 +++++++++++++
+ 4 files changed, 62 insertions(+)
+
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
