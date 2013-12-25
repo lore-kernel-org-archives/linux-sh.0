@@ -1,55 +1,26 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 11 Dec 2013 17:20:02 +0000
-Subject: Re: [PATCH] ARM: rcar-gen2: Do not attempt to re-setup timer if running correctly
-Message-Id: <52A89EC2.4040203@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Wed, 25 Dec 2013 19:12:07 +0000
+Subject: [PATCH 0/3] arm: shmobile: koelsch: Add I2C support
+Message-Id: <1387998730-6012-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386753916-25648-1-git-send-email-ben.dooks@codethink.co.uk>
- <52A89D6A.3030707@cogentembedded.com> <52A89DC7.4070909@codethink.co.uk>
-In-Reply-To: <52A89DC7.4070909@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+This adds support for the I2C pins and clocks to the R8A7791 SoC.
+It also adds I2C support to Koelsch board.
 
-On 11-12-2013 21:15, Ben Dooks wrote:
+Valentine Barshak (3):
+  pinctrl: sh-pfc: r8a7791: Add I2C pins
+  arm: shmobile: r8a7791: Add I2C clocks
+  arm: shmobile: koelsch: Add I2C support
 
->>> If the system has been started in non-secure mode, then the ARM generic
->>> timer is not configurable during the kernel initialisation. Currently
->>> the only thing we can check for is if the timer has been correctly
->>> configured during the boot process.
+ arch/arm/mach-shmobile/board-koelsch.c |  46 ++++++++
+ arch/arm/mach-shmobile/clock-r8a7791.c |  13 +++
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c   | 196 +++++++++++++++++++++++++++++++++
+ 3 files changed, 255 insertions(+)
 
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
->>> ---
->>>   arch/arm/mach-shmobile/setup-rcar-gen2.c | 18 +++++++++++++-----
->>>   1 file changed, 13 insertions(+), 5 deletions(-)
-
->>> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c
->>> b/arch/arm/mach-shmobile/setup-rcar-gen2.c
->>> index 5734c24..6b7b7f1 100644
->>> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
->>> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
->>> @@ -78,12 +78,20 @@ void __init rcar_gen2_timer_init(void)
->>>       /* Remap "armgcnt address map" space */
->>>       base = ioremap(0xe6080000, PAGE_SIZE);
->>>
->>> -    /* Update registers with correct frequency */
->>> -    iowrite32(freq, base + CNTFID0);
->>> -    asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (freq));
->>> +    /* Update the timer if it is either not running, or is not at the
->>> +     * right frequency. The timer is only configurable in secure mode
->>> +     * so this avoids an abort if the loader started the timer and
->>> +     * started the kernel in non-secure mode. */
-
->>     You said you've fixed the comment style but you haven't as I see.
-
-> I also said I reposted the previous patch by accident this morning
-> and posted the corrected one after it.
-
-    Sorry, I've only read that after sending my comment. I thought that was an 
-intended repost with a slightly corrected subject.
-
-WBR, Sergei
+-- 
+1.8.3.1
 
