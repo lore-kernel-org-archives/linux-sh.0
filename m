@@ -1,72 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:08 +0000
-Subject: [PATCH 01/47] serial: sh-sci: Don't enable/disable port from within break timer
-Message-Id: <1386323994-12850-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Dec 2013 14:04:50 +0000
+Subject: [PATCH RFC v2 2/3] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+Message-Id: <1388066691-5854-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-The break timer accesses hardware registers and thus requires the port
-to be enabled. It currently ensures this by enabling the port at the
-beginning of the timer handler, and disabling it at the end. However,
-the enable/disable operations call the runtime PM sync functions, which
-are not allowed in atomic context. The current situation is thus broken.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-This change relies on non-atomic code to enable/disable the port. The
-break timer will only be started from the IRQ handler, which already
-runs with the port enabled. We just need to ensure that the port won't
-be disabled with the timer running, and that's easily done by just
-cancelling the timer in the port disable function.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/tty/serial/sh-sci.c | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+v2
+* As suggested by Sergei Shtylyov
+  - Add MSTP74 to beginning of enum on a line by itself
+* As suggested by Magnus Damm
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
+---
+ arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 7d8103c..e3384a2 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -431,6 +431,14 @@ static void sci_port_disable(struct sci_port *sci_port)
- 	if (!sci_port->port.dev)
- 		return;
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index e6ab0cd..c4ba651 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -27,6 +27,7 @@
+ #define FRQCR2		0xfcfe0014
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
++#define STBCR7		0xfcfe0430
+ #define STBCR9		0xfcfe0438
  
-+	/* Cancel the break timer to ensure that the timer handler will not try
-+	 * to access the hardware with clocks and power disabled. Reset the
-+	 * break flag to make the break debouncing state machine ready for the
-+	 * next break.
-+	 */
-+	del_timer_sync(&sci_port->break_timer);
-+	sci_port->break_flag = 0;
-+
- 	clk_disable(sci_port->fclk);
- 	clk_disable(sci_port->iclk);
+ #define PLL_RATE 30
+@@ -146,6 +147,7 @@ struct clk div4_clks[DIV4_NR] = {
+ };
  
-@@ -733,8 +741,6 @@ static void sci_break_timer(unsigned long data)
- {
- 	struct sci_port *port = (struct sci_port *)data;
+ enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++	MSTP74,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+ 	MSTP33,	MSTP_NR };
  
--	sci_port_enable(port);
--
- 	if (sci_rxd_in(&port->port) = 0) {
- 		port->break_flag = 1;
- 		sci_schedule_break_timer(port);
-@@ -744,8 +750,6 @@ static void sci_break_timer(unsigned long data)
- 		sci_schedule_break_timer(port);
- 	} else
- 		port->break_flag = 0;
--
--	sci_port_disable(port);
- }
+@@ -154,6 +156,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+ 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
++	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
+ 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
+ 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
+ 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
+@@ -176,6 +179,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
  
- static int sci_handle_errors(struct uart_port *port)
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
 -- 
-1.8.3.2
+1.8.4
 
