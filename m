@@ -1,7 +1,7 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Wed, 25 Dec 2013 19:36:02 +0000
+Date: Thu, 26 Dec 2013 15:37:58 +0000
 Subject: [PATCH 2/3] arm: shmobile: r8a7791: Add VIN clocks
-Message-Id: <1388000163-9932-3-git-send-email-valentine.barshak@cogentembedded.com>
+Message-Id: <1388072279-12508-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1387998730-6012-3-git-send-email-valentine.barshak@cogentembedded.com>
