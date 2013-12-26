@@ -1,7 +1,7 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Wed, 25 Dec 2013 19:36:01 +0000
+Date: Thu, 26 Dec 2013 15:37:57 +0000
 Subject: [PATCH 1/3] pinctrl: sh-pfc: r8a7791: Add VIN pins
-Message-Id: <1388000163-9932-2-git-send-email-valentine.barshak@cogentembedded.com>
+Message-Id: <1388072279-12508-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387998730-6012-2-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1387998730-6012-2-git-send-email-valentine.barshak@cogentembedded.com>
