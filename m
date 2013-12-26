@@ -1,34 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 14 Dec 2013 01:05:02 +0000
-Subject: Re: [PATCH 08/12] mmc: sh_mobile_sdhi: Convert to clk_prepare/unprepare
-Message-Id: <20131214010502.GE12584@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 26 Dec 2013 15:37:56 +0000
+Subject: [PATCH V2 0/3] arm: shmobile: koelsch: Add VIN1 camera support
+Message-Id: <1388072279-12508-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383000569-8916-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <23114596.UeGyAebmZh@avalon> <87a9g67t63.fsf@octavius.laptop.org>
- <4390506.Q1di3yUE6Z@avalon> <87mwk66c1m.fsf@octavius.laptop.org>
-In-Reply-To: <87mwk66c1m.fsf@octavius.laptop.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Dec 11, 2013 at 09:25:09PM -0500, Chris Ball wrote:
-> Hi Laurent,
-> 
-> On Wed, Dec 11 2013, Laurent Pinchart wrote:
-> >> I'm sorry about the delay -- it's in mmc-next for 3.14 now.
-> >
-> > Thanks a lot and sorry about shouting. Don't worry about the delay, I only 
-> > wanted to make sure the patch would get in v3.14.
-> 
-> No worries, it was deserved yelling.  :-)
-> 
-> > [PATCH v3 1/3] mmc: sh_mmcif: Factorize DMA channel request and configuration 
-> > code
-> > [PATCH v3 2/3] mmc: sh_mmcif: Fix compilation warning on 64-bit platforms
-> 
-> These two are in mmc-next now too.  (I usually wait for someone with
-> SH hardware to ACK, but I understand that Guennadi's not around as
-> much anymore.)
+This adds VIN pins and clocks to R8A7791 SoC along with
+VIN1 camera support to Koelsch board.
 
-I believe I can provide such Acks going forwards.
+This is probably a bit early since it depends on
+the following pending patches:
+http://marc.info/?l=linux-sh&m8807191506999&w=2
+([PATCH V2] media: soc_camera: rcar_vin: Add preliminary R-Car M2 support)
+http://marc.info/?l=linux-sh&m8799873528360&w=2
+([PATCH 0/3] arm: shmobile: koelsch: Add I2C support)
+
+Changes in V2:
+* made koelsch_add_vin_device function static.
+
+Valentine Barshak (3):
+  pinctrl: sh-pfc: r8a7791: Add VIN pins
+  arm: shmobile: r8a7791: Add VIN clocks
+  arm: shmobile: koelsch: Add VIN1 SoC camera support
+
+ arch/arm/mach-shmobile/board-koelsch.c |  76 +++++++
+ arch/arm/mach-shmobile/clock-r8a7791.c |  10 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c   | 360 +++++++++++++++++++++++++++++++++
+ 3 files changed, 446 insertions(+)
+
+-- 
+1.8.3.1
+
