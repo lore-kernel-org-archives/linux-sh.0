@@ -1,65 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 07 Dec 2013 01:11:09 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: koelsch: Add DU device
-Message-Id: <4572296.nggD5h1FTe@avalon>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 26 Dec 2013 15:31:49 +0000
+Subject: [PATCH V2] media: soc_camera: rcar_vin: Add preliminary R-Car M2 support
+Message-Id: <1388071909-12207-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386282891-2698-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386282891-2698-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-media@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Hans Verkuil <hans.verkuil@cisco.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi Sergei,
+This adds R-Car M2 (R8A7791) VIN support. Both H2 and M2
+variants look the same from the driver's point of view,
+so use GEN2 id for both.
 
-On Saturday 07 December 2013 02:53:06 Sergei Shtylyov wrote:
-> On 06-12-2013 2:34, Laurent Pinchart wrote:
-> > Only the LVDS output is currently supported.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   arch/arm/mach-shmobile/board-koelsch.c | 63 ++++++++++++++++++++++++++++
-> >   1 file changed, 63 insertions(+)
-> > 
-> > Changes since v1:
-> > 
-> > - Rebased on top of renesas-devel-v3.13-rc2-20131202
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-koelsch.c
-> > b/arch/arm/mach-shmobile/board-koelsch.c index 6e12914..53846ec 100644
-> > --- a/arch/arm/mach-shmobile/board-koelsch.c
-> > +++ b/arch/arm/mach-shmobile/board-koelsch.c
-> 
-> [...]
-> 
-> > @@ -26,13 +27,66 @@
-> >  #include <linux/leds.h>
-> >  #include <linux/pinctrl/machine.h>
-> >  #include <linux/platform_data/gpio-rcar.h>
-> > +#include <linux/platform_data/rcar-du.h>
-> >  #include <linux/platform_device.h>
-> >  #include <mach/common.h>
-> > +#include <mach/irqs.h>
-> >  #include <mach/r8a7791.h>
-> >  #include <mach/rcar-gen2.h>
-> >  #include <asm/mach-types.h>
-> >  #include <asm/mach/arch.h>
-> > 
-> > +/* DU */
-> > +static struct rcar_du_encoder_data lager_du_encoders[] = {
-> 
->     Apparently it should be named koelsch_du_encoders[].
-> 
-> > +static const struct rcar_du_platform_data lager_du_pdata __initconst = {
-> 
->     Again, 'koelsch_du_pdata'...
+Changes in V2:
+* Used the same (RCAR_GEN2) id for both H2 and M2 variants
+  since they are no different from the driver's point of view.
 
-Oops... Will resubmit, thank you.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/media/platform/soc_camera/rcar_vin.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 6866bb4..3b1c05a 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -106,7 +106,7 @@
+ #define VIN_MAX_HEIGHT		2048
+ 
+ enum chip_id {
+-	RCAR_H2,
++	RCAR_GEN2,
+ 	RCAR_H1,
+ 	RCAR_M1,
+ 	RCAR_E1,
+@@ -302,7 +302,7 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		dmr = 0;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB32:
+-		if (priv->chip = RCAR_H2 || priv->chip = RCAR_H1 ||
++		if (priv->chip = RCAR_GEN2 || priv->chip = RCAR_H1 ||
+ 		    priv->chip = RCAR_E1) {
+ 			dmr = VNDMR_EXRGB;
+ 			break;
+@@ -1384,7 +1384,8 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
+ };
+ 
+ static struct platform_device_id rcar_vin_id_table[] = {
+-	{ "r8a7790-vin",  RCAR_H2 },
++	{ "r8a7791-vin",  RCAR_GEN2 },
++	{ "r8a7790-vin",  RCAR_GEN2 },
+ 	{ "r8a7779-vin",  RCAR_H1 },
+ 	{ "r8a7778-vin",  RCAR_M1 },
+ 	{ "uPD35004-vin", RCAR_E1 },
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.1
 
