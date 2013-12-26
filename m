@@ -1,67 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:16:06 +0000
-Subject: [PATCH 26/29] ARM: shmobile: r8a7790: Don't set plat_sci_port scbrr_algo_id field
-Message-Id: <6319ea5089a267b3a1cbd1d745ecc7cdae9a0a7e.1387888861.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Dec 2013 14:04:48 +0000
+Subject: [PATCH RFC v2 0/3] Add ethernet support for r7s72100
+Message-Id: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi,
 
-The field will be removed from the sh-sci driver. Don't set it and let
-the driver handle baud rate calculation internally.
+this is a second pass at adding ethernet support to sh-pfc for
+the r7s72100 SoC.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7790.c | 11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+It has been written with reference to the hardware documentation
+but not well tested.
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 8bfdc36..66476d2 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -100,11 +100,10 @@ void __init r8a7790_pinmux_init(void)
- 	r8a7790_register_i2c(3);
- }
- 
--#define __R8A7790_SCIF(scif_type, _scscr, algo, index, baseaddr, irq)	\
-+#define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
- static struct plat_sci_port scif##index##_platform_data = {		\
- 	.type		= scif_type,					\
- 	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scbrr_algo_id	= algo,						\
- 	.scscr		= _scscr,					\
- };									\
- 									\
-@@ -115,19 +114,19 @@ static struct resource scif##index##_resources[] = {			\
- 
- #define R8A7790_SCIF(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIF, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_2, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_SCIFA(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIFA, SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
--		       SCBRR_ALGO_4, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_SCIFB(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_SCIFB, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_4, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- #define R8A7790_HSCIF(index, baseaddr, irq)				\
- 	__R8A7790_SCIF(PORT_HSCIF, SCSCR_RE | SCSCR_TE,			\
--		       SCBRR_ALGO_6, index, baseaddr, irq)
-+		       index, baseaddr, irq)
- 
- R8A7790_SCIFA(0, 0xe6c40000, gic_spi(144)); /* SCIFA0 */
- R8A7790_SCIFA(1, 0xe6c50000, gic_spi(145)); /* SCIFA1 */
+This series is based on a merge of:
+* The topic/r7s72100-v3.13-rc5-20131226 tag in my renesas tree
+* net-next
+  - Head revision: db34de939ae28954
+    ("rose: cleanup checkpatch errors,spaces required")
+
+Changes since v1 are noted in the changelog of each patch.
+
+Simon Horman (3):
+  sh_eth: Add support for r7s72100
+  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+  ARM: shmobile: genmai: Enable r7s72100-ether
+
+ arch/arm/mach-shmobile/board-genmai.c   |  21 ++++++
+ arch/arm/mach-shmobile/clock-r7s72100.c |   4 ++
+ drivers/net/ethernet/renesas/sh_eth.c   | 119 ++++++++++++++++++++++++++++++--
+ drivers/net/ethernet/renesas/sh_eth.h   |   4 +-
+ 4 files changed, 141 insertions(+), 7 deletions(-)
+
 -- 
 1.8.4
 
