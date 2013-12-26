@@ -1,219 +1,277 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 06 Dec 2013 09:59:16 +0000
-Subject: [PATCH 09/47] serial: sh-sci: Support resources passed through platform resources
-Message-Id: <1386323994-12850-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Dec 2013 14:04:49 +0000
+Subject: [PATCH RFC net-next v2 1/3] sh_eth: Add support for r7s72100
+Message-Id: <1388066691-5854-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386323994-12850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-serial@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Memory and IRQ resources are currently passed to the driver through
-platform data. Support passing them through the standard platform
-resources mechanism instead. This deprecates platform data resources.
+This is a fast ethernet controller.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/tty/serial/sh-sci.c | 65 ++++++++++++++++++++++++++++++++++-----------
- include/linux/serial_sci.h  |  8 +++---
- 2 files changed, 53 insertions(+), 20 deletions(-)
+v2
+* As suggested by Magnus Damm and Sergei Shtylyov
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 40ced29..4c49ebe 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -74,6 +74,7 @@ struct sci_port {
- 	/* Function clock */
- 	struct clk		*fclk;
- 
-+	int			irqs[SCIx_NR_IRQS];
- 	char			*irqstr[SCIx_NR_IRQS];
- 	char			*gpiostr[SCIx_NR_FNS];
- 
-@@ -1079,19 +1080,19 @@ static int sci_request_irq(struct sci_port *port)
- 
- 	for (i = j = 0; i < SCIx_NR_IRQS; i++, j++) {
- 		struct sci_irq_desc *desc;
--		unsigned int irq;
-+		int irq;
- 
- 		if (SCIx_IRQ_IS_MUXED(port)) {
- 			i = SCIx_MUX_IRQ;
- 			irq = up->irq;
- 		} else {
--			irq = port->cfg->irqs[i];
-+			irq = port->irqs[i];
- 
- 			/*
- 			 * Certain port types won't support all of the
- 			 * available interrupt sources.
- 			 */
--			if (unlikely(!irq))
-+			if (unlikely(irq < 0))
- 				continue;
- 		}
- 
-@@ -1116,7 +1117,7 @@ static int sci_request_irq(struct sci_port *port)
- 
- out_noirq:
- 	while (--i >= 0)
--		free_irq(port->cfg->irqs[i], port);
-+		free_irq(port->irqs[i], port);
- 
- out_nomem:
- 	while (--j >= 0)
-@@ -1134,16 +1135,16 @@ static void sci_free_irq(struct sci_port *port)
- 	 * IRQ first.
- 	 */
- 	for (i = 0; i < SCIx_NR_IRQS; i++) {
--		unsigned int irq = port->cfg->irqs[i];
-+		int irq = port->irqs[i];
- 
- 		/*
- 		 * Certain port types won't support all of the available
- 		 * interrupt sources.
- 		 */
--		if (unlikely(!irq))
-+		if (unlikely(irq < 0))
- 			continue;
- 
--		free_irq(port->cfg->irqs[i], port);
-+		free_irq(port->irqs[i], port);
- 		kfree(port->irqstr[i]);
- 
- 		if (SCIx_IRQ_IS_MUXED(port)) {
-@@ -1659,7 +1660,7 @@ static void rx_timer_fn(unsigned long arg)
- 
- 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
- 		scr &= ~0x4000;
--		enable_irq(s->cfg->irqs[1]);
-+		enable_irq(s->irqs[SCIx_RXI_IRQ]);
- 	}
- 	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
- 	dev_dbg(port->dev, "DMA Rx timed out\n");
-@@ -2149,11 +2150,12 @@ static struct uart_ops sci_uart_ops = {
+* As suggested by Magnus Damm
+  - As RZ specific register layout rather than using the gigabit layout
+    which includes registers that do not exist on this chip.
+
+As suggested by Sergei Shtylyov
+  - Do not use sh_eth_chip_reset_r8a7740 as it accesses non-existent
+    RMII registers. Instead use sh_eth_chip_reset.
+  - Do not use sh_eth_set_rate_gether as it accesses non-existent registers.
+  - Do not use reserved LCHNG bit of ECSR
+  - Do not use reserved LCHNGIP bit of ECSIPR
+  - Document that R8A779x also needs a 16 bit shift of the RFS bits
+  - Do not document that the R7S72100 has GECMR, it does not
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 119 ++++++++++++++++++++++++++++++++--
+ drivers/net/ethernet/renesas/sh_eth.h |   4 +-
+ 2 files changed, 116 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index ca742e1..aaf011c 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -194,6 +194,59 @@ static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[TRIMD]		= 0x027c,
  };
  
- static int sci_init_single(struct platform_device *dev,
--				     struct sci_port *sci_port,
--				     unsigned int index,
--				     struct plat_sci_port *p)
-+			   struct sci_port *sci_port, unsigned int index,
-+			   struct plat_sci_port *p, bool early)
- {
- 	struct uart_port *port = &sci_port->port;
-+	const struct resource *res;
-+	unsigned int i;
- 	int ret;
- 
- 	sci_port->cfg	= p;
-@@ -2162,6 +2164,38 @@ static int sci_init_single(struct platform_device *dev,
- 	port->iotype	= UPIO_MEM;
- 	port->line	= index;
- 
-+	if (dev->num_resources) {
-+		/* Device has resources, use them. */
-+		res = platform_get_resource(dev, IORESOURCE_MEM, 0);
-+		if (res = NULL)
-+			return -ENOMEM;
++static const u16 sh_eth_offset_fast_rz[SH_ETH_MAX_REGISTER_OFFSET] = {
++	[EDSR]		= 0x0000,
++	[EDMR]		= 0x0400,
++	[EDTRR]		= 0x0408,
++	[EDRRR]		= 0x0410,
++	[EESR]		= 0x0428,
++	[EESIPR]	= 0x0430,
++	[TDLAR]		= 0x0010,
++	[TDFAR]		= 0x0014,
++	[TDFXR]		= 0x0018,
++	[TDFFR]		= 0x001c,
++	[RDLAR]		= 0x0030,
++	[RDFAR]		= 0x0034,
++	[RDFXR]		= 0x0038,
++	[RDFFR]		= 0x003c,
++	[TRSCER]	= 0x0438,
++	[RMFCR]		= 0x0440,
++	[TFTR]		= 0x0448,
++	[FDR]		= 0x0450,
++	[RMCR]		= 0x0458,
++	[RPADIR]	= 0x0460,
++	[FCFTR]		= 0x0468,
++	[CSMR]		= 0x04E4,
 +
-+		port->mapbase = res->start;
++	[ECMR]		= 0x0500,
++	[ECSR]		= 0x0510,
++	[ECSIPR]	= 0x0518,
++	[PIR]		= 0x0520,
++	[APR]		= 0x0554,
++	[MPR]		= 0x0558,
++	[PFTCR]		= 0x055c,
++	[PFRCR]		= 0x0560,
++	[TPAUSER]	= 0x0564,
++	[MAHR]		= 0x05c0,
++	[MALR]		= 0x05c8,
++	[CEFCR]		= 0x0740,
++	[FRECR]		= 0x0748,
++	[TSFRCR]	= 0x0750,
++	[TLFRCR]	= 0x0758,
++	[RFCR]		= 0x0760,
++	[MAFCR]		= 0x0778,
 +
-+		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
-+			sci_port->irqs[i] = platform_get_irq(dev, i);
++	[ARSTR]		= 0x0000,
++	[TSU_CTRST]	= 0x0004,
++	[TSU_VTAG0]	= 0x0058,
++	[TSU_ADSBSY]	= 0x0060,
++	[TSU_TEN]	= 0x0064,
++	[TSU_ADRH0]	= 0x0100,
++	[TSU_ADRL0]	= 0x0104,
++	[TSU_ADRH31]	= 0x01f8,
++	[TSU_ADRL31]	= 0x01fc,
++};
 +
-+		/* The SCI generates several interrupts. They can be muxed
-+		 * together or connected to different interrupt lines. In the
-+		 * muxed case only one interrupt resource is specified. In the
-+		 * non-muxed case three or four interrupt resources are
-+		 * specified, as the BRI interrupt is optional.
-+		 */
-+		if (sci_port->irqs[0] < 0)
-+			return -ENXIO;
-+
-+		if (sci_port->irqs[1] < 0) {
-+			sci_port->irqs[1] = sci_port->irqs[0];
-+			sci_port->irqs[2] = sci_port->irqs[0];
-+			sci_port->irqs[3] = sci_port->irqs[0];
-+		}
-+	} else {
-+		/* No resources, use old-style platform data. */
-+		port->mapbase = p->mapbase;
-+		for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
-+			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
-+	}
-+
- 	switch (p->type) {
- 	case PORT_SCIFB:
- 		port->fifosize = 256;
-@@ -2186,7 +2220,7 @@ static int sci_init_single(struct platform_device *dev,
- 			return ret;
- 	}
- 
--	if (dev) {
-+	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
- 		if (IS_ERR(sci_port->iclk)) {
- 			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
-@@ -2241,7 +2275,6 @@ static int sci_init_single(struct platform_device *dev,
- 		p->error_mask |= (1 << p->overrun_bit);
- 	}
- 
--	port->mapbase		= p->mapbase;
- 	port->type		= p->type;
- 	port->flags		= UPF_FIXED_PORT | p->flags;
- 	port->regshift		= p->regshift;
-@@ -2253,7 +2286,7 @@ static int sci_init_single(struct platform_device *dev,
- 	 *
- 	 * For the muxed case there's nothing more to do.
- 	 */
--	port->irq		= p->irqs[SCIx_RXI_IRQ];
-+	port->irq		= sci_port->irqs[SCIx_RXI_IRQ];
- 	port->irqflags		= 0;
- 
- 	port->serial_in		= sci_serial_in;
-@@ -2385,7 +2418,7 @@ static int sci_probe_earlyprintk(struct platform_device *pdev)
- 
- 	early_serial_console.index = pdev->id;
- 
--	sci_init_single(NULL, &sci_ports[pdev->id], pdev->id, cfg);
-+	sci_init_single(pdev, &sci_ports[pdev->id], pdev->id, cfg, true);
- 
- 	serial_console_setup(&early_serial_console, early_serial_buf);
- 
-@@ -2452,7 +2485,7 @@ static int sci_probe_single(struct platform_device *dev,
- 		return -EINVAL;
- 	}
- 
--	ret = sci_init_single(dev, sciport, index, p);
-+	ret = sci_init_single(dev, sciport, index, p, false);
- 	if (ret)
- 		return ret;
- 
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 12cf50c..42620f1 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -107,10 +107,10 @@ enum {
+ static const u16 sh_eth_offset_fast_sh4[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[ECMR]		= 0x0100,
+ 	[RFLR]		= 0x0108,
+@@ -322,6 +375,14 @@ static int sh_eth_is_gether(struct sh_eth_private *mdp)
+ 		return 0;
  }
  
- #define SCIx_IRQ_IS_MUXED(port)			\
--	((port)->cfg->irqs[SCIx_ERI_IRQ] =	\
--	 (port)->cfg->irqs[SCIx_RXI_IRQ]) ||	\
--	((port)->cfg->irqs[SCIx_ERI_IRQ] &&	\
--	 !(port)->cfg->irqs[SCIx_RXI_IRQ])
-+	((port)->irqs[SCIx_ERI_IRQ] =	\
-+	 (port)->irqs[SCIx_RXI_IRQ]) ||	\
-+	((port)->irqs[SCIx_ERI_IRQ] &&	\
-+	 ((port)->irqs[SCIx_RXI_IRQ] < 0))
++static int sh_eth_is_rz_fast_ether(struct sh_eth_private *mdp)
++{
++	if (mdp->reg_offset = sh_eth_offset_fast_rz)
++		return 1;
++	else
++		return 0;
++}
++
+ static void sh_eth_select_mii(struct net_device *ndev)
+ {
+ 	u32 value = 0x0;
+@@ -705,6 +766,35 @@ static struct sh_eth_cpu_data r8a7740_data = {
+ 	.shift_rd0	= 1,
+ };
+ 
++/* R7S72100 */
++static struct sh_eth_cpu_data r7s72100_data = {
++	.chip_reset	= sh_eth_chip_reset,
++	.set_duplex	= sh_eth_set_duplex,
++
++	.register_type	= SH_ETH_REG_FAST_RZ,
++
++	.ecsr_value	= ECSR_ICD,
++	.ecsipr_value	= ECSIPR_ICDIP,
++	.eesipr_value	= 0xff7f009f,
++
++	.tx_check	= EESR_TC1 | EESR_FTC,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
++			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
++			  EESR_TDE | EESR_ECI,
++	.fdr_value	= 0x0000070f,
++	.rmcr_value	= RMCR_RNC,
++
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++	.rpadir		= 1,
++	.rpadir_value   = 2 << 16,
++	.no_trimd	= 1,
++	.tsu		= 1,
++	.shift_rd0	= 1,
++};
++
+ static struct sh_eth_cpu_data sh7619_data = {
+ 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
+ 
+@@ -771,7 +861,7 @@ static int sh_eth_reset(struct net_device *ndev)
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 	int ret = 0;
+ 
+-	if (sh_eth_is_gether(mdp)) {
++	if (sh_eth_is_gether(mdp) || sh_eth_is_rz_fast_ether(mdp)) {
+ 		sh_eth_write(ndev, EDSR_ENALL, EDSR);
+ 		sh_eth_write(ndev, sh_eth_read(ndev, EDMR) | EDMR_SRST_GETHER,
+ 			     EDMR);
+@@ -887,6 +977,8 @@ static unsigned long sh_eth_get_edtrr_trns(struct sh_eth_private *mdp)
+ {
+ 	if (sh_eth_is_gether(mdp))
+ 		return EDTRR_TRNS_GETHER;
++	else if (sh_eth_is_rz_fast_ether(mdp))
++		return EDTRR_TRNS_RZ_ETHER;
+ 	else
+ 		return EDTRR_TRNS_ETHER;
+ }
+@@ -1046,7 +1138,8 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		/* Rx descriptor address set */
+ 		if (i = 0) {
+ 			sh_eth_write(ndev, mdp->rx_desc_dma, RDLAR);
+-			if (sh_eth_is_gether(mdp))
++			if (sh_eth_is_gether(mdp) ||
++			    sh_eth_is_rz_fast_ether(mdp))
+ 				sh_eth_write(ndev, mdp->rx_desc_dma, RDFAR);
+ 		}
+ 	}
+@@ -1067,7 +1160,8 @@ static void sh_eth_ring_format(struct net_device *ndev)
+ 		if (i = 0) {
+ 			/* Tx descriptor address set */
+ 			sh_eth_write(ndev, mdp->tx_desc_dma, TDLAR);
+-			if (sh_eth_is_gether(mdp))
++			if (sh_eth_is_gether(mdp) ||
++			    sh_eth_is_rz_fast_ether(mdp))
+ 				sh_eth_write(ndev, mdp->tx_desc_dma, TDFAR);
+ 		}
+ 	}
+@@ -1316,9 +1410,9 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 		/*
+ 		 * In case of almost all GETHER/ETHERs, the Receive Frame State
+ 		 * (RFS) bits in the Receive Descriptor 0 are from bit 9 to
+-		 * bit 0. However, in case of the R8A7740's GETHER, the RFS
+-		 * bits are from bit 25 to bit 16. So, the driver needs right
+-		 * shifting by 16.
++		 * bit 0. However, in case of the R8A7740, R8A779x and
++		 * R7S72100 the RFS bits are from bit 25 to bit 16. So, the
++		 * driver needs right shifting by 16.
+ 		 */
+ 		if (mdp->cd->shift_rd0)
+ 			desc_status >>= 16;
+@@ -2063,6 +2157,10 @@ static struct net_device_stats *sh_eth_get_stats(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
++	if (sh_eth_is_rz_fast_ether(mdp)) {
++		return &ndev->stats;
++	}
++
+ 	pm_runtime_get_sync(&mdp->pdev->dev);
+ 
+ 	ndev->stats.tx_dropped += sh_eth_read(ndev, TROCR);
+@@ -2447,6 +2545,11 @@ static int sh_eth_vlan_rx_kill_vid(struct net_device *ndev,
+ /* SuperH's TSU register init function */
+ static void sh_eth_tsu_init(struct sh_eth_private *mdp)
+ {
++	if (sh_eth_is_rz_fast_ether(mdp)) {
++		sh_eth_tsu_write(mdp, 0, TSU_TEN); /* Disable all CAM entry */
++		return;
++	}
++
+ 	sh_eth_tsu_write(mdp, 0, TSU_FWEN0);	/* Disable forward(0->1) */
+ 	sh_eth_tsu_write(mdp, 0, TSU_FWEN1);	/* Disable forward(1->0) */
+ 	sh_eth_tsu_write(mdp, 0, TSU_FCM);	/* forward fifo 3k-3k */
+@@ -2569,6 +2672,9 @@ static const u16 *sh_eth_get_register_offset(int register_type)
+ 	case SH_ETH_REG_FAST_RCAR:
+ 		reg_offset = sh_eth_offset_fast_rcar;
+ 		break;
++	case SH_ETH_REG_FAST_RZ:
++		reg_offset = sh_eth_offset_fast_rz;
++		break;
+ 	case SH_ETH_REG_FAST_SH4:
+ 		reg_offset = sh_eth_offset_fast_sh4;
+ 		break;
+@@ -2805,6 +2911,7 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
++	{ "r7s72100-ether", (kernel_ulong_t)&r7s72100_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index f32c169..dc5c16c 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -160,6 +160,7 @@ enum {
+ enum {
+ 	SH_ETH_REG_GIGABIT,
+ 	SH_ETH_REG_FAST_RCAR,
++	SH_ETH_REG_FAST_RZ,
+ 	SH_ETH_REG_FAST_SH4,
+ 	SH_ETH_REG_FAST_SH3_SH2
+ };
+@@ -174,7 +175,7 @@ enum {
  /*
-  * SCI register subset common for all port types.
-  * Not all registers will exist on all parts.
+  * Register's bits
+  */
+-/* EDSR : sh7734, sh7757, sh7763, and r8a7740 only */
++/* EDSR : sh7734, sh7757, sh7763, r8a7740 and r7s72100 only */
+ enum EDSR_BIT {
+ 	EDSR_ENT = 0x01, EDSR_ENR = 0x02,
+ };
+@@ -196,6 +197,7 @@ enum DMAC_M_BIT {
+ /* EDTRR */
+ enum DMAC_T_BIT {
+ 	EDTRR_TRNS_GETHER = 0x03,
++	EDTRR_TRNS_RZ_ETHER = 0x03,
+ 	EDTRR_TRNS_ETHER = 0x01,
+ };
+ 
 -- 
-1.8.3.2
+1.8.4
 
