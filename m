@@ -1,36 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 06 Dec 2013 01:41:19 +0000
-Subject: [PATCH 2/2] ARM: shmobile: armadillo800eva: Enable SMSC_PHY in defconfig
-Message-Id: <1386294079-16392-3-git-send-email-horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 10:58:08 +0000
+Subject: [PATCH V2] ARM: shmobile: r8a7790: Fix I2C controller names
+Message-Id: <1388141888-5424-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1386294079-16392-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The armadillo800eva board uses has an SMSC LAN8710A phy.
-Enable SMSC_PHY in the defconfig to make use of the SMSC-specific phy
-driver rather than relying on the generic phy driver.
+This fixes the issue introduced by the following commit:
+b448c904f5058b6c "ARM: shmobile: r8a7790: add I2C support"
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The R8A7790 is an R-Car Gen2 SoC. The clock division factor
+(CDF) width is 3 bits on Gen2 as opposed to 2 bits on Gen1.
+Fix the device names for R8A7790 SoC to make the R-Car I2C
+driver configure the hardware properly.
+
+Changes in V2:
+* rebased on top of the latest branch;
+* capitalized ARM in the subject line;
+* noted the commit that caused the issue in the log.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
+ arch/arm/mach-shmobile/setup-r8a7790.c | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 5abf1a2..6162a4b 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -75,6 +75,7 @@ CONFIG_SH_ETH=y
- # CONFIG_NET_VENDOR_SEEQ is not set
- # CONFIG_NET_VENDOR_SMSC is not set
- # CONFIG_NET_VENDOR_STMICRO is not set
-+CONFIG_SMSC_PHY=y
- # CONFIG_WLAN is not set
- # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
- CONFIG_INPUT_EVDEV=y
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index c5c60ec..f44987a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -292,13 +292,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+ 	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+-	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 7800cec..6ab37aa 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -85,7 +85,7 @@ static struct resource i2c_resources[] __initdata = {
+ 
+ #define r8a7790_register_i2c(idx)		\
+ 	platform_device_register_simple(	\
+-		"i2c-rcar", idx,		\
++		"i2c-rcar_gen2", idx,		\
+ 		i2c_resources + (2 * idx), 2);	\
+ 
+ void __init r8a7790_pinmux_init(void)
 -- 
-1.8.4
+1.8.3.1
 
