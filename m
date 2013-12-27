@@ -1,87 +1,29 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:18 +0000
-Subject: [PATCH 01/11] serial: sh-sci: Sort headers alphabetically
-Message-Id: <8fb9631c517b862267590e7af93615a6ef03394d.1387887969.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 11:27:36 +0000
+Subject: [PATCH 0/3 V2] ARM: shmobile: koelsch: Add I2C support
+Message-Id: <1388143659-8739-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds support for the I2C pins and clocks to the R8A7791 SoC.
+It also adds I2C support to Koelsch board.
 
-This helps locating duplicates.
+Changes in V2:
+* Capitalized ARM in the subject.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++++---------------------
- 1 file changed, 21 insertions(+), 21 deletions(-)
+Valentine Barshak (3):
+  pinctrl: sh-pfc: r8a7791: Add I2C pins
+  ARM: shmobile: r8a7791: Add I2C clocks
+  ARM: shmobile: koelsch: Add I2C support
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 1a3fc7a..e98a217 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -23,35 +23,35 @@
- 
- #undef DEBUG
- 
--#include <linux/module.h>
-+#include <linux/clk.h>
-+#include <linux/console.h>
-+#include <linux/ctype.h>
-+#include <linux/cpufreq.h>
-+#include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/err.h>
- #include <linux/errno.h>
--#include <linux/sh_dma.h>
--#include <linux/timer.h>
-+#include <linux/gpio.h>
-+#include <linux/init.h>
- #include <linux/interrupt.h>
--#include <linux/tty.h>
--#include <linux/tty_flip.h>
--#include <linux/serial.h>
--#include <linux/major.h>
--#include <linux/string.h>
--#include <linux/sysrq.h>
- #include <linux/ioport.h>
-+#include <linux/major.h>
-+#include <linux/module.h>
- #include <linux/mm.h>
--#include <linux/init.h>
--#include <linux/delay.h>
--#include <linux/console.h>
--#include <linux/platform_device.h>
--#include <linux/serial_sci.h>
- #include <linux/notifier.h>
-+#include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
--#include <linux/cpufreq.h>
--#include <linux/clk.h>
--#include <linux/ctype.h>
--#include <linux/err.h>
--#include <linux/dmaengine.h>
--#include <linux/dma-mapping.h>
- #include <linux/scatterlist.h>
-+#include <linux/serial.h>
-+#include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/slab.h>
--#include <linux/gpio.h>
-+#include <linux/string.h>
-+#include <linux/sysrq.h>
-+#include <linux/timer.h>
-+#include <linux/tty.h>
-+#include <linux/tty_flip.h>
- 
- #ifdef CONFIG_SUPERH
- #include <asm/sh_bios.h>
+ arch/arm/mach-shmobile/board-koelsch.c |  46 ++++++++
+ arch/arm/mach-shmobile/clock-r8a7791.c |  13 +++
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c   | 196 +++++++++++++++++++++++++++++++++
+ 3 files changed, 255 insertions(+)
+
 -- 
-1.8.4
+1.8.3.1
 
