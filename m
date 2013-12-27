@@ -1,56 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Dec 2013 05:54:34 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: kzm9g: add FSI support for DTS
-Message-Id: <20131224055434.GB27167@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 20:16:00 +0000
+Subject: [PATCH v2 6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+Message-Id: <1388175362-17132-7-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387764079.git.horms+renesas@verge.net.au>
- <3c2a87c85391272b098827e432813c9437e93992.1387764079.git.horms+renesas@verge.net.au>
- <52B838C1.1080705@cogentembedded.com>
- <52B84441.2020809@cogentembedded.com>
-In-Reply-To: <52B84441.2020809@cogentembedded.com>
+References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 23, 2013 at 06:10:09PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 23-12-2013 17:21, Sergei Shtylyov wrote:
-> 
-> >>From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> >>This patch support FSI-AK4648 with simple audio card
-> 
-> >>Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >>Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >>---
-> >>  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 33
-> >>++++++++++++++++++++++++++++
-> >>  1 file changed, 33 insertions(+)
-> 
-> >>diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> >>b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> >>index 5bb593d..eb8886b 100644
-> >>--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> >>+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> >[...]
-> >>@@ -226,6 +240,12 @@
-> >>              };
-> >>          };
-> >>      };
-> >>+
-> >>+    ak4648: ak4648@0x12 {
-> 
-> >    Perhaps "sound-codec" or "audio-codec" would be a better name; hardware
-> >specific names are not recommended by ePAPR. And drop "0x" from the address
-> >part please.
-> 
->    Sorry, I didn't notice the patch is posted as a part of pull
-> request; I've probably missed the original posting (though I've
-> already told to Morimoto-san that names like "ak4648" shouldn't be
-> used).
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Indeed, I think that you have commended on node naming on more
-than one occasion. Feel free to make some cleanup patches if you
-have the inclination.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
+---
+v2:
+  - Clarify RSPI/QSPI
+  - Add interrupt-parent
+  - s/should/must/ for #address-cells and #size-cells
+
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |   31 ++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/spi-rspi.txt
+
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+new file mode 100644
+index 000000000000..504db8917927
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -0,0 +1,31 @@
++Device tree configuration for Renesas RSPI/QSPI driver
++
++Required properties:
++- compatible       : For Renesas Serial Peripheral Interface:
++                     "renesas,rspi-<soctype>", "renesas,rspi-rz" as fallback.
++		     For Quad Serial Peripheral Interface:
++		     "renesas,qspi-<soctype>", "renesas,qspi-rcar" as fallback.
++- reg              : address start and address range size of device
++- interrupts       : 3 interrupts for RSPI (SPEI, SPRI, SPTI),
++		     1 interrupt for QSPI
++- interrupt-parent : the phandle for the interrupt controller that
++		     services interrupts for this device.
++- num-cs	   : Number of chip selects
++- #address-cells   : must be <1>
++- #size-cells      : must be <0>
++
++Pinctrl properties might be needed, too. See there.
++
++Example:
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-parent = <&gic>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
+-- 
+1.7.9.5
+
