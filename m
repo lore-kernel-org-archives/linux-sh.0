@@ -1,59 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:21 +0000
-Subject: [PATCH 25/26] ARM: shmobile: bockw: remove unused RSND_SSI_CLK_FROM_ADG
-Message-Id: <c653033bae957ee141b2d27881c22e46ff26c651.1387763524.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 11:44:02 +0000
+Subject: [PATCH V3 0/2] ARM: shmobile: lager: Add VIN1 support
+Message-Id: <1388144644-9000-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This adds VIN clocks to R8A7790 SoC and VIN1 camera support to Lager.
+VIN1 uses I2C ADV7180 decoder device that is also added.
+The board also has VIN0 wired up to the I2C ADV7612 decoder, but it's
+not enabled yet due to the lack of ADV7612 support in the kernel.
 
-92eba04e4bcd469518cc759ac1bf1a49acaa5cc1
-(ASoC: rcar: remove RSND_SSI_CLK_FROM_ADG) removed
-RSND_SSI_CLK_FROM_ADG, it is no longer needed
+Changes in V2:
+* made lager_add_vin_device function static.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Mark Brown <broonie@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-bockw.c | 4 ++--
- include/sound/rcar_snd.h             | 1 -
- 2 files changed, 2 insertions(+), 3 deletions(-)
+Changes in V3:
+* capitalized ARM in the subject.
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 540f0dc..eb5b54f 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -332,11 +332,11 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
- 	RSND_SSI_UNUSED, /* SSI 1 */
- 	RSND_SSI_UNUSED, /* SSI 2 */
- 	RSND_SSI_SET(1, 0, gic_iid(0x85), RSND_SSI_PLAY),
--	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
-+	RSND_SSI_SET(2, 0, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
- 	RSND_SSI_SET(0, 0, gic_iid(0x86), RSND_SSI_PLAY),
- 	RSND_SSI_SET(0, 0, gic_iid(0x86), 0),
- 	RSND_SSI_SET(3, 0, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE | RSND_SSI_CLK_FROM_ADG),
-+	RSND_SSI_SET(4, 0, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
- };
- 
- static struct rsnd_scu_platform_info rsnd_scu[9] = {
-diff --git a/include/sound/rcar_snd.h b/include/sound/rcar_snd.h
-index 12afab1..6ce506b 100644
---- a/include/sound/rcar_snd.h
-+++ b/include/sound/rcar_snd.h
-@@ -34,7 +34,6 @@
-  * B : SSI direction
-  */
- #define RSND_SSI_CLK_PIN_SHARE		(1 << 31)
--#define RSND_SSI_CLK_FROM_ADG		(1 << 30) /* clock parent is master */
- #define RSND_SSI_SYNC			(1 << 29) /* SSI34_sync etc */
- 
- #define RSND_SSI_PLAY			(1 << 24)
+Valentine Barshak (2):
+  ARM: shmobile: r8a7790: Add VIN clock support
+  ARM: shmobile: lager: Add VIN1 SoC camera support
+
+ arch/arm/mach-shmobile/board-lager.c   | 76 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c |  9 ++++
+ 2 files changed, 85 insertions(+)
+
 -- 
-1.8.4
+1.8.3.1
 
