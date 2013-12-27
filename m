@@ -1,106 +1,78 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Dec 2013 23:31:06 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: Initial r7s72100 support
-Message-Id: <CANqRtoTuev8Z0ZgNwWdvuPbLPdfkT2S6MmKYokA15KPVV_ZiQg@mail.gmail.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 18:06:39 +0000
+Subject: [PATCH 2/2] clk: shmobile: Fix MSTP clock array initialization
+Message-Id: <1388167599-23525-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131127074122.18314.48522.sendpatchset@w520>
-	<2184496.xEujhTLELy@avalon>
-In-Reply-To: <2184496.xEujhTLELy@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Linus Walleij <linus.walleij@linaro.org>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+The clks member of the clk_onecell_data structure should
+point to a valid clk array (no NULL entries allowed),
+and the clk_num should be equal to the number
+of elements in the clks array.
 
-Here are some replies to your comments, my apologies for the delay.
+The MSTP driver fails to satisfy the above conditions.
+The clks array may contain NULL entries if not all
+clock-indices are initialized in the device tree.
+Thus, if the clock indices are interleaved we end up
+with NULL pointers in-between.
 
-On Wed, Nov 27, 2013 at 7:54 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patch.
->
-> On Wednesday 27 November 2013 16:41:22 Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Add r7s72100 PINCTRL support via sh-pfc. At this point this code
->> provides enough support to allow use together with the gpio-rz
->> driver. Incremental per-device patches will in the future be
->> submitted on top of this base patch to allow PINCTRL enablement
->> for each individual device.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->>  drivers/pinctrl/sh-pfc/Kconfig        |    5
->>  drivers/pinctrl/sh-pfc/Makefile       |    1
->>  drivers/pinctrl/sh-pfc/core.c         |    9 +
->>  drivers/pinctrl/sh-pfc/core.h         |    1
->>  drivers/pinctrl/sh-pfc/pfc-r7s72100.c |  166 ++++++++++++++++++++++++++++++
->>  5 files changed, 182 insertions(+)
->
-> [snip]
->
->> --- /dev/null
->> +++ work/drivers/pinctrl/sh-pfc/pfc-r7s72100.c        2013-11-27
-> 15:20:28.000000000
->> +0900 @@ -0,0 +1,166 @@
->
-> [snip]
->
->> +#define RZ_PORT_PIN(bank, pin) (((bank) * 16) + (pin))
->
-> Could you move this below closer to the location where it will be used, right
-> after the pinmux_pins array ?
+The other problem is the driver uses maximum clock index
+as the number of clocks, which is incorrect (less than
+the actual number of clocks by 1).
 
-Yes, I did in V2. I still prefer to have it in the GPIO header so it
-can be shared between PFC and GPIO.
+Fix the first issue by pre-setting the whole clks array
+with ERR_PTR(-ENOENT) pointers instead of zeros; and
+use maximum clkidx + 1 as the number of clocks to fix
+the other one.
 
->> +#define PORT_P_1(bank, pin, fn, sfx) fn(bank, pin, P_##bank##_##pin, sfx)
->
-> I'm tempted to call the pins GP_ instead of P_ to be able to reuse the
-> existing macros. On the other hand I suppose the datasheet uses P, not GP.
-> What's your opinion on that ?
+This should make of_clk_src_onecell_get() return the following:
+* valid clk pointers for all clocks registered;
+* ERR_PTR(-EINVAL) if (idx >= clk_data->clk_num);
+* ERR_PTR(-ENOENT) if the clock at the selected index was not
+  initialized in the device tree (and was not registered).
 
-The data sheet is using P so I prefer to stick to that. Also,
-regarding code sharing, I think it makes sense to move the 16-bit
-register support to a shared location when more than one SoC will use
-it. For now this SoC is the only user so we may as well keep it here
-for now.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/clk/shmobile/clk-mstp.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
->> +     PINMUX_FUNCTION_BEGIN,
->> +     P_ALL(PMC_0), P_ALL(PMC_1),
->> +     P_ALL(PFC_0), P_ALL(PFC_1),
->> +     P_ALL(PFCE_0), P_ALL(PFCE_1),
->> +     P_ALL(PFCAE_0), P_ALL(PFCAE_1),
->> +     P_ALL(PIBC_0), P_ALL(PIBC_1),
->> +     P_ALL(PBDC_0), P_ALL(PBDC_1),
->> +     P_ALL(PIPC_0), P_ALL(PIPC_1),
->> +     PINMUX_FUNCTION_END,
->
-> Only the PMC_1 and PFC* registers seem to be used in your later patches. What
-> are the other registers for ? Shouldn't they be omitted if unused ?
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index be7d017..14b91ad 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -160,7 +160,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 	unsigned int i;
+ 
+ 	group = kzalloc(sizeof(*group), GFP_KERNEL);
+-	clks = kzalloc(MSTP_MAX_CLOCKS * sizeof(*clks), GFP_KERNEL);
++	clks = kmalloc(MSTP_MAX_CLOCKS * sizeof(*clks), GFP_KERNEL);
+ 	if (group = NULL || clks = NULL) {
+ 		kfree(group);
+ 		kfree(clks);
+@@ -182,6 +182,10 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 	}
+ 
+ 	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
++		clks[i] = ERR_PTR(-ENOENT);
++	}
++
++	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
+ 		const char *parent_name;
+ 		const char *name;
+ 		u32 clkidx;
+@@ -208,7 +212,8 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 		clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
+ 						       clkidx, group);
+ 		if (!IS_ERR(clks[clkidx])) {
+-			group->data.clk_num = max(group->data.clk_num, clkidx);
++			group->data.clk_num = max(group->data.clk_num,
++						  clkidx + 1);
+ 			/*
+ 			 * Register a clkdev to let board code retrieve the
+ 			 * clock by name and register aliases for non-DT
+-- 
+1.8.3.1
 
-Um, all registers expect PIPC were used in this version unless I'm
-mistaken. I started using PIPC to V2 but that turned out to cause
-issues with the I2C pin functions.
-
->> +#define _P_ALL(n) CPU_ALL_PORT(n, unused)
->> +
->> +#define _P_GPIO(bank, _pin, _name, sfx)                                      \
->> +     [(bank * 16) + _pin] = {                                        \
->> +             .pin = (bank * 16) + _pin,                              \
->> +             .name = __stringify(_name),                             \
->> +             .enum_id = _name##_DATA,                                \
->> +     }
->
-> What about renaming _GP_GPIO to _GP_GPIO32 in sh_pfc.h, and move this macro to
-> that header, calling it _GP_GPIO16 ?
-
-Done as a separate patch in the V2 patch series.
-
-Thanks,
-
-/ magnus
