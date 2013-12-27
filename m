@@ -1,82 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 27 Dec 2013 16:18:07 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 19:01:53 +0000
 Subject: Re: [PATCH 4/6] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
-Message-Id: <2590710.91Xybr4TsD@avalon>
+Message-Id: <CAMuHMdXrPamASqFz8eCVxE0WKT=cdkrzxjDDT84m_AHT+1nmEA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387886210-3634-1-git-send-email-geert+renesas@linux-m68k.org>
  <1387886210-3634-5-git-send-email-geert+renesas@linux-m68k.org>
-In-Reply-To: <1387886210-3634-5-git-send-email-geert+renesas@linux-m68k.org>
+ <2590710.91Xybr4TsD@avalon>
+In-Reply-To: <2590710.91Xybr4TsD@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Laurent,
 
-Thank you for the patch. It's nice to see DT support for the RSPI driver.
+On Fri, Dec 27, 2013 at 5:18 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Tuesday 24 December 2013 12:56:48 Geert Uytterhoeven wrote:
+>> +++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+>> @@ -0,0 +1,27 @@
+>> +Device tree configuration for Renesas RSPI/QSPI driver
+>> +
+>> +Required properties:
+>> +- compatible      : "renesas,rspi-<soctype>". "renesas,rspi-rz" as
+>> fallback,
+>> +                    or
+>> +                    "renesas,qspi-<soctype>", "renesas,qspi-rcar" as
+>> fallback.
+>
+> I think you need to be a bit more verbose here and explain when to use rspi
+> and when to use qspi. I'm also wondering where we need the -rz and -rcar
 
-On Tuesday 24 December 2013 12:56:48 Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Cc: devicetree@vger.kernel.org
-> ---
->  Documentation/devicetree/bindings/spi/spi-rspi.txt |   27 +++++++++++++++++
->  1 file changed, 27 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/spi/spi-rspi.txt
-> 
-> diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt
-> b/Documentation/devicetree/bindings/spi/spi-rspi.txt new file mode 100644
-> index 000000000000..06ec17fce4c6
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-> @@ -0,0 +1,27 @@
-> +Device tree configuration for Renesas RSPI/QSPI driver
-> +
-> +Required properties:
-> +- compatible      : "renesas,rspi-<soctype>". "renesas,rspi-rz" as
-> fallback,
-> +                    or
-> +                    "renesas,qspi-<soctype>", "renesas,qspi-rcar" as
-> fallback.
+OK.
 
-I think you need to be a bit more verbose here and explain when to use rspi 
-and when to use qspi. I'm also wondering where we need the -rz and -rcar 
-suffixes for the generic compatible strings.
+> suffixes for the generic compatible strings.
 
-> +- reg             : address start and address range size of device
-> +- interrupts      : 3 interrupts for RSPI (SPEI, SPRI, SPTI),
-> +                    1 interrupt for QSPI
-> +- num-cs	  : Number of chip selects
-> +- #address-cells  : should be <1>
-> +- #size-cells     : should be <0>
+The rationale behind this is that RSPI DT would apply to RSPI on RZ/A1H.
+The spi-rspi driver also supports legacy SH7757, which may not move to
+DT anytime soon.
+For symmetry, I did the same thing for QSPI, which applies to QSPI
+on R-Car H2 and M2 (upon second look, it should be "renesas,qspi-rcar-gen2",
+as E1/M1/H1 have HSPI).
 
-I would say "must" instead of "should".
+Does this makes sense? Or do you still prefer plain "renesas,rspi" and
+"renesas,qspi", and perhaps "renesas,rspi-sh" if we ever get DT there?
 
-> +
-> +Pinctrl properties might be needed, too. See there.
-> +
-> +Example:
-> +
-> +	spi0: spi@e800c800 {
-> +		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-> +		reg = <0xe800c800 0x24>;
-> +		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
+>> +- reg             : address start and address range size of device
+>> +- interrupts      : 3 interrupts for RSPI (SPEI, SPRI, SPTI),
+>> +                    1 interrupt for QSPI
+>> +- num-cs       : Number of chip selects
+>> +- #address-cells  : should be <1>
+>> +- #size-cells     : should be <0>
+>
+> I would say "must" instead of "should".
 
-You're missing the interrupt-parent property.
+OK.
 
-Now that we have two ways to specify interrupts (interrupt-parent + interrupts 
-or interrupts-extended) we should probably decide on a common wording for 
-interrupt properties in individual DT bindings, but that's out of scope of 
-this patch.
+>> +Example:
+>> +
+>> +     spi0: spi@e800c800 {
+>> +             compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
+>> +             reg = <0xe800c800 0x24>;
+>> +             interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
+>> +                          <0 239 IRQ_TYPE_LEVEL_HIGH>,
+>> +                          <0 240 IRQ_TYPE_LEVEL_HIGH>;
+>
+> You're missing the interrupt-parent property.
 
-> +		num-cs = <1>;
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +	};
+OK.
 
--- 
-Regards,
+But we don't need it in the spi node in the actual .dts, as we already have
+"interrupt-parent = <&gic>;" in the enclosing node, right?
 
-Laurent Pinchart
+Thanks!
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
