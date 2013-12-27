@@ -1,32 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 04 Dec 2013 01:01:48 +0000
-Subject: Re: [PATCH 1/2] sh-pfc: Share common PORTCR macro definition
-Message-Id: <4732628.OUdUJgUf9z@avalon>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 18:06:38 +0000
+Subject: [PATCH 1/2] clk: shmobile: Fix MSTP clock index
+Message-Id: <1388167599-23525-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385430334-12141-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385430334-12141-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Linus,
+Use clkidx when registering MSTP clocks instead of loop counter
+since the value is then used to access the specific clock index bit
+in the mstp register.
 
-On Tuesday 03 December 2013 10:33:49 Linus Walleij wrote:
-> On Tue, Nov 26, 2013 at 2:45 AM, Laurent Pinchart wrote:
-> > The macro is defined identically in four different locations. Share it.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> 
-> Laurent, please stack this into your series for pull-req, OK?
+The issue was introduced by the following commit:
+f94859c215b6d977 "clk: shmobile: Add MSTP clock support"
 
-Sure.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/clk/shmobile/clk-mstp.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index e576b60..be7d017 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -205,8 +205,8 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 			continue;
+ 		}
+ 
+-		clks[clkidx] = cpg_mstp_clock_register(name, parent_name, i,
+-						       group);
++		clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
++						       clkidx, group);
+ 		if (!IS_ERR(clks[clkidx])) {
+ 			group->data.clk_num = max(group->data.clk_num, clkidx);
+ 			/*
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.1
 
