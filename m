@@ -1,23 +1,49 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 20 Dec 2013 11:28:15 +0000
-Subject: Re: [PATCH 3/4] pinctrl: sh-pfc: sh: Constify pins and cfg_regs arrays
-Message-Id: <CACRpkdZxrr7NmunmaNg_SK8LA+yLJYdJfDbLDCDt7_o_ynVLag@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 20:15:54 +0000
+Subject: [PATCH v2 0/8] SoC and board integration for RSPI on RZ/A1H
+Message-Id: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387221917-15437-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1387221917-15437-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 16, 2013 at 8:25 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+This patch series integrates Renesas RSPI on the RZ/A1H aka R7S72100 SoC,
+and the Genmai development board.
 
-> The arrays are never modified, declare them as const.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The series is based on renesas-devel-v3.13-rc5-20131226, with Magnus'
+pinctrl, Wolfram's riic, and Simon's sh_eth work applied on top.
 
-Patch applied.
+It was tested on the Genmai development board (genmai-reference), using
+an in-kernel version of Documentation/spi/spidev_test.c, exercising
+loopback mode on rspi1, with the same outcome as the SDK reference code.
 
-Yours,
-Linus Walleij
+Notes:
+  1. The proposed DT bindings also talk about QSPI on the R8A779x, as those
+     SoCs use the same driver.
+  2. As the actual spi-rspi driver doesn't use DT yet, platform devices and
+     spi board info are still used from C to instantiate SPI buses and their
+     children, while pinctrl is performed by DT.
+  3. It will not work with the non-reference version of genmai, due to
+     missing pinmux configuration in setup-r7s72100.c.
+  4. Patches [4/8] and [5/8] are new.
+
+    [1/8] pinctrl: sh-pfc: r7s72100: Add RSPI support
+    [2/8] ARM: shmobile: r7s72100: Add RSPI clocks
+    [3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
+    [4/8] ARM: shmobile: genmai: Add RSPI children (NEW)
+    [5/8] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux (NEW)
+    [6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+    [7/8] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+    [8/8] [RFC] ARM: shmobile: genmai reference: Add RSPI nodes
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
