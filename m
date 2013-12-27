@@ -1,47 +1,22 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Dec 2013 15:25:36 +0000
-Subject: [PATCH v5 12/17] ARM: shmobile: Let Lager multiplatform boot with Lager DTB
-Message-Id: <1387034741-3852-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 18:06:37 +0000
+Subject: [PATCH 0/2] clk: shmobile: clk-mstp fixes
+Message-Id: <1388167599-23525-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Let the multiplatform Lager support boot with the legacy DTS for Lager
-as well as the Lager reference DTS.
+This fixes a number of issues with CPG MSTP clock array handling.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/Makefile                     | 2 +-
- arch/arm/mach-shmobile/board-lager-reference.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+Valentine Barshak (2):
+  clk: shmobile: Fix MSTP clock index
+  clk: shmobile: Fix MSTP clock array initialization
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 37aefa2..f28b4ef 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -234,7 +234,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
--	r8a7790-lager-reference.dtb \
-+	r8a7790-lager.dtb \
- 	r8a7791-koelsch-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 7e3fe37..a6e271d 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -64,6 +64,7 @@ static void __init lager_add_standard_devices(void)
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager",
- 	"renesas,lager-reference",
- 	NULL,
- };
+ drivers/clk/shmobile/clk-mstp.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
 -- 
-1.8.3.2
+1.8.3.1
 
