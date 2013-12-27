@@ -1,42 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:03:36 +0000
-Subject: [PATCH 3/7] ARM: shmobile: genmai: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY
-Message-Id: <7f558a124022630e177f08bbdd0673c3301f7e84.1387854925.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 20:15:57 +0000
+Subject: [PATCH v2 3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
+Message-Id: <1388175362-17132-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387854925.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
+References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-The ARCH_SHMOBILE configuration option has been renamed to
-ARCH_SHMOBILE_LEGACY. Update the defconfig accordingly.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-[ horms+renesas@verge.net.au: Removed non-genmai changes which
-  have been squashed into "ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY". ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/configs/genmai_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2:
+  - Correct platform device names ("rspi%u.0" -> "rspi.%u")
+  - Add missing platform data
+  - Correct summary (resources -> platform devices)
 
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-index 69b1531..aa0b704 100644
---- a/arch/arm/configs/genmai_defconfig
-+++ b/arch/arm/configs/genmai_defconfig
-@@ -12,7 +12,7 @@ CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
- # CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R7S72100=y
- CONFIG_MACH_GENMAI=y
- # CONFIG_SH_TIMER_CMT is not set
+ arch/arm/mach-shmobile/setup-r7s72100.c |   34 +++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 9c0b3a9d5f7a..c353549cad03 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -23,6 +23,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
++#include <linux/spi/rspi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+@@ -81,6 +82,34 @@ static struct resource mtu2_0_resources[] __initdata = {
+ 					  &mtu2_##idx##_platform_data,	\
+ 					  sizeof(struct sh_timer_config))
+ 
++/* RSPI */
++#define RSPI_RESOURCE(idx, baseaddr, irq)				\
++static const struct resource rspi##idx##_resources[] __initconst = {	\
++	DEFINE_RES_MEM(baseaddr, 0x24),					\
++	DEFINE_RES_IRQ(irq),		/* SPEI */			\
++	DEFINE_RES_IRQ(irq + 1),	/* SPRI */			\
++	DEFINE_RES_IRQ(irq + 2),	/* SPTI */			\
++}
++
++RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
++RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
++RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
++RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
++RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
++
++static const struct rspi_plat_data rspi_pdata __initconst = {
++	.data_width	= 8,
++	.txmode		= false,
++	.spcr2		= false,
++	.num_chipselect	= 1,
++};
++
++#define r7s72100_register_rspi(idx)					\
++	platform_device_register_resndata(&platform_bus, "rspi", idx,	\
++					rspi##idx##_resources,		\
++					ARRAY_SIZE(rspi##idx##_resources), \
++					&rspi_pdata, sizeof(rspi_pdata))
++
+ void __init r7s72100_add_dt_devices(void)
+ {
+ 	r7s72100_register_scif(0);
+@@ -92,6 +121,11 @@ void __init r7s72100_add_dt_devices(void)
+ 	r7s72100_register_scif(6);
+ 	r7s72100_register_scif(7);
+ 	r7s72100_register_mtu2(0);
++	r7s72100_register_rspi(0);
++	r7s72100_register_rspi(1);
++	r7s72100_register_rspi(2);
++	r7s72100_register_rspi(3);
++	r7s72100_register_rspi(4);
+ }
+ 
+ void __init r7s72100_init_early(void)
 -- 
-1.8.4
+1.7.9.5
 
