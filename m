@@ -1,91 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:14:31 +0000
-Subject: [PATCH 10/11] serial: sh-sci: Compute overrun_bit without using baud rate algo
-Message-Id: <b545e4f40613be708ad660517f10c87423a09e8d.1387887969.git.horms+renesas@verge.net.au>
+Date: Fri, 27 Dec 2013 03:14:08 +0000
+Subject: [PATCH] ARM: shmobile: emev2: Use __initconst for const init definition
+Message-Id: <1388114048-3630-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+__initconst must be used instead of __initdata for
+const init definitions.
 
-The overrun bit index is a property of the hardware. It's currently
-computed based on a different and unrelated hardware property, the baud
-rate calculation algorithm. Compute it using hardware identification
-information only.
+This problem was introduced by 3d5de27174955702 ("mach-shmobile: Emma
+Mobile EV2 DT support V3") in v3.4-rc7.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Reported-by: Fengguang Wu <fengguang.wu@intel.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 26 ++++++++++++++------------
- 1 file changed, 14 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/setup-emev2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 99a64fd..d5239d5 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2133,30 +2133,38 @@ static int sci_init_single(struct platform_device *dev,
- 			sci_port->irqs[i] = p->irqs[i] ? p->irqs[i] : -ENXIO;
- 	}
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index c8f2a1a..c71d667 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -58,7 +58,7 @@ static void __init emev2_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
-+	if (p->regtype = SCIx_PROBE_REGTYPE) {
-+		ret = sci_probe_regmap(p);
-+		if (unlikely(ret))
-+			return ret;
-+	}
-+
- 	switch (p->type) {
- 	case PORT_SCIFB:
- 		port->fifosize = 256;
-+		sci_port->overrun_bit = 9;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
-+		sci_port->overrun_bit = 0;
- 		break;
- 	case PORT_SCIFA:
- 		port->fifosize = 64;
-+		sci_port->overrun_bit = 9;
- 		break;
- 	case PORT_SCIF:
- 		port->fifosize = 16;
-+		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE)
-+			sci_port->overrun_bit = 9;
-+		else
-+			sci_port->overrun_bit = 0;
- 		break;
- 	default:
- 		port->fifosize = 1;
-+		sci_port->overrun_bit = 5;
- 		break;
- 	}
- 
--	if (p->regtype = SCIx_PROBE_REGTYPE) {
--		ret = sci_probe_regmap(p);
--		if (unlikely(ret))
--			return ret;
--	}
--
- 	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
- 		if (IS_ERR(sci_port->iclk)) {
-@@ -2194,12 +2202,6 @@ static int sci_init_single(struct platform_device *dev,
- 	 * Establish sensible defaults for the overrun detection, unless
- 	 * the part has explicitly disabled support for it.
- 	 */
--	if (p->type = PORT_SCI)
--		sci_port->overrun_bit = 5;
--	else if (p->scbrr_algo_id = SCBRR_ALGO_4)
--		sci_port->overrun_bit = 9;
--	else
--		sci_port->overrun_bit = 0;
- 
- 	/*
- 	 * Make the error mask inclusive of overrun detection, if
+-static const char *emev2_boards_compat_dt[] __initdata = {
++static const char *emev2_boards_compat_dt[] __initconst = {
+ 	"renesas,emev2",
+ 	NULL,
+ };
 -- 
 1.8.4
 
