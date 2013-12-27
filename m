@@ -1,63 +1,106 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Dec 2013 14:04:50 +0000
-Subject: [PATCH RFC v2 2/3] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-Message-Id: <1388066691-5854-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 20:16:01 +0000
+Subject: [PATCH v2 7/8] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+Message-Id: <1388175362-17132-8-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1388066691-5854-1-git-send-email-horms+renesas@verge.net.au>
+References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
-v2
-* As suggested by Sergei Shtylyov
-  - Add MSTP74 to beginning of enum on a line by itself
-* As suggested by Magnus Damm
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
----
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
- 1 file changed, 4 insertions(+)
+v2: No changes
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index e6ab0cd..c4ba651 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -27,6 +27,7 @@
- #define FRQCR2		0xfcfe0014
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
-+#define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
+ arch/arm/boot/dts/r7s72100.dtsi |   65 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ff0bd6be454f..42e9b423476c 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -34,6 +34,11 @@
+ 		gpio10 = &port10;
+ 		gpio11 = &port11;
+ 		gpio12 = &jtagport0;
++		spi0 = &spi0;
++		spi1 = &spi1;
++		spi2 = &spi2;
++		spi3 = &spi3;
++		spi4 = &spi4;
+ 	};
  
- #define PLL_RATE 30
-@@ -146,6 +147,7 @@ struct clk div4_clks[DIV4_NR] = {
+ 	cpus {
+@@ -289,4 +294,64 @@
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi1: spi@e800d000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d000 0x24>;
++		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi2: spi@e800d800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d800 0x24>;
++		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi3: spi@e800e000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e000 0x24>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi4: spi@e800e800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e800 0x24>;
++		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
  };
- 
- enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
- 	MSTP33,	MSTP_NR };
- 
-@@ -154,6 +156,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
- 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
-+	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
- 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
- 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
- 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
-@@ -176,6 +179,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
- 
- 	/* MSTP clocks */
-+	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
 -- 
-1.8.4
+1.7.9.5
 
