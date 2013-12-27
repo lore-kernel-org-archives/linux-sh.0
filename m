@@ -1,58 +1,251 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 02 Dec 2013 17:49:01 +0000
-Subject: Re: [PATCH 05/11] spi: spi-sh-msiof: rx_need_dummy_tx variant
-Message-Id: <20131202174901.GN27568@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="22aa2PWZKnsI44rM"
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 11:27:37 +0000
+Subject: [PATCH 1/3 V2] pinctrl: sh-pfc: r8a7791: Add I2C pins
+Message-Id: <1388143659-8739-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
- <1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
- <1385921962-19843-5-git-send-email-takasi-y@ops.dti.ne.jp>
-In-Reply-To: <1385921962-19843-5-git-send-email-takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>
-To: takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+This adds I2C[0-4] pinmux support to R8A7791 SoC.
 
---22aa2PWZKnsI44rM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Changes in V2:
+* None.
 
-On Mon, Dec 02, 2013 at 03:19:16AM +0900, takasi-y@ops.dti.ne.jp wrote:
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 196 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 196 insertions(+)
 
->  	if (tx_buf)
->  		tx_fifo(p, tx_buf, words, fifo_shift);
-> +	else if (rx_buf && p->info->rx_need_dummy_tx)
-> +		tx_fifo(p, rx_buf, words, fifo_shift);
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index ea02d37..654bef3 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -1805,6 +1805,144 @@ static const unsigned int eth_rmii_mux[] = {
+ 	ETH_RXD0_MARK, ETH_RXD1_MARK, ETH_RX_ER_MARK, ETH_CRS_DV_MARK,
+ 	ETH_TXD0_MARK, ETH_TXD1_MARK, ETH_TX_EN_MARK, ETH_REFCLK_MARK,
+ };
++/* - I2C0 ------------------------------------------------------------------- */
++static const unsigned int i2c0_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(0, 24), RCAR_GP_PIN(0, 25),
++};
++static const unsigned int i2c0_mux[] = {
++	SCL0_MARK, SDA0_MARK,
++};
++static const unsigned int i2c0_b_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(2, 2), RCAR_GP_PIN(2, 3),
++};
++static const unsigned int i2c0_b_mux[] = {
++	SCL0_B_MARK, SDA0_B_MARK,
++};
++static const unsigned int i2c0_c_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(0, 16), RCAR_GP_PIN(1, 1),
++};
++static const unsigned int i2c0_c_mux[] = {
++	SCL0_C_MARK, SDA0_C_MARK,
++};
++/* - I2C1 ------------------------------------------------------------------- */
++static const unsigned int i2c1_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 11),
++};
++static const unsigned int i2c1_mux[] = {
++	SCL1_MARK, SDA1_MARK,
++};
++static const unsigned int i2c1_b_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(2, 4), RCAR_GP_PIN(2, 5),
++};
++static const unsigned int i2c1_b_mux[] = {
++	SCL1_B_MARK, SDA1_B_MARK,
++};
++static const unsigned int i2c1_c_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(6, 14), RCAR_GP_PIN(6, 15),
++};
++static const unsigned int i2c1_c_mux[] = {
++	SCL1_C_MARK, SDA1_C_MARK,
++};
++static const unsigned int i2c1_d_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(4, 25), RCAR_GP_PIN(4, 26),
++};
++static const unsigned int i2c1_d_mux[] = {
++	SCL1_D_MARK, SDA1_D_MARK,
++};
++static const unsigned int i2c1_e_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(7, 15), RCAR_GP_PIN(7, 16),
++};
++static const unsigned int i2c1_e_mux[] = {
++	SCL1_E_MARK, SDA1_E_MARK,
++};
++/* - I2C2 ------------------------------------------------------------------- */
++static const unsigned int i2c2_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(2, 6), RCAR_GP_PIN(2, 7),
++};
++static const unsigned int i2c2_mux[] = {
++	SCL2_MARK, SDA2_MARK,
++};
++static const unsigned int i2c2_b_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(3, 26), RCAR_GP_PIN(3, 29),
++};
++static const unsigned int i2c2_b_mux[] = {
++	SCL2_B_MARK, SDA2_B_MARK,
++};
++static const unsigned int i2c2_c_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 14),
++};
++static const unsigned int i2c2_c_mux[] = {
++	SCL2_C_MARK, SDA2_C_MARK,
++};
++static const unsigned int i2c2_d_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(5, 17), RCAR_GP_PIN(5, 18),
++};
++static const unsigned int i2c2_d_mux[] = {
++	SCL2_D_MARK, SDA2_D_MARK,
++};
++/* - I2C3 ------------------------------------------------------------------- */
++static const unsigned int i2c3_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 16),
++};
++static const unsigned int i2c3_mux[] = {
++	SCL3_MARK, SDA3_MARK,
++};
++static const unsigned int i2c3_b_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(4, 15), RCAR_GP_PIN(4, 16),
++};
++static const unsigned int i2c3_b_mux[] = {
++	SCL3_B_MARK, SDA3_B_MARK,
++};
++static const unsigned int i2c3_c_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(3, 22), RCAR_GP_PIN(3, 23),
++};
++static const unsigned int i2c3_c_mux[] = {
++	SCL3_C_MARK, SDA3_C_MARK,
++};
++static const unsigned int i2c3_d_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(0, 27), RCAR_GP_PIN(0, 28),
++};
++static const unsigned int i2c3_d_mux[] = {
++	SCL3_D_MARK, SDA3_D_MARK,
++};
++/* - I2C4 ------------------------------------------------------------------- */
++static const unsigned int i2c4_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(4, 13), RCAR_GP_PIN(4, 14),
++};
++static const unsigned int i2c4_mux[] = {
++	SCL4_MARK, SDA4_MARK,
++};
++static const unsigned int i2c4_b_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(4, 27), RCAR_GP_PIN(4, 28),
++};
++static const unsigned int i2c4_b_mux[] = {
++	SCL4_B_MARK, SDA4_B_MARK,
++};
++static const unsigned int i2c4_c_pins[] = {
++	/* SCL, SDA */
++	RCAR_GP_PIN(7, 13), RCAR_GP_PIN(7, 14),
++};
++static const unsigned int i2c4_c_mux[] = {
++	SCL4_C_MARK, SDA4_C_MARK,
++};
+ /* - INTC ------------------------------------------------------------------- */
+ static const unsigned int intc_irq0_pins[] = {
+ 	/* IRQ */
+@@ -2694,6 +2832,25 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(eth_magic),
+ 	SH_PFC_PIN_GROUP(eth_mdio),
+ 	SH_PFC_PIN_GROUP(eth_rmii),
++	SH_PFC_PIN_GROUP(i2c0),
++	SH_PFC_PIN_GROUP(i2c0_b),
++	SH_PFC_PIN_GROUP(i2c0_c),
++	SH_PFC_PIN_GROUP(i2c1),
++	SH_PFC_PIN_GROUP(i2c1_b),
++	SH_PFC_PIN_GROUP(i2c1_c),
++	SH_PFC_PIN_GROUP(i2c1_d),
++	SH_PFC_PIN_GROUP(i2c1_e),
++	SH_PFC_PIN_GROUP(i2c2),
++	SH_PFC_PIN_GROUP(i2c2_b),
++	SH_PFC_PIN_GROUP(i2c2_c),
++	SH_PFC_PIN_GROUP(i2c2_d),
++	SH_PFC_PIN_GROUP(i2c3),
++	SH_PFC_PIN_GROUP(i2c3_b),
++	SH_PFC_PIN_GROUP(i2c3_c),
++	SH_PFC_PIN_GROUP(i2c3_d),
++	SH_PFC_PIN_GROUP(i2c4),
++	SH_PFC_PIN_GROUP(i2c4_b),
++	SH_PFC_PIN_GROUP(i2c4_c),
+ 	SH_PFC_PIN_GROUP(intc_irq0),
+ 	SH_PFC_PIN_GROUP(intc_irq1),
+ 	SH_PFC_PIN_GROUP(intc_irq2),
+@@ -2842,6 +2999,40 @@ static const char * const eth_groups[] = {
+ 	"eth_rmii",
+ };
+ 
++static const char * const i2c0_groups[] = {
++	"i2c0",
++	"i2c0_b",
++	"i2c0_c",
++};
++
++static const char * const i2c1_groups[] = {
++	"i2c1",
++	"i2c1_b",
++	"i2c1_c",
++	"i2c1_d",
++	"i2c1_e",
++};
++
++static const char * const i2c2_groups[] = {
++	"i2c2",
++	"i2c2_b",
++	"i2c2_c",
++	"i2c2_d",
++};
++
++static const char * const i2c3_groups[] = {
++	"i2c3",
++	"i2c3_b",
++	"i2c3_c",
++	"i2c3_d",
++};
++
++static const char * const i2c4_groups[] = {
++	"i2c4",
++	"i2c4_b",
++	"i2c4_c",
++};
++
+ static const char * const intc_groups[] = {
+ 	"intc_irq0",
+ 	"intc_irq1",
+@@ -3029,6 +3220,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(du0),
+ 	SH_PFC_FUNCTION(du1),
+ 	SH_PFC_FUNCTION(eth),
++	SH_PFC_FUNCTION(i2c0),
++	SH_PFC_FUNCTION(i2c1),
++	SH_PFC_FUNCTION(i2c2),
++	SH_PFC_FUNCTION(i2c3),
++	SH_PFC_FUNCTION(i2c4),
+ 	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(mmc),
+ 	SH_PFC_FUNCTION(msiof0),
+-- 
+1.8.3.1
 
-This is going to transmit the contents of the RX buffer.  This means
-that if there's any data in there it'll get sent but the expected
-behaviour would be to send all zeros.  It's possible some devices may
-misbehave if this were to happen.  It would be better to allocate some
-zeros with kzalloc() and send that.
-
-Really we should have core support for this, it's not the only
-controller with such limitations.
-
---22aa2PWZKnsI44rM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSnMgKAAoJELSic+t+oim9vNoQAJyA8h9DxiHLzalwfj7VixhF
-9tDhyIE3bwe/i29UXCu++XqPQQQjRiPFFf4CXHaLebggPZmg1Suw71EDoPJlqNKC
-x6jnJW2/+kNpGrQ2mKRbqWQeFMFzYGUweFhw/rJaHpbmC5UlgxoSsfIS/baF+1Su
-2lTL99Q3jIAwFrU5MRad1pNdKxUWVX5EBlrlEpPbHr2DZTP9JrBsPH4RGuz0jyPZ
-ay/ycbXhnPzHQja8KtO3LOZusQL78C44HQWZpCJa2qqW03efPEIOiXjBDlX5CFLo
-Gu9vIUl2uKq1fVZ1lbLz0Kv7YVTp03yj4M1iOEY50L1IPT1m3BWyFTrral+LtWPT
-0FdFtjdMblNSMtpoGU3nYkEukpmG82tUOk2KR0l7GP7LicMAFPF7E4Avm3quGink
-CST4h2nDv8fBFWRRaBprIfpnmsFEz3Us7DXzg8V/ulFTi/40ecUBYLcoqoYIRkXn
-Dz3hSoMxUKmQROIlBCJvn7qoz+3SVlPEmj1/6pLaGs4gaAbpc1rzYmff2BksQ2A3
-QFe4RobQXgz26LTbQC4TNLXwiOv+acWqoaRDDq7HUd6jXuPDc11ONVDJPQqCrSoe
-fketkyIUpz8xiJeixT02HAjP6yrebsuhWKURERsNgNx6jMDq4+L2CppbthN1f6Hz
-agnctdBwVqxTi2PSildL
-=4VaB
------END PGP SIGNATURE-----
-
---22aa2PWZKnsI44rM--
