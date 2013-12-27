@@ -1,35 +1,40 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sun, 29 Dec 2013 21:25:26 +0000
-Subject: Re: [GIT PULL 0/7] Second Round of Renesas ARM Based SoC Defconfig Updates for v3.14
-Message-Id: <20131229212526.GE20958@quad.lixom.net>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 14:42:09 +0000
+Subject: [PATCH] clk: shmobile: Fix SMTP clock index
+Message-Id: <1388155329-11124-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387854925.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 24, 2013 at 03:03:22PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
-> 
-> please consider this second round of Renesas ARM based SoC defconfig
-> updates for v3.14.
-> 
-> It is based on the first round of such updates,
-> tagged as renesas-defconfig-for-v3.14, which you have already pulled.
-> 
-> 
-> The following changes since commit 577092b3d11530acd8467074f6ea7e2dd36b5028:
-> 
->   ARM: shmobile: kzm9d: Enable AUTO_ZRELADDR in defconfig (2013-11-24 15:13:43 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.14
+Use clkidx when registering SMTP clocks instead of loop counter
+since the value is then used to access the specific clock index bit
+in the smtp register.
 
+The issue was introduced by the following commit:
+f94859c215b6d977 "clk: shmobile: Add MSTP clock support"
 
-Pulled, thanks.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/clk/shmobile/clk-mstp.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
--Olof
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index e576b60..be7d017 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -205,8 +205,8 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 			continue;
+ 		}
+ 
+-		clks[clkidx] = cpg_mstp_clock_register(name, parent_name, i,
+-						       group);
++		clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
++						       clkidx, group);
+ 		if (!IS_ERR(clks[clkidx])) {
+ 			group->data.clk_num = max(group->data.clk_num, clkidx);
+ 			/*
+-- 
+1.8.3.1
 
