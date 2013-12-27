@@ -1,71 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:54 +0000
-Subject: [PATCH 21/33] ARM: shmobile: r8a7791: Add DU and LVDS clocks
-Message-Id: <cf4f85ccd5c235123a8a1827d2265da5c33a1bb0.1386897180.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 20:15:59 +0000
+Subject: [PATCH v2 5/8] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux setup
+Message-Id: <1388175362-17132-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
+References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-The ZX parent clock isn't implemented yet, add it as well.
+This does not work as there's no pinmux configuration in setup-r7s72100.c
+yet.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+New in v2
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index c9a26f1..fda7c6c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
- SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
- SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
-+SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
+ arch/arm/mach-shmobile/board-genmai.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 7c912d337828..d89d87ac1c6f 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -19,6 +19,7 @@
+  */
  
- static struct clk *main_clks[] = {
- 	&extal_clk,
-@@ -116,11 +117,12 @@ static struct clk *main_clks[] = {
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-+	&zx_clk,
+ #include <linux/kernel.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_eth.h>
+ #include <linux/spi/spi.h>
+@@ -51,9 +52,25 @@ static const struct spi_board_info spi_info[] __initconst = {
+ 	},
  };
  
- /* MSTP */
- enum {
--	MSTP721, MSTP720,
-+	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
-@@ -129,6 +131,9 @@ enum {
- };
++static const struct pinctrl_map genmai_pinctrl_map[] = {
++	/* RSPI4 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_rspck_p4_0", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_ssl0_p4_1", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_mosi_p4_2", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_miso_p4_3", "rspi4"),
++};
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
++	pinctrl_register_mappings(genmai_pinctrl_map,
++				  ARRAY_SIZE(genmai_pinctrl_map));
++	/* FIXME there's no pinmux configuration in setup-r7s72100.c yet */
++	/* r7s72100_pinmux_init(); */
+ 	r7s72100_add_dt_devices();
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
-+	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
-+	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
- 	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
- 	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
- 	[MSTP719] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 19, 0), /* SCIF2 */
-@@ -164,6 +169,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
- 
- 	/* MSTP */
-+	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7791", &mstp_clks[MSTP726]),
-+	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7791", &mstp_clks[MSTP724]),
-+	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7791", &mstp_clks[MSTP723]),
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]), /* SCIFB0 */
+ 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
 -- 
-1.8.4
+1.7.9.5
 
