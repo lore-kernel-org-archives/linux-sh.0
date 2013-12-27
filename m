@@ -1,37 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:03:39 +0000
-Subject: [PATCH 6/7] ARM: shmobile: koelsch: Enable CONFIG_PACKET in defconfig
-Message-Id: <5dfdf53358ae64c234d85ad801294054150dae76.1387854925.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 27 Dec 2013 11:27:38 +0000
+Subject: [PATCH 2/3 V2] ARM: shmobile: r8a7791: Add I2C clocks
+Message-Id: <1388143659-8739-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387854925.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387854925.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-CONFIG_PACKET is required for the ISC dhcpd daemon function.
-This change brings the koelsch defconfig into line with
-other shmobile defconfigs.
+This adds I2C[0-5] clock support to R8A7791 SoC.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Changes in V2:
+* Capitalized ARM in the subject.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/configs/koelsch_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index c59eab1..ef79cbf 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -30,6 +30,7 @@ CONFIG_NEON=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_PACKET=y
- CONFIG_INET=y
- CONFIG_IP_PNP=y
- CONFIG_IP_PNP_DHCP=y
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index f546126..fe4a774 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -122,6 +122,7 @@ static struct clk *main_clks[] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+ 	MSTP813,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+@@ -133,6 +134,12 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP931] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 31, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 30, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 29, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
++	[MSTP927] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 27, 0), /* I2C4 */
++	[MSTP925] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 25, 0), /* I2C5 */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
+@@ -194,6 +201,12 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.4", &mstp_clks[MSTP927]),
++	CLKDEV_DEV_ID("i2c-rcar_gen2.5", &mstp_clks[MSTP925]),
+ 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
+ };
+ 
 -- 
-1.8.4
+1.8.3.1
 
