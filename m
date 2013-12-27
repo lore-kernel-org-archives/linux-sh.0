@@ -1,159 +1,57 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 18 Dec 2013 21:31:59 +0000
-Subject: [PATCH V2 3/5] arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-Message-Id: <1387402321-21866-4-git-send-email-wsa@the-dreams.de>
+Date: Fri, 27 Dec 2013 04:27:47 +0000
+Subject: Re: [PATCH V2 3/5] arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
+Message-Id: <20131227042747.GB6161@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="R3G7APHDIzY6R/pk"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <1387402321-21866-4-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387402321-21866-4-git-send-email-wsa@the-dreams.de>
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
 
-I decided to put the pinmuxing into the dtsi file since there is only
-one pinmux posiibility which one probably wants to have when using the
-bus.
+--R3G7APHDIzY6R/pk
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Magnus Damm <damm@opensource.se>
----
- arch/arm/boot/dts/r7s72100.dtsi | 102 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 102 insertions(+)
+On Wed, Dec 18, 2013 at 10:31:59PM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa@sang-engineering.com>
+>=20
+> I decided to put the pinmuxing into the dtsi file since there is only
+> one pinmux posiibility which one probably wants to have when using the
+> bus.
+>=20
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> Acked-by: Magnus Damm <damm@opensource.se>
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index d396b38..ff0bd6b 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -8,6 +8,8 @@
-  * kind, whether express or implied.
-  */
- 
-+#include <dt-bindings/interrupt-controller/irq.h>
-+
- / {
- 	compatible = "renesas,r7s72100";
- 	interrupt-parent = <&gic>;
-@@ -15,6 +17,10 @@
- 	#size-cells = <1>;
- 
- 	aliases {
-+		i2c0 = &i2c0;
-+		i2c1 = &i2c1;
-+		i2c2 = &i2c2;
-+		i2c3 = &i2c3;
- 		gpio0 = &port0;
- 		gpio1 = &port1;
- 		gpio2 = &port2;
-@@ -58,6 +64,26 @@
- 			  <0xfcfe7b40 0x04>, /* JPMC */
- 			  <0xfcfe7b90 0x04>, /* JPMCSR */
- 			  <0xfcfe7f00 0x04>; /* JPIBC */
-+
-+		riic0_pins: i2c0 {
-+			renesas,groups = "riic0_scl_p1_0", "riic0_sda_p1_1";
-+			renesas,function = "riic0";
-+		};
-+
-+		riic1_pins: i2c1 {
-+			renesas,groups = "riic1_scl_p1_2", "riic1_sda_p1_3";
-+			renesas,function = "riic1";
-+		};
-+
-+		riic2_pins: i2c2 {
-+			renesas,groups = "riic2_scl_p1_4", "riic2_sda_p1_5";
-+			renesas,function = "riic2";
-+		};
-+
-+		riic3_pins: i2c3 {
-+			renesas,groups = "riic3_scl_p1_6", "riic3_sda_p1_7";
-+			renesas,function = "riic3";
-+		};
- 	};
- 
- 	port0: gpio@fcfe3100 {
-@@ -187,4 +213,80 @@
- 		gpio-controller;
- 		gpio-ranges = <&pfc 0 192 2>;
- 	};
-+
-+	i2c0: i2c@fcfee000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee000 0x44>;
-+		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 158 IRQ_TYPE_EDGE_RISING>,
-+			     <0 159 IRQ_TYPE_EDGE_RISING>,
-+			     <0 160 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 161 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
-+		pinctrl-0 = <&riic0_pins>;
-+		pinctrl-names = "default";
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c1: i2c@fcfee400 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee400 0x44>;
-+		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 166 IRQ_TYPE_EDGE_RISING>,
-+			     <0 167 IRQ_TYPE_EDGE_RISING>,
-+			     <0 168 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 169 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		pinctrl-0 = <&riic1_pins>;
-+		pinctrl-names = "default";
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c2: i2c@fcfee800 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee800 0x44>;
-+		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 174 IRQ_TYPE_EDGE_RISING>,
-+			     <0 175 IRQ_TYPE_EDGE_RISING>,
-+			     <0 176 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 177 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
-+		pinctrl-0 = <&riic2_pins>;
-+		pinctrl-names = "default";
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c3: i2c@fcfeec00 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfeec00 0x44>;
-+		interrupts = <0 181 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 182 IRQ_TYPE_EDGE_RISING>,
-+			     <0 183 IRQ_TYPE_EDGE_RISING>,
-+			     <0 184 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 185 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		pinctrl-0 = <&riic3_pins>;
-+		pinctrl-names = "default";
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
- };
--- 
-1.8.4.2
+Simon, I think you could pull in these patches, too. My series does not
+really depend on the pinctrl stuff. I2C pins are function group 1 and
+thus activated by default if the bootloader doesn't do weird things.
+Actually, I coded the PFC stuff after the driver was finished :)
 
+
+--R3G7APHDIzY6R/pk
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSvQHDAAoJEBQN5MwUoCm2YyUP/3HIgyhvn0UXF+KD5lxmkGPQ
+g8Jkn/xeEMLGXPJfEr9z3IZpyUGHzcYbYWnUypW3MpTaWyJnWYESTbH4ueenaeWt
+WrT/SkBMtUWeDoMsgQmIOTL3J224lNVV9d1nCLYH4+20S1Qvn3+5Wmg+eN50n8vY
+sUSsBnT1jbxwBetsnopKNhQiNv18OAlpfGS+Of+ZzMetfAn6AjNGk1xYj+X/tP31
+BIRseh/UguBcDg9boJw7pNlU1Gi+kEE+Dz9ZmCbrTfr/caKbgjzu5liTQcoc4uyH
+kFxkJuJ9RXfAdzOa9c8R1qtJPITglrjsBy/fSeGVWbjOmBSRtoxjMfuP3LzCqfdh
+o637t4sLb845GlWMr1ktxGeSAW0vg6cuUFOk8VPEmNN/4huOWC3LrndE6Fvom4mx
+s+o5tRiEOPkDZiquN3Wcl/p4uIVrle8sWP+IuZhaYrJM2tDwYHryXVGO0PSmpOai
+/oPrcE0RTIikWjXic96z/VxOPR5Yke2iwzedM1jIKGM36I5juNHBwZip6nz/DIK7
+OlS0vUQ/wdTa6cOwVe7O4fDxmWWkczOTKBFZxvfsI7hNKsYF+AJ+si0I6KjWyqOD
+GeF+GZRmQPAVVHDFWx/Rfx66ZKTrOd3dJ1lUxvOlprLms9s/PvGh8NTLoQNFVLN0
+G9ayCG21MV8wmn82rhFq
+=QBzm
+-----END PGP SIGNATURE-----
+
+--R3G7APHDIzY6R/pk--
