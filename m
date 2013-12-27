@@ -1,77 +1,99 @@
-From: Levente Kurusa <levex@linux.com>
-Date: Thu, 19 Dec 2013 15:03:40 +0000
-Subject: [PATCH 29/38] superhyway: maple: add missing put_device call
-Message-Id: <1387465429-3568-30-git-send-email-levex@linux.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 27 Dec 2013 20:15:58 +0000
+Subject: [PATCH v2 4/8] ARM: shmobile: genmai: Add RSPI children
+Message-Id: <1388175362-17132-5-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387465429-3568-2-git-send-email-levex@linux.com>
-In-Reply-To: <1387465429-3568-2-git-send-email-levex@linux.com>
+References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Levente Kurusa <levex@linux.com>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This is required so that we give up the last reference to the device.
-Also rework maple_release_device to use maple_free_dev instead, avoiding
-same code being in two functions at the same time.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Levente Kurusa <levex@linux.com>
+On this board, only rspi4 is in use. Its bus contains a single device
+(a wm8978 audio codec).
+
+As the RSPI driver itself doesn't use DT yet, we have to instantiate the
+SPI child device in C code, too, for both genmai and genmai-reference.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/sh/maple/maple.c | 23 +++++++++--------------
- 1 file changed, 9 insertions(+), 14 deletions(-)
+New in v2
 
-diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-index bec81c2..c4afb7e 100644
---- a/drivers/sh/maple/maple.c
-+++ b/drivers/sh/maple/maple.c
-@@ -134,16 +134,18 @@ static int maple_dma_done(void)
- 	return (__raw_readl(MAPLE_STATE) & 1) = 0;
- }
+ arch/arm/mach-shmobile/board-genmai-reference.c |   11 +++++++++++
+ arch/arm/mach-shmobile/board-genmai.c           |   11 +++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
+index 7630c1053e32..2f8094b3add2 100644
+--- a/arch/arm/mach-shmobile/board-genmai-reference.c
++++ b/arch/arm/mach-shmobile/board-genmai-reference.c
+@@ -21,11 +21,21 @@
+ #include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
++#include <linux/spi/spi.h>
+ #include <mach/common.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
-+static void maple_free_dev(struct maple_device *mdev)
-+{
-+	kmem_cache_free(maple_queue_cache, mdev->mq->recvbuf);
-+	kfree(mdev->mq);
-+	kfree(mdev);
-+}
++static const struct spi_board_info spi_info[] __initconst = {
++	{
++		.modalias               = "wm8978",
++		.max_speed_hz           = 5000000,
++		.bus_num                = 4,
++		.chip_select            = 0,
++	},
++};
 +
- static void maple_release_device(struct device *dev)
+ static void __init genmai_add_standard_devices(void)
  {
- 	struct maple_device *mdev;
--	struct mapleq *mq;
--
- 	mdev = to_maple_dev(dev);
--	mq = mdev->mq;
--	kmem_cache_free(maple_queue_cache, mq->recvbuf);
--	kfree(mq);
--	kfree(mdev);
-+	maple_free_dev(mdev);
+ #ifdef CONFIG_COMMON_CLK
+@@ -34,6 +44,7 @@ static void __init genmai_add_standard_devices(void)
+ 	r7s72100_clock_init();
+ #endif
+ 	r7s72100_add_dt_devices();
++	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
- /**
-@@ -234,13 +236,6 @@ static struct maple_device *maple_alloc_dev(int port, int unit)
- 	return mdev;
- }
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index a1f6fe1fb06f..7c912d337828 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -21,6 +21,7 @@
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_eth.h>
++#include <linux/spi/spi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+@@ -41,11 +42,21 @@ static const struct resource ether_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_iid(359)),
+ };
  
--static void maple_free_dev(struct maple_device *mdev)
--{
--	kmem_cache_free(maple_queue_cache, mdev->mq->recvbuf);
--	kfree(mdev->mq);
--	kfree(mdev);
--}
--
- /* process the command queue into a maple command block
-  * terminating command has bit 32 of first long set to 0
-  */
-@@ -393,7 +388,7 @@ static void maple_attach_driver(struct maple_device *mdev)
- 		dev_warn(&mdev->dev, "could not register device at"
- 			" (%d, %d), with error 0x%X\n", mdev->unit,
- 			mdev->port, error);
--		maple_free_dev(mdev);
-+		put_device(&mdev->dev);
- 		mdev = NULL;
- 		return;
- 	}
++static const struct spi_board_info spi_info[] __initconst = {
++	{
++		.modalias               = "wm8978",
++		.max_speed_hz           = 5000000,
++		.bus_num                = 4,
++		.chip_select            = 0,
++	},
++};
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
+ 
++	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ 	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
+ 					  ether_resources,
+ 					  ARRAY_SIZE(ether_resources),
 -- 
-1.8.3.1
+1.7.9.5
 
