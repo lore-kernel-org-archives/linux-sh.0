@@ -1,47 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 18:38:43 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 28 Dec 2013 11:44:29 +0000
 Subject: Re: [PATCH 2/5] spi: rspi: Remove casts
-Message-Id: <CAMuHMdXyeRdgFJF0MzJkJ5jf1pSWfO98mdn-JSF0ze2iuTbLug@mail.gmail.com>
+Message-Id: <8739713.Slr9ZZgJxG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org>
-	<1387878574-21445-3-git-send-email-geert+renesas@linux-m68k.org>
-	<2810034.n2a8aHlIUW@avalon>
-In-Reply-To: <2810034.n2a8aHlIUW@avalon>
+References: <1387878574-21445-1-git-send-email-geert+renesas@linux-m68k.org> <2810034.n2a8aHlIUW@avalon> <CAMuHMdXyeRdgFJF0MzJkJ5jf1pSWfO98mdn-JSF0ze2iuTbLug@mail.gmail.com>
+In-Reply-To: <CAMuHMdXyeRdgFJF0MzJkJ5jf1pSWfO98mdn-JSF0ze2iuTbLug-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Fri, Dec 27, 2013 at 3:33 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> @@ -440,12 +437,13 @@ static void rspi_memory_from_8bit(void *buf, const
->> void *data, unsigned len) static int rspi_send_dma(struct rspi_data *rspi,
->> struct spi_transfer *t) {
->>       struct scatterlist sg;
->> -     void *buf = NULL;
->> +     const void *buf = NULL;
->>       struct dma_async_tx_descriptor *desc;
->>       unsigned len;
->>       int ret = 0;
->>
->>       if (rspi->dma_width_16bit) {
->> +             void *tmp;
->
-> I really dislike tmp as a variable name, as it can mean pretty much anything.
-> What about calling it tx_buf instead ?
+Hi Geert,
 
-Thanks, that would indeed be a better name.
-However, Mark has already applied it to spi/for-next, so I'm not sure we
-can still change it, without sending a complete new patch.
+On Friday 27 December 2013 19:38:43 Geert Uytterhoeven wrote:
+> On Fri, Dec 27, 2013 at 3:33 PM, Laurent Pinchart wrote:
+> >> @@ -440,12 +437,13 @@ static void rspi_memory_from_8bit(void *buf, const
+> >> void *data, unsigned len) static int rspi_send_dma(struct rspi_data
+> >> *rspi,
+> >> struct spi_transfer *t) {
+> >> 
+> >>       struct scatterlist sg;
+> >> 
+> >> -     void *buf = NULL;
+> >> +     const void *buf = NULL;
+> >> 
+> >>       struct dma_async_tx_descriptor *desc;
+> >>       unsigned len;
+> >>       int ret = 0;
+> >>       
+> >>       if (rspi->dma_width_16bit) {
+> >> 
+> >> +             void *tmp;
+> > 
+> > I really dislike tmp as a variable name, as it can mean pretty much
+> > anything. What about calling it tx_buf instead ?
+> 
+> Thanks, that would indeed be a better name.
+> However, Mark has already applied it to spi/for-next, so I'm not sure we
+> can still change it, without sending a complete new patch.
 
-Gr{oetje,eeting}s,
+I've noticed that after sending the reply. I think we can live with tmp for 
+now.
 
-                        Geert
+-- 
+Regards,
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Laurent Pinchart
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
