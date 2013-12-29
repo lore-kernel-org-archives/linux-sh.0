@@ -1,36 +1,35 @@
 From: Olof Johansson <olof@lixom.net>
-Date: Sat, 28 Dec 2013 23:37:13 +0000
-Subject: Re: [GIT PULL 0/3] Second Round of Renesas ARM based SoC Fixes for v3.13
-Message-Id: <20131228233713.GE22753@quad.lixom.net>
+Date: Sun, 29 Dec 2013 21:21:18 +0000
+Subject: Re: [GIT PULL 0/3] Second Round of Renesas ARM Based SoC DT Updates for v3.14
+Message-Id: <20131229212118.GC20958@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387856124.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387856124.git.horms+renesas@verge.net.au>
+References: <cover.1387764079.git.horms+renesas@verge.net.au>
+ <20131224034541.GA7267@verge.net.au>
+In-Reply-To: <20131224034541.GA7267@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 03:04:43PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
+On Tue, Dec 24, 2013 at 12:45:41PM +0900, Simon Horman wrote:
+> [ Corrected subject: s/3.13.3.14 ]
 > 
-> please consider this second round of Renesas ARM based SoC fixes for v3.13.
-> It is based on the first round of fixes, tagged as renesas-fixes-for-v3.13,
-> which you have previously pulled.
-> 
-> 
-> The following changes since commit 23de2278ebc3a2f971ce45ca5e5e35c9d5a74040:
-> 
->   ARM: shmobile: r8a7790: Fix GPIO resources in DTS (2013-11-28 17:04:39 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes2-for-v3.13
-> 
-> for you to fetch changes up to d721a15c300c5f638a11573a6dd492158e737d6a:
-> 
->   ARM: shmobile: r8a7790: fix shdi resource sizes (2013-12-19 18:14:48 +0900)
+> On Mon, Dec 23, 2013 at 11:08:12AM +0900, Simon Horman wrote:
+> > Hi Kevin, Hi Olof, Hi Arnd,
+> > 
+> > Please consider this second round of Renesas ARM Based SoC DT Updates for
+> > v3.13. It is based on the first round, tagged as renesas-dt-for-v3.14,
+> > which you have already pulled.
+> > 
+> > 
+> > The following changes since commit 1fd219561a4afc51b5f257692f3581546434db5b:
+> > 
+> >   ARM: shmobile: marzen: enable HSPI0 in DTS (2013-12-10 17:27:25 +0900)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.14
 
 Pulled, thanks.
-
 
 -Olof
