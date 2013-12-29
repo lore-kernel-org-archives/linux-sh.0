@@ -1,54 +1,145 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Dec 2013 02:29:46 +0000
-Subject: [PATCH 13/33] ARM: shmobile: r8a7790: add QSPI support
-Message-Id: <3dd3b1cf068a64a71f1b40319ca33fcb50842bc0.1386897180.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 29 Dec 2013 21:41:56 +0000
+Subject: [PATCH] ARM: shmobile: dts: Remove r8a7791-koelsch-reference.dts
+Message-Id: <1388353316-3289-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1386897180.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1386897180.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+The dts file has been superseded by r8a7791-koelsch.dts and been removed
+from the ARCH_SHMOBILE_LEGACY dtb target. Remove it.
 
-Adds support for QSPI on the r8a7790.
-
-Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 115 ------------------------
+ 1 file changed, 115 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 161d44e..5269640 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -183,6 +183,7 @@ static struct clk div6_clks[DIV6_NR] = {
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928,
-+	MSTP917,
- 	MSTP813,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
-@@ -199,6 +200,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP930] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 30, 0), /* I2C1 */
- 	[MSTP929] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 29, 0), /* I2C2 */
- 	[MSTP928] = SH_CLK_MSTP32(&hp_clk, SMSTPCR9, 28, 0), /* I2C3 */
-+	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP725] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 25, 0), /* LVDS1 */
-@@ -298,6 +300,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("ee220000.mmcif", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
- };
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+deleted file mode 100644
+index 588ca17..0000000
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/*
+- * Device Tree Source for the Koelsch board
+- *
+- * Copyright (C) 2013 Renesas Electronics Corporation
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7791.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Koelsch";
+-	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	gpio-keys {
+-		compatible = "gpio-keys";
+-
+-		key-a {
+-			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+-			linux,code = <30>;
+-			label = "SW30";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-b {
+-			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
+-			linux,code = <48>;
+-			label = "SW31";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-c {
+-			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
+-			linux,code = <46>;
+-			label = "SW32";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-d {
+-			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
+-			linux,code = <32>;
+-			label = "SW33";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-e {
+-			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
+-			linux,code = <18>;
+-			label = "SW34";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-f {
+-			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
+-			linux,code = <33>;
+-			label = "SW35";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-g {
+-			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
+-			linux,code = <34>;
+-			label = "SW36";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data_d";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data_d";
+-		renesas,function = "scif1";
+-	};
+-};
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
