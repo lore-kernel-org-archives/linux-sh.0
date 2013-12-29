@@ -1,43 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 06:05:35 +0000
-Subject: [GIT PULL 0/3] Renesas ARM based SoC IRQC Driver Updates for v3.14
-Message-Id: <cover.1387855444.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Sun, 29 Dec 2013 21:29:09 +0000
+Subject: Re: [GIT PULL 0/3] Renesas ARM based SoC IRQC Driver Updates for v3.14
+Message-Id: <20131229212909.GF20958@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1387855444.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387855444.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kevin, Hi Olof, Hi Arnd,
+On Tue, Dec 24, 2013 at 03:05:46PM +0900, Simon Horman wrote:
+> Hi Kevin, Hi Olof, Hi Arnd,
+> 
+> please consider these Renesas ARM based SoC IRQC driver updates for v3.14.
+> 
+> The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
+> 
+>   Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-irqc-for-v3.14
+> 
+> for you to fetch changes up to ce70af18801fd8dac6e9f85308294948916e84d6:
+> 
+>   irq-renesas-irqc: simplify irq_set_type() method (2013-12-23 09:27:17 +0900)
 
-please consider these Renesas ARM based SoC IRQC driver updates for v3.14.
+Pulled, thanks. These look mostly like trivial changes so I'm guessing Thomas
+will be fine with it going though our tree.
 
-The following changes since commit 6ce4eac1f600b34f2f7f58f9cd8f0503d79e42ae:
+> ----------------------------------------------------------------
+> Renesas ARM based SoC IRQC Driver Updates for v3.14
+> 
+> * Simplify irq_set_type() method
+> * Enable mask on suspend
+> * Use lazy disable
+> 
+> ----------------------------------------------------------------
+> Magnus Damm (2):
+>       irqchip: renesas-irqc: Use lazy disable
+>       irqchip: renesas-irqc: Enable mask on suspend
+> 
+> Sergei Shtylyov (1):
+>       irq-renesas-irqc: simplify irq_set_type() method
 
-  Linux 3.13-rc1 (2013-11-22 11:30:55 -0800)
+Small nit: I've been giving some others reminders to keep consistent
+commit messages per platform/subsystem. Same here.
 
-are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-irqc-for-v3.14
-
-for you to fetch changes up to ce70af18801fd8dac6e9f85308294948916e84d6:
-
-  irq-renesas-irqc: simplify irq_set_type() method (2013-12-23 09:27:17 +0900)
-
-----------------------------------------------------------------
-Renesas ARM based SoC IRQC Driver Updates for v3.14
-
-* Simplify irq_set_type() method
-* Enable mask on suspend
-* Use lazy disable
-
-----------------------------------------------------------------
-Magnus Damm (2):
-      irqchip: renesas-irqc: Use lazy disable
-      irqchip: renesas-irqc: Enable mask on suspend
-
-Sergei Shtylyov (1):
-      irq-renesas-irqc: simplify irq_set_type() method
-
- drivers/irqchip/irq-renesas-irqc.c | 21 ++++++++-------------
- 1 file changed, 8 insertions(+), 13 deletions(-)
+-Olof
