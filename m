@@ -1,12 +1,16 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Dec 2013 18:16:09 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 30 Dec 2013 00:58:08 +0000
 Subject: [PATCH 3/3] ARM: shmobile: mackerel: Fix coherent DMA mask
-Message-Id: <1387217769-22751-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <b6328a6b7ba57fc84c38248f6f0e387e1170f1a8.1388364591.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1388364591.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1388364591.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 Commit 4dcfa60071b3d23f0181f27d8519f12e37cefbb9 ("ARM: DMA-API: better
 handing of DMA masks for coherent allocations") added an additional
@@ -17,15 +21,16 @@ Set the LCDC coherent DMA mask to DMA_BIT_MASK(32) instead of ~0 to fix
 the problem.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/board-mackerel.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 207acf0..975a7ac 100644
+index af06753..e721d2c 100644
 --- a/arch/arm/mach-shmobile/board-mackerel.c
 +++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -410,7 +410,7 @@ static struct platform_device lcdc_device = {
+@@ -409,7 +409,7 @@ static struct platform_device lcdc_device = {
  	.resource	= lcdc_resources,
  	.dev	= {
  		.platform_data	= &lcdc_info,
@@ -34,7 +39,7 @@ index 207acf0..975a7ac 100644
  	},
  };
  
-@@ -500,7 +500,7 @@ static struct platform_device hdmi_lcdc_device = {
+@@ -499,7 +499,7 @@ static struct platform_device hdmi_lcdc_device = {
  	.id		= 1,
  	.dev	= {
  		.platform_data	= &hdmi_lcdc_info,
@@ -44,5 +49,5 @@ index 207acf0..975a7ac 100644
  };
  
 -- 
-1.8.3.2
+1.8.4
 
