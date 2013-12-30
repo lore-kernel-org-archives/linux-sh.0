@@ -1,66 +1,56 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Dec 2013 20:16:00 +0000
-Subject: [PATCH v2 6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
-Message-Id: <1388175362-17132-7-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 30 Dec 2013 12:58:45 +0000
+Subject: Re: [PATCH v2 6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+Message-Id: <20131230125845.GX31886@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="+1tcKVLXPU0QafK6"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <1388175362-17132-7-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-7-git-send-email-geert@linux-m68k.org>
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
----
-v2:
-  - Clarify RSPI/QSPI
-  - Add interrupt-parent
-  - s/should/must/ for #address-cells and #size-cells
+--+1tcKVLXPU0QafK6
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
- Documentation/devicetree/bindings/spi/spi-rspi.txt |   31 ++++++++++++++++++++
- 1 file changed, 31 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/spi/spi-rspi.txt
+On Fri, Dec 27, 2013 at 09:16:00PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> Cc: devicetree@vger.kernel.org
 
-diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-new file mode 100644
-index 000000000000..504db8917927
---- /dev/null
-+++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-@@ -0,0 +1,31 @@
-+Device tree configuration for Renesas RSPI/QSPI driver
-+
-+Required properties:
-+- compatible       : For Renesas Serial Peripheral Interface:
-+                     "renesas,rspi-<soctype>", "renesas,rspi-rz" as fallback.
-+		     For Quad Serial Peripheral Interface:
-+		     "renesas,qspi-<soctype>", "renesas,qspi-rcar" as fallback.
-+- reg              : address start and address range size of device
-+- interrupts       : 3 interrupts for RSPI (SPEI, SPRI, SPTI),
-+		     1 interrupt for QSPI
-+- interrupt-parent : the phandle for the interrupt controller that
-+		     services interrupts for this device.
-+- num-cs	   : Number of chip selects
-+- #address-cells   : must be <1>
-+- #size-cells      : must be <0>
-+
-+Pinctrl properties might be needed, too. See there.
-+
-+Example:
-+
-+	spi0: spi@e800c800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800c800 0x24>;
-+		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-parent = <&gic>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+	};
--- 
-1.7.9.5
+You've not CCed any maintainers on any of this stuff so I'm assuming you
+don't want any review or the patches applying.  You should in general
+always CC maintainers, things that only go to the list can easily be
+missed.  However I did take a brief look...
 
+> +- num-cs	   : Number of chip selects
+
+Why is this variable and how does this map onto hardware?
+
+--+1tcKVLXPU0QafK6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSwW4CAAoJELSic+t+oim9ZPQP/2nd3HMmCR2psp65DPPYxhdy
+dEKLTndZvFcSAN5OxpykTfNUW4s+cEplfYE9qSvD6mJx7XlKhFDvtbbS7/kTyxWn
+n09MH+URO0Tphydi0kXznvQhAj2WYndoYOeWIo3F+xNcrmqy3ejAra5/qQzHxSS+
+2Un6Sn0hNejpR5coQgtiy155VZhYMjGWmUpaKxK8OWRR7uhwrJ5uEBi5VkymWNoy
+iETHs5SWfIIrw525J0zI6HBbiYS3dlrcnc4AmIqgGSnZumEq9vfLI+XjlobNt6lN
+f9FhxJFqt+R3fo+uFno0+Rh4IiZOVxLOOEZCexJ35sjGfcPHLXXotD/1ujqGEUZi
+CBFjWUmDOet0xq1MFH3n84Gbg3T5eUSVaFPusCkMK6o3Kr6MPx7Hyis89nfqSO1J
+GriHQoxzs5c0VdeIkN5yuTuUq29KSfyeZAfV748/lOW7L1Z0Y/w3o/ZaQ3uOjZrC
+vi7d5AQViWoxdpxeHW25Gik0QdfEhUF2VW+ERdXSooIgKHbO2ggGA4rvmJMujXZz
+tOCTA19CffOvyYuSxH2mu+ifkokJFTy4ve0JmwijbJPcNjurCr6SlqU89jX4GZ83
+SEp4pMJ+QO6QPR3ruHTcyFfAKXfI/kUgp8xFIqwGOuYAaX8aZmryefrctlDXrOGE
+pYb/UsveOosAG9Io7Kg8
+=W25w
+-----END PGP SIGNATURE-----
+
+--+1tcKVLXPU0QafK6--
