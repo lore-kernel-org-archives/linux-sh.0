@@ -1,73 +1,55 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Dec 2013 02:07:06 +0000
-Subject: [PATCH 01/26] ARM: shmobile: bockw: use regulator for MMCIF
-Message-Id: <06ac2a61e1559e5986b1e2269d110d51576ab8d4.1387763524.git.horms+renesas@verge.net.au>
+Date: Mon, 30 Dec 2013 00:57:05 +0000
+Subject: [GIT PULL 0/3] Third Round of Renesas ARM based SoC Fixes for v3.13
+Message-Id: <cover.1388364591.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387763524.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387763524.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-When regulators are used with MMC devices, sh_mmcif_plat_data::ocr
-is not needed, they can be removed from platform data.
-This patch adds v3.3 regulator settings,
-and moved fixed-dummy regulator registration position
+Please consider this third round of Renesas ARM based SoC fixes for v3.13.
+Or alternatively, if it is too late in the v3.13 cycle, please consider
+them for v3.14.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-bockw.c | 13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
+This pull request is based on the second round such fixes,
+tagged as renesas-fixes2-for-v3.13, which you have already pulled.
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 3861152..540f0dc 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -116,6 +116,11 @@ static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
- };
- 
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
-+};
-+
- static struct smsc911x_platform_config smsc911x_data __initdata = {
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
- 	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-@@ -271,7 +276,6 @@ static struct resource mmc_resources[] __initdata = {
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat __initdata = {
- 	.sup_pclk	= 0,
--	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NEEDS_POLL,
-@@ -614,6 +618,10 @@ static void __init bockw_init(void)
- 		&usb_phy_platform_data,
- 		sizeof(struct rcar_phy_platform_data));
- 
-+	regulator_register_fixed(0, dummy_supplies,
-+				 ARRAY_SIZE(dummy_supplies));
-+	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
- 
- 	/* for SMSC */
- 	fpga = ioremap_nocache(FPGA, SZ_1M);
-@@ -629,9 +637,6 @@ static void __init bockw_init(void)
- 		val &= ~(1 << 4); /* enable SMSC911x */
- 		iowrite16(val, fpga + IRQ0MR);
- 
--		regulator_register_fixed(0, dummy_supplies,
--					 ARRAY_SIZE(dummy_supplies));
--
- 		platform_device_register_resndata(
- 			&platform_bus, "smsc911x", -1,
- 			smsc911x_resources, ARRAY_SIZE(smsc911x_resources),
--- 
-1.8.4
 
+The following changes since commit d721a15c300c5f638a11573a6dd492158e737d6a:
+
+  ARM: shmobile: r8a7790: fix shdi resource sizes (2013-12-19 18:14:48 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes3-for-v3.13
+
+for you to fetch changes up to b6328a6b7ba57fc84c38248f6f0e387e1170f1a8:
+
+  ARM: shmobile: mackerel: Fix coherent DMA mask (2013-12-26 14:21:03 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM based SoC Fixes for v3.13
+
+* sh7372 (SH-Mobile AP4) based Mackerel board
+  r8a773a0 (SH-Mobile AG5) based kzm9g board
+  r8a7740 (R-Mobile A1) based Armadillo board
+
+  - Correct coherent DMA mask
+
+    This resolves regressions introduced by 4dcfa60071b3d23f
+    ("ARM: DMA-API: better handing of DMA masks for coherent allocations")
+    in v3.12-rc1.
+
+----------------------------------------------------------------
+Laurent Pinchart (3):
+      ARM: shmobile: armadillo: Fix coherent DMA mask
+      ARM: shmobile: kzm9g: Fix coherent DMA mask
+      ARM: shmobile: mackerel: Fix coherent DMA mask
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 4 ++--
+ arch/arm/mach-shmobile/board-kzm9g.c           | 2 +-
+ arch/arm/mach-shmobile/board-mackerel.c        | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
