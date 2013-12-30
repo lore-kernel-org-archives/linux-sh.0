@@ -1,12 +1,16 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Dec 2013 18:16:08 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 30 Dec 2013 00:58:07 +0000
 Subject: [PATCH 2/3] ARM: shmobile: kzm9g: Fix coherent DMA mask
-Message-Id: <1387217769-22751-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <4f387323853c495ac589210832fad4503f75a0e7.1388364591.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1388364591.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1388364591.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 Commit 4dcfa60071b3d23f0181f27d8519f12e37cefbb9 ("ARM: DMA-API: better
 handing of DMA masks for coherent allocations") added an additional
@@ -17,6 +21,7 @@ Set the LCDC coherent DMA mask to DMA_BIT_MASK(32) instead of ~0 to fix
 the problem.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/board-kzm9g.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -35,5 +40,5 @@ index fe689b7..bc40b85 100644
  };
  
 -- 
-1.8.3.2
+1.8.4
 
