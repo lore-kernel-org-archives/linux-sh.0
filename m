@@ -1,37 +1,35 @@
 From: Olof Johansson <olof@lixom.net>
-Date: Thu, 02 Jan 2014 18:55:59 +0000
-Subject: Re: [GIT PULL 0/3] Renesas SH based SoC Updates for v3.14
-Message-Id: <20140102185559.GF8684@quad.lixom.net>
+Date: Thu, 02 Jan 2014 19:01:29 +0000
+Subject: Re: [GIT PULL 0/3] Third Round of Renesas ARM based SoC Fixes for v3.13
+Message-Id: <20140102190129.GH8684@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387889858.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387889858.git.horms+renesas@verge.net.au>
+References: <cover.1388364591.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1388364591.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 11:28:56PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
+On Mon, Dec 30, 2013 at 09:57:05AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Please consider these Renesas SH based SoC Updates for v3.14.
+> Please consider this third round of Renesas ARM based SoC fixes for v3.13.
+> Or alternatively, if it is too late in the v3.13 cycle, please consider
+> them for v3.14.
 > 
-> I am routing these changes through my tree as they are
-> dependencies for updates to the SH SCI driver.
-> 
-> This pull-request is based on the second round of Renesas SH SCI updates
-> for v3.14, tagged as renesas-sh-sci2-for-v3.14, which I will
-> also send a pull-request for today.
+> This pull request is based on the second round such fixes,
+> tagged as renesas-fixes2-for-v3.13, which you have already pulled.
 > 
 > 
-> The following changes since commit ec09c5eb491834d4011c72538e58d8b7096076bd:
+> The following changes since commit d721a15c300c5f638a11573a6dd492158e737d6a:
 > 
->   serial: sh-sci: Rework baud rate calculation (2013-12-24 11:17:53 +0900)
+>   ARM: shmobile: r8a7790: fix shdi resource sizes (2013-12-19 18:14:48 +0900)
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-soc-for-v3.14
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes3-for-v3.13
 
-Pulled, thanks.
+Pulled into fixes for 3.13. Thanks!
 
 
 -Olof
