@@ -1,67 +1,51 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 26 Jan 2014 16:49:00 +0000
-Subject: [PATCH 3/8] ARM: shmbobile: r8a7790.dtsi: add pci0/1/2 nodes
-Message-Id: <1390754945-28142-4-git-send-email-ben.dooks@codethink.co.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 02 Jan 2014 15:00:57 +0000
+Subject: Re: [PATCH V3] i2c: riic: add driver
+Message-Id: <20140102150057.GA3914@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8t9RHnE3ZwKMSgU+"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, horms+renesas@verge.net.au
+References: <1387562930-14645-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1387562930-14645-1-git-send-email-wsa@the-dreams.de>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org
 
-Add nodes for USB PCI bridge devices.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
----
-Cc: devicetree@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: horms+renesas@verge.net.au
----
- arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+--8t9RHnE3ZwKMSgU+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3cc834b..e716df8 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -728,4 +728,34 @@
- 				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
- 	};
-+
-+	pci0: pci@ee090000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	pci1: pci@ee0b0000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0b0000 0x0 0xc00>,
-+		      <0x0 0xee0a0000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	pci2: pci@ee0d0000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
- };
--- 
-1.8.5.2
+On Fri, Dec 20, 2013 at 07:08:50PM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa@sang-engineering.com>
+>=20
+> Tested with a r7s72100 genmai board acessing an eeprom.
+>=20
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 
+Applied to for-next, thanks!
+
+
+--8t9RHnE3ZwKMSgU+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSxX8pAAoJEBQN5MwUoCm2L0IQAKAdPlVjM2JVXb3Ev6V4JFNb
+rzVeMpQSuDPDG7XC85YkR+V+xx22mv1d2DaX6UK9TUK1JfAd69Ff26uLBW/R6ISf
+UkMt/sBBd5rkAhusH/j95pKUDOBt9L8qr+Sd440K82sqLoZi49hKDH4qOjkzpqCp
+kdv1sNduUB+ASNzAPZLsCuC4hTu6wXQmx4/S5hiGHod1dUPR6fkzLlgfQthcJd/c
+SytHY3cPivLE21uM/M9u9++xzpMGlKLlULGd/8FCQ9R4gDtQURPTtbS/eXgJCCuv
+pxz35v1VzVClAUNor/Si8xBzani3FwGgjpaPf1MY35o5PIt7mPn89CS+0V1GcTfW
+dtKSeU2Q4wpVDnHJva1OHKA1iUu4NjGlszRciT0XFOhMbSHdxC3TZeji99oCNBoh
+35SF2UvE93WJFO0F8vedb8lf2zVyZeStx4+DA/HdulcIWQGH8G8xGeooeU/GKlTA
+2gqE6vT7vBfbiNPZaT5fE+6l3OsUzMIJKOazU4BcbCHTe2v97SJchMlSijx9Ttij
+w5uQrma0awevpAkZN8LohIeBlZJBluS5N/vHasW5eydvk0VIdalJK1nPkH5x+mfv
+iHza2x6EBfayPUozLvlrPtijkYftVvpfuyhBkgfkDe6PO/WUMgE40qAW48eJP8Vw
+5DHWp1aJwXSC9fzw2OmB
+=Ah9n
+-----END PGP SIGNATURE-----
+
+--8t9RHnE3ZwKMSgU+--
