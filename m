@@ -1,41 +1,111 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 21 Jan 2014 12:59:45 +0000
-Subject: Re: [PATCH 0/2] clk: shmobile rcar-gen2 fixes
-Message-Id: <2118020.lZAv6IL4Xy@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 02 Jan 2014 10:25:36 +0000
+Subject: Re: [PATCH 3/8] spi: rspi: Add support for more than one interrupt
+Message-Id: <CAMuHMdU8HjLgix0dvrECm3tan909s8kF_OznP1060KUN2dDTaw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CAMuHMdUVGAL_h8iezPHZsmfC+77xXE9+irNywk4LYcqAMk9JGg@mail.gmail.com>
- <1591253.8BzYfubhGS@avalon>
-In-Reply-To: <1591253.8BzYfubhGS@avalon>
+References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
+	<1387885248-28425-4-git-send-email-geert+renesas@linux-m68k.org>
+	<2037815.gDYqhVmlrl@avalon>
+In-Reply-To: <2037815.gDYqhVmlrl@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@linux-m68k.org>, linux-spi@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Mike,
+Hi Laurent,
 
-On Wednesday 08 January 2014 00:06:39 Laurent Pinchart wrote:
-> On Tuesday 07 January 2014 17:59:01 Geert Uytterhoeven wrote:
-> > On Tue, Jan 7, 2014 at 5:47 PM, Laurent Pinchart wrote:
-> > > Geert, could you please verify that the series fixes your QSPI clock
-> > > issues with the Koelsch board ?
-> > > 
-> > > Laurent Pinchart (2):
-> > >   clk: shmobile: rcar-gen2: Fix clock parent all non-PLL clocks
-> > >   clk: shmobile: rcar-gen2: Fix qspi divisor
-> > 
-> > Thanks, both:
-> > 
-> > Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> 
-> Thank you.
-> 
-> Mike, could you please pick those patches up for v3.14 ?
+On Tue, Dec 31, 2013 at 12:38 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Tuesday 24 December 2013 12:40:43 Geert Uytterhoeven wrote:
+>> +     int irq[MAX_NUM_IRQ];
+>
+> Should this field be called irqs ?
 
-Ping ?
+OK.
 
--- 
-Regards,
+>> +     unsigned int numirq;
+>
+> This driver seems to use underscores to separate words in variable names,
+> maybe you could use num_irq (or num_irqs) instead.
 
-Laurent Pinchart
+OK.
 
+>> +     int i, ret = 0;
+>
+> i is an unsigned loop index, could you please make it an unsigned int ?
+
+OK.
+
+>> @@ -948,6 +948,19 @@ static int rspi_probe(struct platform_device *pdev)
+>>       rspi->ops = ops;
+>>       rspi->master = master;
+>>
+>> +     for (i = 0; i < MAX_NUM_IRQ; i++) {
+>> +             irq = platform_get_irq(pdev, i);
+>> +             if (irq < 0) {
+>> +                     if (rspi->numirq)
+>> +                             break;
+>> +                     dev_err(&pdev->dev, "platform_get_irq error\n");
+>> +                     ret = -ENODEV;
+>> +                     goto error1;
+>> +             }
+>> +             rspi->irq[i] = irq;
+>> +             rspi->numirq++;
+>> +     }
+>> +
+>>       res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+>>       rspi->addr = devm_ioremap_resource(&pdev->dev, res);
+>>       if (IS_ERR(rspi->addr)) {
+>> @@ -979,14 +992,16 @@ static int rspi_probe(struct platform_device *pdev)
+>>       master->transfer = rspi_transfer;
+>>       master->cleanup = rspi_cleanup;
+>>
+>> -     ret = devm_request_irq(&pdev->dev, irq, rspi_irq, 0,
+>> -                            dev_name(&pdev->dev), rspi);
+>> -     if (ret < 0) {
+>> -             dev_err(&pdev->dev, "request_irq error\n");
+>> -             goto error1;
+>> +     for (i = 0; i < rspi->numirq; i++) {
+>> +             ret = devm_request_irq(&pdev->dev, rspi->irq[i], rspi_irq, 0,
+>> +                                    dev_name(&pdev->dev), rspi);
+>> +             if (ret < 0) {
+>> +                     dev_err(&pdev->dev, "request_irq %d error\n",
+>> +                             rspi->irq[i]);
+>> +                     goto error1;
+>> +             }
+>>       }
+>
+> Just an idea, what about combining the two loops ?
+
+I was a bit concerned about dependencies and cleanup, but indeed, it seems
+to be possible.
+
+>> --- a/include/linux/spi/rspi.h
+>> +++ b/include/linux/spi/rspi.h
+>> @@ -1,7 +1,7 @@
+>>  /*
+>>   * Renesas SPI driver
+>>   *
+>> - * Copyright (C) 2012  Renesas Solutions Corp.
+>> + * Copyright (C) 2012, 2013  Renesas Solutions Corp.
+>>   *
+>>   * This program is free software; you can redistribute it and/or modify
+>>   * it under the terms of the GNU General Public License as published by
+>
+> This change seems to be unrelated. You might want to squash it into patch 1/8.
+
+I'll move it to the first patch that actually adds code to rspi.h.
+
+Thanks for your comments!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
