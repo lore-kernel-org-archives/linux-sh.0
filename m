@@ -1,51 +1,37 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sat, 18 Jan 2014 15:10:21 +0000
-Subject: [PATCH] pci-rcar-gen2: add of match table
-Message-Id: <1390057821-14604-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Olof Johansson <olof@lixom.net>
+Date: Thu, 02 Jan 2014 18:55:59 +0000
+Subject: Re: [GIT PULL 0/3] Renesas SH based SoC Updates for v3.14
+Message-Id: <20140102185559.GF8684@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390057420-13226-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390057420-13226-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <cover.1387889858.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387889858.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, "open list:PCI DRIVER FOR RE..." <linux-pci@vger.kernel.org>, "open list:OPEN FIRMWARE AND..." <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add OF match table for pci-rcar-gen2 driver for device tree support.
+On Tue, Dec 24, 2013 at 11:28:56PM +0900, Simon Horman wrote:
+> Hi Kevin, Hi Olof, Hi Arnd,
+> 
+> Please consider these Renesas SH based SoC Updates for v3.14.
+> 
+> I am routing these changes through my tree as they are
+> dependencies for updates to the SH SCI driver.
+> 
+> This pull-request is based on the second round of Renesas SH SCI updates
+> for v3.14, tagged as renesas-sh-sci2-for-v3.14, which I will
+> also send a pull-request for today.
+> 
+> 
+> The following changes since commit ec09c5eb491834d4011c72538e58d8b7096076bd:
+> 
+>   serial: sh-sci: Rework baud rate calculation (2013-12-24 11:17:53 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-soc-for-v3.14
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
-Cc: Bjorn Helgaas <bhelgaas@google.com> (supporter:PCI SUBSYSTEM)
-Cc: Simon Horman <horms@verge.net.au> (maintainer:PCI DRIVER FOR RE...)
-Cc: linux-pci@vger.kernel.org (open list:PCI DRIVER FOR RE...)
-Cc: linux-sh@vger.kernel.org (open list:PCI DRIVER FOR RE...)
-Cc: devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND...)
----
- drivers/pci/host/pci-rcar-gen2.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+Pulled, thanks.
 
-diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-index ceec147..ea65bac 100644
---- a/drivers/pci/host/pci-rcar-gen2.c
-+++ b/drivers/pci/host/pci-rcar-gen2.c
-@@ -311,9 +311,17 @@ static int __init rcar_pci_probe(struct platform_device *pdev)
- 	return rcar_pci_add_controller(priv);
- }
- 
-+static struct of_device_id rcar_pci_of_match[] = {
-+	{ .compatible = "renesas,pci-r8a7790", },
-+	{ },
-+};
-+
-+MODULE_DEVICE_TABLE(of, rcar_pci_of_match);
-+
- static struct platform_driver rcar_pci_driver = {
- 	.driver = {
- 		.name = "pci-rcar-gen2",
-+		.of_match_table = rcar_pci_of_match,
- 	},
- };
- 
--- 
-1.8.5.2
 
+-Olof
