@@ -1,44 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 08:48:04 +0000
-Subject: [PATCH 4/8] ARM: shmobile: bockw: Conditionally select SMSC_PHY
-Message-Id: <1389084488-25984-5-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 02 Jan 2014 15:05:50 +0000
+Subject: Re: [PATCH 01/15] i2c: shmobile/rcar: Restrict non-COMPILE_TEST compilation
+Message-Id: <1798320.lHX29KN0J4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131128073621.GC24146@verge.net.au> <1786644.MDElX0sS53@avalon>
+In-Reply-To: <1786644.MDElX0sS53@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The bockw board uses has an SMSC911X ethernet controller which uses an
-SMSC phy. Select SMSC_PHY for bockw if SMSC911X is enabled to make use of the
-SMSC-specific phy driver rather than relying on the generic phy driver.
+Hi Wolfram,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+On Wednesday 11 December 2013 13:47:34 Laurent Pinchart wrote:
+> Hi Wolfram,
+> 
+> Could you please pick this patch up for v3.14 ?
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 6f16983..fdd274d 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -209,6 +209,7 @@ config MACH_BOCKW
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select RENESAS_INTC_IRQPIN
-+	select SMSC_PHY if SMSC911X
- 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	select USE_OF
-@@ -219,6 +220,7 @@ config MACH_BOCKW_REFERENCE
- 	select ARCH_REQUIRE_GPIOLIB
- 	select RENESAS_INTC_IRQPIN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SMSC_PHY if SMSC911X
- 	select USE_OF
- 	---help---
- 	   Use reference implementation of BockW board support
+Ping ?
+
+> On Thursday 28 November 2013 16:36:21 Simon Horman wrote:
+> > On Wed, Nov 27, 2013 at 02:18:23AM +0100, Laurent Pinchart wrote:
+> > > Hardware supported by the i2c sh_mobile and rcar drivers is only found
+> > > on SUPERH or ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST
+> > > compilation to them.
+> > > 
+> > > Cc: Wolfram Sang <wsa@the-dreams.de>
+> > > Cc: linux-i2c@vger.kernel.org
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > 
+> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> > 
+> > > ---
+> > > 
+> > >  drivers/i2c/busses/Kconfig | 4 ++--
+> > >  1 file changed, 2 insertions(+), 2 deletions(-)
+> > > 
+> > > diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+> > > index 3b26129..92bdcf9 100644
+> > > --- a/drivers/i2c/busses/Kconfig
+> > > +++ b/drivers/i2c/busses/Kconfig
+> > > @@ -683,7 +683,7 @@ config I2C_SH7760
+> > > 
+> > >  config I2C_SH_MOBILE
+> > >  
+> > >  	tristate "SuperH Mobile I2C Controller"
+> > > 
+> > > -	depends on SUPERH || ARM || COMPILE_TEST
+> > > +	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+> > > 
+> > >  	help
+> > >  	
+> > >  	  If you say yes to this option, support will be included for the
+> > >  	  built-in I2C interface on the Renesas SH-Mobile processor.
+> > > 
+> > > @@ -796,7 +796,7 @@ config I2C_XLR
+> > > 
+> > >  config I2C_RCAR
+> > >  
+> > >  	tristate "Renesas R-Car I2C Controller"
+> > > 
+> > > -	depends on ARM || COMPILE_TEST
+> > > +	depends on ARCH_SHMOBILE || COMPILE_TEST
+> > > 
+> > >  	help
+> > >  	
+> > >  	  If you say yes to this option, support will be included for the
+> > >  	  R-Car I2C controller.
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
