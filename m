@@ -1,73 +1,60 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 27 Jan 2014 08:32:19 +0000
-Subject: Re: [PATCH 4/9] idle: move the cpuidle entry point to the generic idle loop
-Message-Id: <52E61993.2090705@linaro.org>
+From: Olof Johansson <olof@lixom.net>
+Date: Thu, 02 Jan 2014 18:49:39 +0000
+Subject: Re: [GIT PULL 00/21] Third Round of Renesas ARM Based SoC DT Updates for v3.14
+Message-Id: <20140102184939.GE8684@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
- <1390802904-28399-5-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1390802904-28399-5-git-send-email-nicolas.pitre@linaro.org>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387893834.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 01/27/2014 07:08 AM, Nicolas Pitre wrote:
-> In order to integrate cpuidle with the scheduler, we must have a better
-> proximity in the core code with what cpuidle is doing and not delegate
-> such interaction to arch code.
->
-> Architectures implementing arch_cpu_idle() should simply enter
-> a cheap idle mode in the absence of a proper cpuidle driver.
->
-> Signed-off-by: Nicolas Pitre <nico@linaro.org>
+On Tue, Dec 24, 2013 at 11:19:23PM +0900, Simon Horman wrote:
+> Hi Kevin, Hi Olof, Hi Arnd,
+> 
+> please consider this third round of Renesas ARM based SoC DT updates for v3.14.
+> 
+> This is based on a merge of:
+> 
+> * The second round of Renesas ARM based SoC DT updates for v3.14,
+>   tagged as renesas-dt2-for-v3.14, which I have previously sent a
+>   pull-request for.
+> 
+> * The second round of Renesas ARM based SoC updates for v3.14,
+>   tagged as renesas-soc2-for-v3.14, which I have previously sent a
+>   pull-request for.
+> 
+> * The clk-next-shmobile branch of Mike Turquette's tree
+> 
+> * The clockevents/for-Simon-3.13-rc2 branch of Daniel Lezcano's tree
+> 
+> * The pinctl/for-next branch of Linus Walleij's tree
+> 
+> * v3.13-rc3
 
-This patch without the next ones will lead to an extra call to=20
-cpuidle_idle_call.
+Ah, here's the missing clk branch that caused earlier merges not to build.
 
-	cpuidle_idle_call
-		arch_cpu_idle
-			cpuidle_idle_call
-				x86_idle
+Please provide actual URLs for the external branches since we want to
+track them. I can't reverse-engineer them since you use remotes instead
+of the URL when you merged in, unfortunately.
 
-But I guess it is acceptable as it is fixed with the next patches of the=20
-serie.
+(No need to redo the pull request, just give me the URLs, please.
 
-Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> The reason for these merges is to provide dependencies for
+> the clock updates for the r8a7791 (R-Car M2) based Koelsch and r8a7790
+> (R-Car H2) based Lager boards.
+> 
+> 
+> The following changes since commit b652896b02df3dfde3a68957cce01f2aa4585842:
+> 
+>   ARM: shmobile: r8a7791: Add SSI clocks in device tree (2013-12-24 23:01:13 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v3.14
 
-> ---
->   kernel/cpu/idle.c | 4 +++-
->   1 file changed, 3 insertions(+), 1 deletion(-)
->
-> diff --git a/kernel/cpu/idle.c b/kernel/cpu/idle.c
-> index 4e327e211b..a6f40ad9f8 100644
-> --- a/kernel/cpu/idle.c
-> +++ b/kernel/cpu/idle.c
-> @@ -3,6 +3,7 @@
->    */
->   #include <linux/sched.h>
->   #include <linux/cpu.h>
-> +#include <linux/cpuidle.h>
->   #include <linux/tick.h>
->   #include <linux/mm.h>
->   #include <linux/stackprotector.h>
-> @@ -94,7 +95,8 @@ static void cpu_idle_loop(void)
->   				if (!current_clr_polling_and_test()) {
->   					stop_critical_timings();
->   					rcu_idle_enter();
-> -					arch_cpu_idle();
-> +					if (cpuidle_idle_call())
-> +						arch_cpu_idle();
->   					WARN_ON_ONCE(irqs_disabled());
->   					rcu_idle_exit();
->   					start_critical_timings();
->
+Pulled, thanks.
 
 
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
-
+-Olof
