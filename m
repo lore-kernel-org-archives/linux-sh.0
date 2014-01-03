@@ -1,30 +1,35 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 23 Jan 2014 08:44:28 +0000
-Subject: Re: [GIT PULL] Renesas pinctrl patch
-Message-Id: <CACRpkdYhVVvFtkev_DS+PxiRASgwPd-XHwABJzVz9Gw7RcOreA@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 15:48:48 +0000
+Subject: [PATCH 4/4] ARM: shmobile: lager: Make spi_flash_data const
+Message-Id: <1388764128-27686-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5411991.NWHfO7Sty2@avalon>
-In-Reply-To: <5411991.NWHfO7Sty2@avalon>
+References: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 22, 2014 at 11:21 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-> Hi Linus,
->
-> The following changes since commit 8385af02bad1724a720f6ba4c1ec590d4f082229:
->
->   pinctrl: sirf: add pin group for USP0 with only RX or TX frame sync
-> (2014-01-08 10:51:10 +0100)
->
-> are available in the git repository at:
->
->   git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ arch/arm/mach-shmobile/board-lager.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Pulled in for v3.15.
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f20c10a18543..40ace7195f84 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -263,7 +263,7 @@ static struct mtd_partition spi_flash_part[] = {
+ 	},
+ };
+ 
+-static struct flash_platform_data spi_flash_data = {
++static const struct flash_platform_data spi_flash_data = {
+ 	.name           = "m25p80",
+ 	.parts          = spi_flash_part,
+ 	.nr_parts       = ARRAY_SIZE(spi_flash_part),
+-- 
+1.7.9.5
 
-Yours,
-Linus Walleij
