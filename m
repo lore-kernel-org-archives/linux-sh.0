@@ -1,31 +1,42 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 03 Jan 2014 00:34:07 +0000
+From: Joe Perches <joe@perches.com>
+Date: Fri, 03 Jan 2014 01:42:27 +0000
 Subject: Re: [PATCH] sh_eth: coding style fixes
-Message-Id: <20140102.193407.23280653408847634.davem@davemloft.net>
+Message-Id: <1388713347.2259.86.camel@joe-AO722>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201312310325.21951.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201312310325.21951.sergei.shtylyov@cogentembedded.com>
+	 <20140102.193407.23280653408847634.davem@davemloft.net>
+In-Reply-To: <20140102.193407.23280653408847634.davem@davemloft.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: David Miller <davem@davemloft.net>
+Cc: sergei.shtylyov@cogentembedded.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-RnJvbTogU2VyZ2VpIFNodHlseW92IDxzZXJnZWkuc2h0eWx5b3ZAY29nZW50ZW1iZWRkZWQuY29t
-Pg0KRGF0ZTogVHVlLCAzMSBEZWMgMjAxMyAwMzoyNToyMSArMDMwMA0KDQo+IEBAIC0xOTUyLDgg
-KzE5NDksOCBAQCBzdGF0aWMgdm9pZCBzaF9ldGhfdHhfdGltZW91dChzdHJ1Y3QgbmV0DQo+ICAJ
-bmV0aWZfc3RvcF9xdWV1ZShuZGV2KTsNCj4gIA0KPiAgCWlmIChuZXRpZl9tc2dfdGltZXIobWRw
-KSkNCj4gLQkJZGV2X2VycigmbmRldi0+ZGV2LCAiJXM6IHRyYW5zbWl0IHRpbWVkIG91dCwgc3Rh
-dHVzICU4Ljh4LCINCj4gLQkgICAgICAgIiByZXNldHRpbmcuLi5cbiIsIG5kZXYtPm5hbWUsIChp
-bnQpc2hfZXRoX3JlYWQobmRldiwgRUVTUikpOw0KPiArCQlkZXZfZXJyKCZuZGV2LT5kZXYsICIl
-czogdHJhbnNtaXQgdGltZWQgb3V0LCBzdGF0dXMgJTguOHgsIHJlc2V0dGluZy4uLlxuIg0KPiAr
-CQkJbmRldi0+bmFtZSwgKGludClzaF9ldGhfcmVhZChuZGV2LCBFRVNSKSk7DQo+ICANCj4gIAkv
-KiB0eF9lcnJvcnMgY291bnQgdXAgKi8NCj4gIAluZGV2LT5zdGF0cy50eF9lcnJvcnMrKzsNCg0K
-WW91IGRpZCBub3QgYnVpbGQgdGVzdCB0aGlzLg0KDQpkcml2ZXJzL25ldC9ldGhlcm5ldC9yZW5l
-c2FzL3NoX2V0aC5jOiBJbiBmdW5jdGlvbiChc2hfZXRoX3R4X3RpbWVvdXSiOg0KZHJpdmVycy9u
-ZXQvZXRoZXJuZXQvcmVuZXNhcy9zaF9ldGguYzoxOTUzOjQ6IGVycm9yOiBleHBlY3RlZCChKaIg
-YmVmb3JlIKFuZGV2og0KZHJpdmVycy9uZXQvZXRoZXJuZXQvcmVuZXNhcy9zaF9ldGguYzoxOTUz
-OjQ6IHdhcm5pbmc6IGZvcm1hdCChJXOiIGV4cGVjdHMgYSBtYXRjaGluZyChY2hhciAqoiBhcmd1
-bWVudCBbLVdmb3JtYXRdDQpkcml2ZXJzL25ldC9ldGhlcm5ldC9yZW5lc2FzL3NoX2V0aC5jOjE5
-NTM6NDogd2FybmluZzogZm9ybWF0IKEleKIgZXhwZWN0cyBhIG1hdGNoaW5nIKF1bnNpZ25lZCBp
-bnSiIGFyZ3VtZW50IFstV2Zvcm1hdF0NCg=
+On Thu, 2014-01-02 at 19:34 -0500, David Miller wrote:
+> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Date: Tue, 31 Dec 2013 03:25:21 +0300
+> 
+> > @@ -1952,8 +1949,8 @@ static void sh_eth_tx_timeout(struct net
+> >  	netif_stop_queue(ndev);
+> >  
+> >  	if (netif_msg_timer(mdp))
+> > -		dev_err(&ndev->dev, "%s: transmit timed out, status %8.8x,"
+> > -	       " resetting...\n", ndev->name, (int)sh_eth_read(ndev, EESR));
+> > +		dev_err(&ndev->dev, "%s: transmit timed out, status %8.8x, resetting...\n"
+> > +			ndev->name, (int)sh_eth_read(ndev, EESR));
+> >  
+> >  	/* tx_errors count up */
+> >  	ndev->stats.tx_errors++;
+> 
+> You did not build test this.
+> 
+> drivers/net/ethernet/renesas/sh_eth.c: In function ‘sh_eth_tx_timeout’:
+> drivers/net/ethernet/renesas/sh_eth.c:1953:4: error: expected ‘)’ before ‘ndev’
+
+Also, this would likely be better as:
+
+	netif_err(mdp, timer, ndev, "transmit timed out, status %#08lx, resetting...\n",
+		  sh_eth_read(ndev, EESR));
+
+
+
