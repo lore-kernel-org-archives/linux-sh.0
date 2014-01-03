@@ -1,73 +1,123 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 13 Jan 2014 12:16:41 +0000
-Subject: Re: [PATCH V2 3/8] spi: rspi: Add support for more than one interrupt
-Message-Id: <20140113121641.GP29039@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="BfIB/hDtUWEgpOfz"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 15:48:46 +0000
+Subject: [PATCH 2/4] ARM: shmobile: Set CONFIG_LOCALVERSION in defconfigs
+Message-Id: <1388764128-27686-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
- <1389522464-1569-4-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389522464-1569-4-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
---BfIB/hDtUWEgpOfz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This allows to derive the kernel flavor from the kernel version.
 
-On Sun, Jan 12, 2014 at 11:27:39AM +0100, Geert Uytterhoeven wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ arch/arm/configs/ape6evm_defconfig         |    1 +
+ arch/arm/configs/armadillo800eva_defconfig |    1 +
+ arch/arm/configs/bockw_defconfig           |    1 +
+ arch/arm/configs/genmai_defconfig          |    1 +
+ arch/arm/configs/koelsch_defconfig         |    1 +
+ arch/arm/configs/kzm9d_defconfig           |    1 +
+ arch/arm/configs/kzm9g_defconfig           |    1 +
+ arch/arm/configs/lager_defconfig           |    1 +
+ arch/arm/configs/mackerel_defconfig        |    1 +
+ arch/arm/configs/marzen_defconfig          |    1 +
+ 10 files changed, 10 insertions(+)
 
-> +	for (i = 0; i < MAX_NUM_IRQ; i++) {
-> +		irq = platform_get_irq(pdev, i);
-> +		if (irq < 0) {
-> +			if (rspi->num_irqs)
-> +				break;
-> +			dev_err(&pdev->dev, "platform_get_irq error\n");
-> +			ret = -ENODEV;
-> +			goto error1;
-> +		}
-> +		ret = devm_request_irq(&pdev->dev, irq, rspi_irq, 0,
-> +				       dev_name(&pdev->dev), rspi);
-> +		if (ret < 0) {
-> +			dev_err(&pdev->dev, "request_irq %d error\n", irq);
-> +			goto error1;
-> +		}
-> +		rspi->irqs[i] = irq;
-> +		rspi->num_irqs++;
->  	}
+diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+index c13f560f07db..554611c82d04 100644
+--- a/arch/arm/configs/ape6evm_defconfig
++++ b/arch/arm/configs/ape6evm_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-ape6evm"
+ CONFIG_SYSVIPC=y
+ CONFIG_POSIX_MQUEUE=y
+ CONFIG_NO_HZ=y
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 1edc2ce32063..2e8212d4c51e 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-armadillo800eva"
+ CONFIG_EXPERIMENTAL=y
+ CONFIG_SYSVIPC=y
+ CONFIG_IKCONFIG=y
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 564eab338f02..0f583fecfc69 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-bockw"
+ # CONFIG_ARM_PATCH_PHYS_VIRT is not set
+ CONFIG_KERNEL_LZMA=y
+ CONFIG_NO_HZ=y
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index 5fa44cb6e915..ede35f400df2 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-genmai"
+ CONFIG_SYSVIPC=y
+ CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index c8ebeb1f0497..f795ea42a8fc 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-koelsch"
+ CONFIG_SYSVIPC=y
+ CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+index 3ee3858939d9..2d1b9b3740dd 100644
+--- a/arch/arm/configs/kzm9d_defconfig
++++ b/arch/arm/configs/kzm9d_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-kzm9d"
+ # CONFIG_ARM_PATCH_PHYS_VIRT is not set
+ CONFIG_EXPERIMENTAL=y
+ CONFIG_SYSVIPC=y
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 800faff9df1d..26a3303bcdf7 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-kzm9g"
+ # CONFIG_ARM_PATCH_PHYS_VIRT is not set
+ CONFIG_EXPERIMENTAL=y
+ # CONFIG_LOCALVERSION_AUTO is not set
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index da8fa5e8719b..18b9dd96250a 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-lager"
+ CONFIG_SYSVIPC=y
+ CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 9d406022d72b..f303b8c5b7d2 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-mackerel"
+ CONFIG_EXPERIMENTAL=y
+ CONFIG_SYSVIPC=y
+ CONFIG_IKCONFIG=y
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index fe3d8f7c0a2c..b89105b12ae6 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -1,3 +1,4 @@
++CONFIG_LOCALVERSION="-marzen"
+ # CONFIG_ARM_PATCH_PHYS_VIRT is not set
+ CONFIG_EXPERIMENTAL=y
+ CONFIG_KERNEL_LZMA=y
+-- 
+1.7.9.5
 
-This should really have some way of identifying which interrupt is which
-either through defines in the header or by using _get_irq_byname() (the
-latter is a bit neater) - even if the driver can get away with treating
-all interrupts interchangably now it would seem very surprising if they
-were totally interchangible so the driver might get support for treating
-them separately in the future (or some new IP revision might add another
-interrupt type for that matter).
-
-Some blank lines (for example between get and request) would be good
-too.
-
---BfIB/hDtUWEgpOfz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS09kmAAoJELSic+t+oim9oX0P+wSvUdqbyLpv67D7PNMY2iPE
-9g4PdxskijM7QfhgJ6kxYqlqZj/RQHyMvh1b0vW3Pa0zjEWN2bIxg76MUjHaExAY
-Op6XA5Nf7XUwTz0q+PUMb6VWJ4KVvXLYswUMz4ExA9zbYOTaIrp+yZfgsdd4bfvn
-IP0pVOuE1nBCdn/Wx/cEzLvObKd86sm65kQ2QdBnuFaloSSg2ptUf+f2LrSq5cOM
-kM1L+s/OEAqcFVmfiaDGMa5toD7g4/uQAg+07pYjMwYfBj1TlkvDJhXhPA1Aip+B
-8/xrjBiubPMt/29XYUjLkFdeFBCBsYPoB1pbF1y9j+qbM+TMcMUeXmaXi0O+HELJ
-oIqD3JobhmZZ8ss/w2NqG63I1nsLOv2EMuSdvPOw5w+Lid9gNyXIe54TJ7QFRLSq
-6O2tynqpdTiVFOWOmmTzmXR+XF6D3t0U9l8mRdZliXLrd+1GGIa8PvA3rYN/G4Eh
-OjVCDUpq9Yy1NoENtdw14xzBwGKqrApIhRE3huykUl8XO0TGTqzdU+UG8K+d9uUo
-97v0ibeByqYl0qTfLTkKhssrPu+sw2kuOG6fcHfDPGgAkHHMsnqiQ/ESwmjRaJCv
-A+UokgBUsrFqgzi6FEb8GWqS2C+TUZAsKJGSvJcqIuTM14ADeCWixvBWsB0cckCi
-O7iB8RZ6n7BxNRZct5Ub
-=lEGM
------END PGP SIGNATURE-----
-
---BfIB/hDtUWEgpOfz--
