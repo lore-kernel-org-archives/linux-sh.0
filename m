@@ -1,77 +1,54 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 04 Jan 2014 04:59:18 +0000
-Subject: Re: [GIT PULL 00/21] Third Round of Renesas ARM Based SoC DT Updates for v3.14
-Message-Id: <20140104045918.GA3643@quad.lixom.net>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 03 Jan 2014 15:47:58 +0000
+Subject: Re: [PATCH 01/15] i2c: shmobile/rcar: Restrict non-COMPILE_TEST compilation
+Message-Id: <20140103154758.GF7132@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="JcvBIhDvR6w3jUPA"
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
- <20140102184939.GE8684@quad.lixom.net>
- <20140103234238.GA5150@verge.net.au>
-In-Reply-To: <20140103234238.GA5150@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385515117-23664-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jan 04, 2014 at 08:42:38AM +0900, Simon Horman wrote:
-> On Thu, Jan 02, 2014 at 10:49:39AM -0800, Olof Johansson wrote:
-> > On Tue, Dec 24, 2013 at 11:19:23PM +0900, Simon Horman wrote:
-> > > Hi Kevin, Hi Olof, Hi Arnd,
-> > > 
-> > > please consider this third round of Renesas ARM based SoC DT updates for v3.14.
-> > > 
-> > > This is based on a merge of:
-> > > 
-> > > * The second round of Renesas ARM based SoC DT updates for v3.14,
-> > >   tagged as renesas-dt2-for-v3.14, which I have previously sent a
-> > >   pull-request for.
-> > > 
-> > > * The second round of Renesas ARM based SoC updates for v3.14,
-> > >   tagged as renesas-soc2-for-v3.14, which I have previously sent a
-> > >   pull-request for.
-> > > 
-> > > * The clk-next-shmobile branch of Mike Turquette's tree
-> 
-> git://git.linaro.org/people/mike.turquette/linux.git clk-next-shmobile
-> 
-> > > 
-> > > * The clockevents/for-Simon-3.13-rc2 branch of Daniel Lezcano's tree
-> 
-> git://git.linaro.org/people/daniel.lezcano/linux.git clockevents/for-Simon-3.13-rc2
-> 
-> > > * The pinctl/for-next branch of Linus Walleij's tree
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git pinctl/for-next
-> 
-> > > 
-> > > * v3.13-rc3
-> > 
-> > Ah, here's the missing clk branch that caused earlier merges not to build.
-> 
-> Yes, sorry about that.
-> 
-> > Please provide actual URLs for the external branches since we want to
-> > track them. I can't reverse-engineer them since you use remotes instead
-> > of the URL when you merged in, unfortunately.
-> > 
-> > (No need to redo the pull request, just give me the URLs, please.
-> 
-> Sorry about that. Is the information I have added above sufficient?
 
-Yep, thanks! Since the branches both come from parties that we normally
-share branches with. I've cc:d them on this reply as well.
+--JcvBIhDvR6w3jUPA
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-The only branch that isn't optimal is that it pulls in all of for-next from the
-pinctrl tree, but it's OK for that tree in general. Having a dedicated topic
-branch makes it a little harder to forget and accidentally rebase.
+On Wed, Nov 27, 2013 at 02:18:23AM +0100, Laurent Pinchart wrote:
+> Hardware supported by the i2c sh_mobile and rcar drivers is only found
+> on SUPERH or ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST
+> compilation to them.
+>=20
+> Cc: Wolfram Sang <wsa@the-dreams.de>
+> Cc: linux-i2c@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
+m>
 
-Note that it's pretty much ideal for us to be cc:d into the three-way handshake
-that the remote branch will be guaranteed to be stable. The last thing we want
-is that some of these people didn't quite understand what we need w.r.t.
-stability (that has happened in the past). Especially if they feed their
-branches up to another maintainer above them.
-
-I'll merge in the dt3 branch with the above three as external dependency
-branches.
+Applied to for-next, thanks!
 
 
--Olof
+--JcvBIhDvR6w3jUPA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJSxtuuAAoJEBQN5MwUoCm2ldIP/RbDAXHnGtRtBe35brJ0rvGV
+qKPd5y6LtjdJaRdMnh4+5x43gmQzdy7vruBeaaS6b/N3ft3YlymeFOr/Gz/UICNZ
+TCdW+MHAq7SiIS6b9NtmWP0Cu4RDqSx7bXq8Oqcviyra0WS9MI3p0lojGMDQ6wNw
+fc6zEdxsuRMe7kqNkEGBG7fLghwxh5+t+s6XTp/HJyynJ7Do1EgB0Gr+fyE6m1x5
+9EiqykZRpDDv0o9zDvTFBIHcG6gxoGdm/jMRkAuYofmhgm1B5QYIGAd5uZ1Ga/vQ
+KFNPp998fqT7BhUChN5M5Ib5gl+gysxVnayD6s5dbyNdFweymq4/Yfk248J4275z
+rzSBN/eXlUqE9Ta96dOkcUKJ+SJb9sp4RZVbQoh2zE76B3V79wx7StGVI63vPVEU
+FRvNQXQFCvMVLJY4nPvDFBw+sdgc37zBYvGfouMKEFpjM5NsRtr0OHnnvgJddjvX
+1/eCtgEb8HuSHBpF2qzhoxXIvQCnJB6Ii599VAUtRsvXSEvoUu7NKk6Vpke2LK5n
+CymemXkYvLi7zdacf0ArMPxuqoqMwNfDoA3q2kidf2V0xwWGz30ijU4Un7ROJToK
+/gK3uV9rC3YKoYIRq4i6WREO9YP333VPQe7Cdij7KNSzgWaYX1INyyanDNUzpLil
+kdphQqEkykftG855fbgi
+=PJhw
+-----END PGP SIGNATURE-----
+
+--JcvBIhDvR6w3jUPA--
