@@ -1,108 +1,82 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Wed, 29 Jan 2014 09:21:49 +0000
-Subject: Re: [PATCH 1/3] arm: shmobile: lager: Add USBHS support
-Message-Id: <52E8C82D.40908@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 15:34:14 +0000
+Subject: [PATCH 1/3] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
+Message-Id: <1388763256-25851-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387548804-20829-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387548804-20829-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 01/29/2014 10:11 AM, Simon Horman wrote:
-> On Mon, Jan 27, 2014 at 07:26:53PM +0900, Magnus Damm wrote:
->> Hi Valentine,
->>
->> On Sat, Jan 25, 2014 at 8:05 AM, Valentine
->> <valentine.barshak@cogentembedded.com> wrote:
->>> On 01/24/2014 08:40 AM, Magnus Damm wrote:
->>>>
->>>> Hi Valentine,
->>>>
->>>
->>> Hi Magnus,
->>>
->>>
->>>> On Sat, Jan 18, 2014 at 3:31 AM, Valentine
->>>> <valentine.barshak@cogentembedded.com> wrote:
->>>>>
->>>>> On 01/15/2014 04:39 PM, Magnus Damm wrote:
->>>>>>
->>>>>>
->>>>>> On Fri, Dec 20, 2013 at 11:13 PM, Valentine Barshak
->>>>>> <valentine.barshak@cogentembedded.com> wrote:
->>>>>>>
->>>>>>>
->>>>>>> This adds USBHS PHY and registers USBHS device if the driver is
->>>>>>> enabled.
->>>>>>>
->>>>>>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->>>>>>> ---
->>>>>>>     arch/arm/mach-shmobile/board-lager.c | 117
->>>>>>> +++++++++++++++++++++++++++++++++++
->>>>>>>     1 file changed, 117 insertions(+)
->>>>>>
->>>>>>
->>>>>>
->>>>>> Hi Valentine,
->>>>>
->>>>>
->>>>>
->>>>> Magnus, Simon,
->>>>>
->>>>>
->>>>>>
->>>>>> Thanks for this USB function patch. I'd like to switch focus to USB
->>>>>> function soon.
->>>>>>
->>>>>> By the way, I'm happy to see that SATA platform device support is
->>>>>> picked up by Simon. I intend to give your SATA DTS patches a go later
->>>>>> this week, they should be ready to queue up rather soon I believe.
->>>>>>
->>>>>> Would it be possible for you to update your USB function platform
->>>>>> device patches for Lager and Koelsch? I'd like to merge those after
->>>>>> SATA, and the platform device files shouldn't change now so USB can go
->>>>>> next now unless I'm mistaken. Please send a complete per-board series
->>>>>> for USB function so patch pick up and testing gets easy - same style
->>>>>> as SATA would be great.
->>>>>
->>>>>
->>>>>
->>>>> Just respinned the USB series for Lager and Koelsch.
->>>>> I did not include defconfig changes yet.
->>>>
->>>>
->>>> Thanks!
->>>>
->>>>> I think we need to enable kernel modules in the defconfig first,
->>>>> so that multiple USB gadgets can be selected as modules.
->>>>
->>>>
->>>> I agree that for testing something is needed., but perhaps a simple
->>>> composite device is enough?
->>>>
->>>> In general I think the USB gadget kernel configuration is something
->>>> that it is left for the distributions to select since it depends on
->>>> each use case. Also, using modules is fine but I also think there is
->>>> some configfs interface that can be used to configure the USB gadget
->>>> during run time.
->>>
->>>
->>> I've sent a couple of patches that enable modules for lager and koelsch.
->>> I think this is useful even if we decide to go with composite gadget.
->>
->> Ok, thanks, I will duck and let Simon decide about this!
->
-> I think it would be better to wait until we need modules
-> before turning them on.
->
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Well, you may never need them and have everything built-in.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-Thought you might want modules for USB gadgets.
-What configuration do you propose for the USBHS gadget?
-Do you want me to add composite gadget built-in?
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 654bef369ab8..0070243c859e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -2135,6 +2135,25 @@ static const unsigned int msiof2_tx_pins[] = {
+ static const unsigned int msiof2_tx_mux[] = {
+ 	MSIOF2_TXD_MARK,
+ };
++/* - QSPI ------------------------------------------------------------------- */
++static const unsigned int qspi_pins[] = {
++	/* SPCLK, MOSI_IO0, MISO_IO1, IO2, IO3, SSL */
++	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
++	RCAR_GP_PIN(1, 7), RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 9),
++};
++static const unsigned int qspi_mux[] = {
++	SPCLK_MARK, MOSI_IO0_MARK, MISO_IO1_MARK,
++	IO2_MARK, IO3_MARK, SSL_MARK
++};
++static const unsigned int qspi_b_pins[] = {
++	/* SPCLK, MOSI_IO0, MISO_IO1, IO2, IO3, SSL */
++	RCAR_GP_PIN(6, 0), RCAR_GP_PIN(6, 1), RCAR_GP_PIN(6, 2),
++	RCAR_GP_PIN(6, 3), RCAR_GP_PIN(6, 4), RCAR_GP_PIN(6, 5),
++};
++static const unsigned int qspi_b_mux[] = {
++	SPCLK_B_MARK, MOSI_IO0_B_MARK, MISO_IO1_B_MARK,
++	IO2_B_MARK, IO3_B_MARK, SSL_B_MARK
++};
+ /* - SCIF0 ------------------------------------------------------------------ */
+ static const unsigned int scif0_data_pins[] = {
+ 	/* RX, TX */
+@@ -2877,6 +2896,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(msiof2_ss2),
+ 	SH_PFC_PIN_GROUP(msiof2_rx),
+ 	SH_PFC_PIN_GROUP(msiof2_tx),
++	SH_PFC_PIN_GROUP(qspi),
++	SH_PFC_PIN_GROUP(qspi_b),
+ 	SH_PFC_PIN_GROUP(scif0_data),
+ 	SH_PFC_PIN_GROUP(scif0_data_b),
+ 	SH_PFC_PIN_GROUP(scif0_data_c),
+@@ -3074,6 +3095,11 @@ static const char * const msiof2_groups[] = {
+ 	"msiof2_tx",
+ };
+ 
++static const char * const qspi_groups[] = {
++	"qspi",
++	"qspi_b",
++};
++
+ static const char * const scif0_groups[] = {
+ 	"scif0_data",
+ 	"scif0_data_b",
+@@ -3230,6 +3256,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(msiof0),
+ 	SH_PFC_FUNCTION(msiof1),
+ 	SH_PFC_FUNCTION(msiof2),
++	SH_PFC_FUNCTION(qspi),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+ 	SH_PFC_FUNCTION(scif2),
+-- 
+1.7.9.5
 
-Thanks,
-Val.
