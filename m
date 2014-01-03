@@ -1,77 +1,152 @@
-From: Tomi Valkeinen <tomi.valkeinen@ti.com>
-Date: Wed, 08 Jan 2014 08:31:48 +0000
-Subject: Re: [PATCH] fbdev: sh_mobile_lcdcfb: Don't use plain 0 as NULL pointer
-Message-Id: <52CD0CF4.8040900@ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="LQFSUXXUrn5vwr0bb1gGwnN2dbCpcKWdr"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 15:48:45 +0000
+Subject: [PATCH 1/4] ARM: shmobile: Disable /sbin/hotplug fork-bomb in defconfigs
+Message-Id: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385512723-11722-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385512723-11722-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: linux-fbdev@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
---LQFSUXXUrn5vwr0bb1gGwnN2dbCpcKWdr
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 2014-01-07 17:17, Laurent Pinchart wrote:
-> Hi Jean-Christophe and Tomi,
->=20
-> Could you please pick this patch up for v3.14 ?
->=20
-> On Wednesday 27 November 2013 01:38:43 Laurent Pinchart wrote:
->> This fixes a sparse warning.
->>
->> Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
->> Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
->> Cc: linux-fbdev@vger.kernel.org
->> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard=
-=2Ecom>
->> ---
->>  drivers/video/sh_mobile_lcdcfb.c | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/drivers/video/sh_mobile_lcdcfb.c
->> b/drivers/video/sh_mobile_lcdcfb.c index ab85ad6..2bcc84a 100644
->> --- a/drivers/video/sh_mobile_lcdcfb.c
->> +++ b/drivers/video/sh_mobile_lcdcfb.c
->> @@ -1227,7 +1227,7 @@ static void sh_mobile_lcdc_stop(struct
->> sh_mobile_lcdc_priv *priv) /* Free the MERAM cache. */
->>  		if (ch->cache) {
->>  			sh_mobile_meram_cache_free(priv->meram_dev, ch->cache);
->> -			ch->cache =3D 0;
->> +			ch->cache =3D NULL;
->>  		}
->>
->>  	}
+Cfr. commit 7934779a69f1184f29d786b89e77dd14519bd226 ("Driver-Core: disable
+/sbin/hotplug by default").
 
-Queued for 3.14.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ arch/arm/configs/ape6evm_defconfig         |    1 -
+ arch/arm/configs/armadillo800eva_defconfig |    1 -
+ arch/arm/configs/bockw_defconfig           |    1 -
+ arch/arm/configs/genmai_defconfig          |    1 -
+ arch/arm/configs/koelsch_defconfig         |    1 -
+ arch/arm/configs/kzm9d_defconfig           |    1 -
+ arch/arm/configs/kzm9g_defconfig           |    1 -
+ arch/arm/configs/lager_defconfig           |    1 -
+ arch/arm/configs/mackerel_defconfig        |    1 -
+ arch/arm/configs/marzen_defconfig          |    1 -
+ 10 files changed, 10 deletions(-)
 
- Tomi
+diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+index cb26c62dc722..c13f560f07db 100644
+--- a/arch/arm/configs/ape6evm_defconfig
++++ b/arch/arm/configs/ape6evm_defconfig
+@@ -47,7 +47,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_LRO is not set
+ # CONFIG_IPV6_SIT is not set
+ CONFIG_NETFILTER=y
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_FW_LOADER_USER_HELPER is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CADENCE is not set
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 9287a62de830..1edc2ce32063 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -57,7 +57,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_DIAG is not set
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_MD=y
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+index 80cff50beb34..564eab338f02 100644
+--- a/arch/arm/configs/bockw_defconfig
++++ b/arch/arm/configs/bockw_defconfig
+@@ -43,7 +43,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_LRO is not set
+ # CONFIG_INET_DIAG is not set
+ # CONFIG_IPV6 is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index aa0b704f48af..5fa44cb6e915 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -49,7 +49,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_DIAG is not set
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CORE is not set
+ # CONFIG_NET_VENDOR_ARC is not set
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index e248f49d5549..c8ebeb1f0497 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -35,7 +35,6 @@ CONFIG_UNIX=y
+ CONFIG_INET=y
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_ARC is not set
+ # CONFIG_NET_CADENCE is not set
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+index e42ce3756af3..3ee3858939d9 100644
+--- a/arch/arm/configs/kzm9d_defconfig
++++ b/arch/arm/configs/kzm9d_defconfig
+@@ -49,7 +49,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_DIAG is not set
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 9934dbc23d64..800faff9df1d 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -59,7 +59,6 @@ CONFIG_IP_PNP_DHCP=y
+ CONFIG_IRDA=y
+ CONFIG_SH_IRDA=y
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 883443f8f4f3..da8fa5e8719b 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -48,7 +48,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_DIAG is not set
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CORE is not set
+ # CONFIG_NET_VENDOR_ARC is not set
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index a61e1653fc5e..9d406022d72b 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -41,7 +41,6 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_INET_XFRM_MODE_BEET is not set
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CONCAT=y
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index f21bd405cc2a..fe3d8f7c0a2c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -42,7 +42,6 @@ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
+-- 
+1.7.9.5
 
-
-
---LQFSUXXUrn5vwr0bb1gGwnN2dbCpcKWdr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJSzQz0AAoJEPo9qoy8lh71pFAQAI5MPoqWZY9c3SvQ1h90P2vB
-nT0CJcXSBvGhuzuc6MHccR34/w70t9iPj4ZJyHfvTUgdOn5DUaUBpXXmXzlY/VYq
-6j8jHAU0GSzTkqOAfrEr0tej88K3CzBWMR4iNiJfCTt260akhSU9+UKPdWM+eJKc
-rdpqjAeur87vII04Xs2NB0ad5kEsMvS1mGMMbkBENzjCs4fQrMlcdZTIkTpAggJp
-2RpBZCAJTwgcJ+OmOIykXv9lj4A7VNly/Ruvm+H2YUeNrGZn34JG3t9pd2NCu8Qn
-Dxh3sNCRUJEurqBfPtfsJw1eH7lynh0dAgVUBMsIiKz7x/BZ+SuouIFDFpf+Dz1g
-HsQNbxMoPCiqzIPBRqZ1JMTXpeIr+RO3Df1SLRmy3UFyxpsgwouW+7ByM1HTueCO
-AfP526GK9+CuDByhTD6kMFdnZWTuYG6S1jDjdtGJn42h1vNeZav8Q9DVv628nwac
-kntbg6gM0WOvYGDiCCzxL7pJPclL10MQTOgDwMCxk3VPsBXG9RkD9SCEqIquZyoZ
-VUr/sxhUx97/kfiyUcsNNh9RxS741sTvh6EyEU5taXXrLimF36pKZdVLCkRFur1E
-BZU5s5bGFOIECWqCioQI2/NO6bps0PzgYY2W1NK2bAaBOpnr9UazzBbR+cEnHami
-wp48E0gGrXPnEgoP8qQN
-=kqSK
------END PGP SIGNATURE-----
-
---LQFSUXXUrn5vwr0bb1gGwnN2dbCpcKWdr--
