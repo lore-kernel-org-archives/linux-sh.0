@@ -1,50 +1,31 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 13 Jan 2014 12:10:44 +0000
-Subject: Re: [PATCH V2 2/8] spi: rspi: Add more QSPI register documentation
-Message-Id: <20140113121044.GO29039@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="2wyf/X6i9kneRjiV"
+From: David Miller <davem@davemloft.net>
+Date: Fri, 03 Jan 2014 00:34:07 +0000
+Subject: Re: [PATCH] sh_eth: coding style fixes
+Message-Id: <20140102.193407.23280653408847634.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
- <1389522464-1569-3-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389522464-1569-3-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <201312310325.21951.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201312310325.21951.sergei.shtylyov@cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-
---2wyf/X6i9kneRjiV
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Sun, Jan 12, 2014 at 11:27:38AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-Applied, thanks.
-
---2wyf/X6i9kneRjiV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS09fAAAoJELSic+t+oim918EQAImwV9tH0Us0xksaX5cE1JkY
-9idkUo+ITDFGd9zWfdjxLei6XApd624nLnLvjY7xoMo+Q/k0WE9rebnGSFOs4tof
-jjbRpp+ElxjXnu5/Xv/ELMC/bptVYgkOkjatumhf0El6nn2h9g+oWjam86KDP1r1
-rllUOpT5pu0tgmukoHCQADsFX4YR8p4bQvsgpeA66kAPxtv6oGGsWA8rfW7lKyDe
-b6wOQIUAA/tsSfGuQ5730fcTTRH1b1Gi1hqWYh3sLk4bEmlAd7wVL6xhUMVmc4R3
-n9L9PbvfTdK4tUtQphDVVh+WMb0FjIs48K5ML6wPfnK0IqfXvt93LXDxdKuyqGJy
-9h7Y7dq6DpWoQqfiJszVEH2hR4fg4aS+ICG1e6BKXpRkgP9SA3YVXLsIp0ieeM2w
-t8PLiu0ToeV8vp09vFuo/EFJWKFCtUsSe5LK6tGXSi6Zp81uOOn+MbBwHTLImfR5
-it59d8nngoQFXTVFX+E9VAtVHoFXXyTWwy2dpzbk4REYQD5lvaF5WBzPvFgkdoOF
-ozY6S2oU5j+VnXlUk038T5qbN5Or0d9Rkda2oqXHpiz5MXv27jblpAvEnSFuNc4D
-s4NSWh3hjjNo3U/FbwHXFgX07WZt8e9aCgBUPfDIeBMUNv+Z9CdNX/EshONCkh73
-B2u4yDwb1M1j75SbrUg0
-=isk9
------END PGP SIGNATURE-----
-
---2wyf/X6i9kneRjiV--
+RnJvbTogU2VyZ2VpIFNodHlseW92IDxzZXJnZWkuc2h0eWx5b3ZAY29nZW50ZW1iZWRkZWQuY29t
+Pg0KRGF0ZTogVHVlLCAzMSBEZWMgMjAxMyAwMzoyNToyMSArMDMwMA0KDQo+IEBAIC0xOTUyLDgg
+KzE5NDksOCBAQCBzdGF0aWMgdm9pZCBzaF9ldGhfdHhfdGltZW91dChzdHJ1Y3QgbmV0DQo+ICAJ
+bmV0aWZfc3RvcF9xdWV1ZShuZGV2KTsNCj4gIA0KPiAgCWlmIChuZXRpZl9tc2dfdGltZXIobWRw
+KSkNCj4gLQkJZGV2X2VycigmbmRldi0+ZGV2LCAiJXM6IHRyYW5zbWl0IHRpbWVkIG91dCwgc3Rh
+dHVzICU4Ljh4LCINCj4gLQkgICAgICAgIiByZXNldHRpbmcuLi5cbiIsIG5kZXYtPm5hbWUsIChp
+bnQpc2hfZXRoX3JlYWQobmRldiwgRUVTUikpOw0KPiArCQlkZXZfZXJyKCZuZGV2LT5kZXYsICIl
+czogdHJhbnNtaXQgdGltZWQgb3V0LCBzdGF0dXMgJTguOHgsIHJlc2V0dGluZy4uLlxuIg0KPiAr
+CQkJbmRldi0+bmFtZSwgKGludClzaF9ldGhfcmVhZChuZGV2LCBFRVNSKSk7DQo+ICANCj4gIAkv
+KiB0eF9lcnJvcnMgY291bnQgdXAgKi8NCj4gIAluZGV2LT5zdGF0cy50eF9lcnJvcnMrKzsNCg0K
+WW91IGRpZCBub3QgYnVpbGQgdGVzdCB0aGlzLg0KDQpkcml2ZXJzL25ldC9ldGhlcm5ldC9yZW5l
+c2FzL3NoX2V0aC5jOiBJbiBmdW5jdGlvbiChc2hfZXRoX3R4X3RpbWVvdXSiOg0KZHJpdmVycy9u
+ZXQvZXRoZXJuZXQvcmVuZXNhcy9zaF9ldGguYzoxOTUzOjQ6IGVycm9yOiBleHBlY3RlZCChKaIg
+YmVmb3JlIKFuZGV2og0KZHJpdmVycy9uZXQvZXRoZXJuZXQvcmVuZXNhcy9zaF9ldGguYzoxOTUz
+OjQ6IHdhcm5pbmc6IGZvcm1hdCChJXOiIGV4cGVjdHMgYSBtYXRjaGluZyChY2hhciAqoiBhcmd1
+bWVudCBbLVdmb3JtYXRdDQpkcml2ZXJzL25ldC9ldGhlcm5ldC9yZW5lc2FzL3NoX2V0aC5jOjE5
+NTM6NDogd2FybmluZzogZm9ybWF0IKEleKIgZXhwZWN0cyBhIG1hdGNoaW5nIKF1bnNpZ25lZCBp
+bnSiIGFyZ3VtZW50IFstV2Zvcm1hdF0NCg=
