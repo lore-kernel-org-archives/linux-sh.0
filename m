@@ -1,42 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 08:48:01 +0000
-Subject: [PATCH 1/8] ARM: shmobile: ape6evm: Conditionally select SMSC_PHY
-Message-Id: <1389084488-25984-2-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 10:15:30 +0000
+Subject: Re: Failure to bring up secondary CPU on koelsch
+Message-Id: <CAMuHMdWJUkzz9xsbUi-sNGtHEm6_OR5AysFuPYRp9T9jZP_PuA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The ape6evm board uses has an SMSC911X ethernet controller which uses an
-SMSC phy. Select SMSC_PHY for ape6evm if SMSC911X is enabled to make use of the
-SMSC-specific phy driver rather than relying on the generic phy driver.
+On Sun, Dec 22, 2013 at 11:14 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> When cold-booting koelsch, it sometimes locks up after printing
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+This is real cold-booting. Turning of the power for 10s is not enough, you have
+to wait for all juice to disappear.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 958ccf3d..2673f68 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -156,11 +156,13 @@ comment "Renesas ARM SoCs Board Type"
- config MACH_APE6EVM
- 	bool "APE6EVM board"
- 	depends on ARCH_R8A73A4
-+	select SMSC_PHY if SMSC911X
- 	select USE_OF
- 
- config MACH_APE6EVM_REFERENCE
- 	bool "APE6EVM board - Reference Device Tree Implementation"
- 	depends on ARCH_R8A73A4
-+	select SMSC_PHY if SMSC911X
- 	select USE_OF
- 	---help---
- 	   Use reference implementation of APE6EVM board support
--- 
-1.8.4
+>     Starting kernel ...
+>
+> Resetting the board and trying again usually helps (sometimes a few tries
+> are needed).
+>
+> As koelsch doesn't have early printk support, I made printk() save all
+> messages to a buffer in RAM, to be inspected by uboot after a reset.
+> The last lines are:
+>
+>     CPU0: update cpu_power 1024
+>     CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+>     Setting up static identity map for 0x4028e1b8 - 0x4028e210
 
+With more debugging code added:
+
+    CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+    r8a7791_smp_prepare_cpus:34 max_cpus 2
+    r8a7791_smp_prepare_cpus:53
+    kernel_init_freeable:906
+    Setting up static identity map for 0x402a5f70 - 0x402a5fc8
+    kernel_init_freeable:908
+    kernel_init_freeable:911
+    shmobile_smp_apmu_boot_secondary:141
+    shmobile_smp_hook:24
+    shmobile_smp_hook:26
+    shmobile_smp_hook:28
+    shmobile_smp_hook:31
+    shmobile_smp_hook:33
+    shmobile_smp_hook:35
+
+> On success, the next lines are:
+
+    shmobile_smp_hook:37
+    shmobile_smp_apmu_boot_secondary:145
+    shmobile_smp_apmu_boot_secondary:147
+    secondary_start_kernel:337
+    secondary_start_kernel:346
+    secondary_start_kernel:357
+    CPU1: Booted secondary processor
+
+So it locks up while executing the second flush_cache_all() below:
+
+void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
+{
+        shmobile_smp_fn[cpu] = 0;
+        flush_cache_all();
+
+        shmobile_smp_mpidr[cpu] = cpu_logical_map(cpu);
+        shmobile_smp_fn[cpu] = fn;
+        shmobile_smp_arg[cpu] = arg;
+        flush_cache_all();
+}
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
