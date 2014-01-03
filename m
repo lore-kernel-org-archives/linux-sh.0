@@ -1,50 +1,37 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 03 Jan 2014 15:51:50 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 16:07:02 +0000
 Subject: Re: [PATCH 3/3] ARM: shmobile: Koelsch: Add QSPI support
-Message-Id: <52C6EAA7.7050200@cogentembedded.com>
+Message-Id: <CAMuHMdVzawC2ccXCwyLSe7u0Uaa0qpLwaO+3dqQiSrmOcGdTCA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
  <1388763256-25851-4-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388763256-25851-4-git-send-email-geert@linux-m68k.org>
+ <52C6EAA7.7050200@cogentembedded.com>
+In-Reply-To: <52C6EAA7.7050200@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Fri, Jan 3, 2014 at 5:51 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+>> +       platform_device_register_resndata(&platform_bus, "qspi", 0,
+>
+>    As I understood, there's single QSPI controller, so why you pass 0, and
+> not -1 here?
 
-On 01/03/2014 06:34 PM, Geert Uytterhoeven wrote:
+Indeed, there's only a single QSPI instance.
+However, I choose to use "0" for consistency with Lager.
+Mach-shmobile seems to use a mix of 0 and -1.
 
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+If the maintainer prefers -1, I can change that.
 
-> Enable support for the Spansion s25fl512s SPI FLASH on the Koelsch board:
->    - Add QSPI platform device, resources, platform data, and pinmux,
->    - Add FLASH data and MTD partitions.
+Gr{oetje,eeting}s,
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> ---
->   arch/arm/mach-shmobile/board-koelsch.c |   61 ++++++++++++++++++++++++++++++++
->   1 file changed, 61 insertions(+)
+                        Geert
 
-> diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-> index de7cc64b1f37..723ed54b38be 100644
-> --- a/arch/arm/mach-shmobile/board-koelsch.c
-> +++ b/arch/arm/mach-shmobile/board-koelsch.c
-[...]
-> @@ -190,6 +246,11 @@ static void __init koelsch_add_standard_devices(void)
->   	platform_device_register_data(&platform_bus, "gpio-keys", -1,
->   				      &koelsch_keys_pdata,
->   				      sizeof(koelsch_keys_pdata));
-> +	platform_device_register_resndata(&platform_bus, "qspi", 0,
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-    As I understood, there's single QSPI controller, so why you pass 0, and 
-not -1 here?
-
-> +					  qspi_resources,
-> +					  ARRAY_SIZE(qspi_resources),
-> +					  &qspi_pdata, sizeof(qspi_pdata));
-> +	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
-
-WBR, Sergei
-
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
