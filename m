@@ -1,130 +1,125 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Jan 2014 07:56:35 +0000
-Subject: Re: [PATCH v6 15.1/17] ARM: shmobile: Add GPIO keys to Koelsch DTS
-Message-Id: <20140106075634.GN24653@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jan 2014 15:34:16 +0000
+Subject: [PATCH 3/3] ARM: shmobile: Koelsch: Add QSPI support
+Message-Id: <1388763256-25851-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387466923-8800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1387466923-8800-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 23, 2013 at 09:45:17AM +0900, Simon Horman wrote:
-> On Fri, Dec 20, 2013 at 11:46:10PM +0100, Laurent Pinchart wrote:
-> > Hi Magnus,
-> > 
-> > On Friday 20 December 2013 23:40:19 Magnus Damm wrote:
-> > > On Fri, Dec 20, 2013 at 11:24 PM, Laurent Pinchart wrote:
-> > > > On Friday 20 December 2013 16:18:39 Magnus Damm wrote:
-> > > >> On Fri, Dec 20, 2013 at 12:28 AM, Laurent Pinchart wrote:
-> > > >> > The Koelsh reference device tree is going away, copy the missing GPIO
-> > > >> > keys device node to the Koeslch device tree file.
-> > > >> > 
-> > > >> > Signed-off-by: Laurent Pinchart
-> > > >> > <laurent.pinchart+renesas@ideasonboard.com>
-> > > >> > ---
-> > > >> > 
-> > > >> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 54 +++++++++++++++++++++++++++
-> > > >> >  1 file changed, 54 insertions(+)
-> > > >> > 
-> > > >> > Hi Simon,
-> > > >> > 
-> > > >> > This patch contains the differences between v4 (which you have queued
-> > > >> > up) and v5 of "ARM: shmobile: Sync Koelsch DTS with Koelsch reference
-> > > >> > DTS".> Feel free to apply it on top of your dt branch, or alternatively
-> > > >> > rebase the branch to replace v4 with v5.
-> > > >> 
-> > > >> Hi Laurent,
-> > > >> 
-> > > >> Thanks for this patch. If you compare GPIO-keys on Koelsch and Lager
-> > > >> then you can see that both have a DIP switch and Koelsch also has a
-> > > >> set of buttons. I may recall wrong, but I think the legacy code
-> > > >> supports both the DIP switch and buttons. This DT reference patch
-> > > >> seems to only add buttons, not the DIP switch. Any plans to include
-> > > >> the DIP switch?
-> > > > 
-> > > > I've seen that when implementing the original Koelsh GPIO keys DT support
-> > > > and poundered how to handle it properly. It basically boils down the how
-> > > > we define a GPIO key. A GPIO is a hardware concept, but a key is defined
-> > > > by its usage intent. As the buttons and DIP switches you refer to are
-> > > > just buttons and switches without a defined purpose, how to handle them
-> > > > is I believe a policy decision.
-> > > 
-> > > I agree. This is IMO the same as for the platform device case, but I guess
-> > > there it is more common to mix software policy and hardware description
-> > > there. There are also no letters printed on the buttons on the actual
-> > > hardware, so assigning something dummy in DT seems kind of odd too.
-> > > 
-> > > > In the end I've decided to handle the buttons with the GPIO keys driver as
-> > > > I believe it makes sense to have keys hooked up to the input subsystem on
-> > > > a development board. As the DIP switches are not momentary buttons from a
-> > > > hardware point of view I've decided to omit them and let them be used for
-> > > > other purposes.
-> > > 
-> > > What are "other purposes" here if I may ask? =)
-> > 
-> > Boot configuration is one possibility. Basically anything that the GPIO API 
-> > can expose to kernelspace and/or userspace. Exposing GPIOs as GPIOs is 
-> > probably useful on a development board the same way exposing them as keys is.
-> > 
-> > > > I'm fine with revisiting this decision, but please note that this patch
-> > > > only synchronizes the non-reference dts with the reference dts.
-> > > 
-> > > How do you mean by synchronize? It seems to half-synchronize to me, see
-> > > below!
-> > 
-> > This patch is about synchronizing r8a7791-koelsch.dts with r8a7791-koelsch-
-> > reference.dts, as r8a7791-koelsch-reference.dts will be removed. I'm not 
-> > opposed to adding keys for the DIP switch to r8a7791-koelsch.dts as a second 
-> > step.
-> > 
-> > > I want to keep the legacy board code and the DT reference stuff in full
-> > > sync. I also would like to keep software support for Lager and Koelsch on a
-> > > similar level.
-> > > 
-> > > As you know, I submitted GPIO code to the Koelsch legacy code earlier, and I
-> > > was about to send the DT bits too, but someone else got there before me. =)
-> > > 
-> > > Unless I'm mistaken the legacy Koelsch code contains this:
-> > > 
-> > > static struct gpio_keys_button gpio_buttons[] = {
-> > > GPIO_KEY(KEY_4, RCAR_GP_PIN(5, 3), "SW2-pin4"),
-> > > GPIO_KEY(KEY_3, RCAR_GP_PIN(5, 2), "SW2-pin3"),
-> > > GPIO_KEY(KEY_2, RCAR_GP_PIN(5, 1), "SW2-pin2"),
-> > > GPIO_KEY(KEY_1, RCAR_GP_PIN(5, 0), "SW2-pin1"),
-> > > 
-> > > So if you want to use SW2 for something else, then I think it's something we
-> > > should do across both Lager and Koelsch and both legacy and DT reference
-> > > code. Just being special in one place seems odd.
-> > 
-> > Lager and Koelsch are two different boards so I don't think they should have 
-> > the same features set just for the sake of it, but that doesn't mean I'm 
-> > opposed to adding keys for the DIP switch on Koelsch.
-> > 
-> > > Please note that in the Lager case we only have DIP switches, so waking up
-> > > from Suspend-to-RAM via GPIO can only be done via the DIP switch.
-> > 
-> > Doesn't the reset button wake up the CPU ? :-p
-> > 
-> > > Because of that I prefer to allow wakeup via DIP switch in a consistent way
-> > > for both Lager and Koelsch. Did you have any special idea how to interface
-> > > to the DIP switches so we can wake up from Suspend-to-RAM? =)
-> > 
-> > That's a good question. Aren't there use cases where we want a button to wake 
-> > up the system, but without exposing it as a key ?
-> > 
-> > Anyway, I'm not opposed to adding keys for the DIP switch, but I'd rather do 
-> > it on top of this patch series.
-> 
-> My understanding is that this patch merely moves code that
-> was (the file has now been removed by the subsequent patch,
-> which I have queued up) from r8a7791-koelsch-reference.dts to
-> r8a7791-koelsch.dts.
-> 
-> With this in mind I think that this patch is entirely reasonable in
-> its current form and that further enablement can be added on top.
-> 
-> Are there any objections to me queuing up this patch?
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-I will queue this up.
+Enable support for the Spansion s25fl512s SPI FLASH on the Koelsch board:
+  - Add QSPI platform device, resources, platform data, and pinmux,
+  - Add FLASH data and MTD partitions.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ arch/arm/mach-shmobile/board-koelsch.c |   61 ++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index de7cc64b1f37..723ed54b38be 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -25,12 +25,17 @@
+ #include <linux/input.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
+ #include <linux/phy.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_eth.h>
++#include <linux/spi/flash.h>
++#include <linux/spi/rspi.h>
++#include <linux/spi/spi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+@@ -148,6 +153,55 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ };
+ 
++/* QSPI */
++static const struct resource qspi_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6b10000, 0x1000),
++	DEFINE_RES_IRQ(gic_spi(184)),
++};
++
++static const struct rspi_plat_data qspi_pdata __initconst = {
++	.num_chipselect = 1,
++};
++
++/* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
++static struct mtd_partition spi_flash_part[] = {
++	{
++		.name		= "loader",
++		.offset		= 0x00000000,
++		.size		= 512 * 1024,
++		.mask_flags	= MTD_WRITEABLE,
++	},
++	{
++		.name		= "bootenv",
++		.offset		= MTDPART_OFS_APPEND,
++		.size		= 512 * 1024,
++		.mask_flags	= MTD_WRITEABLE,
++	},
++	{
++		.name		= "data",
++		.offset		= MTDPART_OFS_APPEND,
++		.size		= MTDPART_SIZ_FULL,
++	},
++};
++
++static const struct flash_platform_data spi_flash_data = {
++	.name		= "m25p80",
++	.parts		= spi_flash_part,
++	.nr_parts	= ARRAY_SIZE(spi_flash_part),
++	.type		= "s25fl512s",
++};
++
++static const struct spi_board_info spi_info[] __initconst = {
++	{
++		.modalias	= "m25p80",
++		.platform_data	= &spi_flash_data,
++		.mode		= SPI_MODE_0,
++		.max_speed_hz	= 30000000,
++		.bus_num	= 0,
++		.chip_select	= 0,
++	},
++};
++
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* DU */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
+@@ -165,6 +219,8 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 				  "eth_rmii", "eth"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
+ 				  "intc_irq0", "intc"),
++	/* QSPI */
++	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791", "qspi", "qspi"),
+ 	/* SCIF0 (CN19: DEBUG SERIAL0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
+ 				  "scif0_data_d", "scif0"),
+@@ -190,6 +246,11 @@ static void __init koelsch_add_standard_devices(void)
+ 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
+ 				      &koelsch_keys_pdata,
+ 				      sizeof(koelsch_keys_pdata));
++	platform_device_register_resndata(&platform_bus, "qspi", 0,
++					  qspi_resources,
++					  ARRAY_SIZE(qspi_resources),
++					  &qspi_pdata, sizeof(qspi_pdata));
++	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ 
+ 	koelsch_add_du_device();
+ }
+-- 
+1.7.9.5
+
