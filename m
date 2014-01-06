@@ -1,63 +1,85 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Jan 2014 05:36:48 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7790: removed unnecessary mmc option
-Message-Id: <871tzo7lw2.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 07:52:06 +0000
+Subject: Re: [PATCH V3 2/3] ARM: shmobile: r8a7791: Add VIN clocks
+Message-Id: <20140106075206.GK24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-	<8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>
-Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, Dec 27, 2013 at 03:57:50PM +0400, Valentine Barshak wrote:
+> This adds VIN[0-2] clock support to R8A7791 SoC.
+> 
+> Changes in V2:
+> * none.
+> 
+> Changes in V3:
+> * capitalized ARM in the subject.
 
-r8a7790 specific MMC options are cared by driver.
-This driver removes these from DTSI
+Thanks, I will queue this up.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |    4 ----
- 1 file changed, 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index f48487c..df578cd 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -265,7 +265,6 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
--		cap-sd-highspeed;
- 		status = "disabled";
- 	};
- 
-@@ -275,7 +274,6 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
--		cap-sd-highspeed;
- 		status = "disabled";
- 	};
- 
-@@ -285,7 +283,6 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
--		cap-sd-highspeed;
- 		status = "disabled";
- 	};
- 
-@@ -295,7 +292,6 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
--		cap-sd-highspeed;
- 		status = "disabled";
- 	};
- 
--- 
-1.7.9.5
-
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> ---
+>  arch/arm/mach-shmobile/clock-r8a7791.c | 10 ++++++++++
+>  1 file changed, 10 insertions(+)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+> index fe4a774..191ad60 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7791.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+> @@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
+>  SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
+>  SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
+>  SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
+> +SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
+>  SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
+>  
+>  static struct clk *main_clks[] = {
+> @@ -117,6 +118,7 @@ static struct clk *main_clks[] = {
+>  	&rclk_clk,
+>  	&mp_clk,
+>  	&cp_clk,
+> +	&zg_clk,
+>  	&zx_clk,
+>  };
+>  
+> @@ -124,6 +126,7 @@ static struct clk *main_clks[] = {
+>  enum {
+>  	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+>  	MSTP813,
+> +	MSTP811, MSTP810, MSTP809,
+>  	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+>  	MSTP719, MSTP718, MSTP715, MSTP714,
+>  	MSTP522,
+> @@ -141,6 +144,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+>  	[MSTP927] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 27, 0), /* I2C4 */
+>  	[MSTP925] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 25, 0), /* I2C5 */
+>  	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+> +	[MSTP811] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 11, 0), /* VIN0 */
+> +	[MSTP810] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 10, 0), /* VIN1 */
+> +	[MSTP809] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  9, 0), /* VIN2 */
+>  	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+>  	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
+>  	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
+> @@ -172,6 +178,7 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_CON_ID("pll1",		&pll1_clk),
+>  	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
+>  	CLKDEV_CON_ID("pll3",		&pll3_clk),
+> +	CLKDEV_CON_ID("zg",		&zg_clk),
+>  	CLKDEV_CON_ID("hp",		&hp_clk),
+>  	CLKDEV_CON_ID("p",		&p_clk),
+>  	CLKDEV_CON_ID("rclk",		&rclk_clk),
+> @@ -208,6 +215,9 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_DEV_ID("i2c-rcar_gen2.4", &mstp_clks[MSTP927]),
+>  	CLKDEV_DEV_ID("i2c-rcar_gen2.5", &mstp_clks[MSTP925]),
+>  	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
+> +	CLKDEV_DEV_ID("r8a7791-vin.0", &mstp_clks[MSTP811]),
+> +	CLKDEV_DEV_ID("r8a7791-vin.1", &mstp_clks[MSTP810]),
+> +	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
+>  };
+>  
+>  #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+> -- 
+> 1.8.3.1
+> 
