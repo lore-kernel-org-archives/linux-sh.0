@@ -1,34 +1,38 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 26 Jan 2014 15:57:42 +0000
-Subject: Re: [PATCH 3/4] i2c: rcar: do not print error if device nacks transfer
-Message-Id: <52E53076.9020504@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 06 Jan 2014 08:32:12 +0000
+Subject: [PATCH 0/2] ARM: shmobile: r8a7790: add Audio-DMAC support
+Message-Id: <871u0ljyt2.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk> <1389982298-23143-4-git-send-email-ben.dooks@codethink.co.uk> <20140124171112.GD2629@katana>
-In-Reply-To: <20140124171112.GD2629@katana>
+References: <1386935560-16739-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1386935560-16739-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, horms+renesas@verge.net.au, linux-i2c@vger.kernel.org
-
-On 24/01/14 17:11, Wolfram Sang wrote:
-> On Fri, Jan 17, 2014 at 06:11:37PM +0000, Ben Dooks wrote:
->> The i2c-rcar driver currently prints an error message if the master_xfer
->> callback fails. However if the bus is being probed then lots of NAKs
->> will be generated, causing the output of a number of errors printed.
->>
->> To solve this, disable the print if the error is not -EREMOTEIO.
->
-> Basically OK. Yet, according to 'fault-codes" it should be -ENXIO. May
-> be a good time to fix this as well.
->
-> Also, you might want to print for -EIO only? Or do you want to see
-> -EAGAIN, too.
-
-I'm not sure, I've not seen any EAGAIN replies from the driver.
-I will leave this for a future patch.
+To: linux-sh@vger.kernel.org
 
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+Hi Simon
+
+These patches add Audio DMAC support on r8a7790.
+These are used from R-Car sound driver.
+
+Current Simon's branch doesn't have R-Car
+sound driver support, since it needs ASoC branch merge.
+(= it has Gen2 support)
+But, this DMAEngine support can be applied without
+sound driver support.
+
+These are based on renesas-devel-v3.13-rc5-20131230 tag
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: add Audio DMAC clock
+      ARM: shmobile: r8a7790: add Audio DMAC support
+
+ arch/arm/mach-shmobile/clock-r8a7790.c        |    5 ++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |   25 +++++++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |   90 +++++++++++++++++++++++++
+ 3 files changed, 120 insertions(+)
+
+Best regards
+---
+Kuninori Morimoto
