@@ -1,55 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 07 Jan 2014 19:53:41 +0000
-Subject: Re: [PATCH 1/3] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
-Message-Id: <CAMuHMdVuDWi+6LCscS0U8vVV=VXXSwXJoTSdokdNjYWHP_8QoQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 06 Jan 2014 01:25:16 +0000
+Subject: Re: [PATCH 2/5] arm: shmobile: r8a7790: Add SATA clock
+Message-Id: <87zjn9kikm.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
- <1388763256-25851-2-git-send-email-geert@linux-m68k.org>
- <11491980.GOk5XT7hjl@avalon>
-In-Reply-To: <11491980.GOk5XT7hjl@avalon>
+References: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 7, 2014 at 3:58 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> +static const unsigned int qspi_pins[] = {
->> +     /* SPCLK, MOSI_IO0, MISO_IO1, IO2, IO3, SSL */
->> +     RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
->> +     RCAR_GP_PIN(1, 7), RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 9),
->> +};
->
-> The QSPI controller can be used in 1-bit, 2-bit or 4-mode mode, so you should
-> split the pins group to allow that. You could use one pin group for the
-> control signals (SPCLK and SSL), one group for 2-bit data (MOSI + MISO, or IO0
-> + IO1 depending on the mode) and one group for 4-bit data (IO0 + IO1 + IO2 +
-> IO3).
 
-OK, while you can't mix "real" functions (half of the pins are FN2, the other
-half FN3), I forgot you can still configure the SoC to use IO2 and IO3 for GPIO.
+Hi Valentine
 
-Will split in qspi_ctrl (2 control wires), qspi_data2 (2 data wires),
-and qspi_data4 (4 data wires).
+Happy new year, and sorry for my late response
 
-> I assume that usage of the SSL signal is always required. If that's not the
-> case the control signals group should be split in two.
->
-> Similarly, if the hardware supports "write-only" mode (where the MISO signal
-> isn't connected), that should be supported through a 1-bit data signals group.
+> >>> I will ask this to HW people, but maybe p_clk is fine here.
+> >>
+> >> Morimoto-san,
+> >> is there any news?
+> >>
+> >> It says "PLL in the Serial-ATA module" not the "Serial-ATA phy", but without
+> >> the clock map it's hard to say.
+> >>
+> >>> If you need to control CICREFN1_SATAx clocks,
+> >>> it should be defined as CLKDEV_ICK_ID() and use clk_xx() function
+> >>
+> >> If MSTP814/MSTP815 controls the internal SATA clocks, then I'm not sure how
+> >> to control the external CICREF[PN][01]_SATA ones.
+> >
+> > If my guess is correct the CICREF[PN][01]_SATA clock doesn't need to be
+> > controlled.
+> 
+> I agree. Still the question remains whether it's OK to use p_clk here.
 
-No, the hardware doesn't support three-wire mode.
-Only four-wire (Single/Dual SPI) and six-wire (Quad SPI) are supported.
+According to HW guys, parent clock of SATA module is zs_clk.
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Best regards
+---
+Kuninori Morimoto
