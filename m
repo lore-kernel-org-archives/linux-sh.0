@@ -1,40 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 07 Jan 2014 22:13:25 +0000
-Subject: Re: [PATCH 0/4] thermal: rcar: Add missing clock handling
-Message-Id: <CAMuHMdWBVZ6RNe8B5m3hh+6O=2Sg0NR7sGrAg-xDEKgsGrDnbw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 07:57:46 +0000
+Subject: Re: [PATCH 15/21] ARM: shmobile: Remove Koelsch reference DTS
+Message-Id: <20140106075745.GO24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
- <52CC770E.1000004@cogentembedded.com>
-In-Reply-To: <52CC770E.1000004@cogentembedded.com>
+References: <cover.1387893834.git.horms+renesas@verge.net.au>
+ <11196073.PIXxcg54ZL@avalon> <20131227022356.GF9184@verge.net.au>
+ <2111872.r7nHcLFZor@avalon>
+In-Reply-To: <2111872.r7nHcLFZor@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Valentine,
+On Sun, Dec 29, 2013 at 10:42:02PM +0100, Laurent Pinchart wrote:
+> Hi Simon,
+> 
+> On Friday 27 December 2013 11:23:57 Simon Horman wrote:
+> > On Thu, Dec 26, 2013 at 03:48:58PM +0100, Laurent Pinchart wrote:
+> > > On Tuesday 24 December 2013 20:00:43 Sergei Shtylyov wrote:
+> > > > On 24-12-2013 18:19, Simon Horman wrote:
+> > > > > From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> > > > > 
+> > > > > Now that the DTS file r8a7790-koelsch.dts can be used with
+> > > > > board-koelsch.c and board-koelsch-reference.c, proceed with removing
+> > > > > r8a7790-koelsch-reference.dts.
+> > > > > 
+> > > > > Signed-off-by: Laurent Pinchart
+> > > > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > > > > ---
+> > > > > 
+> > > > >   arch/arm/boot/dts/Makefile | 1 -
+> > > > >   1 file changed, 1 deletion(-)
+> > > > > 
+> > > > > diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+> > > > > index 909d910..5839077 100644
+> > > > > --- a/arch/arm/boot/dts/Makefile
+> > > > > +++ b/arch/arm/boot/dts/Makefile
+> > > > > @@ -225,7 +225,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) +> > > > > emev2-kzm9d.dtb
+> > > > > \
+> > > > > 
+> > > > >   	r8a7779-marzen.dtb \
+> > > > >   	r8a7779-marzen-reference.dtb \
+> > > > >   	r8a7791-koelsch.dtb \
+> > > > > 
+> > > > > -	r8a7791-koelsch-reference.dtb \
+> > > > > 
+> > > > >   	r8a7790-lager.dtb \
+> > > > >   	r8a7790-lager-reference.dtb \
+> > > > 
+> > > > Hm, the previous commit removed that file itself but forgot to remove it
+> > > > from the Makefile.
+> > > 
+> > > Indeed, this problem doesn't seem to be present in the patches I've sent.
+> > > Simon, has something gone wrong during a rebase ?
+> > 
+> > Sorry about that.
+> > 
+> > Could you supply an incremental patch to remove the file itself?
+> 
+> Sure. I've sent the patch.
 
-On Tue, Jan 7, 2014 at 10:52 PM, Valentine
-<valentine.barshak@cogentembedded.com> wrote:
-> On 01/07/2014 10:57 PM, Geert Uytterhoeven wrote:
->> This patch series fixes a problem when the thermal-rcar device is
->> instantiated from the device tree on the r8a7791-based Koelsch development
->> board. The driver fails during initialization with:
->
->
-> I think explicitly acquiring the clocks should not be needed.
-> Could you please try the patches from the following series instead?
->
-> http://marc.info/?l=linux-sh&m8823255807611&w=2
+Thanks, got it.
 
-I already had these applied, and the problem persists.
+> Could you please also pick "[PATCH v6 15.1/17] ARM: 
+> shmobile: Add GPIO keys to Koelsch DTS" from the list ?
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Done.
