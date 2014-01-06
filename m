@@ -1,44 +1,19 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 02:27:12 +0000
-Subject: [PATCH v3 0/3] Add ethernet support for r7s72100
-Message-Id: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 05:35:13 +0000
+Subject: Re: [PATCH 2/3 V2] ARM: shmobile: r8a7791: Add I2C clocks
+Message-Id: <20140106053513.GD24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+On Fri, Dec 27, 2013 at 03:27:38PM +0400, Valentine Barshak wrote:
+> This adds I2C[0-5] clock support to R8A7791 SoC.
+> 
+> Changes in V2:
+> * Capitalized ARM in the subject.
+> 
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-this is a third pass at adding ethernet support to sh-pfc for
-the r7s72100 SoC.
-
-This series is based on a merge of:
-* The topic/r7s72100-v3.13-rc7-20140107 tag in my renesas tree
-* net-next
-  - Head revision: 56a4342dfe3145cd
-    ("Merge branch 'master' of
-      git://git.kernel.org/pub/scm/linux/kernel/git/davem/net")
-
-The first patch, targeted at net-next, also applies cleanly there.
-
-Changes since v2
-* Trivial rebase
-* Dropped "RFC" from subject
-
-Changes since v1 are noted in the changelog of each patch.
-
-Simon Horman (3):
-  sh_eth: Add support for r7s72100
-  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-  ARM: shmobile: genmai: Enable r7s72100-ether
-
- arch/arm/mach-shmobile/board-genmai.c   |  21 ++++++
- arch/arm/mach-shmobile/clock-r7s72100.c |   4 ++
- drivers/net/ethernet/renesas/sh_eth.c   | 119 ++++++++++++++++++++++++++++++--
- drivers/net/ethernet/renesas/sh_eth.h   |   4 +-
- 4 files changed, 141 insertions(+), 7 deletions(-)
-
--- 
-1.8.4
-
+Thanks, I will queue this up.
