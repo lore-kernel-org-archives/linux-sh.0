@@ -1,74 +1,30 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 09 Jan 2014 14:26:51 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7790: Add SATA clocks
-Message-Id: <52CEB1AB.7010003@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 05:26:33 +0000
+Subject: Re: [PATCH V2] ARM: shmobile: r8a7790: Fix I2C controller names
+Message-Id: <20140106052632.GC24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1378813194-19493-4-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1378813194-19493-4-git-send-email-ulrich.hecht@gmail.com>
+References: <1388141888-5424-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1388141888-5424-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 01/09/2014 12:19 PM, Simon Horman wrote:
-> On Wed, Jan 08, 2014 at 08:31:25PM +0400, Valentine Barshak wrote:
->> This adds SATA[01] clock support to R8A7790 SoC.
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->> ---
->>   arch/arm/mach-shmobile/clock-r8a7790.c | 5 +++++
->>   1 file changed, 5 insertions(+)
->
-> Thanks, I have queued this up.
->
-> As I did so without 2/3 of this series applied there were some
-> minor conflicts. Please check that the following is correct.
-
-It is correct.
-
-Thanks,
-Val.
-
->
-> From: Valentine Barshak <valentine.barshak@cogentembedded.com>
->
-> ARM: shmobile: r8a7790: Add SATA clocks
->
-> This adds SATA[01] clock support to R8A7790 SoC.
->
+On Fri, Dec 27, 2013 at 02:58:08PM +0400, Valentine Barshak wrote:
+> This fixes the issue introduced by the following commit:
+> b448c904f5058b6c "ARM: shmobile: r8a7790: add I2C support"
+> 
+> The R8A7790 is an R-Car Gen2 SoC. The clock division factor
+> (CDF) width is 3 bits on Gen2 as opposed to 2 bits on Gen1.
+> Fix the device names for R8A7790 SoC to make the R-Car I2C
+> driver configure the hardware properly.
+> 
+> Changes in V2:
+> * rebased on top of the latest branch;
+> * capitalized ARM in the subject line;
+> * noted the commit that caused the issue in the log.
+> 
 > Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> [horms+renesas@verge.net.au: resolved trivial conflicts]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index b2b2323..f25b43a 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -196,6 +196,7 @@ enum {
->   	MSTP1009, MSTP1008, MSTP1007, MSTP1006, MSTP1005,
->   	MSTP931, MSTP930, MSTP929, MSTP928,
->   	MSTP917,
-> +	MSTP815, MSTP814,
->   	MSTP813,
->   	MSTP811, MSTP810, MSTP809, MSTP808,
->   	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
-> @@ -226,6 +227,8 @@ static struct clk mstp_clks[MSTP_NR] = {
->   	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
->   	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
->   	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
-> +	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
-> +	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
->   	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
->   	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
->   	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
-> @@ -340,6 +343,8 @@ static struct clk_lookup lookups[] = {
->   	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
->   	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
->   	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-> +	CLKDEV_DEV_ID("sata-r8a7790.0", &mstp_clks[MSTP815]),
-> +	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
->
->   	/* ICK */
->   	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
->
+> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+Thanks, I will queue this up.
