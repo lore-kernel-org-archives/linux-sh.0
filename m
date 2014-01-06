@@ -1,69 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Jan 2014 07:57:46 +0000
-Subject: Re: [PATCH 15/21] ARM: shmobile: Remove Koelsch reference DTS
-Message-Id: <20140106075745.GO24653@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 06 Jan 2014 06:43:46 +0000
+Subject: [PATCH] ARM: shmobile: lager: Enable VIN in defconfig
+Message-Id: <1388990626-21460-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387893834.git.horms+renesas@verge.net.au>
- <11196073.PIXxcg54ZL@avalon> <20131227022356.GF9184@verge.net.au>
- <2111872.r7nHcLFZor@avalon>
-In-Reply-To: <2111872.r7nHcLFZor@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Dec 29, 2013 at 10:42:02PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Friday 27 December 2013 11:23:57 Simon Horman wrote:
-> > On Thu, Dec 26, 2013 at 03:48:58PM +0100, Laurent Pinchart wrote:
-> > > On Tuesday 24 December 2013 20:00:43 Sergei Shtylyov wrote:
-> > > > On 24-12-2013 18:19, Simon Horman wrote:
-> > > > > From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > 
-> > > > > Now that the DTS file r8a7790-koelsch.dts can be used with
-> > > > > board-koelsch.c and board-koelsch-reference.c, proceed with removing
-> > > > > r8a7790-koelsch-reference.dts.
-> > > > > 
-> > > > > Signed-off-by: Laurent Pinchart
-> > > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > > ---
-> > > > > 
-> > > > >   arch/arm/boot/dts/Makefile | 1 -
-> > > > >   1 file changed, 1 deletion(-)
-> > > > > 
-> > > > > diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-> > > > > index 909d910..5839077 100644
-> > > > > --- a/arch/arm/boot/dts/Makefile
-> > > > > +++ b/arch/arm/boot/dts/Makefile
-> > > > > @@ -225,7 +225,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) +> > > > > emev2-kzm9d.dtb
-> > > > > \
-> > > > > 
-> > > > >   	r8a7779-marzen.dtb \
-> > > > >   	r8a7779-marzen-reference.dtb \
-> > > > >   	r8a7791-koelsch.dtb \
-> > > > > 
-> > > > > -	r8a7791-koelsch-reference.dtb \
-> > > > > 
-> > > > >   	r8a7790-lager.dtb \
-> > > > >   	r8a7790-lager-reference.dtb \
-> > > > 
-> > > > Hm, the previous commit removed that file itself but forgot to remove it
-> > > > from the Makefile.
-> > > 
-> > > Indeed, this problem doesn't seem to be present in the patches I've sent.
-> > > Simon, has something gone wrong during a rebase ?
-> > 
-> > Sorry about that.
-> > 
-> > Could you supply an incremental patch to remove the file itself?
-> 
-> Sure. I've sent the patch.
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/lager_defconfig | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Thanks, got it.
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 883443f..7fe482d 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -90,6 +90,12 @@ CONFIG_RCAR_THERMAL=y
+ CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
+ CONFIG_REGULATOR_GPIO=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_SOC_CAMERA_PLATFORM=y
++CONFIG_VIDEO_RCAR_VIN=y
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=y
+ # CONFIG_USB_SUPPORT is not set
+-- 
+1.8.4
 
-> Could you please also pick "[PATCH v6 15.1/17] ARM: 
-> shmobile: Add GPIO keys to Koelsch DTS" from the list ?
-
-Done.
