@@ -1,49 +1,114 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 09 Jan 2014 14:29:57 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: r8a7790: Add SATA clocks to device tree
-Message-Id: <52CEB265.3070501@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 08:10:33 +0000
+Subject: Re: [PATCH v2 3/3] ARM: shmobile: kzm9d: Use common clock framework
+Message-Id: <20140106081030.GR24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
+References: <20131008143403.c11f294c8a1701a2ab3bc5fd@ops.dti.ne.jp>
+ <20131009034057.GO15065@verge.net.au>
+ <CANqRtoQs+31mv0ZULOd3SGshkBkvp-kGoaVOSb10+Ncdp+WNXw@mail.gmail.com>
+ <20131009065438.GA7220@verge.net.au>
+ <CANqRtoSGFEjcBPDAtq3YCDbkiFCftyr8b=qniYqyMafng=zurw@mail.gmail.com>
+ <20131009103915.GB17869@verge.net.au>
+ <20131029044239.GC20432@verge.net.au>
+ <20131202022549.GA12357@verge.net.au>
+ <20131223064103.22761.77246@quantum>
+ <20131223080034.GA26412@verge.net.au>
+In-Reply-To: <20131223080034.GA26412@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 01/07/2014 12:22 PM, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Mon, Dec 23, 2013 at 05:00:36PM +0900, Simon Horman wrote:
+> On Sun, Dec 22, 2013 at 10:41:03PM -0800, Mike Turquette wrote:
+> > Quoting Simon Horman (2013-12-01 18:25:51)
+> > > On Tue, Oct 29, 2013 at 01:42:41PM +0900, Simon Horman wrote:
+> > > > On Wed, Oct 09, 2013 at 07:39:18PM +0900, Simon Horman wrote:
+> > > > > On Wed, Oct 09, 2013 at 04:29:56PM +0900, Magnus Damm wrote:
+> > > > > > Hi Simon,
+> > > > > > 
+> > > > > > On Wed, Oct 9, 2013 at 3:54 PM, Simon Horman <horms@verge.net.au> wrote:
+> > > > > > > On Wed, Oct 09, 2013 at 01:59:46PM +0900, Magnus Damm wrote:
+> > > > > > >> Hi Simon,
+> > > > > > >>
+> > > > > > >> On Wed, Oct 9, 2013 at 12:40 PM, Simon Horman <horms@verge.net.au> wrote:
+> > > > > > >> > On Tue, Oct 08, 2013 at 02:34:03PM +0900, takasi-y@ops.dti.ne.jp wrote:
+> > > > > > >> >> Use common clock framework version of clock
+> > > > > > >> >>  drivers/clk/shmobile/clk-emev2.c
+> > > > > > >> >> instead of sh-clkfwk version
+> > > > > > >> >>  arch/arm/mach-shmobile/clock-emev2.c
+> > > > > > >> >> when it is configured as a part of multi-platform.
+> > > > > > >> >>
+> > > > > > >> >> Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+> > > > > > >> >
+> > > > > > >> > Thanks.
+> > > > > > >> >
+> > > > > > >> > I plan to add this patch to a new topic branch,
+> > > > > > >> > topic/emev2-common-clock, in the renesas tree and
+> > > > > > >> > queue it up from there for inclusion in mainline
+> > > > > > >> > if/when the first patch of this series is accepted
+> > > > > > >> > by Mike Turquette.
+> > > > > > >>
+> > > > > > >> Thanks for picking up patches, Simon.
+> > > > > > >>
+> > > > > > >> I think you can simply merge this patch after the following series:
+> > > > > > >>
+> > > > > > >> [PATCH 00/05] ARM: shmobile: KZM9D Multiplatform update
+> > > > > > >
+> > > > > > > This is already queued up.
+> > > > > > 
+> > > > > > Yes, I know, thanks for that. I tried to explain the dependency in the
+> > > > > > 00/00 cover letter but I will try to be more clear next time!
+> > > > > > 
+> > > > > > >> There are no build time dependencies on patch 1 and 2 so this patch
+> > > > > > >> can be merged independently. Regarding run-time operation, the
+> > > > > > >> multiplatform series above makes KZM9D DT reference only build for
+> > > > > > >> multiplatform, and in such case CCF is required.
+> > > > > > >>
+> > > > > > >> So if you want to keep KZM9D DT reference working until Mike Turquette
+> > > > > > >> accepts the CCF bits, then I recommend you to wait with "[PATCH 00/05]
+> > > > > > >> ARM: shmobile: KZM9D Multiplatform update" until all EMEV2 CCF bits
+> > > > > > >> have been merged.
+> > > > > > >>
+> > > > > > >> Another way is to merge "[PATCH 00/05] ARM: shmobile: KZM9D
+> > > > > > >> Multiplatform update" before the EMEV2 CCF bits, but if so you may as
+> > > > > > >> well merge this patch as well IMO. This
+> > > > > > >> multiplatform-update-series-merge-before-CCF plan will result in
+> > > > > > >> untestable KZM9D DT reference until EMEV2 CCF is merged. Either way is
+> > > > > > >> fine with me.
+> > > > > > >
+> > > > > > > I am mainly concerned that the bindings may change before
+> > > > > > > they are finally merged. And I thought it would be nice to avoid
+> > > > > > > having to fix up the usage of the bindings if they change.
+> > > > > > 
+> > > > > > Sure, but the code in this patch looks like it simply starts DT CCF
+> > > > > > probing regardless of what the bindings look like. So I don't think
+> > > > > > you will have to worry about actual bindings detail.
+> > > > > > 
+> > > > > > > But I'm happy to just queue-up patches 2 and 3 of this series
+> > > > > > > now if you prefer.
+> > > > > > 
+> > > > > > Well, I meant patch 3 only. Patch 1 and 2 are tied together by dependencies. =)
+> > > > > 
+> > > > > Thanks, I understand now.
+> > > > > 
+> > > > > I'll queue-up 3/3.
+> > > > 
+> > > > Which I did.
+> > > > 
+> > > > Then some time passed...
+> > > > 
+> > > > Mike has accepted my pull-request for patch 1 of this series
+> > > > and accordingly I have queued-up this patch for v3.14.
+> > > > It should appear in the devel branch the next time that I push it.
+> > > 
+> > > I was mistaken. It was not queued up  for v3.14.
+> > > And still has not been queued up.
+> > > 
+> > > I have un-queued this patch accordingly.
+> > 
+> > I have pulled in the emev2 SMU clock support patch now.
+> 
+> Thanks
 
-Tested-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-
-Thanks,
-Val.
-
-> ---
->   arch/arm/boot/dts/r8a7790.dtsi | 9 ++++++---
->   1 file changed, 6 insertions(+), 3 deletions(-)
->
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index ae7d77e..26ec957 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -707,13 +707,16 @@
->   		mstp8_clks: mstp8_clks@e6150990 {
->   			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
->   			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> -			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
-> +			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
-> +				 <&zs_clk>, <&zs_clk>;
->   			#clock-cells = <1>;
->   			renesas,clock-indices = <
->   				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
-> -				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
-> +				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
-> +				R8A7790_CLK_SATA0
->   			>;
-> -			clock-output-names = "vin3", "vin2", "vin1", "vin0", "ether";
-> +			clock-output-names > +				"vin3", "vin2", "vin1", "vin0", "ether", "sata1", "sata0";
->   		};
->   		mstp9_clks: mstp9_clks@e6150994 {
->   			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
->
-
+I have queued up kzm9d this patch again.
