@@ -1,58 +1,77 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 30 Jan 2014 12:12:51 +0000
-Subject: Re: About gpio-regulator setting on DT
-Message-Id: <20140130121251.GO22609@sirena.org.uk>
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Date: Mon, 06 Jan 2014 06:50:06 +0000
+Subject: Fw: linux-next: manual merge of the sh tree with the  tree
+Message-Id: <20140106175006.12e983b2fcc905d72b85d2a8@canb.auug.org.au>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="GTGEtWEe6jD60dxL"
+Content-Type: multipart/mixed; boundary="Signature=_Mon__6_Jan_2014_17_50_06_+1100_U8sD5F9nam.afhSb"
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
- <20140129124516.GZ11841@sirena.org.uk>
- <87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-
---GTGEtWEe6jD60dxL
-Content-Type: text/plain; charset=us-ascii
+--Signature=_Mon__6_Jan_2014_17_50_06_+1100_U8sD5F9nam.afhSb
+Content-Type: text/plain; charset=US-ASCII
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, Jan 29, 2014 at 04:08:30PM -0800, Kuninori Morimoto wrote:
+I sent the blow message earlier today but it bounced with:
 
->     /* build initial state from gpio init data. */
->     state = 0;
->     for (ptr = 0; ptr < drvdata->nr_gpios; ptr++) {
->         if (config->gpios[ptr].flags & GPIOF_OUT_INIT_HIGH)     <== we need this
->                state |= (1 << ptr);
->     }
->     drvdata->state = state;
+<lethal@linux-sh.org>: host mail.linux-sh.org[111.68.239.195] said: 550 5.7=
+.1
+    <lethal@linux-sh.org>... Relaying denied. Proper authentication require=
+d.
+    (in reply to RCPT TO command)
 
-So this just looks like a bug in the code - the DT has all the data
-needed but the parsing code isn't setting everything up that the rest of
-the code needs and/or we should drop one of the ways of configuring
-things in the main probe function.  Avoiding having two ways of doing
-the same thing in the main probe would definitely be good.
+Hopefully someone on this list can contact Paul ...
 
---GTGEtWEe6jD60dxL
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Begin forwarded message:
+
+Date: Mon, 6 Jan 2014 12:13:17 +1100
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+To: Paul Mundt <lethal@linux-sh.org>, Olof Johansson <olof@lixom.net>, Arnd=
+ Bergmann <arnd@arndb.de>, <linux-arm-kernel@lists.infradead.org>
+Cc: linux-next@vger.kernel.org, linux-kernel@vger.kernel.org, Bastian Hecht=
+ <hechtb@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboar=
+d.com>
+Subject: linux-next: manual merge of the sh tree with the  tree
+
+
+Hi Paul,
+
+Today's linux-next merge of the sh tree got conflicts in
+drivers/tty/serial/sh-sci.c and include/linux/serial_sci.h between
+commits 8fb9631c517b ("serial: sh-sci: Sort headers alphabetically"),
+20bdcab8268c ("serial: sh-sci: Add OF support") and probably others from
+the arm-soc tree and commits ada80ee7fa60 ("serial: sh-sci: Add OF
+support") and b19ef75c56e9 ("serial: sh-sci: OF definitions need
+linux/of.h") from the sh tree.
+
+The arm-soc tree version is dated much more recently than
+the sh tree version and conflicts badly, so for today I have just dropped
+the sh tree (everything in there was committed before April 2013).  Please
+figure this out.
+
+--=20
+Cheers,
+Stephen Rothwell                    sfr@canb.auug.org.au
+
+--Signature=_Mon__6_Jan_2014_17_50_06_+1100_U8sD5F9nam.afhSb
+Content-Type: application/pgp-signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJS6kG/AAoJELSic+t+oim9s0cP/16C9I4fzfxkSMAmMu56Qlww
-TMWA/wKctewkQm/Wa53Ij2+ttrlak0GolARyxUfbUCMhWVb35q1cWVwmNEy4pbAI
-rfWzjl55pCYYo0r42Ag704vcM4evnNPaVXW0QYuJjqwsO+8sY6XONti3+JeBh9a/
-oJr5tr8hwxnk5n9p44Q1kdaPHaWHUlwpD9nN3QkwXJMsndDb2M05U1DcM9u6eMSs
-dvyR9jMVOGLBE3kYkGr2KrrbkL5ztDNY6sLJGatJGJWDMwG6zaTxck1RnE8PzgWL
-1wC0MFX4rs0V1y4jbpeKs6ynexhvmkehHMD7UTkIUIHJMKYixTLaYbWdq76sBvdG
-Cio2zkOystmDCLtwkwPx4Ryos2rHPTtbyepnsmzc3os7hNNFMzxDxFtFKxtxFEY7
-q7SUrJ6CK8DCcxGpGrnBg65zFDMJWXcm9Ol/HvMLfOnkImqvENvVxkYP5w6K0G+L
-qKyUKSexSNmskNPx4d1JyWSZLCU0ghWEjhw/IS0uC/GTtefRskoFm37rcvmLsOAn
-UsEQDGtJ8qQpwWQDGDf5tqhBfP3nCyfhS8P1dJTBQwmbbUPVo+eqfhB/g3BV1oUH
-n9PPXTA3qt4wLKAMR+0lAu3ZgPQYKEIAnhDwJsDuMH9c2Fo7k8Tpib6FBGo3JDuR
-Ko1m09anoEO3llBbc6Cu
-=nakD
+iQIcBAEBCAAGBQJSylInAAoJEMDTa8Ir7ZwV56AP/jWpWBZDsfAGAR355UtY1yQt
+ivNr99qRTUH7/+IwIuCYTwsFwiQKn10wIMQ9YbkJOyhP1CPNfjedBNlpsu9OrrCx
+Eh4KUPN0BSxAiSb085NxWCRBR0bHAnMq1P9Qu4J2LI22s2/ggx+KR9t2DqcKGTOn
+MfJv9iYhXzDc5luNU9BzCFc+udtlnixRRmxgctQfmAxHczPvrpneGeUuBaRMtDnF
+LoY5TBKZH6keGFAd9l8Eq4LlmjL3UdbMNAC/FkVn8phMXdtJ0XUvDKxRmYyj0SIa
+TAPPs2KQwCJt7ObO7KJ7ekmUqUNh0ChndSQSz6V1H+rv/q0rQjTAjAgFR0GOoO3U
+pTi9/HgEHWBcIfbt2Gjfs+hZMraP0dPEtF5ddHtGE3mbXqjege7rMFcjOaSMK534
+TAhXT9lpaUz27XEPOs5VqE6JqLNGk0di1aMVuh0DOHp8NvVl5ysXSEf2T8ZjOGfx
+IQGxVojRCgkQOKkmKwEqZTRit5N2xVcNaHxEno6CdjhL9ENCWjaMkprkY1bNmTA8
+WetVdmV5phQMat8xHfyXHTX/zvBKbxs/GxQBvrDfrwzXiSMP1X5+l3bw3nLZelxQ
+N4/XXB6ytIPz3OExPUsFBopINPRe4q7i1wdvuvKV2qIRgcESo1AcbE97UkZcUKLt
+9MejYZ5747yxT73sgnpL
+=yEWI
 -----END PGP SIGNATURE-----
 
---GTGEtWEe6jD60dxL--
+--Signature=_Mon__6_Jan_2014_17_50_06_+1100_U8sD5F9nam.afhSb--
