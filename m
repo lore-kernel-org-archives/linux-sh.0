@@ -1,111 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 02 Jan 2014 10:25:36 +0000
-Subject: Re: [PATCH 3/8] spi: rspi: Add support for more than one interrupt
-Message-Id: <CAMuHMdU8HjLgix0dvrECm3tan909s8kF_OznP1060KUN2dDTaw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 05:39:15 +0000
+Subject: Re: [PATCH 1/1] ARM: shmobile: Koelsch: pass Ether PHY IRQ
+Message-Id: <20140106053915.GF24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387885248-28425-1-git-send-email-geert+renesas@linux-m68k.org>
-	<1387885248-28425-4-git-send-email-geert+renesas@linux-m68k.org>
-	<2037815.gDYqhVmlrl@avalon>
-In-Reply-To: <2037815.gDYqhVmlrl@avalon>
+References: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
+ <201312200228.00555.sergei.shtylyov@cogentembedded.com>
+ <20131227021227.GC9184@verge.net.au>
+ <52BD66A2.4050504@cogentembedded.com>
+In-Reply-To: <52BD66A2.4050504@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@linux-m68k.org>, linux-spi@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+On Fri, Dec 27, 2013 at 03:38:10PM +0400, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 27-12-2013 6:12, Simon Horman wrote:
+> 
+> >>Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+> >>trigger type to be low-level as per the Micrel PHY driver's setup.
+> 
+> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> >Hi Sergei,
+> 
+> >does this depend on changes that have been queued up in net or net-next
+> >since v3.13-rc1?
+> 
+>    Yes, in net-next.
+> 
+> >If so are they present in v3.13-rc5?
+> 
+>    No, they should be available in 3.14-rc1.
+> 
+> >If not please
+> >repost when an rc release with the required dependencies is available.
+> 
+>    You mean this patch should inevitably wait for 3.15? I hoped
+> either you or DaveM could still queue this patch for 3.14...
 
-On Tue, Dec 31, 2013 at 12:38 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 24 December 2013 12:40:43 Geert Uytterhoeven wrote:
->> +     int irq[MAX_NUM_IRQ];
->
-> Should this field be called irqs ?
-
-OK.
-
->> +     unsigned int numirq;
->
-> This driver seems to use underscores to separate words in variable names,
-> maybe you could use num_irq (or num_irqs) instead.
-
-OK.
-
->> +     int i, ret = 0;
->
-> i is an unsigned loop index, could you please make it an unsigned int ?
-
-OK.
-
->> @@ -948,6 +948,19 @@ static int rspi_probe(struct platform_device *pdev)
->>       rspi->ops = ops;
->>       rspi->master = master;
->>
->> +     for (i = 0; i < MAX_NUM_IRQ; i++) {
->> +             irq = platform_get_irq(pdev, i);
->> +             if (irq < 0) {
->> +                     if (rspi->numirq)
->> +                             break;
->> +                     dev_err(&pdev->dev, "platform_get_irq error\n");
->> +                     ret = -ENODEV;
->> +                     goto error1;
->> +             }
->> +             rspi->irq[i] = irq;
->> +             rspi->numirq++;
->> +     }
->> +
->>       res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
->>       rspi->addr = devm_ioremap_resource(&pdev->dev, res);
->>       if (IS_ERR(rspi->addr)) {
->> @@ -979,14 +992,16 @@ static int rspi_probe(struct platform_device *pdev)
->>       master->transfer = rspi_transfer;
->>       master->cleanup = rspi_cleanup;
->>
->> -     ret = devm_request_irq(&pdev->dev, irq, rspi_irq, 0,
->> -                            dev_name(&pdev->dev), rspi);
->> -     if (ret < 0) {
->> -             dev_err(&pdev->dev, "request_irq error\n");
->> -             goto error1;
->> +     for (i = 0; i < rspi->numirq; i++) {
->> +             ret = devm_request_irq(&pdev->dev, rspi->irq[i], rspi_irq, 0,
->> +                                    dev_name(&pdev->dev), rspi);
->> +             if (ret < 0) {
->> +                     dev_err(&pdev->dev, "request_irq %d error\n",
->> +                             rspi->irq[i]);
->> +                     goto error1;
->> +             }
->>       }
->
-> Just an idea, what about combining the two loops ?
-
-I was a bit concerned about dependencies and cleanup, but indeed, it seems
-to be possible.
-
->> --- a/include/linux/spi/rspi.h
->> +++ b/include/linux/spi/rspi.h
->> @@ -1,7 +1,7 @@
->>  /*
->>   * Renesas SPI driver
->>   *
->> - * Copyright (C) 2012  Renesas Solutions Corp.
->> + * Copyright (C) 2012, 2013  Renesas Solutions Corp.
->>   *
->>   * This program is free software; you can redistribute it and/or modify
->>   * it under the terms of the GNU General Public License as published by
->
-> This change seems to be unrelated. You might want to squash it into patch 1/8.
-
-I'll move it to the first patch that actually adds code to rspi.h.
-
-Thanks for your comments!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Sorry, it was too late for v3.14 and I would prefer if you didn't route
+this via Dave's tree.
