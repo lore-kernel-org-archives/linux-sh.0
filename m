@@ -1,31 +1,24 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 07 Jan 2014 00:14:14 +0000
-Subject: Re: [PATCH 2/5] arm: shmobile: r8a7790: Add SATA clock
-Message-Id: <87y52s4pik.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 06 Jan 2014 06:44:57 +0000
+Subject: Re: [PATCH V3 1/2] ARM: shmobile: r8a7790: Add VIN clock support
+Message-Id: <20140106064457.GI24653@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1372297984-9315-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372297984-9315-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Valentine
-
-> > Happy new year, and sorry for my late response
+On Fri, Dec 27, 2013 at 03:44:03PM +0400, Valentine Barshak wrote:
+> This adds VIN[0-3] clock support to R8A7790 SoC.
 > 
-> Thanks! No problem, hope you had great holidays!
-
-Thank you :)
-
-> > According to HW guys, parent clock of SATA module is zs_clk.
+> Changes in V2:
+> * none.
 > 
-> Thanks!
-> I'll resend with series with the clocks updated.
+> Changes in V3:
+> * capitalized ARM in the subject.
+> 
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Thanks
-
-Best regards
----
-Kuninori Morimoto
+Thanks, I will queue this up.
