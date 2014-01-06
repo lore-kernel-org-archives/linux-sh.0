@@ -1,39 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 07 Jan 2014 08:22:53 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Add VIN clocks to device tree
-Message-Id: <1389082976-22254-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 06 Jan 2014 02:46:40 +0000
+Subject: Re: [PATCH 0/6][RFC] ARM: shmobile: lager: SDHI support
+Message-Id: <87r48lket1.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87a9g11jxt.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87a9g11jxt.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Hi Simon
+
+> > #1 - #4 patches are for mmc ML,
+> > but, mmc-next branch doesn't have latest arch/arm/mach-shmobile.
+> > So these are still [RFC], and I didn't Cc to mmc ML this time.
+> > I will post #1 - #4 patches to mmc ML after merge.
+> > 
+> > #1 - #4 : for mmc ML, for DT
+> >           based on mmc-next branch,
+> >           but, it needs latest Simon's branch.
+> >           I will re-post these to mmc ML after merge
+> > 
+> > #5      : for SH ML, for legacy code
+> >           based on renesas-devel-v3.13-rc3-20131214v2
+> >           it needs mmc-next branch
+> > 
+> > #6      : for SH ML, for DT
+> >           based on renesas-devel-v3.13-rc3-20131214v2
+> >           it needs mmc-next branch, and #1 - #5
+(snip)
+> Would it be worth me placing these in a topic branch?
+> I believe that Ben has some interest in this area and
+> a branch may be useful to hom.
+
+Thank you for your help
+Yes, it seems good idea.
+
+
+Best regards
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7d7d441..ae7d77e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -707,10 +707,13 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&p_clk>;
-+			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7790_CLK_ETHER>;
--			clock-output-names = "ether";
-+			renesas,clock-indices = <
-+				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
-+				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
-+			>;
-+			clock-output-names = "vin3", "vin2", "vin1", "vin0", "ether";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
--- 
-1.8.3.2
-
+Kuninori Morimoto
