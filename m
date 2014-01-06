@@ -1,44 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Jan 2014 05:39:15 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 06 Jan 2014 12:47:58 +0000
 Subject: Re: [PATCH 1/1] ARM: shmobile: Koelsch: pass Ether PHY IRQ
-Message-Id: <20140106053915.GF24653@verge.net.au>
+Message-Id: <52CAA5FE.7020204@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
  <201312200228.00555.sergei.shtylyov@cogentembedded.com>
- <20131227021227.GC9184@verge.net.au>
- <52BD66A2.4050504@cogentembedded.com>
-In-Reply-To: <52BD66A2.4050504@cogentembedded.com>
+ <20131227021227.GC9184@verge.net.au> <52BD66A2.4050504@cogentembedded.com>
+ <20140106053915.GF24653@verge.net.au>
+In-Reply-To: <20140106053915.GF24653@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 27, 2013 at 03:38:10PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 27-12-2013 6:12, Simon Horman wrote:
-> 
-> >>Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
-> >>trigger type to be low-level as per the Micrel PHY driver's setup.
-> 
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >Hi Sergei,
-> 
-> >does this depend on changes that have been queued up in net or net-next
-> >since v3.13-rc1?
-> 
->    Yes, in net-next.
-> 
-> >If so are they present in v3.13-rc5?
-> 
->    No, they should be available in 3.14-rc1.
-> 
-> >If not please
-> >repost when an rc release with the required dependencies is available.
-> 
->    You mean this patch should inevitably wait for 3.15? I hoped
-> either you or DaveM could still queue this patch for 3.14...
+Hello.
 
-Sorry, it was too late for v3.14 and I would prefer if you didn't route
-this via Dave's tree.
+On 06-01-2014 9:39, Simon Horman wrote:
+
+>>>> Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+>>>> trigger type to be low-level as per the Micrel PHY driver's setup.
+
+>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>>> Hi Sergei,
+
+>>> does this depend on changes that have been queued up in net or net-next
+>>> since v3.13-rc1?
+
+>>     Yes, in net-next.
+
+>>> If so are they present in v3.13-rc5?
+
+>>     No, they should be available in 3.14-rc1.
+
+>>> If not please
+>>> repost when an rc release with the required dependencies is available.
+
+>>     You mean this patch should inevitably wait for 3.15? I hoped
+>> either you or DaveM could still queue this patch for 3.14...
+
+> Sorry, it was too late for v3.14 and I would prefer if you didn't route
+> this via Dave's tree.
+
+    I somehow thought you were asking about the Lager patch. No, I wasn't 
+going to route the Koelsch patch via Dave, only Lager. Dave doesn't seem eager 
+to do it anyway.
+
+WBR, Sergei
+
