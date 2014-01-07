@@ -1,68 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 02:27:15 +0000
-Subject: [PATCH v3 3/3] ARM: shmobile: genmai: Enable r7s72100-ether
-Message-Id: <1389061635-4083-4-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 07 Jan 2014 22:13:47 +0000
+Subject: Re: [PATCH v3 3/3] ARM: shmobile: genmai: Enable r7s72100-ether
+Message-Id: <52CC7C1B.20807@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
+ <1389061635-4083-4-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389061635-4083-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
----
-v2
-* As suggested by Magnus Damm and Sergei Shtylyov
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
+Hello.
 
-* As suggested by Sergei Shtylyov
-  - set no_ether_link as there is no LINK signal documented
-    in the manual
----
- arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+On 07-01-2014 6:27, Simon Horman wrote:
 
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c..a1f6fe1 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,36 @@
- 
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/sh_eth.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* Ether */
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
-+	.phy			= 0x00, /* PD60610 */
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.phy_interface		= PHY_INTERFACE_MODE_MII,
-+	.no_ether_link		= 1
-+};
-+
-+static const struct resource ether_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe8203000, 0x800),
-+	DEFINE_RES_MEM(0xe8204800, 0x200),
-+	DEFINE_RES_IRQ(gic_iid(359)),
-+};
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
-+
-+	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  &ether_pdata, sizeof(ether_pdata));
- }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
--- 
-1.8.4
+    You've removed RFC but still haven't signed off. :-)
+
+> ---
+> v2
+> * As suggested by Magnus Damm and Sergei Shtylyov
+>    - r7s72100 ethernet is not gigabit so do not refer to it as such
+
+> * As suggested by Sergei Shtylyov
+>    - set no_ether_link as there is no LINK signal documented
+>      in the manual
+
+    I'm OK with the patch, you can add my Acked-by.
+
+WBR, Sergei
 
