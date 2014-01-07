@@ -1,59 +1,77 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Jan 2014 00:15:38 +0000
-Subject: Re: [PATCH 01/10] ARM: shmobile: marzen: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <20140131001538.GF14663@verge.net.au>
+Date: Tue, 07 Jan 2014 01:26:28 +0000
+Subject: Re: [PATCH v2 0/8] SoC and board integration for RSPI on RZ/A1H
+Message-Id: <20140107012628.GD2196@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k3dii8yp.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87k3dii8yp.wl%kuninori.morimoto.gx@gmail.com>
+References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jan 30, 2014 at 09:26:51PM +0300, Sergei Shtylyov wrote:
-> Hello.
+On Fri, Dec 27, 2013 at 09:15:54PM +0100, Geert Uytterhoeven wrote:
+> This patch series integrates Renesas RSPI on the RZ/A1H aka R7S72100 SoC,
+> and the Genmai development board.
 > 
-> On 01/30/2014 03:56 AM, Kuninori Morimoto wrote:
+> The series is based on renesas-devel-v3.13-rc5-20131226, with Magnus'
+> pinctrl, Wolfram's riic, and Simon's sh_eth work applied on top.
 > 
-> >From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> It was tested on the Genmai development board (genmai-reference), using
+> an in-kernel version of Documentation/spi/spidev_test.c, exercising
+> loopback mode on rspi1, with the same outcome as the SDK reference code.
 > 
-> >This reverts commit 41307133da4b6f242ecbb45950b9d043c0b21b96.
+> Notes:
+>   1. The proposed DT bindings also talk about QSPI on the R8A779x, as those
+>      SoCs use the same driver.
+>   2. As the actual spi-rspi driver doesn't use DT yet, platform devices and
+>      spi board info are still used from C to instantiate SPI buses and their
+>      children, while pinctrl is performed by DT.
+>   3. It will not work with the non-reference version of genmai, due to
+>      missing pinmux configuration in setup-r7s72100.c.
+>   4. Patches [4/8] and [5/8] are new.
 > 
->    Please also specify that commit's summary line in parens (since
-> you're not doing this in the subject).
+>     [1/8] pinctrl: sh-pfc: r7s72100: Add RSPI support
+
+I believe that Laurent should handle this.
+
+>     [2/8] ARM: shmobile: r7s72100: Add RSPI clocks
+
+This seems fine and independent of the other patches.
+But unfortunately it no longer applies.
+
+Feel free to rebase it if you would like me to queue it up sooner
+than later.
+
+>     [3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
+
+I assume this depends on 1/3.
+
+Please add a patch to update the koelsch defconfig.
+
+>     [4/8] ARM: shmobile: genmai: Add RSPI children (NEW)
+
+This seems reasonable but I assume it depends on earlier patches.
+
+Please add a patch to update the koelsch defconfig or Kconfig.
+
+>     [5/8] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux (NEW)
+>     [6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+>     [7/8] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+>     [8/8] [RFC] ARM: shmobile: genmai reference: Add RSPI nodes
 > 
-> >DEVTMPFS is needed for udev
+> Gr{oetje,eeting}s,
 > 
-> >Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 						Geert
 > 
-> WBR, Sergei
-
-Thanks, I have queued up the following.
-
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-ARM: shmobile: marzen: enable CONFIG_DEVTMPFS in defconfig
-
-This reverts commit 41307133da4b6f242ecbb45950b9d043c0b21b96
-("ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig").
-
-DEVTMPFS is needed for udev.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-[horms+renesas@verge.net.au: Added subject of reverted patch to changelog]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index f21bd40..92994f7 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -43,6 +43,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+> 							    -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
