@@ -1,69 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jan 2014 03:10:05 +0000
-Subject: Re: [PATCH 02/03] pinctrl: sh-pfc: r8a7790: Break out USB0 OVC/VBUS
-Message-Id: <CANqRtoSubhvfgzn590k9oePLv04V00Z7aEuKw2Ofxi8FeCObbA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 07 Jan 2014 09:54:41 +0000
+Subject: Re: [PATCH 15/15] sh: intc: Enable driver compilation with COMPILE_TEST
+Message-Id: <2305561.CqXvNryyXG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140129230959.22655.55645.sendpatchset@w520>
- <20140129231019.22655.41456.sendpatchset@w520>
- <1397857.qyLQY9XTlp@avalon>
-In-Reply-To: <1397857.qyLQY9XTlp@avalon>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <3670569.dVXQxeaJBM@avalon>
+In-Reply-To: <3670569.dVXQxeaJBM@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
-
-On Fri, Jan 31, 2014 at 10:17 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
+On Wednesday 11 December 2013 13:52:31 Laurent Pinchart wrote:
 > Hi Magnus,
->
-> Thank you for the patch.
->
-> On Thursday 30 January 2014 08:10:19 Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Create a new group for the USB0 OVC/VBUS pin by itself. This
->> allows us to monitor PWEN as GPIO on the Lager board.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->>  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |    9 +++++++++
->>  1 file changed, 9 insertions(+)
->>
->> --- 0001/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
->> +++ work/drivers/pinctrl/sh-pfc/pfc-r8a7790.c 2014-01-24
-> 10:23:32.000000000
->> +0900 @@ -3231,6 +3231,13 @@ static const unsigned int usb0_pins[] >>  static const unsigned int usb0_mux[] = {
->>       USB0_PWEN_MARK, USB0_OVC_VBUS_MARK,
->>  };
->> +static const unsigned int usb0_ovc_vbus_pins[] = {
->> +     /* OVC/VBUS */
->> +     RCAR_GP_PIN(5, 19),
->> +};
->> +static const unsigned int usb0_ovc_vbus_mux[] = {
->> +     USB0_OVC_VBUS_MARK,
->> +};
->
-> Another option would have been to split the existing usb0 group in usb0_pwen
-> and usb0_ovc. I'm not sure which is better though, I'd just like to know if
-> you had given it a thought.
+> 
+> Could you tell me who is responsible for merging drivers/sh patches ? If
+> that's one of you, could you please pick this patch up for v3.14 ?
 
-I actually did just that in my first local attempt, but I decided not
-to since it will only cause potential breakage.
+Ping ?
 
-> Regardless, what about naming the new group usb0_ovc instead of usb0_ovc_bus
-> to keep names short ?
+> On Wednesday 27 November 2013 02:18:37 Laurent Pinchart wrote:
+> > This helps increasing build testing coverage.
+> > 
+> > Cc: Magnus Damm <magnus.damm@gmail.com>
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > ---
+> > 
+> >  drivers/sh/intc/Kconfig | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+> > index a305731..f7d9061 100644
+> > --- a/drivers/sh/intc/Kconfig
+> > +++ b/drivers/sh/intc/Kconfig
+> > @@ -6,7 +6,7 @@ comment "Interrupt controller options"
+> > 
+> >  config INTC_USERIMASK
+> >  
+> >  	bool "Userspace interrupt masking support"
+> > 
+> > -	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
+> > +	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
+> > 
+> >  	help
+> >  	
+> >  	  This enables support for hardware-assisted userspace hardirq
+> >  	  masking.
 
-Is there any particular reason why you want shorter names?
+-- 
+Regards,
 
-From my side, I prefer to keep the names in sync with the data sheet.
-In this particular case it is a shared pin so OVC is used for Host
-while VBUS is used for gadget, so if you're proposing to ditch VBUS
-then this feels somewhat inconsistent with the current gadget use
-case. =)
+Laurent Pinchart
 
-Thanks,
-
-/ magnus
