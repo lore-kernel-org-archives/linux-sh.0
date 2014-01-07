@@ -1,37 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 20 Jan 2014 00:31:36 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
-Message-Id: <20140120003133.GF9752@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Jan 2014 18:57:14 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7790: Add thermal clock in device tree
+Message-Id: <1389121036-3555-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
- <201312200219.31121.sergei.shtylyov@cogentembedded.com>
- <CANqRtoQ_qPBJUqnbU6wrrc+tmsspk_v99w-ZTdnhPivEdBzd4A@mail.gmail.com>
-In-Reply-To: <CANqRtoQ_qPBJUqnbU6wrrc+tmsspk_v99w-ZTdnhPivEdBzd4A@mail.gmail.com>
+References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 17, 2014 at 03:00:29PM +0900, Magnus Damm wrote:
-> On Fri, Dec 20, 2013 at 8:19 AM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
-> > Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
-> > trigger type to be low-level as per the Micrel PHY driver's setup.
-> >
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >
-> > ---
-> >  arch/arm/mach-shmobile/board-lager.c |    4 ++++
-> >  1 file changed, 4 insertions(+)
-> 
-> Thanks for your efforts. The code looks fine. I have now also tested
-> this on my Lager board.
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Sergei,
+Add the missing thermal MSTP clock to the thermal device node.
 
-please repost this patch with Magnus's ack once an rc release is
-available with the pre-requisites of this patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index f48487c2a970..b53834e6a55f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -168,6 +168,7 @@
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
+ 	};
+ 
+ 	timer {
+-- 
+1.7.9.5
+
