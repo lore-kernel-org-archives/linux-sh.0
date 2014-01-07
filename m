@@ -1,64 +1,31 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Jan 2014 05:39:40 +0000
-Subject: [PATCH] ARM: shmobile: bockw: use wp-gpios instead of WP pin
-Message-Id: <87zjmc676u.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 07 Jan 2014 08:22:52 +0000
+Subject: [PATCH 0/4] r8a779[01]: Add new clocks to the device tree
+Message-Id: <1389082976-22254-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello,
 
-Latest Renesas Chip has some SDHI channels and the WP pin
-availability depends on its channel or HW implementation.
-Thus, this patch decides new policy whch indicates
-WP is disabled as default.
-But, we can use wp-gpios property to enable it as
-other method.
+These four patches add the VIN and SATA clocks to the device tree. Not much
+else to be said, the changes should be safe and will be needed for VIN and
+SATA DT support.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-Simon
+Laurent Pinchart (4):
+  ARM: shmobile: r8a7790: Add VIN clocks to device tree
+  ARM: shmobile: r8a7791: Add VIN clocks to device tree
+  ARM: shmobile: r8a7790: Add SATA clocks to device tree
+  ARM: shmobile: r8a7791: Add SATA clocks to device tree
 
-This was included on v1 patch series,
-but no relationship with mmc part patches.
+ arch/arm/boot/dts/r8a7790.dtsi | 12 +++++++++---
+ arch/arm/boot/dts/r8a7791.dtsi | 11 ++++++++---
+ 2 files changed, 17 insertions(+), 6 deletions(-)
 
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index bb62c7a..06cda19 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -17,6 +17,7 @@
- /dts-v1/;
- #include "r8a7778.dtsi"
- #include <dt-bindings/interrupt-controller/irq.h>
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "bockw";
-@@ -84,7 +85,7 @@
- 
- 	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
--				  "sdhi0_cd", "sdhi0_wp";
-+				  "sdhi0_cd";
- 		renesas,function = "sdhi0";
- 	};
- 
-@@ -101,6 +102,7 @@
- 	vmmc-supply = <&fixedregulator3v3>;
- 	bus-width = <4>;
- 	status = "okay";
-+	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
- };
- 
- &hspi0 {
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
