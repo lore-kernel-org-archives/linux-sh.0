@@ -1,75 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 17 Jan 2014 00:22:29 +0000
-Subject: [PATCH v7 3/4] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-Message-Id: <1389918150-19058-4-git-send-email-horms+renesas@verge.net.au>
+From: Joerg Roedel <joro@8bytes.org>
+Date: Tue, 07 Jan 2014 14:36:05 +0000
+Subject: Re: [PATCH 0/2] SH Mobile IOMMU fixes
+Message-Id: <20140107143603.GE2742@8bytes.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389918150-19058-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389918150-19058-1-git-send-email-horms+renesas@verge.net.au>
+References: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1387300730-28783-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Nguyen Viet Dung <nv-dung-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Tue, Dec 17, 2013 at 06:18:48PM +0100, Laurent Pinchart wrote:
+> Hello,
+> 
+> These two small patches fix bugs in the SH Mobile IOMMU driver that result in
+> crashes at runtime. Given that the bugs have been present in the driver since
+> v3.9 there's no urgency to push the fixes to v3.13.
+> 
+> Laurent Pinchart (2):
+>   iommu/shmobile: Allocate archdata with kzalloc()
+>   iommu/shmobile: Turn the flush_lock mutex into a spinlock
+> 
+>  drivers/iommu/shmobile-iommu.c |  3 +--
+>  drivers/iommu/shmobile-ipmmu.c | 10 +++++-----
+>  drivers/iommu/shmobile-ipmmu.h |  2 +-
+>  3 files changed, 7 insertions(+), 8 deletions(-)
 
----
-Dave, I am planning to take this change through my tree.
-
-v6 - v7
-* No change
-
-v5
-* Rebase
-
-v3 - v4
-* No change
-
-v2
-* As suggested by Sergei Shtylyov
-  - Add MSTP74 to beginning of enum on a line by itself
-* As suggested by Magnus Damm
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
----
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index dd8ce87..0242ca5 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -27,6 +27,7 @@
- #define FRQCR2		0xfcfe0014
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
-+#define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
- 
- #define PLL_RATE 30
-@@ -146,6 +147,7 @@ struct clk div4_clks[DIV4_NR] = {
- };
- 
- enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
- 	MSTP33,	MSTP_NR };
- 
-@@ -154,6 +156,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
- 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
-+	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
- 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
- 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
- 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
-@@ -180,6 +183,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
- 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
-+	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
--- 
-1.8.4
+Applied both, thanks.
 
