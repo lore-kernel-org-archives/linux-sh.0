@@ -1,30 +1,27 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 14 Jan 2014 19:09:47 +0000
-Subject: Re: [RESEND] clk_get() return code fixes
-Message-Id: <2126842.zB7hpVdX9z@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 07 Jan 2014 01:02:26 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
+Message-Id: <20140107010224.GA28639@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389725007-5023-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1389725007-5023-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <201312200218.08076.sergei.shtylyov@cogentembedded.com>
+ <201312200219.31121.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201312200219.31121.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ben,
+On Fri, Dec 20, 2013 at 02:19:30AM +0300, Sergei Shtylyov wrote:
+> Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+> trigger type to be low-level as per the Micrel PHY driver's setup.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thank you for the patches.
+Hi Sergei,
 
-For the whole series,
+for better or for worse I believe this is a v3.15 candidate.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Could you repost it once v3.14-rc1 has been released,
+I believe it will include the dependencies of this patch.
 
-On Tuesday 14 January 2014 18:43:25 Ben Dooks wrote:
-> Since v1:
-> 	- fixed commit comments
-> 	- add koelsh as well as lager
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks
