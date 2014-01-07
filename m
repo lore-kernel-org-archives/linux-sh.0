@@ -1,35 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Jan 2014 00:56:17 +0000
-Subject: [PATCH 02/10] ARM: shmobile: mackerel: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <87iot2i8y8.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 08:48:04 +0000
+Subject: [PATCH 4/8] ARM: shmobile: bockw: Conditionally select SMSC_PHY
+Message-Id: <1389084488-25984-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The bockw board uses has an SMSC911X ethernet controller which uses an
+SMSC phy. Select SMSC_PHY for bockw if SMSC911X is enabled to make use of the
+SMSC-specific phy driver rather than relying on the generic phy driver.
 
-DEVTMPFS is needed for udev
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/mackerel_defconfig |    2 ++
+ arch/arm/mach-shmobile/Kconfig | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index a61e165..57ececb 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -42,6 +42,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_FIRMWARE_IN_KERNEL is not set
- CONFIG_MTD=y
- CONFIG_MTD_CONCAT=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 6f16983..fdd274d 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -209,6 +209,7 @@ config MACH_BOCKW
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select RENESAS_INTC_IRQPIN
++	select SMSC_PHY if SMSC911X
+ 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 	select USE_OF
+@@ -219,6 +220,7 @@ config MACH_BOCKW_REFERENCE
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select RENESAS_INTC_IRQPIN
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SMSC911X
+ 	select USE_OF
+ 	---help---
+ 	   Use reference implementation of BockW board support
 -- 
-1.7.9.5
+1.8.4
 
