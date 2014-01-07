@@ -1,57 +1,44 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 22:29:05 +0000
-Subject: [PATCH V3 3/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
-Message-Id: <1390602546-11911-4-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 08:48:02 +0000
+Subject: [PATCH 2/8] ARM: shmobile: armadillo800eva: Conditionally select SMSC_PHY
+Message-Id: <1389084488-25984-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host clock support to R-Car M2 SoC.
+The armadillo800eva board uses has an SH ethernet controller which uses an
+SMSC phy. Select SMSC_PHY for koelsch if SH_ETH is enabled to make use of the
+SMSC-specific phy driver rather than relying on the generic phy driver.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Changes in V3:
-* none.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index ab1ef2e..564cd46 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -140,7 +140,7 @@ enum {
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
-@@ -171,6 +171,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
- 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
-@@ -238,6 +239,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
- };
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2673f68..b624b5a 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -184,6 +184,7 @@ config MACH_ARMADILLO800EVA
+ 	depends on ARCH_R8A7740
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SH_ETH
+ 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
+ 	select USE_OF
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+@@ -192,6 +193,7 @@ config MACH_ARMADILLO800EVA_REFERENCE
+ 	depends on ARCH_R8A7740
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SH_ETH
+ 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
+ 	select USE_OF
+ 	---help---
 -- 
-1.8.3.1
+1.8.4
 
