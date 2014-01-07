@@ -1,30 +1,30 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 03 Jan 2014 15:34:13 +0000
-Subject: [PATCH 0/3] Add QSPI support on r8a7791/koelsch
-Message-Id: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 07 Jan 2014 01:20:15 +0000
+Subject: Re: [PATCH 0/3] Add QSPI support on r8a7791/koelsch
+Message-Id: <20140107012015.GC2196@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This series adds support for the Spansion s25fl512s SPI FLASH on the
-r8a7791-based Koelsch board:
+On Fri, Jan 03, 2014 at 04:34:13PM +0100, Geert Uytterhoeven wrote:
+> This series adds support for the Spansion s25fl512s SPI FLASH on the
+> r8a7791-based Koelsch board:
+> 
+>     [1/3] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
 
-    [1/3] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
-    [2/3] ARM: shmobile: r8a7791: add QSPI clock
-    [3/3] ARM: shmobile: Koelsch: Add QSPI support
+I believe that Laurent should handle patch 1/3.
 
-This applies to non-multiplatform Koelsch only.  Multi-platform Koelsch
-support will be added when the spi-rspi driver gains DT support.
+>     [2/3] ARM: shmobile: r8a7791: add QSPI clock
+>     [3/3] ARM: shmobile: Koelsch: Add QSPI support
 
-Gr{oetje,eeting}s,
+I believe that patch 3/3 depends on patch 1/3.
+So I would like to wait for Laurent to handle patch 1/3.
 
-						Geert
+Also, please post a patch to update the koelsch defconfig.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+> This applies to non-multiplatform Koelsch only.  Multi-platform Koelsch
+> support will be added when the spi-rspi driver gains DT support.
