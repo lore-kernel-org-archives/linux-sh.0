@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 07 Jan 2014 20:04:04 +0000
+From: Gerhard Sittig <gsi@denx.de>
+Date: Tue, 07 Jan 2014 20:57:19 +0000
 Subject: Re: [PATCH 3/4] thermal: rcar: Add missing clock handling
-Message-Id: <52CC5DB4.6070205@cogentembedded.com>
+Message-Id: <20140107205719.GL20094@book.gsilab.sittig.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
  <1389121036-3555-4-git-send-email-geert@linux-m68k.org>
@@ -11,31 +11,18 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
-
-On 07-01-2014 22:57, Geert Uytterhoeven wrote:
-
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-
-> When using DT to instantiate the rcar-thermal device, it prints the
-> following error:
-
->      rcar_thermal e61f0000.thermal: thermal sensor was broken
-
-> Explicitly request and enable the thermal clock to fix this.
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> ---
->   drivers/thermal/rcar_thermal.c |   40 +++++++++++++++++++++++++++++++++-------
->   1 file changed, 33 insertions(+), 7 deletions(-)
-
-> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-> index 88f92e1a9944..a5629500723a 100644
-> --- a/drivers/thermal/rcar_thermal.c
-> +++ b/drivers/thermal/rcar_thermal.c
-[...]
+On Tue, Jan 07, 2014 at 19:57 +0100, Geert Uytterhoeven wrote:
+> 
 > @@ -378,23 +380,38 @@ static int rcar_thermal_probe(struct platform_device *pdev)
-[...]
+>  	spin_lock_init(&common->lock);
+>  	common->dev = dev;
+>  
+> +	common->clk = devm_clk_get(&pdev->dev, NULL);
+> +	if (IS_ERR(common->clk)) {
+> +		dev_err(&pdev->dev, "cannot get clock\n");
+> +		return PTR_ERR(common->clk);
+> +	}
+> +
 > +	ret = clk_prepare(common->clk);
 > +	if (ret < 0) {
 > +		dev_err(&pdev->dev, "unable to prepare clock\n");
@@ -44,36 +31,15 @@ On 07-01-2014 22:57, Geert Uytterhoeven wrote:
 > +
 > +	clk_enable(common->clk);
 > +
+>  	pm_runtime_enable(dev);
+>  	pm_runtime_get_sync(dev);
 
-    Why not just clk_prepare_enable()?
+clk_enable() can fail, too, so you should check its return value
 
-[...]
-> @@ -465,9 +484,13 @@ error_unregister:
->   			rcar_thermal_irq_disable(priv);
->   	}
->
-> +error_unpm:
->   	pm_runtime_put_sync(dev);
->   	pm_runtime_disable(dev);
->
-> +	clk_disable(common->clk);
-> +	clk_unprepare(common->clk);
-> +
 
-    Why not just clk_disable_unprepare()?
-
->   	return ret;
->   }
->
-> @@ -486,6 +509,9 @@ static int rcar_thermal_remove(struct platform_device *pdev)
->   	pm_runtime_put_sync(dev);
->   	pm_runtime_disable(dev);
->
-> +	clk_disable(common->clk);
-> +	clk_unprepare(common->clk);
-> +
-
-    Likewise.
-
-WBR, Sergei
-
+virtually yours
+Gerhard Sittig
+-- 
+DENX Software Engineering GmbH,     MD: Wolfgang Denk & Detlev Zundel
+HRB 165235 Munich, Office: Kirchenstr. 5, D-82194 Groebenzell, Germany
+Phone: +49-8142-66989-0 Fax: +49-8142-66989-80  Email: office@denx.de
