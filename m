@@ -1,123 +1,130 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 21 Jan 2014 12:10:30 +0000
-Subject: Re: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <1784316.ZelAfIxChY@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Jan 2014 18:57:15 +0000
+Subject: [PATCH 3/4] thermal: rcar: Add missing clock handling
+Message-Id: <1389121036-3555-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 07 January 2014 16:08:37 Laurent Pinchart wrote:
-> Hello,
-> 
-> Ping ? Could this patch series (with patches v3.1 1/3, v3 2/3 and v3 3/3) be
-> applied for v3.14 ? Same question for "DMA: shdma: Enable driver
-> compilation with COMPILE_TEST".
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-PING ?
+When using DT to instantiate the rcar-thermal device, it prints the
+following error:
 
-> On Wednesday 11 December 2013 13:43:04 Laurent Pinchart wrote:
-> > Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
-> > variables, and cast pointers to uintptr_t instead of unsigned int where
-> > applicable. This fixes warnings on platforms where pointers and/or
-> > dma_addr_t have a different size than int
-> > 
-> > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > Cc: Vinod Koul <vinod.koul@intel.com>
-> > Cc: dmaengine@vger.kernel.org
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/dma/sh/shdma-base.c | 8 ++++----
-> >  drivers/dma/sh/shdma-of.c   | 3 ++-
-> >  drivers/dma/sh/sudmac.c     | 4 ++--
-> >  3 files changed, 8 insertions(+), 7 deletions(-)
-> > 
-> > diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-> > index 2e7b394..5367e01 100644
-> > --- a/drivers/dma/sh/shdma-base.c
-> > +++ b/drivers/dma/sh/shdma-base.c
-> > @@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void
-> > *arg) struct shdma_chan *schan = to_shdma_chan(chan);
-> > 
-> >  	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
-> >  	const struct shdma_ops *ops = sdev->ops;
-> > 
-> > -	int match = (int)arg;
-> > +	int match = (long)arg;
-> > 
-> >  	int ret;
-> >  	
-> >  	if (match < 0)
-> > 
-> > @@ -491,8 +491,8 @@ static struct shdma_desc *shdma_add_desc(struct
-> > shdma_chan *schan, }
-> > 
-> >  	dev_dbg(schan->dev,
-> > 
-> > -		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
-> > -		copy_size, *len, *src, *dst, &new->async_tx,
-> > +		"chaining (%zu/%zu)@%pad -> %pad with %p, cookie %d\n",
-> > +		copy_size, *len, src, dst, &new->async_tx,
-> > 
-> >  		new->async_tx.cookie);
-> >  	
-> >  	new->mark = DESC_PREPARED;
-> > 
-> > @@ -555,7 +555,7 @@ static struct dma_async_tx_descriptor
-> > *shdma_prep_sg(struct shdma_chan *schan, goto err_get_desc;
-> > 
-> >  		do {
-> > 
-> > -			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
-> > +			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %llx\n",
-> > 
-> >  				i, sg, len, (unsigned long long)sg_addr);
-> >  			
-> >  			if (direction = DMA_DEV_TO_MEM)
-> > 
-> > diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-> > index 06473a0..b4ff9d3 100644
-> > --- a/drivers/dma/sh/shdma-of.c
-> > +++ b/drivers/dma/sh/shdma-of.c
-> > @@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct
-> > of_phandle_args *dma_spec, /* Only slave DMA channels can be allocated via
-> > DT */
-> > 
-> >  	dma_cap_set(DMA_SLAVE, mask);
-> > 
-> > -	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
-> > +	chan = dma_request_channel(mask, shdma_chan_filter,
-> > +				   (void *)(uintptr_t)id);
-> > 
-> >  	if (chan)
-> >  	
-> >  		to_shdma_chan(chan)->hw_req = id;
-> > 
-> > diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-> > index c7e9cdf..4e7df43 100644
-> > --- a/drivers/dma/sh/sudmac.c
-> > +++ b/drivers/dma/sh/sudmac.c
-> > @@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan *schan,
-> > 
-> >  	struct sudmac_chan *sc = to_chan(schan);
-> >  	struct sudmac_desc *sd = to_desc(sdesc);
-> > 
-> > -	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
-> > -		__func__, src, dst, *len);
-> > +	dev_dbg(sc->shdma_chan.dev, "%s: src=%pad, dst=%pad, len=%zu\n",
-> > +		__func__, &src, &dst, *len);
-> > 
-> >  	if (*len > schan->max_xfer_len)
-> >  	
-> >  		*len = schan->max_xfer_len;
+    rcar_thermal e61f0000.thermal: thermal sensor was broken
 
+Explicitly request and enable the thermal clock to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/thermal/rcar_thermal.c |   40 +++++++++++++++++++++++++++++++++-------
+ 1 file changed, 33 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 88f92e1a9944..a5629500723a 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -17,6 +17,7 @@
+  *  with this program; if not, write to the Free Software Foundation, Inc.,
+  *  59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+  */
++#include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/err.h>
+ #include <linux/irq.h>
+@@ -53,6 +54,7 @@ struct rcar_thermal_common {
+ 	struct device *dev;
+ 	struct list_head head;
+ 	spinlock_t lock;
++	struct clk *clk;
+ };
+ 
+ struct rcar_thermal_priv {
+@@ -378,23 +380,38 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 	spin_lock_init(&common->lock);
+ 	common->dev = dev;
+ 
++	common->clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(common->clk)) {
++		dev_err(&pdev->dev, "cannot get clock\n");
++		return PTR_ERR(common->clk);
++	}
++
++	ret = clk_prepare(common->clk);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "unable to prepare clock\n");
++		return ret;
++	}
++
++	clk_enable(common->clk);
++
+ 	pm_runtime_enable(dev);
+ 	pm_runtime_get_sync(dev);
+ 
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 	if (irq) {
+-		int ret;
++		int ret2;
+ 
+ 		/*
+ 		 * platform has IRQ support.
+ 		 * Then, drier use common register
+ 		 */
+ 
+-		ret = devm_request_irq(dev, irq->start, rcar_thermal_irq, 0,
+-				       dev_name(dev), common);
+-		if (ret) {
++		ret2 = devm_request_irq(dev, irq->start, rcar_thermal_irq, 0,
++					dev_name(dev), common);
++		if (ret2) {
+ 			dev_err(dev, "irq request failed\n ");
+-			return ret;
++			ret = ret2;
++			goto error_unpm;
+ 		}
+ 
+ 		/*
+@@ -402,8 +419,10 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		 */
+ 		res = platform_get_resource(pdev, IORESOURCE_MEM, mres++);
+ 		common->base = devm_ioremap_resource(dev, res);
+-		if (IS_ERR(common->base))
+-			return PTR_ERR(common->base);
++		if (IS_ERR(common->base)) {
++			ret = PTR_ERR(common->base);
++			goto error_unpm;
++		}
+ 
+ 		/* enable temperature comparation */
+ 		rcar_thermal_common_write(common, ENR, 0x00030303);
+@@ -465,9 +484,13 @@ error_unregister:
+ 			rcar_thermal_irq_disable(priv);
+ 	}
+ 
++error_unpm:
+ 	pm_runtime_put_sync(dev);
+ 	pm_runtime_disable(dev);
+ 
++	clk_disable(common->clk);
++	clk_unprepare(common->clk);
++
+ 	return ret;
+ }
+ 
+@@ -486,6 +509,9 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	pm_runtime_put_sync(dev);
+ 	pm_runtime_disable(dev);
+ 
++	clk_disable(common->clk);
++	clk_unprepare(common->clk);
++
+ 	return 0;
+ }
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
