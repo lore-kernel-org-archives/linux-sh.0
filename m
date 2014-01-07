@@ -1,48 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 29 Jan 2014 23:10:09 +0000
-Subject: [PATCH 01/03] ARM: shmobile: Remove Lager USBHS UDC ifdefs
-Message-Id: <20140129231009.22655.45084.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 08:48:01 +0000
+Subject: [PATCH 1/8] ARM: shmobile: ape6evm: Conditionally select SMSC_PHY
+Message-Id: <1389084488-25984-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140129230959.22655.55645.sendpatchset@w520>
-In-Reply-To: <20140129230959.22655.55645.sendpatchset@w520>
+References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The ape6evm board uses has an SMSC911X ethernet controller which uses an
+SMSC phy. Select SMSC_PHY for ape6evm if SMSC911X is enabled to make use of the
+SMSC-specific phy driver rather than relying on the generic phy driver.
 
-Remove ifdefs to make the Lager USBHS device always present.
-This makes it more like other devices, no need to be special.
-
-Also, these ifdefs by themselves do not hurt much, but combined
-with USB Host device ifdefs that were proposed earlier we could
-basically end up with a kernel that drives VBUS incorrectly
-depending on the kernel configuration - lets not do that.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- arch/arm/mach-shmobile/board-lager.c |    4 ----
- 1 file changed, 4 deletions(-)
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 958ccf3d..2673f68 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -156,11 +156,13 @@ comment "Renesas ARM SoCs Board Type"
+ config MACH_APE6EVM
+ 	bool "APE6EVM board"
+ 	depends on ARCH_R8A73A4
++	select SMSC_PHY if SMSC911X
+ 	select USE_OF
+ 
+ config MACH_APE6EVM_REFERENCE
+ 	bool "APE6EVM board - Reference Device Tree Implementation"
+ 	depends on ARCH_R8A73A4
++	select SMSC_PHY if SMSC911X
+ 	select USE_OF
+ 	---help---
+ 	   Use reference implementation of APE6EVM board support
+-- 
+1.8.4
 
---- 0003/arch/arm/mach-shmobile/board-lager.c
-+++ work/arch/arm/mach-shmobile/board-lager.c	2014-01-24 10:16:15.000000000 +0900
-@@ -368,7 +368,6 @@ static const struct platform_device_info
- };
- 
- /* USBHS */
--#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
- static const struct resource usbhs_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6590000, 0x100),
- 	DEFINE_RES_IRQ(gic_spi(107)),
-@@ -478,9 +477,6 @@ static void __init lager_register_usbhs(
- 					  &usbhs_priv.info,
- 					  sizeof(usbhs_priv.info));
- }
--#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
--static inline void lager_register_usbhs(void) { }
--#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
- 
- /* USBHS PHY */
- static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
