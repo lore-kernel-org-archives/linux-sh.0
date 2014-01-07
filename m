@@ -1,143 +1,55 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 30 Jan 2014 00:08:44 +0000
-Subject: Re: [PATCH V3 0/3] ARM: shmobile: lager: Add USB support
-Message-Id: <52E9980C.8040205@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 02:06:38 +0000
+Subject: [GIT PULL 0/2] Renesas ARM Based SoC DT Fixes for v3.14
+Message-Id: <cover.1389060068.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 01/30/2014 03:39 AM, Magnus Damm wrote:
-> Hi Valentine,
->
-> Thanks a lot for your efforts.
->
-> On Wed, Jan 29, 2014 at 3:34 AM, Valentine
-> <valentine.barshak@cogentembedded.com> wrote:
->> On 01/27/2014 03:25 PM, Magnus Damm wrote:
->>> On Mon, Jan 27, 2014 at 7:45 PM, Valentine
->>> <valentine.barshak@cogentembedded.com> wrote:
->>>> On 01/27/2014 02:31 PM, Magnus Damm wrote:
->>>>> I don't think DMA pool by itself is enough though, HIGHMEM is probably
->>>>> used for cached disk contents so to also cover the USB storage case I
->>>>> believe we need to use bounce buffers. I recall something similar was
->>>>> needed for SM501 with local memory, I may be wrong about this case
->>>>> though. As-is is probably not enough though.
->>>>
->>>> I have played with this a bit. I haven't seen any issues with HIGHMEM.
->>>> As long as the kernel uses 1G/3G memory split (kernel/user-space) I have
->>>> not
->>>> seen any issues.
->>>
->>> Ok, thanks, I see. Can you please share your test cases with us?
->>
->>
->> I've been doing disk reads/writes with dd using direct flags and various
->> buffer sizes in parallel with memtest.
->
-> The "direct flag" thing here sticks out a bit. Have you tried using a
-> file system?
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Yes, I actually switched to direct after I had tested without it,
-I did some extensive copying back and forth from one USB storage to another
-and stuff like that with some memory consuming processes in the background.
+please consider these renesas ARM Based SoC DT Fixes for v3.14.
 
->
->>> My half-educated guess is that devices that do not use HIGHMEM will
->>> most likely function. Whatever serial ports and keyboards will be
->>> fine. USB storage will most likely fail if you stress test, and it is
->>> a pretty important feature IMO so I'd like to make sure that it is
->>> working as expected.
->>>
->>> If you have not tested USB storage yet, would it be possible for you
->>> to perform some basic testing?
->>
->>
->> Yes, I've been doing it with USB storage. HIGHMEM is not a problem
->> since USB storage driver copies everything to lowmem. Besides DMA
->> bouncing of HIGHMEM is not supported.
->
-> I see. Can you point out where this code is located to I can have a look?
+This pull-request is based on the Third Round of Renesas ARM Based SoC DT
+Updates for v3.14, tagged as renesas-dt3-for-v3.14, which you have
+previously pulled.  And it resolves a problem introduced in that
+pull-request.
 
-grep -r  "HIGHMEM" arch/arm/common/dmabounce.c
-# dev_err(dev, "DMA buffer bouncing of HIGHMEM pages is not supported\n");
 
->
->>>> I have not tested the PAE yet. I planned to play more with it and send
->>>> incremental patches
->>>> for that later.
->>>
->>>
->>> The thing is that LPAE is needed to support all physical memory on the
->>> Lager board. So it's not really optional in my opinion.
->>>
->>> To be fair, actual board support for 4GiB of memory was added rather
->>> recently due to upstream ARM architecture code wasn't working as
->>> expected in some cases. I expect that the defconfig for Lager will
->>> enable LPAE. For multiplatform distro kernels this is something that
->>> the distribution will select. Regardless of setting we want the USB
->>> code to work as expected.
->>>
->>>> Using bounce buffers with different memory model works fine for DMA
->>>> transfers but it involves
->>>> changes to the board-specific code which should limit DMA zone to just
->>>> 1GB
->>>> for all DMA
->>>> allocations.
->>>
->>>
->>> Uhm, I don't think this has anything to do with the DMA zone. You can
->>> write code that specifically allocates from DMA or DMA32 zones, but in
->>> case of general purpose OS disk caching we cannot select that. And if
->>> we could then all HIGHMEM would be pretty darn useless since we
->>> couldn't use it for disk caching. So HIGHMEM will be around -
->>> especially on 32-bit ARM and especially especially on systems that use
->>> LPAE. =)
->>>
->>>> Unfortunately ARM PCI doesn't seem to have specific DMA memory limitation
->>>> support as PowerPC does.
->>>> So I used platform notifiers to fix up DMA mask for PCI devices.
->>>
->>>
->>> Is this enough really? I think you can use the ixp4xx implementation
->>> as a reference to see how to make use of bounce buffer support on ARM.
->>
->>
->> This is exactly what ixp4xx is doing. I'll send RFC patches for you to test.
->> I also needed adjust the size of the default ARM coherent DMA pool since
->> 256K
->> was not enough for bouncing USB DMA buffers.
->
-> Thanks for your work on that!
->
->> As I have said before I have not been able to see any problems so far with
->> HIGHMEM.
->> Enabling LPAE doesn't seem to hard either. Besides we may want to revisit
->> other
->> drivers that set 32-bit DMA mask for LPAE support as well.
->>
->> The problems were observed with memory split other than 3G/1G user/kernel,
->> when
->> more than 1G was available in lowmem for DMA.
->
-> I'm not so concerned about the user/kernel split, but I understand
-> that it may affect things. My main concern is that HIGHMEM should be
-> handled correctly at this point.
+The following changes since commit b652896b02df3dfde3a68957cce01f2aa4585842:
 
-Haven't seen any problems with HIGHMEM (and no dmabounce) so far.
-AFAIU, the USB storage protocol copies all data from HIGHMEM to the internal
-buffer before the transfer:
-drivers/usb/storage/protocol.c:unsigned int usb_stor_access_xfer_buf(unsigned char *buffer,
+  ARM: shmobile: r8a7791: Add SSI clocks in device tree (2013-12-24 23:01:13 +0900)
 
->
-> Thanks,
->
-> / magnus
->
+are available in the git repository at:
 
-Thanks,
-Val.
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-fixes-for-v3.14
 
+for you to fetch changes up to 3effae8c26f451a9d572255c08dfbe342dd1dc98:
+
+  Revert "ARM: shmobile: r8a7791: Add SSI clocks in device tree" (2013-12-26 14:16:54 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC DT Fixes for v3.14
+
+Revert the addition of SSI clocks to DT for the
+r8a7790 (R-Car H2) and r8a7791 (R-Car M2) SoCs.
+
+Unfortunately these patches prevent booting the
+r8a7790-based Lager board and r8a7791-based Koelsch board
+to the point where a serial output is available.
+
+A solution to this problem is being sought but has not
+yet been finalised so in the mean time revert the changes.
+
+----------------------------------------------------------------
+Simon Horman (2):
+      Revert "ARM: shmobile: r8a7790: Add SSI clocks in device tree"
+      Revert "ARM: shmobile: r8a7791: Add SSI clocks in device tree"
+
+ arch/arm/boot/dts/r8a7790.dtsi            | 20 --------------------
+ arch/arm/boot/dts/r8a7791.dtsi            | 20 --------------------
+ include/dt-bindings/clock/r8a7790-clock.h | 13 -------------
+ include/dt-bindings/clock/r8a7791-clock.h | 13 -------------
+ 4 files changed, 66 deletions(-)
