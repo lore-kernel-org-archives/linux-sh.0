@@ -1,65 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 20 Jan 2014 22:52:20 +0000
-Subject: Re: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <1566590.zu3Q3sqakp@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1634193.HdAEV76yrR"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 02:27:15 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: genmai: Enable r7s72100-ether
+Message-Id: <1389061635-4083-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389707776-23306-1-git-send-email-ben.dooks@codethink.co.uk>
- <1482392.XFeYNLvUZH@avalon> <20140120155643.GQ17314@sirena.org.uk>
-In-Reply-To: <20140120155643.GQ17314@sirena.org.uk>
+References: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+---
+v2
+* As suggested by Magnus Damm and Sergei Shtylyov
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
 
---nextPart1634193.HdAEV76yrR
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+* As suggested by Sergei Shtylyov
+  - set no_ether_link as there is no LINK signal documented
+    in the manual
+---
+ arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-Hi Mark,
-
-On Monday 20 January 2014 15:56:43 Mark Brown wrote:
-> On Mon, Jan 20, 2014 at 04:48:10PM +0100, Laurent Pinchart wrote:
-> > The problem isn't as simple as it seems, and more advanced implemen=
-tations
-> > that would allow listing clocks that should be managed automaticall=
-y (or
-> > the other way around) would also add another level of complexity. T=
-he
-> > required information is platform-dependent, but we currently don't
-> > express it as such in DT.
->=20
-> Well, the set of clocks an IP requires will tend to be the same - it'=
-s
-> normally just that integrators may have done things like tie them tog=
-ether
-> or decide to spread confusion by renaming them.
-
-That's the problem :-) How should the runtime PM core be given the list=
- of=20
-clocks it needs to manage ? That information needs to come from somewhe=
-re.
-
-=2D-=20
-Regards,
-
-Laurent Pinchart
-
---nextPart1634193.HdAEV76yrR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJS3aikAAoJEIkPb2GL7hl17NQH/ixLeTaEA/5rSS46ljmO9oIc
-KNBToXJHRMiNuEOzaVo3deebyZ3KuQpNB1S0ju+92UEfXQQv6AaChYFqqOZDvBke
-QVg9xKt8NvlB4Vu6KYTVChUZoTtuB6AUe5BpZPu0ih5QcSyBXxXTvj+1vbYB2E3i
-FQ4ueSzNBqtxVRvOmSIQbJerf/8qY3Iw+J7HzUeaqjEyJxEal8pJSV5SJ6v4E5iE
-8TnXxtZ+cw54+4vx2YuV3ATn3M35OXB1El0ikIQDHxwJksOLq7lk+7Lj/Sl3b6QK
-DrrC7h1QGqcbOwHhj+nmmVUE9YFGBvcuCGDsgChyPJxijGqvBz03IBq10V+/7GI=
-=jyzU
------END PGP SIGNATURE-----
-
---nextPart1634193.HdAEV76yrR--
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 3e92e3c..a1f6fe1 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,15 +20,36 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/sh_eth.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* Ether */
++static const struct sh_eth_plat_data ether_pdata __initconst = {
++	.phy			= 0x00, /* PD60610 */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++	.no_ether_link		= 1
++};
++
++static const struct resource ether_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe8203000, 0x800),
++	DEFINE_RES_MEM(0xe8204800, 0x200),
++	DEFINE_RES_IRQ(gic_iid(359)),
++};
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
++
++	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  &ether_pdata, sizeof(ether_pdata));
+ }
+ 
+ static const char * const genmai_boards_compat_dt[] __initconst = {
+-- 
+1.8.4
 
