@@ -1,77 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jan 2014 01:14:37 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790.dtsi: ficx i2c[0-3] clock reference
-Message-Id: <2450badfc19b67340d3570665cc02a22df03dfab.1390525593.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 07 Jan 2014 08:34:12 +0000
+Subject: Re: [PATCH v4 0/3] ARM: shmobile: r8a7779/90: Poll MSTP clocks status
+Message-Id: <1461053.gFKtODbvpC@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1390525593.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1390525593.git.horms+renesas@verge.net.au>
+References: <1387034633-3798-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1387034633-3798-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+Hi Simon,
 
-The R8A7790's dtsi file i2c0, i2c1, i2c2, and i2c3 nodes have clock
-references to the mstp3_clks clock node, however these clocks are in the
-mstp9_clks node.
+On Saturday 14 December 2013 16:23:50 Laurent Pinchart wrote:
+> Hello,
+> 
+> This patch set implements a busy loop to ensure that enabling an MSTP clock
+> will not return before the clock is actually enabled. It has successfully
+> been tested on the Marzen board and on the Lager board where they fix
+> random crashes with the VSP1.
+> 
+> Simon, could you please apply this for v3.14 ?
 
-The error was introducted in 72197ca7a1cb1cea5 ("ARM: shmobile: r8a7790:
- Reference clocks") which is in Simon's current development tree.
+Ping ?
 
-This patch fixes the following error:
+This patch series is required to fix crashes with the VSP1 on R8A7790.
 
-of_clk_src_onecell_get: invalid clock index 31
-i2c-rcar e6508000.i2c: cannot get clock
-i2c-rcar: probe of e6508000.i2c failed with error -2
+> Changes since v3:
+> 
+> - Rebased on top of renesas-devel-v3.13-rc3-20131214v2
+> 
+> Changes since v2:
+> 
+> - Don't remove unused MSTPCR registers from 2/3
+> - Rebased on top of renesas-devel-v3.13-rc1-20131125
+> 
+> Guennadi Liakhovetski (1):
+>   ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
+> 
+> Laurent Pinchart (1):
+>   ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
+> 
+> Shinya Kuribayashi (1):
+>   ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
+> 
+>  arch/arm/mach-shmobile/clock-r8a7779.c |  20 +++---
+>  arch/arm/mach-shmobile/clock-r8a7790.c | 115 ++++++++++++++++--------------
+>  drivers/sh/clk/cpg.c                   |  38 +++++++++++
+>  include/linux/sh_clk.h                 |  19 ++++--
+>  4 files changed, 122 insertions(+), 70 deletions(-)
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a179125..46ac214 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -197,7 +197,7 @@
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
-+		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
- 		status = "disabled";
- 	};
- 
-@@ -208,7 +208,7 @@
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
-+		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
- 		status = "disabled";
- 	};
- 
-@@ -219,7 +219,7 @@
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
-+		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
- 		status = "disabled";
- 	};
- 
-@@ -230,7 +230,7 @@
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
-+		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
- 		status = "disabled";
- 	};
- 
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
