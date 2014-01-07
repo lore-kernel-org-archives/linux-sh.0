@@ -1,46 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 15 Jan 2014 12:26:13 +0000
-Subject: [PATCH 03/04] ARM: shmobile: r8a7790 CA15-SCU enablement
-Message-Id: <20140115122613.9437.11213.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 07 Jan 2014 15:13:49 +0000
+Subject: Re: [PATCH 10/15] irda: sh_irda: Enable driver compilation with COMPILE_TEST
+Message-Id: <63153015.VK19yFZrrS@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140115122539.9437.63968.sendpatchset@w520>
-In-Reply-To: <20140115122539.9437.63968.sendpatchset@w520>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <2434798.8bvsZzgdNb@avalon>
+In-Reply-To: <2434798.8bvsZzgdNb@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+On Wednesday 11 December 2013 13:49:15 Laurent Pinchart wrote:
+> Hi Samuel,
+> 
+> Could you please pick this patch up for v3.14 ?
 
-Power on CA15 SCU in case of booting from a CA7 core.
+Ping ?
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+> On Wednesday 27 November 2013 02:18:32 Laurent Pinchart wrote:
+> > This helps increasing build testing coverage.
+> > 
+> > Cc: Samuel Ortiz <samuel@sortiz.org>
+> > Cc: netdev@vger.kernel.org
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> > Acked-by: Simon Horman <horms@verge.net.au>
+> > ---
+> > 
+> >  drivers/net/irda/Kconfig | 3 ++-
+> >  1 file changed, 2 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/drivers/net/irda/Kconfig b/drivers/net/irda/Kconfig
+> > index 2a30193..cae5ee2 100644
+> > --- a/drivers/net/irda/Kconfig
+> > +++ b/drivers/net/irda/Kconfig
+> > @@ -403,7 +403,8 @@ config MCS_FIR
+> > 
+> >  config SH_IRDA
+> >  
+> >  	tristate "SuperH IrDA driver"
+> > 
+> > -	depends on IRDA && ARCH_SHMOBILE
+> > +	depends on IRDA
+> > +	depends on ARCH_SHMOBILE || COMPILE_TEST
+> > 
+> >  	help
+> >  	
+> >  	  Say Y here if your want to enable SuperH IrDA devices.
+-- 
+Regards,
 
- arch/arm/mach-shmobile/smp-r8a7790.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+Laurent Pinchart
 
---- 0004/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-01-15 14:41:47.000000000 +0900
-@@ -29,6 +29,11 @@
- #define CA7RESCNT	0x0044
- #define MERAM		0xe8080000
- 
-+static struct rcar_sysc_ch r8a7790_ca15_scu = {
-+	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
-+	.isr_bit = 12, /* CA15-SCU */
-+};
-+
- static struct rcar_sysc_ch r8a7790_ca7_scu = {
- 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
- 	.isr_bit = 21, /* CA7-SCU */
-@@ -64,6 +69,7 @@ static void __init r8a7790_smp_prepare_c
- 
- 	/* turn on power to SCU */
- 	r8a7790_pm_init();
-+	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
- 
