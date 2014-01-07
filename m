@@ -1,46 +1,45 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:02:24 +0000
-Subject: Re: [PATCH 01/14] spi: rspi: Remove unused mesg parameter from {send,receive}_pio()
-Message-Id: <20140127200224.GC11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Dy3pjCZLf6+6NySR"
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 07 Jan 2014 15:17:47 +0000
+Subject: Re: [PATCH] fbdev: sh_mobile_lcdcfb: Don't use plain 0 as NULL pointer
+Message-Id: <4478344.Lf8VtL9Dnd@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-2-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <1385512723-11722-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1385512723-11722-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev@vger.kernel.org
 
+Hi Jean-Christophe and Tomi,
 
---Dy3pjCZLf6+6NySR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Could you please pick this patch up for v3.14 ?
 
-On Fri, Jan 24, 2014 at 09:43:51AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Wednesday 27 November 2013 01:38:43 Laurent Pinchart wrote:
+> This fixes a sparse warning.
+> 
+> Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
+> Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
+> Cc: linux-fbdev@vger.kernel.org
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/video/sh_mobile_lcdcfb.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/video/sh_mobile_lcdcfb.c
+> b/drivers/video/sh_mobile_lcdcfb.c index ab85ad6..2bcc84a 100644
+> --- a/drivers/video/sh_mobile_lcdcfb.c
+> +++ b/drivers/video/sh_mobile_lcdcfb.c
+> @@ -1227,7 +1227,7 @@ static void sh_mobile_lcdc_stop(struct
+> sh_mobile_lcdc_priv *priv) /* Free the MERAM cache. */
+>  		if (ch->cache) {
+>  			sh_mobile_meram_cache_free(priv->meram_dev, ch->cache);
+> -			ch->cache = 0;
+> +			ch->cache = NULL;
+>  		}
+> 
+>  	}
+-- 
+Regards,
 
-Applied, thanks.
+Laurent Pinchart
 
---Dy3pjCZLf6+6NySR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS5rtNAAoJELSic+t+oim9OzUQAIWghbso0r/bFpuruOLSQVGA
-rzUT5d1qi4Vgfjw6hXCQKUd92gX/dDWwIBPx26/N2HxxCSkw0pGtDnq0UTfK2pCk
-qgH/Uf38enzmJq+qHHiYqxHxqX1A1NbzOwgAFDKyrw+3AoQe4bC66ZNBQgMNq9y+
-UT0r0+xJc0b/TNEXMY15dYAN9ZaT6GGCfI1ZGMLxFdrXZ6Z4Xm/uD7ZrGwX8bw0P
-6OdV2dP78muLdLQXx9AujNLW1NIo0yTPCDxahYGjcPIgnvRx114M3/y/OIuoS1zC
-kuo6Rj0Dzdn2uvNg1bVw1YAZsLSXuNtYRbXqMJ9v0AjncbuUP7JCOihPFJ8WN2Vx
-eC6jJ1DojHX4gPHfoHUOTr9B1GnSOUyTIpefmrCd1K7s6a2//WGvhcw05uax1asG
-1Jqt30t8BKwcMisWnkLEHipmzYi3CyjNdUVZFHfb8juoFwRDnkqS43n5l8ywO44z
-yA5PGWAsguzmw91Sc39buT1NunWpPfoQybBFMwm/sZiGTlc5jAZsLMIi/iJS+UuA
-Ij21qwfCuuuhWkXzTJ2Nu5cfWvHA9p1OGhyP+ipzXCU4NgsRXlh/DiHS5iH+6Gov
-GBX2DNYSVxIuhw9ki1ReRat7hX0m/vzy0Yqhcl+S9jtEgglnb8lJBNeBTMM5qcR9
-zchC78RsboxwaZWavnel
-=mVJR
------END PGP SIGNATURE-----
-
---Dy3pjCZLf6+6NySR--
