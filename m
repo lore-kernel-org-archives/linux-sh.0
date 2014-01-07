@@ -1,75 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 16 Jan 2014 02:34:15 +0000
-Subject: [PATCH v6 3/4] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-Message-Id: <1389839656-10932-4-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 08:48:08 +0000
+Subject: [PATCH 8/8] ARM: shmobile: marzen: Conditionally select SMSC_PHY
+Message-Id: <1389084488-25984-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
+References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+The marzen board uses has an SMSC911X ethernet controller which uses an
+SMSC phy. Select SMSC_PHY for marzen if SMSC911X is enabled to make use of the
+SMSC-specific phy driver rather than relying on the generic phy driver.
+
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
 ---
-Dave, I intend to take this change through my tree.
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-v6
-* No change
-
-v5
-* Rebase
-
-v3 - v4
-* No change
-
-v2
-* As suggested by Sergei Shtylyov
-  - Add MSTP74 to beginning of enum on a line by itself
-* As suggested by Magnus Damm
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
----
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index dd8ce87..0242ca5 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -27,6 +27,7 @@
- #define FRQCR2		0xfcfe0014
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
-+#define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d745b1f..8011329 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -252,6 +252,7 @@ config MACH_MARZEN
+ 	depends on ARCH_R8A7779
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SMSC911X
+ 	select USE_OF
  
- #define PLL_RATE 30
-@@ -146,6 +147,7 @@ struct clk div4_clks[DIV4_NR] = {
- };
- 
- enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
- 	MSTP33,	MSTP_NR };
- 
-@@ -154,6 +156,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
- 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
-+	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
- 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
- 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
- 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
-@@ -180,6 +183,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
- 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
-+	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
+ config MACH_MARZEN_REFERENCE
+@@ -259,6 +260,7 @@ config MACH_MARZEN_REFERENCE
+ 	depends on ARCH_R8A7779
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SMSC911X
+ 	select USE_OF
+ 	---help---
+ 	   Use reference implementation of Marzen board support
 -- 
 1.8.4
 
