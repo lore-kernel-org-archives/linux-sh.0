@@ -1,36 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 08:48:07 +0000
-Subject: [PATCH 7/8] ARM: shmobile: mackerel: Conditionally select SMSC_PHY
-Message-Id: <1389084488-25984-8-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 02:27:12 +0000
+Subject: [PATCH v3 0/3] Add ethernet support for r7s72100
+Message-Id: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The mackerel board uses has an SMSC911X ethernet controller which uses an
-SMSC phy. Select SMSC_PHY for mackerel if SMSC911X is enabled to make use of the
-SMSC-specific phy driver rather than relying on the generic phy driver.
+Hi,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+this is a third pass at adding ethernet support to sh-pfc for
+the r7s72100 SoC.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 2ccd597..d745b1f 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -177,6 +177,7 @@ config MACH_MACKEREL
- 	depends on ARCH_SH7372
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SMSC_PHY if SMSC911X
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	select USE_OF
- 
+This series is based on a merge of:
+* The topic/r7s72100-v3.13-rc7-20140107 tag in my renesas tree
+* net-next
+  - Head revision: 56a4342dfe3145cd
+    ("Merge branch 'master' of
+      git://git.kernel.org/pub/scm/linux/kernel/git/davem/net")
+
+The first patch, targeted at net-next, also applies cleanly there.
+
+Changes since v2
+* Trivial rebase
+* Dropped "RFC" from subject
+
+Changes since v1 are noted in the changelog of each patch.
+
+Simon Horman (3):
+  sh_eth: Add support for r7s72100
+  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+  ARM: shmobile: genmai: Enable r7s72100-ether
+
+ arch/arm/mach-shmobile/board-genmai.c   |  21 ++++++
+ arch/arm/mach-shmobile/clock-r7s72100.c |   4 ++
+ drivers/net/ethernet/renesas/sh_eth.c   | 119 ++++++++++++++++++++++++++++++--
+ drivers/net/ethernet/renesas/sh_eth.h   |   4 +-
+ 4 files changed, 141 insertions(+), 7 deletions(-)
+
 -- 
 1.8.4
 
