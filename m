@@ -1,66 +1,81 @@
-From: Nicolas Pitre <nicolas.pitre@linaro.org>
-Date: Mon, 27 Jan 2014 06:08:24 +0000
-Subject: [PATCH 9/9] cpu/idle.c: move to sched/idle.c
-Message-Id: <1390802904-28399-10-git-send-email-nicolas.pitre@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 07 Jan 2014 02:06:54 +0000
+Subject: [PATCH 2/2] Revert "ARM: shmobile: r8a7791: Add SSI clocks in device tree"
+Message-Id: <3effae8c26f451a9d572255c08dfbe342dd1dc98.1389060068.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
+References: <cover.1389060068.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1389060068.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Integration of cpuidle with the scheduler requires that the idle loop be
-closely integrated with the scheduler proper. Moving cpu/idle.c into the
-sched directory will allow for a smoother integration, and eliminate a
-subdirectory which contained only one source file.
+This reverts commit b652896b02df3dfde3a68957cce01f2aa4585842.
 
-Signed-off-by: Nicolas Pitre <nico@linaro.org>
+Unfortunately this commit prevents multiplatform from booting to
+the point where a serial console is available. Revert it while
+a solution is sought.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- kernel/Makefile              | 1 -
- kernel/cpu/Makefile          | 1 -
- kernel/sched/Makefile        | 2 +-
- kernel/{cpu => sched}/idle.c | 0
- 4 files changed, 1 insertion(+), 3 deletions(-)
- delete mode 100644 kernel/cpu/Makefile
- rename kernel/{cpu => sched}/idle.c (100%)
+ arch/arm/boot/dts/r8a7791.dtsi            | 20 --------------------
+ include/dt-bindings/clock/r8a7791-clock.h | 13 -------------
+ 2 files changed, 33 deletions(-)
 
-diff --git a/kernel/Makefile b/kernel/Makefile
-index bc010ee272..6f1c7e5cfc 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -22,7 +22,6 @@ obj-y += sched/
- obj-y += locking/
- obj-y += power/
- obj-y += printk/
--obj-y += cpu/
- obj-y += irq/
- obj-y += rcu/
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index e92c1f7..19c6550 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -495,26 +495,6 @@
+ 				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c4", "i2c3",
+ 				"i2c2", "i2c1", "i2c0";
+ 		};
+-		mstp10_clks: mstp10_clks@e6150998 {
+-			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+-			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
+-			clocks = <&p_clk>, <&mstp10_clks R8A7791_CLK_SSI>,
+-				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
+-				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
+-				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
+-				 <&mstp10_clks R8A7791_CLK_SSI>, <&mstp10_clks R8A7791_CLK_SSI>,
+-				 <&mstp10_clks R8A7791_CLK_SSI>;
+-			#clock-cells = <1>;
+-			renesas,clock-indices = <
+-				R8A7791_CLK_SSI R8A7791_CLK_SSI9 R8A7791_CLK_SSI8
+-				R8A7791_CLK_SSI7 R8A7791_CLK_SSI6 R8A7791_CLK_SSI5
+-				R8A7791_CLK_SSI4 R8A7791_CLK_SSI3 R8A7791_CLK_SSI2
+-				R8A7791_CLK_SSI1 R8A7791_CLK_SSI0
+-			>;
+-			clock-output-names -				"ssi", "ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
+-				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0";
+-		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 1c8f00d..30f82f2 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -103,19 +103,6 @@
+ #define R8A7791_CLK_I2C1		30
+ #define R8A7791_CLK_I2C0		31
  
-diff --git a/kernel/cpu/Makefile b/kernel/cpu/Makefile
-deleted file mode 100644
-index 59ab052ef7..0000000000
---- a/kernel/cpu/Makefile
-+++ /dev/null
-@@ -1 +0,0 @@
--obj-y	= idle.o
-diff --git a/kernel/sched/Makefile b/kernel/sched/Makefile
-index 7b621409cf..ac3e0ea68f 100644
---- a/kernel/sched/Makefile
-+++ b/kernel/sched/Makefile
-@@ -11,7 +11,7 @@ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
- CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
- endif
- 
--obj-y += core.o proc.o clock.o cputime.o idle_task.o fair.o rt.o stop_task.o
-+obj-y += core.o proc.o clock.o cputime.o idle_task.o idle.o fair.o rt.o stop_task.o
- obj-y += wait.o completion.o
- obj-$(CONFIG_SMP) += cpupri.o
- obj-$(CONFIG_SCHED_AUTOGROUP) += auto_group.o
-diff --git a/kernel/cpu/idle.c b/kernel/sched/idle.c
-similarity index 100%
-rename from kernel/cpu/idle.c
-rename to kernel/sched/idle.c
+-/* MSTP10 */
+-#define R8A7791_CLK_SSI			5
+-#define R8A7791_CLK_SSI9		6
+-#define R8A7791_CLK_SSI8		7
+-#define R8A7791_CLK_SSI7		8
+-#define R8A7791_CLK_SSI6		9
+-#define R8A7791_CLK_SSI5		10
+-#define R8A7791_CLK_SSI4		11
+-#define R8A7791_CLK_SSI3		12
+-#define R8A7791_CLK_SSI2		13
+-#define R8A7791_CLK_SSI1		14
+-#define R8A7791_CLK_SSI0		15
+-
+ /* MSTP11 */
+ #define R8A7791_CLK_SCIFA3		6
+ #define R8A7791_CLK_SCIFA4		7
 -- 
-1.8.4.108.g55ea5f6
+1.8.4
 
