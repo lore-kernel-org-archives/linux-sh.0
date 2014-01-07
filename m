@@ -1,32 +1,39 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 07 Jan 2014 16:41:53 +0000
-Subject: Re: [GIT PULL FOR v3.14] Renesas pinctrl fixes
-Message-Id: <CACRpkdYOUA1zk2MmGD212Afi1LjNONetBZZmqj7X_jY_kxFbYA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 07 Jan 2014 08:22:53 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Add VIN clocks to device tree
+Message-Id: <1389082976-22254-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1497178.A4PLILmBU4@avalon>
- <CACRpkdZTt=yQGyzD3AnzKF3RjGiC4WdDX3yQY7zw68VFeYf5oQ@mail.gmail.com>
- <1976554.0KiPFU2ADY@avalon>
-In-Reply-To: <1976554.0KiPFU2ADY@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 7, 2014 at 4:52 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 07 January 2014 16:50:31 Linus Walleij wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
->> Now, what do I do about all the other Renesas pinctrl stuff that is
->> floating? Like all the new stuff from Magnus &al? Do you keep track
->> of that or should I start looking at it?
->
-> I wouldn't mind less work of course :-) but I was planning to keep track of
-> the RZ pinctrl patches, at least for the next kernel version. Things will
-> hopefully stabilize after that. I'm waiting for Magnus to repost his patch
-> series (or at least reply to my comments).
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7d7d441..ae7d77e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -707,10 +707,13 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&p_clk>;
++			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7790_CLK_ETHER>;
+-			clock-output-names = "ether";
++			renesas,clock-indices = <
++				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
++				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
++			>;
++			clock-output-names = "vin3", "vin2", "vin1", "vin0", "ether";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.8.3.2
 
-OK I'm not touching any of that stuff until you two have settled
-on some way forward. Will be for v3.15 anyway.
-
-Yours,
-Linus Walleij
