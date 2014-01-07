@@ -1,65 +1,77 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 07 Jan 2014 08:52:34 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 07 Jan 2014 15:01:30 +0000
 Subject: Re: [PATCH v2 0/8] SoC and board integration for RSPI on RZ/A1H
-Message-Id: <20140107085231.GA26477@verge.net.au>
+Message-Id: <5395895.snn5ED4YEr@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1388175362-17132-1-git-send-email-geert@linux-m68k.org>
  <20140107012628.GD2196@verge.net.au>
- <CAMuHMdW5e74keNhRkSG6q6crGWZ0Gqtb5-hntbCUNm7Md78Bcw@mail.gmail.com>
-In-Reply-To: <CAMuHMdW5e74keNhRkSG6q6crGWZ0Gqtb5-hntbCUNm7Md78Bcw@mail.gmail.com>
+In-Reply-To: <20140107012628.GD2196@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 07, 2014 at 09:31:17AM +0100, Geert Uytterhoeven wrote:
-> On Tue, Jan 7, 2014 at 2:26 AM, Simon Horman <horms@verge.net.au> wrote:
-> >>     [1/8] pinctrl: sh-pfc: r7s72100: Add RSPI support
-> >
-> > I believe that Laurent should handle this.
-> 
-> Don't you mean Magnus? This is RZ/A1H, not R-Car.
-> 
-> >>     [2/8] ARM: shmobile: r7s72100: Add RSPI clocks
-> >
-> > This seems fine and independent of the other patches.
-> > But unfortunately it no longer applies.
-> >
-> > Feel free to rebase it if you would like me to queue it up sooner
-> > than later.
-> 
-> Will do.
-> 
-> >>     [3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
-> >
-> > I assume this depends on 1/3.
-> 
-> 1/8? Or are you mixing up with 1/3 for Koelsch?
+Hi Simon,
 
-1/8
-
-> Nevertheless, this just adds platform devices, so it should be fairly
-> independent.
-
-Ok, thanks. It sounds like I will be able to queue it up
-once you repost the series.
-
+On Tuesday 07 January 2014 10:26:28 Simon Horman wrote:
+> On Fri, Dec 27, 2013 at 09:15:54PM +0100, Geert Uytterhoeven wrote:
+> > This patch series integrates Renesas RSPI on the RZ/A1H aka R7S72100 SoC,
+> > and the Genmai development board.
+> > 
+> > The series is based on renesas-devel-v3.13-rc5-20131226, with Magnus'
+> > pinctrl, Wolfram's riic, and Simon's sh_eth work applied on top.
+> > 
+> > It was tested on the Genmai development board (genmai-reference), using
+> > an in-kernel version of Documentation/spi/spidev_test.c, exercising
+> > loopback mode on rspi1, with the same outcome as the SDK reference code.
+> > 
+> > Notes:
+> >   1. The proposed DT bindings also talk about QSPI on the R8A779x, as
+> >      those SoCs use the same driver.
+> >   
+> >   2. As the actual spi-rspi driver doesn't use DT yet, platform devices
+> >      and spi board info are still used from C to instantiate SPI buses and
+> >      their children, while pinctrl is performed by DT.
+> >   
+> >   3. It will not work with the non-reference version of genmai, due to
+> >      missing pinmux configuration in setup-r7s72100.c.
+> >   
+> >   4. Patches [4/8] and [5/8] are new.
+> >   
+> >     [1/8] pinctrl: sh-pfc: r7s72100: Add RSPI support
 > 
-> > Please add a patch to update the koelsch defconfig.
-> 
-> Genmai defconfig, not koelsch.
-> 
-> >>     [4/8] ARM: shmobile: genmai: Add RSPI children (NEW)
-> >
-> > This seems reasonable but I assume it depends on earlier patches.
-> 
-> Yes, it's useless without 3/8. But I guess it will just fail to find the
-> SPI bus.
+> I believe that Laurent should handle this.
 
-Useless is ok. Its just breakage that I'm concerned about these days :^)
+I will, but I'm waiting for Magnus to resubmit the base r7s72100 pinctrl patch 
+series.
 
-> > Please add a patch to update the koelsch defconfig or Kconfig.
+> >     [2/8] ARM: shmobile: r7s72100: Add RSPI clocks
 > 
-> Genmai ;-) Will do.
+> This seems fine and independent of the other patches.
+> But unfortunately it no longer applies.
+> 
+> Feel free to rebase it if you would like me to queue it up sooner
+> than later.
+> 
+> >     [3/8] ARM: shmobile: r7s72100: Add RSPI platform devices
+> 
+> I assume this depends on 1/3.
+> 
+> Please add a patch to update the koelsch defconfig.
+> 
+> >     [4/8] ARM: shmobile: genmai: Add RSPI children (NEW)
+> 
+> This seems reasonable but I assume it depends on earlier patches.
+> 
+> Please add a patch to update the koelsch defconfig or Kconfig.
+> 
+> >     [5/8] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux (NEW)
+> >     [6/8] [RFC] Documentation: dt: Add Renesas RSPI/QSPI bindings
+> >     [7/8] [RFC] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+> >     [8/8] [RFC] ARM: shmobile: genmai reference: Add RSPI nodes
 
-Yes, Genmai :)
+-- 
+Regards,
+
+Laurent Pinchart
+
