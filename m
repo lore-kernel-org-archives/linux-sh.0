@@ -1,36 +1,43 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Mon, 06 Jan 2014 13:56:37 +0000
-Subject: Re: [PATCH] clk: shmobile: Fix SMTP clock index
-Message-Id: <52CAB615.2070305@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 07 Jan 2014 08:22:55 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7790: Add SATA clocks to device tree
+Message-Id: <1389082976-22254-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388155329-11124-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1388155329-11124-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87li0752rz.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 01/06/2014 05:28 AM, Kuninori Morimoto wrote:
-> Hi Valentine
->
->> Use clkidx when registering SMTP clocks instead of loop counter
->> since the value is then used to access the specific clock index bit
->> in the smtp register.
->>
->> The issue was introduced by the following commit:
->> f94859c215b6d977 "clk: shmobile: Add MSTP clock support"
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->> ---
->
-> In Subject and comment, I think...
->
-> - SMTP
-> + MSTP
->
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-This patch is superseded by the "[PATCH V2 1/2] clk: shmobile: Fix MSTP clock index"
-which has the typo fixed.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ae7d77e..26ec957 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -707,13 +707,16 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
++			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
+-				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
++				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
++				R8A7790_CLK_SATA0
+ 			>;
+-			clock-output-names = "vin3", "vin2", "vin1", "vin0", "ether";
++			clock-output-names +				"vin3", "vin2", "vin1", "vin0", "ether", "sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.8.3.2
 
-Thanks,
-Val.
