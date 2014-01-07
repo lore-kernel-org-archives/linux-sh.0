@@ -1,105 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 07 Jan 2014 14:58:18 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Jan 2014 19:53:41 +0000
 Subject: Re: [PATCH 1/3] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
-Message-Id: <11491980.GOk5XT7hjl@avalon>
+Message-Id: <CAMuHMdVuDWi+6LCscS0U8vVV=VXXSwXJoTSdokdNjYWHP_8QoQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
  <1388763256-25851-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388763256-25851-2-git-send-email-geert@linux-m68k.org>
+ <11491980.GOk5XT7hjl@avalon>
+In-Reply-To: <11491980.GOk5XT7hjl@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+On Tue, Jan 7, 2014 at 3:58 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+>> +static const unsigned int qspi_pins[] = {
+>> +     /* SPCLK, MOSI_IO0, MISO_IO1, IO2, IO3, SSL */
+>> +     RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
+>> +     RCAR_GP_PIN(1, 7), RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 9),
+>> +};
+>
+> The QSPI controller can be used in 1-bit, 2-bit or 4-mode mode, so you should
+> split the pins group to allow that. You could use one pin group for the
+> control signals (SPCLK and SSL), one group for 2-bit data (MOSI + MISO, or IO0
+> + IO1 depending on the mode) and one group for 4-bit data (IO0 + IO1 + IO2 +
+> IO3).
 
-Thank you for the patch.
+OK, while you can't mix "real" functions (half of the pins are FN2, the other
+half FN3), I forgot you can still configure the SoC to use IO2 and IO3 for GPIO.
 
-On Friday 03 January 2014 16:34:14 Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Cc: Linus Walleij <linus.walleij@linaro.org>
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7791.c |   27 +++++++++++++++++++++++++++
->  1 file changed, 27 insertions(+)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c index 654bef369ab8..0070243c859e
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> @@ -2135,6 +2135,25 @@ static const unsigned int msiof2_tx_pins[] = {
->  static const unsigned int msiof2_tx_mux[] = {
->  	MSIOF2_TXD_MARK,
->  };
-> +/* - QSPI
-> ------------------------------------------------------------------- */
-> +static const unsigned int qspi_pins[] = {
-> +	/* SPCLK, MOSI_IO0, MISO_IO1, IO2, IO3, SSL */
-> +	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
-> +	RCAR_GP_PIN(1, 7), RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 9),
-> +};
+Will split in qspi_ctrl (2 control wires), qspi_data2 (2 data wires),
+and qspi_data4 (4 data wires).
 
-The QSPI controller can be used in 1-bit, 2-bit or 4-mode mode, so you should 
-split the pins group to allow that. You could use one pin group for the 
-control signals (SPCLK and SSL), one group for 2-bit data (MOSI + MISO, or IO0 
-+ IO1 depending on the mode) and one group for 4-bit data (IO0 + IO1 + IO2 + 
-IO3).
+> I assume that usage of the SSL signal is always required. If that's not the
+> case the control signals group should be split in two.
+>
+> Similarly, if the hardware supports "write-only" mode (where the MISO signal
+> isn't connected), that should be supported through a 1-bit data signals group.
 
-I assume that usage of the SSL signal is always required. If that's not the 
-case the control signals group should be split in two.
+No, the hardware doesn't support three-wire mode.
+Only four-wire (Single/Dual SPI) and six-wire (Quad SPI) are supported.
 
-Similarly, if the hardware supports "write-only" mode (where the MISO signal 
-isn't connected), that should be supported through a 1-bit data signals group.
+Thanks!
 
-> +static const unsigned int qspi_mux[] = {
-> +	SPCLK_MARK, MOSI_IO0_MARK, MISO_IO1_MARK,
-> +	IO2_MARK, IO3_MARK, SSL_MARK
-> +};
-> +static const unsigned int qspi_b_pins[] = {
-> +	/* SPCLK, MOSI_IO0, MISO_IO1, IO2, IO3, SSL */
-> +	RCAR_GP_PIN(6, 0), RCAR_GP_PIN(6, 1), RCAR_GP_PIN(6, 2),
-> +	RCAR_GP_PIN(6, 3), RCAR_GP_PIN(6, 4), RCAR_GP_PIN(6, 5),
-> +};
-> +static const unsigned int qspi_b_mux[] = {
-> +	SPCLK_B_MARK, MOSI_IO0_B_MARK, MISO_IO1_B_MARK,
-> +	IO2_B_MARK, IO3_B_MARK, SSL_B_MARK
-> +};
->  /* - SCIF0
-> ------------------------------------------------------------------ */
-> static const unsigned int scif0_data_pins[] = {
->  	/* RX, TX */
-> @@ -2877,6 +2896,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] > { SH_PFC_PIN_GROUP(msiof2_ss2),
->  	SH_PFC_PIN_GROUP(msiof2_rx),
->  	SH_PFC_PIN_GROUP(msiof2_tx),
-> +	SH_PFC_PIN_GROUP(qspi),
-> +	SH_PFC_PIN_GROUP(qspi_b),
->  	SH_PFC_PIN_GROUP(scif0_data),
->  	SH_PFC_PIN_GROUP(scif0_data_b),
->  	SH_PFC_PIN_GROUP(scif0_data_c),
-> @@ -3074,6 +3095,11 @@ static const char * const msiof2_groups[] = {
->  	"msiof2_tx",
->  };
-> 
-> +static const char * const qspi_groups[] = {
-> +	"qspi",
-> +	"qspi_b",
-> +};
-> +
->  static const char * const scif0_groups[] = {
->  	"scif0_data",
->  	"scif0_data_b",
-> @@ -3230,6 +3256,7 @@ static const struct sh_pfc_function pinmux_functions[]
-> = { SH_PFC_FUNCTION(msiof0),
->  	SH_PFC_FUNCTION(msiof1),
->  	SH_PFC_FUNCTION(msiof2),
-> +	SH_PFC_FUNCTION(qspi),
->  	SH_PFC_FUNCTION(scif0),
->  	SH_PFC_FUNCTION(scif1),
->  	SH_PFC_FUNCTION(scif2),
--- 
-Regards,
+Gr{oetje,eeting}s,
 
-Laurent Pinchart
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
