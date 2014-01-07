@@ -1,21 +1,41 @@
-From: Ian Molton <ian.molton@codethink.co.uk>
-Date: Wed, 08 Jan 2014 10:33:37 +0000
-Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
-Message-Id: <52CD2981.6010503@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Jan 2014 18:57:12 +0000
+Subject: [PATCH 0/4] thermal: rcar: Add missing clock handling
+Message-Id: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk> <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk> <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk> <20130905060429.GJ14960@verge.net.au> <20130925044503.GA24243@verge.net.au> <52A23916.40507@codethink.co.uk> <20131211020904.GK19992@verge.net.au> <20131211115908.GA2564@katana>
-In-Reply-To: <20131211115908.GA2564@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>
-Cc: magnus.damm@gmail.com, grant.likely@linaro.org, rob.herring@calxeda.com, devicetree@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, ben.dooks@codethink.co.uk
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/12/13 11:59, Wolfram Sang wrote:
-> No need to resend. I have it on my todo-list. Yet, by glimpsing at it I
-> found some issues which need a proper review for which I didn't have the
-> time so far. I hope to have it done by this week.
+    Hi all,
 
-Ping :)
+This patch series fixes a problem when the thermal-rcar device is
+instantiated from the device tree on the r8a7791-based Koelsch development
+board. The driver fails during initialization with:
 
--Ian
+    rcar_thermal e61f0000.thermal: thermal sensor was broken
+
+This does not happen when using legacy platform devices.
+
+This series was tested using Koelsch reference (DT) and non-reference
+(legacy) kernel configurations. It was not tested on r8a7790/Lager
+(which is very similar).
+
+    [1/4] ARM: shmobile: r8a7791: Add thermal clock in device tree
+    [2/4] ARM: shmobile: r8a7790: Add thermal clock in device tree
+    [3/4] thermal: rcar: Add missing clock handling
+    [4/4] thermal: rcar: Spelling s/delaye/delay/g
+
+Thanks for your comments!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
