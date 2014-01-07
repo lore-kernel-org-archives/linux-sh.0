@@ -1,37 +1,36 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 20 Jan 2014 09:56:05 +0000
-Subject: Re: [PATCH] MAINTAINERS: Add dts files for r8 series to SHMOBILE
-Message-Id: <52DCF2B5.2060208@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Jan 2014 18:57:16 +0000
+Subject: [PATCH -trivial 4/4] thermal: rcar: Spelling s/delaye/delay/g
+Message-Id: <1389121036-3555-5-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390057071-12455-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390057071-12455-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 20/01/14 00:11, Simon Horman wrote:
-> On Sat, Jan 18, 2014 at 05:07:30PM +0100, Geert Uytterhoeven wrote:
->> On Sat, Jan 18, 2014 at 3:57 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->>> --- a/MAINTAINERS
->>> +++ b/MAINTAINERS
->>> @@ -1239,6 +1239,8 @@ Q:        http://patchwork.kernel.org/project/linux-sh/list/
->>>   T:     git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
->>>   S:     Supported
->>>   F:     arch/arm/mach-shmobile/
->>> +F:     arch/arm/boot/dts/r8*
->>
->> While you're at it, can you please also include r7s*?
->
-> There is also sh73* and emev2*.
->
-> And while we are opening this topic, are the defconfigs of interest too?
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Time to check what the other entries are like, although the defconfigs
-do seem to be a reasonably sensible thing to have listed here.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Jiri Kosina <trivial@kernel.org>
+---
+ drivers/thermal/rcar_thermal.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I will get this updated today and re-send.
-
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index a5629500723a..32d591087307 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -427,7 +427,7 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		/* enable temperature comparation */
+ 		rcar_thermal_common_write(common, ENR, 0x00030303);
+ 
+-		idle = 0; /* polling delaye is not needed */
++		idle = 0; /* polling delay is not needed */
+ 	}
+ 
+ 	for (i = 0;; i++) {
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
