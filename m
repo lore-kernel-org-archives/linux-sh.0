@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 07 Jan 2014 08:53:38 +0000
+Date: Wed, 08 Jan 2014 01:03:54 +0000
 Subject: Re: [PATCH v4 0/3] ARM: shmobile: r8a7779/90: Poll MSTP clocks status
-Message-Id: <20140107085338.GB26477@verge.net.au>
+Message-Id: <20140108010354.GN5136@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1387034633-3798-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1387034633-3798-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,57 +10,43 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jan 07, 2014 at 09:34:12AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Saturday 14 December 2013 16:23:50 Laurent Pinchart wrote:
-> > Hello,
+On Tue, Jan 07, 2014 at 05:53:38PM +0900, Simon Horman wrote:
+> On Tue, Jan 07, 2014 at 09:34:12AM +0100, Laurent Pinchart wrote:
+> > Hi Simon,
 > > 
-> > This patch set implements a busy loop to ensure that enabling an MSTP clock
-> > will not return before the clock is actually enabled. It has successfully
-> > been tested on the Marzen board and on the Lager board where they fix
-> > random crashes with the VSP1.
+> > On Saturday 14 December 2013 16:23:50 Laurent Pinchart wrote:
+> > > Hello,
+> > > 
+> > > This patch set implements a busy loop to ensure that enabling an MSTP clock
+> > > will not return before the clock is actually enabled. It has successfully
+> > > been tested on the Marzen board and on the Lager board where they fix
+> > > random crashes with the VSP1.
+> > > 
+> > > Simon, could you please apply this for v3.14 ?
 > > 
-> > Simon, could you please apply this for v3.14 ?
+> > Ping ?
+> > 
+> > This patch series is required to fix crashes with the VSP1 on R8A7790.
 > 
-> Ping ?
-> 
-> This patch series is required to fix crashes with the VSP1 on R8A7790.
+> Thanks. I haven't heard back from Paul so I'll look at queuing
+> this up tomorrow.
 
-Thanks. I haven't heard back from Paul so I'll look at queuing
-this up tomorrow.
+Hi Laurent,
 
-> > Changes since v3:
-> > 
-> > - Rebased on top of renesas-devel-v3.13-rc3-20131214v2
-> > 
-> > Changes since v2:
-> > 
-> > - Don't remove unused MSTPCR registers from 2/3
-> > - Rebased on top of renesas-devel-v3.13-rc1-20131125
-> > 
-> > Guennadi Liakhovetski (1):
-> >   ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
-> > 
-> > Laurent Pinchart (1):
-> >   ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
-> > 
-> > Shinya Kuribayashi (1):
-> >   ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
-> > 
-> >  arch/arm/mach-shmobile/clock-r8a7779.c |  20 +++---
-> >  arch/arm/mach-shmobile/clock-r8a7790.c | 115 ++++++++++++++++--------------
-> >  drivers/sh/clk/cpg.c                   |  38 +++++++++++
-> >  include/linux/sh_clk.h                 |  19 ++++--
-> >  4 files changed, 122 insertions(+), 70 deletions(-)
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I have queued up this series locally in the soc-fixes-for-v3.14 which
+I plan to include in the devel and next branches and push later today.
+
+It would help me when sending a pull-request for these changes if
+you could give me a description of the problem they solve and if
+possible when they problem was introduced.
+
+e.g. (I am completely guessing about the cause)
+
+This resolves crashing when using VSP1 which has been observed on the
+r8a7779 (R-Car H1) based Marzen board. This problem has been present since
+VSP support was added to Marzen by deadbeef ("ARM: shmobile: marzen: Add
+VSP1") in v3.W-rcX.
+
+This also resolves the same problem on the r8a7790 (R-Car H2) based Lager
+board. The problem was introduced there by by dead1234 ("ARM: shmobile:
+lager: Add VSP1") in v3.Y-rcZ.
