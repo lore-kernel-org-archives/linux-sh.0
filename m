@@ -1,47 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 Jan 2014 15:32:35 +0000
-Subject: [RFC/PATCH 0/7] Renesas R-Car DU OF support
-Message-Id: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 08 Jan 2014 08:02:28 +0000
+Subject: [PATCH v4 0/4] Add ethernet support for r7s72100
+Message-Id: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: dri-devel@lists.freedesktop.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Hi,
 
-This patch set adds OF support to the DU driver (1/7) and enables the DU on
-the Lager (2/7 to 4/7) and Koelsch (5/7 to 7/7) platforms.
+this series adds ethernet support to sh-pfc for the r7s72100 SoC.
 
-Due to the lack of standard bindings for video devices, the approach taken
-here is minimalistic and aims at enabling the DU on multiplatform kernels until
-more complete DT bindings get developed. The DU DT node contains core resources
-only (memory, IRQ and clocks), and output configuration is passed in platform
-data using OF_DEV_AUXDATA.
+This series is based on a merge of:
+* The topic/r7s72100-v3.13-rc7-20140107 tag in my renesas tree
+* net-next
+  - Head revision: 80077935cad223b29
+    ("Merge branch 'master' of
+      git://git.kernel.org/pub/scm/linux/kernel/git/jkirsher/net-next")
 
-Laurent Pinchart (7):
-  drm/rcar-du: Add OF support
-  ARM: shmobile: r8a7790: Add DU node to device tree
-  ARM: shmobile: lager-reference: Add DU platform data
-  ARM: shmobile: lager: Enable DU device in DT
-  ARM: shmobile: r8a7791: Add DU node to device tree
-  ARM: shmobile: koelsch-reference: Add DU platform data
-  ARM: shmobile: koelsch: Enable DU device in DT
+The first two patches, targeted at net-next, also applies cleanly there.
 
- .../devicetree/bindings/video/renesas,du.txt       |  49 +++++++
- arch/arm/boot/dts/r8a7790-lager.dts                |  11 ++
- arch/arm/boot/dts/r8a7790.dtsi                     |  19 +++
- arch/arm/boot/dts/r8a7791-koelsch.dts              |  11 ++
- arch/arm/boot/dts/r8a7791.dtsi                     |  15 ++
- arch/arm/mach-shmobile/board-koelsch-reference.c   |  38 ++++-
- arch/arm/mach-shmobile/board-lager-reference.c     |  41 +++++-
- drivers/gpu/drm/rcar-du/rcar_du_drv.c              | 161 ++++++++++++---------
- 8 files changed, 271 insertions(+), 74 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/video/renesas,du.txt
+Changes since v3
+* Use bool as return type of sh_eth_is_gether()
+  and sh_eth_is_rz_fast_ether()
+* Correct coding style in sh_eth_get_stats()
+
+Changes since v2
+* Trivial rebase
+* Dropped "RFC" from subject
+
+Changes since v1 are noted in the changelog of each patch.
+
+Simon Horman (4):
+  sh_eth: Use bool as return type of sh_eth_is_gether()
+  sh_eth: Add support for r7s72100
+  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+  ARM: shmobile: genmai: Enable r7s72100-ether
+
+ arch/arm/mach-shmobile/board-genmai.c   |  21 ++++++
+ arch/arm/mach-shmobile/clock-r7s72100.c |   4 ++
+ drivers/net/ethernet/renesas/sh_eth.c   | 124 +++++++++++++++++++++++++++++---
+ drivers/net/ethernet/renesas/sh_eth.h   |   4 +-
+ 4 files changed, 143 insertions(+), 10 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
