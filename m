@@ -1,115 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 Jan 2014 12:48:38 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7790: Fix serial ports DT compatible strings
-Message-Id: <1390308519-31320-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 08 Jan 2014 08:02:29 +0000
+Subject: [PATCH v4 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
+Message-Id: <1389168152-9434-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Remove the -generic suffix that has been added by mistake from the
-serial port compatible strings.
+Return a boolean and use true and false.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index f2f5394..8d6ee9e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -301,7 +301,7 @@
- 	};
+Dave,
+
+please consider this for net-next.
+
+v4
+* First post
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 8884107..4b38533 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -310,12 +310,12 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[TSU_ADRL31]	= 0x01fc,
+ };
  
- 	scifa0: serial@e6c40000 {
--		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 64>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 144 4>;
-@@ -311,7 +311,7 @@
- 	};
+-static int sh_eth_is_gether(struct sh_eth_private *mdp)
++static bool sh_eth_is_gether(struct sh_eth_private *mdp)
+ {
+ 	if (mdp->reg_offset = sh_eth_offset_gigabit)
+-		return 1;
++		return true;
+ 	else
+-		return 0;
++		return false;
+ }
  
- 	scifa1: serial@e6c50000 {
--		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c50000 0 64>;
- 		interrupts = <0 145 4>;
-@@ -321,7 +321,7 @@
- 	};
- 
- 	scifa2: serial@e6c60000 {
--		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c60000 0 64>;
- 		interrupts = <0 151 4>;
-@@ -331,7 +331,7 @@
- 	};
- 
- 	scifb0: serial@e6c20000 {
--		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c20000 0 64>;
- 		interrupts = <0 148 4>;
-@@ -341,7 +341,7 @@
- 	};
- 
- 	scifb1: serial@e6c30000 {
--		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c30000 0 64>;
- 		interrupts = <0 149 4>;
-@@ -351,7 +351,7 @@
- 	};
- 
- 	scifb2: serial@e6ce0000 {
--		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6ce0000 0 64>;
- 		interrupts = <0 150 4>;
-@@ -361,7 +361,7 @@
- 	};
- 
- 	scif0: serial@e6e60000 {
--		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		compatible = "renesas,scif-r8a7790", "renesas,scif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e60000 0 64>;
- 		interrupts = <0 152 4>;
-@@ -371,7 +371,7 @@
- 	};
- 
- 	scif1: serial@e6e68000 {
--		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		compatible = "renesas,scif-r8a7790", "renesas,scif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e68000 0 64>;
- 		interrupts = <0 153 4>;
-@@ -381,7 +381,7 @@
- 	};
- 
- 	hscif0: serial@e62c0000 {
--		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c0000 0 96>;
- 		interrupts = <0 154 4>;
-@@ -391,7 +391,7 @@
- 	};
- 
- 	hscif1: serial@e62c8000 {
--		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c8000 0 96>;
- 		interrupts = <0 155 4>;
+ static void sh_eth_select_mii(struct net_device *ndev)
 -- 
-1.8.3.2
+1.8.4
 
