@@ -1,65 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 20 Jan 2014 15:30:21 +0000
-Subject: Re: [PATCH 13/15] fbdev: sh-mobile-lcdcfb: Enable driver compilation with COMPILE_TEST
-Message-Id: <5189278.VEETF0BgjA@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart13766517.2z3GftTjSq"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 08 Jan 2014 06:40:23 +0000
+Subject: Re: [PATCH 0/2] arm: shmobile: Add SATA support for Lager board
+Message-Id: <CANqRtoS5dGSdFticc=F6aSjtns0UT_0vsz0KnXojw8hF+46j_g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <22423852.GiH1NBjiii@avalon> <52DD06CB.8050606@ti.com>
-In-Reply-To: <52DD06CB.8050606@ti.com>
-To: linux-arm-kernel@lists.infradead.org
+References: <1387475843-25849-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387475843-25849-1-git-send-email-valentine.barshak@cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
+On Fri, Dec 20, 2013 at 2:57 AM, Valentine Barshak
+<valentine.barshak@cogentembedded.com> wrote:
+> This adds SATA0/1 clocks to R8A7790 SoC and adds SATA1 to Lager board.
+> SATA0 is not available on Lager since MD23 selection is fixed to USB3.
+>
+> It depends on the following commit available in the libata git tree:
+> https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Dfo=
+r-3.14&id=E67adb4e669db834c1f95cbdf99bb4e9ec8455b3
+>
+> Valentine Barshak (2):
+>   arm: shmobile: r8a7790: Add SATA clock
+>   arm: shmobile: lager: Add SATA support
+>
+>  arch/arm/mach-shmobile/board-lager.c   | 17 +++++++++++++++++
+>  arch/arm/mach-shmobile/clock-r8a7790.c | 19 +++++++++++++++++++
+>  2 files changed, 36 insertions(+)
 
---nextPart13766517.2z3GftTjSq
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+Hi Valentine and Simon,
 
-Hi Tomi,
+Thanks for your patches. I have now successfully tested this Lager
+SATA (pdev) series on my hardware. My SATA HDD can be used on Lager as
+long as the drive is powered on before kernel boot.
 
-On Monday 20 January 2014 13:21:47 Tomi Valkeinen wrote:
-> On 2014-01-19 23:01, Laurent Pinchart wrote:
-> > Hi Tomi,
-> > 
-> > The lcdc driver can be compiled without meram support. This is handled by
-> > conditional compilation in include/video/sh_mobile_meram.h that defines
-> > the
-> > meram functions as stubs when meram support isn't selected.
-> > 
-> > The problem comes from the combination of FB_SH_MOBILE_MERAM=m and
-> > FB_SH_MOBILE_LCDC=y. The former makes the meram function non-stubs, while
-> > the later makes the LCDC driver fail to link, as meram support is then
-> > compiled as a module.
-> > 
-> > How do you usually handle this ?
-> 
-> I guess the easiest option is to make FB_SH_MOBILE_MERAM a bool, instead
-> of tristate.
+Due to delay on my side (my apologies, moved house) there seems to
+have been some bitrot, so I had to manually fix up the patches to make
+them fit on "renesas-devel-v3.13-rc7-20140108". It seems to me that
+you may need to use SH_CLK_MSTP32_STS() now, so I suspect that you
+need to update the patch series to match latest devel tag. Feel free
+to include this:
 
-That's easy, but it would prevent meram support from being compiled as a 
-module when lcdc support is compiled as a module as well.
+Acked-by: Magnus Damm <damm@opensource.se>
 
--- 
-Regards,
+Also, the Lager defconfig probably wants to be updated to include SATA supp=
+ort.
 
-Laurent Pinchart
+Simon, can you please work with Valentine to merge this series?
 
---nextPart13766517.2z3GftTjSq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Cheers,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJS3UETAAoJEIkPb2GL7hl1N0cIAK3CuBV2Skvj6Gv52A6C+Xmn
-um31AZBSSbmGlp6FP1D6WcWjCtMRJfUQJWim81wxe8RnprmdHqvtkJsFCzhBmN2o
-/t0FKilzX+IUQUzipvA/2hwFIqL2TtCsAS+ENmOLWI5ysFlnWwNEw1HBlGSzAmQK
-FLhG4V+BkfZWLbXD/9d9oov+SNXvKFeP1ZkfyDvejVkHwIt5uxeFZdG9KEz4+BYg
-5/0RuptQXNbh6ZzSbcF16wan4migfshAtdnruR6GQjYlEU+tNcwz6EsvVIUWNxk2
-WlZuIGhKua2W/QBZFIY991czwhX9ZlF62jExY59K1LGtTnDMzW2Q2f8m/8tzmjY=
-=+ZPH
------END PGP SIGNATURE-----
-
---nextPart13766517.2z3GftTjSq--
-
+/ magnus
