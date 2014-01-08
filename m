@@ -1,45 +1,35 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 02 Jan 2014 18:46:08 +0000
-Subject: Re: [GIT PULL 00/12] Second Round of Renesas ARM based SoC Board updates for v3.14
-Message-Id: <20140102184608.GD8684@quad.lixom.net>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 08 Jan 2014 00:41:57 +0000
+Subject: Re: [PATCH 04/04 v2] ARM: shmobile: Genmai I2C-over-GPIO support
+Message-Id: <20140108004157.GH5136@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <20131217050232.727.9552.sendpatchset@w520>
+ <20131217050324.727.61701.sendpatchset@w520>
+ <20131217163435.GC7071@katana>
+In-Reply-To: <20131217163435.GC7071@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 11:17:58PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
+On Tue, Dec 17, 2013 at 05:34:36PM +0100, Wolfram Sang wrote:
+> On Tue, Dec 17, 2013 at 02:03:24PM +0900, Magnus Damm wrote:
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > Add support for the Genmai I2C bus hooked up to P1_5 and P1_4 using
+> > the i2c-gpio driver. On the bus sits a 24c128 EEPRROM.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
 > 
-> please consider the this second round of Renesas ARM based SoC board
-> updates for v3.14.
-> 
-> This pull request is based on a merge of:
-> 
-> * The first round of Renesas ARM based SoC board
->   updates for v3.14, tagged as renesas-boards-for-v3.14,
->   which you have already pulled.
-> 
-> * The second round of Renesas ARM based SoC
->   updates for v3.14, tagged as renesas-soc-for-v3.14,
->   which I have previously sent a pull-request for.
-> 
-> The reason for this merge is to provide SoC dependencies
-> used by the multiplatform and CCF changes in this series.
-> 
-> 
-> The following changes since commit 70d4f2e5576a16120e6bc85b10011032306c1179:
-> 
->   Merge branch 'heads/soc2' into boards2-base (2013-12-19 19:08:11 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.14
+> Acked-by: Wolfram Sang <wsa@the-dreams.de>
 
-Pulled, thanks.
+Hi Magnus, Hi Wolfram,
 
+could you clarify the status of this patch for me?
 
--Olof
+I believe it is reverted by "[PATCH V2 4/5] arm: shmobile: genmai: adapt
+dts to use native i2c driver".
+
+I'm fine with applying both patches at some point. But perhaps
+we can skip some dependencies by just applying a squashed version?
+
