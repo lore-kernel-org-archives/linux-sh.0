@@ -1,100 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 08 Jan 2014 07:56:30 +0000
-Subject: Re: [PATCH v3 0/4] Lager and Koelsch reference serial port support
-Message-Id: <20140108075630.GF18870@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 08 Jan 2014 01:33:51 +0000
+Subject: [PATCH] mmc: tmio: fixup compile error
+Message-Id: <87fvozxnnn.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386767664-20113-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <3500878.UmMfVoYuQ7@avalon> <20140108044416.GH15891@verge.net.au>
- <2632892.VB8aUk9VoW@avalon> <20140108075505.GE18870@verge.net.au>
-In-Reply-To: <20140108075505.GE18870@verge.net.au>
+References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com>
+	<87fvqr8ogb.wl%kuninori.morimoto.gx@renesas.com>
+	<201401071440.28355.arnd@arndb.de>
+In-Reply-To: <201401071440.28355.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Wed, Jan 08, 2014 at 04:55:05PM +0900, Simon Horman wrote:
-> On Wed, Jan 08, 2014 at 08:51:25AM +0100, Laurent Pinchart wrote:
-> > Hi Simon,
-> > 
-> > On Wednesday 08 January 2014 13:44:17 Simon Horman wrote:
-> > > On Tue, Jan 07, 2014 at 09:03:13AM +0100, Laurent Pinchart wrote:
-> > > > On Tuesday 07 January 2014 10:39:36 Simon Horman wrote:
-> > > > > On Wed, Dec 11, 2013 at 02:14:20PM +0100, Laurent Pinchart wrote:
-> > > > > > Hello,
-> > > > > > 
-> > > > > > This patch set implements serial port support for the Lager reference
-> > > > > > board.
-> > > > > > 
-> > > > > > The code is available in my git tree at
-> > > > > > 
-> > > > > >         git://linuxtv.org/pinchartl/fbdev.git clocks/ccf/serial/boards
-> > > > > > 
-> > > > > > The patches are based on top of the "[PATCH 00/47] sh-sci updates for
-> > > > > > v3.14" and "[PATCH v3 00/15] Lager and Koelsch multiplatform support"
-> > > > > > patch series.
-> > > > > 
-> > > > > Hi Laurent, Hi Magnus,
-> > > > > 
-> > > > > I have marked this series as deferred, but to be honest
-> > > > > I don't quite recall what we decided to do with it.
-> > > > 
-> > > > If I recall correctly the decision was to apply patches 1/4 and 2/4 for
-> > > > v3.13 and delay 3/4 and 4/4.
-> > > 
-> > > In that case I apologise as I did not queue up 1/4 and 1/4 for v3.13.
-> > > Instead I have now queued them up locally for v3.14 and will push them soon.
-> > 
-> > I actually meant v3.14, so all is good :-)
-> 
-> self.errors--; /* :-) */
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I meant v3.15.
+This patch fixup below compile error
 
-self.errors++; /* :-( */
+${LINUX}/drivers/mmc/host/tmio_mmc.c: In function 'tmio_mmc_probe':
+${LINUX}/drivers/mmc/host/tmio_mmc.c:93:35: \
+	error: 'res_ctl' undeclared (first use in this function)
+${LINUX}/drivers/mmc/host/tmio_mmc.c:93:35: \
+	note: each undeclared identifier is reported only \
+	once for each function it appears in
 
-> 
-> > 
-> > > I will leave 3/4 and 4/4 marked as deferred.
-> > 
-> > Sure. I'll resubmit them for v3.15.
-> 
-> Great, thanks.
-> 
-> > > > > > Changes compared to v2:
-> > > > > > 
-> > > > > > - Added Koelsch support
-> > > > > > 
-> > > > > > Changes compared to v1:
-> > > > > > 
-> > > > > > - Removed early debugging support as it requires more work before
-> > > > > > being
-> > > > > > 
-> > > > > >   mainlined
-> > > > > > 
-> > > > > > Laurent Pinchart (4):
-> > > > > >   ARM: shmobile: r8a7790: Add serial ports to the device tree
-> > > > > >   ARM: shmobile: r8a7791: Add serial ports to the device tree
-> > > > > >   ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
-> > > > > >   ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT
-> > > > > >  
-> > > > > >  arch/arm/boot/dts/r8a7790-lager.dts              |  24 ++-
-> > > > > >  arch/arm/boot/dts/r8a7790.dtsi                   | 100 +++++++++++++
-> > > > > >  arch/arm/boot/dts/r8a7791-koelsch.dts            |  24 ++-
-> > > > > >  arch/arm/boot/dts/r8a7791.dtsi                   | 180 ++++++++++++++
-> > > > > >  arch/arm/mach-shmobile/board-koelsch-reference.c |  18 +--
-> > > > > >  arch/arm/mach-shmobile/board-lager-reference.c   |  18 +--
-> > > > > >  arch/arm/mach-shmobile/clock-r8a7790.c           |  16 +-
-> > > > > >  arch/arm/mach-shmobile/clock-r8a7791.c           |  24 +--
-> > > > > >  arch/arm/mach-shmobile/setup-r8a7790.c           |  26 ++--
-> > > > > >  arch/arm/mach-shmobile/setup-r8a7791.c           |  34 ++---
-> > > > > >  10 files changed, 374 insertions(+), 90 deletions(-)
-> > -- 
-> > Regards,
-> > 
-> > Laurent Pinchart
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Chris
+This is needed on mmc-next branch.
+
+ drivers/mmc/host/tmio_mmc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc.c b/drivers/mmc/host/tmio_mmc.c
+index 8a781e2..1900abb 100644
+--- a/drivers/mmc/host/tmio_mmc.c
++++ b/drivers/mmc/host/tmio_mmc.c
+@@ -90,7 +90,7 @@ static int tmio_mmc_probe(struct platform_device *pdev)
+ 		return -EINVAL;
+ 
+ 	/* SD control register space size is 0x200, 0x400 for bus_shift=1 */
+-	pdata->bus_shift = resource_size(res_ctl) >> 10;
++	pdata->bus_shift = resource_size(res) >> 10;
+ 	pdata->flags |= TMIO_MMC_HAVE_HIGH_REG;
+ 
+ 	ret = tmio_mmc_host_probe(&host, pdev, pdata);
+-- 
+1.7.9.5
+
