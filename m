@@ -1,73 +1,122 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jan 2014 02:46:49 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790: Fix I2C controller names
-Message-Id: <db455c786886465c4d7fcd012fe2684b4c887776.1389321620.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 08 Jan 2014 07:54:46 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: Wait for status on all MSTP clocks
+Message-Id: <1389167686-13458-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1389321620.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1389321620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-This fixes the issue introduced by the following commit:
-b448c904f5058b6c "ARM: shmobile: r8a7790: add I2C support"
+When enabling a module clock by clearing its bit in the MSTP control
+register, the CPG requires waiting for the status register to signal
+that the clock has started. Failure to do so will result in returning
+from the clk_enable() call with the clock potentially still disabled,
+leading to various race conditions and difficult to debug errors.
 
-The R8A7790 is an R-Car Gen2 SoC. The clock division factor
-(CDF) width is 3 bits on Gen2 as opposed to 2 bits on Gen1.
-Fix the device names for R8A7790 SoC to make the R-Car I2C
-driver configure the hardware properly.
+Enable status wait for all MSTP clocks on the r8a7791.
 
-Changes in V2:
-* rebased on top of the latest branch;
-* capitalized ARM in the subject line;
-* noted the commit that caused the issue in the log.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
- arch/arm/mach-shmobile/setup-r8a7790.c | 2 +-
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 68 +++++++++++++++++++---------------
+ 1 file changed, 38 insertions(+), 30 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index b6ecea3..e6f88dd 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -292,13 +292,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
- 	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
--	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP931]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
--	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP930]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
--	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP929]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
--	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP928]),
-+	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 66476d2..d6589f3 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -81,7 +81,7 @@ static struct resource i2c_resources[] __initdata = {
+Simon,
+
+This patch is a follow-up on the "[PATCH v4 0/3] ARM: shmobile: r8a7779/90:
+Poll MSTP clocks status" series. Could you please queue it up for v3.14 as
+well ?
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 191ad60..1074ba4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -59,6 +59,14 @@
+ #define SMSTPCR10	0xE6150998
+ #define SMSTPCR11	0xE615099C
  
- #define r8a7790_register_i2c(idx)		\
- 	platform_device_register_simple(	\
--		"i2c-rcar", idx,		\
-+		"i2c-rcar_gen2", idx,		\
- 		i2c_resources + (2 * idx), 2);	\
++#define MSTPSR1		IOMEM(0xe6150038)
++#define MSTPSR2		IOMEM(0xe6150040)
++#define MSTPSR5		IOMEM(0xe615003c)
++#define MSTPSR7		IOMEM(0xe61501c4)
++#define MSTPSR8		IOMEM(0xe61509a0)
++#define MSTPSR9		IOMEM(0xe61509a4)
++#define MSTPSR11	IOMEM(0xe61509ac)
++
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+ #define SD2CKCR		0xE6150078
+@@ -137,36 +145,36 @@ enum {
+ };
  
- void __init r8a7790_pinmux_init(void)
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP931] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 31, 0), /* I2C0 */
+-	[MSTP930] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 30, 0), /* I2C1 */
+-	[MSTP929] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 29, 0), /* I2C2 */
+-	[MSTP928] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 28, 0), /* I2C3 */
+-	[MSTP927] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 27, 0), /* I2C4 */
+-	[MSTP925] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 25, 0), /* I2C5 */
+-	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
+-	[MSTP811] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 11, 0), /* VIN0 */
+-	[MSTP810] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 10, 0), /* VIN1 */
+-	[MSTP809] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  9, 0), /* VIN2 */
+-	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+-	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
+-	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
+-	[MSTP721] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 21, 0), /* SCIF0 */
+-	[MSTP720] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 20, 0), /* SCIF1 */
+-	[MSTP719] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 19, 0), /* SCIF2 */
+-	[MSTP718] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 18, 0), /* SCIF3 */
+-	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
+-	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
+-	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+-	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+-	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+-	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+-	[MSTP204] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
+-	[MSTP203] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
+-	[MSTP202] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 2, 0), /* SCIFA2 */
+-	[MSTP1105] = SH_CLK_MSTP32(&mp_clk, SMSTPCR11, 5, 0), /* SCIFA3 */
+-	[MSTP1106] = SH_CLK_MSTP32(&mp_clk, SMSTPCR11, 6, 0), /* SCIFA4 */
+-	[MSTP1107] = SH_CLK_MSTP32(&mp_clk, SMSTPCR11, 7, 0), /* SCIFA5 */
+-	[MSTP124] = SH_CLK_MSTP32(&rclk_clk, SMSTPCR1, 24, 0), /* CMT0 */
++	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
++	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
++	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
++	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
++	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
++	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
++	[MSTP809] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 9, MSTPSR8, 0), /* VIN2 */
++	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
++	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
++	[MSTP723] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 23, MSTPSR7, 0), /* DU1 */
++	[MSTP721] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 21, MSTPSR7, 0), /* SCIF0 */
++	[MSTP720] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 20, MSTPSR7, 0), /* SCIF1 */
++	[MSTP719] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 19, MSTPSR7, 0), /* SCIF2 */
++	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
++	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
++	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
++	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
++	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
++	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
++	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
++	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
++	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
++	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
++	[MSTP1105] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 5, MSTPSR11, 0), /* SCIFA3 */
++	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA4 */
++	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA5 */
++	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
 -- 
-1.8.4
+Regards,
+
+Laurent Pinchart
 
