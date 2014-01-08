@@ -1,49 +1,62 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:08:31 +0000
-Subject: Re: [PATCH v2 12/14] spi: rspi: Use NULL as the clock ID
-Message-Id: <20140127200831.GN11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="aglTZS2R0flMmvQN"
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Wed, 08 Jan 2014 16:31:23 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7790: Add VIN clock support
+Message-Id: <1389198685-6435-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-13-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-13-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+References: <1383060193-1505-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1383060193-1505-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+This adds VIN[0-3] clock support to R8A7790 SoC.
 
---aglTZS2R0flMmvQN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Changes in V2:
+* none.
 
-On Fri, Jan 24, 2014 at 09:44:02AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> There's only one RSPI/QSPI clock, so we can use NULL as the clock ID
+Changes in V3:
+* capitalized ARM in the subject.
 
-Applied, thanks.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7790.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
---aglTZS2R0flMmvQN
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a028f96..31c5ffa 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -197,6 +197,7 @@ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928,
+ 	MSTP917,
+ 	MSTP813,
++	MSTP811, MSTP810, MSTP809, MSTP808,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP704,
+@@ -225,6 +226,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+ 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
++	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
++	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
++	[MSTP809] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  9, MSTPSR8, 0), /* VIN2 */
++	[MSTP808] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  8, MSTPSR8, 0), /* VIN3 */
+ 	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 25, MSTPSR7, 0), /* LVDS1 */
+ 	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
+@@ -309,6 +314,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
++	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
++	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
++	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
++	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+-- 
+1.8.3.1
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS5ry8AAoJELSic+t+oim9+/EQAJzqq6Q3+qAC0xWTGL8W8vm3
-sXQG1XPX2SiaKI4Wj9aVo/NFMmf59ASkMm2SqU7Ns+z6ZXeAqi1CrAr0wE9/iAn0
-7UhV9g3x6uhryBSSKXkAf905+C6S7KNS9lIsKUhFfs0zO+OWL4iXpHJlQh0K/DK2
-68bZ51eBRD9oMd29ddJTjQ4j96KJz2cZU70HWovISbnz1z0CaPQpGfKrUwuZvfOY
-XXAE6jHW9sWa5/D8083xf2gazYevogRggrGh8HkT8kLWd3QgzmzIMCz8+yj/ZF3j
-hJ+dNIz7CkbTKcbIGe8pnHIGVy0S8EJQ1jVv1tNdpqHQgVsdMHSd8vwLkuAxIE9W
-NiY41nzaPHN1l9uaVlAEIatgBw+pP5gSJLSkwjqcY+r/w4Q4bZr+ufpnVBqjab/l
-b+YDE9TvxD688oTIt6VOmgP8FuIHwsV/7uGT4gorGMzxvvm7xcdoNhc4kk92xl/U
-5VxBUgSz/Fy5D9kmcNdTm0wbjDxZTwr7kBS6fZCq7Nu02ccVaUwNWJJ15sp80nWX
-D4h31T6nRSel8Ux2f3vR1yPX3RWWCh1ECmGqzyg1W5qZ1rqBAC6NhNknA01yDIYK
-6ElWrQfxh9m76EdWhqDxe2wddVjPQ5rpsswqA5mdIYTvmInQ01+33M1clZrE9rdZ
-Q9R81XxEz6EKHSMZpT/e
-=POqp
------END PGP SIGNATURE-----
-
---aglTZS2R0flMmvQN--
