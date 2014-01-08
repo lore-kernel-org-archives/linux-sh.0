@@ -1,7 +1,7 @@
-From: Gerhard Sittig <gsi@denx.de>
-Date: Tue, 07 Jan 2014 20:57:19 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 08 Jan 2014 01:08:16 +0000
 Subject: Re: [PATCH 3/4] thermal: rcar: Add missing clock handling
-Message-Id: <20140107205719.GL20094@book.gsilab.sittig.org>
+Message-Id: <87ha9fxoua.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
  <1389121036-3555-4-git-send-email-geert@linux-m68k.org>
@@ -11,12 +11,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 07, 2014 at 19:57 +0100, Geert Uytterhoeven wrote:
-> 
-> @@ -378,23 +380,38 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->  	spin_lock_init(&common->lock);
->  	common->dev = dev;
->  
+
+Hi Geert
+
 > +	common->clk = devm_clk_get(&pdev->dev, NULL);
 > +	if (IS_ERR(common->clk)) {
 > +		dev_err(&pdev->dev, "cannot get clock\n");
@@ -34,12 +31,10 @@ On Tue, Jan 07, 2014 at 19:57 +0100, Geert Uytterhoeven wrote:
 >  	pm_runtime_enable(dev);
 >  	pm_runtime_get_sync(dev);
 
-clk_enable() can fail, too, so you should check its return value
+You can use "dev" instead of "&pdev->dev" :)
+
+And this patch seems strange for me.
+pm_runtime_xxx() is doing same things.
+If it didn't work, wrong place is not driver, clock side ?
 
 
-virtually yours
-Gerhard Sittig
--- 
-DENX Software Engineering GmbH,     MD: Wolfgang Denk & Detlev Zundel
-HRB 165235 Munich, Office: Kirchenstr. 5, D-82194 Groebenzell, Germany
-Phone: +49-8142-66989-0 Fax: +49-8142-66989-80  Email: office@denx.de
