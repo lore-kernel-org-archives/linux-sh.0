@@ -1,53 +1,25 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 02 Jan 2014 18:58:15 +0000
-Subject: Re: [GIT PULL 0/4] Third Round of Renesas SH SCI Updates for v3.14
-Message-Id: <20140102185815.GG8684@quad.lixom.net>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Wed, 08 Jan 2014 16:31:22 +0000
+Subject: [PATCH 0/3] ARM: shmobile: r8a7790: Add VIN, PCI USB and SATA clocks
+Message-Id: <1389198685-6435-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387890410.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387890410.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 24, 2013 at 11:30:07PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
-> 
-> please consider this third round of Renesas SH SCI updates for v3.14.
-> 
-> This pull request is based on a merge of the following:
-> 
-> * Renesas SH based SoC updates for v3.14,
->   tagged as renesas-sh-soc-for-v3.14, which I will
->   also send a pull-request for today.
-> 
-> * Third Round of Renesas ARM based SoC updates for v3.14,
->   tagged as renesas-soc3-for-v3.14, which I will
->   also send a pull-request for today.
-> 
-> Both of the above branches are based on
-> 
-> * Second Round of Renesas SH SCI Updates for v3.14
->   tagged as renesas-sh-sci2-for-v3.14, which I will
->   also send a pull-request for today.
-> 
-> The reason for this merge is to provide dependencies for the
-> patches in this series. In a nutshell there was a round of
-> driver updates, followed by SoC updates to use the new driver code,
-> followed by more driver updates.
-> 
-> 
-> The following changes since commit 20f4e334272dc191e475039d68a3bf3eb46ec66e:
-> 
->   Merge branch 'sh-soc' into sh-sci2-base (2013-12-24 21:50:13 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-sci3-for-v3.14
-> 
+This adds VIN, PCI USB and SATA clocks to R8A7790 SoC
+The patches are rebased on top of the following commit:
+357f3cc31e "ARM: shmobile: r8a7790: Wait for status on all MSTP clocks"
 
-Pulled, thanks.
+Valentine Barshak (3):
+  ARM: shmobile: r8a7790: Add VIN clock support
+  ARM: shmobile: r8a7790: Add PCI USB host clock support
+  ARM: shmobile: r8a7790: Add SATA clocks
 
+ arch/arm/mach-shmobile/clock-r8a7790.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
--Olof
+-- 
+1.8.3.1
+
