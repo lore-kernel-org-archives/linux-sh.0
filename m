@@ -1,69 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Jan 2014 19:05:34 +0000
-Subject: Re: [PATCH V2 4/8] spi: rspi: Add support for 8-bit Data Register access
-Message-Id: <CAMuHMdU4mkayFPY-5+hHChWQnPiqsKVHhKYKrY1MxLf57pjLUw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 08 Jan 2014 04:22:39 +0000
+Subject: Re: [PATCH 2/3] arm: shmobile: r8a7790: Add PCI USB host clock support
+Message-Id: <20140108042239.GD15891@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
-	<1389522464-1569-5-git-send-email-geert@linux-m68k.org>
-	<20140113122912.GT29039@sirena.org.uk>
-	<CAMuHMdViLJD9O4gnovR6x7RTWor9GYPBZuzP5X7JmVw5g=o4kw@mail.gmail.com>
-	<20140113155507.GZ29039@sirena.org.uk>
-In-Reply-To: <20140113155507.GZ29039@sirena.org.uk>
+References: <1387548804-20829-3-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387548804-20829-3-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Jan 13, 2014 at 4:55 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Mon, Jan 13, 2014 at 02:29:28PM +0100, Geert Uytterhoeven wrote:
->> On Mon, Jan 13, 2014 at 1:29 PM, Mark Brown <broonie@kernel.org> wrote:
->> > This looks very strange - if no platform data is specified the value set
->> > for spdcr is one that can't be arrived at via platform data.  What's
->> > going on here?  It'd seem more idiomatic to treat missing platform data
->> > and a zero data_width identically too.
->
->> The else branch is also taken when platform data is specified, but
->> data_width is zero. So you can indicate legacy 16-bit data width through
->> platform data.
->> It's unfortunate that the bits inside spdcr to configure the data width are
->> different for RSPI on SH and RSPI on ARM.
->
-> So what you want here is either a separate bit of platform data for the
-> architecture or just some ifdefs.  Deciding what architecture the driver
-> is running on based on platform data isn't at all clear, someone is
-> likely to come along and fix this as a cleanup at some point especially
-> given the lack of comments to indicate that this is intentional.
+On Fri, Dec 20, 2013 at 06:13:23PM +0400, Valentine Barshak wrote:
+> This adds internal PCI USB host clock support.
+> 
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> ---
+>  arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++++-
+>  1 file changed, 5 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+> index c5c60ec..3e27200 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+> @@ -190,7 +190,7 @@ enum {
+>  	MSTP813,
+>  	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+>  	MSTP717, MSTP716,
+> -	MSTP704,
+> +	MSTP704, MSTP703,
+>  	MSTP522,
+>  	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+>  	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+> @@ -226,6 +226,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+>  	[MSTP717] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 17, 0), /* HSCIF0 */
+>  	[MSTP716] = SH_CLK_MSTP32(&zs_clk, SMSTPCR7, 16, 0), /* HSCIF1 */
+>  	[MSTP704] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 4, 0), /* HSUSB */
+> +	[MSTP703] = SH_CLK_MSTP32(&mp_clk, SMSTPCR7, 3, 0), /* EHCI */
+>  	[MSTP522] = SH_CLK_MSTP32(&extal_clk, SMSTPCR5, 22, 0), /* Thermal */
+>  	[MSTP315] = SH_CLK_MSTP32(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, 0), /* MMC0 */
+>  	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_SD0], SMSTPCR3, 14, 0), /* SDHI0 */
+> @@ -317,6 +318,9 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+>  	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+>  	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+> +	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
+> +	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
+> +	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
+>  
+>  	/* ICK */
+>  	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
 
-I'll add more comments to clarify.
+Unfortunately this patch conflicts with "ARM: shmobile: r8a7790: Wait for
+status on all MSTP clocks" which I have queued up as a fix for v3.14.
 
-I don't want to add an architecture ifdef, as I'm not 100% sure there exist
-no ARM SoCs with the old SH RSPI core, or vice versa.
+As this patch will be submitted for inclusion on v3.15 it will be in a
+branch based on v3.14-rc1 which I expect to include (""ARM: shmobile:
+r8a7790: Wait for status on all MSTP clocks").
 
-The several RSPI/QSPI IP cores are very similar, but they do have different
-feature sets and options. During the evolution, features are dropped, and
-bits in registers become unused and reserved. At the same time, new features
-are introduced, using up unused and reserved register bits, possibly
-reusing bits for dropped features...
-
-Currently there are no plans to convert SH to device tree, and the single
-user under arch/sh (for SH7757) doesn't even pass platform data.
-Hence the defaults for missing platform data.
-As there do exist other SH775x SoCs with the same RSPI core, there's
-probably out-of-tree code that uses it, too, so I don't want to break
-backwards-compatiblity, if possible.
-
-So far my rationale for some of the decisions I made when working on
-the driver. I hope more cleanups can be made when platform data is
-deprecated and removed.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Could you please rebase it on top of the latest devel tag of the renesas
+tree, currently renesas-devel-v3.13-rc7-20140108.
