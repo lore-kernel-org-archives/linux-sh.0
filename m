@@ -1,64 +1,21 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 14 Jan 2014 23:53:27 +0000
-Subject: Re: [PATCH V2 0/3] SoC and board integration for QSPI on r8a7791/koelsch
-Message-Id: <20140114235327.GC8769@verge.net.au>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Wed, 08 Jan 2014 10:33:37 +0000
+Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
+Message-Id: <52CD2981.6010503@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389524433-2823-1-git-send-email-geert@linux-m68k.org>
- <20140114004638.GE18217@verge.net.au>
- <CAMuHMdWYqv41RwyZROmuSeD9F9RfFFyOuCxn+66NgJ3MbhsJvw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWYqv41RwyZROmuSeD9F9RfFFyOuCxn+66NgJ3MbhsJvw@mail.gmail.com>
+References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk> <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk> <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk> <20130905060429.GJ14960@verge.net.au> <20130925044503.GA24243@verge.net.au> <52A23916.40507@codethink.co.uk> <20131211020904.GK19992@verge.net.au> <20131211115908.GA2564@katana>
+In-Reply-To: <20131211115908.GA2564@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>
+Cc: magnus.damm@gmail.com, grant.likely@linaro.org, rob.herring@calxeda.com, devicetree@vger.kernel.org, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, ben.dooks@codethink.co.uk
 
-On Tue, Jan 14, 2014 at 10:05:28AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Tue, Jan 14, 2014 at 1:46 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Sun, Jan 12, 2014 at 12:00:29PM +0100, Geert Uytterhoeven wrote:
-> >> This series adds support for the Spansion s25fl512s SPI FLASH on the
-> >> r8a7791-based Koelsch board. It is based on
-> >> renesas-devel-v3.13-rc7-20140109v2, with Valentine's i2c pinctrl and
-> >> Laurent's SCIF DT work applied on top.
-> >> [Simon: I don't know in which order you will merge these. If you want me
-> >>  to rebase my patches, just ask! Thanks!]
-> >
-> > I see that Laruent has taken patch 1/4.
-> >
-> > Is it possible for me to merge patches 2-4/4 independently of that patch?
-> > That is, can I apply them and still produce a kernel that boots. If so,
-> > that is my preferred option. If not I will talk to Laurent about a branch
-> > to base things on.
-> 
-> Yes you can. Note that RSPI still won't be enabled without "spi: rspi: Remove
-> dependency on DMAE for SHMOBILE" (which has now landed in the spi tree).
-> And with that patch applied, you'll get warnings like:
-> 
->     pinmux core: sh-pfc does not support function qspi
->     sh-pfc pfc-r8a7791: invalid function qspi in map table
->     pinmux core: sh-pfc does not support function qspi
->     sh-pfc pfc-r8a7791: invalid function qspi in map table
-> 
-> which are harmless, and spi will still work, as that's the default pin config
-> anyway.
+On 11/12/13 11:59, Wolfram Sang wrote:
+> No need to resend. I have it on my todo-list. Yet, by glimpsing at it I
+> found some issues which need a proper review for which I didn't have the
+> time so far. I hope to have it done by this week.
 
-Thanks, that is perfectly fine.
+Ping :)
 
-> > Also, I would like to get an Ack from Magnus.
-> 
-> Sure.
-> 
-> Thanks!
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+-Ian
