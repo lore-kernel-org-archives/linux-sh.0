@@ -1,38 +1,32 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 02 Jan 2014 18:33:55 +0000
-Subject: Re: [GIT PULL 00/11] Second Round of Renesas SH SCI updates for v3.14
-Message-Id: <20140102183355.GB8684@quad.lixom.net>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 08 Jan 2014 00:45:14 +0000
+Subject: Re: [PATCH 00/04 v2] ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL V2
+Message-Id: <20140108004511.GI5136@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387887969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387887969.git.horms+renesas@verge.net.au>
+References: <20131217050232.727.9552.sendpatchset@w520>
+In-Reply-To: <20131217050232.727.9552.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 11:14:11PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
+On Tue, Dec 17, 2013 at 02:02:32PM +0900, Magnus Damm wrote:
+> ARM: shmobile: r7s72100 and Genmai GPIO / PINCTRL V2
 > 
-> please consider this second round of Renesas SH SCI updates for v3.14.
+> [PATCH 01/04] ARM: shmobile: r7s72100 GPIO and PINCTRL device nodes
+> [PATCH 02/04] ARM: shmobile: Genmai SCIF2 PINCTRL configuration
+> [PATCH 03/04] ARM: shmobile: Genmai LED1 and LED2 support
+> [PATCH 04/04 v2] ARM: shmobile: Genmai I2C-over-GPIO support
+>
+> Add various device nodes to the r7s72100 SoC and the Genmai board,
+> nothing special just basic support for LEDs and I2C-over-GPIO.
 > 
-> They have been acked by Greg Kroah-Hartman to be taken
-> through my tree. The reason for this is that they are dependencies
-> for subsequent changes to use the common clock framework.
+> Changes since V1:
+>  - 2/4 and 3/4 now includes acks, thanks Laurent!
+>  - 4/4 has been updated, thanks to Sergei and Wolfram!
 > 
-> This pull-request is based on the first round of such changes,
-> tagged as renesas-sh-sci-for-v3.14, which I have previously sent
-> a pull-request for.
-> 
-> 
-> The following changes since commit b016b646e8676858f39ea9be760494b04b9ee0af:
-> 
->   serial: sh-sci: Convert to clk_prepare/unprepare (2013-12-14 09:59:31 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-sci2-for-v3.14
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
+Hi Magnus,
 
-Pulled, thanks.
-
--Olof
+what is the status of this series?
