@@ -1,49 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 08 Jan 2014 10:23:16 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 08 Jan 2014 12:20:00 +0000
 Subject: Re: [PATCH 3/4] thermal: rcar: Add missing clock handling
-Message-Id: <CAMuHMdW+1yP2PqvLTc0tjyrnhGssvn_iK8mCO6u-++pjGYR9KQ@mail.gmail.com>
+Message-Id: <52CD4270.3010907@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
  <1389121036-3555-4-git-send-email-geert@linux-m68k.org>
- <87ha9fxoua.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87ha9fxoua.wl%kuninori.morimoto.gx@gmail.com>
+ <20140107205719.GL20094@book.gsilab.sittig.org>
+In-Reply-To: <20140107205719.GL20094@book.gsilab.sittig.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 8, 2014 at 2:08 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@gmail.com> wrote:
->> +     common->clk = devm_clk_get(&pdev->dev, NULL);
->> +     if (IS_ERR(common->clk)) {
->> +             dev_err(&pdev->dev, "cannot get clock\n");
->> +             return PTR_ERR(common->clk);
->> +     }
+On 07/01/14 20:57, Gerhard Sittig wrote:
+> On Tue, Jan 07, 2014 at 19:57 +0100, Geert Uytterhoeven wrote:
+>>
+>> @@ -378,23 +380,38 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+>>   	spin_lock_init(&common->lock);
+>>   	common->dev = dev;
+>>
+>> +	common->clk = devm_clk_get(&pdev->dev, NULL);
+>> +	if (IS_ERR(common->clk)) {
+>> +		dev_err(&pdev->dev, "cannot get clock\n");
+>> +		return PTR_ERR(common->clk);
+>> +	}
 >> +
->> +     ret = clk_prepare(common->clk);
->> +     if (ret < 0) {
->> +             dev_err(&pdev->dev, "unable to prepare clock\n");
->> +             return ret;
->> +     }
+>> +	ret = clk_prepare(common->clk);
+>> +	if (ret < 0) {
+>> +		dev_err(&pdev->dev, "unable to prepare clock\n");
+>> +		return ret;
+>> +	}
 >> +
->> +     clk_enable(common->clk);
+>> +	clk_enable(common->clk);
 >> +
->>       pm_runtime_enable(dev);
->>       pm_runtime_get_sync(dev);
+>>   	pm_runtime_enable(dev);
+>>   	pm_runtime_get_sync(dev);
 >
-> And this patch seems strange for me.
-> pm_runtime_xxx() is doing same things.
-> If it didn't work, wrong place is not driver, clock side ?
+> clk_enable() can fail, too, so you should check its return value
 
-That's an interesting observation...
+Also, if you enable the pm-runtime then the device clock is actually
+handled by the common pm-clock framework.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
