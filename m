@@ -1,96 +1,79 @@
-From: Balaji T K <balajitk@ti.com>
-Date: Fri, 17 Jan 2014 14:47:54 +0000
-Subject: Re: Multiple CCR definitions
-Message-Id: <52D93FCA.1090202@ti.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 08 Jan 2014 08:02:32 +0000
+Subject: [PATCH v4 4/4] ARM: shmobile: genmai: Enable r7s72100-ether
+Message-Id: <1389168152-9434-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdVLat9-EMnCX=usthZLrP2YhCCT7-a3nhSQmgLvn_ftBg@mail.gmail.com>
- <CAGo_u6or57HEqRQjSjUXFpRNiFNbJyRYrsPX19Gf97J-sg4iHQ@mail.gmail.com>
-In-Reply-To: <CAGo_u6or57HEqRQjSjUXFpRNiFNbJyRYrsPX19Gf97J-sg4iHQ@mail.gmail.com>
+References: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Friday 17 January 2014 12:09 AM, Nishanth Menon wrote:
-> +linux-omap as well.
->
-> On Thu, Jan 16, 2014 at 7:07 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Tue, Sep 10, 2013 at 11:05 PM, Linux Kernel Mailing List
->> <linux-kernel@vger.kernel.org> wrote:
->>>      mmc: omap_hsmmc: use the generic config for omap2plus devices
->>>
->>>      OMAP's hs_mmc driver is used for MMC controller operation on many
->>>      omap2plus SoCs (OMAP2430, OMAP3, 4, 5 and AM335x).
->>>
->>>      Considering that the device tree entries are already present for these,
->>>      allow the driver to be built using the config ARCH_OMAP2PLUS rather
->>>      than individually adding a config for each SoC to enable the
->>>      support.
->>>
->>>      Use COMPILE_TEST to enable the build for other platforms.
->>>
->>>      Signed-off-by: Amarinder Bindra <a-bindra@ti.com>
->>>      Cc: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
->>>      Cc: Nishanth Menon <nm@ti.com>
->>>      Acked-by: Felipe Balbi <balbi@ti.com>
->>>      Acked-by: Balaji T K <balajitk@ti.com>
->>>      Signed-off-by: Chris Ball <cjb@laptop.org>
->>> ---
->>>   drivers/mmc/host/Kconfig |    6 +++---
->>>   1 files changed, 3 insertions(+), 3 deletions(-)
->>>
->>> diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
->>> index 84102bc..b8ce939 100644
->>> --- a/drivers/mmc/host/Kconfig
->>> +++ b/drivers/mmc/host/Kconfig
->>> @@ -284,11 +284,11 @@ config MMC_OMAP
->>>
->>>   config MMC_OMAP_HS
->>>          tristate "TI OMAP High Speed Multimedia Card Interface support"
->>> -       depends on SOC_OMAP2430 || ARCH_OMAP3 || ARCH_OMAP4
->>> +       depends on ARCH_OMAP2PLUS || COMPILE_TEST
->>
->> sh-allmodconfig (http://kisskb.ellerman.id.au/kisskb/buildresult/10477672/):
->> include/linux/omap-dma.h:171:8: error: expected identifier before
->> numeric constant
->> make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
->>
->> It fails because sh #defines "CCR", which is one of the enum values in
->> include/linux/omap-dma.h.
->>
->> I expect a similar failure on blackfin, which also has #define CCR.
->>
->> Possible solutions:
->>    1. Rename CCR in sh/bfin to e.g. SH_CCR resp. BF_CCR.
->>    2. Use "depends on ARCH_OMAP2PLUS || (COMPILE_TEST && ARM)
+Signed-off-by: Simon Horman <horms@verge.net.au>
+Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-omap-dma.h will be needed until all OMAPs are converted to DT only boot.
-So depends on ARCH_OMAP2PLUS || (COMPILE_TEST && ARM) looks good to me
+---
 
->>    3. Stop using include/linux/omap-dma.h, as it says:
->>
->>       *  Legacy OMAP DMA handling defines and functions
->>       *
->>       *  NOTE: Do not use these any longer.
->>       *
->>       *  Use the generic dmaengine functions as defined in
->>       *  include/linux/dmaengine.h.
->>
+Dave,
 
->> Gr{oetje,eeting}s,
->>
->>                          Geert
->>
->> --
->> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->>
->> In personal conversations with technical people, I call myself a hacker. But
->> when I'm talking to journalists I just say "programmer" or something like that.
->>                                  -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-omap" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+I plan to take this change through my tree.
+
+v3 - v4
+* No change
+
+v2
+* As suggested by Magnus Damm and Sergei Shtylyov
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
+
+* As suggested by Sergei Shtylyov
+  - set no_ether_link as there is no LINK signal documented
+    in the manual
+---
+ arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 3e92e3c..a1f6fe1 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,15 +20,36 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/sh_eth.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* Ether */
++static const struct sh_eth_plat_data ether_pdata __initconst = {
++	.phy			= 0x00, /* PD60610 */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++	.no_ether_link		= 1
++};
++
++static const struct resource ether_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe8203000, 0x800),
++	DEFINE_RES_MEM(0xe8204800, 0x200),
++	DEFINE_RES_IRQ(gic_iid(359)),
++};
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
++
++	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  &ether_pdata, sizeof(ether_pdata));
+ }
+ 
+ static const char * const genmai_boards_compat_dt[] __initconst = {
+-- 
+1.8.4
 
