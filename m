@@ -1,28 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Jan 2014 08:08:36 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: add Audio DMAC support
-Message-Id: <20140109080834.GB9267@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 09 Jan 2014 15:23:23 +0000
+Subject: [PATCH V2 4/4] ARM: shmobile: koelsch: Enable SATA in defconfig
+Message-Id: <1389281003-10253-5-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
-In-Reply-To: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Jan 06, 2014 at 12:32:54AM -0800, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> R-Car H2 has many DMACs
-> (ex SYS-DMAC, 2D-DMAC, Audio-DMAC, USB-DMAC etc)
-> and, these DMAEngine needs DMA slave IDs to use it.
-> 
-> This patch adds new DMA slave ID list for r8a7790.
-> There, common part has RCAR_DMA_xxx prefix,
-> and Audio DMAC part has AUDIO_DMAC_SLAVE_xxx prefix.
-> 
-> Audio DMAC can be controlled via sh-dma-engine
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This enables block layer, R-Car SATA and SCSI disk in koelsch_defconfig.
 
-Thanks, I will queue this up.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/configs/koelsch_defconfig | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index e248f49..4071e61 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -8,7 +8,6 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+-# CONFIG_BLOCK is not set
+ CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_MACH_KOELSCH=y
+@@ -36,6 +35,9 @@ CONFIG_INET=y
+ CONFIG_IP_PNP=y
+ CONFIG_IP_PNP_DHCP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_BLK_DEV_SD=y
++CONFIG_ATA=y
++CONFIG_SATA_RCAR=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_ARC is not set
+ # CONFIG_NET_CADENCE is not set
+-- 
+1.8.3.1
+
