@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 09 Jan 2014 12:30:57 +0000
+Date: Thu, 09 Jan 2014 14:42:11 +0000
 Subject: Re: lager - non-booting latest horms' devel branch
-Message-Id: <52CE9681.3060700@codethink.co.uk>
+Message-Id: <52CEB543.1020205@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <52CE8BC0.7060306@codethink.co.uk>
 In-Reply-To: <52CE8BC0.7060306@codethink.co.uk>
@@ -21,43 +21,14 @@ On 09/01/14 12:21, Geert Uytterhoeven wrote:
 >> The board does not produce any console output so I am not
 >> sure what is going on. Has anyone else had issues with using
 >> the fdt-only boot?
->
-> I'm using Koelsch (not Lager), but usually the non-reference version as I
-> need Ethernet for NFS root.
-> The DT-version does boot for me until mounting root.
->
-> Are you using an initramfs? I noticed the kernel crashes early when using
-> a non-trivial initramfs:
 
-No, we're just tftping and then nfs-root.
+Ok, having looked at this we have the following issues:
 
->      Error: unrecognized/unsupported machine ID (r1 = 0x41915083).
->
->      Available machine support:
->
->      ID (hex)        NAME
->      ffffffff        Generic R8A7791 (Flattened Device Tree)
->      ffffffff        koelsch
->
->      Please check your kernel config and/or bootloader.
->
-> Apparently the device tree gets overwritten in memory. I tried loading the
-> DTB at a different address, but that didn't help. I didn't have more time
-> to investigate, though.
+sh_cmt sh   _cmt.0: cannot get clock...4
+sh_cmt: probe of sh_cmt.0 failed with error -2
 
-I've managed to get it to boot with another boot method, however that 
-has other limitations...
-
->
-> FYI, I'm using the following patch to capture early kernel messages in RAM.
-> After a reset, look up the addres of big_buffer[] in System.map, and
-> inspect it from U-Boot to retrieve the messages (translate from 0xc0000000
-> to 0x40000000).
-
-Ta, that's a useful thing to have
-
-i am considering it may be a dtc compiler bug or some other issue with
-the device-tree.
+sh-sci.4: can't get iclk.
+sh-sci: probe of sh-sci.4 failed with error -2
 
 -- 
 Ben Dooks				http://www.codethink.co.uk/
