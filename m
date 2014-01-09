@@ -1,120 +1,53 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Wed, 29 Jan 2014 10:04:05 +0000
-Subject: Re: [PATCH RFC 1/2] ARM: shmobile: lager: Use DMA bounce for PCI devices
-Message-Id: <52E8D215.9060007@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 09 Jan 2014 09:41:55 +0000
+Subject: Re: [PATCH 2/2] spi: rspi: Fix typo when clearing SPSR_OVRF
+Message-Id: <CAMuHMdU+4qCc64CkJeLAhh4SHqbB0E8Cu=8dKpmaYbphTBJV6g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390935213-12896-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1390935213-12896-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1387823664-32318-1-git-send-email-geert+renesas@linux-m68k.org>
+	<1387823664-32318-2-git-send-email-geert+renesas@linux-m68k.org>
+	<20131224025936.GF22401@verge.net.au>
+	<CAMuHMdWiJPF2NU+ME=CLMygvABZ_fcTyr7ggdQtFKbOGhCA0+w@mail.gmail.com>
+	<20131227021639.GD9184@verge.net.au>
+In-Reply-To: <20131227021639.GD9184-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On 01/29/2014 10:47 AM, Simon Horman wrote:
-> On Tue, Jan 28, 2014 at 10:53:32PM +0400, Valentine Barshak wrote:
->> Since R-Car Gen2 PCI controller does not support
->> more than 2GB memory window limit DMA mask for
->> PCI devices to 31 bits and enable DMA bounce.
+Hi Simon,
+
+On Fri, Dec 27, 2013 at 3:16 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Tue, Dec 24, 2013 at 10:26:17AM +0100, Geert Uytterhoeven wrote:
+>> On Tue, Dec 24, 2013 at 3:59 AM, Simon Horman <horms@verge.net.au> wrote:
+>> > On Mon, Dec 23, 2013 at 07:34:24PM +0100, Geert Uytterhoeven wrote:
+>> >> The overrun flag should be cleared in the SPI Status Register, not in the
+>> >> SPI Control Register, based on the SDK sample code.
+>> >>
+>> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 >>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->> ---
->>   arch/arm/mach-shmobile/Kconfig       |  2 ++
->>   arch/arm/mach-shmobile/board-lager.c | 38 ++++++++++++++++++++++++++++++++++++
->>   2 files changed, 40 insertions(+)
+>> The issue is quite obvious: after clearing the bit, the new value should
+>> be written back to the same register.
 >>
->> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
->> index 8011329..bfd8757 100644
->> --- a/arch/arm/mach-shmobile/Kconfig
->> +++ b/arch/arm/mach-shmobile/Kconfig
->> @@ -126,6 +126,7 @@ config ARCH_R8A7790
->>   	select MIGHT_HAVE_PCI
->>   	select SH_CLK_CPG
->>   	select RENESAS_IRQC
->> +	select DMABOUNCE if PCI_RCAR_GEN2
->>
->>   config ARCH_R8A7791
->>   	bool "R-Car M2 (R8A77910)"
->> @@ -135,6 +136,7 @@ config ARCH_R8A7791
->>   	select MIGHT_HAVE_PCI
->>   	select SH_CLK_CPG
->>   	select RENESAS_IRQC
->> +	select DMABOUNCE if PCI_RCAR_GEN2
->>
->>   config ARCH_EMEV2
->>   	bool "Emma Mobile EV2"
->> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
->> index 972633e..2044a23 100644
->> --- a/arch/arm/mach-shmobile/board-lager.c
->> +++ b/arch/arm/mach-shmobile/board-lager.c
->> @@ -26,6 +26,7 @@
->>   #include <linux/leds.h>
->>   #include <linux/mmc/host.h>
->>   #include <linux/mmc/sh_mmcif.h>
->> +#include <linux/pci.h>
->>   #include <linux/pinctrl/machine.h>
->>   #include <linux/platform_data/camera-rcar.h>
->>   #include <linux/platform_data/gpio-rcar.h>
->> @@ -546,9 +547,43 @@ static const struct resource usbhs_phy_resources[] __initconst = {
->>   	DEFINE_RES_MEM(0xe6590100, 0x100),
->>   };
+>> However, the fix is not in a v3.10-rc6 version I saw, so this may matter
+>> for LTSI.
 >
-> Is all the #if...#endif below completely necessary?
->
+> I believe that the LTSI-3.10 work from Renesas (so far mainly me) is
+> independent of the sample code at the link above. So unless this fix ends
+> up in v3.10 -stable, which should feed into LTSI-3.10, then it will need to
+> be submitted to LTSI (probably be me or you) if we want it to be in LTSI.
 
-Yes they are. Otherwise the kernel doesn't build.
+According to the documentation, this bit is valid only in SPI slave mode.
+As Linux supports SPI master mode only, this looks like a purely cosmetical
+issue to me, so it doesn't warrant applying to -stable or LTSI-3.10.
 
->>
->> +#if IS_ENABLED(CONFIG_DMABOUNCE)
->> +static int lager_needs_bounce(struct device *dev,
->> +			      dma_addr_t dma_addr, size_t size)
->> +{
->> +	return 0;
->> +}
->> +
->> +static int lager_platform_notify(struct device *dev)
->> +{
->> +	if (dev_is_pci(dev)) {
->> +		*dev->dma_mask =  DMA_BIT_MASK(31);
->> +		dev->coherent_dma_mask = DMA_BIT_MASK(31);
->> +		dmabounce_register_dev(dev, SZ_2K, SZ_4K,
->> +				       lager_needs_bounce);
->> +	}
->> +
->> +	return 0;
->> +}
->> +
->> +static int lager_platform_notify_remove(struct device *dev)
->> +{
->> +	if (dev_is_pci(dev))
->> +		dmabounce_unregister_dev(dev);
->> +
->> +	return 0;
->> +}
->> +#endif
->> +
->>   /* Add all available USB devices */
->>   static void __init lager_add_usb_devices(void)
->>   {
->> +
->> +#if IS_ENABLED(CONFIG_DMABOUNCE)
->> +	platform_notify = lager_platform_notify;
->> +	platform_notify_remove = lager_platform_notify_remove;
->> +#endif
->> +
->>   	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
->>   					  -1, usbhs_phy_resources,
->>   					  ARRAY_SIZE(usbhs_phy_resources),
->> @@ -707,4 +742,7 @@ DT_MACHINE_START(LAGER_DT, "lager")
->>   	.init_machine	= lager_init,
->>   	.init_late	= shmobile_init_late,
->>   	.dt_compat	= lager_boards_compat_dt,
->> +#if IS_ENABLED(CONFIG_ZONE_DMA)
->> +	.dma_zone_size	= SZ_1G
->> +#endif
->>   MACHINE_END
->> --
->> 1.8.3.1
->>
+Gr{oetje,eeting}s,
 
-Thanks,
-Val.
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
