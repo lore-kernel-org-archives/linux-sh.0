@@ -1,50 +1,107 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:08:18 +0000
-Subject: Re: [PATCH v2 11/14] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
-Message-Id: <20140127200818.GM11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="HJXn/kF6DSjhJ2mL"
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 09 Jan 2014 17:46:50 +0000
+Subject: Re: [PATCH 2/2] clk: shmobile: Fix MSTP clock array initialization
+Message-Id: <1595314.ajZq4Que6Z@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-12-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-12-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+References: <1388167599-23525-3-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1388167599-23525-3-git-send-email-valentine.barshak@cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Hi Valentine,
 
---HJXn/kF6DSjhJ2mL
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Saturday 28 December 2013 12:35:31 Laurent Pinchart wrote:
+> On Friday 27 December 2013 22:06:39 Valentine Barshak wrote:
+> > The clks member of the clk_onecell_data structure should
+> > point to a valid clk array (no NULL entries allowed),
+> > and the clk_num should be equal to the number
+> > of elements in the clks array.
+> > 
+> > The MSTP driver fails to satisfy the above conditions.
+> > The clks array may contain NULL entries if not all
+> > clock-indices are initialized in the device tree.
+> > Thus, if the clock indices are interleaved we end up
+> > with NULL pointers in-between.
+> 
+> I don't think that's an issue in practice as long as no reference to a NULL
+> clock exists in the device tree, but it should of course be fixed.
+> 
+> > The other problem is the driver uses maximum clock index
+> > as the number of clocks, which is incorrect (less than
+> > the actual number of clocks by 1).
+> 
+> Good catch.
+> 
+> > Fix the first issue by pre-setting the whole clks array
+> > with ERR_PTR(-ENOENT) pointers instead of zeros; and
+> > use maximum clkidx + 1 as the number of clocks to fix
+> > the other one.
+> > 
+> > This should make of_clk_src_onecell_get() return the following:
+> > * valid clk pointers for all clocks registered;
+> > * ERR_PTR(-EINVAL) if (idx >= clk_data->clk_num);
+> > * ERR_PTR(-ENOENT) if the clock at the selected index was not
+> > 
+> >   initialized in the device tree (and was not registered).
+> > 
+> > Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> > ---
+> > 
+> >  drivers/clk/shmobile/clk-mstp.c | 9 +++++++--
+> >  1 file changed, 7 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/drivers/clk/shmobile/clk-mstp.c
+> > b/drivers/clk/shmobile/clk-mstp.c index be7d017..14b91ad 100644
+> > --- a/drivers/clk/shmobile/clk-mstp.c
+> > +++ b/drivers/clk/shmobile/clk-mstp.c
+> > @@ -160,7 +160,7 @@ static void __init cpg_mstp_clocks_init(struct
+> > device_node *np)
+> >  	unsigned int i;
+> > 
+> >  	group = kzalloc(sizeof(*group), GFP_KERNEL);
+> > -	clks = kzalloc(MSTP_MAX_CLOCKS * sizeof(*clks), GFP_KERNEL);
+> > +	clks = kmalloc(MSTP_MAX_CLOCKS * sizeof(*clks), GFP_KERNEL);
+> >  	if (group = NULL || clks = NULL) {
+> >  		kfree(group);
+> >  		kfree(clks);
+> > @@ -182,6 +182,10 @@ static void __init cpg_mstp_clocks_init(struct
+> > device_node *np) }
+> > 
+> >  	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
+> > +		clks[i] = ERR_PTR(-ENOENT);
+> > +	}
+> 
+> No need for brackets here.
+> 
+> With this fixed,
+> 
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-On Fri, Jan 24, 2014 at 09:44:01AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Get the driver ready for the migration to the common clock framework by
-> calling clk_prepare_enable() and clk_disable_unprepare().
+Could you please resubmit the series with this fixed and the Reviewed-by line 
+from Ben picked for patch 1/2, and ask Mike to apply it for v3.14 in the cover 
+letter ?
 
-Applied, thanks.
+> > +
+> > +	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
+> >  		const char *parent_name;
+> >  		const char *name;
+> >  		u32 clkidx;
+> > @@ -208,7 +212,8 @@ static void __init cpg_mstp_clocks_init(struct
+> > device_node *np)
+> >  		clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
+> >  						       clkidx, group);
+> >  		
+> >  		if (!IS_ERR(clks[clkidx])) {
+> > -			group->data.clk_num = max(group->data.clk_num, clkidx);
+> > +			group->data.clk_num = max(group->data.clk_num,
+> > +						  clkidx + 1);
+> >  			/*
+> >  			 * Register a clkdev to let board code retrieve the
+> >  			 * clock by name and register aliases for non-DT
+-- 
+Regards,
 
---HJXn/kF6DSjhJ2mL
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Laurent Pinchart
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS5ryvAAoJELSic+t+oim95zgP/0X7hYaEYNfIANL9qSFu0eFE
-7i5O+btT0M3uVZNjjQFLb31/vVgahpvs6BVsWizP6t3kSqoTnf9vf3M41zDPR6lU
-UWfoEiGEvx90ez1tDvFD1gtOaJPR8frsBfjfYQQs808edat+YHdIXnsAB3HrwBLP
-p+asXmRmEihncKrui/J0aL8TbnlesBpWf4jQsa6X1tQEc8qp7IDzgU6FOi3B4u0y
-1ITpPgN5KwSgefjccgQQLxQ2KfKxf1kFbGbnPoFAJmw6X8Z2HhdsCxCFKMWvdT9X
-ENzwKHiHtBpZo4cC/e5eC2hwtIF+b1fLLSSnRzT+CMgdKj8izobAmp7Q12Nb86ra
-w/40soFedttjLW2O5OEQXH/DgCQYl8KCZJhL1H2Um8jazuY5CV5cvvMhTS5y8wWu
-dI37VL+ZdXtSmGoHAI2iCTP8OqOF3E2/fVE2fLooeFZ1W3ZuudRrgH0rEpqCEI1o
-YeHoy3SasrRrMghJ2GeuJTZp0cnVz8RIeCatOzHXik16oFzYXRl0kfQaseEtVw1A
-uXFjhFotMudUM0T7c8znQenDzsJ7rLBZK+ZCi/UkZFZyLB2dSKfUxhnEZOx08aAu
-vo6svGG1KVV1icY93ZBoIuqZ/4tmsRLUP1cki7z0KS9fuOUMNeTGstTPlVExbt5m
-3wdYHu5iNTlyeBypVD96
-=cRkz
------END PGP SIGNATURE-----
-
---HJXn/kF6DSjhJ2mL--
