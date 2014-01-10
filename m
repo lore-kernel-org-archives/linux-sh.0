@@ -1,41 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 31 Jan 2014 12:46:26 +0000
-Subject: Re: [PATCH 3/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7779
-Message-Id: <52EB9B22.4050703@cogentembedded.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 10 Jan 2014 15:18:15 +0000
+Subject: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
+Message-Id: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com> <878utw7m3z.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <878utw7m3z.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Linux Kernel list <linux-kernel@vger.kernel.org>, Linus SH list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
-Hello.
+If the kernel is built to support multi-arm configurmation with shmobile
+support built in, then the drivers/sh is not built. This contains drivers
+that are essential to devices support by that configuration, including the
+PM runtime code in drivers/sh/pm_runtime.c (which implicitly enables the
+bus clocks for all devices).
 
-On 31-01-2014 9:32, Kuninori Morimoto wrote:
+If CONFIG_ARCH_SHMOBILE_MULTI then build the drivers/sh directory,
+but ensure that bits that may conflict (drivers/sh/clk if the common
+clock framework is not enabled) are built.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The ARCH_SHMOBILE_MULTI was added by efacfce5f8a ("ARM: shmobile: Introduce
+ARCH_SHMOBILE_MULTI") but this has only just recently been found due to
+building device-tree only kernels.
 
-> This patch updates r8a7779 DT data to have SoC specific settings.
+Cc: Linux Kernel list <linux-kernel@vger.kernel.org>
+Cc: Linus SH list <linux-sh@vger.kernel.org>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/Makefile    | 1 +
+ drivers/sh/Makefile | 3 +++
+ 2 files changed, 4 insertions(+)
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 6442286..322cd35 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
->   	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
->   	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
->   	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
-> -	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
-> +	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
-
-    I'd merge this to the previous patch.
-
-WBR, Sergei
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 8e3b8b0..abc4744 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -118,6 +118,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
+ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
++obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= sh/
+ obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
+ ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+ obj-y				+= clocksource/
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index fc67f56..86604a5 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -3,7 +3,10 @@
+ #
+ obj-y	:= intc/
+ 
++ifeq ($(CONFIG_COMMON_CLK),n)
+ obj-$(CONFIG_HAVE_CLK)		+= clk/
++endif
++
+ obj-$(CONFIG_MAPLE)		+= maple/
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ 
+-- 
+1.8.5.2
 
