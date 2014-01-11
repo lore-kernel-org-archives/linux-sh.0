@@ -1,67 +1,60 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 27 Jan 2014 08:24:31 +0000
-Subject: Re: [PATCH 3/9] idle: no more arch_cpu_idle_prepare() users
-Message-Id: <52E617BF.4030500@linaro.org>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sat, 11 Jan 2014 13:05:39 +0000
+Subject: [PATCH 2/3] power: clock_ops.c: check return of clk_enable() in pm_clk_resume()
+Message-Id: <1389445540-21426-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
- <1390802904-28399-4-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1390802904-28399-4-git-send-email-nicolas.pitre@linaro.org>
+References: <1389445540-21426-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389445540-21426-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@lists.codethink.co.uk
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Pavel Machek <pavel@ucw.cz>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 01/27/2014 07:08 AM, Nicolas Pitre wrote:
-> ... so we can get rid of it entirely.
->
-> Signed-off-by: Nicolas Pitre <nico@linaro.org>
+The clk_enable() call in the pm_clk_resume() call returns an error
+that is not being checked. If clk_enable() fails then we should
+not set the state of the clock to PCE_STATUS_ENABLED.
 
-Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Note, the issue of warning the user if this fails has not been
+addressed in this patch as this is not the only place the driver
+calls clk_enable().
 
-> ---
->   include/linux/cpu.h | 1 -
->   kernel/cpu/idle.c   | 2 --
->   2 files changed, 3 deletions(-)
->
-> diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-> index 03e235ad1b..218fab7521 100644
-> --- a/include/linux/cpu.h
-> +++ b/include/linux/cpu.h
-> @@ -221,7 +221,6 @@ void cpu_idle(void);
->   void cpu_idle_poll_ctrl(bool enable);
->
->   void arch_cpu_idle(void);
-> -void arch_cpu_idle_prepare(void);
->   void arch_cpu_idle_enter(void);
->   void arch_cpu_idle_exit(void);
->   void arch_cpu_idle_dead(void);
-> diff --git a/kernel/cpu/idle.c b/kernel/cpu/idle.c
-> index 988573a9a3..4e327e211b 100644
-> --- a/kernel/cpu/idle.c
-> +++ b/kernel/cpu/idle.c
-> @@ -52,7 +52,6 @@ static inline int cpu_idle_poll(void)
->   }
->
->   /* Weak implementations for optional arch specific functions */
-> -void __weak arch_cpu_idle_prepare(void) { }
->   void __weak arch_cpu_idle_enter(void) { }
->   void __weak arch_cpu_idle_exit(void) { }
->   void __weak arch_cpu_idle_dead(void) { }
-> @@ -136,6 +135,5 @@ void cpu_startup_entry(enum cpuhp_state state)
->   	boot_init_stack_canary();
->   #endif
->   	__current_set_polling();
-> -	arch_cpu_idle_prepare();
->   	cpu_idle_loop();
->   }
->
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Cc: Pavel Machek <pavel@ucw.cz>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-pm@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+---
+ drivers/base/power/clock_ops.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+index b9dd8fa..9bb95ab 100644
+--- a/drivers/base/power/clock_ops.c
++++ b/drivers/base/power/clock_ops.c
+@@ -252,6 +252,7 @@ int pm_clk_resume(struct device *dev)
+ 	struct pm_subsys_data *psd = dev_to_psd(dev);
+ 	struct pm_clock_entry *ce;
+ 	unsigned long flags;
++	int ret;
+ 
+ 	dev_dbg(dev, "%s()\n", __func__);
+ 
+@@ -262,8 +263,9 @@ int pm_clk_resume(struct device *dev)
+ 
+ 	list_for_each_entry(ce, &psd->clock_list, node) {
+ 		if (ce->status < PCE_STATUS_ERROR) {
+-			clk_enable(ce->clk);
+-			ce->status = PCE_STATUS_ENABLED;
++			ret = clk_enable(ce->clk);
++			if (ret = 0)
++				ce->status = PCE_STATUS_ENABLED;
+ 		}
+ 	}
+ 
+-- 
+1.8.5.2
 
