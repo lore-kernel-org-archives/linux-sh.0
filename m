@@ -1,64 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 13 Jan 2014 00:33:02 +0000
-Subject: Re: [PATCH V3 0/5] SoC and board integration for RSPI on r7s72100/genmai
-Message-Id: <20140113003301.GH15296@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sat, 11 Jan 2014 13:05:40 +0000
+Subject: [PATCH 3/3] power: clock_ops.c: report clock errors from clk_enable()
+Message-Id: <1389445540-21426-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
- <2996587.8yFdzmUGOy@avalon>
-In-Reply-To: <2996587.8yFdzmUGOy@avalon>
+References: <1389445540-21426-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389445540-21426-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Pavel Machek <pavel@ucw.cz>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Sun, Jan 12, 2014 at 10:32:27PM +0100, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patches.
-> 
-> On Sunday 12 January 2014 11:48:38 Geert Uytterhoeven wrote:
-> > This patch series integrates Renesas RSPI on the RZ/A1H aka R7S72100 SoC,
-> > and the Genmai development board.
-> > 
-> > The series is based on renesas-devel-v3.13-rc7-20140109v2, with Magnus'
-> > pinctrl, Wolfram's riic, and Simon's sh_eth work applied on top.
-> > [Simon: I don't know in which order you will merge these. If you want me
-> >  to rebase my patches, just ask! Thanks!]
-> > 
-> > It was tested on the Genmai development board (genmai-reference), using
-> > an in-kernel version of Documentation/spi/spidev_test.c, exercising
-> > loopback mode on rspi1, with the same outcome as the SDK reference code.
-> > 
-> > It will not yet work with the non-reference version of genmai, due to
-> > missing pinmux configuration in setup-r7s72100.c.
-> 
-> The whole series looks good to me. The first patch depends on r7s72100 pinmux 
-> support, for which I'm still waiting a new version from Magnus. The rest could 
-> already be applied as far as I'm concerned.
+If clk_enable() fails, then print a message so that the user can see
+what is happening instead of silently failing to enable the clock.
 
-Thanks, that sounds reasonable to me.
-But I would like to hear from Magnus.
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Cc: Pavel Machek <pavel@ucw.cz>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-pm@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+---
+ drivers/base/power/clock_ops.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
-> 
-> >     [1/5] pinctrl: sh-pfc: r7s72100: Add RSPI support
-> >     [2/5] ARM: shmobile: r7s72100: Add RSPI clocks
-> >     [3/5] ARM: shmobile: genmai: Add RSPI support
-> >     [4/5] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux
-> >     [5/5] ARM: shmobile: genmai: Enable RSPI in defconfig
-> > 
-> > Changes in V2:
-> >   - Add "ARM: shmobile: genmai: Add RSPI children"
-> >   - Add "[RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux"
-> > 
-> > Changes in V3:
-> >   - Implement review comments
-> >   - Add defconfig update
-> >   - Remove DT support patches, they will be sent in a separate series
-> >   - Merge "ARM: shmobile: r7s72100: Add RSPI platform devices" and
-> >     "ARM: shmobile: genmai: Add RSPI children"
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+index 9bb95ab..b94b3ec 100644
+--- a/drivers/base/power/clock_ops.c
++++ b/drivers/base/power/clock_ops.c
+@@ -33,6 +33,21 @@ struct pm_clock_entry {
+ };
+ 
+ /**
++ * pm_clk_enable - Enable a clock, reporting any errors
++ * @dev: The device for the given clock
++ * @clk: The clock being enabled.
++ */
++static inline int __pm_clk_enable(struct device *dev, struct clk *clk)
++{
++	int ret = clk_enable(clk);
++	if (ret != 0)
++		dev_err(dev, "%s: failed to enable clk %p, error %d\n",
++			__func__, clk, ret);
++
++	return ret;
++}
++
++/**
+  * pm_clk_acquire - Acquire a device clock.
+  * @dev: Device whose clock is to be acquired.
+  * @ce: PM clock entry corresponding to the clock.
+@@ -263,7 +278,7 @@ int pm_clk_resume(struct device *dev)
+ 
+ 	list_for_each_entry(ce, &psd->clock_list, node) {
+ 		if (ce->status < PCE_STATUS_ERROR) {
+-			ret = clk_enable(ce->clk);
++			ret = __pm_clk_enable(dev, ce->clk);
+ 			if (ret = 0)
+ 				ce->status = PCE_STATUS_ENABLED;
+ 		}
+@@ -381,7 +396,7 @@ int pm_clk_resume(struct device *dev)
+ 	spin_lock_irqsave(&psd->lock, flags);
+ 
+ 	list_for_each_entry(ce, &psd->clock_list, node)
+-		clk_enable(ce->clk);
++		__pm_clk_enable(dev, ce->clk);
+ 
+ 	spin_unlock_irqrestore(&psd->lock, flags);
+ 
+-- 
+1.8.5.2
+
