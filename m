@@ -1,8 +1,10 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 10 Jan 2014 15:18:15 +0000
+Date: Sat, 11 Jan 2014 13:06:29 +0000
 Subject: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
+Message-Id: <1389445589-21502-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
