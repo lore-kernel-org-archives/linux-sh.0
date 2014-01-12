@@ -1,53 +1,92 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 09 Jan 2014 15:23:21 +0000
-Subject: [PATCH V2 2/4] ARM: shmobile: r8a7791: Add SATA clocks
-Message-Id: <1389281003-10253-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:00:31 +0000
+Subject: [PATCH V2 2/4] ARM: shmobile: r8a7791: add QSPI clocks
+Message-Id: <1389524433-2823-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389524433-2823-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389524433-2823-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds SATA[01] clock support to R8A7791 SoC.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+The QSPI clock divider value depends on the MD1, MD2, and MD3 mode
+switches.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
-Changes in V2:
- * used zs_clk as SATA clock parent, according to the feedback from Renesas.
+V2:
+  - No changes
 
- arch/arm/mach-shmobile/clock-r8a7791.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
 diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 52d7d13..e4e4dfa 100644
+index ca01dfe5f656..1185e5669a5e 100644
 --- a/arch/arm/mach-shmobile/clock-r8a7791.c
 +++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -135,6 +135,7 @@ static struct clk *main_clks[] = {
+@@ -101,6 +101,7 @@ static struct clk main_clk = {
+  */
+ SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
+ SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
+ 
+ /* fixed ratio clock */
+ SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
+@@ -123,6 +124,7 @@ static struct clk *main_clks[] = {
+ 	&pll3_clk,
+ 	&hp_clk,
+ 	&p_clk,
++	&qspi_clk,
+ 	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
+@@ -133,6 +135,7 @@ static struct clk *main_clks[] = {
  /* MSTP */
  enum {
  	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
-+	MSTP815, MSTP814,
++	MSTP917,
  	MSTP813,
  	MSTP811, MSTP810, MSTP809,
  	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
-@@ -153,6 +154,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+@@ -151,6 +154,7 @@ static struct clk mstp_clks[MSTP_NR] = {
  	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
  	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
  	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
-+	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
-+	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
++	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
  	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
  	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
  	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
-@@ -229,6 +232,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a7791-vin.0", &mstp_clks[MSTP811]),
- 	CLKDEV_DEV_ID("r8a7791-vin.1", &mstp_clks[MSTP810]),
- 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
-+	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
-+	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
- };
+@@ -189,6 +193,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("zg",		&zg_clk),
+ 	CLKDEV_CON_ID("hp",		&hp_clk),
+ 	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("rclk",		&rclk_clk),
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
+@@ -214,6 +219,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+@@ -263,6 +269,11 @@ void __init r8a7791_clock_init(void)
+ 		break;
+ 	}
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
++	else
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
 -- 
-1.8.3.1
+1.7.9.5
 
