@@ -1,58 +1,38 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 17 Jan 2014 18:11:36 +0000
-Subject: [PATCH 2/4] ARM: lager: add i2c1, i2c2 pins
-Message-Id: <1389982298-23143-3-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 10:48:43 +0000
+Subject: [PATCH V3 5/5] ARM: shmobile: genmai: Enable RSPI in defconfig
+Message-Id: <1389523723-2288-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
-to ensure these are setup correctly at initialisation time. The i2c0
-and i2c3 busses are connected to single function pins.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+V3:
+  - New
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index b66d3de..d680ab7 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -80,6 +80,16 @@
- 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
- 		renesas,function = "mmc1";
- 	};
-+
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
-+
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
- };
- 
- &mmcif1 {
-@@ -98,10 +108,14 @@
- 
- &i2c1	{
- 	status = "ok";
-+	pinctrl-0 = <&i2c1_pins>;
-+	pinctrl-names = "default";
- };
- 
- &i2c2	{
- 	status = "ok";
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
- };
- 
- &i2c3	{
+ arch/arm/configs/genmai_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index ede35f400df2..401285305251 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -79,6 +79,8 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_I2C_SH_MOBILE=y
++CONFIG_SPI=y
++CONFIG_SPI_RSPI=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
 -- 
-1.8.5.2
+1.7.9.5
 
