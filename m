@@ -1,78 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 15 Jan 2014 06:12:21 +0000
-Subject: [PATCH v5 4/4] ARM: shmobile: genmai: Enable r7s72100-ether
-Message-Id: <1389766341-14001-5-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 10:48:42 +0000
+Subject: [PATCH V3 4/5] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux setup
+Message-Id: <1389523723-2288-5-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389766341-14001-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389766341-14001-1-git-send-email-horms+renesas@verge.net.au>
+References: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
+This does not work as there's no pinmux configuration in setup-r7s72100.c
+yet.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
-Dave,
+V2:
+  - New
+V3:
+  - No changes
 
-I plan to take this change through my tree.
-
-v3 - v5
-* No change
-
-v2
-* As suggested by Magnus Damm and Sergei Shtylyov
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
-
-* As suggested by Sergei Shtylyov
-  - set no_ether_link as there is no LINK signal documented
-    in the manual
----
- arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ arch/arm/mach-shmobile/board-genmai.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
 diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c..a1f6fe1 100644
+index f85628e24de4..c8d07d3d81e9 100644
 --- a/arch/arm/mach-shmobile/board-genmai.c
 +++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,36 @@
+@@ -19,6 +19,7 @@
+  */
  
  #include <linux/kernel.h>
++#include <linux/pinctrl/machine.h>
  #include <linux/platform_device.h>
-+#include <linux/sh_eth.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+ #include <linux/sh_eth.h>
+ #include <linux/spi/rspi.h>
+@@ -80,9 +81,25 @@ static const struct spi_board_info spi_info[] __initconst = {
+ 	},
+ };
  
-+/* Ether */
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
-+	.phy			= 0x00, /* PD60610 */
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.phy_interface		= PHY_INTERFACE_MODE_MII,
-+	.no_ether_link		= 1
-+};
-+
-+static const struct resource ether_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe8203000, 0x800),
-+	DEFINE_RES_MEM(0xe8204800, 0x200),
-+	DEFINE_RES_IRQ(gic_iid(359)),
++static const struct pinctrl_map genmai_pinctrl_map[] = {
++	/* RSPI4 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_rspck_p4_0", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_ssl0_p4_1", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_mosi_p4_2", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
++				  "rspi4_miso_p4_3", "rspi4"),
 +};
 +
  static void __init genmai_add_standard_devices(void)
  {
  	r7s72100_clock_init();
++	pinctrl_register_mappings(genmai_pinctrl_map,
++				  ARRAY_SIZE(genmai_pinctrl_map));
++	/* FIXME there's no pinmux configuration in setup-r7s72100.c yet */
++	/* r7s72100_pinmux_init(); */
  	r7s72100_add_dt_devices();
-+
-+	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  &ether_pdata, sizeof(ether_pdata));
- }
  
- static const char * const genmai_boards_compat_dt[] __initconst = {
+ 	r7s72100_register_rspi(0);
 -- 
-1.8.4
+1.7.9.5
 
