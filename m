@@ -1,91 +1,154 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Thu, 09 Jan 2014 14:26:11 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: r8a7790: Add VIN clock support
-Message-Id: <52CEB183.2080909@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 10:48:39 +0000
+Subject: [PATCH V3 1/5] pinctrl: sh-pfc: r7s72100: Add RSPI support
+Message-Id: <1389523723-2288-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383060193-1505-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1383060193-1505-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 01/09/2014 12:14 PM, Simon Horman wrote:
-> On Wed, Jan 08, 2014 at 08:31:23PM +0400, Valentine Barshak wrote:
->> This adds VIN[0-3] clock support to R8A7790 SoC.
->
-> Please place Changes and similar annotations below a "---" line
-> to allow git to automatically strip them out for me when I apply your
-> patches.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-OK, thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+---
+V2:
+  - No changes
+V3:
+  - No changes
 
->
-> ---
->
->>
->> Changes in V2:
->> * none.
->>
->> Changes in V3:
->> * capitalized ARM in the subject.
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->> ---
->>   arch/arm/mach-shmobile/clock-r8a7790.c | 9 +++++++++
->>   1 file changed, 9 insertions(+)
->
-> There was some fuzz when applying this patch.
-> I have queued up the following. Please check that it is correct.
+ drivers/pinctrl/sh-pfc/pfc-r7s72100.c |   94 +++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
 
-It is correct, thanks.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+index 267677c683c5..5e0f03c14fcc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r7s72100.c
+@@ -138,6 +138,70 @@ RIIC1(RZ_PIN_AND_MUX)
+ RIIC2(RZ_PIN_AND_MUX)
+ RIIC3(RZ_PIN_AND_MUX)
+ 
++#define RSPI0(fn)			\
++	fn(rspi0, rspck,  2, 12, 2)	\
++	fn(rspi0, ssl0,   2, 13, 2)	\
++	fn(rspi0, mosi,   2, 14, 2)	\
++	fn(rspi0, miso,   2, 15, 2)	\
++	fn(rspi0, rspck,  7, 15, 2)	\
++	fn(rspi0, ssl0,   8,  0, 2)	\
++	fn(rspi0, mosi,   8,  1, 2)	\
++	fn(rspi0, miso,   8,  2, 2)	\
++	fn(rspi0, rspck, 10, 12, 4)	\
++	fn(rspi0, ssl0,  10, 13, 4)	\
++	fn(rspi0, mosi,  10, 14, 4)	\
++	fn(rspi0, miso,  10, 15, 4)	\
++
++#define RSPI1(fn)			\
++	fn(rspi1, rspck,  4,  4, 2)	\
++	fn(rspi1, ssl0,   4,  5, 2)	\
++	fn(rspi1, mosi,   4,  6, 2)	\
++	fn(rspi1, miso,   4,  7, 2)	\
++	fn(rspi1, rspck,  6,  4, 7)	\
++	fn(rspi1, ssl0,   6,  5, 7)	\
++	fn(rspi1, mosi,   6,  6, 7)	\
++	fn(rspi1, miso,   6,  7, 7)	\
++	fn(rspi1, rspck, 11, 12, 2)	\
++	fn(rspi1, ssl0,  11, 13, 2)	\
++	fn(rspi1, mosi,  11, 14, 2)	\
++	fn(rspi1, miso,  11, 15, 2)	\
++
++#define RSPI2(fn)			\
++	fn(rspi2, rspck,  8,  3, 3)	\
++	fn(rspi2, ssl0,   8,  4, 3)	\
++	fn(rspi2, mosi,   8,  5, 3)	\
++	fn(rspi2, miso,   8,  6, 3)	\
++	fn(rspi2, rspck,  8, 14, 5)	\
++	fn(rspi2, ssl0,   8, 15, 5)	\
++	fn(rspi2, mosi,   9,  0, 5)	\
++	fn(rspi2, miso,   9,  1, 5)	\
++
++#define RSPI3(fn)			\
++	fn(rspi3, rspck,  3,  0, 8)	\
++	fn(rspi3, ssl0,   3,  1, 8)	\
++	fn(rspi3, mosi,   3,  2, 8)	\
++	fn(rspi3, miso,   3,  3, 8)	\
++	fn(rspi3, rspck,  5,  0, 8)	\
++	fn(rspi3, ssl0,   5,  1, 8)	\
++	fn(rspi3, mosi,   5,  2, 8)	\
++	fn(rspi3, miso,   5,  3, 8)	\
++
++#define RSPI4(fn)			\
++	fn(rspi4, rspck,  2,  8, 8)	\
++	fn(rspi4, ssl0,   2,  9, 8)	\
++	fn(rspi4, mosi,   2, 10, 8)	\
++	fn(rspi4, miso,   2, 11, 8)	\
++	fn(rspi4, rspck,  4,  0, 7)	\
++	fn(rspi4, ssl0,   4,  1, 7)	\
++	fn(rspi4, mosi,   4,  2, 7)	\
++	fn(rspi4, miso,   4,  3, 7)	\
++
++RSPI0(RZ_PIN_AND_MUX)
++RSPI1(RZ_PIN_AND_MUX)
++RSPI2(RZ_PIN_AND_MUX)
++RSPI3(RZ_PIN_AND_MUX)
++RSPI4(RZ_PIN_AND_MUX)
++
+ #define SCIF0(fn)			\
+ 	fn(scif0, clk, 2, 13, 6)	\
+ 	fn(scif0, txd, 2, 14, 6)	\
+@@ -312,6 +376,11 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	RIIC1(RZ_PMX_GROUP)
+ 	RIIC2(RZ_PMX_GROUP)
+ 	RIIC3(RZ_PMX_GROUP)
++	RSPI0(RZ_PMX_GROUP)
++	RSPI1(RZ_PMX_GROUP)
++	RSPI2(RZ_PMX_GROUP)
++	RSPI3(RZ_PMX_GROUP)
++	RSPI4(RZ_PMX_GROUP)
+ 	SCIF0(RZ_PMX_GROUP)
+ 	SCIF1(RZ_PMX_GROUP)
+ 	SCIF2(RZ_PMX_GROUP)
+@@ -339,6 +408,26 @@ static const char * const riic3_groups[] = {
+ 	RIIC3(RZ_GROUPS)
+ };
+ 
++static const char * const rspi0_groups[] = {
++	RSPI0(RZ_GROUPS)
++};
++
++static const char * const rspi1_groups[] = {
++	RSPI1(RZ_GROUPS)
++};
++
++static const char * const rspi2_groups[] = {
++	RSPI2(RZ_GROUPS)
++};
++
++static const char * const rspi3_groups[] = {
++	RSPI3(RZ_GROUPS)
++};
++
++static const char * const rspi4_groups[] = {
++	RSPI4(RZ_GROUPS)
++};
++
+ static const char * const scif0_groups[] = {
+ 	SCIF0(RZ_GROUPS)
+ };
+@@ -380,6 +469,11 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(riic1),
+ 	SH_PFC_FUNCTION(riic2),
+ 	SH_PFC_FUNCTION(riic3),
++	SH_PFC_FUNCTION(rspi0),
++	SH_PFC_FUNCTION(rspi1),
++	SH_PFC_FUNCTION(rspi2),
++	SH_PFC_FUNCTION(rspi3),
++	SH_PFC_FUNCTION(rspi4),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+ 	SH_PFC_FUNCTION(scif2),
+-- 
+1.7.9.5
 
->
-> From: Valentine Barshak <valentine.barshak@cogentembedded.com>
->
-> ARM: shmobile: r8a7790: Add VIN clock support
->
-> This adds VIN[0-3] clock support to R8A7790 SoC.
->
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> [horms+renesas@verge.net.au: manually applied]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-> index 58f3dcf..b2b2323 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -197,6 +197,7 @@ enum {
->   	MSTP931, MSTP930, MSTP929, MSTP928,
->   	MSTP917,
->   	MSTP813,
-> +	MSTP811, MSTP810, MSTP809, MSTP808,
->   	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
->   	MSTP717, MSTP716,
->   	MSTP704,
-> @@ -226,6 +227,10 @@ static struct clk mstp_clks[MSTP_NR] = {
->   	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
->   	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
->   	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
-> +	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
-> +	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
-> +	[MSTP809] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  9, MSTPSR8, 0), /* VIN2 */
-> +	[MSTP808] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  8, MSTPSR8, 0), /* VIN3 */
->   	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
->   	[MSTP725] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 25, MSTPSR7, 0), /* LVDS1 */
->   	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
-> @@ -312,6 +317,10 @@ static struct clk_lookup lookups[] = {
->   	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
->   	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
->   	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
-> +	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
-> +	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
-> +	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
-> +	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
->   	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
->   	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
->   	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
->
-
-Thanks,
-Val.
