@@ -1,68 +1,172 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 10:48:42 +0000
-Subject: [PATCH V3 4/5] [RFC] ARM: shmobile: genmai: Add preliminary RSPI pinmux setup
-Message-Id: <1389523723-2288-5-git-send-email-geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 10:27:41 +0000
+Subject: [PATCH V2 5/8] spi: rspi: Add support for no TX only mode
+Message-Id: <1389522464-1569-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
+References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-This does not work as there's no pinmux configuration in setup-r7s72100.c
-yet.
+Add support for RSPI variants lacking TX only mode, based on the SDK
+reference code. This is needed for RZ/A1H.
+
+The TX only mode flag is passed using platform data, defaulting to true for
+legacy RSPI. QSPI never has TX only mode.
+
+If TX only mode is not available, we have to wait for the receive interrupt
+bit to become set, and perform a dummy read, in the transmit path.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
 V2:
-  - New
-V3:
-  - No changes
+  - Spelling s/nevers/never/
 
- arch/arm/mach-shmobile/board-genmai.c |   17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ drivers/spi/spi-rspi.c   |   50 ++++++++++++++++++++++++++++++++++++++++------
+ include/linux/spi/rspi.h |    1 +
+ 2 files changed, 45 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index f85628e24de4..c8d07d3d81e9 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -19,6 +19,7 @@
-  */
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index c3332d2b48e9..e507c2d6c710 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -200,6 +200,7 @@ struct rspi_data {
  
- #include <linux/kernel.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/sh_eth.h>
- #include <linux/spi/rspi.h>
-@@ -80,9 +81,25 @@ static const struct spi_board_info spi_info[] __initconst = {
- 	},
+ 	unsigned dma_width_16bit:1;
+ 	unsigned dma_callbacked:1;
++	unsigned txmode:1;
  };
  
-+static const struct pinctrl_map genmai_pinctrl_map[] = {
-+	/* RSPI4 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_rspck_p4_0", "rspi4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_ssl0_p4_1", "rspi4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_mosi_p4_2", "rspi4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rspi.4", "pfc-r7s72100",
-+				  "rspi4_miso_p4_3", "rspi4"),
-+};
+ static void rspi_write8(const struct rspi_data *rspi, u8 data, u16 offset)
+@@ -259,6 +260,20 @@ struct spi_ops {
+ /*
+  * functions for RSPI
+  */
++static void rspi_set_txmode(const struct rspi_data *rspi)
++{
++	if (rspi->txmode)
++		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
++			    RSPI_SPCR);
++}
 +
- static void __init genmai_add_standard_devices(void)
++static void rspi_clear_txmode(const struct rspi_data *rspi)
++{
++	if (rspi->txmode)
++		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
++			    RSPI_SPCR);
++}
++
+ static int rspi_parse_platform_data(struct rspi_data *rspi,
+ 				    const struct rspi_plat_data *rspi_pd)
  {
- 	r7s72100_clock_init();
-+	pinctrl_register_mappings(genmai_pinctrl_map,
-+				  ARRAY_SIZE(genmai_pinctrl_map));
-+	/* FIXME there's no pinmux configuration in setup-r7s72100.c yet */
-+	/* r7s72100_pinmux_init(); */
- 	r7s72100_add_dt_devices();
+@@ -283,6 +298,11 @@ static int rspi_parse_platform_data(struct rspi_data *rspi,
+ 		rspi->spdcr = 0;
+ 	}
  
- 	r7s72100_register_rspi(0);
++	if (rspi_pd)
++		rspi->txmode = rspi_pd->txmode;
++	else
++		rspi->txmode = 1;	/* legacy RSPI defaults to true */
++
+ 	return 0;
+ }
+ 
+@@ -329,6 +349,9 @@ static int qspi_parse_platform_data(struct rspi_data *rspi,
+ 	rspi->data_width = 8;
+ 	rspi->spdcr = 0;
+ 
++	/* No TX only mode */
++	rspi->txmode = 0;
++
+ 	return 0;
+ }
+ 
+@@ -422,8 +445,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 	int remain = t->len;
+ 	const u8 *data = t->tx_buf;
+ 	while (remain > 0) {
+-		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
+-			    RSPI_SPCR);
++		rspi_set_txmode(rspi);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+@@ -431,6 +453,15 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 			return -ETIMEDOUT;
+ 		}
+ 
++		if (!rspi->txmode && remain != t->len) {
++			if (rspi_wait_for_interrupt(rspi, SPSR_SPRF,
++						    SPCR_SPRIE) < 0) {
++				dev_err(&rspi->master->dev,
++					"%s: receive timeout\n", __func__);
++				return -ETIMEDOUT;
++			}
++			rspi_read_data(rspi);	/* dummy read */
++		}
+ 		rspi_write_data(rspi, *data);
+ 		data++;
+ 		remain--;
+@@ -439,6 +470,14 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 	/* Waiting for the last transmition */
+ 	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
+ 
++	if (!rspi->txmode) {
++		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
++			dev_err(&rspi->master->dev,
++				"%s: receive timeout\n", __func__);
++			return -ETIMEDOUT;
++		}
++		rspi_read_data(rspi);	/* dummy read */
++	}
+ 	return 0;
+ }
+ 
+@@ -570,7 +609,7 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
+ 	for (i = 0; i < rspi->num_irqs; i++)
+ 		disable_irq(rspi->irqs[i]);
+ 
+-	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD, RSPI_SPCR);
++	rspi_set_txmode(rspi);
+ 	rspi_enable_irq(rspi, SPCR_SPTIE);
+ 	rspi->dma_callbacked = 0;
+ 
+@@ -621,8 +660,7 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
+ 
+ 	data = t->rx_buf;
+ 	while (remain > 0) {
+-		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
+-			    RSPI_SPCR);
++		rspi_clear_txmode(rspi);
+ 
+ 		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+ 			dev_err(&rspi->master->dev,
+@@ -756,7 +794,7 @@ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
+ 	for (i = 0; i < rspi->num_irqs; i++)
+ 		disable_irq(rspi->irqs[i]);
+ 
+-	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD, RSPI_SPCR);
++	rspi_clear_txmode(rspi);
+ 	rspi_enable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
+ 	rspi->dma_callbacked = 0;
+ 
+diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
+index 7316dd9c7ba9..0f5f612f0092 100644
+--- a/include/linux/spi/rspi.h
++++ b/include/linux/spi/rspi.h
+@@ -28,6 +28,7 @@ struct rspi_plat_data {
+ 	unsigned int dma_rx_id;
+ 
+ 	unsigned dma_width_16bit:1;	/* DMAC read/write width = 16-bit */
++	unsigned txmode:1;		/* TX only mode */
+ 
+ 	u16 num_chipselect;
+ };
 -- 
 1.7.9.5
 
