@@ -1,70 +1,42 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 26 Jan 2014 21:50:25 +0000
-Subject: Re: [PATCH 3/6] i2c: rcar: do not print error if device nacks transfer
-Message-Id: <20140126215025.GA7643@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="cWoXeonUoKmBZSoM"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:00:29 +0000
+Subject: [PATCH V2 0/3] SoC and board integration for QSPI on r8a7791/koelsch
+Message-Id: <1389524433-2823-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390752337-22386-1-git-send-email-ben.dooks@codethink.co.uk>
- <1390752337-22386-4-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390752337-22386-4-git-send-email-ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
-To: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
-Cc: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+This series adds support for the Spansion s25fl512s SPI FLASH on the
+r8a7791-based Koelsch board. It is based on
+renesas-devel-v3.13-rc7-20140109v2, with Valentine's i2c pinctrl and
+Laurent's SCIF DT work applied on top.
+[Simon: I don't know in which order you will merge these. If you want me
+ to rebase my patches, just ask! Thanks!]
 
---cWoXeonUoKmBZSoM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This applies to non-multiplatform Koelsch only.  Multi-platform Koelsch
+support will be added in a separate series.
 
-On Sun, Jan 26, 2014 at 04:05:34PM +0000, Ben Dooks wrote:
-> The i2c-rcar driver currently prints an error message if the master_xfer
-> callback fails. However if the bus is being probed then lots of NAKs
-> will be generated, causing the output of a number of errors printed.
->=20
-> To solve this, disable the print if the error is not -EREMOTEIO.
->=20
-> An example of running i2cdetect:
->=20
-> 10: i2c-rcar e6530000.i2c: error -121 : 15
-> -- i2c-rcar e6530000.i2c: error -121 : 15
-> -- 12 i2c-rcar e6530000.i2c: error -121 : 15
-> -- i2c-rcar e6530000.i2c: error -121 : 15
-> -- i2c-rcar e6530000.i2c: error -121 : 15
-> -- i2c-rcar e6530000.i2c: error -121 : 15
-> -- i2c-rcar e6530000.i2c: error -121 : 15
-> -- i2c-rcar e6530000.i2c: error -121 : 15
->=20
-> Cc: Simon Horman <horms+renesas@verge.net.au>
-> Cc: Wolfram Sang <wsa@the-dreams.de>
-> Cc: linux-i2c@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+    [1/4] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
+    [2/4] ARM: shmobile: r8a7791: add QSPI clocks
+    [3/4] ARM: shmobile: koelsch: Add QSPI support
+    [4/4] ARM: shmobile: koelsch: Enable RSPI and MTD_M25P80 in
 
-All applied to for-current, thanks, especially for doing the extra
-kernel-doc update!
+Changes in V2:
+  - Split QSPI pins in 2 sets of 3 pin groups
+  - Add "[PATCH V2 4/4] ARM: shmobile: koelsch: Enable RSPI and MTD_M25P80
+    in defconfig"
 
+Thanks!
 
---cWoXeonUoKmBZSoM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Gr{oetje,eeting}s,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+						Geert
 
-iQIcBAEBAgAGBQJS5YMgAAoJEBQN5MwUoCm2rxwP/jufy/68AC2MErggBqKwaB1D
-x2ASG2babodijQ/MuRNe3bXPanOtwKj/Y97qMMUOhUxrx5MbdRinBUlgjUqhYJSE
-PhkAIyRME15SC+VQkQs+HdLhsodUZqwM0d+qiXEXKI2snuRswmuCCqneCRFTTdV3
-NrpX7Zbb/gqWvlBdXyFxk5iWewpgik+5JTyJU+Lfy4dQ5nrBhqQNWzCKc1W2Xiq9
-yLUtpoZ1SNgmvIw7v2okA04Bhhbd5hU34/OWe0wV6j6mrZeii0wtO/7TJIGVGIzB
-I+Hu4E3UnrRtO64s12RnSMD2/4NnGYvhm6GrQxmZ+eJVzIJZDxPZFnnXeZYOSoDa
-niKZxwZqpyJUlymlBrPnJAZiU4CIUpeBVAh7Zz7kuBIZOg8qWMCejBZxXYRikpW8
-5Qqqdy7xtFTHiJ/dHFtIr0IvGxDg9GuOeZyo1CY3Q0MrOJ81qkPSjlW/DfGs6ffQ
-lcqc68xVeiUsFyGmgceRFz954EoBDyQQ1hJEQfXoYGFG6pJdxgn2sIRKWxzu/r8t
-CAATd8l/ZeViTIZHtNf7YeR4dzBrlBZPrrf045p4pohSLLacrE+o2QZ7ghjeRQYv
-HB9S5m7gTemhqX1zoYfJs9K+dM0YUZIPwZZ+chsa3JU3W4+NsSxmggyfFoSDUs0I
-N0UCKox+4QmzIeFh6oxW
-=wxmo
------END PGP SIGNATURE-----
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---cWoXeonUoKmBZSoM--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
