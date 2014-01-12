@@ -1,39 +1,38 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 11:13:33 +0000
-Subject: [PATCH 0/9] Renesas RSPI/QSPI DT support
-Message-Id: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 12:55:19 +0000
+Subject: Re: [PATCH 0/9] Renesas RSPI/QSPI DT support
+Message-Id: <CAMuHMdWmFa-XsderYDp4jMw6r7fnwpm5XgQGfz8gEbCryXEkHg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patches series adds DT support to the Renesas RSPI/QSPI driver, and
-to the r7s72100/genmai and r8a7791/koelsch development boards:
+On Sun, Jan 12, 2014 at 12:13 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>     [5/9] ARM: shmobile: r7s72100: Add RSPI clocks for DT
+>     [6/9][V3] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+>     [7/9][V3] ARM: shmobile: genmai reference: Add RSPI nodes
+>     [8/9] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+>     [9/9] ARM: shmobile: koelsch: Add QSPI nodes
 
-    [1/9] spi: rspi: Add missing clk_disable() calls in error and cleanup paths
-    [2/9] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
-    [3/9] spi: rspi: Use NULL as the clock ID
-    [4/9][V3] spi: rspi: Add DT support
-    [5/9] ARM: shmobile: r7s72100: Add RSPI clocks for DT
-    [6/9][V3] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
-    [7/9][V3] ARM: shmobile: genmai reference: Add RSPI nodes
-    [8/9] ARM: shmobile: r8a7791 dtsi: Add QSPI node
-    [9/9] ARM: shmobile: koelsch: Add QSPI nodes
+Forgot to mention:
 
-[4/9], [6/9], and [7/9] have been sent before in the series "[PATCH v2 0/8]
-SoC and board integration for RSPI on RZ/A1H".
-[4/9] received some updates, cfr. its changelog.
-
-Thanks!
+The ARM/shmobile part is based on renesas-devel-v3.13-rc7-20140109v2, with
+Magnus' pinctrl, Wolfram's riic, Simon's sh_eth, Valentine's i2c pinctrl
+and Laurent's SCIF DT work applied on top.
+[Simon: I don't know in which order you will merge these. If you want me
+ to rebase my patches, just ask! Thanks!]
 
 Gr{oetje,eeting}s,
 
-						Geert
+                        Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+                                -- Linus Torvalds
