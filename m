@@ -1,58 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 15 Jan 2014 12:26:04 +0000
-Subject: [PATCH 02/04] ARM: shmobile: r8a7790 CA7-SCU enablement
-Message-Id: <20140115122604.9437.98423.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:13:38 +0000
+Subject: [PATCH 5/9] ARM: shmobile: r7s72100: Add RSPI clocks for DT
+Message-Id: <1389525222-3482-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140115122539.9437.63968.sendpatchset@w520>
-In-Reply-To: <20140115122539.9437.63968.sendpatchset@w520>
+References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Power on CA7 SCU in case of booting from a CA15 core.
+Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
+clockframe yet.
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
+ arch/arm/mach-shmobile/clock-r7s72100.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
- arch/arm/mach-shmobile/smp-r8a7790.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 6ae341ca713c..f5bf95cec6cf 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -194,6 +194,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi.4", &mstp_clks[MSTP103]),
++	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+-- 
+1.7.9.5
 
---- 0001/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-01-15 14:34:03.000000000 +0900
-@@ -19,6 +19,8 @@
- #include <linux/io.h>
- #include <asm/smp_plat.h>
- #include <mach/common.h>
-+#include <mach/pm-rcar.h>
-+#include <mach/r8a7790.h>
- 
- #define RST		0xe6160000
- #define CA15BAR		0x0020
-@@ -27,6 +29,11 @@
- #define CA7RESCNT	0x0044
- #define MERAM		0xe8080000
- 
-+static struct rcar_sysc_ch r8a7790_ca7_scu = {
-+	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
-+	.isr_bit = 21, /* CA7-SCU */
-+};
-+
- static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
- {
- 	void __iomem *p;
-@@ -54,6 +61,10 @@ static void __init r8a7790_smp_prepare_c
- 	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
- 		       p + CA7RESCNT);
- 	iounmap(p);
-+
-+	/* turn on power to SCU */
-+	r8a7790_pm_init();
-+	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
- 
- struct smp_operations r8a7790_smp_ops __initdata = {
