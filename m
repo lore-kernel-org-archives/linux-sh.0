@@ -1,39 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 07 Jan 2014 16:47:53 +0000
-Subject: [PATCH 2/2] clk: shmobile: rcar-gen2: Fix qspi divisor
-Message-Id: <1389113273-10364-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:13:35 +0000
+Subject: [PATCH 2/9] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
+Message-Id: <1389525222-3482-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The qspi clock divisor is incorrectly set to twice the value it should
-have, possibly because it has been computed based on PLL1 as the clock
-parent instead of PLL1 / 2 (the datasheets specifies the qspi nominal
-frequencies, not the divisor values). Fix it.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Get the driver ready for the migration to the common clock framework by
+calling clk_prepare_enable() and clk_disable_unprepare().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/clk/shmobile/clk-rcar-gen2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/spi/spi-rspi.c |   11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index 8c7bcbd..dd272a0 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -215,7 +215,7 @@ rcar_gen2_cpg_register_clock(struct device_node *np, struct rcar_gen2_cpg *cpg,
- 	} else if (!strcmp(name, "qspi")) {
- 		parent_name = "pll1_div2";
- 		div = (cpg_mode & (BIT(3) | BIT(2) | BIT(1))) = BIT(2)
--		    ? 16 : 20;
-+		    ? 8 : 10;
- 	} else if (!strcmp(name, "sdh")) {
- 		parent_name = "pll1_div2";
- 		table = cpg_sdh_div_table;
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 5ce2127b2b43..b6439c9505ac 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -1066,7 +1066,7 @@ static int rspi_remove(struct platform_device *pdev)
+ 	struct rspi_data *rspi = platform_get_drvdata(pdev);
+ 
+ 	rspi_release_dma(rspi);
+-	clk_disable(rspi->clk);
++	clk_disable_unprepare(rspi->clk);
+ 
+ 	return 0;
+ }
+@@ -1115,7 +1115,12 @@ static int rspi_probe(struct platform_device *pdev)
+ 		ret = PTR_ERR(rspi->clk);
+ 		goto error1;
+ 	}
+-	clk_enable(rspi->clk);
++
++	ret = clk_prepare_enable(rspi->clk);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "unable to prepare/enable clock\n");
++		goto error1;
++	}
+ 
+ 	INIT_LIST_HEAD(&rspi->queue);
+ 	spin_lock_init(&rspi->lock);
+@@ -1177,7 +1182,7 @@ static int rspi_probe(struct platform_device *pdev)
+ error3:
+ 	rspi_release_dma(rspi);
+ error2:
+-	clk_disable(rspi->clk);
++	clk_disable_unprepare(rspi->clk);
+ error1:
+ 	spi_master_put(master);
+ 
 -- 
-1.8.3.2
+1.7.9.5
 
