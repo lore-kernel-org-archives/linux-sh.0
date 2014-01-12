@@ -1,54 +1,72 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 17 Jan 2014 18:21:34 +0000
-Subject: [PATCH V2 3/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
-Message-Id: <1389982895-20726-4-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:13:40 +0000
+Subject: [PATCH V3 7/9] ARM: shmobile: genmai reference: Add RSPI nodes
+Message-Id: <1389525222-3482-8-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host clock support to R-Car M2 SoC.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Add pinctrl and SPI devices for RSPI on Genmai.
+
+On this board, only rspi4 is in use. Its bus contains a single device
+(a wm8978 audio codec), for which no bindings are defined yet.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+V2:
+  - Use generic "codec" instead of specific "wm8978" node name.
+V3:
+  - No changes
 
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index ab1ef2e..564cd46 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -140,7 +140,7 @@ enum {
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
-@@ -171,6 +171,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
- 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
-@@ -238,6 +239,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 367af5c133e0..c2cc4bd5a470 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -43,7 +43,7 @@
  };
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+ &pfc {
+-	pinctrl-0 = <&scif2_pins &ethernet_pins>;
++	pinctrl-0 = <&scif2_pins &ethernet_pins &rspi4_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	scif2_pins: serial2 {
+@@ -73,6 +73,12 @@
+ 				 "ethernet_int_p1_15";
+ 		renesas,function = "ethernet";
+ 	};
++
++	rspi4_pins: spi4 {
++		renesas,groups = "rspi4_rspck_p4_0", "rspi4_ssl0_p4_1",
++				 "rspi4_mosi_p4_2", "rspi4_miso_p4_3";
++		renesas,function = "rspi4";
++	};
+ };
+ 
+ &i2c2 {
+@@ -85,3 +91,13 @@
+ 		pagesize = <64>;
+ 	};
+ };
++
++&spi4 {
++	status = "okay";
++
++	codec: codec@0 {
++		compatible = "wlf,wm8978";
++		reg = <0>;
++		spi-max-frequency = <5000000>;
++	};
++};
 -- 
-1.8.3.1
+1.7.9.5
 
