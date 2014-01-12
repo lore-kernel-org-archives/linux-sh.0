@@ -1,36 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 14 Jan 2014 11:49:32 +0000
-Subject: Re: [PATCH] sh_eth: fix garbled TX error message
-Message-Id: <52D5244C.6070603@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:13:33 +0000
+Subject: [PATCH 0/9] Renesas RSPI/QSPI DT support
+Message-Id: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201401110241.49471.sergei.shtylyov@cogentembedded.com> <20140113.232935.776174177146650322.davem@davemloft.net>
-In-Reply-To: <20140113.232935.776174177146650322.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+This patches series adds DT support to the Renesas RSPI/QSPI driver, and
+to the r7s72100/genmai and r8a7791/koelsch development boards:
 
-On 14-01-2014 11:29, David Miller wrote:
+    [1/9] spi: rspi: Add missing clk_disable() calls in error and cleanup paths
+    [2/9] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
+    [3/9] spi: rspi: Use NULL as the clock ID
+    [4/9][V3] spi: rspi: Add DT support
+    [5/9] ARM: shmobile: r7s72100: Add RSPI clocks for DT
+    [6/9][V3] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+    [7/9][V3] ARM: shmobile: genmai reference: Add RSPI nodes
+    [8/9] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+    [9/9] ARM: shmobile: koelsch: Add QSPI nodes
 
->> sh_eth_error() in case of a TX error tries to print a message using 2 dev_err()
->> calls with the first string not finished by '\n', so that the resulting message
->> would inevitably come out garbled, with something like "3net eth0: " inserted
->> in the middle.  Avoid that by merging 2 calls into one.
+[4/9], [6/9], and [7/9] have been sent before in the series "[PATCH v2 0/8]
+SoC and board integration for RSPI on RZ/A1H".
+[4/9] received some updates, cfr. its changelog.
 
->> While at it, insert an empty line after the nearby declaration.
+Thanks!
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Gr{oetje,eeting}s,
 
-> Applied, thanks.
+						Geert
 
-> I don't think this is really -stable material, sorry.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-    Right, this is not even a fix anymore, at least not from 2.6.31 times (if 
-Joe's estimate was correct), and I was going to resubmit it as a cleanup. 
-Should have warned you not to apply yet but didn't, sorry.
-
-WBR, Sergei
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
