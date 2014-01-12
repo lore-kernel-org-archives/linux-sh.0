@@ -1,72 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 Jan 2014 00:18:21 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: koelsch: fix error return code check from clk_get()
-Message-Id: <20140115001821.GB19268@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 10:27:38 +0000
+Subject: [PATCH V2 2/8] spi: rspi: Add more QSPI register documentation
+Message-Id: <1389522464-1569-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389725007-5023-3-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1389725007-5023-3-git-send-email-ben.dooks@codethink.co.uk>
+References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389522464-1569-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-On Tue, Jan 14, 2014 at 06:43:27PM +0000, Ben Dooks wrote:
-> The koelsch_add_standard_devices() function calls clk_get() but then fails
-> to check that it returns an error pointer instead of NULL on failure.
-> 
-> This was added by f31239ef ("ARM: shmobile: koelsch-reference:
-> Instantiate clkdevs for SCIF and CMT") in horms' renesas-boards2-for-v3.14~6
-> release.
-> 
-> The issue is not serious as it does not cause a crash and seems to not be
-> actually causing any issues now the other clock bugs have been fixed.
-> 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Cc: Simon Horman <horms+renesas@verge.net.au>
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->  arch/arm/mach-shmobile/board-koelsch-reference.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thanks, I have queued up the following.
-
-Ben Dooks <ben.dooks@codethink.co.uk>
-
-ARM: shmobile: koelsch: fix error return code check from clk_get()
-
-The koelsch_add_standard_devices() function calls clk_get() but then fails
-to check that it returns an error pointer instead of NULL on failure.
-
-This was added by f31239ef ("ARM: shmobile: koelsch-reference:
-Instantiate clkdevs for SCIF and CMT") in Simon Horman's
-renesas-boards2-for-v3.14 tag.
-
-The issue is not serious as it does not cause a crash and seems to not be
-actually causing any issues now the other clock bugs have been fixed.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-[horms+renesas@verge.net.au: tweaked changelog]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+V2:
+  - Add Acked-by
+  - Add Word/Byte Swap of read-data for DMAC on R-Car M2 only
+  - Add Dual/Quad bits
+  - Fix SPCMD_SPRW
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 652b592..feb8d97 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -45,14 +45,14 @@ static void __init koelsch_add_standard_devices(void)
+ drivers/spi/spi-rspi.c |   25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 53e6e07251c1..eded530763ca 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -62,12 +62,12 @@
+ #define RSPI_SPBFDR		0x22	/* Buffer Data Count Setting Register */
  
- 	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
- 		clk = clk_get(NULL, scif_names[i]);
--		if (clk) {
-+		if (!IS_ERR(clk)) {
- 			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
- 			clk_put(clk);
- 		}
- 	}
+ /*qspi only */
+-#define QSPI_SPBFCR		0x18
+-#define QSPI_SPBDCR		0x1a
+-#define QSPI_SPBMUL0		0x1c
+-#define QSPI_SPBMUL1		0x20
+-#define QSPI_SPBMUL2		0x24
+-#define QSPI_SPBMUL3		0x28
++#define QSPI_SPBFCR		0x18	/* Buffer Control Register */
++#define QSPI_SPBDCR		0x1a	/* Buffer Data Count Register */
++#define QSPI_SPBMUL0		0x1c	/* Transfer Data Length Multiplier Setting Register 0 */
++#define QSPI_SPBMUL1		0x20	/* Transfer Data Length Multiplier Setting Register 1 */
++#define QSPI_SPBMUL2		0x24	/* Transfer Data Length Multiplier Setting Register 2 */
++#define QSPI_SPBMUL3		0x28	/* Transfer Data Length Multiplier Setting Register 3 */
  
- 	clk = clk_get(NULL, "cmt0");
--	if (clk) {
-+	if (!IS_ERR(clk)) {
- 		clk_register_clkdev(clk, NULL, "sh_cmt.0");
- 		clk_put(clk);
- 	}
+ /* SPCR - Control Register */
+ #define SPCR_SPRIE		0x80	/* Receive Interrupt Enable */
+@@ -79,6 +79,9 @@
+ /* RSPI on SH only */
+ #define SPCR_TXMD		0x02	/* TX Only Mode (vs. Full Duplex) */
+ #define SPCR_SPMS		0x01	/* 3-wire Mode (vs. 4-wire) */
++/* QSPI on R-Car M2 only */
++#define SPCR_WSWAP		0x02	/* Word Swap of read-data for DMAC */
++#define SPCR_BSWAP		0x01	/* Byte Swap of read-data for DMAC */
+ 
+ /* SSLP - Slave Select Polarity Register */
+ #define SSLP_SSL1P		0x02	/* SSL1 Signal Polarity Setting */
+@@ -91,6 +94,9 @@
+ #define SPPCR_SPLP2		0x02	/* Loopback Mode 2 (non-inverting) */
+ #define SPPCR_SPLP		0x01	/* Loopback Mode (inverting) */
+ 
++#define SPPCR_IO3FV		0x04	/* Single-/Dual-SPI Mode IO3 Output Fixed Value */
++#define SPPCR_IO2FV		0x04	/* Single-/Dual-SPI Mode IO2 Output Fixed Value */
++
+ /* SPSR - Status Register */
+ #define SPSR_SPRF		0x80	/* Receive Buffer Full Flag */
+ #define SPSR_TEND		0x40	/* Transmit End */
+@@ -151,6 +157,13 @@
+ #define SPCMD_SPB_24BIT		0x0100
+ #define SPCMD_SPB_32BIT		0x0200
+ #define SPCMD_SSLKP		0x0080	/* SSL Signal Level Keeping */
++#define SPCMD_SPIMOD_MASK	0x0060	/* SPI Operating Mode (QSPI only) */
++#define SPCMD_SPIMOD1		0x0040
++#define SPCMD_SPIMOD0		0x0020
++#define SPCMD_SPIMOD_SINGLE	0
++#define SPCMD_SPIMOD_DUAL	SPCMD_SPIMOD0
++#define SPCMD_SPIMOD_QUAD	SPCMD_SPIMOD1
++#define SPCMD_SPRW		0x0010	/* SPI Read/Write Access (Dual/Quad) */
+ #define SPCMD_SSLA_MASK		0x0030	/* SSL Assert Signal Setting (RSPI) */
+ #define SPCMD_BRDV_MASK		0x000c	/* Bit Rate Division Setting */
+ #define SPCMD_CPOL		0x0002	/* Clock Polarity Setting */
+-- 
+1.7.9.5
+
