@@ -1,45 +1,76 @@
-From: Nicolas Pitre <nicolas.pitre@linaro.org>
-Date: Wed, 29 Jan 2014 17:45:11 +0000
-Subject: [PATCH v2 4/6] SH: remove redundant cpuidle_idle_call()
-Message-Id: <1391017513-12995-5-git-send-email-nicolas.pitre@linaro.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 12 Jan 2014 11:13:42 +0000
+Subject: [PATCH 9/9] ARM: shmobile: koelsch: Add QSPI nodes
+Message-Id: <1389525222-3482-10-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The core idle loop now takes care of it.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Nicolas Pitre <nico@linaro.org>
-Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Add pinctrl and SPI devices for QSPI on Koelsch.
+Add Spansion s25fl512s SPI FLASH and MTD partitions.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/sh/kernel/idle.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   36 +++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
-index 2ea4483fd7..be616ee0cf 100644
---- a/arch/sh/kernel/idle.c
-+++ b/arch/sh/kernel/idle.c
-@@ -16,7 +16,6 @@
- #include <linux/thread_info.h>
- #include <linux/irqflags.h>
- #include <linux/smp.h>
--#include <linux/cpuidle.h>
- #include <linux/atomic.h>
- #include <asm/pgalloc.h>
- #include <asm/smp.h>
-@@ -40,8 +39,7 @@ void arch_cpu_idle_dead(void)
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index d5e42b396ef7..885b61e09638 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -123,6 +123,11 @@
+ 		renesas,groups = "scif1_data_d";
+ 		renesas,function = "scif1";
+ 	};
++
++	qspi_pins: spi {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
  
- void arch_cpu_idle(void)
- {
--	if (cpuidle_idle_call())
--		sh_idle();
-+	sh_idle();
- }
+ &scif0 {
+@@ -138,3 +143,34 @@
  
- void __init select_idle_routine(void)
+ 	status = "okay";
+ };
++
++&spi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00080000>;
++			read-only;
++		};
++		partition@80000 {
++			label = "bootenv";
++			reg = <0x00080000 0x00080000>;
++			read-only;
++		};
++		partition@100000 {
++			label = "data";
++			reg = <0x00100000 0x03f00000>;
++		};
++	};
++};
 -- 
-1.8.4.108.g55ea5f6
+1.7.9.5
 
