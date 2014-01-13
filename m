@@ -1,72 +1,102 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 13 Jan 2014 06:45:36 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 13 Jan 2014 09:28:29 +0000
 Subject: Re: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <52D38B90.1060002@codethink.co.uk>
+Message-Id: <CAMuHMdU+SfjNJC_b_7ovT9Uf5p5MwB0iULjorzthcLJxYJ-00g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389445589-21502-1-git-send-email-ben.dooks@codethink.co.uk> <2820428.J065BbN1jW@avalon> <4441342.H8MHOLBobb@avalon>
-In-Reply-To: <4441342.H8MHOLBobb@avalon>
+References: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: Ben Dooks <ben.dooks@codethink.co.uk>
 Cc: linux-kernel@lists.codethink.co.uk, Linux Kernel list <linux-kernel@vger.kernel.org>, Linus SH list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
-On 12/01/14 22:01, Laurent Pinchart wrote:
-> Hi Ben,
+On Fri, Jan 10, 2014 at 4:18 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> --- a/drivers/sh/Makefile
+> +++ b/drivers/sh/Makefile
+> @@ -3,7 +3,10 @@
+>  #
+>  obj-y  := intc/
 >
-> On Sunday 12 January 2014 22:54:15 Laurent Pinchart wrote:
->> Hi Ben,
->>
->> Thank you for the patch.
->>
->> On Saturday 11 January 2014 13:06:29 Ben Dooks wrote:
->>> If the kernel is built to support multi-arm configurmation with shmobile
->>> support built in, then the drivers/sh is not built. This contains drivers
->>> that are essential to devices support by that configuration, including the
->>> PM runtime code in drivers/sh/pm_runtime.c (which implicitly enables the
->>> bus clocks for all devices).
->
-> Thinking a bit more about this, I think the approach taken in
-> drivers/sh/pm_runtime.c isn't good. The code enables device clocks when
-> devices are bound to a driver, increasing power consumption when devices are
-> idle. Instead of enabling it for ARCH_SHMOBILE_MULTI I'd like to either add
-> explicit clock support to drivers, or to integrate clocks with runtime PM
-> only.
+> +ifeq ($(CONFIG_COMMON_CLK),n)
+>  obj-$(CONFIG_HAVE_CLK)         += clk/
+> +endif
+> +
 
-If pm-runtime is enabled, then I believe that the device clocks are
-kept in sync with the active state of the device, which means that
-they should be shut down when the device is not needed. There have
-been recent discussions about this with respect to the PCI bridges
-used by the USB host system.
+This part breaks my Koelsch legacy (non-reference) build:
 
-Given the above, I'm not sure exactly what you mean by the statement
-"I think the approach taken in drivers/sh/pm_runtime.c isn't good."
-as if we're going to abstract the clock management we have the following
-issues.
+arch/arm/kernel/built-in.o: In function `twd_local_timer_common_register':
+io.c:(.init.text+0x1804): undefined reference to `clk_enable'
+io.c:(.init.text+0x1828): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `sci_port_disable':
+clkdev.c:(.text+0x2ae30): undefined reference to `clk_disable'
+clkdev.c:(.text+0x2ae38): undefined reference to `clk_disable'
+drivers/built-in.o: In function `sci_port_enable':
+clkdev.c:(.text+0x2ae74): undefined reference to `clk_enable'
+clkdev.c:(.text+0x2ae7c): undefined reference to `clk_get_rate'
+clkdev.c:(.text+0x2ae88): undefined reference to `clk_enable'
+drivers/built-in.o: In function `sci_notifier':
+clkdev.c:(.text+0x2c85c): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `__pm_clk_remove':
+clkdev.c:(.text+0x40844): undefined reference to `clk_disable'
+drivers/built-in.o: In function `pm_clk_suspend':
+clkdev.c:(.text+0x40c6c): undefined reference to `clk_disable'
+drivers/built-in.o: In function `pm_clk_resume':
+clkdev.c:(.text+0x40ce0): undefined reference to `clk_enable'
+drivers/built-in.o: In function `qspi_set_config_register':
+clkdev.c:(.text+0x515a4): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `rspi_set_config_register':
+clkdev.c:(.text+0x516dc): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `rspi_remove':
+clkdev.c:(.text+0x518ac): undefined reference to `clk_disable'
+drivers/built-in.o: In function `rspi_probe':
+clkdev.c:(.text+0x51a20): undefined reference to `clk_enable'
+clkdev.c:(.text+0x51d60): undefined reference to `clk_disable'
+drivers/built-in.o: In function `hspi_transfer_one_message':
+clkdev.c:(.text+0x5312c): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `sh_msiof_spi_txrx':
+clkdev.c:(.text+0x53d90): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `sh_msiof_spi_chipselect':
+clkdev.c:(.text+0x54200): undefined reference to `clk_enable'
+clkdev.c:(.text+0x542b8): undefined reference to `clk_disable'
+drivers/built-in.o: In function `sh_cmt_start':
+clkdev.c:(.text+0x6f900): undefined reference to `clk_enable'
+clkdev.c:(.text+0x6f93c): undefined reference to `clk_get_rate'
+clkdev.c:(.text+0x6f95c): undefined reference to `clk_get_rate'
+clkdev.c:(.text+0x6fa08): undefined reference to `clk_disable'
+drivers/built-in.o: In function `sh_cmt_stop':
+clkdev.c:(.text+0x6fc14): undefined reference to `clk_disable'
+drivers/built-in.o: In function `__sh_tmu_disable':
+clkdev.c:(.text+0x70590): undefined reference to `clk_disable'
+drivers/built-in.o: In function `__sh_tmu_enable':
+clkdev.c:(.text+0x70980): undefined reference to `clk_enable'
+clkdev.c:(.text+0x709f0): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `em_sti_start':
+clkdev.c:(.text+0x70f44): undefined reference to `clk_enable'
+clkdev.c:(.text+0x70f68): undefined reference to `clk_get_rate'
+drivers/built-in.o: In function `em_sti_stop':
+clkdev.c:(.text+0x710d0): undefined reference to `clk_disable'
+arch/arm/mach-shmobile/built-in.o: In function `shmobile_clk_init':
+platsmp-apmu.c:(.init.text+0x7ac): undefined reference to
+`recalculate_root_clocks'
+platsmp-apmu.c:(.init.text+0x7b0): undefined reference to
+`clk_enable_init_clocks'
+arch/arm/mach-shmobile/built-in.o: In function `r8a7791_clock_init':
+platsmp-apmu.c:(.init.text+0x8fc): undefined reference to `clk_register'
+platsmp-apmu.c:(.init.text+0x920): undefined reference to `sh_clk_mstp_register'
+arch/arm/mach-shmobile/built-in.o:(.data+0x16f0): undefined reference
+to `followparent_recalc'
 
-- If pm-runtime is not enabled then we need something to manage the
-   clocks for the driver. If we put that code in the driver then there
-   is not a lot of point in having the pm-runtime clock code here as
-   the driver really only needs a helper to turn them on and off at
-   the right place.
+Both of my Koelsch legacy and reference configs have CONFIG_HAVE_CLK=y,
+but only the reference once has CONFIG_COMMON_CLK=y.
 
-- If just standard power management is enabled, then do we really care
-   about the power consumption of leaving peripherals running when their
-   devices are bound? Managing the device clock optimally is hardly
-   a concern if device drivers are not going to be idled when they are
-   not being used.
+Gr{oetje,eeting}s,
 
-When discussing this on freenode's #armkernel channel, several people
-including Mark Brown wanted to keep this as it made driver's handling
-of clocks much easier (there was no longer any need to deal with the
-clk code when writing a simple driver). My view is it is a pain as we
-now have a mix of drivers which expect to do their own clock work and
-some that do not. (It is possible there are even some shmobile drivers
-that still do their own clock management).
+                        Geert
 
-Personally I do not like hiding the implementation of this, as it ends
-up confusing people when they first come to it.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
