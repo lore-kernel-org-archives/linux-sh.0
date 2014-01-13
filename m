@@ -1,71 +1,52 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 08 Jan 2014 12:58:22 +0000
+Date: Mon, 13 Jan 2014 08:57:08 +0000
 Subject: Re: [PATCH 3/4] thermal: rcar: Add missing clock handling
-Message-Id: <CAMuHMdV+UAwYoFp=Ex=9jkL4D+mVZYfDGnJdRUsYZfOEm+RGCA@mail.gmail.com>
+Message-Id: <CAMuHMdWVZhWKDS46GWo83z940B9+Z-yt1WrBKSuiS+zwYMqZQA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
  <1389121036-3555-4-git-send-email-geert@linux-m68k.org>
- <52CD434E.6030906@codethink.co.uk>
-In-Reply-To: <52CD434E.6030906@codethink.co.uk>
+ <87ha9fxoua.wl%kuninori.morimoto.gx@gmail.com>
+ <CAMuHMdW+1yP2PqvLTc0tjyrnhGssvn_iK8mCO6u-++pjGYR9KQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdW+1yP2PqvLTc0tjyrnhGssvn_iK8mCO6u-++pjGYR9KQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 8, 2014 at 1:23 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> @@ -378,23 +380,38 @@ static int rcar_thermal_probe(struct platform_device
->> *pdev)
->>         spin_lock_init(&common->lock);
->>         common->dev = dev;
->>
->> +       common->clk = devm_clk_get(&pdev->dev, NULL);
->> +       if (IS_ERR(common->clk)) {
->> +               dev_err(&pdev->dev, "cannot get clock\n");
->> +               return PTR_ERR(common->clk);
->> +       }
->> +
->> +       ret = clk_prepare(common->clk);
->> +       if (ret < 0) {
->> +               dev_err(&pdev->dev, "unable to prepare clock\n");
->> +               return ret;
->> +       }
->> +
->> +       clk_enable(common->clk);
->> +
->>         pm_runtime_enable(dev);
->>         pm_runtime_get_sync(dev);
->>
->>         irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
->>         if (irq) {
->> -               int ret;
->> +               int ret2;
->>
->>                 /*
->>                  * platform has IRQ support.
->>                  * Then, drier use common register
->>                  */
->>
->> -               ret = devm_request_irq(dev, irq->start, rcar_thermal_irq,
->> 0,
->> -                                      dev_name(dev), common);
->> -               if (ret) {
->> +               ret2 = devm_request_irq(dev, irq->start, rcar_thermal_irq,
->> 0,
->> +                                       dev_name(dev), common);
->> +               if (ret2) {
->>                         dev_err(dev, "irq request failed\n ");
->> -                       return ret;
->> +                       ret = ret2;
->> +                       goto error_unpm;
->>                 }
->
-> I'd suggest not renaming ret2 and just use the original ret.
+Hi Morimoto-san,
 
-I did that because the for loop after that block depends on ret still being
--ENODEV. Upon closer look, I did break that myself by assigning it
-the return value of clk_prepare().
-So I'll use the original ret, and reset it to -ENODEV before the for loop
-(unless we manage to fix it in pm_runtime_*()).
+On Wed, Jan 8, 2014 at 11:23 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Wed, Jan 8, 2014 at 2:08 AM, Kuninori Morimoto
+> <kuninori.morimoto.gx@gmail.com> wrote:
+>>> +     common->clk = devm_clk_get(&pdev->dev, NULL);
+>>> +     if (IS_ERR(common->clk)) {
+>>> +             dev_err(&pdev->dev, "cannot get clock\n");
+>>> +             return PTR_ERR(common->clk);
+>>> +     }
+>>> +
+>>> +     ret = clk_prepare(common->clk);
+>>> +     if (ret < 0) {
+>>> +             dev_err(&pdev->dev, "unable to prepare clock\n");
+>>> +             return ret;
+>>> +     }
+>>> +
+>>> +     clk_enable(common->clk);
+>>> +
+>>>       pm_runtime_enable(dev);
+>>>       pm_runtime_get_sync(dev);
+>>
+>> And this patch seems strange for me.
+>> pm_runtime_xxx() is doing same things.
+>> If it didn't work, wrong place is not driver, clock side ?
+>
+> That's an interesting observation...
+
+You were right. After applying both of "ARM: shmobile: compile drivers/sh
+for CONFIG_ARCH_SHMOBILE_MULTI" and "power: clock_ops.c: fixup clk
+prepare/unprepare count" from Ben Dooks the issue went away.
+
+So my patch can be dropped.
 
 Gr{oetje,eeting}s,
 
