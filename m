@@ -1,275 +1,91 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 10:27:40 +0000
-Subject: [PATCH V2 4/8] spi: rspi: Add support for 8-bit Data Register access
-Message-Id: <1389522464-1569-5-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 13 Jan 2014 12:29:12 +0000
+Subject: Re: [PATCH V2 4/8] spi: rspi: Add support for 8-bit Data Register access
+Message-Id: <20140113122912.GT29039@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="JlQgkxKsF3TswZob"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389522464-1569-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+ <1389522464-1569-5-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389522464-1569-5-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add support for accessing the RSPI Data Register using 8-bit operations,
-based on the SDK reference code.  This is needed for RZ/A1H.
+--JlQgkxKsF3TswZob
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-The data width is passed using platform data, defaulting to 16-bit for
-legacy RSPI. QSPI always uses 8-bit accesses.
+On Sun, Jan 12, 2014 at 11:27:40AM +0100, Geert Uytterhoeven wrote:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
-v2:
-  - Drop last if clause in rspi{write,read}_data(), and document we fall
-    back to 16-bit there
-  - Return sensible error value in rspi_parse_platform_data()
-  - Update copyright header in rspi.h
+> +static void rspi_write_data(const struct rspi_data *rspi, u16 data)
+> +{
+> +	if (rspi->data_width == 8)
+> +		rspi_write8(rspi, data, RSPI_SPDR);
+> +	else /* 16 bit only */
+> +		rspi_write16(rspi, data, RSPI_SPDR);
+> +}
 
- drivers/spi/spi-rspi.c   |   89 +++++++++++++++++++++++++++++++++++++++-------
- include/linux/spi/rspi.h |    4 ++-
- 2 files changed, 79 insertions(+), 14 deletions(-)
+A switch statement is the more natural way of writing this.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 45da760281f9..c3332d2b48e9 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -188,6 +188,8 @@ struct rspi_data {
- 	spinlock_t lock;
- 	struct clk *clk;
- 	u8 spsr;
-+	u8 spdcr;
-+	u8 data_width;
- 	int irqs[MAX_NUM_IRQ];
- 	unsigned int num_irqs;
- 	const struct spi_ops *ops;
-@@ -225,8 +227,26 @@ static u16 rspi_read16(const struct rspi_data *rspi, u16 offset)
- 	return ioread16(rspi->addr + offset);
- }
- 
-+static void rspi_write_data(const struct rspi_data *rspi, u16 data)
-+{
-+	if (rspi->data_width = 8)
-+		rspi_write8(rspi, data, RSPI_SPDR);
-+	else /* 16 bit only */
-+		rspi_write16(rspi, data, RSPI_SPDR);
-+}
-+
-+static u16 rspi_read_data(const struct rspi_data *rspi)
-+{
-+	if (rspi->data_width = 8)
-+		return rspi_read8(rspi, RSPI_SPDR);
-+	else /* 16 bit only */
-+		return rspi_read16(rspi, RSPI_SPDR);
-+}
-+
- /* optional functions */
- struct spi_ops {
-+	int (*parse_platform_data)(struct rspi_data *rspi,
-+				   const struct rspi_plat_data *rspi_pd);
- 	int (*set_config_register)(const struct rspi_data *rspi,
- 				   int access_size);
- 	int (*send_pio)(struct rspi_data *rspi, struct spi_message *mesg,
-@@ -239,6 +259,33 @@ struct spi_ops {
- /*
-  * functions for RSPI
-  */
-+static int rspi_parse_platform_data(struct rspi_data *rspi,
-+				    const struct rspi_plat_data *rspi_pd)
-+{
-+	if (rspi_pd && rspi_pd->data_width) {
-+		rspi->data_width = rspi_pd->data_width;
-+		switch (rspi_pd->data_width) {
-+		case 8:
-+			rspi->spdcr = SPDCR_SPLBYTE;
-+			break;
-+		case 16:
-+			rspi->spdcr = SPDCR_SPLWORD;
-+			break;
-+		default:
-+			return -EINVAL;
-+		}
-+	} else {
-+		/*
-+		 * Use legacy 16-bit width data access if a data_width value
-+		 * isn't defined in the platform data.
-+		 */
-+		rspi->data_width = 16;
-+		rspi->spdcr = 0;
-+	}
-+
-+	return 0;
-+}
-+
- static int rspi_set_config_register(const struct rspi_data *rspi,
- 				    int access_size)
- {
-@@ -252,7 +299,7 @@ static int rspi_set_config_register(const struct rspi_data *rspi,
- 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
- 
- 	/* Sets number of frames to be used: 1 frame */
--	rspi_write8(rspi, 0x00, RSPI_SPDCR);
-+	rspi_write8(rspi, rspi->spdcr, RSPI_SPDCR);
- 
- 	/* Sets RSPCK, SSL, next-access delay value */
- 	rspi_write8(rspi, 0x00, RSPI_SPCKD);
-@@ -275,6 +322,16 @@ static int rspi_set_config_register(const struct rspi_data *rspi,
- /*
-  * functions for QSPI
-  */
-+static int qspi_parse_platform_data(struct rspi_data *rspi,
-+				    const struct rspi_plat_data *rspi_pd)
-+{
-+	/* Fixed 8-bit for now */
-+	rspi->data_width = 8;
-+	rspi->spdcr = 0;
-+
-+	return 0;
-+}
-+
- static int qspi_set_config_register(const struct rspi_data *rspi,
- 				    int access_size)
- {
-@@ -289,7 +346,7 @@ static int qspi_set_config_register(const struct rspi_data *rspi,
- 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
- 
- 	/* Sets number of frames to be used: 1 frame */
--	rspi_write8(rspi, 0x00, RSPI_SPDCR);
-+	rspi_write8(rspi, rspi->spdcr, RSPI_SPDCR);
- 
- 	/* Sets RSPCK, SSL, next-access delay value */
- 	rspi_write8(rspi, 0x00, RSPI_SPCKD);
-@@ -374,7 +431,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 			return -ETIMEDOUT;
- 		}
- 
--		rspi_write16(rspi, *data, RSPI_SPDR);
-+		rspi_write_data(rspi, *data);
- 		data++;
- 		remain--;
- 	}
-@@ -401,14 +458,14 @@ static int qspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 				"%s: tx empty timeout\n", __func__);
- 			return -ETIMEDOUT;
- 		}
--		rspi_write8(rspi, *data++, RSPI_SPDR);
-+		rspi_write_data(rspi, *data++);
- 
- 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
- 			dev_err(&rspi->master->dev,
- 				"%s: receive timeout\n", __func__);
- 			return -ETIMEDOUT;
- 		}
--		rspi_read8(rspi, RSPI_SPDR);
-+		rspi_read_data(rspi);
- 
- 		remain--;
- 	}
-@@ -548,7 +605,7 @@ static void rspi_receive_init(const struct rspi_data *rspi)
- 
- 	spsr = rspi_read8(rspi, RSPI_SPSR);
- 	if (spsr & SPSR_SPRF)
--		rspi_read16(rspi, RSPI_SPDR);	/* dummy read */
-+		rspi_read_data(rspi);	/* dummy read */
- 	if (spsr & SPSR_OVRF)
- 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPSR) & ~SPSR_OVRF,
- 			    RSPI_SPSR);
-@@ -573,15 +630,14 @@ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 			return -ETIMEDOUT;
- 		}
- 		/* dummy write for generate clock */
--		rspi_write16(rspi, DUMMY_DATA, RSPI_SPDR);
-+		rspi_write_data(rspi, DUMMY_DATA);
- 
- 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
- 			dev_err(&rspi->master->dev,
- 				"%s: receive timeout\n", __func__);
- 			return -ETIMEDOUT;
- 		}
--		/* SPDR allows 16 or 32-bit access only */
--		*data = (u8)rspi_read16(rspi, RSPI_SPDR);
-+		*data = rspi_read_data(rspi);
- 
- 		data++;
- 		remain--;
-@@ -596,7 +652,7 @@ static void qspi_receive_init(const struct rspi_data *rspi)
- 
- 	spsr = rspi_read8(rspi, RSPI_SPSR);
- 	if (spsr & SPSR_SPRF)
--		rspi_read8(rspi, RSPI_SPDR);   /* dummy read */
-+		rspi_read_data(rspi);   /* dummy read */
- 	rspi_write8(rspi, SPBFCR_TXRST | SPBFCR_RXRST, QSPI_SPBFCR);
- 	rspi_write8(rspi, 0x00, QSPI_SPBFCR);
- }
-@@ -618,15 +674,14 @@ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 			return -ETIMEDOUT;
- 		}
- 		/* dummy write for generate clock */
--		rspi_write8(rspi, DUMMY_DATA, RSPI_SPDR);
-+		rspi_write_data(rspi, DUMMY_DATA);
- 
- 		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
- 			dev_err(&rspi->master->dev,
- 				"%s: receive timeout\n", __func__);
- 			return -ETIMEDOUT;
- 		}
--		/* SPDR allows 8, 16 or 32-bit access */
--		*data++ = rspi_read8(rspi, RSPI_SPDR);
-+		*data++ = rspi_read_data(rspi);
- 		remain--;
- 	}
- 
-@@ -989,6 +1044,12 @@ static int rspi_probe(struct platform_device *pdev)
- 	master->transfer = rspi_transfer;
- 	master->cleanup = rspi_cleanup;
- 
-+	ret = ops->parse_platform_data(rspi, rspi_pd);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "rspi invalid platform data.\n");
-+		goto error1;
-+	}
-+
- 	for (i = 0; i < MAX_NUM_IRQ; i++) {
- 		irq = platform_get_irq(pdev, i);
- 		if (irq < 0) {
-@@ -1033,12 +1094,14 @@ error1:
- }
- 
- static struct spi_ops rspi_ops = {
-+	.parse_platform_data =		rspi_parse_platform_data,
- 	.set_config_register =		rspi_set_config_register,
- 	.send_pio =			rspi_send_pio,
- 	.receive_pio =			rspi_receive_pio,
- };
- 
- static struct spi_ops qspi_ops = {
-+	.parse_platform_data =		qspi_parse_platform_data,
- 	.set_config_register =		qspi_set_config_register,
- 	.send_pio =			qspi_send_pio,
- 	.receive_pio =			qspi_receive_pio,
-diff --git a/include/linux/spi/rspi.h b/include/linux/spi/rspi.h
-index a25bd6f65e7f..7316dd9c7ba9 100644
---- a/include/linux/spi/rspi.h
-+++ b/include/linux/spi/rspi.h
-@@ -1,7 +1,7 @@
- /*
-  * Renesas SPI driver
-  *
-- * Copyright (C) 2012  Renesas Solutions Corp.
-+ * Copyright (C) 2012, 2013  Renesas Solutions Corp.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -22,6 +22,8 @@
- #define __LINUX_SPI_RENESAS_SPI_H__
- 
- struct rspi_plat_data {
-+	u8 data_width;			/* Data register access width */
-+
- 	unsigned int dma_tx_id;
- 	unsigned int dma_rx_id;
- 
--- 
-1.7.9.5
+> +static int rspi_parse_platform_data(struct rspi_data *rspi,
+> +				    const struct rspi_plat_data *rspi_pd)
+> +{
+> +	if (rspi_pd && rspi_pd->data_width) {
+> +		rspi->data_width = rspi_pd->data_width;
+> +		switch (rspi_pd->data_width) {
+> +		case 8:
+> +			rspi->spdcr = SPDCR_SPLBYTE;
+> +			break;
+> +		case 16:
+> +			rspi->spdcr = SPDCR_SPLWORD;
+> +			break;
+> +		default:
+> +			return -EINVAL;
+> +		}
+> +	} else {
+> +		/*
+> +		 * Use legacy 16-bit width data access if a data_width value
+> +		 * isn't defined in the platform data.
+> +		 */
+> +		rspi->data_width = 16;
+> +		rspi->spdcr = 0;
+> +	}
 
+This looks very strange - if no platform data is specified the value set
+for spdcr is one that can't be arrived at via platform data.  What's
+going on here?  It'd seem more idiomatic to treat missing platform data
+and a zero data_width identically too.
+
+> +	ret = ops->parse_platform_data(rspi, rspi_pd);
+> +	if (ret < 0) {
+> +		dev_err(&pdev->dev, "rspi invalid platform data.\n");
+> +		goto error1;
+> +	}
+
+I'd move the error logging up into the parse function and have it say
+what exactly is wrong - that'd be more friendly to users.
+
+--JlQgkxKsF3TswZob
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS09wVAAoJELSic+t+oim9faEP/3KxOiawh1cklxsKzSF0mOg5
+saloNBcyi/zPTsem/QSsqLooszVt0GrwGuM8nBpufTVixGUmPI6nKH1anPJtzbX9
+AZss2s1q+OSrBbAmJJ+TqKlavM4XaLwKUStEGgatfGp/VHxra7en7tZOP/TeEI7C
+dEQNRrRASvrS0O2hQ0EfHI/kW8mqk7A+dUn8uduMwffxledoRnajzW7jgIRVlEVW
+Jh1eCrN67sas+3DszxeUZ/AhsqymZIbVbbd6zDHrONFvueDTCd6Ze8/K+jJQbJv4
+z8c3HD+5pPm4QCYqugQz9n5CmZK3nepfHPAuZh+9CB3JcRrbqYIon1pNgTXSyqX+
+va/6Lwy6BcbZ3yrRD/grgVBzKHVTfrKjq/mwBmXWdEbXN5Kmt5jPbwwp0aUDkfc3
+qSoShpvnnJsSlMbrfwlvcBPY+JrppsV/yMAcv9mQZCXvu+ZlaugkTBSX/HQBLsBa
+P1eboy/VwdpvaJ66Auvx8xMF6GyaRS2ndMbwtDAX5o1AGQPCDCvEBuC+BOrRJmY4
+ypaYb6rYIuJ58jIaJUUHjqjHW1kfZ4yM4LfK93i3sZhkhLjDo0S4UPMb+3X+m456
+Sl/sE/ZQPXvbezfjKRsrkzg1mPwp8waqL1JsZTp+T/YODWWL2+nG4L2u1LCs6Bmh
+gA/q9y5qGyg9ytAhW+Ma
+=bA2T
+-----END PGP SIGNATURE-----
+
+--JlQgkxKsF3TswZob--
