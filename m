@@ -1,69 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 13 Jan 2014 16:15:19 +0000
+From: Joe Perches <joe@perches.com>
+Date: Mon, 13 Jan 2014 16:51:58 +0000
 Subject: Re: [PATCH] sh_eth: fix garbled TX error message
-Message-Id: <52D41117.3040809@cogentembedded.com>
+Message-Id: <1389631918.24849.20.camel@joe-AO722>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201401110241.49471.sergei.shtylyov@cogentembedded.com>	 <20140113004532.GJ15296@verge.net.au> <1389576241.24849.10.camel@joe-AO722>
-In-Reply-To: <1389576241.24849.10.camel@joe-AO722>
+References: <201401110241.49471.sergei.shtylyov@cogentembedded.com>
+	 <20140113004532.GJ15296@verge.net.au> <1389576241.24849.10.camel@joe-AO722>
+	 <52D41117.3040809@cogentembedded.com>
+In-Reply-To: <52D41117.3040809@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Joe Perches <joe@perches.com>, Simon Horman <horms@verge.net.au>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Simon Horman <horms@verge.net.au>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hello.
+On Mon, 2014-01-13 at 20:15 +0400, Sergei Shtylyov wrote:
+> On 13-012014 5:24, Joe Perches wrote:
+> >>> sh_eth_error() in case of a TX error tries to print a message using 2 dev_err()
+> >>> calls with the first string not finished by '\n', so that the resulting message
+> >>> would inevitably come out garbled, with something like "3net eth0: " inserted
+> >>> in the middle.  Avoid that by merging 2 calls into one.
+> 
+> > I believe this interleaving should not happen since
+> > commit e28d713704117bca0820c732210df6075b09f13b
+> > (2.6.31 days)
+> 
+>     I believe you have given me the wrong commit, which has nothing to do the 
+> the newline problem per se. It just adds KERN_DEFAULT. I was able to find the 
+> correct commit though: it's the parent of the commit you cited, 
 
-On 13-012014 5:24, Joe Perches wrote:
+Yeah, I was just scanning the printk commit logs
+and looked for the first one that said something
+like force newline.
 
->>> sh_eth_error() in case of a TX error tries to print a message using 2 dev_err()
->>> calls with the first string not finished by '\n', so that the resulting message
->>> would inevitably come out garbled, with something like "3net eth0: " inserted
->>> in the middle.  Avoid that by merging 2 calls into one.
+> I should have tested my assumption beforehand... 
 
-> I believe this interleaving should not happen since
-> commit e28d713704117bca0820c732210df6075b09f13b
-> (2.6.31 days)
+Always a good thing.
 
-    I believe you have given me the wrong commit, which has nothing to do the 
-the newline problem per se. It just adds KERN_DEFAULT. I was able to find the 
-correct commit though: it's the parent of the commit you cited, 
-5fd29d6ccbc98884569d6f3105aeca70858b3e0f -- so you're probably right, and I 
-should have tested my assumption beforehand... (I'd like to merge these 
-dev_err() calls still though).
+> (I'd like to merge these 
+> dev_err() calls still though).
 
-> Perhaps it'd be better to use netdev_<level> and
-> netif_<level> instead of dev_<level> and pr_<level>.
+Yes, the dev_err calls should be merged.
 
-    Thank you, I got it the first time you suggested it, I just haven't had 
-time to implement it yet.
+About the other stuff, what/when ever...
 
-> uncompiled/untested...
-
-    Thanks for the patch. I don't agree with all of it though...
-
-> ---
->
->   drivers/net/ethernet/renesas/sh_eth.c | 63 ++++++++++++++++-------------------
->   1 file changed, 28 insertions(+), 35 deletions(-)
-
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> index 8884107..6baad48 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-[...]
-> @@ -2691,9 +2683,10 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
->   	/* read and set MAC address */
->   	read_mac_address(ndev, pd->mac_addr);
->   	if (!is_valid_ether_addr(ndev->dev_addr)) {
-> -		dev_warn(&pdev->dev,
-> -			 "no valid MAC address supplied, using a random one.\n");
->   		eth_hw_addr_random(ndev);
-> +		dev_warn(&pdev->dev,
-> +			 "no valid MAC address supplied, using random %pM\n",
-> +			 ndev->dev_addr);
-
-    There's no need to print random MAC address twice. It's already printed 
-right below.
-
-WBR, Sergei
+cheers, Joe
 
