@@ -1,35 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 11:15:49 +0000
-Subject: [PATCH] ARM: shmobile: koelsch: Enable DEVTMPFS_MOUNT in defconfig
-Message-Id: <1389525349-3722-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 13 Jan 2014 00:38:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: koelsch: Enable DEVTMPFS_MOUNT in defconfig
+Message-Id: <20140113003811.GI15296@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389525349-3722-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389525349-3722-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Sun, Jan 12, 2014 at 12:15:49PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> 
+> Without this, a Debian jessie nfsroot hangs early in the boot process.
 
-Without this, a Debian jessie nfsroot hangs early in the boot process.
+If this is really necessary for Jessie to boot then I think
+we should enabled it in all shmobile defconfigs.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- arch/arm/configs/koelsch_defconfig |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 8f283f725a12..7c06fbac21a7 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -36,6 +36,8 @@ CONFIG_UNIX=y
- CONFIG_INET=y
- CONFIG_IP_PNP=y
- CONFIG_IP_PNP_DHCP=y
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- CONFIG_MTD=y
- CONFIG_MTD_M25P80=y
- CONFIG_NETDEVICES=y
--- 
-1.7.9.5
-
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> ---
+>  arch/arm/configs/koelsch_defconfig |    2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+> index 8f283f725a12..7c06fbac21a7 100644
+> --- a/arch/arm/configs/koelsch_defconfig
+> +++ b/arch/arm/configs/koelsch_defconfig
+> @@ -36,6 +36,8 @@ CONFIG_UNIX=y
+>  CONFIG_INET=y
+>  CONFIG_IP_PNP=y
+>  CONFIG_IP_PNP_DHCP=y
+> +CONFIG_DEVTMPFS=y
+> +CONFIG_DEVTMPFS_MOUNT=y
+>  CONFIG_MTD=y
+>  CONFIG_MTD_M25P80=y
+>  CONFIG_NETDEVICES=y
+> -- 
+> 1.7.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
