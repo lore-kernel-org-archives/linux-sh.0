@@ -1,33 +1,72 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 12:23:51 +0000
-Subject: [PATCH 2/2] ARM: shmobile: koelsch: Enable modules in defconfig
-Message-Id: <1390566231-18928-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 14 Jan 2014 09:20:33 +0000
+Subject: [PATCH rebased 2/2] spi: rspi: Add missing clk_disable() calls in error and cleanup paths
+Message-Id: <1389691233-29890-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389691233-29890-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389691233-29890-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-This enables modules and module versioning support for Koelsch.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/configs/koelsch_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+Rebased on top of linux-spi/for-next
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 3015797..1ce71b2 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -8,6 +8,8 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODVERSIONS=y
- CONFIG_ARCH_SHMOBILE_LEGACY=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_MACH_KOELSCH=y
+ drivers/spi/spi-rspi.c |   11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 1f8fb32d59fd..cb8a1a4ee700 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -918,6 +918,7 @@ static int rspi_remove(struct platform_device *pdev)
+ 	struct rspi_data *rspi = platform_get_drvdata(pdev);
+ 
+ 	rspi_release_dma(rspi);
++	clk_disable(rspi->clk);
+ 
+ 	return 0;
+ }
+@@ -992,28 +993,30 @@ static int rspi_probe(struct platform_device *pdev)
+ 			       dev_name(&pdev->dev), rspi);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "request_irq error\n");
+-		goto error1;
++		goto error2;
+ 	}
+ 
+ 	rspi->irq = irq;
+ 	ret = rspi_request_dma(rspi, pdev);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
+-		goto error2;
++		goto error3;
+ 	}
+ 
+ 	ret = devm_spi_register_master(&pdev->dev, master);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "spi_register_master error.\n");
+-		goto error2;
++		goto error3;
+ 	}
+ 
+ 	dev_info(&pdev->dev, "probed\n");
+ 
+ 	return 0;
+ 
+-error2:
++error3:
+ 	rspi_release_dma(rspi);
++error2:
++	clk_disable(rspi->clk);
+ error1:
+ 	spi_master_put(master);
+ 
 -- 
-1.8.3.1
+1.7.9.5
 
