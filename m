@@ -1,98 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 13 Jan 2014 22:37:11 +0000
-Subject: Re: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <23961394.c3Uic7DPzS@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 14 Jan 2014 13:56:16 +0000
+Subject: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
+Message-Id: <1389707776-23306-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389445589-21502-1-git-send-email-ben.dooks@codethink.co.uk> <4441342.H8MHOLBobb@avalon> <52D38B90.1060002@codethink.co.uk>
-In-Reply-To: <52D38B90.1060002@codethink.co.uk>
+References: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, Linux Kernel list <linux-kernel@vger.kernel.org>, Linus SH list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: linux-sh@vger.kernel.org
 
-Hi Ben,
+If the kernel is built to support multi-arm configurmation with shmobile
+support built in, then the drivers/sh is not built. This contains drivers
+that are essential to devices support by that configuration, including the
+PM runtime code in drivers/sh/pm_runtime.c (which implicitly enables the
+bus clocks for all devices).
 
-On Monday 13 January 2014 06:45:36 Ben Dooks wrote:
-> On 12/01/14 22:01, Laurent Pinchart wrote:
-> > On Sunday 12 January 2014 22:54:15 Laurent Pinchart wrote:
-> >> Hi Ben,
-> >> 
-> >> Thank you for the patch.
-> >> 
-> >> On Saturday 11 January 2014 13:06:29 Ben Dooks wrote:
-> >>> If the kernel is built to support multi-arm configurmation with shmobile
-> >>> support built in, then the drivers/sh is not built. This contains
-> >>> drivers that are essential to devices support by that configuration,
-> >>> including the PM runtime code in drivers/sh/pm_runtime.c (which
-> >>> implicitly enables the bus clocks for all devices).
-> > 
-> > Thinking a bit more about this, I think the approach taken in
-> > drivers/sh/pm_runtime.c isn't good. The code enables device clocks when
-> > devices are bound to a driver, increasing power consumption when devices
-> > are idle. Instead of enabling it for ARCH_SHMOBILE_MULTI I'd like to
-> > either add explicit clock support to drivers, or to integrate clocks with
-> > runtime PM only.
-> 
-> If pm-runtime is enabled, then I believe that the device clocks are
-> kept in sync with the active state of the device, which means that
-> they should be shut down when the device is not needed. There have
-> been recent discussions about this with respect to the PCI bridges
-> used by the USB host system.
-> 
-> Given the above, I'm not sure exactly what you mean by the statement
-> "I think the approach taken in drivers/sh/pm_runtime.c isn't good."
+If CONFIG_ARCH_SHMOBILE_MULTI then build the drivers/sh directory,
+but ensure that bits that may conflict (drivers/sh/clk if the common
+clock framework is not enabled) are built.
 
-I might have read the code too fast. I was under the impression that the code 
-enabled the device clock as soon as the device was bound to a driver. Upon 
-closer inspection this doesn't seem to be the case.
+The ARCH_SHMOBILE_MULTI was added by efacfce5f8a ("ARM: shmobile: Introduce
+ARCH_SHMOBILE_MULTI") but this has only just recently been found due to
+changes currently only in Simon Horman's tree. This patch is a partial
+revert of bf98c1eac1d4a6b ("ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY")
+to address the issue of drivers not being built.
 
-> as if we're going to abstract the clock management we have the following
-> issues.
-> 
-> - If pm-runtime is not enabled then we need something to manage the clocks
->   for the driver. If we put that code in the driver then there is not a lot
->   of point in having the pm-runtime clock code here as the driver really
->   only needs a helper to turn them on and off at the right place.
-> 
-> - If just standard power management is enabled, then do we really care
->   about the power consumption of leaving peripherals running when their
->   devices are bound? Managing the device clock optimally is hardly a concern
->   if device drivers are not going to be idled when they are not being used.
+It is also possible the drivers/sh/intc will also need to be built
+however the lack of intc is not causing a number of drivers to fail
+to properly manage their clocks. This is left as an future patch for
+someone who understands that part of the code.
 
-Many devices are not bound to a power domain handled by runtime PM. Adding a 
-runtime PM dependency to clock handling for those devices doesn't make me 
-really happy.
+Cc: Linus SH list <linux-sh@vger.kernel.org>
+Cc: laurent.pinchart+renesas@ideasonboard.com
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/Makefile    | 2 +-
+ drivers/sh/Makefile | 3 +++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
-Does automatic clock handling even work at all with runtime PM disabled ? The 
-clk_enable() call seems to come from pm_clk_resume() only, which is used as 
-the runtime_resume handler. with runtime PM disabled that code looks like it 
-won't be called at all.
-
-> When discussing this on freenode's #armkernel channel, several people
-> including Mark Brown wanted to keep this as it made driver's handling
-> of clocks much easier (there was no longer any need to deal with the
-> clk code when writing a simple driver). My view is it is a pain as we
-> now have a mix of drivers which expect to do their own clock work and
-> some that do not. (It is possible there are even some shmobile drivers
-> that still do their own clock management).
-
-We could remove manual clock handling from some drivers, but the drivers that 
-need to handle several clocks will still need to do so manually. As long as 
-the core code allows this (which I think it does, but I'm not too familiar 
-with the code) I won't complain (too much at least :-)).
-
-> Personally I do not like hiding the implementation of this, as it ends
-> up confusing people when they first come to it.
-
-I like explicit implementations as well, but I have to admit that devices that 
-require a single clock and have clock requirements that are in sync with the 
-PM runtime requirements would probably benefit from automatic clock handling, 
-at least from a driver code complexity point of view, to the expense of a less 
-explicit implementation.
-
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 8e3b8b0..3cc8214 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -118,7 +118,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
+ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+-obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
++obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+ ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+ obj-y				+= clocksource/
+ endif
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index fc67f56..b4d588c 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -3,7 +3,10 @@
+ #
+ obj-y	:= intc/
+ 
++ifneq ($(CONFIG_COMMON_CLK),y)
+ obj-$(CONFIG_HAVE_CLK)		+= clk/
++endif
++
+ obj-$(CONFIG_MAPLE)		+= maple/
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
