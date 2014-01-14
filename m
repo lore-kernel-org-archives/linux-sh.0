@@ -1,14 +1,17 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 14 Jan 2014 17:05:29 +0000
-Subject: [PATCH 0/2] ARM: dts: Add SATA to R8A7790 Lager device tree
-Message-Id: <1389719131-24376-1-git-send-email-valentine.barshak@cogentembedded.com>
+Date: Tue, 14 Jan 2014 17:05:39 +0000
+Subject: [PATCH 0/2] ARM: dts: Add SATA to R8A7791 Koelsch device tree
+Message-Id: <1389719141-24419-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389719131-24376-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1389719131-24376-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-This adds SATA nodes to r8a7790.dtsi and enables SATA1 in r8a7790-lager.dts.
+This adds SATA nodes to r8a7791.dtsi and enables SATA0 in r8a7791-koelsch.d=
+ts.
 In order for this to work the following patches are also needed:
 * R-Car Gen2 SATA phy support:
 https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Dfor-=
@@ -17,11 +20,11 @@ https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Dfor-=
 http://marc.info/?l=3Dlinux-sh&m=138823255807611&w=3D2
 
 Valentine Barshak (2):
-  ARM: dts: r8a7790: Add SATA nodes to r8a7790.dtsi
-  ARM: dts: lager: Enable SATA1 in r8a7790-lager.dts
+  ARM: dts: r8a7791: Add SATA nodes to r8a7791.dtsi
+  ARM: dts: koelsch: Enable SATA0 in r8a7791-koelsch.dts
 
- arch/arm/boot/dts/r8a7790-lager.dts |  4 ++++
- arch/arm/boot/dts/r8a7790.dtsi      | 18 ++++++++++++++++++
+ arch/arm/boot/dts/r8a7791-koelsch.dts |  4 ++++
+ arch/arm/boot/dts/r8a7791.dtsi        | 18 ++++++++++++++++++
  2 files changed, 22 insertions(+)
 
 --=20
