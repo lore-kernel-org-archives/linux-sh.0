@@ -1,97 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Jan 2014 08:25:10 +0000
-Subject: Re: [PATCH 1/2] arm: shmobile: r8a7791: Add SATA clocks
-Message-Id: <20140109082510.GF9267@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 14 Jan 2014 18:43:27 +0000
+Subject: [PATCH 2/2] ARM: shmobile: koelsch: fix error return code check from clk_get()
+Message-Id: <1389725007-5023-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Dec 19, 2013 at 09:59:04PM +0400, Valentine Barshak wrote:
-> This adds SATA 0/1 clock support. External 100MHz SATA 0/1
-> reference clock is supposed to be applied to the following pins:
->   CICREFP0_SATA/CICREFP1_SATA;
->   CICREFN0_SATA/CICREFN1_SATA.
-> 
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+The koelsch_add_standard_devices() function calls clk_get() but then fails
+to check that it returns an error pointer instead of NULL on failure.
 
-Unfortunately this patch conflicts with "ARM: shmobile: r8a7791: Wait for
-status on all MSTP clocks" which I merged earlier today. Could you please
-rebase this patch on top of the latest devel tag in the renesas tree,
-currently renesas-devel-v3.13-rc7-20140109?
+This was added by f31239ef ("ARM: shmobile: koelsch-reference:
+Instantiate clkdevs for SCIF and CMT") in horms' renesas-boards2-for-v3.14~6
+release.
 
-Please repost the entire two patch series.
-Please include Magnus's Ack for each patch of the series.
+The issue is not serious as it does not cause a crash and seems to not be
+actually causing any issues now the other clock bugs have been fixed.
 
-Thanks
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7791.c | 19 +++++++++++++++++++
->  1 file changed, 19 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-> index f546126..01a0314 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7791.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-> @@ -78,6 +78,18 @@ static struct clk extal_clk = {
->  	.mapping	= &cpg_mapping,
->  };
->  
-> +/* External SATA0 reference clock: 100MHz fixed */
-> +static struct clk sata0_clk = {
-> +	.rate		= 100000000,
-> +	.mapping	= &cpg_mapping,
-> +};
-> +
-> +/* External SATA1 reference clock: 100MHz fixed */
-> +static struct clk sata1_clk = {
-> +	.rate		= 100000000,
-> +	.mapping	= &cpg_mapping,
-> +};
-> +
->  static struct sh_clk_ops followparent_clk_ops = {
->  	.recalc	= followparent_recalc,
->  };
-> @@ -118,10 +130,13 @@ static struct clk *main_clks[] = {
->  	&mp_clk,
->  	&cp_clk,
->  	&zx_clk,
-> +	&sata0_clk,
-> +	&sata1_clk,
->  };
->  
->  /* MSTP */
->  enum {
-> +	MSTP815, MSTP814,
->  	MSTP813,
->  	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
->  	MSTP719, MSTP718, MSTP715, MSTP714,
-> @@ -133,6 +148,8 @@ enum {
->  };
->  
->  static struct clk mstp_clks[MSTP_NR] = {
-> +	[MSTP815] = SH_CLK_MSTP32(&sata0_clk, SMSTPCR8, 15, 0), /* SATA0 */
-> +	[MSTP814] = SH_CLK_MSTP32(&sata1_clk, SMSTPCR8, 14, 0),	/* SATA1 */
->  	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
->  	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
->  	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
-> @@ -195,6 +212,8 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
->  	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
->  	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
-> +	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
-> +	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
->  };
->  
->  #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 652b592..feb8d97 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -45,14 +45,14 @@ static void __init koelsch_add_standard_devices(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+ 		clk = clk_get(NULL, scif_names[i]);
+-		if (clk) {
++		if (!IS_ERR(clk)) {
+ 			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
+ 			clk_put(clk);
+ 		}
+ 	}
+ 
+ 	clk = clk_get(NULL, "cmt0");
+-	if (clk) {
++	if (!IS_ERR(clk)) {
+ 		clk_register_clkdev(clk, NULL, "sh_cmt.0");
+ 		clk_put(clk);
+ 	}
+-- 
+1.8.5.2
+
