@@ -1,71 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:43:50 +0000
-Subject: [PATCH 0/14] spi: rspi: Add support for RZ/A1H, DT, and Quad/Dual on QSPI
-Message-Id: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 14 Jan 2014 17:05:40 +0000
+Subject: [PATCH 1/2] ARM: dts: r8a7791: Add SATA nodes to r8a7791.dtsi
+Message-Id: <1389719141-24419-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-	Hi Mark,
+This adds SATA[01] device nodes to r8a7791.dtsi.
 
-This patch series
-  1. refactors the Renesas RSPI/QSPI driver,
-  2. adds support for RSPI in the r7s72100 aka RZ/A1H SoC,
-  3. adds support for DT binding,
-  4. adds support for Quad/Dual SPI Transfers on QSPI in the r8a7790/r8a7791
-     aka R-Car H2/M2 SoCs.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-SoC and board integration patches will be posted in a separate series.
-
-It was tested on the r7s72100-based Genmai reference board using loopback
-mode, and on the r8a7791-based Koelsch reference board using the Spansion
-s25fl512s SPI FLASH.
-
-Quad Write Transfers were not tested, as this needs support in the m25p80
-driver first. Also, it's of limited use, as FLASH programming is slow.
-
-Overview:
-    [   01/14] spi: rspi: Remove unused mesg parameter from
-    			  {send,receive}_pio()
-    [   02/14] spi: rspi: Use core message handling
-    [   03/14] spi: rspi: Abstract 8/16-bit Data Register access
-    [   04/14] spi: rspi: Add rspi_data_{out,in,out_in}() helpers
-    [   05/14] spi: rspi: Abstract transfer_one() for RSPI and QSPI
-    [   06/14] spi: rspi: Merge rspi_send_pio() and rspi_receive_pio()
-    [   07/14] spi: rspi: Merge qspi_send_pio() and qspi_receive_pio()
-    [v3 08/14] spi: rspi: Add support for more than one interrupt
-    [   09/14] spi: rspi: Add support for RSPI on RZ/A1H
-    [v3 10/14] spi: rspi: Add support for loopback mode
-    [v2 11/14] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
-    [v2 12/14] spi: rspi: Use NULL as the clock ID
-    [v4 13/14] spi: rspi: Add DT support
-    [   14/14] spi: rspi: Add support for Quad and Dual SPI Transfers on QSPI
-
-The series contains new work, and remaining/rebased/updated patches from the
-following series that had been posted before:
-    [PATCH v2 0/8] spi: rspi: Add support for RZ/A1H
-    [PATCH v3 0/9] Renesas RSPI/QSPI DT support
-
-Patches [03/14] and [09/14] completely replace the old handling using
-platform data in
-    [4/8 V2] spi: rspi: Add support for 8-bit Data Register access
-    [5/8 V2] spi: rspi: Add support for no TX only mode
-    [6/8 V2] spi: rspi: Add support for missing SPCR2 register
-by a new "rspi-rz" platform device name binding.
-
-Please review, thanks!
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 94e3cc1..d5cc362 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -366,6 +366,24 @@
+ 		status = "disabled";
+ 	};
+ 
++	sata0: sata@ee300000 {
++		compatible = "renesas,sata-r8a7791";
++		reg = <0 0xee300000 0 0x2000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7791_CLK_SATA0>;
++		status = "disabled";
++	};
++
++	sata1: sata@ee500000 {
++		compatible = "renesas,sata-r8a7791";
++		reg = <0 0xee500000 0 0x2000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7791_CLK_SATA1>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+1.8.3.1
 
