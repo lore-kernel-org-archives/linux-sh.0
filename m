@@ -1,50 +1,49 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:05:45 +0000
-Subject: Re: [PATCH v3 08/14] spi: rspi: Add support for more than one interrupt
-Message-Id: <20140127200545.GJ11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="A1+ljxmNgwU2bK8G"
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 14 Jan 2014 17:05:30 +0000
+Subject: [PATCH 1/2] ARM: dts: r8a7790: Add SATA nodes to r8a7790.dtsi
+Message-Id: <1389719131-24376-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-9-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-9-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+This adds SATA[01] device nodes to r8a7790.dtsi
 
---A1+ljxmNgwU2bK8G
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-On Fri, Jan 24, 2014 at 09:43:58AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Add support for multiple interrupts, based on the SDK reference code.
-> This is needed for RZ/A1H, which supports 3 interrupts.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index b2c2845..f2f5394 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -400,6 +400,24 @@
+ 		status = "disabled";
+ 	};
+ 
++	sata0: sata@ee300000 {
++		compatible = "renesas,sata-r8a7790";
++		reg = <0 0xee300000 0 0x2000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7790_CLK_SATA0>;
++		status = "disabled";
++	};
++
++	sata1: sata@ee500000 {
++		compatible = "renesas,sata-r8a7790";
++		reg = <0 0xee500000 0 0x2000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7790_CLK_SATA1>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+1.8.3.1
 
-Applied, thanks.
-
---A1+ljxmNgwU2bK8G
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS5rwWAAoJELSic+t+oim9vhAP/2qSvhUVg1t3v0UxelkRzfYb
-F3uMf2ixd9suE8qA+PI1YUT92uymJwoIJkjcFuBQYZMROKkmerfNGKMfcdb8o+ju
-vjbZptnbrRnZHFNYvtDi1ktwY+heW4dPYIcvAjdu4wEDjOdYfuAujHYxOM1I9XJR
-bbsC8NAxSd2lE3sYx4bCxJOTRFCk+t7MWBOCncc9WfzIs7bJFs+jiWL9mbbaxLLV
-oofER0HV2SmAOa9pe+gFr2gQ2K90GKaKjB1LD4JbzjptU8kfhxGm2N+yDYTh+n5G
-h+FBHESR3qSTGAhoN1ie1Z2DzodOhy7Ma7EbNS9zCOLZU7gNQJCb2zDqQrmUV7op
-rNiyB89CPUssnOpNPicJqXHSMXJ6O76kHmHIKufEhGz0PoZmTRr1r0J0prP8Zay5
-ycKx7GDryQjC2/xEwouGOPJ//0Z84VUAb9pdpXIDU13Aij200XUptzIXPRH+fPib
-K/Uw7iYkoE7HkmgboKo68PcM4vQ2dWl2WMv3fPI1GDL97P5bFu0FW2wDDXTjQnpF
-3oY+JVibS4z87Ld53o5W+dM2Iq9fs1Esj4RkLkCXLcx3uCg60a/uYmGtb83XH6+G
-4ypJyDqg/IQkGwYLYmnZF5qo1TJT/slNh48D0XUHjIjympjusuOlfrJPWBDvGX/o
-W1ESbC6XRUo63v2Z57yP
-=Rx4P
------END PGP SIGNATURE-----
-
---A1+ljxmNgwU2bK8G--
