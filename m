@@ -1,47 +1,28 @@
-From: Joe Perches <joe@perches.com>
-Date: Mon, 13 Jan 2014 16:51:58 +0000
+From: David Miller <davem@davemloft.net>
+Date: Tue, 14 Jan 2014 07:29:35 +0000
 Subject: Re: [PATCH] sh_eth: fix garbled TX error message
-Message-Id: <1389631918.24849.20.camel@joe-AO722>
+Message-Id: <20140113.232935.776174177146650322.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201401110241.49471.sergei.shtylyov@cogentembedded.com>
-	 <20140113004532.GJ15296@verge.net.au> <1389576241.24849.10.camel@joe-AO722>
-	 <52D41117.3040809@cogentembedded.com>
-In-Reply-To: <52D41117.3040809@cogentembedded.com>
+In-Reply-To: <201401110241.49471.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Simon Horman <horms@verge.net.au>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, 2014-01-13 at 20:15 +0400, Sergei Shtylyov wrote:
-> On 13-012014 5:24, Joe Perches wrote:
-> >>> sh_eth_error() in case of a TX error tries to print a message using 2 dev_err()
-> >>> calls with the first string not finished by '\n', so that the resulting message
-> >>> would inevitably come out garbled, with something like "3net eth0: " inserted
-> >>> in the middle.  Avoid that by merging 2 calls into one.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 11 Jan 2014 02:41:49 +0300
+
+> sh_eth_error() in case of a TX error tries to print a message using 2 dev_err()
+> calls with the first string not finished by '\n', so that the resulting message
+> would inevitably come out garbled, with something like "3net eth0: " inserted
+> in the middle.  Avoid that by merging 2 calls into one.
 > 
-> > I believe this interleaving should not happen since
-> > commit e28d713704117bca0820c732210df6075b09f13b
-> > (2.6.31 days)
+> While at it, insert an empty line after the nearby declaration.
 > 
->     I believe you have given me the wrong commit, which has nothing to do the 
-> the newline problem per se. It just adds KERN_DEFAULT. I was able to find the 
-> correct commit though: it's the parent of the commit you cited, 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Yeah, I was just scanning the printk commit logs
-and looked for the first one that said something
-like force newline.
+Applied, thanks.
 
-> I should have tested my assumption beforehand... 
-
-Always a good thing.
-
-> (I'd like to merge these 
-> dev_err() calls still though).
-
-Yes, the dev_err calls should be merged.
-
-About the other stuff, what/when ever...
-
-cheers, Joe
-
+I don't think this is really -stable material, sorry.
