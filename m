@@ -1,45 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 08 Jan 2014 07:50:17 +0000
-Subject: Re: [PATCH v4 0/3] ARM: shmobile: r8a7779/90: Poll MSTP clocks status
-Message-Id: <26716651.17InoLzNy9@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 14 Jan 2014 18:43:26 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: fix error return code check from clk_get()
+Message-Id: <1389725007-5023-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387034633-3798-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1387034633-3798-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+The lager_add_standard_devices() function calls clk_get() but then fails
+to check that it returns an error pointer instead of NULL on failure.
 
-On Wednesday 08 January 2014 16:04:44 Magnus Damm wrote:
-> On Tue, Jan 7, 2014 at 5:34 PM, Laurent Pinchart wrote:
-> > On Saturday 14 December 2013 16:23:50 Laurent Pinchart wrote:
-> >> Hello,
-> >> 
-> >> This patch set implements a busy loop to ensure that enabling an MSTP
-> >> clock will not return before the clock is actually enabled. It has
-> >> successfully been tested on the Marzen board and on the Lager board where
-> >> they fix random crashes with the VSP1.
-> >> 
-> >> Simon, could you please apply this for v3.14 ?
-> > 
-> > Ping ?
-> > 
-> > This patch series is required to fix crashes with the VSP1 on R8A7790.
-> 
-> Thanks for fixing this issue, the missing status bit check has been
-> around for ages.
+This was added by 4a606af2 ("ARM: shmobile: lager-reference: Instantiate
+clkdevs for SCIF and CMT") patch in horms' renesas-boards2-for-v3.14~6
+release.
 
-You're welcome.
+The issue is not serious as it does not cause a crash and seems to not be
+actually causing any issues now the other clock bugs have been fixed.
 
-> I suspect a similar fix is needed for r8a7791 as well, any chance that
-> would be needed for DU / VSP1 on Koelsch?
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/mach-shmobile/board-lager-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Indeed. I'll submit a patch.
-
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index a6e271d..dc8d76b 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -44,14 +44,14 @@ static void __init lager_add_standard_devices(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+ 		clk = clk_get(NULL, scif_names[i]);
+-		if (clk) {
++		if (!IS_ERR(clk)) {
+ 			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
+ 			clk_put(clk);
+ 		}
+ 	}
+ 
+ 	clk = clk_get(NULL, "cmt0");
+-	if (clk) {
++	if (!IS_ERR(clk)) {
+ 		clk_register_clkdev(clk, NULL, "sh_cmt.0");
+ 		clk_put(clk);
+ 	}
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
