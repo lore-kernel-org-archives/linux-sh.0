@@ -1,65 +1,29 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Wed, 29 Jan 2014 09:17:39 +0000
-Subject: Re: [PATCH 3/3] PCI: rcar: fix bridge logic configuration accesses
-Message-Id: <52E8C733.30305@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 14 Jan 2014 17:05:29 +0000
+Subject: [PATCH 0/2] ARM: dts: Add SATA to R8A7790 Lager device tree
+Message-Id: <1389719131-24376-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390903616-8073-1-git-send-email-ben.dooks@codethink.co.uk> <1390903616-8073-4-git-send-email-ben.dooks@codethink.co.uk> <52E807E9.8060900@cogentembedded.com> <52E8C622.5030603@codethink.co.uk>
-In-Reply-To: <52E8C622.5030603@codethink.co.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On 01/29/2014 01:13 PM, Ben Dooks wrote:
-> On 28/01/14 19:41, Valentine wrote:
->> On 01/28/2014 02:06 PM, Ben Dooks wrote:
->>> The bridge logic at slot 0 only supports reads up to 0x40 and the
->>> rest of the PCI configuration space for this slot is marked as
->>> reserved in the manual.
->>>
->>> Trying a read from offset 0x100 is producing an error from the
->>> bridge. With error interrupts enabled, the following is printed:
->>
->> I don't think this is a critical error.
->> The bridge works fine after an attempt to access the unsupported
->> PCIe/PCI-X 2 area.
->>
->> If you want to prevent the access, I'm OK with it.
->> But I think it's better to do "if (where <= 0x100)"
->> and drop the slot check since all other slots do not support
->> access beyond 0x100 as well.
->
-> The bridge specifically says that the registers end at 0x40 so
-> that really should stay.
+This adds SATA nodes to r8a7790.dtsi and enables SATA1 in r8a7790-lager.dts.
+In order for this to work the following patches are also needed:
+* R-Car Gen2 SATA phy support:
+https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Dfor-=
+3.14&id=E67adb4e669db834c1f95cbdf99bb4e9ec8455b3
+* a couple of MSTP clock fixes:
+http://marc.info/?l=3Dlinux-sh&m=138823255807611&w=3D2
 
-AFAIU, nothing is going to access the area beyond 0x40 if the device does not
-expose any PCI capabilities. Otherwise we would probably need to fix the
-generic PCI subsytem driver.
+Valentine Barshak (2):
+  ARM: dts: r8a7790: Add SATA nodes to r8a7790.dtsi
+  ARM: dts: lager: Enable SATA1 in r8a7790-lager.dts
 
->
-> We're seeing external aborts being generated from somewhere, and
-> it seems that either the bridge or the USB drivers are responsible
-> for generating them.
+ arch/arm/boot/dts/r8a7790-lager.dts |  4 ++++
+ arch/arm/boot/dts/r8a7790.dtsi      | 18 ++++++++++++++++++
+ 2 files changed, 22 insertions(+)
 
-How often do you see them?
-Do you see them if you use the approach I've proposed?
+--=20
+1.8.3.1
 
->
->> The PCI code attempts to access beyond 0x100 only once when probing PCI
->> bridges
->> to see if they support PCIe/PCI-X 2 area which is 4K.
->> The area beyond 0x40 is never accessed because the bridge does not
->> expose any PCI capabilities.
->>
->>>
->>> pci-rcar-gen2 ee0d0000.pci: error irq: status 00000014
->>
->> Did you experience any problems other than this message
->> printed by the IRQ handler introduced by the previous patch?
->>
->
->
-
-Thanks,
-Val.
