@@ -1,60 +1,35 @@
-From: Zhang Rui <rui.zhang@intel.com>
-Date: Thu, 02 Jan 2014 02:55:46 +0000
-Subject: Re: [PATCH 12/15] thermal: rcar-thermal: Enable driver compilation with COMPILE_TEST
-Message-Id: <1388631346.3739.74.camel@rzhang1-mobl4>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 14 Jan 2014 02:26:00 +0000
+Subject: [PATCH 4/4] ARM: shmobile: lager: add sound support on defconfig
+Message-Id: <8761pnguyx.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <5903007.OehDdPcG2U@avalon> <52A9C1C8.2030907@ti.com>
-In-Reply-To: <52A9C1C8.2030907@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, 2013-12-12 at 10:01 -0400, Eduardo Valentin wrote:
-> On 11-12-2013 08:50, Laurent Pinchart wrote:
-> > Hi Zhang and Eduardo,
-> > 
-> > Could you please pick this patch up for v3.14 ?
-> 
-> Yes Laurent, I can pick it.
-> 
-> > 
-> > On Wednesday 27 November 2013 02:18:34 Laurent Pinchart wrote:
-> >> This helps increasing build testing coverage.
-> >>
-> >> Cc: Zhang Rui <rui.zhang@intel.com>
-> >> Cc: Eduardo Valentin <eduardo.valentin@ti.com>
-> >> Cc: linux-pm@vger.kernel.org
-> >> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> >> Acked-by: Simon Horman <horms@verge.net.au>
-> 
-> Acked-by: Eduardo Valentin <eduardo.valentin@ti.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-applied.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/lager_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-thanks,
-rui
-> 
-> >> ---
-> >>  drivers/thermal/Kconfig | 2 +-
-> >>  1 file changed, 1 insertion(+), 1 deletion(-)
-> >>
-> >> diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
-> >> index f35a1f7..661cafc 100644
-> >> --- a/drivers/thermal/Kconfig
-> >> +++ b/drivers/thermal/Kconfig
-> >> @@ -121,7 +121,7 @@ config SPEAR_THERMAL
-> >>
-> >>  config RCAR_THERMAL
-> >>  	tristate "Renesas R-Car thermal driver"
-> >> -	depends on ARCH_SHMOBILE
-> >> +	depends on ARCH_SHMOBILE || COMPILE_TEST
-> >>  	help
-> >>  	  Enable this to plug the R-Car thermal sensor driver into the Linux
-> >>  	  thermal framework.
-> 
-> 
-
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 89b6e71..38b3bb0 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -100,6 +100,10 @@ CONFIG_VIDEO_RCAR_VIN=y
+ CONFIG_VIDEO_ADV7180=y
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=y
++CONFIG_SOUND=y
++CONFIG_SND=y
++CONFIG_SND_SOC=y
++CONFIG_SND_SOC_RCAR=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+-- 
+1.7.9.5
 
