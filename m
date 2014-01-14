@@ -1,35 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 27 Jan 2014 17:13:13 +0000
-Subject: Re: [PATCH 2/8] pci-rcar-gen2: add initial device tree documentation
-Message-Id: <52E6A1B4.6060906@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 14 Jan 2014 17:05:31 +0000
+Subject: [PATCH 2/2] ARM: dts: lager: Enable SATA1 in r8a7790-lager.dts
+Message-Id: <1389719131-24376-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>	<1390754945-28142-3-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdVo80pmYG+MC8d4-_Lxod0j2reAEEFM4sC7Z2vCbEioMw@mail.gmail.com> <52E65F95.9080306@cogentembedded.com> <52E6602A.8040003@codethink.co.uk>
-In-Reply-To: <52E6602A.8040003@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@lists.codethink.co.uk, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, horms+renesas@verge.net.au
+To: linux-sh@vger.kernel.org
 
-Hello.
+This enables SATA1 in Lager device tree.
+SATA0 is not available on Lager since its
+pinmux is fixed to USB3.0.
 
-On 01/27/2014 04:33 PM, Ben Dooks wrote:
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
->>>> + - reg : A list of physical regions to access the device. The first is
->>>> +         the operational registers for the OHCI/EHCI controller and the
->>>> +        second region is for the bridge configuration and control
->>>> registers.
-
->>> You may want to add "reg-names" to use named regions, as there
->>> is more than one region.
-
->>     I've already told Ben he can't claim EHCI/OHCI register ranges at
->> the bridge node, so there should be only one "reg" specifier.
-
-> Well, that's going to take quite a bit of changing the driver as
-> it already assumes two nodes from the platform device definition.
-
-    Ah, I failed to realize it's not your mistake, sorry.
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 57569cb..1081c5e 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -91,3 +91,7 @@
+ 	non-removable;
+ 	status = "okay";
+ };
++
++&sata1 {
++	status = "okay";
++};
+-- 
+1.8.3.1
 
