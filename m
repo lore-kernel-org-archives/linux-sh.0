@@ -1,15 +1,15 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sat, 11 Jan 2014 13:05:40 +0000
+Date: Tue, 14 Jan 2014 12:23:42 +0000
 Subject: [PATCH 3/3] power: clock_ops.c: report clock errors from clk_enable()
-Message-Id: <1389445540-21426-3-git-send-email-ben.dooks@codethink.co.uk>
+Message-Id: <1389702222-17260-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389445540-21426-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1389445540-21426-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1389702222-17260-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389702222-17260-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Pavel Machek <pavel@ucw.cz>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, "Rafael J. Wysocki" <rjw@rjwysocki.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Pavel Machek <pavel@ucw.cz>, linux-pm@vger.kernel.org
 
 If clk_enable() fails, then print a message so that the user can see
 what is happening instead of silently failing to enable the clock.
@@ -27,7 +27,7 @@ Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
  1 file changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
-index 9bb95ab..b94b3ec 100644
+index cad7190..e870bbe 100644
 --- a/drivers/base/power/clock_ops.c
 +++ b/drivers/base/power/clock_ops.c
 @@ -33,6 +33,21 @@ struct pm_clock_entry {
@@ -41,7 +41,7 @@ index 9bb95ab..b94b3ec 100644
 +static inline int __pm_clk_enable(struct device *dev, struct clk *clk)
 +{
 +	int ret = clk_enable(clk);
-+	if (ret != 0)
++	if (ret)
 +		dev_err(dev, "%s: failed to enable clk %p, error %d\n",
 +			__func__, clk, ret);
 +
@@ -58,7 +58,7 @@ index 9bb95ab..b94b3ec 100644
  		if (ce->status < PCE_STATUS_ERROR) {
 -			ret = clk_enable(ce->clk);
 +			ret = __pm_clk_enable(dev, ce->clk);
- 			if (ret = 0)
+ 			if (!ret)
  				ce->status = PCE_STATUS_ENABLED;
  		}
 @@ -381,7 +396,7 @@ int pm_clk_resume(struct device *dev)
