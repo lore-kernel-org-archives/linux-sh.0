@@ -1,46 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 10 Jan 2014 00:49:09 +0000
-Subject: Re: [PATCH 2/2] spi: rspi: Fix typo when clearing SPSR_OVRF
-Message-Id: <20140110004909.GB22965@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Jan 2014 12:39:07 +0000
+Subject: Re: [PATCH 1/3] arm: shmobile: lager: Add USBHS support
+Message-Id: <CANqRtoSCppvquKsrCzLS7ewrR3yRthpdXfwua6RbKcR=HRNi=g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387823664-32318-1-git-send-email-geert+renesas@linux-m68k.org>
- <1387823664-32318-2-git-send-email-geert+renesas@linux-m68k.org>
- <20131224025936.GF22401@verge.net.au>
- <CAMuHMdWiJPF2NU+ME=CLMygvABZ_fcTyr7ggdQtFKbOGhCA0+w@mail.gmail.com>
- <20131227021639.GD9184@verge.net.au>
- <CAMuHMdU+4qCc64CkJeLAhh4SHqbB0E8Cu=8dKpmaYbphTBJV6g@mail.gmail.com>
-In-Reply-To: <CAMuHMdU+4qCc64CkJeLAhh4SHqbB0E8Cu=8dKpmaYbphTBJV6g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1387548804-20829-2-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387548804-20829-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Jan 09, 2014 at 10:41:55AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Fri, Dec 27, 2013 at 3:16 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Tue, Dec 24, 2013 at 10:26:17AM +0100, Geert Uytterhoeven wrote:
-> >> On Tue, Dec 24, 2013 at 3:59 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> > On Mon, Dec 23, 2013 at 07:34:24PM +0100, Geert Uytterhoeven wrote:
-> >> >> The overrun flag should be cleared in the SPI Status Register, not in the
-> >> >> SPI Control Register, based on the SDK sample code.
-> >> >>
-> >> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> >>
-> >> The issue is quite obvious: after clearing the bit, the new value should
-> >> be written back to the same register.
-> >>
-> >> However, the fix is not in a v3.10-rc6 version I saw, so this may matter
-> >> for LTSI.
-> >
-> > I believe that the LTSI-3.10 work from Renesas (so far mainly me) is
-> > independent of the sample code at the link above. So unless this fix ends
-> > up in v3.10 -stable, which should feed into LTSI-3.10, then it will need to
-> > be submitted to LTSI (probably be me or you) if we want it to be in LTSI.
-> 
-> According to the documentation, this bit is valid only in SPI slave mode.
-> As Linux supports SPI master mode only, this looks like a purely cosmetical
-> issue to me, so it doesn't warrant applying to -stable or LTSI-3.10.
+On Fri, Dec 20, 2013 at 11:13 PM, Valentine Barshak
+<valentine.barshak@cogentembedded.com> wrote:
+> This adds USBHS PHY and registers USBHS device if the driver is enabled.
+>
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> ---
+>  arch/arm/mach-shmobile/board-lager.c | 117 +++++++++++++++++++++++++++++++++++
+>  1 file changed, 117 insertions(+)
 
-Thanks for the clarification.
+Hi Valentine,
+
+Thanks for this USB function patch. I'd like to switch focus to USB
+function soon.
+
+By the way, I'm happy to see that SATA platform device support is
+picked up by Simon. I intend to give your SATA DTS patches a go later
+this week, they should be ready to queue up rather soon I believe.
+
+Would it be possible for you to update your USB function platform
+device patches for Lager and Koelsch? I'd like to merge those after
+SATA, and the platform device files shouldn't change now so USB can go
+next now unless I'm mistaken. Please send a complete per-board series
+for USB function so patch pick up and testing gets easy - same style
+as SATA would be great.
+
+I suppose we need to control MSTP bits via Runtime PM for USBHS, so
+some patch for clock control may be needed as well.
+
+Thanks,
+
+/ magnus
