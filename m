@@ -1,40 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 10:30:49 +0000
-Subject: [PATCH] sh: sh7757: switch RSPI clock to dev ID match
-Message-Id: <1389522649-1753-1-git-send-email-geert@linux-m68k.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Jan 2014 12:26:22 +0000
+Subject: [PATCH 04/04] ARM: shmobile: r8a7790 CCI configuration
+Message-Id: <20140115122622.9437.27236.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140115122539.9437.63968.sendpatchset@w520>
+In-Reply-To: <20140115122539.9437.63968.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Switch the RSPI MSTP clock on SH7757 from a con ID match to a dev ID
-match, so we can start looking it up using clk_get() with a NULL ID.
+Add the settings of CCI-400 for enabling ca15/ca7 snoop on r8a7790.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Untested, as I don't have the hardware, but this is a prerequisite for
-"spi: rspi: Use NULL as the clock ID".
 
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/smp-r8a7790.c |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-index e84a43229b9c..5c0e3c335161 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-@@ -132,7 +132,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("usb_fck", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP102]),
- 	CLKDEV_CON_ID("mmc0", &mstp_clks[MSTP220]),
--	CLKDEV_CON_ID("rspi2", &mstp_clks[MSTP127]),
-+	CLKDEV_DEV_ID("rspi.2", &mstp_clks[MSTP127]),
- };
+--- 0005/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-01-15 15:40:56.000000000 +0900
+@@ -28,6 +28,11 @@
+ #define CA15RESCNT	0x0040
+ #define CA7RESCNT	0x0044
+ #define MERAM		0xe8080000
++#define CCI_BASE	0xf0090000
++#define CCI_SLAVE3	0x4000
++#define CCI_SLAVE4	0x5000
++#define CCI_SNOOP	0x0000
++#define CCI_STATUS	0x000c
  
- int __init arch_clk_init(void)
--- 
-1.7.9.5
-
+ static struct rcar_sysc_ch r8a7790_ca15_scu = {
+ 	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
+@@ -71,6 +76,16 @@ static void __init r8a7790_smp_prepare_c
+ 	r8a7790_pm_init();
+ 	rcar_sysc_power_up(&r8a7790_ca15_scu);
+ 	rcar_sysc_power_up(&r8a7790_ca7_scu);
++
++	/* enable snoop and DVM */
++	p = ioremap_nocache(CCI_BASE, 0x8000);
++	writel_relaxed(readl_relaxed(p + CCI_SLAVE3 + CCI_SNOOP) | 0x3,
++		p + CCI_SLAVE3 + CCI_SNOOP);    /* ca15 */
++	writel_relaxed(readl_relaxed(p + CCI_SLAVE4 + CCI_SNOOP) | 0x3,
++		p + CCI_SLAVE4 + CCI_SNOOP);    /* ca7 */
++	while (__raw_readl(p + CCI_STATUS));
++	/* wait for pending bit low */
++	iounmap(p);
+ }
+ 
+ struct smp_operations r8a7790_smp_ops __initdata = {
