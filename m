@@ -1,33 +1,58 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 12:23:50 +0000
-Subject: [PATCH 1/2] ARM: shmobile: lager: Enable modules in defconfig
-Message-Id: <1390566231-18928-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Jan 2014 12:26:04 +0000
+Subject: [PATCH 02/04] ARM: shmobile: r8a7790 CA7-SCU enablement
+Message-Id: <20140115122604.9437.98423.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140115122539.9437.63968.sendpatchset@w520>
+In-Reply-To: <20140115122539.9437.63968.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This enables modules and module versioning support for Lager.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Power on CA7 SCU in case of booting from a CA15 core.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/configs/lager_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index ee93b8a..2c5497e 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -8,6 +8,8 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODVERSIONS=y
- # CONFIG_LBDAF is not set
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
--- 
-1.8.3.1
+ arch/arm/mach-shmobile/smp-r8a7790.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
+--- 0001/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-01-15 14:34:03.000000000 +0900
+@@ -19,6 +19,8 @@
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7790.h>
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
+@@ -27,6 +29,11 @@
+ #define CA7RESCNT	0x0044
+ #define MERAM		0xe8080000
+ 
++static struct rcar_sysc_ch r8a7790_ca7_scu = {
++	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
++	.isr_bit = 21, /* CA7-SCU */
++};
++
+ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	void __iomem *p;
+@@ -54,6 +61,10 @@ static void __init r8a7790_smp_prepare_c
+ 	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
+ 		       p + CA7RESCNT);
+ 	iounmap(p);
++
++	/* turn on power to SCU */
++	r8a7790_pm_init();
++	rcar_sysc_power_up(&r8a7790_ca7_scu);
+ }
+ 
+ struct smp_operations r8a7790_smp_ops __initdata = {
