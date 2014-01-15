@@ -1,108 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 11:13:39 +0000
-Subject: [PATCH V3 6/9] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
-Message-Id: <1389525222-3482-7-git-send-email-geert@linux-m68k.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 15 Jan 2014 12:26:13 +0000
+Subject: [PATCH 03/04] ARM: shmobile: r8a7790 CA15-SCU enablement
+Message-Id: <20140115122613.9437.11213.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+References: <20140115122539.9437.63968.sendpatchset@w520>
+In-Reply-To: <20140115122539.9437.63968.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Power on CA15 SCU in case of booting from a CA7 core.
+
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-V2:
-  - No changes
-V3:
-  - No changes
 
- arch/arm/boot/dts/r7s72100.dtsi |   65 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 65 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7790.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index ff0bd6be454f..42e9b423476c 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -34,6 +34,11 @@
- 		gpio10 = &port10;
- 		gpio11 = &port11;
- 		gpio12 = &jtagport0;
-+		spi0 = &spi0;
-+		spi1 = &spi1;
-+		spi2 = &spi2;
-+		spi3 = &spi3;
-+		spi4 = &spi4;
- 	};
+--- 0004/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-01-15 14:41:47.000000000 +0900
+@@ -29,6 +29,11 @@
+ #define CA7RESCNT	0x0044
+ #define MERAM		0xe8080000
  
- 	cpus {
-@@ -289,4 +294,64 @@
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
++static struct rcar_sysc_ch r8a7790_ca15_scu = {
++	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
++	.isr_bit = 12, /* CA15-SCU */
++};
 +
-+	spi0: spi@e800c800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800c800 0x24>;
-+		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi1: spi@e800d000 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800d000 0x24>;
-+		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi2: spi@e800d800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800d800 0x24>;
-+		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi3: spi@e800e000 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800e000 0x24>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi4: spi@e800e800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800e800 0x24>;
-+		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
--- 
-1.7.9.5
-
+ static struct rcar_sysc_ch r8a7790_ca7_scu = {
+ 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+ 	.isr_bit = 21, /* CA7-SCU */
+@@ -64,6 +69,7 @@ static void __init r8a7790_smp_prepare_c
+ 
+ 	/* turn on power to SCU */
+ 	r8a7790_pm_init();
++	rcar_sysc_power_up(&r8a7790_ca15_scu);
+ 	rcar_sysc_power_up(&r8a7790_ca7_scu);
+ }
+ 
