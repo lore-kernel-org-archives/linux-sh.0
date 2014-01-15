@@ -1,33 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 19 Jan 2014 21:33:43 +0000
-Subject: Re: debug uart for shmobile platforms
-Message-Id: <3557246.OF360HDnfJ@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 15 Jan 2014 06:12:18 +0000
+Subject: [PATCH v5 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
+Message-Id: <1389766341-14001-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52D8FF13.3010709@codethink.co.uk>
-In-Reply-To: <52D8FF13.3010709@codethink.co.uk>
+References: <1389766341-14001-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389766341-14001-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ben,
+Return a boolean and use true and false.
 
-On Friday 17 January 2014 09:59:47 Ben Dooks wrote:
-> Laurent has posted support for this previously, is there a chance this
-> could be sorted out for the next release as it is /very/ useful when
-> doing any development work.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-I suppose you're referring to the earlyprintk patch. I'm afraid I haven't had 
-time to clean it up yet.
+---
+v5
+* No change
 
-The patch is currently very specific to Lager. I'd like to change that to a 
-single .c file could be used for all serial ports of the same model, probably 
-with a Kconfig option to select the port number and/or base address. I'm not 
-sure how the virtual address should be computed though, any help would be 
-appreciated.
+v4
+* First post
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index ba1f6c9..4f5cfad 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -310,12 +310,12 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[TSU_ADRL31]	= 0x01fc,
+ };
+ 
+-static int sh_eth_is_gether(struct sh_eth_private *mdp)
++static bool sh_eth_is_gether(struct sh_eth_private *mdp)
+ {
+ 	if (mdp->reg_offset = sh_eth_offset_gigabit)
+-		return 1;
++		return true;
+ 	else
+-		return 0;
++		return false;
+ }
+ 
+ static void sh_eth_select_mii(struct net_device *ndev)
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4
 
