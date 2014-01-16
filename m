@@ -1,51 +1,50 @@
-From: Valentine <valentine.barshak@cogentembedded.com>
-Date: Fri, 17 Jan 2014 19:24:53 +0000
-Subject: Re: [PATCH 1/2] ARM: dts: r8a7790: Add SATA nodes to r8a7790.dtsi
-Message-Id: <52D98385.9050600@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Thu, 16 Jan 2014 22:07:42 +0000
+Subject: [PATCH] libata, dt: Add clocks to sata_rcar bindings
+Message-Id: <1389910062-17777-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389719131-24376-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1389719131-24376-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+Cc: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-On 01/17/2014 09:26 AM, Simon Horman wrote:
-> On Tue, Jan 14, 2014 at 09:05:30PM +0400, Valentine Barshak wrote:
->> This adds SATA[01] device nodes to r8a7790.dtsi
->
-> I have queued this up with Magnus's Ack and dts: changed to shmobile:
-> in the subject. There was a minor conflict which I resolved.
-> Please check that the following is correct.
 
-That is correct, thanks.
+Now that the clocks are available in the R-Car Gen2 DT,
+add clocks property description to the sata_rcar bindings.
+The clocks have been tested on r8a7791 so we use that
+as an example of the R-Car SATA node.
 
->
-> From: Valentine Barshak <valentine.barshak@cogentembedded.com>
->
-> ARM: shmobile: lager: Enable SATA1 in r8a7790-lager.dts
->
-> This enables SATA1 in Lager device tree.
-> SATA0 is not available on Lager since its
-> pinmux is fixed to USB3.0.
->
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index 57569cb..1081c5e 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -91,3 +91,7 @@
->   	non-removable;
->   	status = "okay";
->   };
-> +
-> +&sata1 {
-> +	status = "okay";
-> +};
->
+The patch is against for-next branch of the libata git repo.
 
-Thanks,
-Val.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 1e61113..6da60c0 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -7,12 +7,14 @@ Required properties:
+ 			  - "renesas,sata-r8a7791" for R-Car M2
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
++- clocks		: must contain a phandle and clock-specifier pair.
+ 
+ Example:
+ 
+-sata: sata@fc600000 {
+-	compatible = "renesas,sata-r8a7779";
+-	reg = <0xfc600000 0x2000>;
++sata0: sata@ee300000 {
++	compatible = "renesas,sata-r8a7791";
++	reg = <0 0xee300000 0 0x2000>;
+ 	interrupt-parent = <&gic>;
+-	interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++	interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
++	clocks = <&mstp8_clks R8A7791_CLK_SATA0>;
+ };
+-- 
+1.8.3.1
+
