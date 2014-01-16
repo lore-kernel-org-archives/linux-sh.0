@@ -1,41 +1,43 @@
-From: Joe Perches <joe@perches.com>
-Date: Wed, 15 Jan 2014 09:35:20 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 16 Jan 2014 01:15:07 +0000
 Subject: Re: [PATCH v5 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
-Message-Id: <1389778520.14001.16.camel@joe-AO722>
+Message-Id: <20140116011506.GA18995@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389766341-14001-1-git-send-email-horms+renesas@verge.net.au>
  <1389766341-14001-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389766341-14001-2-git-send-email-horms+renesas@verge.net.au>
+ <1389778520.14001.16.camel@joe-AO722>
+In-Reply-To: <1389778520.14001.16.camel@joe-AO722>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 2014-01-15 at 15:12 +0900, Simon Horman wrote:
-> Return a boolean and use true and false.
-[]
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-[]
-> @@ -310,12 +310,12 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
->  	[TSU_ADRL31]	= 0x01fc,
->  };
->  
-> -static int sh_eth_is_gether(struct sh_eth_private *mdp)
-> +static bool sh_eth_is_gether(struct sh_eth_private *mdp)
->  {
->  	if (mdp->reg_offset = sh_eth_offset_gigabit)
-> -		return 1;
-> +		return true;
->  	else
-> -		return 0;
-> +		return false;
->  }
+On Wed, Jan 15, 2014 at 01:35:20AM -0800, Joe Perches wrote:
+> On Wed, 2014-01-15 at 15:12 +0900, Simon Horman wrote:
+> > Return a boolean and use true and false.
+> []
+> > diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+> []
+> > @@ -310,12 +310,12 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
+> >  	[TSU_ADRL31]	= 0x01fc,
+> >  };
+> >  
+> > -static int sh_eth_is_gether(struct sh_eth_private *mdp)
+> > +static bool sh_eth_is_gether(struct sh_eth_private *mdp)
+> >  {
+> >  	if (mdp->reg_offset = sh_eth_offset_gigabit)
+> > -		return 1;
+> > +		return true;
+> >  	else
+> > -		return 0;
+> > +		return false;
+> >  }
+> 
+> Or maybe:
+> 
+> static bool sh_eth_is_gether(struct sh_eth_private *mdp)
+> {
+> 	return mdp->reg_offset = sh_eth_offset_gigabit;
+> }
 
-Or maybe:
-
-static bool sh_eth_is_gether(struct sh_eth_private *mdp)
-{
-	return mdp->reg_offset = sh_eth_offset_gigabit;
-}
-
-
+Thanks, will do.
