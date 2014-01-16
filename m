@@ -1,35 +1,77 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Jan 2014 05:22:47 +0000
-Subject: Re: [PATCH V2 3/5] arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-Message-Id: <20140106052247.GB24653@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 16 Jan 2014 13:07:56 +0000
+Subject: Multiple CCR definitions (was: Re: mmc: omap_hsmmc: use the generic config for omap2plus devices)
+Message-Id: <CAMuHMdVLat9-EMnCX=usthZLrP2YhCCT7-a3nhSQmgLvn_ftBg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387402321-21866-1-git-send-email-wsa@the-dreams.de>
- <1387402321-21866-4-git-send-email-wsa@the-dreams.de>
- <20131227042747.GB6161@katana>
-In-Reply-To: <20131227042747.GB6161@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 27, 2013 at 05:27:47AM +0100, Wolfram Sang wrote:
-> On Wed, Dec 18, 2013 at 10:31:59PM +0100, Wolfram Sang wrote:
-> > From: Wolfram Sang <wsa@sang-engineering.com>
-> > 
-> > I decided to put the pinmuxing into the dtsi file since there is only
-> > one pinmux posiibility which one probably wants to have when using the
-> > bus.
-> > 
-> > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> > Acked-by: Magnus Damm <damm@opensource.se>
-> 
-> Simon, I think you could pull in these patches, too. My series does not
-> really depend on the pinctrl stuff. I2C pins are function group 1 and
-> thus activated by default if the bootloader doesn't do weird things.
-> Actually, I coded the PFC stuff after the driver was finished :)
+On Tue, Sep 10, 2013 at 11:05 PM, Linux Kernel Mailing List
+<linux-kernel@vger.kernel.org> wrote:
+>     mmc: omap_hsmmc: use the generic config for omap2plus devices
+>
+>     OMAP's hs_mmc driver is used for MMC controller operation on many
+>     omap2plus SoCs (OMAP2430, OMAP3, 4, 5 and AM335x).
+>
+>     Considering that the device tree entries are already present for these,
+>     allow the driver to be built using the config ARCH_OMAP2PLUS rather
+>     than individually adding a config for each SoC to enable the
+>     support.
+>
+>     Use COMPILE_TEST to enable the build for other platforms.
+>
+>     Signed-off-by: Amarinder Bindra <a-bindra@ti.com>
+>     Cc: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+>     Cc: Nishanth Menon <nm@ti.com>
+>     Acked-by: Felipe Balbi <balbi@ti.com>
+>     Acked-by: Balaji T K <balajitk@ti.com>
+>     Signed-off-by: Chris Ball <cjb@laptop.org>
+> ---
+>  drivers/mmc/host/Kconfig |    6 +++---
+>  1 files changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+> index 84102bc..b8ce939 100644
+> --- a/drivers/mmc/host/Kconfig
+> +++ b/drivers/mmc/host/Kconfig
+> @@ -284,11 +284,11 @@ config MMC_OMAP
+>
+>  config MMC_OMAP_HS
+>         tristate "TI OMAP High Speed Multimedia Card Interface support"
+> -       depends on SOC_OMAP2430 || ARCH_OMAP3 || ARCH_OMAP4
+> +       depends on ARCH_OMAP2PLUS || COMPILE_TEST
 
-That seems reasonable.
+sh-allmodconfig (http://kisskb.ellerman.id.au/kisskb/buildresult/10477672/):
+include/linux/omap-dma.h:171:8: error: expected identifier before
+numeric constant
+make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
 
-Could you send a series which contains the patches you would like
-queued up? Please base it on the latest devel tag, currently
-renesas-devel-v3.13-rc5-20131230, without other patches applied.
+It fails because sh #defines "CCR", which is one of the enum values in
+include/linux/omap-dma.h.
+
+I expect a similar failure on blackfin, which also has #define CCR.
+
+Possible solutions:
+  1. Rename CCR in sh/bfin to e.g. SH_CCR resp. BF_CCR.
+  2. Use "depends on ARCH_OMAP2PLUS || (COMPILE_TEST && ARM)
+  3. Stop using include/linux/omap-dma.h, as it says:
+
+     *  Legacy OMAP DMA handling defines and functions
+     *
+     *  NOTE: Do not use these any longer.
+     *
+     *  Use the generic dmaengine functions as defined in
+     *  include/linux/dmaengine.h.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
