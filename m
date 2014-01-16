@@ -1,53 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 16 Jan 2014 02:34:13 +0000
-Subject: [PATCH v6 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
-Message-Id: <1389839656-10932-2-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 16 Jan 2014 15:19:46 +0000
+Subject: Re: [PATCH v6 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
+Message-Id: <52D7F892.1050708@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
+ <1389839656-10932-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389839656-10932-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Return a boolean and use true and false.
+Hello.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On 16-01-2014 6:34, Simon Horman wrote:
 
----
-Dave, please consider this for net-next.
+> Return a boolean and use true and false.
 
-v6
-* Simplify logic as suggested by Joe Perches
+    You're not using them explicitly anymore. I'd update the changelog
+with converting the function to one-liner.
 
-v5
-* No change
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-v4
-* First post
----
- drivers/net/ethernet/renesas/sh_eth.c | 7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index ba1f6c9..f12a929 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -310,12 +310,9 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
- 	[TSU_ADRL31]	= 0x01fc,
- };
- 
--static int sh_eth_is_gether(struct sh_eth_private *mdp)
-+static bool sh_eth_is_gether(struct sh_eth_private *mdp)
- {
--	if (mdp->reg_offset = sh_eth_offset_gigabit)
--		return 1;
--	else
--		return 0;
-+	return mdp->reg_offset = sh_eth_offset_gigabit;
- }
- 
- static void sh_eth_select_mii(struct net_device *ndev)
--- 
-1.8.4
+WBR, Sergei
 
