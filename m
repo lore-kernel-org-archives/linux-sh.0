@@ -1,33 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 16 Jan 2014 00:37:58 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 16 Jan 2014 00:50:29 +0000
 Subject: Re: [PATCH] ARM: shmobile: Break out R-Car SYSC PM code
-Message-Id: <87txd47od8.wl%kuninori.morimoto.gx@gmail.com>
+Message-Id: <20140116005027.GG12550@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140115074308.8471.64824.sendpatchset@w520>
  <20140115083027.GC16455@verge.net.au>
  <CANqRtoQ8sLLXQWKHaxbFpSb+3oBF2Spn_nUZx91OWsmb_+kMnA@mail.gmail.com>
-In-Reply-To: <CANqRtoQ8sLLXQWKHaxbFpSb+3oBF2Spn_nUZx91OWsmb_+kMnA@mail.gmail.com>
+ <87txd47od8.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87txd47od8.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Magnus, Simon
-
-> >> Break out the R-Car SYSC power management code from
-> >> the r8a7779 SoC code. With this new shared R-Car SYSC
-> >> code base it is possible to hook in Generation 2 SoCs
-> >> as well.
-> >
-> > Is this also useful for the r8a7778 (the other Gen 1 SoC in mainline) ?
+On Wed, Jan 15, 2014 at 04:37:58PM -0800, Kuninori Morimoto wrote:
 > 
-> I don't know actually. =) What does Morimoto-san say about this?
+> Hi Magnus, Simon
+> 
+> > >> Break out the R-Car SYSC power management code from
+> > >> the r8a7779 SoC code. With this new shared R-Car SYSC
+> > >> code base it is possible to hook in Generation 2 SoCs
+> > >> as well.
+> > >
+> > > Is this also useful for the r8a7778 (the other Gen 1 SoC in mainline) ?
+> > 
+> > I don't know actually. =) What does Morimoto-san say about this?
+> 
+> Thank you for this patch.
+> it is useful, but, unfortunately r8a7778 (= M1) doesn't have SYSC
 
-Thank you for this patch.
-it is useful, but, unfortunately r8a7778 (= M1) doesn't have SYSC
-
-
-Best regards
----
-Kuninori Morimoto
+Thanks, one less thing to worry about :)
