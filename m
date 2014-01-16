@@ -1,44 +1,76 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 12:49:41 +0000
-Subject: [PATCH v2 05/15] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
-Message-Id: <1390567791-8988-6-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 16 Jan 2014 02:34:16 +0000
+Subject: [PATCH v6 4/4] ARM: shmobile: genmai: Enable r7s72100-ether
+Message-Id: <1389839656-10932-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+References: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
-clock framework yet.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
-v2:
-  - No changes
+Dave, I intend to take this change through my tree
 
- arch/arm/mach-shmobile/clock-r7s72100.c |    5 +++++
- 1 file changed, 5 insertions(+)
+v3 - v6
+* No change
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index bf15b63c3d5a..f17a5db00221 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -194,6 +194,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
-+	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+v2
+* As suggested by Magnus Damm and Sergei Shtylyov
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
+
+* As suggested by Sergei Shtylyov
+  - set no_ether_link as there is no LINK signal documented
+    in the manual
+---
+ arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 3e92e3c..a1f6fe1 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,15 +20,36 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/sh_eth.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* Ether */
++static const struct sh_eth_plat_data ether_pdata __initconst = {
++	.phy			= 0x00, /* PD60610 */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++	.no_ether_link		= 1
++};
++
++static const struct resource ether_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe8203000, 0x800),
++	DEFINE_RES_MEM(0xe8204800, 0x200),
++	DEFINE_RES_IRQ(gic_iid(359)),
++};
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
++
++	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  &ether_pdata, sizeof(ether_pdata));
+ }
+ 
+ static const char * const genmai_boards_compat_dt[] __initconst = {
 -- 
-1.7.9.5
+1.8.4
 
