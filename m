@@ -1,32 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 16 Jan 2014 00:50:29 +0000
-Subject: Re: [PATCH] ARM: shmobile: Break out R-Car SYSC PM code
-Message-Id: <20140116005027.GG12550@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 16 Jan 2014 02:34:13 +0000
+Subject: [PATCH v6 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
+Message-Id: <1389839656-10932-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140115074308.8471.64824.sendpatchset@w520>
- <20140115083027.GC16455@verge.net.au>
- <CANqRtoQ8sLLXQWKHaxbFpSb+3oBF2Spn_nUZx91OWsmb_+kMnA@mail.gmail.com>
- <87txd47od8.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87txd47od8.wl%kuninori.morimoto.gx@gmail.com>
+References: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 15, 2014 at 04:37:58PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Magnus, Simon
-> 
-> > >> Break out the R-Car SYSC power management code from
-> > >> the r8a7779 SoC code. With this new shared R-Car SYSC
-> > >> code base it is possible to hook in Generation 2 SoCs
-> > >> as well.
-> > >
-> > > Is this also useful for the r8a7778 (the other Gen 1 SoC in mainline) ?
-> > 
-> > I don't know actually. =) What does Morimoto-san say about this?
-> 
-> Thank you for this patch.
-> it is useful, but, unfortunately r8a7778 (= M1) doesn't have SYSC
+Return a boolean and use true and false.
 
-Thanks, one less thing to worry about :)
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+Dave, please consider this for net-next.
+
+v6
+* Simplify logic as suggested by Joe Perches
+
+v5
+* No change
+
+v4
+* First post
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index ba1f6c9..f12a929 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -310,12 +310,9 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
+ 	[TSU_ADRL31]	= 0x01fc,
+ };
+ 
+-static int sh_eth_is_gether(struct sh_eth_private *mdp)
++static bool sh_eth_is_gether(struct sh_eth_private *mdp)
+ {
+-	if (mdp->reg_offset = sh_eth_offset_gigabit)
+-		return 1;
+-	else
+-		return 0;
++	return mdp->reg_offset = sh_eth_offset_gigabit;
+ }
+ 
+ static void sh_eth_select_mii(struct net_device *ndev)
+-- 
+1.8.4
+
