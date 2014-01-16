@@ -1,43 +1,59 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 07 Jan 2014 13:40:28 +0000
-Subject: Re: [PATCH 2/4] mmc: tmio: bus_shift become tmio_mmc_data member
-Message-Id: <201401071440.28355.arnd@arndb.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 16 Jan 2014 02:34:12 +0000
+Subject: [PATCH v6 0/4] Add ethernet support for r7s72100
+Message-Id: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iovn8ohs.wl%kuninori.morimoto.gx@renesas.com> <87fvqr8ogb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fvqr8ogb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 20 November 2013, Kuninori Morimoto wrote:
->         const struct mfd_cell *cell = mfd_get_cell(pdev);
->         struct tmio_mmc_data *pdata;
->         struct tmio_mmc_host *host;
-> +       struct resource *res;
->         int ret = -EINVAL, irq;
->  
->         if (pdev->num_resources != 2)
-> @@ -84,6 +85,13 @@ static int tmio_mmc_probe(struct platform_device *pdev)
->                         goto out;
->         }
->  
-> +       res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +       if (!res)
-> +               return -EINVAL;
-> +
-> +       /* SD control register space size is 0x200, 0x400 for bus_shift=1 */
-> +       pdata->bus_shift = resource_size(res_ctl) >> 10;
-> +
->         ret = tmio_mmc_host_probe(&host, pdev, pdata);
->         if (ret)
->                 goto cell_disable;
+Hi,
 
-Unfortunately, this has introduced a build error, since you use
-an incorrect variable name (res_ctl vs. res) in the last line that
-was added.
+this series adds ethernet support to sh-pfc for the r7s72100 SoC.
 
-Please add a fix on top.
+This series is based on a merge of:
+* The topic/r7s72100-v3.13-rc8-20140115 tag in my renesas tree
+* net-next
+  - Head revision: 08c93cd99b2f31ba9
+    ("Merge branch 'for-davem' of git://gitorious.org/linux-can/linux-can-next")
 
-	Arnd
+The first two patches, targeted at net-next, also applies cleanly there.
+
+Changes since v5
+* Address feedback from Joe Perches and Sergei Shtylyov as detailed
+  in the changelogs of:
+  - sh_eth: Use bool as return type of sh_eth_is_gether()
+  - sh_eth: Add support for r7s72100
+
+Changes since v4
+* Addressed feedback from Sergei Shtylyov as detailed in the changelog
+  of "sh_eth: Add support for r7s72100"
+* Rebase
+
+Changes since v3
+* Use bool as return type of sh_eth_is_gether()
+  and sh_eth_is_rz_fast_ether()
+* Correct coding style in sh_eth_get_stats()
+
+Changes since v2
+* Trivial rebase
+* Dropped "RFC" from subject
+
+Changes since v1 are noted in the changelog of each patch.
+
+Simon Horman (4):
+  sh_eth: Use bool as return type of sh_eth_is_gether()
+  sh_eth: Add support for r7s72100
+  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+  ARM: shmobile: genmai: Enable r7s72100-ether
+
+ arch/arm/mach-shmobile/board-genmai.c   |  21 +++++
+ arch/arm/mach-shmobile/clock-r7s72100.c |   4 +
+ drivers/net/ethernet/renesas/sh_eth.c   | 131 +++++++++++++++++++++++++++++---
+ drivers/net/ethernet/renesas/sh_eth.h   |   3 +-
+ 4 files changed, 146 insertions(+), 13 deletions(-)
+
+-- 
+1.8.4
+
