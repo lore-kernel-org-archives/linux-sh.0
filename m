@@ -1,75 +1,75 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 12:49:43 +0000
-Subject: [PATCH v4 07/15] ARM: shmobile: genmai reference dts: Add RSPI nodes
-Message-Id: <1390567791-8988-8-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 17 Jan 2014 00:22:29 +0000
+Subject: [PATCH v7 3/4] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+Message-Id: <1389918150-19058-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+References: <1389918150-19058-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389918150-19058-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Add pinctrl and SPI devices for RSPI on Genmai.
-
-On this board, only rspi4 is in use. Its bus contains a single device
-(a wm8978 audio codec), for which no bindings are defined yet.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
 ---
-v4:
-  - No changes
-v3:
-  - No changes
-v2:
-  - Use generic "codec" instead of specific "wm8978" node name.
+Dave, I am planning to take this change through my tree.
 
- arch/arm/boot/dts/r7s72100-genmai-reference.dts |   18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
+v6 - v7
+* No change
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index 367af5c133e0..c2cc4bd5a470 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -43,7 +43,7 @@
+v5
+* Rebase
+
+v3 - v4
+* No change
+
+v2
+* As suggested by Sergei Shtylyov
+  - Add MSTP74 to beginning of enum on a line by itself
+* As suggested by Magnus Damm
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
+---
+ arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index dd8ce87..0242ca5 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -27,6 +27,7 @@
+ #define FRQCR2		0xfcfe0014
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
++#define STBCR7		0xfcfe0430
+ #define STBCR9		0xfcfe0438
+ 
+ #define PLL_RATE 30
+@@ -146,6 +147,7 @@ struct clk div4_clks[DIV4_NR] = {
  };
  
- &pfc {
--	pinctrl-0 = <&scif2_pins &ethernet_pins>;
-+	pinctrl-0 = <&scif2_pins &ethernet_pins &rspi4_pins>;
- 	pinctrl-names = "default";
+ enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++	MSTP74,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+ 	MSTP33,	MSTP_NR };
  
- 	scif2_pins: serial2 {
-@@ -73,6 +73,12 @@
- 				 "ethernet_int_p1_15";
- 		renesas,function = "ethernet";
- 	};
-+
-+	rspi4_pins: spi4 {
-+		renesas,groups = "rspi4_rspck_p4_0", "rspi4_ssl0_p4_1",
-+				 "rspi4_mosi_p4_2", "rspi4_miso_p4_3";
-+		renesas,function = "rspi4";
-+	};
- };
+@@ -154,6 +156,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+ 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
++	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
+ 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
+ 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
+ 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
+@@ -180,6 +183,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+ 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
++	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
  
- &i2c2 {
-@@ -85,3 +91,13 @@
- 		pagesize = <64>;
- 	};
- };
-+
-+&spi4 {
-+	status = "okay";
-+
-+	codec: codec@0 {
-+		compatible = "wlf,wm8978";
-+		reg = <0>;
-+		spi-max-frequency = <5000000>;
-+	};
-+};
+ 	/* ICK */
 -- 
-1.7.9.5
+1.8.4
 
