@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 08 Jan 2014 00:12:28 +0000
+From: Zhang Rui <rui.zhang@intel.com>
+Date: Fri, 17 Jan 2014 08:23:24 +0000
 Subject: Re: [PATCH -trivial 4/4] thermal: rcar: Spelling s/delaye/delay/g
-Message-Id: <20140108001228.GD5136@verge.net.au>
+Message-Id: <1389947004.5918.47.camel@rzhang1-mobl4>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389121036-3555-1-git-send-email-geert@linux-m68k.org>
  <1389121036-3555-5-git-send-email-geert@linux-m68k.org>
@@ -11,14 +11,16 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 07, 2014 at 07:57:16PM +0100, Geert Uytterhoeven wrote:
+On Tue, 2014-01-07 at 19:57 +0100, Geert Uytterhoeven wrote:
 > From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 > 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 > Cc: Jiri Kosina <trivial@kernel.org>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+applied.
 
+thanks,
+rui
 > ---
 >  drivers/thermal/rcar_thermal.c |    2 +-
 >  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -36,6 +38,5 @@ Acked-by: Simon Horman <horms+renesas@verge.net.au>
 >  	}
 >  
 >  	for (i = 0;; i++) {
-> -- 
-> 1.7.9.5
-> 
+
+
