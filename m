@@ -1,54 +1,46 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:04:07 +0000
-Subject: Re: [PATCH 06/14] spi: rspi: Merge rspi_send_pio() and rspi_receive_pio()
-Message-Id: <20140127200407.GH11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="XyBMaHrM0hrbbr/O"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 17 Jan 2014 18:11:35 +0000
+Subject: [PATCH 1/4] ARM: lager: enable i2c devices
+Message-Id: <1389982298-23143-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-7-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-7-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Add i2c0, i2c1, i2c2 and i2c3 nodes to the Lager reference device tree as
+these busses all have devices on them that can be probed even if they
+are no drivers yet.
 
---XyBMaHrM0hrbbr/O
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-On Fri, Jan 24, 2014 at 09:43:56AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> rspi_send_pio() and rspi_receive_pio() are very similar:
->   - the former only sends data, using TX Only Mode,
->   - the latter sends and receives full duplex data to/from the hardware,
->     but uses dummy transmit data.
-> Merge them into rspi_transfer_out_in(), now supporting full duplex if
-> needed.
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 57569cb..b66d3de 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -91,3 +91,19 @@
+ 	non-removable;
+ 	status = "okay";
+ };
++
++&i2c0	{
++	status = "ok";
++};
++
++&i2c1	{
++	status = "ok";
++};
++
++&i2c2	{
++	status = "ok";
++};
++
++&i2c3	{
++	status = "ok";
++};
+-- 
+1.8.5.2
 
-Applied, thanks.
-
---XyBMaHrM0hrbbr/O
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS5ru0AAoJELSic+t+oim94QkP/RsQrcl8qsEkVB+FjlnlwqkS
-iI3jsXQMZXgrTRxz7EhbcWMGjpimZB/4cuKhNYEwIi8NIjwjs31k4YEySPyY5OMR
-kkLU+3q4aA78NT3it8ZSsZJx5O2sKekP43Q0ty9E79HTicapJ23E3m3ICmwFa8Kn
-k/AGG7IoA8FnzC4U1nW0VgfqikArPLcSpFDnrfgIIeZS82q6rwdwrkdcXK+c/YLm
-sPW9v/uIN5KgFD8eDIej4uUA1y6MC1/AQpGYpQRzdGUkWxPzX7WrpmrVtJNqsnHH
-4a6N0/7+5UtLC1uUVGVXFM/N8+iWsyiQYjvBGdnmZwUrL7gzS80QLD7IlEt6h2NK
-irT5ahuUQE9QYyqV4Ymec4KpGdXVQsJxBx9K11ms5WmZmMGnSqEJgqFTKsnyc8tA
-hbGbrl9WlpKbILDB/EddjRiPG1Xvfru+uW/d47fgweyNTWmRjBHAW1JErmtkO8IA
-BWzRKv2Ao4oA1In0n4/eIRqQweyYJR/t+KtaYsCPTjrYnNoR0P6nUKoBIfsmnWvy
-Mf+UseqSME4M2CzsH8afwtGtn69zVmfsf3aXeq/IukH8sORLMHW9N3OTnKYH9yLU
-LuRGf/U+YJcjvNgp0m3xBx7Keg2X55szmTmG7CCvN03YzAcljGmduZBdCfr9DR3S
-5V0yhp2yDLQkB6Q8xXXF
-=O7Zi
------END PGP SIGNATURE-----
-
---XyBMaHrM0hrbbr/O--
