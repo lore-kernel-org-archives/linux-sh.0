@@ -1,48 +1,55 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 09 Jan 2014 15:23:20 +0000
-Subject: [PATCH V2 1/4] ARM: shmobile: r8a7791: Add ZS clock
-Message-Id: <1389281003-10253-2-git-send-email-valentine.barshak@cogentembedded.com>
+Date: Fri, 17 Jan 2014 18:21:32 +0000
+Subject: [PATCH V2 1/4] ARM: shmobile: r8a7791: Add USBHS clock support
+Message-Id: <1389982895-20726-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389281003-10253-2-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1389281003-10253-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This adds fixed ratio zs_clk to R8A7791 clocks.
+This adds USBHS clocks to the R8A7791 SoC.
 
 Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag.
 
 diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 1074ba4..52d7d13 100644
+index e4e4dfa..ab1ef2e 100644
 --- a/arch/arm/mach-shmobile/clock-r8a7791.c
 +++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -113,6 +113,7 @@ SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
- SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
- SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
-+SH_FIXED_RATIO_CLK_SET(zs_clk,			pll1_clk,	1, 6);
- 
- static struct clk *main_clks[] = {
- 	&extal_clk,
-@@ -128,6 +129,7 @@ static struct clk *main_clks[] = {
- 	&cp_clk,
- 	&zg_clk,
- 	&zx_clk,
-+	&zs_clk,
+@@ -140,6 +140,7 @@ enum {
+ 	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP704,
+ 	MSTP522,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+@@ -169,6 +170,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
++	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+@@ -234,6 +236,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
+ 	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
+ 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
  };
  
- /* MSTP */
-@@ -187,6 +189,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
- 	CLKDEV_CON_ID("pll3",		&pll3_clk),
- 	CLKDEV_CON_ID("zg",		&zg_clk),
-+	CLKDEV_CON_ID("zs",		&zs_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
 1.8.3.1
 
