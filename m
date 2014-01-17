@@ -1,43 +1,96 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 02 Jan 2014 18:38:46 +0000
-Subject: Re: [GIT PULL 00/29] Third Round of Renesas ARM Based SoC Updates for v3.14
-Message-Id: <20140102183846.GC8684@quad.lixom.net>
+From: Balaji T K <balajitk@ti.com>
+Date: Fri, 17 Jan 2014 14:47:54 +0000
+Subject: Re: Multiple CCR definitions
+Message-Id: <52D93FCA.1090202@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387888861.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387888861.git.horms+renesas@verge.net.au>
+References: <CAMuHMdVLat9-EMnCX=usthZLrP2YhCCT7-a3nhSQmgLvn_ftBg@mail.gmail.com>
+ <CAGo_u6or57HEqRQjSjUXFpRNiFNbJyRYrsPX19Gf97J-sg4iHQ@mail.gmail.com>
+In-Reply-To: <CAGo_u6or57HEqRQjSjUXFpRNiFNbJyRYrsPX19Gf97J-sg4iHQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 24, 2013 at 11:15:38PM +0900, Simon Horman wrote:
-> Hi Kevin, Hi Olof, Hi Arnd,
-> 
-> please consider this third round of Renesas ARM based SoC updates for v3.14.
-> 
-> It is based on a merge of:
-> 
-> * The second round of Renesas ARM based SoC updates for v3.14, tagged as
->   renesas-soc2-for-v3.14, which I have sent a pull-request for.
-> 
-> * The second round of Renesas SH SCI updates for v3.14, tagged as
->   renesas-sh-sci2-for-v3.14, which I have sent a pull-request for.
-> 
-> The reason for the merge is to provide SH SCI driver dependencies
-> for the SH SCI SoC changes in this series. That is, all
-> the changes by Laurent Pinchart in this series.
-> 
-> 
-> The following changes since commit e62db3848cd61e85a2b0b7828eb47de3ccda83e2:
-> 
->   Merge branch 'sh-sci' into soc3-base (2013-12-24 21:08:27 +0900)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.14
+On Friday 17 January 2014 12:09 AM, Nishanth Menon wrote:
+> +linux-omap as well.
+>
+> On Thu, Jan 16, 2014 at 7:07 AM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+>> On Tue, Sep 10, 2013 at 11:05 PM, Linux Kernel Mailing List
+>> <linux-kernel@vger.kernel.org> wrote:
+>>>      mmc: omap_hsmmc: use the generic config for omap2plus devices
+>>>
+>>>      OMAP's hs_mmc driver is used for MMC controller operation on many
+>>>      omap2plus SoCs (OMAP2430, OMAP3, 4, 5 and AM335x).
+>>>
+>>>      Considering that the device tree entries are already present for these,
+>>>      allow the driver to be built using the config ARCH_OMAP2PLUS rather
+>>>      than individually adding a config for each SoC to enable the
+>>>      support.
+>>>
+>>>      Use COMPILE_TEST to enable the build for other platforms.
+>>>
+>>>      Signed-off-by: Amarinder Bindra <a-bindra@ti.com>
+>>>      Cc: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+>>>      Cc: Nishanth Menon <nm@ti.com>
+>>>      Acked-by: Felipe Balbi <balbi@ti.com>
+>>>      Acked-by: Balaji T K <balajitk@ti.com>
+>>>      Signed-off-by: Chris Ball <cjb@laptop.org>
+>>> ---
+>>>   drivers/mmc/host/Kconfig |    6 +++---
+>>>   1 files changed, 3 insertions(+), 3 deletions(-)
+>>>
+>>> diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+>>> index 84102bc..b8ce939 100644
+>>> --- a/drivers/mmc/host/Kconfig
+>>> +++ b/drivers/mmc/host/Kconfig
+>>> @@ -284,11 +284,11 @@ config MMC_OMAP
+>>>
+>>>   config MMC_OMAP_HS
+>>>          tristate "TI OMAP High Speed Multimedia Card Interface support"
+>>> -       depends on SOC_OMAP2430 || ARCH_OMAP3 || ARCH_OMAP4
+>>> +       depends on ARCH_OMAP2PLUS || COMPILE_TEST
+>>
+>> sh-allmodconfig (http://kisskb.ellerman.id.au/kisskb/buildresult/10477672/):
+>> include/linux/omap-dma.h:171:8: error: expected identifier before
+>> numeric constant
+>> make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
+>>
+>> It fails because sh #defines "CCR", which is one of the enum values in
+>> include/linux/omap-dma.h.
+>>
+>> I expect a similar failure on blackfin, which also has #define CCR.
+>>
+>> Possible solutions:
+>>    1. Rename CCR in sh/bfin to e.g. SH_CCR resp. BF_CCR.
+>>    2. Use "depends on ARCH_OMAP2PLUS || (COMPILE_TEST && ARM)
 
-Pulled, thanks.
+omap-dma.h will be needed until all OMAPs are converted to DT only boot.
+So depends on ARCH_OMAP2PLUS || (COMPILE_TEST && ARM) looks good to me
 
+>>    3. Stop using include/linux/omap-dma.h, as it says:
+>>
+>>       *  Legacy OMAP DMA handling defines and functions
+>>       *
+>>       *  NOTE: Do not use these any longer.
+>>       *
+>>       *  Use the generic dmaengine functions as defined in
+>>       *  include/linux/dmaengine.h.
+>>
 
--Olof
+>> Gr{oetje,eeting}s,
+>>
+>>                          Geert
+>>
+>> --
+>> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>>
+>> In personal conversations with technical people, I call myself a hacker. But
+>> when I'm talking to journalists I just say "programmer" or something like that.
+>>                                  -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-omap" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
