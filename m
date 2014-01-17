@@ -1,83 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 28 Jan 2014 04:45:24 +0000
-Subject: [PATCH 3/4] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
-Message-Id: <87ha8o90kf.wl%kuninori.morimoto.gx@gmail.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 17 Jan 2014 18:21:34 +0000
+Subject: [PATCH V2 3/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
+Message-Id: <1389982895-20726-4-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This adds internal PCI USB host clock support to R-Car M2 SoC.
 
-This patch updates r8a7779 DT data to have SoC specific settings.
-Latest Renesas Chip has some SDHI channels and the WP pin
-availability depends on its channel or HW implementation.
-Thus, this patch disables it as default,
-but we can use wp-gpios property to enable it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi    |    8 --------
- drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
- 2 files changed, 1 insertion(+), 9 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index d0561d4..2105059 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -220,8 +220,6 @@
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -230,8 +228,6 @@
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -240,8 +236,6 @@
- 		reg = <0xffe4e000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -250,8 +244,6 @@
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 6442286..322cd35 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
--	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag.
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index ab1ef2e..564cd46 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -140,7 +140,7 @@ enum {
+ 	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+-	MSTP704,
++	MSTP704, MSTP703,
+ 	MSTP522,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+@@ -171,6 +171,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
+ 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
++	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+@@ -238,6 +239,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
  };
+ 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.7.9.5
+1.8.3.1
 
