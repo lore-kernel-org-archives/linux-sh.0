@@ -1,48 +1,55 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 14 Jan 2014 14:06:17 +0000
-Subject: Re: [PATCH rebased 1/2] spi: rspi: Spelling s/transmition/transmission/
-Message-Id: <20140114140617.GJ15567@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="liqSWPDvh3eyfZ9k"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 17 Jan 2014 18:11:37 +0000
+Subject: [PATCH 3/4] i2c: rcar: do not print error if device nacks transfer
+Message-Id: <1389982298-23143-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389691233-29890-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389691233-29890-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, horms+renesas@verge.net.au, Ben Dooks <ben.dooks@codethink.co.uk>, Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
 
+The i2c-rcar driver currently prints an error message if the master_xfer
+callback fails. However if the bus is being probed then lots of NAKs
+will be generated, causing the output of a number of errors printed.
 
---liqSWPDvh3eyfZ9k
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+To solve this, disable the print if the error is not -EREMOTEIO.
 
-On Tue, Jan 14, 2014 at 10:20:32AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+An example of running i2cdetect:
 
-Applied, thanks.
+10: i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- 12 i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
 
---liqSWPDvh3eyfZ9k
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Cc: Simon Horman <horms+renesas@verge.net.au>
+Cc: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/i2c/busses/i2c-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 2c2fd7c..0d25104 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -623,7 +623,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ 	pm_runtime_put(dev);
+ 
+-	if (ret < 0)
++	if (ret < 0 && ret != -EREMOTEIO)
+ 		dev_err(dev, "error %d : %x\n", ret, priv->flags);
+ 
+ 	return ret;
+-- 
+1.8.5.2
 
-iQIcBAEBAgAGBQJS1URWAAoJELSic+t+oim9JF0P/0tGaQGpAylUxhKdr5vM014j
-XQAcvE53K8pycjziaJs4DLSjdQ+gj9sjrPgHf/pVM60UcqI2E/yPi9x9gu7VUBRp
-FfqFHMWgGm/9aWMhdUbPotSb8dFU/2KVjDztIZ1u25OExSrxNqWqwwI8+vK+lYkd
-3QN0s5bLeJh5sAhIbInqCMTkkRJNrjgnA80XgopagD2GNiD2rD8jArcHOMhpItT8
-V8sK2Hd2aMmUh0fEOBSzT1ZfGO+mlVIxvvrI534K3+CDqPYQF/FrolZ9ujHzceYY
-E9DskKxD8oMVmXPv0rqQXmyj2JKb9rF/ysbGFHhSM3ywRZiJffPHCLnkgw2RsuQu
-qSxHfKFpB0Vf92SR3pfqGD1BFmrYJcEoeorrbzwmAbl1VQJddk6dbrfidfMPXlzv
-4cN036aPRLp3xn1z2/gLVrxDTsUdcwT6uEW6DkDU/A8BAPkTIKaG96KFLN64SO+O
-jMxlFvJHtcln/1WA/jw7hUSYXiUlz3XN7UAqLUTU+Diz9TtFCGbUlyOuoj3BCmpH
-lba+oSZB3UNi1vgpwL0oUXuI5+FbqCHV9MlT7jeh9L4yieOxq1d0xnHOtdzOQRfG
-QjUuVET+yGKFmWoq6g7eFClry9yvXRKJrSPNeFeqAQ5hHzAExCkTHpMnQziyuRso
-KPwbdBmd4xQbz87EmLhb
-=AUo2
------END PGP SIGNATURE-----
-
---liqSWPDvh3eyfZ9k--
