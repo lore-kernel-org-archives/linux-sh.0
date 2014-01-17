@@ -1,94 +1,202 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 17 Jan 2014 14:05:12 +0000
-Subject: Re: [PATCH v4 net-next 2/4] sh_eth: Add support for r7s72100
-Message-Id: <52D93898.5040500@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 17 Jan 2014 18:20:52 +0000
+Subject: [PATCH V2 1/3] ARM: shmobile: lager: Add USBHS support
+Message-Id: <1389982854-20680-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
- <1389168152-9434-3-git-send-email-horms+renesas@verge.net.au>
- <52CDBBE1.1010301@cogentembedded.com> <20140109050351.GE2132@verge.net.au>
- <52D70F12.9080800@cogentembedded.com> <20140116004943.GF12550@verge.net.au>
- <52D7FC8D.7000800@cogentembedded.com> <20140117061301.GD16455@verge.net.au>
-In-Reply-To: <20140117061301.GD16455@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+This adds USBHS PHY and registers USBHS device if the driver is enabled.
 
-On 17-01-2014 10:13, Simon Horman wrote:
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/mach-shmobile/board-lager.c | 138 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 138 insertions(+)
 
->>>>>>> This is a fast ethernet controller.
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag;
+* added pipe_type array to the usbhs platform info since it differs from the default.
 
->>>>>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
->>>>>> [...]
-
->>>>>>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
->>>>>>> index 4b38533..cc6d4af 100644
->>>>>>> --- a/drivers/net/ethernet/renesas/sh_eth.c
->>>>>>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->>>>>>> @@ -190,6 +190,59 @@ static const u16 sh_eth_offset_fast_rcar[SH_ETH_MAX_REGISTER_OFFSET] = {
->>>> [...]
->>>>>>> @@ -701,6 +762,35 @@ static struct sh_eth_cpu_data r8a7740_data = {
->>>>>>>   	.shift_rd0	= 1,
->>>>>>>   };
->>>>>>>
->>>>>>> +/* R7S72100 */
->>>>>>> +static struct sh_eth_cpu_data r7s72100_data = {
->>>>>>> +	.chip_reset	= sh_eth_chip_reset,
->>>>>>> +	.set_duplex	= sh_eth_set_duplex,
->>>>>>> +
->>>>>>> +	.register_type	= SH_ETH_REG_FAST_RZ,
->>>>>>> +
->>>>>>> +	.ecsr_value	= ECSR_ICD,
->>>>>>> +	.ecsipr_value	= ECSIPR_ICDIP,
->>>>>>> +	.eesipr_value	= 0xff7f009f,
->>>>>>> +
->>>>>>> +	.tx_check	= EESR_TC1 | EESR_FTC,
->>>>>>> +	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
->>>>>>> +			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
->>>>>>> +			  EESR_TDE | EESR_ECI,
->>>>>>> +	.fdr_value	= 0x0000070f,
->>>>>>> +	.rmcr_value	= RMCR_RNC,
->>>>>>> +
->>>>>>> +	.apr		= 1,
->>>>>>> +	.mpr		= 1,
->>>>>>> +	.tpauser	= 1,
->>>>>>> +	.hw_swap	= 1,
->>>>>>> +	.rpadir		= 1,
->>>>>>> +	.rpadir_value   = 2 << 16,
->>>>>>> +	.no_trimd	= 1,
->>>>>>> +	.tsu		= 1,
->>>>>>> +	.shift_rd0	= 1,
-
->>>>>>     Perhaps this field should be renamed to something talking about
->>>>>> check summing support (since bits 0..15 of RD0 contain a frame check
->>>>>> sum for those SoCs). Or maybe it should be just merged with the
->>>>>> 'hw_crc' field...
-
->>>>> I have no feelings about that one way or another.
-
->>>>     Do you happen to have R8A7740 manual by chance? If so, does it
->>>> talk about RX check summing support and using RD0 for that?
-
->>> Yes and yes.
-
->>> I have taken a quick look and the documentation for RX checksumming on the
->>> R8A7740 appears to be very similar if not the same as that of the R7S72100.
-
->>> In particular both refer to using the bottom 16 bits of RD0 as
->>> containing the packet checksum.
-
->>     OK, now if you had SH7734 manual to completely confirm that check
->> sum is stored in the same place there... most probably it is, of
->> course, and we should merge 'hw_crc' and 'shift_rd0' into a single
->> field.
-
-> Unfortunately I don't have access to that manual.
-
-    Anyway, we also need Gen2 manuals accepting the fact that checksumming is 
-also supported (they also set 'shift_rd0' field) and giving the mapping of CSMR...
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 8dde446..4a95a45 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -30,6 +30,7 @@
+ #include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <linux/platform_data/usb-rcar-gen2-phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/phy.h>
+ #include <linux/regulator/driver.h>
+@@ -37,6 +38,8 @@
+ #include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
++#include <linux/usb/phy.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+@@ -364,6 +367,131 @@ static const struct platform_device_info sata1_info __initconst = {
+ 	.dma_mask	= DMA_BIT_MASK(32),
+ };
+ 
++/* USBHS */
++#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
++static const struct resource usbhs_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6590000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(107)),
++};
++
++struct usbhs_private {
++	struct renesas_usbhs_platform_info info;
++	struct usb_phy *phy;
++};
++
++#define usbhs_get_priv(pdev) \
++	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
++
++static int usbhs_power_ctrl(struct platform_device *pdev,
++				void __iomem *base, int enable)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++
++	if (!priv->phy)
++		return -ENODEV;
++
++	if (enable) {
++		int retval = usb_phy_init(priv->phy);
++
++		if (!retval)
++			retval = usb_phy_set_suspend(priv->phy, 0);
++		return retval;
++	}
++
++	usb_phy_set_suspend(priv->phy, 1);
++	usb_phy_shutdown(priv->phy);
++	return 0;
++}
++
++static int usbhs_hardware_init(struct platform_device *pdev)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++	struct usb_phy *phy;
++
++	phy = usb_get_phy_dev(&pdev->dev, 0);
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
++
++	priv->phy = phy;
++	return 0;
++}
++
++static int usbhs_hardware_exit(struct platform_device *pdev)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++
++	if (!priv->phy)
++		return 0;
++
++	usb_put_phy(priv->phy);
++	priv->phy = NULL;
++	return 0;
++}
++
++static int usbhs_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++static u32 lager_usbhs_pipe_type[] = {
++	USB_ENDPOINT_XFER_CONTROL,
++	USB_ENDPOINT_XFER_ISOC,
++	USB_ENDPOINT_XFER_ISOC,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_INT,
++	USB_ENDPOINT_XFER_INT,
++	USB_ENDPOINT_XFER_INT,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++};
++
++static struct usbhs_private usbhs_priv __initdata = {
++	.info = {
++		.platform_callback = {
++			.power_ctrl	= usbhs_power_ctrl,
++			.hardware_init	= usbhs_hardware_init,
++			.hardware_exit	= usbhs_hardware_exit,
++			.get_id		= usbhs_get_id,
++		},
++		.driver_param = {
++			.buswait_bwait	= 4,
++			.pipe_type = lager_usbhs_pipe_type,
++			.pipe_size = ARRAY_SIZE(lager_usbhs_pipe_type),
++		},
++	}
++};
++
++static void __init lager_register_usbhs(void)
++{
++	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
++	platform_device_register_resndata(&platform_bus,
++					  "renesas_usbhs", -1,
++					  usbhs_resources,
++					  ARRAY_SIZE(usbhs_resources),
++					  &usbhs_priv.info,
++					  sizeof(usbhs_priv.info));
++}
++#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
++static inline void lager_register_usbhs(void) { }
++#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
++
++/* USBHS PHY */
++static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
++	.chan0_pci = 0,	/* Channel 0 is USBHS */
++	.chan2_pci = 1,	/* Channel 2 is PCI USB */
++};
++
++static const struct resource usbhs_phy_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6590100, 0x100),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -408,6 +536,9 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 				  "vin1_data8", "vin1"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.1", "pfc-r8a7790",
+ 				  "vin1_clk", "vin1"),
++	/* USB0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
++				  "usb0", "usb0"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
+@@ -461,6 +592,13 @@ static void __init lager_add_standard_devices(void)
+ 	lager_add_camera1_device();
+ 
+ 	platform_device_register_full(&sata1_info);
++
++	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
++					  -1, usbhs_phy_resources,
++					  ARRAY_SIZE(usbhs_phy_resources),
++					  &usbhs_phy_pdata,
++					  sizeof(usbhs_phy_pdata));
++	lager_register_usbhs();
+ }
+ 
+ /*
+-- 
+1.8.3.1
 
