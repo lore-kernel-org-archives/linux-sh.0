@@ -1,35 +1,197 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 15 Jan 2014 12:25:39 +0000
-Subject: [PATCH 00/04] ARM: shmobile: r8a7790 SYSC, SCU and CCI setup code
-Message-Id: <20140115122539.9437.63968.sendpatchset@w520>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 17 Jan 2014 18:21:33 +0000
+Subject: [PATCH V2 2/4] ARM: shmobile: koelsch: Add USBHS support
+Message-Id: <1389982895-20726-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-ARM: shmobile: r8a7790 SYSC, SCU and CCI setup code
+This adds USBHS PHY and registers USBHS device if the driver is enabled.
 
-[PATCH 01/04] ARM: shmobile: r8a7790 SYSC setup code
-[PATCH 02/04] ARM: shmobile: r8a7790 CA7-SCU enablement
-[PATCH 03/04] ARM: shmobile: r8a7790 CA15-SCU enablement
-[PATCH 04/04] ARM: shmobile: r8a7790 CCI configuration
-
-Add r8a7790 specific SYSC, SCU and CCI setup code.
-
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
+ arch/arm/mach-shmobile/board-koelsch.c | 138 +++++++++++++++++++++++++++++++++
+ 1 file changed, 138 insertions(+)
 
- Written against renesas.git tag renesas-devel-v3.13-rc8-20140115,
- also requires "[PATCH] ARM: shmobile: Break out R-Car SYSC PM code"
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag;
+* added pipe_type array to the usbhs platform info since it differs from the default.
 
- arch/arm/mach-shmobile/Makefile               |    1 
- arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 
- arch/arm/mach-shmobile/pm-r8a7790.c           |   45 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/smp-r8a7790.c          |   32 +++++++++++++++++
- 4 files changed, 79 insertions(+)
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 2ab5c75..9ec1564 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -29,8 +29,11 @@
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <linux/platform_data/usb-rcar-gen2-phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_eth.h>
++#include <linux/usb/phy.h>
++#include <linux/usb/renesas_usbhs.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+@@ -163,6 +166,131 @@ static const struct platform_device_info sata0_info __initconst = {
+ 	.dma_mask	= DMA_BIT_MASK(32),
+ };
+ 
++/* USBHS */
++#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
++static const struct resource usbhs_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6590000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(107)),
++};
++
++struct usbhs_private {
++	struct renesas_usbhs_platform_info info;
++	struct usb_phy *phy;
++};
++
++#define usbhs_get_priv(pdev) \
++	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
++
++static int usbhs_power_ctrl(struct platform_device *pdev,
++				void __iomem *base, int enable)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++
++	if (!priv->phy)
++		return -ENODEV;
++
++	if (enable) {
++		int retval = usb_phy_init(priv->phy);
++
++		if (!retval)
++			retval = usb_phy_set_suspend(priv->phy, 0);
++		return retval;
++	}
++
++	usb_phy_set_suspend(priv->phy, 1);
++	usb_phy_shutdown(priv->phy);
++	return 0;
++}
++
++static int usbhs_hardware_init(struct platform_device *pdev)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++	struct usb_phy *phy;
++
++	phy = usb_get_phy_dev(&pdev->dev, 0);
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
++
++	priv->phy = phy;
++	return 0;
++}
++
++static int usbhs_hardware_exit(struct platform_device *pdev)
++{
++	struct usbhs_private *priv = usbhs_get_priv(pdev);
++
++	if (!priv->phy)
++		return 0;
++
++	usb_put_phy(priv->phy);
++	priv->phy = NULL;
++	return 0;
++}
++
++static int usbhs_get_id(struct platform_device *pdev)
++{
++	return USBHS_GADGET;
++}
++
++static u32 koelsch_usbhs_pipe_type[] = {
++	USB_ENDPOINT_XFER_CONTROL,
++	USB_ENDPOINT_XFER_ISOC,
++	USB_ENDPOINT_XFER_ISOC,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_INT,
++	USB_ENDPOINT_XFER_INT,
++	USB_ENDPOINT_XFER_INT,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++	USB_ENDPOINT_XFER_BULK,
++};
++
++static struct usbhs_private usbhs_priv __initdata = {
++	.info = {
++		.platform_callback = {
++			.power_ctrl	= usbhs_power_ctrl,
++			.hardware_init	= usbhs_hardware_init,
++			.hardware_exit	= usbhs_hardware_exit,
++			.get_id		= usbhs_get_id,
++		},
++		.driver_param = {
++			.buswait_bwait	= 4,
++			.pipe_type = koelsch_usbhs_pipe_type,
++			.pipe_size = ARRAY_SIZE(koelsch_usbhs_pipe_type),
++		},
++	}
++};
++
++static void __init koelsch_register_usbhs(void)
++{
++	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
++	platform_device_register_resndata(&platform_bus,
++					  "renesas_usbhs", -1,
++					  usbhs_resources,
++					  ARRAY_SIZE(usbhs_resources),
++					  &usbhs_priv.info,
++					  sizeof(usbhs_priv.info));
++}
++#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
++static inline void koelsch_register_usbhs(void) { }
++#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
++
++/* USBHS PHY */
++static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
++	.chan0_pci = 0,	/* Channel 0 is USBHS */
++	.chan2_pci = 1,	/* Channel 2 is PCI USB */
++};
++
++static const struct resource usbhs_phy_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6590100, 0x100),
++};
++
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* DU */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
+@@ -186,6 +314,9 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
+ 				  "scif1_data_d", "scif1"),
++	/* USB0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7791",
++				  "usb0", "usb0"),
+ };
+ 
+ static void __init koelsch_add_standard_devices(void)
+@@ -209,6 +340,13 @@ static void __init koelsch_add_standard_devices(void)
+ 	koelsch_add_du_device();
+ 
+ 	platform_device_register_full(&sata0_info);
++
++	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
++					  -1, usbhs_phy_resources,
++					  ARRAY_SIZE(usbhs_phy_resources),
++					  &usbhs_phy_pdata,
++					  sizeof(usbhs_phy_pdata));
++	koelsch_register_usbhs();
+ }
+ 
+ /*
+-- 
+1.8.3.1
+
