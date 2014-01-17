@@ -1,54 +1,96 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 03 Jan 2014 15:47:58 +0000
-Subject: Re: [PATCH 01/15] i2c: shmobile/rcar: Restrict non-COMPILE_TEST compilation
-Message-Id: <20140103154758.GF7132@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="JcvBIhDvR6w3jUPA"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 17 Jan 2014 18:11:38 +0000
+Subject: [PATCH 4/4] i2c: rcar: use devm_clk_get to ensure clock is properly ref-counted
+Message-Id: <1389982298-23143-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1385515117-23664-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: linux-arm-kernel@lists.infradead.org
+References: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, horms+renesas@verge.net.au, Ben Dooks <ben.dooks@codethink.co.uk>, Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
 
+The current i2c-rcar driver does clk_get() without a corresponding
+clk_put(). Add the clk to the driver private data and then get it
+with the devm functions so that it is released when the driver is
+unbound.
 
---JcvBIhDvR6w3jUPA
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Note, we do not call clk_prepare_enable() at this point due to the
+very possible magic that is being done by the pm_runtime system
+underneath the driver.
 
-On Wed, Nov 27, 2013 at 02:18:23AM +0100, Laurent Pinchart wrote:
-> Hardware supported by the i2c sh_mobile and rcar drivers is only found
-> on SUPERH or ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST
-> compilation to them.
->=20
-> Cc: Wolfram Sang <wsa@the-dreams.de>
-> Cc: linux-i2c@vger.kernel.org
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
+Cc: Simon Horman <horms+renesas@verge.net.au>
+Cc: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/i2c/busses/i2c-rcar.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
-Applied to for-next, thanks!
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 0d25104..6fd716e 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -111,6 +111,7 @@ struct rcar_i2c_priv {
+ 	void __iomem *io;
+ 	struct i2c_adapter adap;
+ 	struct i2c_msg	*msg;
++	struct clk *clk;
+ 
+ 	spinlock_t lock;
+ 	wait_queue_head_t wait;
+@@ -227,18 +228,12 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 				    u32 bus_speed,
+ 				    struct device *dev)
+ {
+-	struct clk *clkp = clk_get(dev, NULL);
+ 	u32 scgd, cdf;
+ 	u32 round, ick;
+ 	u32 scl;
+ 	u32 cdf_width;
+ 	unsigned long rate;
+ 
+-	if (IS_ERR(clkp)) {
+-		dev_err(dev, "couldn't get clock\n");
+-		return PTR_ERR(clkp);
+-	}
+-
+ 	switch (priv->devtype) {
+ 	case I2C_RCAR_GEN1:
+ 		cdf_width = 2;
+@@ -266,7 +261,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 	 * clkp : peripheral_clk
+ 	 * F[]  : integer up-valuation
+ 	 */
+-	rate = clk_get_rate(clkp);
++	rate = clk_get_rate(priv->clk);
+ 	cdf = rate / 20000000;
+ 	if (cdf >= 1 << cdf_width) {
+ 		dev_err(dev, "Input clock %lu too high\n", rate);
+@@ -308,7 +303,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 
+ scgd_find:
+ 	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
+-		scl, bus_speed, clk_get_rate(clkp), round, cdf, scgd);
++		scl, bus_speed, clk_get_rate(priv->clk), round, cdf, scgd);
+ 
+ 	/*
+ 	 * keep icccr value
+@@ -664,6 +659,12 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
++	priv->clk = devm_clk_get(dev, NULL);
++	if (IS_ERR(priv->clk)) {
++		dev_err(dev, "cannot get clock\n");
++		return -ENOENT;
++	}
++
+ 	bus_speed = 100000; /* default 100 kHz */
+ 	ret = of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
+ 	if (ret < 0 && pdata && pdata->bus_speed)
+-- 
+1.8.5.2
 
-
---JcvBIhDvR6w3jUPA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJSxtuuAAoJEBQN5MwUoCm2ldIP/RbDAXHnGtRtBe35brJ0rvGV
-qKPd5y6LtjdJaRdMnh4+5x43gmQzdy7vruBeaaS6b/N3ft3YlymeFOr/Gz/UICNZ
-TCdW+MHAq7SiIS6b9NtmWP0Cu4RDqSx7bXq8Oqcviyra0WS9MI3p0lojGMDQ6wNw
-fc6zEdxsuRMe7kqNkEGBG7fLghwxh5+t+s6XTp/HJyynJ7Do1EgB0Gr+fyE6m1x5
-9EiqykZRpDDv0o9zDvTFBIHcG6gxoGdm/jMRkAuYofmhgm1B5QYIGAd5uZ1Ga/vQ
-KFNPp998fqT7BhUChN5M5Ib5gl+gysxVnayD6s5dbyNdFweymq4/Yfk248J4275z
-rzSBN/eXlUqE9Ta96dOkcUKJ+SJb9sp4RZVbQoh2zE76B3V79wx7StGVI63vPVEU
-FRvNQXQFCvMVLJY4nPvDFBw+sdgc37zBYvGfouMKEFpjM5NsRtr0OHnnvgJddjvX
-1/eCtgEb8HuSHBpF2qzhoxXIvQCnJB6Ii599VAUtRsvXSEvoUu7NKk6Vpke2LK5n
-CymemXkYvLi7zdacf0ArMPxuqoqMwNfDoA3q2kidf2V0xwWGz30ijU4Un7ROJToK
-/gK3uV9rC3YKoYIRq4i6WREO9YP333VPQe7Cdij7KNSzgWaYX1INyyanDNUzpLil
-kdphQqEkykftG855fbgi
-=PJhw
------END PGP SIGNATURE-----
-
---JcvBIhDvR6w3jUPA--
