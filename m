@@ -1,50 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 06 Jan 2014 12:47:58 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 17 Jan 2014 06:02:20 +0000
 Subject: Re: [PATCH 1/1] ARM: shmobile: Koelsch: pass Ether PHY IRQ
-Message-Id: <52CAA5FE.7020204@cogentembedded.com>
+Message-Id: <CANqRtoT1bN4jYHA2+DYRzsVjXXMXRdR_9mqx3sUUXDhJAxe5Ow@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201312200226.38815.sergei.shtylyov@cogentembedded.com>
  <201312200228.00555.sergei.shtylyov@cogentembedded.com>
- <20131227021227.GC9184@verge.net.au> <52BD66A2.4050504@cogentembedded.com>
- <20140106053915.GF24653@verge.net.au>
-In-Reply-To: <20140106053915.GF24653@verge.net.au>
+In-Reply-To: <201312200228.00555.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Fri, Dec 20, 2013 at 8:28 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+> trigger type to be low-level as per the Micrel PHY driver's setup.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+>  arch/arm/mach-shmobile/board-koelsch.c |    4 ++++
+>  1 file changed, 4 insertions(+)
 
-On 06-01-2014 9:39, Simon Horman wrote:
+Thanks for this. The code looks good to me. I have now tested this on
+my Koelsch board using ifconfig up/down and checking /proc/interrupts.
 
->>>> Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
->>>> trigger type to be low-level as per the Micrel PHY driver's setup.
+Acked-by: Magnus Damm <damm@opensource.se>
 
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cheers,
 
->>> Hi Sergei,
-
->>> does this depend on changes that have been queued up in net or net-next
->>> since v3.13-rc1?
-
->>     Yes, in net-next.
-
->>> If so are they present in v3.13-rc5?
-
->>     No, they should be available in 3.14-rc1.
-
->>> If not please
->>> repost when an rc release with the required dependencies is available.
-
->>     You mean this patch should inevitably wait for 3.15? I hoped
->> either you or DaveM could still queue this patch for 3.14...
-
-> Sorry, it was too late for v3.14 and I would prefer if you didn't route
-> this via Dave's tree.
-
-    I somehow thought you were asking about the Lager patch. No, I wasn't 
-going to route the Koelsch patch via Dave, only Lager. Dave doesn't seem eager 
-to do it anyway.
-
-WBR, Sergei
-
+/ magnus
