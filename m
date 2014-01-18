@@ -1,107 +1,67 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 10:48:41 +0000
-Subject: [PATCH V3 3/5] ARM: shmobile: genmai: Add RSPI support
-Message-Id: <1389523723-2288-4-git-send-email-geert@linux-m68k.org>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sat, 18 Jan 2014 15:03:36 +0000
+Subject: [PATCH 2/6] ARM: shmbobile: r8a7790.dtsi: add pci0/1/2 nodes
+Message-Id: <1390057420-13226-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389523723-2288-1-git-send-email-geert@linux-m68k.org>
+References: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, horms+renesas@verge.net.au
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Add nodes for USB PCI bridge devices.
 
-Add RSPI platform device, resources, platform data, and SPI child.
-
-On this board, only rspi4 is in use. Its bus contains a single device
-(a wm8978 audio codec).
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
 ---
-V2:
-  - Correct platform device names ("rspi%u.0" -> "rspi.%u")
-  - Add missing platform data
-  - Correct summary (resources -> platform devices)
-V3:
-  - Move platform devices from setup-r7s72100.c to board-genmai.c, as
-    genmai-reference will use devices instantiated from DT
-  - Merge with "ARM: shmobile: genmai: Add RSPI children", as this now
-    touches the same file
-  - Instantiate SPI children in C on genmai only, as genmai-reference will
-    instantiate them from DT
+Cc: devicetree@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: horms+renesas@verge.net.au
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
- arch/arm/mach-shmobile/board-genmai.c |   45 +++++++++++++++++++++++++++++++++
- 1 file changed, 45 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index a1f6fe1fb06f..f85628e24de4 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -21,6 +21,8 @@
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
- #include <linux/sh_eth.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r7s72100.h>
-@@ -41,11 +43,54 @@ static const struct resource ether_resources[] __initconst = {
- 	DEFINE_RES_IRQ(gic_iid(359)),
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3cc834b..c5e9783 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -728,4 +728,34 @@
+ 				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 	};
++
++	pci0: pci@ee090000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 111 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	pci1: pci@ee0b0000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0b0000 0x0 0xc00>,
++		      <0x0 0xee0a0000 0x0 0x1100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	pci2: pci@ee0d0000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0d0000 0x0 0xc00>,
++		      <0x0 0xee0c0000 0x0 0x1100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
  };
- 
-+/* RSPI */
-+#define RSPI_RESOURCE(idx, baseaddr, irq)				\
-+static const struct resource rspi##idx##_resources[] __initconst = {	\
-+	DEFINE_RES_MEM(baseaddr, 0x24),					\
-+	DEFINE_RES_IRQ(irq),		/* SPEI */			\
-+	DEFINE_RES_IRQ(irq + 1),	/* SPRI */			\
-+	DEFINE_RES_IRQ(irq + 2),	/* SPTI */			\
-+}
-+
-+RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
-+RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
-+RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
-+RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
-+RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
-+
-+static const struct rspi_plat_data rspi_pdata __initconst = {
-+	.data_width	= 8,
-+	.txmode		= false,
-+	.spcr2		= false,
-+	.num_chipselect	= 1,
-+};
-+
-+#define r7s72100_register_rspi(idx)					\
-+	platform_device_register_resndata(&platform_bus, "rspi", idx,	\
-+					rspi##idx##_resources,		\
-+					ARRAY_SIZE(rspi##idx##_resources), \
-+					&rspi_pdata, sizeof(rspi_pdata))
-+
-+static const struct spi_board_info spi_info[] __initconst = {
-+	{
-+		.modalias               = "wm8978",
-+		.max_speed_hz           = 5000000,
-+		.bus_num                = 4,
-+		.chip_select            = 0,
-+	},
-+};
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
- 
-+	r7s72100_register_rspi(0);
-+	r7s72100_register_rspi(1);
-+	r7s72100_register_rspi(2);
-+	r7s72100_register_rspi(3);
-+	r7s72100_register_rspi(4);
-+	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- 	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
- 					  ether_resources,
- 					  ARRAY_SIZE(ether_resources),
 -- 
-1.7.9.5
+1.8.5.2
 
