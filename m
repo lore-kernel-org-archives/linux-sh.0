@@ -1,41 +1,39 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sat, 18 Jan 2014 14:57:51 +0000
-Subject: [PATCH] MAINTAINERS: Add dts files for r8 series to SHMOBILE
-Message-Id: <1390057071-12455-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sat, 18 Jan 2014 16:07:30 +0000
+Subject: Re: [PATCH] MAINTAINERS: Add dts files for r8 series to SHMOBILE
+Message-Id: <CAMuHMdUYndAVNLA5G4usuDZJFwaaOyCimOgG0kR6O8GCPLB=9A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390057071-12455-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390057071-12455-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add arch/arm/boot/dts/r8* to the list of files covered by SHMOBILE
-so any changes to these can be reported with get_maintailers.pl
+On Sat, Jan 18, 2014 at 3:57 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> --- a/MAINTAINERS
+> +++ b/MAINTAINERS
+> @@ -1239,6 +1239,8 @@ Q:        http://patchwork.kernel.org/project/linux-sh/list/
+>  T:     git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
+>  S:     Supported
+>  F:     arch/arm/mach-shmobile/
+> +F:     arch/arm/boot/dts/r8*
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
-Cc: Joe Perches <joe@perches.com> (commit_signer:26/328=8%)
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org> (commit_signer:27/328=8%)
-Cc: Andrew Morton <akpm@linux-foundation.org> (commit_signer:41/328%)
-Cc: Magnus Damm <magnus.damm@gmail.com> (supporter:ARM/SHMOBILE ARM...)
-Cc: Simon Horman <horms@verge.net.au> (supporter:ARM/SHMOBILE ARM...)
-Cc: linux-sh@vger.kernel.org
----
- MAINTAINERS | 2 ++
- 1 file changed, 2 insertions(+)
+While you're at it, can you please also include r7s*?
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 6c20792..30fb6dc 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1239,6 +1239,8 @@ Q:	http://patchwork.kernel.org/project/linux-sh/list/
- T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
- S:	Supported
- F:	arch/arm/mach-shmobile/
-+F:	arch/arm/boot/dts/r8*
-+F:	arch/arm/boot/dts/include/dt-bindings/clock/r8a*
- F:	drivers/sh/
- 
- ARM/SOCFPGA ARCHITECTURE
--- 
-1.8.5.2
+> +F:     arch/arm/boot/dts/include/dt-bindings/clock/r8a*
 
+This is a symlink, so shouldn't that be include/dt-bindings/clock/r8a?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
