@@ -1,43 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 07 Jan 2014 01:04:51 +0000
-Subject: Re: [PATCH 2/4] ARM: shmobile: Set CONFIG_LOCALVERSION in defconfigs
-Message-Id: <20140107010451.GB28639@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sat, 18 Jan 2014 15:03:39 +0000
+Subject: [PATCH 5/6] ARM: shmobile: r8a7790.dtsi: add usbphy node
+Message-Id: <1390057420-13226-6-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
- <1388764128-27686-2-git-send-email-geert@linux-m68k.org>
- <20140106022758.GE11231@verge.net.au>
- <CAMuHMdUSbvg593r_2prWaD9BsgXqw+sfur_S9Et5gX1a+v3PuA@mail.gmail.com>
- <20140106084739.GA16341@verge.net.au>
-In-Reply-To: <20140106084739.GA16341@verge.net.au>
+References: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>, "open list:OPEN FIRMWARE AND..." <devicetree@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-On Mon, Jan 06, 2014 at 05:47:40PM +0900, Simon Horman wrote:
-> On Mon, Jan 06, 2014 at 09:43:11AM +0100, Geert Uytterhoeven wrote:
-> > On Mon, Jan 6, 2014 at 3:27 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Fri, Jan 03, 2014 at 04:48:46PM +0100, Geert Uytterhoeven wrote:
-> > >> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> > >>
-> > >> This allows to derive the kernel flavor from the kernel version.
-> > >
-> > > Is this a common practice for ARM?
-> > 
-> > Not really, only 5 ARM deconfigs do that.
-> > Globally, ca. 10% of the Linux defconfigs do it.
-> > 
-> > > I'm a little hesitant to take this if its not.
-> > > Particularly as we are planing to deprecate these defconfigs
-> > > in favour of a shared multiplatform defconfig.
-> > 
-> > A shared multiplatform defconfig can still have
-> > CONFIG_LOCALVERSION="-shmobile", so you'll know it's a multiplatform
-> > kernel when you see the dmesg.
-> 
-> Not if it is shared more widely :^)
+Add node for USB PHY driver to the base R8A7790 device tree include file.
+It is up to the board file to enable and configure it as necessary.
 
-I'm not really sold on this patch as I don't truly understand
-its motivation and I am reluctant to move towards an
-uncommon practice for ARM. I am not planning to take this
-patch at this time.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+---
+Cc: devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND...)
+Cc: Magnus Damm <magnus.damm@gmail.com> (supporter:ARM/SHMOBILE ARM...)
+Cc: Simon Horman <horms@verge.net.au> (supporter:ARM/SHMOBILE ARM...)
+Cc: linux-sh@vger.kernel.org (open list:ARM/SHMOBILE ARM...)
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c5e9783..ea180a5 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -758,4 +758,12 @@
+ 		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+ 	};
++
++	usbphy: usbphy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		clock-names = "usbhs";
++		reg = < 0x0 0xe6590100 0x0 0x100>;
++		status = "disabled";
++	};
+ };
+-- 
+1.8.5.2
+
