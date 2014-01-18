@@ -1,51 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Dec 2013 14:18:07 +0000
-Subject: [PATCH 03/12] ARM: shmobile: armadillo: Set backlight enable GPIO
-Message-Id: <9a3beb04ec32cab91a8e562ae068433387b84547.1387891831.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sat, 18 Jan 2014 15:03:35 +0000
+Subject: [PATCH 1/6] pci-rcar-gen2: add initial device tree documentation
+Message-Id: <1390057420-13226-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1387891831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
+References: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, horms+renesas@verge.net.au
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add initial documentation for the pci-rcar-gen2 driver device tree bindings.
+This is not yet complete and needs work on the sub-nodes for the PCI bus.
 
-The Armadillo 800 EVA panel module has a backlight enable signal
-connected to GPIO 61. Instead of requesting the GPIO in board code and
-setting it to a high level unconditionally, pass the GPIO number to the
-PWM backlight driver as the backlight enable GPIO.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+Cc: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org
+Cc: horms+renesas@verge.net.au
+---
+ Documentation/devicetree/bindings/pci/renessas,pci-r8a7790 | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/renessas,pci-r8a7790
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index d9e28c7a..2ea8935 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -423,7 +423,7 @@ static struct platform_pwm_backlight_data pwm_backlight_data = {
- 	.max_brightness = 255,
- 	.dft_brightness = 255,
- 	.pwm_period_ns = 33333, /* 30kHz */
--	.enable_gpio = -1,
-+	.enable_gpio = 61,
- };
- 
- static struct platform_device pwm_backlight_device = {
-@@ -1203,9 +1203,6 @@ static void __init eva_init(void)
- 	r8a7740_pinmux_init();
- 	r8a7740_meram_workaround();
- 
--	/* LCDC0 */
--	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
--
- 	/* GETHER */
- 	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
+diff --git a/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790 b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790
+new file mode 100644
+index 0000000..65268d9
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790
+@@ -0,0 +1,12 @@
++Renesas internal AHB to PCI bridge
++
++This is the bridge used internally to connect the USB controllers to the
++AHB.
++
++Required properties:
++ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC
++ - reg : A list of physical regions to access the device. The first is
++         the operational registers for the OHCI/EHCI controller and the
++	 second region is for the bridge configuration and control registers.
++ - interrupts : interrupt for the device
++ - clocks : The reference to the device clock
+\ No newline at end of file
 -- 
-1.8.4
+1.8.5.2
 
