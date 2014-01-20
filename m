@@ -1,50 +1,75 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:11:21 +0000
-Subject: Re: [PATCH v4 13/14] spi: rspi: Add DT support
-Message-Id: <20140127201121.GO11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="mgiPvHqStUXOBTSF"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 20 Jan 2014 11:41:53 +0000
+Subject: [PATCH] [V3] ARM: shmobile: r8a7790.dtsi: ficx i2c[0-3] clock reference
+Message-Id: <1390218113-13715-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-14-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-14-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+The R8A7790's dtsi file i2c0, i2c1, i2c2, and i2c3 nodes have clock
+refrences to the mstp3_clks clock node, however these clocks are in the
+mstp9_clks node.
 
---mgiPvHqStUXOBTSF
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The error was introducted in 72197ca7a1cb1cea5 ("ARM: shmobile: r8a7790:
+ Reference clocks") which is in Simon's current development tree.
 
-On Fri, Jan 24, 2014 at 09:44:03AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Cc: devicetree@vger.kernel.org
+This patch fixes the following error:
 
-This looks good modulo Mark's comment on the binding document.
+of_clk_src_onecell_get: invalid clock index 31
+i2c-rcar e6508000.i2c: cannot get clock
+i2c-rcar: probe of e6508000.i2c failed with error -2
 
---mgiPvHqStUXOBTSF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+Cc: horms+renesas@verge.net.au
+Cc: laurent.pinchart+renesas@ideasonboard.com
+Cc: linux-sh@vger.kernel.org
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3cc834b..15e2a97 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -198,7 +198,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -209,7 +209,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -220,7 +220,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -231,7 +231,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+-- 
+1.8.5.2
 
-iQIcBAEBAgAGBQJS5r1mAAoJELSic+t+oim9LUIP/0bIGdCuE/AcP9uw7WR39WuR
-YSwZY2QjijQ19m2tj3WN/oEtSkwZoIxmjUECl3bxBOzvaKUSCqXFZka4hTrHYT7p
-yLhNQsTzLpI/yBud3gkqmbTuq5lwSKNFBv4EMYborzsbbkMFPF8rsZkpeCEixo45
-2zOOE+lfNeK0mccxdKdSp4Jtrue3zzWFHgWUbmEAZFz3XmqKXs0XDCMAvKDnXq8z
-eUk+cyPqOf3mpKh8UBoj+nL74H6ynTNOCEW/p4T9C0kKRM+R3heUdG3OrDLniy8n
-c4vy1EbIixL3IyGE+wWbtoTb2a3QEfwhlOA1AHI1pX9C1uAtDBESISz3E+a5nCwW
-5PUZtHhL59uc1TExNRlll3g6vKSkOuFFqnP4c2lraRlOpGaDdBLfZD+VQoPg1GKQ
-ez2FTAto+H0hbeazRIY+B+IGbn5mS6Kaun/rKORKTjJSPAExjNkinTI1aYta9R5N
-ZROfdJ3zNKGWihXSQJyhaG/vTTOiFBnkDVM7aGh389bTA4J9R8pCIRPTbXu+zwKQ
-5F37V9H9TBRpxQy3Md58YrJT96QOHKuiEbxvUnXaeLo0BW+7PKJE3SskAx4EwqrW
-vOnOg5Po9eLsZe4htOYuWRIJr4TRmKKkszHxZfCgZbwNk0g4rYhaD5igzpHJsXnb
-8KvuykUFpwOcZQoOjJPN
-=QbZm
------END PGP SIGNATURE-----
-
---mgiPvHqStUXOBTSF--
