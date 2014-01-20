@@ -1,45 +1,68 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 20 Jan 2014 11:43:40 +0000
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Mon, 20 Jan 2014 11:47:13 +0000
 Subject: Re: [PATCH v5] can: add Renesas R-Car CAN driver
-Message-Id: <CAMuHMdWZJUvcW9OzM39aB2m+VdKqmZ6EOGR_rZcAdV7Cmwx3kg@mail.gmail.com>
+Message-Id: <52DD0CC1.70205@pengutronix.de>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="5pvnuu9f5L2gjpckVidOAb2fF86L26aNW"
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312270037.15822.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201312270037.15822.sergei.shtylyov@cogentembedded.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, vksavl@gmail.com
+References: <201312270037.15822.sergei.shtylyov@cogentembedded.com> <CAMuHMdWZJUvcW9OzM39aB2m+VdKqmZ6EOGR_rZcAdV7Cmwx3kg@mail.gmail.com>
+In-Reply-To: <CAMuHMdWZJUvcW9OzM39aB2m+VdKqmZ6EOGR_rZcAdV7Cmwx3kg@mail.gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, wg@grandegger.com, linux-can@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, vksavl@gmail.com
 
-Hi Sergei,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--5pvnuu9f5L2gjpckVidOAb2fF86L26aNW
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-On Thu, Dec 26, 2013 at 10:37 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Changes in version 3:
+On 01/20/2014 12:43 PM, Geert Uytterhoeven wrote:
+> Hi Sergei,
+>=20
+> On Thu, Dec 26, 2013 at 10:37 PM, Sergei Shtylyov
+> <sergei.shtylyov@cogentembedded.com> wrote:
+>> Changes in version 3:
+>=20
+>> - added '__packed' to 'struct rcar_can_mbox_regs' and 'struct rcar_can=
+_regs';
+>> - removed unneeded type cast in the probe() method.
+>=20
+>> +/* Mailbox registers structure */
+>> +struct rcar_can_mbox_regs {
+>> +       u32 id;         /* IDE and RTR bits, SID and EID */
+>> +       u8 stub;        /* Not used */
+>> +       u8 dlc;         /* Data Length Code - bits [0..3] */
+>> +       u8 data[8];     /* Data Bytes */
+>> +       u8 tsh;         /* Time Stamp Higher Byte */
+>> +       u8 tsl;         /* Time Stamp Lower Byte */
+>> +} __packed;
+>=20
+> Sorry, I missed the earlier discussion, but why the _packed?
+> One u32 and 12 bytes makes a nice multiple of 4.
 
-> - added '__packed' to 'struct rcar_can_mbox_regs' and 'struct rcar_can_regs';
-> - removed unneeded type cast in the probe() method.
+Better safe than sorry, it's the layout of the registers in hardware,
+don't let the compiler optimize here.
 
-> +/* Mailbox registers structure */
-> +struct rcar_can_mbox_regs {
-> +       u32 id;         /* IDE and RTR bits, SID and EID */
-> +       u8 stub;        /* Not used */
-> +       u8 dlc;         /* Data Length Code - bits [0..3] */
-> +       u8 data[8];     /* Data Bytes */
-> +       u8 tsh;         /* Time Stamp Higher Byte */
-> +       u8 tsl;         /* Time Stamp Lower Byte */
-> +} __packed;
+Marc
 
-Sorry, I missed the earlier discussion, but why the _packed?
-One u32 and 12 bytes makes a nice multiple of 4.
+--=20
+Pengutronix e.K.                  | Marc Kleine-Budde           |
+Industrial Linux Solutions        | Phone: +49-231-2826-924     |
+Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
+Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
 
-Gr{oetje,eeting}s,
 
-                        Geert
+--5pvnuu9f5L2gjpckVidOAb2fF86L26aNW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+Comment: Using GnuPG with Icedove - http://www.enigmail.net/
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+iEYEARECAAYFAlLdDMEACgkQjTAFq1RaXHO+dQCfQzgPHEgMko9Aqv6jet1CwdU9
+qfEAn1lwT8tai+Ary25PpCuOLgUZs8I4
+=rDFG
+-----END PGP SIGNATURE-----
+
+--5pvnuu9f5L2gjpckVidOAb2fF86L26aNW--
