@@ -1,84 +1,75 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Jan 2014 10:19:13 +0000
-Subject: Re: spi-rspi I/O errors
-Message-Id: <CAMuHMdUBK8oi2qiUPH6MZrtya06oO1gaKjnpde_tCS7vRZF3JQ@mail.gmail.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 20 Jan 2014 11:44:21 +0000
+Subject: [PATCH] [V4] ARM: shmobile: r8a7790.dtsi: ficx i2c[0-3] clock reference
+Message-Id: <1390218261-14076-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1401072116370.27579@ayla.of.borg>
- <CAMuHMdVzFeymxW2CZUyKgZ-fxsektE1EpLQksfSzoekj2ex53Q@mail.gmail.com>
- <2820126.AWUstGfrNm@avalon> <1787813.oK07lvnr6k@avalon>
- <CAMuHMdX+4Z5nzj1t-v3kG4__yjYohOic1b0dUA9ZwHJrt2MRgw@mail.gmail.com>
-In-Reply-To: <CAMuHMdX+4Z5nzj1t-v3kG4__yjYohOic1b0dUA9ZwHJrt2MRgw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jan 10, 2014 at 10:20 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, Jan 9, 2014 at 7:14 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
->>> > It seems to get a stale value. I ended up doing the printk() anyway, and
->>> > when reading using small buffer sizes, the issues is more likely to
->>> > happen.
->>> >
->>> > If I add a second copy of rspi->spsr, and make that copy volatile OR add
->>> > a few calls to smp_mb() around the places where it's written and read,
->>> > the copy has the right value inside rspi_wait_for_interrupt(), BUT only if
->>> > I also print the spsr value inside rspi_irq(). Note that the original
->>> > rspi->spsr still has the stale value.
->>>
->>> Do I understand it correctly that the SPSR value read from the register in
->>> rspi_irq() is always correct on the first read, and that only the rspi->spsr
->>> value stored in memory and read in rspi_wait_for_interrupt() is wrong ?
->>> > I'd expect wake_up() and wait_event_timeout() to have the right memory
->>> > barriers (cfr. Documentation/memory-barriers.txt), so I don't have to add
->>> > my own. And why does it need the extra printk()? What extra
->>> > synchronization
->>> > does that give?
->>>
->>> Have you tried adding explicit memory barriers without any extra printk ?
->
-> Yes, cfr. "add a few calls to smp_mb()" above.
->
->>> > Note that the interrupt handler always runs on CPU core 0, while
->>> > rspi_wait_for_interrupt() can run on core 0 or 1. Is there a
->>> > cache-coherency issue between the two CPU cores?
->>>
->>> I'd be very surprised if that was the case, as there should be lots of other
->>> breakages, but let's not rule that out too fast. Magnus should be able to
->>> help you more than I can regarding that.
->>
->> Could you verify that the SMP bit is set in ACTLR
->> (http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0388e/CIHHDDHJ.html)
->
-> ACTLR = 0x000000c0 on CPU 0
-> ACTLR = 0x00000040 on CPU 1
->
-> 0xc0 = EXCL | SMP
-> 0x40 = SMP
->
-> The different EXCL value seems strange to me, especially considering the comment
-> about the matching cache controller configuration:
+The R8A7790's dtsi file i2c0, i2c1, i2c2, and i2c3 nodes have clock
+references to the mstp3_clks clock node, however these clocks are in the
+mstp9_clks node.
 
-I tried enabling the EXCL bit for ACTLR on CPU 1, but it doesn't make
-a difference.
+The error was introducted in 72197ca7a1cb1cea5 ("ARM: shmobile: r8a7790:
+ Reference clocks") which is in Simon's current development tree.
 
-One other thing: As I was playing with m25p80, I had #define DEBUG at the
-top of drivers/mtd/devices/m25p80.c. This doesn't cause much kernel output,
-just one message before every read:
+This patch fixes the following error:
 
-    spi0.0: m25p80_read from 0x00108600, len 512
+of_clk_src_onecell_get: invalid clock index 31
+i2c-rcar e6508000.i2c: cannot get clock
+i2c-rcar: probe of e6508000.i2c failed with error -2
 
-However, without the #define DEBUG, it's _much_ more difficult to trigger
-the issue.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+Cc: horms+renesas@verge.net.au
+Cc: laurent.pinchart+renesas@ideasonboard.com
+Cc: linux-sh@vger.kernel.org
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3cc834b..15e2a97 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -198,7 +198,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -209,7 +209,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -220,7 +220,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -231,7 +231,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+-- 
+1.8.5.2
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
