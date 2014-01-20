@@ -1,78 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 19 Jan 2014 21:44:53 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 20 Jan 2014 11:47:05 +0000
 Subject: Re: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <3417477.Rj26gCLKM2@avalon>
+Message-Id: <20140120114705.GL17314@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="+QmoJrblcRudFCJH"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1389367095-7760-1-git-send-email-ben.dooks@codethink.co.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ben,
 
-On Thursday 16 January 2014 17:25:09 Ben Dooks wrote:
-> On 16/01/14 10:38, Ben Dooks wrote:
-> > On 15/01/14 19:46, Laurent Pinchart wrote:
-> >> On Wednesday 15 January 2014 08:55:05 Simon Horman wrote:
-> >>> On Tue, Jan 14, 2014 at 01:56:16PM +0000, Ben Dooks wrote:
-> >>>> If the kernel is built to support multi-arm configurmation with
-> >>>> shmobile support built in, then the drivers/sh is not built. This
-> >>>> contains drivers that are essential to devices support by that
-> >>>> configuration, including the PM runtime code in drivers/sh/pm_runtime.c
-> >>>> (which implicitly enables the bus clocks for all devices).
-> >>>> 
-> >>>> If CONFIG_ARCH_SHMOBILE_MULTI then build the drivers/sh directory,
-> >>>> but ensure that bits that may conflict (drivers/sh/clk if the common
-> >>>> clock framework is not enabled) are built.
-> >>>> 
-> >>>> The ARCH_SHMOBILE_MULTI was added by efacfce5f8a ("ARM: shmobile:
-> >>>> Introduce ARCH_SHMOBILE_MULTI") but this has only just recently been
-> >>>> found due to changes currently only in Simon Horman's tree. This patch
-> >>>> is a partial revert of bf98c1eac1d4a6b ("ARM: Rename ARCH_SHMOBILE to
-> >>>> ARCH_SHMOBILE_LEGACY") to address the issue of drivers not being built.
-> >>>> 
-> >>>> It is also possible the drivers/sh/intc will also need to be built
-> >>>> however the lack of intc is not causing a number of drivers to fail
-> >>>> to properly manage their clocks. This is left as an future patch for
-> >>>> that is perfectly fine. someone who understands that part of the code.
-> >>> 
-> >>> Laurent, what are you feelings on this?
-> >> 
-> >> If we end up needing an interrupt controller supported by
-> >> drivers/sh/intc for a multiplatform kernel I would rather like to port
-> >> the driver to drivers/irqchip instead of compiling drivers/sh/intc for
-> >> the platform.
-> >> 
-> >> Regarding drivers/sh/pm_runtime.c, compiling it for ARCH_SHMOBILE_MULTI
-> >> will cause multiplatform kernels running on non-Renesas platforms to add
-> >> a pm clock notifier. We need to at least add a runtime check.
-> > 
-> > Hmm, could we move that to the mstp code or add bindings to the
-> > specific architectures that need it?
-> 
-> I was having a think, and how about adding the following to each
-> driver that expects clock management to happen for it, such as the
-> following in the probe sequence:
-> 
-> 	pm_runtime_manage_clock(dev);
-> 
-> This would mean the following:
-> 
-> - People would know a driver had its clock managed elsewhere
-> - You couldn't build a system with the clock_ops disabled.
-> - A system where a mix of drivers where used would work fine
-> - drivers/sh/pm_runtime.c could be deleted too.
+--+QmoJrblcRudFCJH
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-That sounds like a good idea to me. I like how drivers will be responsible for 
-explicitly delegating clock handling to generic code. This combines simplicity 
-with flexibility, and doesn't hide clock handling.
+On Sun, Jan 19, 2014 at 10:44:53PM +0100, Laurent Pinchart wrote:
+> On Thursday 16 January 2014 17:25:09 Ben Dooks wrote:
 
-Mark, Rafael, any opinion ?
+> > I was having a think, and how about adding the following to each
+> > driver that expects clock management to happen for it, such as the
+> > following in the probe sequence:
 
--- 
-Regards,
+> > 	pm_runtime_manage_clock(dev);
 
-Laurent Pinchart
+> > This would mean the following:
 
+> > - People would know a driver had its clock managed elsewhere
+> > - You couldn't build a system with the clock_ops disabled.
+> > - A system where a mix of drivers where used would work fine
+> > - drivers/sh/pm_runtime.c could be deleted too.
+
+> That sounds like a good idea to me. I like how drivers will be responsibl=
+e for=20
+> explicitly delegating clock handling to generic code. This combines simpl=
+icity=20
+> with flexibility, and doesn't hide clock handling.
+
+> Mark, Rafael, any opinion ?
+
+I think that just makes things more complicated and isn't adding
+anything over pm_runtime_enable(), it's just boilerplate code.  In
+theory essentially every driver running on platforms which don't have
+explicit management of core IP clocks ought to be calling this since
+potentially the IP might be deployed on another platform which does have
+clock management (this does actually happen with things like the
+DesignWare IPs) and it doesn't do anything like say which clocks are
+expected to be managed in this way which is another thing that can come
+up when moving devices between platforms.
+
+I'm also struggling to see how it provides any sort of build time
+protection, it would allow the generation of a warning at runtime at
+best.
+
+As far as I can tell the problem that Ben has seen here is that the
+platform really, really needs the code for its power domains running to
+be functional (this doesn't seem unreasonable and may not be related to
+clocks, this may be required to have the IPs powered up at all).  I'd
+expect this is something for the platform to sort out rather than
+something for individual drivers to have to carry code for.
+
+If it was going to be drivers carrying code for this I would expect it
+to be something like providing a list of clocks to be managed along with
+runtime PM - this would also make the code more widely applicable since
+it's quite common for the runtime PM callbacks to do nothing more than
+just enable and disable clocks.
+
+--+QmoJrblcRudFCJH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS3Qy2AAoJELSic+t+oim90AgP+wbZnt+sinMrUTGo+fKH8L3F
+8brM/kOjhfSUdNNc52wvd4sJ6+EfFDavdDo3oH0b6Fl0WF7N3QMkZKDw+4yHRNCP
+OuvNHaG5PAjlIWrPVblIovNJxXerHPZ/CMZslS/H9wCj58wC/g8r4bIeoMlLe0rN
+Mk/RLra46fptByDdj1Z4H0c2GAQ0mSiShENwOYfLpEJVXnD/DamZcIo5zuCxA2BE
+haNqByPMwsLXYJAF24BHH+CvIQ0BmXcDhIIaA5ew46Uu09qkwAlkKUslq/VikCV6
+a8EljG1uV81G1nnRSzjTvY2vxleFHId+lV5wn8R1O3/+MJWbsMuqJnc4qLvgRICj
+1xkBPzJYDEeRIDJShZNwpJfcuIB4P5MPnVaIYk4sJBp5QjDHCEfgXoSW/PrYMzgF
+zoIq8PHDQmvkuNlmlgoxvsD8w28j4W9LjvvG8MUlthVy7ruslq3yTcY62R43f/dg
+jWFJ3j4DZBp2DCa40mOgEsrCWIusM8lEMEpX8pxCtOU2sYFGTcZF8x99C5hebzkJ
+/6ctJwjmQ5g+90GwJzB/4b/VEguE9BF97qSro2u3CZ75AmJSJ0Pg7RTFYKvkxXOu
+WgrrauZA9/y9JsMyXj3U8qbSMyP8dod4tK4BSOYc5DJgcphp2rzz9MM5gGWSyWoY
+tc5eGsz+mnuSFS7J8gzT
+=zqB5
+-----END PGP SIGNATURE-----
+
+--+QmoJrblcRudFCJH--
