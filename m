@@ -1,58 +1,65 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 20 Jan 2014 15:56:43 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 20 Jan 2014 22:52:20 +0000
 Subject: Re: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <20140120155643.GQ17314@sirena.org.uk>
+Message-Id: <1566590.zu3Q3sqakp@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="apqMg07LpBOyFFAR"
+Content-Type: multipart/mixed; boundary="nextPart1634193.HdAEV76yrR"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389707776-23306-1-git-send-email-ben.dooks@codethink.co.uk>
- <20140120125436.GN17314@sirena.org.uk>
- <52DD224B.1050502@codethink.co.uk> <1482392.XFeYNLvUZH@avalon>
-In-Reply-To: <1482392.XFeYNLvUZH@avalon>
+ <1482392.XFeYNLvUZH@avalon> <20140120155643.GQ17314@sirena.org.uk>
+In-Reply-To: <20140120155643.GQ17314@sirena.org.uk>
 To: linux-arm-kernel@lists.infradead.org
 
 
---apqMg07LpBOyFFAR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart1634193.HdAEV76yrR
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-On Mon, Jan 20, 2014 at 04:48:10PM +0100, Laurent Pinchart wrote:
+Hi Mark,
 
-> The problem isn't as simple as it seems, and more advanced implementation=
-s=20
-> that would allow listing clocks that should be managed automatically (or =
-the=20
-> other way around) would also add another level of complexity. The require=
-d=20
-> information is platform-dependent, but we currently don't express it as s=
-uch=20
-> in DT.
+On Monday 20 January 2014 15:56:43 Mark Brown wrote:
+> On Mon, Jan 20, 2014 at 04:48:10PM +0100, Laurent Pinchart wrote:
+> > The problem isn't as simple as it seems, and more advanced implemen=
+tations
+> > that would allow listing clocks that should be managed automaticall=
+y (or
+> > the other way around) would also add another level of complexity. T=
+he
+> > required information is platform-dependent, but we currently don't
+> > express it as such in DT.
+>=20
+> Well, the set of clocks an IP requires will tend to be the same - it'=
+s
+> normally just that integrators may have done things like tie them tog=
+ether
+> or decide to spread confusion by renaming them.
 
-Well, the set of clocks an IP requires will tend to be the same - it's
-normally just that integrators may have done things like tie them
-together or decide to spread confusion by renaming them.
+That's the problem :-) How should the runtime PM core be given the list=
+ of=20
+clocks it needs to manage ? That information needs to come from somewhe=
+re.
 
---apqMg07LpBOyFFAR
+=2D-=20
+Regards,
+
+Laurent Pinchart
+
+--nextPart1634193.HdAEV76yrR
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJS3Uc4AAoJELSic+t+oim9F3QP/1Fqx6+KjKpnKAzcTypCWTFW
-MvyiFPVmFGnRpaLqeQeBfWp6IFzYp70uYqghGwMkBHptTy7jui9MSphL9rRg/EmZ
-TndCpmAx8vOY6cdLwwL17+uVcJ2hWOdtfHP1kHIVXat1jdrrJtoFHXABdUI3oY8e
-taEmfdr6J2q3GA9o9Tw5pck9qUOLe96/eksu3cLqaVD+fmx+CutNPZ380u2VnYJh
-3qObbG1ZzpRE47DQGwL2aLZ3T16RfIn4egaR/9PMxxFFm1I8CSVlh4vIQu+2Sp90
-TbfWe0v5cmWvyVfOd7URc8JXrO62krPl4GcNjUq9eC3fbeNHLkoBCb1xo6FlyOVt
-lECETM952mRKR6NYP+d7pXLpet0SEVs8QiooIqI7JyZlggaPAmBao3kIVhGUAqNn
-2ja9AyGxPhuQlU0Y4Gb1LU24inp3EkRkLa00NYvvcnOc/pq/SiAnt+jDFVAzBFzJ
-MtDzlbvyu1iaQirqCdtPBhxXci77MUrxfeS/DJYk2vjAEbR6U0nN4LxBvYB1UEnj
-qAWnzYglEHHCpCF9G+sgoego5GvEf0/nTEFO+pe0Z6Yj6Uuk61TZY40Va4XeTKKv
-WlFa8HOpS85FSgxVA38i5M1wGqjG2Vrlbmh3qjGYRg4nUOdf4rSNMCVO9iz/hPvA
-ydgxEAympX/M9K1hjkUA
-=VqjL
+iQEcBAABAgAGBQJS3aikAAoJEIkPb2GL7hl17NQH/ixLeTaEA/5rSS46ljmO9oIc
+KNBToXJHRMiNuEOzaVo3deebyZ3KuQpNB1S0ju+92UEfXQQv6AaChYFqqOZDvBke
+QVg9xKt8NvlB4Vu6KYTVChUZoTtuB6AUe5BpZPu0ih5QcSyBXxXTvj+1vbYB2E3i
+FQ4ueSzNBqtxVRvOmSIQbJerf/8qY3Iw+J7HzUeaqjEyJxEal8pJSV5SJ6v4E5iE
+8TnXxtZ+cw54+4vx2YuV3ATn3M35OXB1El0ikIQDHxwJksOLq7lk+7Lj/Sl3b6QK
+DrrC7h1QGqcbOwHhj+nmmVUE9YFGBvcuCGDsgChyPJxijGqvBz03IBq10V+/7GI=
+=jyzU
 -----END PGP SIGNATURE-----
 
---apqMg07LpBOyFFAR--
+--nextPart1634193.HdAEV76yrR--
+
