@@ -1,34 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Jan 2014 05:15:08 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: r8a7790: add Audio-DMAC support
-Message-Id: <20140109051506.GJ2132@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 20 Jan 2014 16:10:32 +0000
+Subject: [PATCH] [V2] MAINTAINERS: Add dts files for r8 series to SHMOBILE
+Message-Id: <1390234232-943-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386935560-16739-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1386935560-16739-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>, Joe Perches <joe@perches.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Andrew Morton <akpm@linux-foundation.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, linux-kernel@vger.kernel.org
 
-On Mon, Jan 06, 2014 at 12:32:12AM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> These patches add Audio DMAC support on r8a7790.
-> These are used from R-Car sound driver.
-> 
-> Current Simon's branch doesn't have R-Car
-> sound driver support, since it needs ASoC branch merge.
-> (= it has Gen2 support)
-> But, this DMAEngine support can be applied without
-> sound driver support.
-> 
-> These are based on renesas-devel-v3.13-rc5-20131230 tag
+Add a number of files to the list of files covered by SHMOBILE
+so any changes to these can be reported with get_maintailers.pl
+for the current SHMOILE architectures.
 
-Hi Morimoto-san,
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+v2:
+  - add defconfigs and r7 configurations
+  - fix path to dt-bindings
 
-these look good to me.
+Cc: Joe Perches <joe@perches.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+ MAINTAINERS | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Magnus,
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 6c20792..f74d830 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1239,7 +1239,14 @@ Q:	http://patchwork.kernel.org/project/linux-sh/list/
+ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
+ S:	Supported
+ F:	arch/arm/mach-shmobile/
++F:	arch/arm/boot/dts/r8*
++F:	arch/arm/boot/dts/r7*
++F:	arch/arm/configs/bockw_defconfig
++F:	arch/arm/configs/genmai_defconfig
++F:	arch/arm/configs/lager_defconfig
++F:	arch/arm/configs/marzen_defconfig
+ F:	drivers/sh/
++F:	include/dt-bindings/clock/r8a*
+ 
+ ARM/SOCFPGA ARCHITECTURE
+ M:	Dinh Nguyen <dinguyen@altera.com>
+-- 
+1.8.5.2
 
-could you review them?
