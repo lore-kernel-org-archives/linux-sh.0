@@ -1,76 +1,114 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 16 Jan 2014 02:34:16 +0000
-Subject: [PATCH v6 4/4] ARM: shmobile: genmai: Enable r7s72100-ether
-Message-Id: <1389839656-10932-5-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 12:48:39 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7790: Replace IRQ type numerical values with macros
+Message-Id: <1390308519-31320-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Replace the hardcoded value 4 with IRQ_TYPE_LEVEL_HIGH.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Dave, I intend to take this change through my tree
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-v3 - v6
-* No change
-
-v2
-* As suggested by Magnus Damm and Sergei Shtylyov
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
-
-* As suggested by Sergei Shtylyov
-  - set no_ether_link as there is no LINK signal documented
-    in the manual
----
- arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c..a1f6fe1 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,36 @@
- 
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/sh_eth.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* Ether */
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
-+	.phy			= 0x00, /* PD60610 */
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.phy_interface		= PHY_INTERFACE_MODE_MII,
-+	.no_ether_link		= 1
-+};
-+
-+static const struct resource ether_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe8203000, 0x800),
-+	DEFINE_RES_MEM(0xe8204800, 0x200),
-+	DEFINE_RES_IRQ(gic_iid(359)),
-+};
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
-+
-+	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  &ether_pdata, sizeof(ether_pdata));
- }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 8d6ee9e..ea95cb60 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -304,7 +304,7 @@
+ 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupt-parent = <&gic>;
+-		interrupts = <0 144 4>;
++		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -314,7 +314,7 @@
+ 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c50000 0 64>;
+-		interrupts = <0 145 4>;
++		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -324,7 +324,7 @@
+ 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c60000 0 64>;
+-		interrupts = <0 151 4>;
++		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -334,7 +334,7 @@
+ 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c20000 0 64>;
+-		interrupts = <0 148 4>;
++		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -344,7 +344,7 @@
+ 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c30000 0 64>;
+-		interrupts = <0 149 4>;
++		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -354,7 +354,7 @@
+ 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6ce0000 0 64>;
+-		interrupts = <0 150 4>;
++		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -364,7 +364,7 @@
+ 		compatible = "renesas,scif-r8a7790", "renesas,scif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6e60000 0 64>;
+-		interrupts = <0 152 4>;
++		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -374,7 +374,7 @@
+ 		compatible = "renesas,scif-r8a7790", "renesas,scif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6e68000 0 64>;
+-		interrupts = <0 153 4>;
++		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -384,7 +384,7 @@
+ 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe62c0000 0 96>;
+-		interrupts = <0 154 4>;
++		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -394,7 +394,7 @@
+ 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe62c8000 0 96>;
+-		interrupts = <0 155 4>;
++		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
 -- 
-1.8.4
+1.8.3.2
 
