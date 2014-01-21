@@ -1,59 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 16 Jan 2014 02:34:12 +0000
-Subject: [PATCH v6 0/4] Add ethernet support for r7s72100
-Message-Id: <1389839656-10932-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 15:32:40 +0000
+Subject: [RFC/PATCH 5/7] ARM: shmobile: r8a7791: Add DU node to device tree
+Message-Id: <1390318362-29954-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org, Magnus Damm <magnus.damm@gmail.com>
 
-Hi,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-this series adds ethernet support to sh-pfc for the r7s72100 SoC.
-
-This series is based on a merge of:
-* The topic/r7s72100-v3.13-rc8-20140115 tag in my renesas tree
-* net-next
-  - Head revision: 08c93cd99b2f31ba9
-    ("Merge branch 'for-davem' of git://gitorious.org/linux-can/linux-can-next")
-
-The first two patches, targeted at net-next, also applies cleanly there.
-
-Changes since v5
-* Address feedback from Joe Perches and Sergei Shtylyov as detailed
-  in the changelogs of:
-  - sh_eth: Use bool as return type of sh_eth_is_gether()
-  - sh_eth: Add support for r7s72100
-
-Changes since v4
-* Addressed feedback from Sergei Shtylyov as detailed in the changelog
-  of "sh_eth: Add support for r7s72100"
-* Rebase
-
-Changes since v3
-* Use bool as return type of sh_eth_is_gether()
-  and sh_eth_is_rz_fast_ether()
-* Correct coding style in sh_eth_get_stats()
-
-Changes since v2
-* Trivial rebase
-* Dropped "RFC" from subject
-
-Changes since v1 are noted in the changelog of each patch.
-
-Simon Horman (4):
-  sh_eth: Use bool as return type of sh_eth_is_gether()
-  sh_eth: Add support for r7s72100
-  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-  ARM: shmobile: genmai: Enable r7s72100-ether
-
- arch/arm/mach-shmobile/board-genmai.c   |  21 +++++
- arch/arm/mach-shmobile/clock-r7s72100.c |   4 +
- drivers/net/ethernet/renesas/sh_eth.c   | 131 +++++++++++++++++++++++++++++---
- drivers/net/ethernet/renesas/sh_eth.h   |   3 +-
- 4 files changed, 146 insertions(+), 13 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d5cc362..a53b0d7 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -384,6 +384,21 @@
+ 		status = "disabled";
+ 	};
+ 
++	du: du@feb00000 {
++		compatible = "renesas,du-r8a7791";
++		reg = <0 0xfeb00000 0 0x40000>,
++		      <0 0xfeb90000 0 0x1c>;
++		reg-names = "du", "lvds.0";
++		interrupt-parent = <&gic>;
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++		         <&mstp7_clks R8A7791_CLK_DU1>,
++		         <&mstp7_clks R8A7791_CLK_LVDS0>;
++		clock-names = "du.0", "du.1", "lvds.0";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.8.4
+1.8.3.2
 
