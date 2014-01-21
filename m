@@ -1,35 +1,115 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Jan 2014 00:57:59 +0000
-Subject: [PATCH 10/10] ARM: shmobile: ape6evm: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <877g9ii8vf.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 12:48:38 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7790: Fix serial ports DT compatible strings
+Message-Id: <1390308519-31320-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Remove the -generic suffix that has been added by mistake from the
+serial port compatible strings.
 
-DEVTMPFS is needed for udev
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/ape6evm_defconfig |    2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index cb26c62..bb396c0 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -48,6 +48,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6_SIT is not set
- CONFIG_NETFILTER=y
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_FW_LOADER_USER_HELPER is not set
- CONFIG_NETDEVICES=y
- # CONFIG_NET_CADENCE is not set
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index f2f5394..8d6ee9e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -301,7 +301,7 @@
+ 	};
+ 
+ 	scifa0: serial@e6c40000 {
+-		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 144 4>;
+@@ -311,7 +311,7 @@
+ 	};
+ 
+ 	scifa1: serial@e6c50000 {
+-		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c50000 0 64>;
+ 		interrupts = <0 145 4>;
+@@ -321,7 +321,7 @@
+ 	};
+ 
+ 	scifa2: serial@e6c60000 {
+-		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c60000 0 64>;
+ 		interrupts = <0 151 4>;
+@@ -331,7 +331,7 @@
+ 	};
+ 
+ 	scifb0: serial@e6c20000 {
+-		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c20000 0 64>;
+ 		interrupts = <0 148 4>;
+@@ -341,7 +341,7 @@
+ 	};
+ 
+ 	scifb1: serial@e6c30000 {
+-		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c30000 0 64>;
+ 		interrupts = <0 149 4>;
+@@ -351,7 +351,7 @@
+ 	};
+ 
+ 	scifb2: serial@e6ce0000 {
+-		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
++		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6ce0000 0 64>;
+ 		interrupts = <0 150 4>;
+@@ -361,7 +361,7 @@
+ 	};
+ 
+ 	scif0: serial@e6e60000 {
+-		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
++		compatible = "renesas,scif-r8a7790", "renesas,scif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 4>;
+@@ -371,7 +371,7 @@
+ 	};
+ 
+ 	scif1: serial@e6e68000 {
+-		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
++		compatible = "renesas,scif-r8a7790", "renesas,scif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 4>;
+@@ -381,7 +381,7 @@
+ 	};
+ 
+ 	hscif0: serial@e62c0000 {
+-		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
++		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 4>;
+@@ -391,7 +391,7 @@
+ 	};
+ 
+ 	hscif1: serial@e62c8000 {
+-		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
++		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 4>;
 -- 
-1.7.9.5
+1.8.3.2
 
