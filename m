@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 Jan 2014 15:32:38 +0000
-Subject: [RFC/PATCH 3/7] ARM: shmobile: lager-reference: Add DU platform data
-Message-Id: <1390318362-29954-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 15:32:41 +0000
+Subject: [RFC/PATCH 6/7] ARM: shmobile: koelsch-reference: Add DU platform data
+Message-Id: <1390318362-29954-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -16,31 +16,28 @@ platform data using OF_DEV_AUXDATA.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 41 +++++++++++++++++++++++++-
- 1 file changed, 40 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 38 +++++++++++++++++++++++-
+ 1 file changed, 37 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index dc8d76b..0294836 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -22,11 +22,49 @@
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index feb8d97..f9831cd 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -23,11 +23,46 @@
  #include <linux/clkdev.h>
- #include <linux/init.h>
+ #include <linux/kernel.h>
  #include <linux/of_platform.h>
 +#include <linux/platform_data/rcar-du.h>
  #include <mach/common.h>
  #include <mach/rcar-gen2.h>
- #include <mach/r8a7790.h>
+ #include <mach/r8a7791.h>
  #include <asm/mach/arch.h>
  
 +/* DU */
-+static struct rcar_du_encoder_data lager_du_encoders[] = {
++static struct rcar_du_encoder_data koelsch_du_encoders[] = {
 +	{
-+		.type = RCAR_DU_ENCODER_VGA,
-+		.output = RCAR_DU_OUTPUT_DPAD0,
-+	}, {
 +		.type = RCAR_DU_ENCODER_NONE,
-+		.output = RCAR_DU_OUTPUT_LVDS1,
++		.output = RCAR_DU_OUTPUT_LVDS0,
 +		.connector.lvds.panel = {
 +			.width_mm = 210,
 +			.height_mm = 158,
@@ -60,29 +57,29 @@ index dc8d76b..0294836 100644
 +	},
 +};
 +
-+static struct rcar_du_platform_data lager_du_pdata = {
-+	.encoders = lager_du_encoders,
-+	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++static struct rcar_du_platform_data koelsch_du_pdata = {
++	.encoders = koelsch_du_encoders,
++	.num_encoders = ARRAY_SIZE(koelsch_du_encoders),
 +};
 +
-+static const struct of_dev_auxdata lager_auxdata_lookup[] __initconst = {
-+	OF_DEV_AUXDATA("renesas,du-r8a7790", 0xfeb00000, NULL, &lager_du_pdata),
++static const struct of_dev_auxdata koelsch_auxdata_lookup[] __initconst = {
++	OF_DEV_AUXDATA("renesas,du-r8a7791", 0xfeb00000, NULL, &koelsch_du_pdata),
 +	{}
 +};
 +
- static void __init lager_add_standard_devices(void)
+ static void __init koelsch_add_standard_devices(void)
  {
  #ifdef CONFIG_COMMON_CLK
-@@ -60,7 +98,8 @@ static void __init lager_add_standard_devices(void)
+@@ -60,7 +95,8 @@ static void __init koelsch_add_standard_devices(void)
+ 	r8a7791_clock_init();
  #endif
- 
- 	r8a7790_add_dt_devices();
+ 	r8a7791_add_dt_devices();
 -	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
 +	of_platform_populate(NULL, of_default_bus_match_table,
-+			     lager_auxdata_lookup, NULL);
++			     koelsch_auxdata_lookup, NULL);
  }
  
- static const char *lager_boards_compat_dt[] __initdata = {
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
 -- 
 1.8.3.2
 
