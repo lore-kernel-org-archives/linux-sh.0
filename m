@@ -1,50 +1,39 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 13 Jan 2014 12:10:32 +0000
-Subject: Re: [PATCH V2 1/8] spi: rspi: Add more RSPI register documentation
-Message-Id: <20140113121032.GN29039@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="qw1jpiGhEv1c2/gd"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 12:48:36 +0000
+Subject: [PATCH 0/3] Renesas serial sh-sci DT fixes
+Message-Id: <1390308519-31320-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389522464-1569-1-git-send-email-geert@linux-m68k.org>
- <1389522464-1569-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389522464-1569-2-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Hello,
 
---qw1jpiGhEv1c2/gd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+These three patches fix issues with the sh-sci DT support.
 
-On Sun, Jan 12, 2014 at 11:27:37AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The first patch fixes a typo in the DT bindings documentation example. The two
+other patches fix issues in the r8a7790 serial port DT nodes caused by merging
+work in progress version of DT support instead of the latest available one.
 
-Applied, thanks.
+The first two patches are candidates for v3.14-rc. I'd like to third patch to
+join them if possible.
 
---qw1jpiGhEv1c2/gd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Simon, could you please pick them up ? The first patch touches DT bindings
+documentation so I've CC'ed the devicetree mailing list, but the fix is so
+trivial that I don't think the DT bindings maintainers' Ack is required.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Laurent Pinchart (3):
+  serial: sh-sci: Fix compatible string in DT bindings example
+  ARM: shmobile: r8a7790: Fix serial ports DT compatible strings
+  ARM: shmobile: r8a7790: Replace IRQ type numerical values with macros
 
-iQIcBAEBAgAGBQJS09e1AAoJELSic+t+oim9uoYP/1Uj0vbcQ0njTu+yxbNhPbbt
-4amEWpR4TeI1vb/txi8Z2Iq0eIxu51txNIIfuzE2euSTsuEQPUbUtYx0VjRV7qkG
-F+9nESq9tHM5wAY/WCf32FfgLcGl3WAiYat2VyNNoPd0s3HcqliAKt5eJCXIYjzZ
-27HKBsplVBm+CPsEgeW2ZohU/kbx/5jMFU778/Fyf3f/thq7plW65OotyA/WLSUC
-vhD7L2RM8KGu+5ic0iluIoCCGcDEQRx/yd9j7+JKTXAKiY3Qj3aeYtc50eLb1QJh
-DTjfGeQQxtbVWjxMU+qzk23v0xwRQTXurfF0KqnlZ+pX4zmF8NA4u/CuAOmggKP0
-FfdDPin4pT0wbky0ihERf/PFPC0go/5x0EnDB88vjLRe0yzMdo0V78JG+Uf3/RbQ
-m582/ieUl3DPJUmrCtv8Z3fxJGdqdDB9lwENFc2a1N5rduGPclYIysKaDcpYWpi7
-53NOXbnLhCcs3VsMDzafR6g3ufpS5sFynrFK0DmEHgdHNbW/ERXgXhZaOgwCrshH
-gw+BXY3rHlpqMl429nJKhgN/EeOT2ZdnYkAxUpN6W8ID8ylCCi88IzoGLBfZHKSQ
-XvwdJK6LWxUPW8UnCAzoQ+uZ/rgOihB5EtRt1xGnJyXIgRPS9GxEd6aywztyGkDh
-HFtHcoOW1xtt2SqyJa6I
-=Mk0v
------END PGP SIGNATURE-----
+ .../bindings/serial/renesas,sci-serial.txt         |  2 +-
+ arch/arm/boot/dts/r8a7790.dtsi                     | 40 +++++++++++-----------
+ 2 files changed, 21 insertions(+), 21 deletions(-)
 
---qw1jpiGhEv1c2/gd--
+-- 
+Regards,
+
+Laurent Pinchart
+
