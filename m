@@ -1,38 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 12:49:40 +0000
-Subject: [PATCH v2 04/15] ARM: shmobile: genmai defconfig: Enable RSPI
-Message-Id: <1390567791-8988-5-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 15:32:39 +0000
+Subject: [RFC/PATCH 4/7] ARM: shmobile: lager: Enable DU device in DT
+Message-Id: <1390318362-29954-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+References: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Enable the DU device and configure the related pins.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-  - No changes
+ arch/arm/boot/dts/r8a7790-lager.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
- arch/arm/configs/genmai_defconfig |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-index ede35f400df2..401285305251 100644
---- a/arch/arm/configs/genmai_defconfig
-+++ b/arch/arm/configs/genmai_defconfig
-@@ -79,6 +79,8 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_I2C_SH_MOBILE=y
-+CONFIG_SPI=y
-+CONFIG_SPI_RSPI=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 1081c5e..27bf361 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -58,6 +58,12 @@
+ 	};
+ };
+ 
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
+ &extal_clk {
+ 	clock-frequency = <20000000>;
+ };
+@@ -66,6 +72,11 @@
+ 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
+ 
++	du_pins: du {
++		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
++		renesas,function = "du";
++	};
++
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data";
+ 		renesas,function = "scif0";
 -- 
-1.7.9.5
+1.8.3.2
 
