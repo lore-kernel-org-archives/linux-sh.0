@@ -1,45 +1,47 @@
-From: "Dr. Musa Hamed" <drmusahamed01@gmail.com>
-Date: Wed, 08 Jan 2014 20:47:31 +0000
-Subject: I have a very lucrative Business
-Message-Id: <CALS90i9nMs6jMoH2O5S68sPF=juYOV2sfMAwaBekL8ccz3eSOQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 15:32:35 +0000
+Subject: [RFC/PATCH 0/7] Renesas R-Car DU OF support
+Message-Id: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org, Magnus Damm <magnus.damm@gmail.com>
 
-ATTN: Dear,
+Hello,
 
-I am Dr. Musa Hamed Executive Director of the Bank of Africa
-Plc B.O.A,Cotonou Benin Rep. I have a very lucrative Business proposal
-worth of 21,500,000.00 USD.
+This patch set adds OF support to the DU driver (1/7) and enables the DU on
+the Lager (2/7 to 4/7) and Koelsch (5/7 to 7/7) platforms.
 
-An Iraqi named Hamadi Hashem a business man made a fixed deposit of
-21,500,000.00 USD . Upon maturity several notices was sent to him,
-even during the war,eleven years ago (2003) up till this date. Again
-after the war another notification was sent and still no response came
-from him. it has been found out that Hamadi Hashem and his family had
-been killed during the war in bomb blast that hit their home at
-Mukaradeeb where his personal oil well was. I am prepared to split the
-funds with you 50%:50%.By placing you as the NEXT OF KIN to his
-deposit.
+Due to the lack of standard bindings for video devices, the approach taken
+here is minimalistic and aims at enabling the DU on multiplatform kernels until
+more complete DT bindings get developed. The DU DT node contains core resources
+only (memory, IRQ and clocks), and output configuration is passed in platform
+data using OF_DEV_AUXDATA.
 
-Should you be interested in doing this deal with me, please send me
-the following information:
+Laurent Pinchart (7):
+  drm/rcar-du: Add OF support
+  ARM: shmobile: r8a7790: Add DU node to device tree
+  ARM: shmobile: lager-reference: Add DU platform data
+  ARM: shmobile: lager: Enable DU device in DT
+  ARM: shmobile: r8a7791: Add DU node to device tree
+  ARM: shmobile: koelsch-reference: Add DU platform data
+  ARM: shmobile: koelsch: Enable DU device in DT
 
-(1) Your Name
-(2) Resident Address
-(3) Your Occupation
-(4) Your Phone Number
-(5) Date of Birth
-(6) Resident Country
+ .../devicetree/bindings/video/renesas,du.txt       |  49 +++++++
+ arch/arm/boot/dts/r8a7790-lager.dts                |  11 ++
+ arch/arm/boot/dts/r8a7790.dtsi                     |  19 +++
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |  11 ++
+ arch/arm/boot/dts/r8a7791.dtsi                     |  15 ++
+ arch/arm/mach-shmobile/board-koelsch-reference.c   |  38 ++++-
+ arch/arm/mach-shmobile/board-lager-reference.c     |  41 +++++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c              | 161 ++++++++++++---------
+ 8 files changed, 271 insertions(+), 74 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/video/renesas,du.txt
 
-And I will prefer you to reach me privately and securely on my personal
-email address: dr.musahamed30@yahoo.fr
-Tel: +229-988-400-97
-
-I will provide you with further information as soon as I hear
-positively from you.
-
+-- 
 Regards,
-Dr. Musa Hamed
+
+Laurent Pinchart
+
