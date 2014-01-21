@@ -1,63 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 02:27:14 +0000
-Subject: [PATCH v3 2/3] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-Message-Id: <1389061635-4083-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 15:32:38 +0000
+Subject: [RFC/PATCH 3/7] ARM: shmobile: lager-reference: Add DU platform data
+Message-Id: <1390318362-29954-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
+References: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org, Magnus Damm <magnus.damm@gmail.com>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The DU device is instantiated through the device tree, pass the DU
+platform data using OF_DEV_AUXDATA.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2
-* As suggested by Sergei Shtylyov
-  - Add MSTP74 to beginning of enum on a line by itself
-* As suggested by Magnus Damm
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
----
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 41 +++++++++++++++++++++++++-
+ 1 file changed, 40 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index e6ab0cd..c4ba651 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -27,6 +27,7 @@
- #define FRQCR2		0xfcfe0014
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
-+#define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index dc8d76b..0294836 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -22,11 +22,49 @@
+ #include <linux/clkdev.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <mach/common.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
  
- #define PLL_RATE 30
-@@ -146,6 +147,7 @@ struct clk div4_clks[DIV4_NR] = {
- };
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static struct rcar_du_platform_data lager_du_pdata = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
++
++static const struct of_dev_auxdata lager_auxdata_lookup[] __initconst = {
++	OF_DEV_AUXDATA("renesas,du-r8a7790", 0xfeb00000, NULL, &lager_du_pdata),
++	{}
++};
++
+ static void __init lager_add_standard_devices(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+@@ -60,7 +98,8 @@ static void __init lager_add_standard_devices(void)
+ #endif
  
- enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
- 	MSTP33,	MSTP_NR };
+ 	r8a7790_add_dt_devices();
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++	of_platform_populate(NULL, of_default_bus_match_table,
++			     lager_auxdata_lookup, NULL);
+ }
  
-@@ -154,6 +156,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
- 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
-+	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
- 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
- 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
- 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
-@@ -176,6 +179,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
- 
- 	/* MSTP clocks */
-+	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.8.4
+1.8.3.2
 
