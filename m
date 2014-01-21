@@ -1,50 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 14 Jan 2014 02:24:40 +0000
-Subject: [PATCH] ARM: shmobile: r8a7790/r8a7778: audio support
-Message-Id: <87bnzfgv15.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 21 Jan 2014 15:32:42 +0000
+Subject: [RFC/PATCH 7/7] ARM: shmobile: koelsch: Enable DU device in DT
+Message-Id: <1390318362-29954-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1390318362-29954-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org, Magnus Damm <magnus.damm@gmail.com>
 
+Enable the DU device and configure the related pins.
 
-Hi Simon, Laurent
-
-These are r8a7790 audio clock support v2 patch
-and lager sound support.
-These are based on renesas-devel-v3.13-rc8-20140113 tag
-
-Kuninori Morimoto (4):
-      1) ARM: shmobile: r8a7778: add audio clock in new style
-      2) ARM: shmobile: r8a7790: add audio clock
-      3) ARM: shmobile: lager: add sound support
-      4) ARM: shmobile: lager: add sound support on defconfig
-
- arch/arm/boot/dts/r8a7790.dtsi         |   23 ++++++++
- arch/arm/configs/lager_defconfig       |    4 ++
- arch/arm/mach-shmobile/Kconfig         |    1 +
- arch/arm/mach-shmobile/board-lager.c   |  100 ++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7778.c |    4 ++
- arch/arm/mach-shmobile/clock-r8a7790.c |   20 +++++++
- 6 files changed, 152 insertions(+)
-
-I will fixup sound driver side after merge for DT supporting.
-To avoid merging conflict issue, platform needs new/old style clock now.
- => #1, #2
-
-#2 has common clock support too.
-
-#3 needs below branch
-
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: topic/rcar
-
-especially, this commit
-
-507d466c733e28d132a7be87040a3da126df7947
-(ASoC: rcar: add Gen2 sound support)
-
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 74f0985..678c54e 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -104,6 +104,12 @@
+ 	};
+ };
+ 
++&du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
+ &extal_clk {
+ 	clock-frequency = <20000000>;
+ };
+@@ -112,6 +118,11 @@
+ 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
+ 
++	du_pins: du {
++		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
++		renesas,function = "du";
++	};
++
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_d";
+ 		renesas,function = "scif0";
+-- 
+1.8.3.2
+
