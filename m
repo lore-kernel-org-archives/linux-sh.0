@@ -1,36 +1,37 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 09 Jan 2014 17:23:25 +0000
-Subject: Re: [PATCH 1/2] clk: shmobile: Fix MSTP clock index
-Message-Id: <52CEDB0D.3080608@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 22 Jan 2014 10:21:26 +0000
+Subject: [GIT PULL] Renesas pinctrl patch
+Message-Id: <5411991.NWHfO7Sty2@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388167599-23525-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1388167599-23525-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 09/01/14 17:21, Ben Dooks wrote:
-> On 27/12/13 18:06, Valentine Barshak wrote:
->> Use clkidx when registering MSTP clocks instead of loop counter
->> since the value is then used to access the specific clock index bit
->> in the mstp register.
->>
->> The issue was introduced by the following commit:
->> f94859c215b6d977 "clk: shmobile: Add MSTP clock support"
->>
->> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
->> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Reviewed-by: Ben Dooks <ben.dooks@codethink.co.uk>
->
-> We just caught this one, it really needs fixing in Simon's tree
-> as it stops stuff working!
+Hi Linus,
 
-sorry, meant to say:
+The following changes since commit 8385af02bad1724a720f6ba4c1ec590d4f082229:
 
-Tested-by: Ben Dooks <ben.dooks@codethink.co.uk>
+  pinctrl: sirf: add pin group for USP0 with only RX or TX frame sync 
+(2014-01-08 10:51:10 +0100)
 
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
+
+for you to fetch changes up to 18bb6ecc1c2faca550f76c3d2b704d6231b06c66:
+
+  pinctrl: sh-pfc: r8a7791: Add QSPI pin groups (2014-01-12 22:39:10 +0100)
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 63 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+Regards,
+
+Laurent Pinchart
+
