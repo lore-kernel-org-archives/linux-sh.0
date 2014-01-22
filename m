@@ -1,79 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 08 Jan 2014 08:02:32 +0000
-Subject: [PATCH v4 4/4] ARM: shmobile: genmai: Enable r7s72100-ether
-Message-Id: <1389168152-9434-5-git-send-email-horms+renesas@verge.net.au>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Wed, 22 Jan 2014 20:56:16 +0000
+Subject: [PATCH] sh: don't use module_init in non-modular psw.c code
+Message-Id: <1390424176-5874-1-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389168152-9434-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The psw.o is built for obj-y -- and hence this code is always
+present.  It will never be modular, so using module_init as an alias
+for __initcall can be somewhat misleading.
 
+Fix this up now, so that we can relocate module_init from
+init.h into module.h in the future.  If we don't do this, we'd
+have to add module.h to obviously non-modular code, and that
+would be a worse thing.
+
+Note that direct use of __initcall is discouraged, vs. one
+of the priority categorized subgroups.  As __initcall gets
+mapped onto device_initcall, our use of device_initcall
+directly in this change means that the runtime impact is
+zero -- it will remain at level 6 in initcall ordering.
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 ---
 
-Dave,
+[patch will be added to init cleanup series:
+   http://git.kernel.org/cgit/linux/kernel/git/paulg/init.git/  ]
 
-I plan to take this change through my tree.
+ arch/sh/boards/mach-landisk/psw.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v3 - v4
-* No change
-
-v2
-* As suggested by Magnus Damm and Sergei Shtylyov
-  - r7s72100 ethernet is not gigabit so do not refer to it as such
-
-* As suggested by Sergei Shtylyov
-  - set no_ether_link as there is no LINK signal documented
-    in the manual
----
- arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c..a1f6fe1 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,36 @@
- 
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/sh_eth.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* Ether */
-+static const struct sh_eth_plat_data ether_pdata __initconst = {
-+	.phy			= 0x00, /* PD60610 */
-+	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
-+	.phy_interface		= PHY_INTERFACE_MODE_MII,
-+	.no_ether_link		= 1
-+};
-+
-+static const struct resource ether_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe8203000, 0x800),
-+	DEFINE_RES_MEM(0xe8204800, 0x200),
-+	DEFINE_RES_IRQ(gic_iid(359)),
-+};
-+
- static void __init genmai_add_standard_devices(void)
+diff --git a/arch/sh/boards/mach-landisk/psw.c b/arch/sh/boards/mach-landisk/psw.c
+index bef83522f958..5192b1f43ada 100644
+--- a/arch/sh/boards/mach-landisk/psw.c
++++ b/arch/sh/boards/mach-landisk/psw.c
+@@ -140,4 +140,4 @@ static int __init psw_init(void)
  {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
-+
-+	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
-+					  ether_resources,
-+					  ARRAY_SIZE(ether_resources),
-+					  &ether_pdata, sizeof(ether_pdata));
+ 	return platform_add_devices(psw_devices, ARRAY_SIZE(psw_devices));
  }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
+-module_init(psw_init);
++device_initcall(psw_init);
 -- 
-1.8.4
+1.8.5.2
 
