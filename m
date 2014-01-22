@@ -1,37 +1,21 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 22 Jan 2014 10:21:26 +0000
-Subject: [GIT PULL] Renesas pinctrl patch
-Message-Id: <5411991.NWHfO7Sty2@avalon>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 22 Jan 2014 13:42:21 +0000
+Subject: Re: [GIT PULL] Renesas pinctrl patch
+Message-Id: <CACRpkdZiXmChZH+=CN9vGOjivTmDuGwTP1+gYGiQR66Cs4C0FQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5411991.NWHfO7Sty2@avalon>
+In-Reply-To: <5411991.NWHfO7Sty2@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Linus,
+On Wed, Jan 22, 2014 at 11:21 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
 
-The following changes since commit 8385af02bad1724a720f6ba4c1ec590d4f082229:
+>   pinctrl: sh-pfc: r8a7791: Add QSPI pin groups (2014-01-12 22:39:10 +0100)
 
-  pinctrl: sirf: add pin group for USP0 with only RX or TX frame sync 
-(2014-01-08 10:51:10 +0100)
+Is this considered a fix or a feature?
 
-are available in the git repository at:
-
-  git://linuxtv.org/pinchartl/fbdev.git pinmux/next/pfc
-
-for you to fetch changes up to 18bb6ecc1c2faca550f76c3d2b704d6231b06c66:
-
-  pinctrl: sh-pfc: r8a7791: Add QSPI pin groups (2014-01-12 22:39:10 +0100)
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
-
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 63 +++++++++++++++++++++++++++++++++++
- 1 file changed, 63 insertions(+)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Yours,
+Linus Walleij
