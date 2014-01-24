@@ -1,37 +1,47 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 22:40:21 +0000
-Subject: [PATCH V2 1/2] ARM: shmobile: lager: Enable modules in defconfig
-Message-Id: <1390603222-13351-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:47 +0000
+Subject: [PATCH v2 11/15] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+Message-Id: <1390567791-8988-12-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This enables modules, module unloading and versioning support for Lager.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/configs/lager_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+v2:
+  - No changes
 
-Changes in V2:
-* enabled module unloading support.
+ arch/arm/boot/dts/r8a7791.dtsi |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index ee93b8a..9ba837b 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -8,6 +8,9 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODULE_UNLOAD=y
-+CONFIG_MODVERSIONS=y
- # CONFIG_LBDAF is not set
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d5cc3626dd60..240c4ece1f0c 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -710,4 +710,16 @@
+ 			clock-output-names = "scifa3", "scifa4", "scifa5";
+ 		};
+ 	};
++
++	spi: spi@e6b10000 {
++		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
++		reg = <0 0xe6b10000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.3.1
+1.7.9.5
 
