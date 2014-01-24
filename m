@@ -1,49 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Jan 2014 09:02:27 +0000
-Subject: Re: [PATCH 0/2] arm: shmobile: Add SATA support for Koelsch board
-Message-Id: <20140109090224.GA20661@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:44:01 +0000
+Subject: [PATCH v2 11/14] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
+Message-Id: <1390553044-11860-12-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387475843-25849-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387475843-25849-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-On Wed, Jan 08, 2014 at 04:27:09PM +0900, Simon Horman wrote:
-> On Wed, Jan 08, 2014 at 04:18:12PM +0900, Magnus Damm wrote:
-> > On Fri, Dec 20, 2013 at 2:59 AM, Valentine Barshak
-> > <valentine.barshak@cogentembedded.com> wrote:
-> > > This adds SATA0/1 clocks to R8A7791 SoC and adds SATA0 to Koelsch boa=
-rd.
-> > > SATA1 is not available on Koelsch since MD24 selection is fixed to PC=
-Ie.
-> > >
-> > > It depends on the following commit available in the libata git tree:
-> > > https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=
-=3Dfor-3.14&id=E67adb4e669db834c1f95cbdf99bb4e9ec8455b3
-> > >
-> > > Valentine Barshak (2):
-> > >   arm: shmobile: r8a7791: Add SATA clocks
-> > >   arm: shmobile: koelsch: Add SATA support
-> > >
-> > >  arch/arm/mach-shmobile/board-koelsch.c | 17 +++++++++++++++++
-> > >  arch/arm/mach-shmobile/clock-r8a7791.c | 19 +++++++++++++++++++
-> > >  2 files changed, 36 insertions(+)
-> >=20
-> > Hi Valentine and Simon,
-> >=20
-> > I have now tested this Koelsch SATA series as well. It works well as
-> > long as the HDD is powered on at boot. When applying the patches I
-> > noticed that there were fewer collisions here due to no legacy clock
-> > status bit polling patch for r8a7791.
-> >=20
-> > Acked-by: Magnus Damm <damm@opensource.se>
-> >=20
-> > Simon, can you please work with Valentine to merge this series?
->=20
-> Sure.
->=20
-> Valentine, can you rebase and repost the series?
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-And include an update to the Koelsch defconfig
+Get the driver ready for the migration to the common clock framework by
+calling clk_prepare_enable() and clk_disable_unprepare().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+v2:
+  - No changes
+
+ drivers/spi/spi-rspi.c |   11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 28db8770aaf3..a648b40c271b 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -980,7 +980,7 @@ static int rspi_remove(struct platform_device *pdev)
+ 	struct rspi_data *rspi = platform_get_drvdata(pdev);
+ 
+ 	rspi_release_dma(rspi);
+-	clk_disable(rspi->clk);
++	clk_disable_unprepare(rspi->clk);
+ 
+ 	return 0;
+ }
+@@ -1041,7 +1041,12 @@ static int rspi_probe(struct platform_device *pdev)
+ 		ret = PTR_ERR(rspi->clk);
+ 		goto error1;
+ 	}
+-	clk_enable(rspi->clk);
++
++	ret = clk_prepare_enable(rspi->clk);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "unable to prepare/enable clock\n");
++		goto error1;
++	}
+ 
+ 	init_waitqueue_head(&rspi->wait);
+ 
+@@ -1112,7 +1117,7 @@ static int rspi_probe(struct platform_device *pdev)
+ error3:
+ 	rspi_release_dma(rspi);
+ error2:
+-	clk_disable(rspi->clk);
++	clk_disable_unprepare(rspi->clk);
+ error1:
+ 	spi_master_put(master);
+ 
+-- 
+1.7.9.5
+
