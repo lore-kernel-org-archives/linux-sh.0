@@ -1,48 +1,75 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 17 Jan 2014 18:21:31 +0000
-Subject: [PATCH V2 0/4] ARM: shmobile: koelsch: Add USB support
-Message-Id: <1389982895-20726-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:43 +0000
+Subject: [PATCH v4 07/15] ARM: shmobile: genmai reference dts: Add RSPI nodes
+Message-Id: <1390567791-8988-8-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-The first two patches add USBHS device and the rest add PCI USB host suppor=
-t to Koelsch board.
-The patches depend on the following commits:
-USBHS and PCI USB host:
-* http://git.linuxtv.org/pinchartl/fbdev.git/commit/9770d221130e18c2d0ffe13=
-cd07365d473114549
-* http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=
-=C8ba8115a21226fba3211085f570b128fa271e31
-* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
-d2985ef720cbbdc63546a5c545ac4450d96e
-PCI USB host:
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
-* http://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3Dp=
-ci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag;
-* added pipe_type array to the usbhs platform info since it differs from th=
-e default.
+Add pinctrl and SPI devices for RSPI on Genmai.
 
-Valentine Barshak (4):
-  ARM: shmobile: r8a7791: Add USBHS clock support
-  ARM: shmobile: koelsch: Add USBHS support
-  ARM: shmobile: r8a7791: Add PCI USB host clock support
-  ARM: shmobile: koelsch: Add internal PCI support
+On this board, only rspi4 is in use. Its bus contains a single device
+(a wm8978 audio codec), for which no bindings are defined yet.
 
- arch/arm/mach-shmobile/board-koelsch.c | 185 +++++++++++++++++++++++++++++=
-++++
- arch/arm/mach-shmobile/clock-r8a7791.c |   7 ++
- 2 files changed, 192 insertions(+)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
+---
+v4:
+  - No changes
+v3:
+  - No changes
+v2:
+  - Use generic "codec" instead of specific "wm8978" node name.
 
---=20
-1.8.3.1
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |   18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 367af5c133e0..c2cc4bd5a470 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -43,7 +43,7 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&scif2_pins &ethernet_pins>;
++	pinctrl-0 = <&scif2_pins &ethernet_pins &rspi4_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	scif2_pins: serial2 {
+@@ -73,6 +73,12 @@
+ 				 "ethernet_int_p1_15";
+ 		renesas,function = "ethernet";
+ 	};
++
++	rspi4_pins: spi4 {
++		renesas,groups = "rspi4_rspck_p4_0", "rspi4_ssl0_p4_1",
++				 "rspi4_mosi_p4_2", "rspi4_miso_p4_3";
++		renesas,function = "rspi4";
++	};
+ };
+ 
+ &i2c2 {
+@@ -85,3 +91,13 @@
+ 		pagesize = <64>;
+ 	};
+ };
++
++&spi4 {
++	status = "okay";
++
++	codec: codec@0 {
++		compatible = "wlf,wm8978";
++		reg = <0>;
++		spi-max-frequency = <5000000>;
++	};
++};
+-- 
+1.7.9.5
 
