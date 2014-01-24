@@ -1,64 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 17 Jan 2014 00:22:26 +0000
-Subject: [PATCH v7 0/4] Add ethernet support for r7s72100
-Message-Id: <1389918150-19058-1-git-send-email-horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 24 Jan 2014 22:40:21 +0000
+Subject: [PATCH V2 1/2] ARM: shmobile: lager: Enable modules in defconfig
+Message-Id: <1390603222-13351-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+This enables modules, module unloading and versioning support for Lager.
 
-this series adds ethernet support to sh-pfc for the r7s72100 SoC.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/configs/lager_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-This series is based on a merge of:
-* The topic/r7s72100-v3.13-rc8-20140115 tag in my renesas tree
-* net-next
-  - Head revision: 08c93cd99b2f31ba9
-    ("Merge branch 'for-davem' of git://gitorious.org/linux-can/linux-can-next")
+Changes in V2:
+* enabled module unloading support.
 
-The first two patches, targeted at net-next, also applies cleanly there.
-
-Changes since v6
-* Update change log of:
-  - sh_eth: Use bool as return type of sh_eth_is_gether()
-
-Changes since v5
-* Address feedback from Joe Perches and Sergei Shtylyov as detailed
-  in the changelogs of:
-  - sh_eth: Use bool as return type of sh_eth_is_gether()
-  - sh_eth: Add support for r7s72100
-
-Changes since v4
-* Addressed feedback from Sergei Shtylyov as detailed in the changelog
-  of "sh_eth: Add support for r7s72100"
-* Rebase
-
-Changes since v3
-* Use bool as return type of sh_eth_is_gether()
-  and sh_eth_is_rz_fast_ether()
-* Correct coding style in sh_eth_get_stats()
-
-Changes since v2
-* Trivial rebase
-* Dropped "RFC" from subject
-
-Changes since v1 are noted in the changelog of each patch.
-
-
-Simon Horman (4):
-  sh_eth: Use bool as return type of sh_eth_is_gether()
-  sh_eth: Add support for r7s72100
-  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-  ARM: shmobile: genmai: Enable r7s72100-ether
-
- arch/arm/mach-shmobile/board-genmai.c   |  21 +++++
- arch/arm/mach-shmobile/clock-r7s72100.c |   4 +
- drivers/net/ethernet/renesas/sh_eth.c   | 131 +++++++++++++++++++++++++++++---
- drivers/net/ethernet/renesas/sh_eth.h   |   3 +-
- 4 files changed, 146 insertions(+), 13 deletions(-)
-
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index ee93b8a..9ba837b 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -8,6 +8,9 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
++CONFIG_MODULES=y
++CONFIG_MODULE_UNLOAD=y
++CONFIG_MODVERSIONS=y
+ # CONFIG_LBDAF is not set
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
 -- 
-1.8.4
+1.8.3.1
 
