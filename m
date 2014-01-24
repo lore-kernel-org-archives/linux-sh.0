@@ -1,165 +1,321 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Jan 2014 07:59:51 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: Disable /sbin/hotplug fork-bomb in defconfigs
-Message-Id: <20140106075951.GP24653@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:44:04 +0000
+Subject: [PATCH 14/14] spi: rspi: Add support for Quad and Dual SPI Transfers on QSPI
+Message-Id: <1390553044-11860-15-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
+References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Fri, Jan 03, 2014 at 04:48:45PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> 
-> Cfr. commit 7934779a69f1184f29d786b89e77dd14519bd226 ("Driver-Core: disable
-> /sbin/hotplug by default").
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Could you please flesh out this changelog a bit, perhaps
-by including the body of the changelog of
-7934779a69f1184f29d786b89e77dd14519bd226.
+Add support for Quad and Dual SPI Transfers on the Renesas Quad Serial
+Peripheral Interface, as found in R-Car Gen2 SoCs like R-Car H2 (r8a7790)
+and R-Car M2 (r8a7791):
+  - Add unidirectional transfer methods for Quad/Dual SPI Transfers.
+  - Program the sequencer to handle SPI messages with multiple transfer
+    modes when Quad or Dual transfers are enabled for an SPI slave.
+    Up to 4 transfer modes per SPI message are supported by the hardware.
+  - Advertise the availability of Quad and Dual SPI modes on QSPI.
 
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> ---
->  arch/arm/configs/ape6evm_defconfig         |    1 -
->  arch/arm/configs/armadillo800eva_defconfig |    1 -
->  arch/arm/configs/bockw_defconfig           |    1 -
->  arch/arm/configs/genmai_defconfig          |    1 -
->  arch/arm/configs/koelsch_defconfig         |    1 -
->  arch/arm/configs/kzm9d_defconfig           |    1 -
->  arch/arm/configs/kzm9g_defconfig           |    1 -
->  arch/arm/configs/lager_defconfig           |    1 -
->  arch/arm/configs/mackerel_defconfig        |    1 -
->  arch/arm/configs/marzen_defconfig          |    1 -
->  10 files changed, 10 deletions(-)
-> 
-> diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-> index cb26c62dc722..c13f560f07db 100644
-> --- a/arch/arm/configs/ape6evm_defconfig
-> +++ b/arch/arm/configs/ape6evm_defconfig
-> @@ -47,7 +47,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_LRO is not set
->  # CONFIG_IPV6_SIT is not set
->  CONFIG_NETFILTER=y
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  # CONFIG_FW_LOADER_USER_HELPER is not set
->  CONFIG_NETDEVICES=y
->  # CONFIG_NET_CADENCE is not set
-> diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-> index 9287a62de830..1edc2ce32063 100644
-> --- a/arch/arm/configs/armadillo800eva_defconfig
-> +++ b/arch/arm/configs/armadillo800eva_defconfig
-> @@ -57,7 +57,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_DIAG is not set
->  # CONFIG_IPV6 is not set
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  CONFIG_SCSI=y
->  CONFIG_BLK_DEV_SD=y
->  CONFIG_MD=y
-> diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-> index 80cff50beb34..564eab338f02 100644
-> --- a/arch/arm/configs/bockw_defconfig
-> +++ b/arch/arm/configs/bockw_defconfig
-> @@ -43,7 +43,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_LRO is not set
->  # CONFIG_INET_DIAG is not set
->  # CONFIG_IPV6 is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  # CONFIG_STANDALONE is not set
->  # CONFIG_PREVENT_FIRMWARE_BUILD is not set
->  # CONFIG_FW_LOADER is not set
-> diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-> index aa0b704f48af..5fa44cb6e915 100644
-> --- a/arch/arm/configs/genmai_defconfig
-> +++ b/arch/arm/configs/genmai_defconfig
-> @@ -49,7 +49,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_DIAG is not set
->  # CONFIG_IPV6 is not set
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  CONFIG_NETDEVICES=y
->  # CONFIG_NET_CORE is not set
->  # CONFIG_NET_VENDOR_ARC is not set
-> diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-> index e248f49d5549..c8ebeb1f0497 100644
-> --- a/arch/arm/configs/koelsch_defconfig
-> +++ b/arch/arm/configs/koelsch_defconfig
-> @@ -35,7 +35,6 @@ CONFIG_UNIX=y
->  CONFIG_INET=y
->  CONFIG_IP_PNP=y
->  CONFIG_IP_PNP_DHCP=y
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  CONFIG_NETDEVICES=y
->  # CONFIG_NET_VENDOR_ARC is not set
->  # CONFIG_NET_CADENCE is not set
-> diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-> index e42ce3756af3..3ee3858939d9 100644
-> --- a/arch/arm/configs/kzm9d_defconfig
-> +++ b/arch/arm/configs/kzm9d_defconfig
-> @@ -49,7 +49,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_DIAG is not set
->  # CONFIG_IPV6 is not set
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  # CONFIG_BLK_DEV is not set
->  CONFIG_NETDEVICES=y
->  # CONFIG_NET_VENDOR_BROADCOM is not set
-> diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-> index 9934dbc23d64..800faff9df1d 100644
-> --- a/arch/arm/configs/kzm9g_defconfig
-> +++ b/arch/arm/configs/kzm9g_defconfig
-> @@ -59,7 +59,6 @@ CONFIG_IP_PNP_DHCP=y
->  CONFIG_IRDA=y
->  CONFIG_SH_IRDA=y
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  CONFIG_SCSI=y
->  CONFIG_BLK_DEV_SD=y
->  CONFIG_NETDEVICES=y
-> diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-> index 883443f8f4f3..da8fa5e8719b 100644
-> --- a/arch/arm/configs/lager_defconfig
-> +++ b/arch/arm/configs/lager_defconfig
-> @@ -48,7 +48,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_DIAG is not set
->  # CONFIG_IPV6 is not set
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  CONFIG_NETDEVICES=y
->  # CONFIG_NET_CORE is not set
->  # CONFIG_NET_VENDOR_ARC is not set
-> diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-> index a61e1653fc5e..9d406022d72b 100644
-> --- a/arch/arm/configs/mackerel_defconfig
-> +++ b/arch/arm/configs/mackerel_defconfig
-> @@ -41,7 +41,6 @@ CONFIG_IP_PNP_DHCP=y
->  # CONFIG_INET_XFRM_MODE_BEET is not set
->  # CONFIG_IPV6 is not set
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  # CONFIG_FIRMWARE_IN_KERNEL is not set
->  CONFIG_MTD=y
->  CONFIG_MTD_CONCAT=y
-> diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-> index f21bd405cc2a..fe3d8f7c0a2c 100644
-> --- a/arch/arm/configs/marzen_defconfig
-> +++ b/arch/arm/configs/marzen_defconfig
-> @@ -42,7 +42,6 @@ CONFIG_IP_PNP=y
->  CONFIG_IP_PNP_DHCP=y
->  # CONFIG_IPV6 is not set
->  # CONFIG_WIRELESS is not set
-> -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
->  # CONFIG_STANDALONE is not set
->  # CONFIG_PREVENT_FIRMWARE_BUILD is not set
->  # CONFIG_FW_LOADER is not set
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-rspi.c |  162 +++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 148 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index e56fcb5f7f99..34ad4bca8a41 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -2,6 +2,7 @@
+  * SH RSPI driver
+  *
+  * Copyright (C) 2012, 2013  Renesas Solutions Corp.
++ * Copyright (C) 2014 Glider bvba
+  *
+  * Based on spi-sh.c:
+  * Copyright (C) 2011 Renesas Solutions Corp.
+@@ -57,6 +58,10 @@
+ #define RSPI_SPCMD5		0x1a	/* Command Register 5 */
+ #define RSPI_SPCMD6		0x1c	/* Command Register 6 */
+ #define RSPI_SPCMD7		0x1e	/* Command Register 7 */
++#define RSPI_SPCMD(i)		(RSPI_SPCMD0 + (i) * 2)
++#define RSPI_NUM_SPCMD		8
++#define RSPI_RZ_NUM_SPCMD	4
++#define QSPI_NUM_SPCMD		4
+ 
+ /* RSPI on RZ only */
+ #define RSPI_SPBFCR		0x20	/* Buffer Control Register */
+@@ -69,6 +74,7 @@
+ #define QSPI_SPBMUL1		0x20	/* Transfer Data Length Multiplier Setting Register 1 */
+ #define QSPI_SPBMUL2		0x24	/* Transfer Data Length Multiplier Setting Register 2 */
+ #define QSPI_SPBMUL3		0x28	/* Transfer Data Length Multiplier Setting Register 3 */
++#define QSPI_SPBMUL(i)		(QSPI_SPBMUL0 + (i) * 4)
+ 
+ /* SPCR - Control Register */
+ #define SPCR_SPRIE		0x80	/* Receive Interrupt Enable */
+@@ -152,7 +158,7 @@
+ #define SPCMD_LSBF		0x1000	/* LSB First */
+ #define SPCMD_SPB_MASK		0x0f00	/* Data Length Setting */
+ #define SPCMD_SPB_8_TO_16(bit)	(((bit - 1) << 8) & SPCMD_SPB_MASK)
+-#define SPCMD_SPB_8BIT		0x0000	/* qspi only */
++#define SPCMD_SPB_8BIT		0x0000	/* QSPI only */
+ #define SPCMD_SPB_16BIT		0x0100
+ #define SPCMD_SPB_20BIT		0x0000
+ #define SPCMD_SPB_24BIT		0x0100
+@@ -245,6 +251,7 @@ struct spi_ops {
+ 	int (*set_config_register)(struct rspi_data *rspi, int access_size);
+ 	int (*transfer_one)(struct spi_master *master, struct spi_device *spi,
+ 			    struct spi_transfer *xfer);
++	u16 mode_bits;
+ };
+ 
+ /*
+@@ -274,8 +281,8 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 	rspi_write8(rspi, 0x00, RSPI_SPCR2);
+ 
+ 	/* Sets SPCMD */
+-	rspi_write16(rspi, SPCMD_SPB_8_TO_16(access_size) | rspi->spcmd,
+-		     RSPI_SPCMD0);
++	rspi->spcmd |= SPCMD_SPB_8_TO_16(access_size);
++	rspi_write16(rspi, rspi->spcmd, RSPI_SPCMD0);
+ 
+ 	/* Sets RSPI mode */
+ 	rspi_write8(rspi, SPCR_MSTR, RSPI_SPCR);
+@@ -321,7 +328,6 @@ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
+  */
+ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ {
+-	u16 spcmd;
+ 	int spbr;
+ 
+ 	/* Sets output mode, MOSI signal, and (optionally) loopback */
+@@ -342,13 +348,13 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 
+ 	/* Data Length Setting */
+ 	if (access_size = 8)
+-		spcmd = SPCMD_SPB_8BIT;
++		rspi->spcmd |= SPCMD_SPB_8BIT;
+ 	else if (access_size = 16)
+-		spcmd = SPCMD_SPB_16BIT;
++		rspi->spcmd |= SPCMD_SPB_16BIT;
+ 	else
+-		spcmd = SPCMD_SPB_32BIT;
++		rspi->spcmd |= SPCMD_SPB_32BIT;
+ 
+-	spcmd |= SPCMD_SCKDEN | SPCMD_SLNDEN | rspi->spcmd | SPCMD_SPNDEN;
++	rspi->spcmd |= SPCMD_SCKDEN | SPCMD_SLNDEN | SPCMD_SPNDEN;
+ 
+ 	/* Resets transfer data length */
+ 	rspi_write32(rspi, 0, QSPI_SPBMUL0);
+@@ -359,9 +365,9 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 	rspi_write8(rspi, 0x00, QSPI_SPBFCR);
+ 
+ 	/* Sets SPCMD */
+-	rspi_write16(rspi, spcmd, RSPI_SPCMD0);
++	rspi_write16(rspi, rspi->spcmd, RSPI_SPCMD0);
+ 
+-	/* Enables SPI function in a master mode */
++	/* Enables SPI function in master mode */
+ 	rspi_write8(rspi, SPCR_SPE | SPCR_MSTR, RSPI_SPCR);
+ 
+ 	return 0;
+@@ -811,12 +817,55 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 	return 0;
+ }
+ 
++static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
++{
++	const u8 *buf = xfer->tx_buf;
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < xfer->len; i++) {
++		ret = rspi_data_out(rspi, *buf++);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* Wait for the last transmission */
++	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
++
++	return 0;
++}
++
++static int qspi_transfer_in(struct rspi_data *rspi, struct spi_transfer *xfer)
++{
++	u8 *buf = xfer->rx_buf;
++	unsigned int i;
++	int ret;
++
++	for (i = 0; i < xfer->len; i++) {
++		ret = rspi_data_in(rspi);
++		if (ret < 0)
++			return ret;
++		*buf++ = ret;
++	}
++
++	return 0;
++}
++
+ static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
+ 			     struct spi_transfer *xfer)
+ {
+ 	struct rspi_data *rspi = spi_master_get_devdata(master);
+ 
+-	return qspi_transfer_out_in(rspi, xfer);
++	if (xfer->tx_buf && xfer->tx_nbits > SPI_NBITS_SINGLE) {
++		/* Quad or Dual SPI Write */
++		return qspi_transfer_out(rspi, xfer);
++	} else if (xfer->rx_buf && xfer->rx_nbits > SPI_NBITS_SINGLE) {
++		/* Quad or Dual SPI Read */
++		return qspi_transfer_in(rspi, xfer);
++	} else {
++		/* Single SPI Transfer */
++		return qspi_transfer_out_in(rspi, xfer);
++	}
+ }
+ 
+ static int rspi_setup(struct spi_device *spi)
+@@ -845,21 +894,101 @@ static void rspi_cleanup(struct spi_device *spi)
+ {
+ }
+ 
++static u16 qspi_transfer_mode(const struct spi_transfer *xfer)
++{
++	if (xfer->tx_buf)
++		switch (xfer->tx_nbits) {
++		case SPI_NBITS_QUAD:
++			return SPCMD_SPIMOD_QUAD;
++		case SPI_NBITS_DUAL:
++			return SPCMD_SPIMOD_DUAL;
++		default:
++			return 0;
++		}
++	if (xfer->rx_buf)
++		switch (xfer->rx_nbits) {
++		case SPI_NBITS_QUAD:
++			return SPCMD_SPIMOD_QUAD | SPCMD_SPRW;
++		case SPI_NBITS_DUAL:
++			return SPCMD_SPIMOD_DUAL | SPCMD_SPRW;
++		default:
++			return 0;
++		}
++
++	return 0;
++}
++
++static int qspi_setup_sequencer(struct rspi_data *rspi,
++				const struct spi_message *msg)
++{
++	const struct spi_transfer *xfer;
++	unsigned int i = 0, len = 0;
++	u16 current_mode = 0xffff, mode;
++
++	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
++		mode = qspi_transfer_mode(xfer);
++		if (mode = current_mode) {
++			len += xfer->len;
++			continue;
++		}
++
++		/* Transfer mode change */
++		if (i) {
++			/* Set transfer data length of previous transfer */
++			rspi_write32(rspi, len, QSPI_SPBMUL(i - 1));
++		}
++
++		if (i >= QSPI_NUM_SPCMD) {
++			dev_err(&msg->spi->dev,
++				"Too many different transfer modes");
++			return -EINVAL;
++		}
++
++		/* Program transfer mode for this transfer */
++		rspi_write16(rspi, rspi->spcmd | mode, RSPI_SPCMD(i));
++		current_mode = mode;
++		len = xfer->len;
++		i++;
++	}
++	if (i) {
++		/* Set final transfer data length and sequence length */
++		rspi_write32(rspi, len, QSPI_SPBMUL(i - 1));
++		rspi_write8(rspi, i - 1, RSPI_SPSCR);
++	}
++
++	return 0;
++}
++
+ static int rspi_prepare_message(struct spi_master *master,
+-				struct spi_message *message)
++				struct spi_message *msg)
+ {
+ 	struct rspi_data *rspi = spi_master_get_devdata(master);
++	int ret;
+ 
++	if (msg->spi->mode &
++	    (SPI_TX_DUAL | SPI_TX_QUAD | SPI_RX_DUAL | SPI_RX_QUAD)) {
++		/* Setup sequencer for messages with multiple transfer modes */
++		ret = qspi_setup_sequencer(rspi, msg);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* Enable SPI function in master mode */
+ 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_SPE, RSPI_SPCR);
+ 	return 0;
+ }
+ 
+ static int rspi_unprepare_message(struct spi_master *master,
+-				  struct spi_message *message)
++				  struct spi_message *msg)
+ {
+ 	struct rspi_data *rspi = spi_master_get_devdata(master);
+ 
++	/* Disable SPI function */
+ 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_SPE, RSPI_SPCR);
++
++	/* Reset sequencer for Single SPI Transfers */
++	rspi_write16(rspi, rspi->spcmd, RSPI_SPCMD0);
++	rspi_write8(rspi, 0, RSPI_SPSCR);
+ 	return 0;
+ }
+ 
+@@ -989,16 +1118,21 @@ static int rspi_remove(struct platform_device *pdev)
+ static const struct spi_ops rspi_ops = {
+ 	.set_config_register =		rspi_set_config_register,
+ 	.transfer_one =			rspi_transfer_one,
++	.mode_bits =			SPI_CPHA | SPI_CPOL | SPI_LOOP,
+ };
+ 
+ static const struct spi_ops rspi_rz_ops = {
+ 	.set_config_register =		rspi_rz_set_config_register,
+ 	.transfer_one =			rspi_rz_transfer_one,
++	.mode_bits =			SPI_CPHA | SPI_CPOL | SPI_LOOP,
+ };
+ 
+ static const struct spi_ops qspi_ops = {
+ 	.set_config_register =		qspi_set_config_register,
+ 	.transfer_one =			qspi_transfer_one,
++	.mode_bits =			SPI_CPHA | SPI_CPOL | SPI_LOOP |
++					SPI_TX_DUAL | SPI_TX_QUAD |
++					SPI_RX_DUAL | SPI_RX_QUAD,
+ };
+ 
+ #ifdef CONFIG_OF
+@@ -1120,7 +1254,7 @@ static int rspi_probe(struct platform_device *pdev)
+ 	master->cleanup = rspi_cleanup;
+ 	master->prepare_message = rspi_prepare_message;
+ 	master->unprepare_message = rspi_unprepare_message;
+-	master->mode_bits = SPI_CPHA | SPI_CPOL | SPI_LOOP;
++	master->mode_bits = ops->mode_bits;
+ 	master->dev.of_node = pdev->dev.of_node;
+ 
+ 	ret = platform_get_irq_byname(pdev, "rx");
+-- 
+1.7.9.5
+
