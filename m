@@ -1,10 +1,10 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 11:13:35 +0000
-Subject: [PATCH 2/9] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
-Message-Id: <1389525222-3482-3-git-send-email-geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:37 +0000
+Subject: [PATCH v4 01/15] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+Message-Id: <1390567791-8988-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,50 +12,74 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Get the driver ready for the migration to the common clock framework by
-calling clk_prepare_enable() and clk_disable_unprepare().
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/spi/spi-rspi.c |   11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+v4:
+  - The platform device basename was changed from "rspi" to "rspi-rz"
+v3:
+  - No changes
+v2:
+  - Correct platform device names ("rspi%u" -> "rspi.%u")
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 5ce2127b2b43..b6439c9505ac 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1066,7 +1066,7 @@ static int rspi_remove(struct platform_device *pdev)
- 	struct rspi_data *rspi = platform_get_drvdata(pdev);
+ arch/arm/mach-shmobile/clock-r7s72100.c |   21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 0242ca5f499a..bf15b63c3d5a 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -22,13 +22,15 @@
+ #include <mach/common.h>
+ #include <mach/r7s72100.h>
  
- 	rspi_release_dma(rspi);
--	clk_disable(rspi->clk);
-+	clk_disable_unprepare(rspi->clk);
+-/* registers */
++/* Frequency Control Registers */
+ #define FRQCR		0xfcfe0010
+ #define FRQCR2		0xfcfe0014
++/* Standby Control Registers */
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
+ #define STBCR7		0xfcfe0430
+ #define STBCR9		0xfcfe0438
++#define STBCR10		0xfcfe043c
  
- 	return 0;
- }
-@@ -1115,7 +1115,12 @@ static int rspi_probe(struct platform_device *pdev)
- 		ret = PTR_ERR(rspi->clk);
- 		goto error1;
- 	}
--	clk_enable(rspi->clk);
-+
-+	ret = clk_prepare_enable(rspi->clk);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "unable to prepare/enable clock\n");
-+		goto error1;
-+	}
+ #define PLL_RATE 30
  
- 	INIT_LIST_HEAD(&rspi->queue);
- 	spin_lock_init(&rspi->lock);
-@@ -1177,7 +1182,7 @@ static int rspi_probe(struct platform_device *pdev)
- error3:
- 	rspi_release_dma(rspi);
- error2:
--	clk_disable(rspi->clk);
-+	clk_disable_unprepare(rspi->clk);
- error1:
- 	spi_master_put(master);
+@@ -146,12 +148,20 @@ struct clk div4_clks[DIV4_NR] = {
+ 					| CLK_ENABLE_ON_INIT),
+ };
  
+-enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++enum {
++	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
++	MSTP97, MSTP96, MSTP95, MSTP94,
+ 	MSTP74,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+-	MSTP33,	MSTP_NR };
++	MSTP33,	MSTP_NR
++};
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
++	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
++	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
++	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
++	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
+ 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+@@ -179,6 +189,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("rspi-rz.0", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("rspi-rz.1", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
 -- 
 1.7.9.5
 
