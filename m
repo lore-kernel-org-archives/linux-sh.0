@@ -1,35 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Jan 2014 00:57:49 +0000
-Subject: [PATCH 09/10] ARM: shmobile: armadillo: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <878utyi8vp.wl%kuninori.morimoto.gx@gmail.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 24 Jan 2014 22:40:22 +0000
+Subject: [PATCH V2 2/2] ARM: shmobile: koelsch: Enable modules in defconfig
+Message-Id: <1390603222-13351-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This enables modules, module unloading and versioning for Koelsch.
 
-DEVTMPFS is needed for udev
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/configs/koelsch_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 9287a62..065addd 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -58,6 +58,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- CONFIG_SCSI=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_MD=y
+Changes in V2:
+* enabled module unloading support.
+
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 3015797..8f858ea 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -8,6 +8,9 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
++CONFIG_MODULES=y
++CONFIG_MODULE_UNLOAD=y
++CONFIG_MODVERSIONS=y
+ CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_MACH_KOELSCH=y
 -- 
-1.7.9.5
+1.8.3.1
 
