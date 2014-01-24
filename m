@@ -1,114 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 21 Jan 2014 12:48:39 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r8a7790: Replace IRQ type numerical values with macros
-Message-Id: <1390308519-31320-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:42 +0000
+Subject: [PATCH v4 06/15] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+Message-Id: <1390567791-8988-7-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the hardcoded value 4 with IRQ_TYPE_LEVEL_HIGH.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+v4:
+  - Switch to named IRQs
+v3:
+  - No changes
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 8d6ee9e..ea95cb60 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -304,7 +304,7 @@
- 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 64>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 144 4>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
+ arch/arm/boot/dts/r7s72100.dtsi |   70 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ff0bd6be454f..d7013df6bb10 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -34,6 +34,11 @@
+ 		gpio10 = &port10;
+ 		gpio11 = &port11;
+ 		gpio12 = &jtagport0;
++		spi0 = &spi0;
++		spi1 = &spi1;
++		spi2 = &spi2;
++		spi3 = &spi3;
++		spi4 = &spi4;
+ 	};
+ 
+ 	cpus {
+@@ -289,4 +294,69 @@
+ 		clock-frequency = <100000>;
  		status = "disabled";
-@@ -314,7 +314,7 @@
- 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c50000 0 64>;
--		interrupts = <0 145 4>;
-+		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -324,7 +324,7 @@
- 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c60000 0 64>;
--		interrupts = <0 151 4>;
-+		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -334,7 +334,7 @@
- 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c20000 0 64>;
--		interrupts = <0 148 4>;
-+		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -344,7 +344,7 @@
- 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c30000 0 64>;
--		interrupts = <0 149 4>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -354,7 +354,7 @@
- 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6ce0000 0 64>;
--		interrupts = <0 150 4>;
-+		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -364,7 +364,7 @@
- 		compatible = "renesas,scif-r8a7790", "renesas,scif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e60000 0 64>;
--		interrupts = <0 152 4>;
-+		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -374,7 +374,7 @@
- 		compatible = "renesas,scif-r8a7790", "renesas,scif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e68000 0 64>;
--		interrupts = <0 153 4>;
-+		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -384,7 +384,7 @@
- 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c0000 0 96>;
--		interrupts = <0 154 4>;
-+		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
-@@ -394,7 +394,7 @@
- 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c8000 0 96>;
--		interrupts = <0 155 4>;
-+		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
- 		status = "disabled";
+ 	};
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi1: spi@e800d000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d000 0x24>;
++		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi2: spi@e800d800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d800 0x24>;
++		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi3: spi@e800e000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e000 0x24>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi4: spi@e800e800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e800 0x24>;
++		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.3.2
+1.7.9.5
 
