@@ -1,49 +1,37 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 14 Jan 2014 17:05:40 +0000
-Subject: [PATCH 1/2] ARM: dts: r8a7791: Add SATA nodes to r8a7791.dtsi
-Message-Id: <1389719141-24419-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:50 +0000
+Subject: [PATCH 14/15] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for the SPI FLASH
+Message-Id: <1390567791-8988-15-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds SATA[01] device nodes to r8a7791.dtsi.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+This depends on spi-rspi and m25p80 updates
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 94e3cc1..d5cc362 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -366,6 +366,24 @@
- 		status = "disabled";
- 	};
- 
-+	sata0: sata@ee300000 {
-+		compatible = "renesas,sata-r8a7791";
-+		reg = <0 0xee300000 0 0x2000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7791_CLK_SATA0>;
-+		status = "disabled";
-+	};
-+
-+	sata1: sata@ee500000 {
-+		compatible = "renesas,sata-r8a7791";
-+		reg = <0 0xee500000 0 0x2000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7791_CLK_SATA1>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ arch/arm/mach-shmobile/board-koelsch.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 56020d9fa841..4cb8674bc4a8 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -195,7 +195,7 @@ static const struct spi_board_info spi_info[] __initconst = {
+ 	{
+ 		.modalias	= "m25p80",
+ 		.platform_data	= &spi_flash_data,
+-		.mode		= SPI_MODE_0,
++		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
+ 		.max_speed_hz	= 30000000,
+ 		.bus_num	= 0,
+ 		.chip_select	= 0,
 -- 
-1.8.3.1
+1.7.9.5
 
