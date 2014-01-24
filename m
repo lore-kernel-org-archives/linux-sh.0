@@ -1,52 +1,44 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 22:29:02 +0000
-Subject: [PATCH V3 0/4] ARM: shmobile: koelsch: Add USB support
-Message-Id: <1390602546-11911-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:41 +0000
+Subject: [PATCH v2 05/15] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+Message-Id: <1390567791-8988-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-The first two patches add USBHS device and the rest add PCI USB host suppor=
-t to Koelsch board.
-The patches depend on the following commits:
-USBHS and PCI USB host:
-* http://git.linuxtv.org/pinchartl/fbdev.git/commit/9770d221130e18c2d0ffe13=
-cd07365d473114549
-* http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=
-=C8ba8115a21226fba3211085f570b128fa271e31
-* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
-d2985ef720cbbdc63546a5c545ac4450d96e
-PCI USB host:
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
-* http://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3Dp=
-ci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Changes in V3:
-* fixed the USB1 device name in the pinmux table;
-* fixed a typo in the "Add internal PCI support" log message.
+Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
+clock framework yet.
 
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag;
-* added pipe_type array to the usbhs platform info since it differs from th=
-e default.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+v2:
+  - No changes
 
-Valentine Barshak (4):
-  ARM: shmobile: r8a7791: Add USBHS clock support
-  ARM: shmobile: koelsch: Add USBHS support
-  ARM: shmobile: r8a7791: Add PCI USB host clock support
-  ARM: shmobile: koelsch: Add internal PCI support
+ arch/arm/mach-shmobile/clock-r7s72100.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
- arch/arm/mach-shmobile/board-koelsch.c | 185 +++++++++++++++++++++++++++++=
-++++
- arch/arm/mach-shmobile/clock-r8a7791.c |   7 ++
- 2 files changed, 192 insertions(+)
-
---=20
-1.8.3.1
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index bf15b63c3d5a..f17a5db00221 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -194,6 +194,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
++	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+-- 
+1.7.9.5
 
