@@ -1,51 +1,33 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:03:10 +0000
-Subject: Re: [PATCH 04/14] spi: rspi: Add rspi_data_{out,in,out_in}() helpers
-Message-Id: <20140127200310.GF11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ULkDCyeHsmlwbqED"
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 24 Jan 2014 12:23:51 +0000
+Subject: [PATCH 2/2] ARM: shmobile: koelsch: Enable modules in defconfig
+Message-Id: <1390566231-18928-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-5-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-5-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+This enables modules and module versioning support for Koelsch.
 
---ULkDCyeHsmlwbqED
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/configs/koelsch_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-On Fri, Jan 24, 2014 at 09:43:54AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Add helpers rspi_data_{out,in,out_in}() to write, read, or write and
-> read data to/from the Data Register, taking care of waiting until data
-> or space is available in the buffers.
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 3015797..1ce71b2 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -8,6 +8,8 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
++CONFIG_MODULES=y
++CONFIG_MODVERSIONS=y
+ CONFIG_ARCH_SHMOBILE_LEGACY=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_MACH_KOELSCH=y
+-- 
+1.8.3.1
 
-Applied, thanks.
-
---ULkDCyeHsmlwbqED
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS5rt7AAoJELSic+t+oim9FQQP/iomgH/DOOHk+sZBNJfQ2kpN
-S+SbtJyr1h+z0914RyNkNj8SseM7oGAHl7JvGRE1XoIill7+LMNb++rAFSMk5ZIO
-7HnAT6akH5YxLjg8c7rjJX+Sck7xwKQBw6iMZn1IV8dxLT7GwVd/QmDw+vB5ZW23
-eV9ps1tx82sau6PCppgYQgJeZV0hYcGS7+FkaGY5NkNFocJ9Wqv0+Stj8gIpcKgc
-5sQcmlogwDFTaRHkyJMjDaEbJ+Ptnm7FugS40UEX5C2pHLkIHz5/lDDV0Wejr04J
-7faNl+j6XU+NBaYaxcpNWAOmuSeReGw0WLvHsTQ1jy0e4S0zJPGjIeE7WuvG+SO9
-0NYYS5W+JcU/28Wrc5hnPzLbIVXaonwj1obRoPM/LHHXJs3xzcWE22jjRKHxUS/7
-6QtUBW1NQmjjolc37RihNFlk1+Soanh5deb+Ug8No1Kh9lMyP+kqpi6ybYP+ISiG
-B3X2GqiQHvvFbdBeItHUnKyECIXVuwZNdG0HRu/EIc/v1KxeoIGxAMgayZGX2n/D
-Is7ImryNhzQRxKzeRTeaW+b5RH0jJnJUs378Wkw9vAIn9GGonCauk25oNOpbOI8q
-r/GKOM8VRA9OlsYiD5a82Ckax8EdLXGmkv+edeE3bw5WiTG9mKmAWz7JrEZwgKO7
-S0iIMY51Ma8M/YqBVP2j
-=nH6z
------END PGP SIGNATURE-----
-
---ULkDCyeHsmlwbqED--
