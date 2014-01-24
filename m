@@ -1,34 +1,98 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 07 Jan 2014 01:16:35 +0000
-Subject: Re: [PATCH 4/4] ARM: shmobile: lager: Make spi_flash_data const
-Message-Id: <20140107011635.GB2196@verge.net.au>
+From: Balaji T K <balajitk@ti.com>
+Date: Fri, 24 Jan 2014 16:53:01 +0000
+Subject: [PATCH/RFC] dmaengine: omap-dma: split header file
+Message-Id: <1390582316-4765-1-git-send-email-balajitk@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388764128-27686-1-git-send-email-geert@linux-m68k.org>
- <1388764128-27686-4-git-send-email-geert@linux-m68k.org>
- <20140106023151.GF11231@verge.net.au>
- <CAMuHMdUdJgxf9EckTNKCRF-x5c+w7NAtnYoGo696B5mgESSnmQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUdJgxf9EckTNKCRF-x5c+w7NAtnYoGo696B5mgESSnmQ@mail.gmail.com>
+References: <20140119100235.GN27282@n2100.arm.linux.org.uk>
+In-Reply-To: <20140119100235.GN27282@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jan 06, 2014 at 09:09:53AM +0100, Geert Uytterhoeven wrote:
-> On Mon, Jan 6, 2014 at 3:31 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> -static struct flash_platform_data spi_flash_data = {
-> >> +static const struct flash_platform_data spi_flash_data = {
-> >>       .name           = "m25p80",
-> >>       .parts          = spi_flash_part,
-> >>       .nr_parts       = ARRAY_SIZE(spi_flash_part),
-> >
-> > Should spi_flash_part also be const?
-> 
-> No, .parts is a non-const pointer (but perhaps it can be made const, but that
-> may be more invasive, and have side-effects).
-> 
-> > And should flash_platform_data and spi_flash_part be annotated
-> > as __initconst?
-> 
-> AFAIU, those are not copied.
+To Resolve build failure seen with sh-allmodconfig:
+    include/linux/omap-dma.h:171:8: error: expected identifier before numeric constant
+    make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
+due to CCR redefinition, move dmaengine consumer specific function to omap-dmaengine.h
 
-Thanks, I will queue up this patch as is.
+Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Balaji T K <balajitk@ti.com>
+---
+ drivers/mmc/host/omap_hsmmc.c  |    2 +-
+ include/linux/omap-dma.h       |   19 +------------------
+ include/linux/omap-dmaengine.h |   21 +++++++++++++++++++++
+ 3 files changed, 23 insertions(+), 19 deletions(-)
+ create mode 100644 include/linux/omap-dmaengine.h
+
+diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
+index dbd32ad..2f57e36 100644
+--- a/drivers/mmc/host/omap_hsmmc.c
++++ b/drivers/mmc/host/omap_hsmmc.c
+@@ -31,7 +31,7 @@
+ #include <linux/of.h>
+ #include <linux/of_gpio.h>
+ #include <linux/of_device.h>
+-#include <linux/omap-dma.h>
++#include <linux/omap-dmaengine.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/core.h>
+ #include <linux/mmc/mmc.h>
+diff --git a/include/linux/omap-dma.h b/include/linux/omap-dma.h
+index 7af25a9..6aa97e5 100644
+--- a/include/linux/omap-dma.h
++++ b/include/linux/omap-dma.h
+@@ -1,23 +1,6 @@
+-/*
+- * OMAP DMA Engine support
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+ #ifndef __LINUX_OMAP_DMA_H
+ #define __LINUX_OMAP_DMA_H
+-
+-struct dma_chan;
+-
+-#if defined(CONFIG_DMA_OMAP) || defined(CONFIG_DMA_OMAP_MODULE)
+-bool omap_dma_filter_fn(struct dma_chan *, void *);
+-#else
+-static inline bool omap_dma_filter_fn(struct dma_chan *c, void *d)
+-{
+-	return false;
+-}
+-#endif
++#include <linux/omap-dmaengine.h>
+ 
+ /*
+  *  Legacy OMAP DMA handling defines and functions
+diff --git a/include/linux/omap-dmaengine.h b/include/linux/omap-dmaengine.h
+new file mode 100644
+index 0000000..2b0b6aa
+--- /dev/null
++++ b/include/linux/omap-dmaengine.h
+@@ -0,0 +1,21 @@
++/*
++ * OMAP DMA Engine support
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#ifndef __LINUX_OMAP_DMAENGINE_H
++#define __LINUX_OMAP_DMAENGINE_H
++
++struct dma_chan;
++
++#if defined(CONFIG_DMA_OMAP) || defined(CONFIG_DMA_OMAP_MODULE)
++bool omap_dma_filter_fn(struct dma_chan *, void *);
++#else
++static inline bool omap_dma_filter_fn(struct dma_chan *c, void *d)
++{
++	return false;
++}
++#endif
++#endif /* __LINUX_OMAP_DMAENGINE_H */
+-- 
+1.7.5.4
+
