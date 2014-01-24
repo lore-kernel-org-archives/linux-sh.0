@@ -1,142 +1,70 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 22:29:06 +0000
-Subject: [PATCH V3 4/4] ARM: shmobile: koelsch: Add internal PCI support
-Message-Id: <1390602546-11911-5-git-send-email-valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:39 +0000
+Subject: [PATCH v4 03/15] [WIP] ARM: shmobile: genmai legacy: Add preliminary RSPI pinmux setup
+Message-Id: <1390567791-8988-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds internal PCI USB host devices to R-Car M2 Koelsch board.
-If USBHS device is disabled, channel 0 is configured as PCI USB host.
-Otherwise, it is configured as USBHS. The USB phy is bound to
-either USB host or USBHS device respectively.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+This does not work yet, as there's no pinmux configuration in
+setup-r7s72100.c
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 67 +++++++++++++++++++++++++++++-----
- 1 file changed, 57 insertions(+), 10 deletions(-)
+v4:
+  - The platform device basename was changed from "rspi" to "rspi-rz"
+v3:
+  - No changes
+v2:
+  - New
 
-Changes in V3:
-* fixed a typo in the log message;
-* fixed the USB1 device name in the pinmux table.
+ arch/arm/mach-shmobile/board-genmai.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 9ec1564..6641c69 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -267,7 +267,11 @@ static struct usbhs_private usbhs_priv __initdata = {
- 	}
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 0b01b7f7e240..3d02167967ec 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include <linux/kernel.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_eth.h>
+ #include <linux/spi/rspi.h>
+@@ -77,9 +78,25 @@ static const struct spi_board_info spi_info[] __initconst = {
+ 	},
  };
  
--static void __init koelsch_register_usbhs(void)
-+/* Channel 0 is USBHS */
-+#define KOELSCH_USB0_PCI	0
-+#define KOELSCH_USB0_NAME	"renesas_usbhs"
++static const struct pinctrl_map genmai_pinctrl_map[] = {
++	/* RSPI4 */
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi-rz.4", "pfc-r7s72100",
++				  "rspi4_rspck_p4_0", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi-rz.4", "pfc-r7s72100",
++				  "rspi4_ssl0_p4_1", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi-rz.4", "pfc-r7s72100",
++				  "rspi4_mosi_p4_2", "rspi4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("rspi-rz.4", "pfc-r7s72100",
++				  "rspi4_miso_p4_3", "rspi4"),
++};
 +
-+static void __init koelsch_add_usb0_device(void)
+ static void __init genmai_add_standard_devices(void)
  {
- 	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
- 	platform_device_register_resndata(&platform_bus,
-@@ -278,12 +282,45 @@ static void __init koelsch_register_usbhs(void)
- 					  sizeof(usbhs_priv.info));
- }
- #else	/* CONFIG_USB_RENESAS_USBHS_UDC */
--static inline void koelsch_register_usbhs(void) { }
-+
-+/* Channel 0 is PCI USB host */
-+#define KOELSCH_USB0_PCI	1
-+#define KOELSCH_USB0_NAME	"pci-rcar-gen2.0"
-+
-+/* Internal PCI0 */
-+static const struct resource pci0_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee090000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee080000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(108)),
-+};
-+
-+static void __init koelsch_add_usb0_device(void)
-+{
-+	usb_bind_phy("0000:00:01.0", 0, "usb_phy_rcar_gen2");
-+	usb_bind_phy("0000:00:02.0", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_simple("pci-rcar-gen2",
-+					0, pci0_resources,
-+					ARRAY_SIZE(pci0_resources));
-+}
- #endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
+ 	r7s72100_clock_init();
++	pinctrl_register_mappings(genmai_pinctrl_map,
++				  ARRAY_SIZE(genmai_pinctrl_map));
++	/* FIXME there's no pinmux configuration in setup-r7s72100.c yet */
++	/* r7s72100_pinmux_init(); */
+ 	r7s72100_add_dt_devices();
  
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static void __init koelsch_add_usb1_device(void)
-+{
-+	platform_device_register_simple("pci-rcar-gen2",
-+					1, pci1_resources,
-+					ARRAY_SIZE(pci1_resources));
-+}
-+
- /* USBHS PHY */
- static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
--	.chan0_pci = 0,	/* Channel 0 is USBHS */
-+	.chan0_pci = KOELSCH_USB0_PCI,
- 	.chan2_pci = 1,	/* Channel 2 is PCI USB */
- };
- 
-@@ -291,6 +328,18 @@ static const struct resource usbhs_phy_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6590100, 0x100),
- };
- 
-+/* Add all available USB devices */
-+static void __init koelsch_add_usb_devices(void)
-+{
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	koelsch_add_usb0_device();
-+	koelsch_add_usb1_device();
-+}
-+
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -315,8 +364,11 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
- 				  "scif1_data_d", "scif1"),
- 	/* USB0 */
--	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7791",
-+	PIN_MAP_MUX_GROUP_DEFAULT(KOELSCH_USB0_NAME, "pfc-r8a7791",
- 				  "usb0", "usb0"),
-+	/* USB1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("pci-rcar-gen2.1", "pfc-r8a7791",
-+				  "usb1", "usb1"),
- };
- 
- static void __init koelsch_add_standard_devices(void)
-@@ -341,12 +393,7 @@ static void __init koelsch_add_standard_devices(void)
- 
- 	platform_device_register_full(&sata0_info);
- 
--	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
--					  -1, usbhs_phy_resources,
--					  ARRAY_SIZE(usbhs_phy_resources),
--					  &usbhs_phy_pdata,
--					  sizeof(usbhs_phy_pdata));
--	koelsch_register_usbhs();
-+	koelsch_add_usb_devices();
- }
- 
- /*
+ 	r7s72100_register_rspi(0);
 -- 
-1.8.3.1
+1.7.9.5
 
