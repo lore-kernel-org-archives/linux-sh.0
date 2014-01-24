@@ -1,86 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 24 Jan 2014 08:18:38 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:33:49 +0000
 Subject: Re: [PATCH] shdma: add R-Car Audio DMAC peri peri driver
-Message-Id: <871tzxg5d1.wl%kuninori.morimoto.gx@gmail.com>
+Message-Id: <CAMuHMdWHSigAGx6EtFp_Em8Qw-jt2E-o79ORoTWe=MdwZmF5pw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <878uu6gle8.wl%kuninori.morimoto.gx@gmail.com>
 	<CAMuHMdX14rktzRtV9bqHFHZV6bsmQ_k=vAZFaPeNjcJsWeX42w@mail.gmail.com>
-In-Reply-To: <CAMuHMdX14rktzRtV9bqHFHZV6bsmQ_k=vAZFaPeNjcJsWeX42w@mail.gmail.com>
+	<871tzxg5d1.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <871tzxg5d1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 Cc: Vinod Koul <vinod.koul@intel.com>, Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
+Hi Morimoto-san,
 
-Hi Geert
+On Fri, Jan 24, 2014 at 9:18 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@gmail.com> wrote:
+>> > +       if (slave_id >= AUDMAPP_SLAVE_NUMBER)
+>>
+>> So slave_id should be unsigned int, too, and AUDMAPP_SLAVE_NUMBER
+>> too ("29U").
+>
+> Hmm...
+> This driver is called from shdma-base.c.
+> And shdmac.c/sudmac.c/rcar-hpbdmac.c are same style.
+>
+>  1) this "slave_id" came from shdma_ops::set_slave
+>     and, it is using "int"
+>  2) above drivers have same xxx_find_slave(),
+>     they are using "int".
+>     (this driver is based on that)
+>
+> What should I do ?
 
-Thank you for your review
+OK, then you should keep using int, and change the test to:
 
-> > --- a/drivers/dma/sh/Kconfig
-> > +++ b/drivers/dma/sh/Kconfig
-> > @@ -29,6 +29,12 @@ config RCAR_HPB_DMAE
-> >         help
-> >           Enable support for the Renesas R-Car series DMA controllers.
-> >
-> > +config RCAR_AUDMAC_PP
-> > +       tristate "Renesas R-Car Audio DMAC Peripheral Peripheral support"
-> 
-> double "Peripheral"
+    if (slave_id < 0 || slave_id >= AUDMAPP_SLAVE_NUMBER)
 
-Unfortunately (?) "Audio DMAC Peripheral Peripheral"
-(= double Peripheral) is the formal name
+Gr{oetje,eeting}s,
 
-> > +       for(i = 0; i < 1024; i++) {
-> 
-> Missing space between "for" and "(" (have you run checkpatch.pl?)
-> 
-> What's a typical value of i when leaving the loop?
+                        Geert
 
-Oops, this is my fault.
-I will fix in v2
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> > +static struct audmapp_slave_config *
-> > +audmapp_find_slave(struct audmapp_chan *auchan, int slave_id)
-> > +{
-> > +       struct audmapp_device *audev = to_dev(auchan);
-> > +       struct audmapp_pdata *pdata = audev->pdata;
-> > +       struct audmapp_slave_config *cfg;
-> > +       int i;
-> 
-> unsigned int
-> 
-> > +
-> > +       if (slave_id >= AUDMAPP_SLAVE_NUMBER)
-> 
-> So slave_id should be unsigned int, too, and AUDMAPP_SLAVE_NUMBER
-> too ("29U").
-
-Hmm...
-This driver is called from shdma-base.c.
-And shdmac.c/sudmac.c/rcar-hpbdmac.c are same style.
-
- 1) this "slave_id" came from shdma_ops::set_slave
-    and, it is using "int"
- 2) above drivers have same xxx_find_slave(),
-    they are using "int".
-    (this driver is based on that)
-
-What should I do ?
-
-> > +       if (*len > (size_t)AUDMAPP_LEN_MAX)
-> 
-> I think you can get rid of the cast by adding a "U" suffix to one of
-> the constants in the definition of AUDMAPP_LEN_MAX.
-> 
-> > +               *len = (size_t)AUDMAPP_LEN_MAX;
-> 
-> The cast is not needed (I think even without the change above).
-
-I will fixup these in v2
-Thank you
-
-
-Best regards
----
-Kuninori Morimoto
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
