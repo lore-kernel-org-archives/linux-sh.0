@@ -1,67 +1,80 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sat, 18 Jan 2014 15:03:36 +0000
-Subject: [PATCH 2/6] ARM: shmbobile: r8a7790.dtsi: add pci0/1/2 nodes
-Message-Id: <1390057420-13226-3-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:48 +0000
+Subject: [PATCH v2 12/15] ARM: shmobile: koelsch dts: Add QSPI nodes
+Message-Id: <1390567791-8988-13-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk
-Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, horms+renesas@verge.net.au
+To: linux-arm-kernel@lists.infradead.org
 
-Add nodes for USB PCI bridge devices.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
----
+Add pinctrl and SPI devices for QSPI on Koelsch.
+Add Spansion s25fl512s SPI FLASH and MTD partitions.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 Cc: devicetree@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: horms+renesas@verge.net.au
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3cc834b..c5e9783 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -728,4 +728,34 @@
- 				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   36 +++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 55ec36e2a1f1..42fd5ebe9119 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -123,6 +123,11 @@
+ 		renesas,groups = "scif1_data_d";
+ 		renesas,function = "scif1";
  	};
 +
-+	pci0: pci@ee090000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 111 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	pci1: pci@ee0b0000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0b0000 0x0 0xc00>,
-+		      <0x0 0xee0a0000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	pci2: pci@ee0d0000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
++	qspi_pins: spi {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
 +	};
  };
+ 
+ &sata0 {
+@@ -142,3 +147,34 @@
+ 
+ 	status = "okay";
+ };
++
++&spi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00080000>;
++			read-only;
++		};
++		partition@80000 {
++			label = "bootenv";
++			reg = <0x00080000 0x00080000>;
++			read-only;
++		};
++		partition@100000 {
++			label = "data";
++			reg = <0x00100000 0x03f00000>;
++		};
++	};
++};
 -- 
-1.8.5.2
+1.7.9.5
 
