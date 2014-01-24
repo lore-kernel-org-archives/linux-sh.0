@@ -1,46 +1,72 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Date: Fri, 24 Jan 2014 17:44:44 +0000
-Subject: [PATCH] sh: mach-highlander/psw.c is tristate and should use module.h
-Message-Id: <1390585484-5736-1-git-send-email-paul.gortmaker@windriver.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 12:49:36 +0000
+Subject: [PATCH 00/15] ARM: shmobile: RSPI RZ and QSPI SoC and board integration
+Message-Id: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This file is controlled by a tristate Kconfig option, and hence
-needs to include module.h so that it can get module_init() once
-we relocate it from init.h into module.h in the future.
+	Hi Simon, Magnus,
 
-Note that module_exit() appears to be missing from the driver, so
-it is questionable whether it would actually work for a removal
-and reload cycle if it was configured for a modular build.
+This patch series contains SoC and board integration for
+  1. RSPI in the r7s72100 aka RZ/A1H SoC on the Genmai reference board,
+  2. QSPI in the r8a7791 aka R-Car M2 SoC on the Koelsch reference board.
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
----
+It was tested on the r7s72100-based Genmai reference board using loopback
+mode, and on the r8a7791-based Koelsch reference board using the Spansion
+s25fl512s SPI FLASH.
 
-[patch will be added to init cleanup series:
-   http://git.kernel.org/cgit/linux/kernel/git/paulg/init.git/  ]
+Actual functioning for some parts may depend on the series "[PATCH 0/14]
+spi: rspi: Add support for RZ/A1H, DT, and Quad/Dual on QSPI" I posted
+earlier today.
 
- arch/sh/boards/mach-highlander/psw.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Overview:
+    [v4 01/15] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+    [v4 02/15] ARM: shmobile: genmai legacy: Add RSPI support
+    [v4 03/15] [WIP] ARM: shmobile: genmai legacy: Add preliminary RSPI
+	       pinmux setup
+    [v2 04/15] ARM: shmobile: genmai defconfig: Enable RSPI
+    [v2 05/15] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+    [v4 06/15] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+    [v4 07/15] ARM: shmobile: genmai reference dts: Add RSPI nodes
+    [v3 08/15] ARM: shmobile: r8a7791 clock: add QSPI clocks
+    [v3 09/15] ARM: shmobile: koelsch legacy: Add QSPI support
+    [v3 10/15] ARM: shmobile: koelsch defconfig: Enable RSPI and MTD_M25P80
+    [v2 11/15] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+    [v2 12/15] ARM: shmobile: koelsch dts: Add QSPI nodes
+    [   13/15] ARM: shmobile: lager legacy: Switch QSPI to named IRQs
+    [   14/15] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for
+	       the SPI FLASH
+    [   15/15] ARM: shmobile: koelsch dts: Enable Quad SPI transfers
 
-diff --git a/arch/sh/boards/mach-highlander/psw.c b/arch/sh/boards/mach-highlander/psw.c
-index 522786318d36..40e2b585d488 100644
---- a/arch/sh/boards/mach-highlander/psw.c
-+++ b/arch/sh/boards/mach-highlander/psw.c
-@@ -10,7 +10,7 @@
-  * for more details.
-  */
- #include <linux/io.h>
--#include <linux/init.h>
-+#include <linux/module.h>
- #include <linux/interrupt.h>
- #include <linux/platform_device.h>
- #include <mach/highlander.h>
--- 
-1.8.5.2
+Earlier versions of these have been posted before in:
+    "[PATCH V3 0/5] SoC and board integration for RSPI on r7s72100/genmai"
+    "[PATCH V2 0/4] SoC and board integration for QSPI on r8a7791/koelsch"
+    "[PATCH 0/9] Renesas RSPI/QSPI DT support"
 
+The series is based on renesas-devel-v3.13-20140124, with pinctrl work 
+accepted by Linus, Magnus' pinctrl, Wolfram's riic, Simon's sh_eth,
+Valentine's i2c, and Laurent's SCIF DT work applied on top.
+[Simon: I don't know in which order you will merge these. If you want me
+ to rebase my patches, just ask! Thanks!]
+
+All of these should be safe to apply, without runtime dependencies on other
+parts, except for [14/15] and [15/15]: those must not go in before
+"[14/14] spi: rspi: Add support for Quad and Dual SPI Transfers on QSPI",
+as this would disable SPI FLASH access (the SPI core rejects Quad SPI slaves
+without Quad SPI master support).
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
