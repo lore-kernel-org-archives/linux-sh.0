@@ -1,117 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 14 Jan 2014 02:25:39 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7790: add audio clock
-Message-Id: <878uujguzj.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:44:02 +0000
+Subject: [PATCH v2 12/14] spi: rspi: Use NULL as the clock ID
+Message-Id: <1390553044-11860-13-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389121036-3555-3-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389121036-3555-3-git-send-email-geert@linux-m68k.org>
+References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Current audio clock doesn't have dependency to device/driver,
-but, it is not good design for DT support.
-To avoid branch merge conflict issue,
-it uses this load map, and this patch is 1) part.
- 1) add old/new style clock in platform
- 2) add new style clock method in driver
- 3) remove old tyle clock from platform
+There's only one RSPI/QSPI clock, so we can use NULL as the clock ID
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7790.dtsi         |   23 +++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c |   20 ++++++++++++++++++++
- 2 files changed, 43 insertions(+)
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3cc834b..b4f0cd5 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -414,6 +414,29 @@
- 			clock-output-names = "extal";
- 		};
+ drivers/spi/spi-rspi.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index a648b40c271b..d79a7ed9b92e 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -1004,7 +1004,6 @@ static int rspi_probe(struct platform_device *pdev)
+ 	struct spi_master *master;
+ 	struct rspi_data *rspi;
+ 	int ret;
+-	char clk_name[16];
+ 	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
+ 	const struct spi_ops *ops;
+ 	const struct platform_device_id *id_entry = pdev->id_entry;
+@@ -1034,8 +1033,7 @@ static int rspi_probe(struct platform_device *pdev)
+ 		goto error1;
+ 	}
  
-+		/*
-+		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
-+		 * default. Boards that provide audio clocks should override them.
-+		 */
-+		audio_clk_a: audio_clk_a {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_a";
-+		};
-+		audio_clk_b: audio_clk_b {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_b";
-+		};
-+		audio_clk_c: audio_clk_c {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_c";
-+		};
-+
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7790-cpg-clocks",
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index f25b43a..77fd456 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -91,6 +91,15 @@ static struct clk main_clk = {
- 	.ops	= &followparent_clk_ops,
- };
- 
-+static struct clk audio_clk_a = {
-+};
-+
-+static struct clk audio_clk_b = {
-+};
-+
-+static struct clk audio_clk_c = {
-+};
-+
- /*
-  * clock ratio of these clock will be updated
-  * on r8a7790_clock_init()
-@@ -124,6 +133,9 @@ SH_FIXED_RATIO_CLK_SET(ddr_clk,			pll3_clk,	1, 8);
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
- 
- static struct clk *main_clks[] = {
-+	&audio_clk_a,
-+	&audio_clk_b,
-+	&audio_clk_c,
- 	&extal_clk,
- 	&extal_div2_clk,
- 	&main_clk,
-@@ -266,6 +278,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- static struct clk_lookup lookups[] = {
- 
- 	/* main clocks */
-+	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
-+	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
-+	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
-+	CLKDEV_CON_ID("audio_clk_internal",	&m2_clk),
- 	CLKDEV_CON_ID("extal",		&extal_clk),
- 	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
- 	CLKDEV_CON_ID("main",		&main_clk),
-@@ -353,6 +369,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
- 	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
- 	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
-+	CLKDEV_ICK_ID("clk_a", "rcar_sound", &audio_clk_a),
-+	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
-+	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
-+	CLKDEV_ICK_ID("clk_i", "rcar_sound", &m2_clk),
- 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP1015]),
- 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP1014]),
- 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP1013]),
+-	snprintf(clk_name, sizeof(clk_name), "%s%d", id_entry->name, pdev->id);
+-	rspi->clk = devm_clk_get(&pdev->dev, clk_name);
++	rspi->clk = devm_clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(rspi->clk)) {
+ 		dev_err(&pdev->dev, "cannot get clock\n");
+ 		ret = PTR_ERR(rspi->clk);
 -- 
 1.7.9.5
 
