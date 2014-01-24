@@ -1,35 +1,98 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 26 Jan 2014 15:33:05 +0000
-Subject: Re: [PATCH 4/4] i2c: rcar: use devm_clk_get to ensure clock is properly ref-counted
-Message-Id: <52E52AB1.7070309@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:44:00 +0000
+Subject: [PATCH v3 10/14] spi: rspi: Add support for loopback mode
+Message-Id: <1390553044-11860-11-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk> <1389982298-23143-5-git-send-email-ben.dooks@codethink.co.uk> <20140124171254.GE2629@katana>
-In-Reply-To: <20140124171254.GE2629@katana>
+References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, horms+renesas@verge.net.au, linux-i2c@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 24/01/14 17:12, Wolfram Sang wrote:
-> On Fri, Jan 17, 2014 at 06:11:38PM +0000, Ben Dooks wrote:
->> The current i2c-rcar driver does clk_get() without a corresponding
->> clk_put(). Add the clk to the driver private data and then get it
->> with the devm functions so that it is released when the driver is
->> unbound.
->>
->
->>
->> +	priv->clk = devm_clk_get(dev, NULL);
->> +	if (IS_ERR(priv->clk)) {
->> +		dev_err(dev, "cannot get clock\n");
->> +		return -ENOENT;
->> +	}
->
-> Return the error here?
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Yes, will change this to be PTR_ERR(priv->clk) and re-send
+Add support for specifying loopback mode.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+v3:
+  - This became a lot simpler after merging the send_pio() and
+    receive_pio() methods
+
+ drivers/spi/spi-rspi.c |   22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 0c7556978d2e..28db8770aaf3 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -183,8 +183,9 @@ struct rspi_data {
+ 	struct spi_master *master;
+ 	wait_queue_head_t wait;
+ 	struct clk *clk;
+-	u8 spsr;
+ 	u16 spcmd;
++	u8 spsr;
++	u8 sppcr;
+ 	int rx_irq, tx_irq;
+ 	const struct spi_ops *ops;
+ 
+@@ -252,8 +253,8 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
+ {
+ 	int spbr;
+ 
+-	/* Sets output mode(CMOS) and MOSI signal(from previous transfer) */
+-	rspi_write8(rspi, 0x00, RSPI_SPPCR);
++	/* Sets output mode, MOSI signal, and (optionally) loopback */
++	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
+ 
+ 	/* Sets transfer bit rate */
+ 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz) - 1;
+@@ -288,8 +289,8 @@ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
+ {
+ 	int spbr;
+ 
+-	/* Sets output mode */
+-	rspi_write8(rspi, 0x00, RSPI_SPPCR);
++	/* Sets output mode, MOSI signal, and (optionally) loopback */
++	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
+ 
+ 	/* Sets transfer bit rate */
+ 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz) - 1;
+@@ -322,8 +323,8 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 	u16 spcmd;
+ 	int spbr;
+ 
+-	/* Sets output mode(CMOS) and MOSI signal(from previous transfer) */
+-	rspi_write8(rspi, 0x00, RSPI_SPPCR);
++	/* Sets output mode, MOSI signal, and (optionally) loopback */
++	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
+ 
+ 	/* Sets transfer bit rate */
+ 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz);
+@@ -829,6 +830,11 @@ static int rspi_setup(struct spi_device *spi)
+ 	if (spi->mode & SPI_CPHA)
+ 		rspi->spcmd |= SPCMD_CPHA;
+ 
++	/* CMOS output mode and MOSI signal from previous transfer */
++	rspi->sppcr = 0;
++	if (spi->mode & SPI_LOOP)
++		rspi->sppcr |= SPPCR_SPLP;
++
+ 	set_config_register(rspi, 8);
+ 
+ 	return 0;
+@@ -1050,7 +1056,7 @@ static int rspi_probe(struct platform_device *pdev)
+ 	master->cleanup = rspi_cleanup;
+ 	master->prepare_message = rspi_prepare_message;
+ 	master->unprepare_message = rspi_unprepare_message;
+-	master->mode_bits = SPI_CPHA | SPI_CPOL;
++	master->mode_bits = SPI_CPHA | SPI_CPOL | SPI_LOOP;
+ 
+ 	ret = platform_get_irq_byname(pdev, "rx");
+ 	if (ret < 0) {
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
