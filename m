@@ -1,52 +1,71 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 26 Jan 2014 16:05:37 +0000
-Subject: [PATCH 6/6] i2c: rcar: fix NACK error code
-Message-Id: <1390752337-22386-7-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:43:50 +0000
+Subject: [PATCH 0/14] spi: rspi: Add support for RZ/A1H, DT, and Quad/Dual on QSPI
+Message-Id: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390752337-22386-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390752337-22386-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <damm@opensource.se>, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The response to a bus NACK is to return -ENXIO instead of the
--EREMOTEIO being currently returned by the driver.
+	Hi Mark,
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
-Cc: Wolfram Sang <wsa@the-dreams.de>
-Cc: Simon Horman <horms+renesas@verge.net.au>
-Cc: Magnus Damm <damm@opensource.se>
-Cc: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
----
- drivers/i2c/busses/i2c-rcar.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+This patch series
+  1. refactors the Renesas RSPI/QSPI driver,
+  2. adds support for RSPI in the r7s72100 aka RZ/A1H SoC,
+  3. adds support for DT binding,
+  4. adds support for Quad/Dual SPI Transfers on QSPI in the r8a7790/r8a7791
+     aka R-Car H2/M2 SoCs.
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index dc8c224..fa16adf 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -599,7 +599,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		 * error handling
- 		 */
- 		if (rcar_i2c_flags_has(priv, ID_NACK)) {
--			ret = -EREMOTEIO;
-+			ret = -ENXIO;
- 			break;
- 		}
- 
-@@ -618,7 +618,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 
- 	pm_runtime_put(dev);
- 
--	if (ret < 0 && ret != -EREMOTEIO)
-+	if (ret < 0 && ret != -ENXIO)
- 		dev_err(dev, "error %d : %x\n", ret, priv->flags);
- 
- 	return ret;
--- 
-1.8.5.2
+SoC and board integration patches will be posted in a separate series.
+
+It was tested on the r7s72100-based Genmai reference board using loopback
+mode, and on the r8a7791-based Koelsch reference board using the Spansion
+s25fl512s SPI FLASH.
+
+Quad Write Transfers were not tested, as this needs support in the m25p80
+driver first. Also, it's of limited use, as FLASH programming is slow.
+
+Overview:
+    [   01/14] spi: rspi: Remove unused mesg parameter from
+    			  {send,receive}_pio()
+    [   02/14] spi: rspi: Use core message handling
+    [   03/14] spi: rspi: Abstract 8/16-bit Data Register access
+    [   04/14] spi: rspi: Add rspi_data_{out,in,out_in}() helpers
+    [   05/14] spi: rspi: Abstract transfer_one() for RSPI and QSPI
+    [   06/14] spi: rspi: Merge rspi_send_pio() and rspi_receive_pio()
+    [   07/14] spi: rspi: Merge qspi_send_pio() and qspi_receive_pio()
+    [v3 08/14] spi: rspi: Add support for more than one interrupt
+    [   09/14] spi: rspi: Add support for RSPI on RZ/A1H
+    [v3 10/14] spi: rspi: Add support for loopback mode
+    [v2 11/14] spi: rspi: Convert to clk_prepare_enable/disable_unprepare
+    [v2 12/14] spi: rspi: Use NULL as the clock ID
+    [v4 13/14] spi: rspi: Add DT support
+    [   14/14] spi: rspi: Add support for Quad and Dual SPI Transfers on QSPI
+
+The series contains new work, and remaining/rebased/updated patches from the
+following series that had been posted before:
+    [PATCH v2 0/8] spi: rspi: Add support for RZ/A1H
+    [PATCH v3 0/9] Renesas RSPI/QSPI DT support
+
+Patches [03/14] and [09/14] completely replace the old handling using
+platform data in
+    [4/8 V2] spi: rspi: Add support for 8-bit Data Register access
+    [5/8 V2] spi: rspi: Add support for no TX only mode
+    [6/8 V2] spi: rspi: Add support for missing SPCR2 register
+by a new "rspi-rz" platform device name binding.
+
+Please review, thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
 
