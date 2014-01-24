@@ -1,48 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 08 Jan 2014 00:06:39 +0000
-Subject: Re: [PATCH v3 net-next 1/3] sh_eth: Add support for r7s72100
-Message-Id: <20140108000638.GB5136@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:43:55 +0000
+Subject: [PATCH 05/14] spi: rspi: Abstract transfer_one() for RSPI and QSPI
+Message-Id: <1390553044-11860-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389061635-4083-1-git-send-email-horms+renesas@verge.net.au>
- <1389061635-4083-2-git-send-email-horms+renesas@verge.net.au>
- <20140107.140755.1722284527902829385.davem@davemloft.net>
-In-Reply-To: <20140107.140755.1722284527902829385.davem@davemloft.net>
+References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Tue, Jan 07, 2014 at 02:07:55PM -0500, David Miller wrote:
-> From: Simon Horman <horms+renesas@verge.net.au>
-> Date: Tue,  7 Jan 2014 11:27:13 +0900
-> 
-> > @@ -318,6 +371,14 @@ static int sh_eth_is_gether(struct sh_eth_private *mdp)
-> >  		return 0;
-> >  }
-> >  
-> > +static int sh_eth_is_rz_fast_ether(struct sh_eth_private *mdp)
-> > +{
-> > +	if (mdp->reg_offset = sh_eth_offset_fast_rz)
-> > +		return 1;
-> > +	else
-> > +		return 0;
-> > +}
-> 
-> Please make this return a boolean and use true/false.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thanks. I will also refactor the giga_ether version of this
-function accordingly.
+Split off qspi_transfer_one() (which doesn't support DMA yet) from
+rspi_transfer_one().
+Replace the abstraction of send_pio()/receive_pio() by the abstracrion of
+transfer_one().
 
-> 
-> > @@ -2061,6 +2155,10 @@ static struct net_device_stats *sh_eth_get_stats(struct net_device *ndev)
-> >  {
-> >  	struct sh_eth_private *mdp = netdev_priv(ndev);
-> >  
-> > +	if (sh_eth_is_rz_fast_ether(mdp)) {
-> > +		return &ndev->stats;
-> > +	}
-> 
-> Single statement basic blocks do not need curly braces, therefore
-> please remove them here.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-rspi.c |   36 +++++++++++++++++++++++-------------
+ 1 file changed, 23 insertions(+), 13 deletions(-)
 
-Will do.
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 4b27513e7204..d837c5029308 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -239,8 +239,8 @@ static u16 rspi_read_data(const struct rspi_data *rspi)
+ /* optional functions */
+ struct spi_ops {
+ 	int (*set_config_register)(struct rspi_data *rspi, int access_size);
+-	int (*send_pio)(struct rspi_data *rspi, struct spi_transfer *t);
+-	int (*receive_pio)(struct rspi_data *rspi, struct spi_transfer *t);
++	int (*transfer_one)(struct spi_master *master, struct spi_device *spi,
++			    struct spi_transfer *xfer);
+ };
+ 
+ /*
+@@ -432,8 +432,6 @@ static int qspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ 	return 0;
+ }
+ 
+-#define send_pio(spi, t) spi->ops->send_pio(spi, t)
+-
+ static void rspi_dma_complete(void *arg)
+ {
+ 	struct rspi_data *rspi = arg;
+@@ -617,8 +615,6 @@ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ 	return 0;
+ }
+ 
+-#define receive_pio(spi, t) spi->ops->receive_pio(spi, t)
+-
+ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
+ {
+ 	struct scatterlist sg, sg_dummy;
+@@ -743,7 +739,7 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
+ 		if (rspi_is_dma(rspi, xfer))
+ 			ret = rspi_send_dma(rspi, xfer);
+ 		else
+-			ret = send_pio(rspi, xfer);
++			ret = rspi_send_pio(rspi, xfer);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+@@ -751,8 +747,24 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
+ 		if (rspi_is_dma(rspi, xfer))
+ 			ret = rspi_receive_dma(rspi, xfer);
+ 		else
+-			ret = receive_pio(rspi, xfer);
++			ret = rspi_receive_pio(rspi, xfer);
++	}
++	return ret;
++}
++
++static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
++			     struct spi_transfer *xfer)
++{
++	struct rspi_data *rspi = spi_master_get_devdata(master);
++	int ret = 0;
++
++	if (xfer->tx_buf) {
++		ret = qspi_send_pio(rspi, xfer);
++		if (ret < 0)
++			return ret;
+ 	}
++	if (xfer->rx_buf)
++		ret = qspi_receive_pio(rspi, xfer);
+ 	return ret;
+ }
+ 
+@@ -948,7 +960,7 @@ static int rspi_probe(struct platform_device *pdev)
+ 
+ 	master->bus_num = pdev->id;
+ 	master->setup = rspi_setup;
+-	master->transfer_one = rspi_transfer_one;
++	master->transfer_one = ops->transfer_one;
+ 	master->cleanup = rspi_cleanup;
+ 	master->prepare_message = rspi_prepare_message;
+ 	master->unprepare_message = rspi_unprepare_message;
+@@ -990,14 +1002,12 @@ error1:
+ 
+ static struct spi_ops rspi_ops = {
+ 	.set_config_register =		rspi_set_config_register,
+-	.send_pio =			rspi_send_pio,
+-	.receive_pio =			rspi_receive_pio,
++	.transfer_one =			rspi_transfer_one,
+ };
+ 
+ static struct spi_ops qspi_ops = {
+ 	.set_config_register =		qspi_set_config_register,
+-	.send_pio =			qspi_send_pio,
+-	.receive_pio =			qspi_receive_pio,
++	.transfer_one =			qspi_transfer_one,
+ };
+ 
+ static struct platform_device_id spi_driver_ids[] = {
+-- 
+1.7.9.5
+
