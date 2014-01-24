@@ -1,35 +1,77 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 20 Jan 2014 18:22:21 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790.dtsi: ficx i2c[0-3] clock reference
-Message-Id: <52DD7765.7040203@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jan 2014 01:14:37 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790.dtsi: ficx i2c[0-3] clock reference
+Message-Id: <2450badfc19b67340d3570665cc02a22df03dfab.1390525593.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390216964-12693-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390216964-12693-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <cover.1390525593.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1390525593.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-On 01/20/2014 05:50 PM, Ben Dooks wrote:
+The R8A7790's dtsi file i2c0, i2c1, i2c2, and i2c3 nodes have clock
+references to the mstp3_clks clock node, however these clocks are in the
+mstp9_clks node.
 
->>>>> The R8A7790's dtsi file i2c0, i2c1, i2c2, and i2c3 nodes have clock
->>>>> refrences that mstp3_clks clock node,
+The error was introducted in 72197ca7a1cb1cea5 ("ARM: shmobile: r8a7790:
+ Reference clocks") which is in Simon's current development tree.
 
->>>> With the typo fixed,
+This patch fixes the following error:
 
->>>> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+of_clk_src_onecell_get: invalid clock index 31
+i2c-rcar e6508000.i2c: cannot get clock
+i2c-rcar: probe of e6508000.i2c failed with error -2
 
->>> I've re-sent with that fixed.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
->>     But the patch subject still have the typo "ficx". :-)
-
->> WBR, Sergei
-
-> Argh. Do I really need to send v5?
-
-    That's up to Simon, I guess...
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a179125..46ac214 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -197,7 +197,7 @@
+ 		reg = <0 0xe6508000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C0>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -208,7 +208,7 @@
+ 		reg = <0 0xe6518000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C1>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -219,7 +219,7 @@
+ 		reg = <0 0xe6530000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C2>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -230,7 +230,7 @@
+ 		reg = <0 0xe6540000 0 0x40>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp3_clks R8A7790_CLK_I2C3>;
++		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+-- 
+1.8.4
 
