@@ -1,39 +1,201 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 07 Jan 2014 08:22:54 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Add VIN clocks to device tree
-Message-Id: <1389082976-22254-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Jan 2014 08:43:54 +0000
+Subject: [PATCH 04/14] spi: rspi: Add rspi_data_{out,in,out_in}() helpers
+Message-Id: <1390553044-11860-5-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+
+Add helpers rspi_data_{out,in,out_in}() to write, read, or write and
+read data to/from the Data Register, taking care of waiting until data
+or space is available in the buffers.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ drivers/spi/spi-rspi.c |  117 +++++++++++++++++++++++-------------------------
+ 1 file changed, 56 insertions(+), 61 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 450fdd1..be4d3e4 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -654,10 +654,13 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&p_clk>;
-+			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
- 			#clock-cells = <1>;
--			renesas,clock-indices = <R8A7791_CLK_ETHER>;
--			clock-output-names = "ether";
-+			renesas,clock-indices = <
-+				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
-+				R8A7791_CLK_ETHER
-+			>;
-+			clock-output-names = "vin2", "vin1", "vin0", "ether";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index a0bb3c28ae91..4b27513e7204 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -356,22 +356,51 @@ static int rspi_wait_for_interrupt(struct rspi_data *rspi, u8 wait_mask,
+ 	return 0;
+ }
+ 
++static int rspi_data_out(struct rspi_data *rspi, u8 data)
++{
++	if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
++		dev_err(&rspi->master->dev, "transmit timeout\n");
++		return -ETIMEDOUT;
++	}
++	rspi_write_data(rspi, data);
++	return 0;
++}
++
++static int rspi_data_in(struct rspi_data *rspi)
++{
++	u8 data;
++
++	if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
++		dev_err(&rspi->master->dev, "receive timeout\n");
++		return -ETIMEDOUT;
++	}
++	data = rspi_read_data(rspi);
++	return data;
++}
++
++static int rspi_data_out_in(struct rspi_data *rspi, u8 data)
++{
++	int ret;
++
++	ret = rspi_data_out(rspi, data);
++	if (ret < 0)
++		return ret;
++
++	return rspi_data_in(rspi);
++}
++
+ static int rspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ {
+-	int remain = t->len;
++	int remain = t->len, ret;
+ 	const u8 *data = t->tx_buf;
++
+ 	while (remain > 0) {
+ 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
+ 			    RSPI_SPCR);
+ 
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: tx empty timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+-
+-		rspi_write_data(rspi, *data);
+-		data++;
++		ret = rspi_data_out(rspi, *data++);
++		if (ret < 0)
++			return ret;
+ 		remain--;
+ 	}
+ 
+@@ -383,28 +412,17 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ 
+ static int qspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ {
+-	int remain = t->len;
++	int remain = t->len, ret;
+ 	const u8 *data = t->tx_buf;
+ 
+ 	rspi_write8(rspi, SPBFCR_TXRST, QSPI_SPBFCR);
+ 	rspi_write8(rspi, 0x00, QSPI_SPBFCR);
+ 
+ 	while (remain > 0) {
+-
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: tx empty timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+-		rspi_write_data(rspi, *data++);
+-
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: receive timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+-		rspi_read_data(rspi);
+-
++		/* dummy read */
++		ret = rspi_data_out_in(rspi, *data++);
++		if (ret < 0)
++			return ret;
+ 		remain--;
+ 	}
+ 
+@@ -549,32 +567,20 @@ static void rspi_receive_init(const struct rspi_data *rspi)
+ 
+ static int rspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ {
+-	int remain = t->len;
+-	u8 *data;
++	int remain = t->len, ret;
++	u8 *data = t->rx_buf;
+ 
+ 	rspi_receive_init(rspi);
+ 
+-	data = t->rx_buf;
+ 	while (remain > 0) {
+ 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
+ 			    RSPI_SPCR);
+ 
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: tx empty timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+-		/* dummy write for generate clock */
+-		rspi_write_data(rspi, DUMMY_DATA);
+-
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: receive timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+-		*data = rspi_read_data(rspi);
+-
+-		data++;
++		/* dummy write data for generate clock */
++		ret = rspi_data_out_in(rspi, DUMMY_DATA);
++		if (ret < 0)
++			return ret;
++		*data++ = ret;
+ 		remain--;
+ 	}
+ 
+@@ -594,28 +600,17 @@ static void qspi_receive_init(const struct rspi_data *rspi)
+ 
+ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
+ {
+-	int remain = t->len;
+-	u8 *data;
++	int remain = t->len, ret;
++	u8 *data = t->rx_buf;
+ 
+ 	qspi_receive_init(rspi);
+ 
+-	data = t->rx_buf;
+ 	while (remain > 0) {
+-
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: tx empty timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+ 		/* dummy write for generate clock */
+-		rspi_write_data(rspi, DUMMY_DATA);
+-
+-		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
+-			dev_err(&rspi->master->dev,
+-				"%s: receive timeout\n", __func__);
+-			return -ETIMEDOUT;
+-		}
+-		*data++ = rspi_read_data(rspi);
++		ret = rspi_data_out_in(rspi, DUMMY_DATA);
++		if (ret < 0)
++			return ret;
++		*data++ = ret;
+ 		remain--;
+ 	}
+ 
 -- 
-1.8.3.2
+1.7.9.5
 
