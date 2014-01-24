@@ -1,45 +1,56 @@
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 17 Jan 2014 18:20:51 +0000
-Subject: [PATCH V2 0/3] ARM: shmobile: lager: Add USB support
-Message-Id: <1389982854-20680-1-git-send-email-valentine.barshak@cogentembedded.com>
+Date: Fri, 24 Jan 2014 22:29:03 +0000
+Subject: [PATCH V3 1/4] ARM: shmobile: r8a7791: Add USBHS clock support
+Message-Id: <1390602546-11911-2-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The first patch adds USBHS device and the rest add PCI USB host support to =
-Lager board.
-The patches depend on the following commits:
-USBHS and PCI USB host:
-* http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=
-=C8ba8115a21226fba3211085f570b128fa271e31
-* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
-d2985ef720cbbdc63546a5c545ac4450d96e
-PCI USB host:
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=103e127d1f8f985e8a662da6537ebc5e08902ee3
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=1Ae5799ef63176cc75ec10e545cb65f620a82747
-* http://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3Dp=
-ci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
+This adds USBHS clocks to the R8A7791 SoC.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+Changes in V3:
+* none.
 
 Changes in V2:
 * capitalized ARM in the subject;
-* rebased on top the latest devel tag;
-* added pipe_type array to the usbhs platform info since it differs from th=
-e default.
+* rebased on top the latest devel tag.
 
-Valentine Barshak (3):
-  ARM: shmobile: lager: Add USBHS support
-  ARM: shmobile: r8a7790: Add PCI USB host clock support
-  ARM: shmobile: lager: Add internal PCI support
-
- arch/arm/mach-shmobile/board-lager.c   | 206 +++++++++++++++++++++++++++++=
-++++
- arch/arm/mach-shmobile/clock-r8a7790.c |   6 +-
- 2 files changed, 211 insertions(+), 1 deletion(-)
-
---=20
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index e4e4dfa..ab1ef2e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -140,6 +140,7 @@ enum {
+ 	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP704,
+ 	MSTP522,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+@@ -169,6 +170,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
++	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+@@ -234,6 +236,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
+ 	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
+ 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ };
+ 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-- 
 1.8.3.1
 
