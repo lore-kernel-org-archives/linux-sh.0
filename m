@@ -1,47 +1,32 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 26 Jan 2014 16:48:59 +0000
-Subject: [PATCH 2/8] pci-rcar-gen2: add initial device tree documentation
-Message-Id: <1390754945-28142-3-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 26 Jan 2014 19:09:39 +0000
+Subject: Re: [PATCH 2/8] pci-rcar-gen2: add initial device tree documentation
+Message-Id: <CAMuHMdVo80pmYG+MC8d4-_Lxod0j2reAEEFM4sC7Z2vCbEioMw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
+	<1390754945-28142-3-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390754945-28142-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, horms+renesas@verge.net.au
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-kernel@lists.codethink.co.uk, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, horms+renesas@verge.net.au
 
-Add initial documentation for the pci-rcar-gen2 driver device tree bindings.
-This is not yet complete and needs work on the sub-nodes for the PCI bus.
+On Sun, Jan 26, 2014 at 5:48 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> + - reg : A list of physical regions to access the device. The first is
+> +         the operational registers for the OHCI/EHCI controller and the
+> +        second region is for the bridge configuration and control registers.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
-Cc: linux-sh@vger.kernel.org
-Cc: devicetree@vger.kernel.org
-Cc: horms+renesas@verge.net.au
----
- .../devicetree/bindings/pci/renessas,pci-r8a7790.txt         | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
+You may want to add "reg-names" to use named regions, as there
+is more than one region.
 
-diff --git a/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
-new file mode 100644
-index 0000000..a6fd432
---- /dev/null
-+++ b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
-@@ -0,0 +1,12 @@
-+Renesas internal AHB to PCI bridge
-+
-+This is the bridge used internally to connect the USB controllers to the
-+AHB.
-+
-+Required properties:
-+ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC
-+ - reg : A list of physical regions to access the device. The first is
-+         the operational registers for the OHCI/EHCI controller and the
-+	 second region is for the bridge configuration and control registers.
-+ - interrupts : interrupt for the device
-+ - clocks : The reference to the device clock
--- 
-1.8.5.2
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
