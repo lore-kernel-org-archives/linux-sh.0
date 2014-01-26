@@ -1,33 +1,55 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 09 Jan 2014 16:01:45 +0000
-Subject: Re: lager - non-booting latest horms' devel branch
-Message-Id: <52CEC7E9.4050402@codethink.co.uk>
+Date: Sun, 26 Jan 2014 16:05:34 +0000
+Subject: [PATCH 3/6] i2c: rcar: do not print error if device nacks transfer
+Message-Id: <1390752337-22386-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52CE8BC0.7060306@codethink.co.uk>
-In-Reply-To: <52CE8BC0.7060306@codethink.co.uk>
+References: <1390752337-22386-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390752337-22386-1-git-send-email-ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org
+Cc: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 09/01/14 11:45, Ben Dooks wrote:
-> I am using the devel branch from Simon Horms' git tree, SHA1
-> 3da593ea7d797d9f59bd6ed1ee629fab681d7a23 and not seeing a
-> boot when using the multi arch defconfig and device-tree.
->
-> The board does not produce any console output so I am not
-> sure what is going on. Has anyone else had issues with using
-> the fdt-only boot?
->
-> The arch setup is:
->
-> CONFIG_ARCH_SHMOBILE=y
-> CONFIG_ARCH_SHMOBILE_MULTI=y
-> CONFIG_MACH_LAGER=y
+The i2c-rcar driver currently prints an error message if the master_xfer
+callback fails. However if the bus is being probed then lots of NAKs
+will be generated, causing the output of a number of errors printed.
 
-I've finally sorted this out, my install scripts where copying the
-old reference dtb instead of the new non-reference version.
+To solve this, disable the print if the error is not -EREMOTEIO.
 
+An example of running i2cdetect:
+
+10: i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- 12 i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+-- i2c-rcar e6530000.i2c: error -121 : 15
+
+Cc: Simon Horman <horms+renesas@verge.net.au>
+Cc: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/i2c/busses/i2c-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 2c2fd7c..0d25104 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -623,7 +623,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ 	pm_runtime_put(dev);
+ 
+-	if (ret < 0)
++	if (ret < 0 && ret != -EREMOTEIO)
+ 		dev_err(dev, "error %d : %x\n", ret, priv->flags);
+ 
+ 	return ret;
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.5.2
+
