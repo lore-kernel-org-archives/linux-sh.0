@@ -1,51 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 15 Jan 2014 00:25:29 +0000
-Subject: Re: [PATCH V2 0/2] clk: shmobile: clk-mstp fixes
-Message-Id: <20140115002529.GA24497@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 26 Jan 2014 16:48:59 +0000
+Subject: [PATCH 2/8] pci-rcar-gen2: add initial device tree documentation
+Message-Id: <1390754945-28142-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388232549-6740-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1388232549-6740-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, horms+renesas@verge.net.au
 
-On Tue, Jan 14, 2014 at 11:44:41AM -0800, Mike Turquette wrote:
-> Quoting Simon Horman (2014-01-09 17:07:01)
-> > [ CC Ben Dooks ]
-> > 
-> > On Mon, Jan 06, 2014 at 08:33:17PM +0400, Valentine wrote:
-> > > On 12/30/2013 01:54 AM, Mike Turquette wrote:
-> > > >Quoting Valentine Barshak (2013-12-28 04:09:07)
-> > > >>This fixes a number of issues with CPG MSTP clock array handling.
-> > > >
-> > > >Thanks for the quick respin. Taken into clk-next.
-> > > 
-> > > Sorry, I don't see it in https://git.linaro.org/people/mike.turquette/linux.git/shortlog/refs/heads/clk-next
-> > > Is this the right place to look for?
-> > 
-> > Hi Mike,
-> > 
-> > I'm not seeing them there either.
-> > 
-> > Also, I would like to pull these changes into my "devel" branch
-> > as they fix problems that developers are hitting. If I could use
-> > an updated clk-next-shmobile branch that includes these patches
-> > and commit ids that won't change I would be most grateful.
-> 
-> Hi all,
-> 
-> Thanks for your persistence. This was sitting in a local branch for a
-> while and I forgot to merge it into clk-next. I've updated the
-> clk-next-shmobile branch to include these patches and I have applied all
-> Acks and Tested-bys. That branch includes some other patches as well but
-> it shouldn't be a problem for a development branch.
-> 
-> I've also merged clk-next-shmobile into clk-next and pushed out to my
-> Linaro mirror.
+Add initial documentation for the pci-rcar-gen2 driver device tree bindings.
+This is not yet complete and needs work on the sub-nodes for the PCI bus.
 
-Thanks.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+Cc: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org
+Cc: horms+renesas@verge.net.au
+---
+ .../devicetree/bindings/pci/renessas,pci-r8a7790.txt         | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
 
-As a convenience to Renesas developers I will merge this into
-the devel branch of the renesas tree. I am not planning
-to submit any pull requests based on it at this time.
+diff --git a/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
+new file mode 100644
+index 0000000..a6fd432
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
+@@ -0,0 +1,12 @@
++Renesas internal AHB to PCI bridge
++
++This is the bridge used internally to connect the USB controllers to the
++AHB.
++
++Required properties:
++ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC
++ - reg : A list of physical regions to access the device. The first is
++         the operational registers for the OHCI/EHCI controller and the
++	 second region is for the bridge configuration and control registers.
++ - interrupts : interrupt for the device
++ - clocks : The reference to the device clock
+-- 
+1.8.5.2
+
