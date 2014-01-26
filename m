@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 26 Jan 2014 15:32:45 +0000
+Date: Sun, 26 Jan 2014 15:57:42 +0000
 Subject: Re: [PATCH 3/4] i2c: rcar: do not print error if device nacks transfer
-Message-Id: <52E52A9D.20608@codethink.co.uk>
+Message-Id: <52E53076.9020504@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389982298-23143-1-git-send-email-ben.dooks@codethink.co.uk> <1389982298-23143-4-git-send-email-ben.dooks@codethink.co.uk> <20140124171112.GD2629@katana>
 In-Reply-To: <20140124171112.GD2629@katana>
@@ -23,10 +23,11 @@ On 24/01/14 17:11, Wolfram Sang wrote:
 > be a good time to fix this as well.
 >
 > Also, you might want to print for -EIO only? Or do you want to see
-> -EAGAIN, too?
+> -EAGAIN, too.
 
-Ok, although the change to the error code should probably be a separate
-patch instead of modifying this one.
+I'm not sure, I've not seen any EAGAIN replies from the driver.
+I will leave this for a future patch.
+
 
 -- 
 Ben Dooks				http://www.codethink.co.uk/
