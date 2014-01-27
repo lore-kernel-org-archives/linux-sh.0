@@ -1,57 +1,54 @@
-From: Joe Perches <joe@perches.com>
-Date: Fri, 03 Jan 2014 14:28:59 +0000
-Subject: Re: [PATCH] sh_eth: coding style fixes
-Message-Id: <1388759339.14334.10.camel@joe-AO722>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Mon, 27 Jan 2014 06:08:18 +0000
+Subject: [PATCH 3/9] idle: no more arch_cpu_idle_prepare() users
+Message-Id: <1390802904-28399-4-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312310325.21951.sergei.shtylyov@cogentembedded.com>
-	 <20140102.193407.23280653408847634.davem@davemloft.net>
-	 <1388713347.2259.86.camel@joe-AO722> <52C6886D.2000801@cogentembedded.com>
-In-Reply-To: <52C6886D.2000801@cogentembedded.com>
+References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 2014-01-03 at 13:52 +0400, Sergei Shtylyov wrote:
-> On 03-01-2014 5:42, Joe Perches wrote:
-> >>> @@ -1952,8 +1949,8 @@ static void sh_eth_tx_timeout(struct net
-> >>>   	netif_stop_queue(ndev);
-> >>>
-> >>>   	if (netif_msg_timer(mdp))
-> >>> -		dev_err(&ndev->dev, "%s: transmit timed out, status %8.8x,"
-> >>> -	       " resetting...\n", ndev->name, (int)sh_eth_read(ndev, EESR));
-> >>> +		dev_err(&ndev->dev, "%s: transmit timed out, status %8.8x, resetting...\n"
-> >>> +			ndev->name, (int)sh_eth_read(ndev, EESR));
-> >>>
-> >>>   	/* tx_errors count up */
-> >>>   	ndev->stats.tx_errors++;
-> 
-> >> You did not build test this.
-> 
-> >> drivers/net/ethernet/renesas/sh_eth.c: In function ‘sh_eth_tx_timeout’:
-> >> drivers/net/ethernet/renesas/sh_eth.c:1953:4: error: expected ‘)’ before ‘ndev’
-> 
-> > Also, this would likely be better as:
-> >
-> > 	netif_err(mdp, timer, ndev, "transmit timed out, status %#08lx, resetting...\n",
-> > 		  sh_eth_read(ndev, EESR));
-> 
->  If checkpoint.pl did point this out, I would have fixed it.
+... so we can get rid of it entirely.
 
-That's not really possible to do via checkpatch.
-checkpatch is neither a compiler nor a programmer.
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+---
+ include/linux/cpu.h | 1 -
+ kernel/cpu/idle.c   | 2 --
+ 2 files changed, 3 deletions(-)
 
-There are _many_ patterns that a person (or maybe
-spatch) might spot that checkpatch could not.
-
-checkpatch is a brainless scanner and please use
-yours over any advice given by checkpatch.
-
-> Since it doesn't, it's probably material of another patch.
-
-All of the dev_<level> uses in this file/module
-should be inspected and possibly converted to
-netdev_<level> or netif_<level>.  This could change
-and improve the output message logging.
+diff --git a/include/linux/cpu.h b/include/linux/cpu.h
+index 03e235ad1b..218fab7521 100644
+--- a/include/linux/cpu.h
++++ b/include/linux/cpu.h
+@@ -221,7 +221,6 @@ void cpu_idle(void);
+ void cpu_idle_poll_ctrl(bool enable);
+ 
+ void arch_cpu_idle(void);
+-void arch_cpu_idle_prepare(void);
+ void arch_cpu_idle_enter(void);
+ void arch_cpu_idle_exit(void);
+ void arch_cpu_idle_dead(void);
+diff --git a/kernel/cpu/idle.c b/kernel/cpu/idle.c
+index 988573a9a3..4e327e211b 100644
+--- a/kernel/cpu/idle.c
++++ b/kernel/cpu/idle.c
+@@ -52,7 +52,6 @@ static inline int cpu_idle_poll(void)
+ }
+ 
+ /* Weak implementations for optional arch specific functions */
+-void __weak arch_cpu_idle_prepare(void) { }
+ void __weak arch_cpu_idle_enter(void) { }
+ void __weak arch_cpu_idle_exit(void) { }
+ void __weak arch_cpu_idle_dead(void) { }
+@@ -136,6 +135,5 @@ void cpu_startup_entry(enum cpuhp_state state)
+ 	boot_init_stack_canary();
+ #endif
+ 	__current_set_polling();
+-	arch_cpu_idle_prepare();
+ 	cpu_idle_loop();
+ }
+-- 
+1.8.4.108.g55ea5f6
 
