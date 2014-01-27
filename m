@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 27 Jan 2014 10:34:21 +0000
+From: Valentine <valentine.barshak@cogentembedded.com>
+Date: Mon, 27 Jan 2014 10:45:20 +0000
 Subject: Re: [PATCH V3 0/3] ARM: shmobile: lager: Add USB support
-Message-Id: <CANqRtoR+1zpM9xPF8M5kKM30qjzuuGHC_LQez0TA+5eTe+L7uA@mail.gmail.com>
+Message-Id: <52E638C0.4090101@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,9 +10,7 @@ Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi Ben,
-
-On Mon, Jan 27, 2014 at 7:31 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+On 01/27/2014 02:31 PM, Magnus Damm wrote:
 > Hi Ben,
 >
 > On Mon, Jan 27, 2014 at 7:24 PM, Ben Dooks <ben.dooks@codethink.co.uk> wr=
@@ -105,11 +103,29 @@ h=3Dpci/host-rcar&id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
 > needed for SM501 with local memory, I may be wrong about this case
 > though. As-is is probably not enough though.
 
-Oh by the way, I may be wrong but I suspect it will be possible to
-only use bounce buffers without IOMMU. If we hook up the IOMMU then we
-will still not have enough physical / bus address space to cover all
-potential memory that can be hooked up via LPAE.
+I have played with this a bit. I haven't seen any issues with HIGHMEM.
+As long as the kernel uses 1G/3G memory split (kernel/user-space) I have no=
+t seen any issues.
 
-Cheers,
+I have not tested the PAE yet. I planned to play more with it and send incr=
+emental patches
+for that later.
 
-/ magnus
+Using bounce buffers with different memory model works fine for DMA transfe=
+rs but it involves
+changes to the board-specific code which should limit DMA zone to just 1GB =
+for all DMA
+allocations.
+
+Unfortunately ARM PCI doesn't seem to have specific DMA memory limitation s=
+upport as PowerPC does.
+So I used platform notifiers to fix up DMA mask for PCI devices.
+
+>
+> Cheers,
+>
+> / magnus
+>
+
+Thanks,
+Val.
