@@ -1,87 +1,122 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jan 2014 03:35:51 +0000
-Subject: Re: [PATCH 03/03] ARM: shmobile: Lager USB0 cable detection workaround
-Message-Id: <CANqRtoQ6HErKuV01Mg2oV7S8UwTayCcsJAQtxhJGJcy8UeYCNQ@mail.gmail.com>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Mon, 27 Jan 2014 06:08:21 +0000
+Subject: [PATCH 6/9] PPC: remove redundant cpuidle_idle_call()
+Message-Id: <1390802904-28399-7-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140129230959.22655.55645.sendpatchset@w520>
- <20140129231029.22655.58864.sendpatchset@w520>
- <1682649.H5bjffAvcD@avalon>
-In-Reply-To: <1682649.H5bjffAvcD@avalon>
+References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+The core idle loop now takes care of it.  However a few things need
+checking:
 
-[CC Morimoto-san, the author of the USBHS driver]
+- Invocation of cpuidle_idle_call() in pseries_lpar_idle() happened
+  through arch_cpu_idle() and was therefore always preceded by a call
+  to ppc64_runlatch_off().  To preserve this property now that
+  cpuidle_idle_call() is invoked directly from core code, a call to
+  ppc64_runlatch_off() has been added to idle_loop_prolog() in
+  platforms/pseries/processor_idle.c.
 
-On Fri, Jan 31, 2014 at 10:14 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patch.
->
-> On Thursday 30 January 2014 08:10:29 Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Add Lager board code to check the PWEN GPIO signal and refuse to
->> allow probe of the USBHS driver in case of DIP misconfiguration.
->>
->> For correct operation Lager DIP switches SW5 and SW6 shall be
->> configured in 2-3 position to enable USB Function support.
->>
->> If the DIP switch is configured incorrectly then the user can
->> simply adjust the hardware and either reboot or use the bind interface
->> to try to probe again:
->>
->> # echo renesas_usbhs > /sys/bus/platform/drivers/renesas_usbhs/bind
->
-> Our of curiosity, and I know you will love the question, have you thought
-> about how to implement this on multiplatform kernels without a board file ?
-> :-)
+- Similarly, cpuidle_idle_call() was followed by ppc64_runlatch_off()
+  so a call to the later has been added to idle_loop_epilog().
 
-Thanks for asking. =)
+- And since arch_cpu_idle() always made sure to re-enable IRQs if they
+  were not enabled, this is now
+  done in idle_loop_epilog() as well.
 
-Actually I've been giving this some thought already. And it happens to
-be that the sister board "Koelsch" has similar but slightly improved
-hardware.
+The above was made in order to keep the execution flow close to the
+original.  I don't know if that was strictly necessary. Someone well
+aquainted with the platform details might find some room for possible
+optimizations.
 
-In the Lager case we can only support USB Function properly and
-safely, and to avoid shooting ourselves in the foot we need a check
-like this patch implements. So on Lager RCAR_GP_PIN(5, 18) needs to be
-high for proper USB Function operation. If not we give up.
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+---
+ arch/powerpc/platforms/pseries/processor_idle.c |  5 ++++
+ arch/powerpc/platforms/pseries/setup.c          | 34 ++++++++++---------------
+ 2 files changed, 19 insertions(+), 20 deletions(-)
 
-In case of Koelsch a MAX3355E chip is hooked up to handle dual
-function or OTG. So on that platform we can use either Function or
-Host. To figure out which cable is hooked up we can check the ID pin
-of the USB connector through the MAX3355E ID_OUT signal.
+diff --git a/arch/powerpc/platforms/pseries/processor_idle.c b/arch/powerpc/platforms/pseries/processor_idle.c
+index a166e38bd6..72ddfe3d2f 100644
+--- a/arch/powerpc/platforms/pseries/processor_idle.c
++++ b/arch/powerpc/platforms/pseries/processor_idle.c
+@@ -33,6 +33,7 @@ static struct cpuidle_state *cpuidle_state_table;
+ 
+ static inline void idle_loop_prolog(unsigned long *in_purr)
+ {
++	ppc64_runlatch_off();
+ 	*in_purr = mfspr(SPRN_PURR);
+ 	/*
+ 	 * Indicate to the HV that we are idle. Now would be
+@@ -49,6 +50,10 @@ static inline void idle_loop_epilog(unsigned long in_purr)
+ 	wait_cycles += mfspr(SPRN_PURR) - in_purr;
+ 	get_lppaca()->wait_state_cycles = cpu_to_be64(wait_cycles);
+ 	get_lppaca()->idle = 0;
++
++	if (irqs_disabled())
++		local_irq_enable();
++	ppc64_runlatch_on();
+ }
+ 
+ static int snooze_loop(struct cpuidle_device *dev,
+diff --git a/arch/powerpc/platforms/pseries/setup.c b/arch/powerpc/platforms/pseries/setup.c
+index c1f1908587..7604c19d54 100644
+--- a/arch/powerpc/platforms/pseries/setup.c
++++ b/arch/powerpc/platforms/pseries/setup.c
+@@ -39,7 +39,6 @@
+ #include <linux/irq.h>
+ #include <linux/seq_file.h>
+ #include <linux/root_dev.h>
+-#include <linux/cpuidle.h>
+ #include <linux/of.h>
+ #include <linux/kexec.h>
+ 
+@@ -356,29 +355,24 @@ early_initcall(alloc_dispatch_log_kmem_cache);
+ 
+ static void pseries_lpar_idle(void)
+ {
+-	/* This would call on the cpuidle framework, and the back-end pseries
+-	 * driver to  go to idle states
++	/*
++	 * Default handler to go into low thread priority and possibly
++	 * low power mode by cedeing processor to hypervisor
+ 	 */
+-	if (cpuidle_idle_call()) {
+-		/* On error, execute default handler
+-		 * to go into low thread priority and possibly
+-		 * low power mode by cedeing processor to hypervisor
+-		 */
+ 
+-		/* Indicate to hypervisor that we are idle. */
+-		get_lppaca()->idle = 1;
++	/* Indicate to hypervisor that we are idle. */
++	get_lppaca()->idle = 1;
+ 
+-		/*
+-		 * Yield the processor to the hypervisor.  We return if
+-		 * an external interrupt occurs (which are driven prior
+-		 * to returning here) or if a prod occurs from another
+-		 * processor. When returning here, external interrupts
+-		 * are enabled.
+-		 */
+-		cede_processor();
++	/*
++	 * Yield the processor to the hypervisor.  We return if
++	 * an external interrupt occurs (which are driven prior
++	 * to returning here) or if a prod occurs from another
++	 * processor. When returning here, external interrupts
++	 * are enabled.
++	 */
++	cede_processor();
+ 
+-		get_lppaca()->idle = 0;
+-	}
++	get_lppaca()->idle = 0;
+ }
+ 
+ /*
+-- 
+1.8.4.108.g55ea5f6
 
-In general with a USB connector (and the MAX3355E chip) there are
-standard signal levels for ID pin detection. The ID signal for the USB
-micro-AB connector will be High in case of Function cable (pull-up,
-left open), and Low in case of Host (tied to GND).
-
-So, to answer your question about how to support this without
-board-specific code written in C, I believe we need to add
-abstractions to support the MAX3355E chip and/or external ID pin
-somehow. Perhaps there is almost nothing to abstract there?
-
-Regarding how to support Lager then I think we can use the same code
-as Koelsch because the ID pin signal is following the same signal
-level. So perhaps it is enough to add support for the USBHS driver to
-handle the ID pin as GPIO? If so, then we can use the same style for
-both Lager and Koelsch, but on Lager we also somehow need to tell the
-the USBHS driver that only Function is OK.
-
-> This might be one of the valid cases where we won't be able to do without a
-> board file. The callback functions in platform data, however, probably need to
-> go.
-
-I think it is possible to get rid of the board file. And especially if
-we can reuse the code for multiple boards or SoC then this starts
-making sense - even to me! =)
-
-Thanks,
-
-/ magnus
