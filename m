@@ -1,122 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:43:55 +0000
-Subject: [PATCH 05/14] spi: rspi: Abstract transfer_one() for RSPI and QSPI
-Message-Id: <1390553044-11860-6-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:03:22 +0000
+Subject: Re: [PATCH 05/14] spi: rspi: Abstract transfer_one() for RSPI and QSPI
+Message-Id: <20140127200322.GG11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Q5Q2TEEGbX9oWZOX"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1390553044-11860-6-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-6-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Split off qspi_transfer_one() (which doesn't support DMA yet) from
-rspi_transfer_one().
-Replace the abstraction of send_pio()/receive_pio() by the abstracrion of
-transfer_one().
+--Q5Q2TEEGbX9oWZOX
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-rspi.c |   36 +++++++++++++++++++++++-------------
- 1 file changed, 23 insertions(+), 13 deletions(-)
+On Fri, Jan 24, 2014 at 09:43:55AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> Split off qspi_transfer_one() (which doesn't support DMA yet) from
+> rspi_transfer_one().
+> Replace the abstraction of send_pio()/receive_pio() by the abstracrion of
+> transfer_one().
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 4b27513e7204..d837c5029308 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -239,8 +239,8 @@ static u16 rspi_read_data(const struct rspi_data *rspi)
- /* optional functions */
- struct spi_ops {
- 	int (*set_config_register)(struct rspi_data *rspi, int access_size);
--	int (*send_pio)(struct rspi_data *rspi, struct spi_transfer *t);
--	int (*receive_pio)(struct rspi_data *rspi, struct spi_transfer *t);
-+	int (*transfer_one)(struct spi_master *master, struct spi_device *spi,
-+			    struct spi_transfer *xfer);
- };
- 
- /*
-@@ -432,8 +432,6 @@ static int qspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- 	return 0;
- }
- 
--#define send_pio(spi, t) spi->ops->send_pio(spi, t)
--
- static void rspi_dma_complete(void *arg)
- {
- 	struct rspi_data *rspi = arg;
-@@ -617,8 +615,6 @@ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
- 	return 0;
- }
- 
--#define receive_pio(spi, t) spi->ops->receive_pio(spi, t)
--
- static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	struct scatterlist sg, sg_dummy;
-@@ -743,7 +739,7 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 		if (rspi_is_dma(rspi, xfer))
- 			ret = rspi_send_dma(rspi, xfer);
- 		else
--			ret = send_pio(rspi, xfer);
-+			ret = rspi_send_pio(rspi, xfer);
- 		if (ret < 0)
- 			return ret;
- 	}
-@@ -751,8 +747,24 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 		if (rspi_is_dma(rspi, xfer))
- 			ret = rspi_receive_dma(rspi, xfer);
- 		else
--			ret = receive_pio(rspi, xfer);
-+			ret = rspi_receive_pio(rspi, xfer);
-+	}
-+	return ret;
-+}
-+
-+static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
-+			     struct spi_transfer *xfer)
-+{
-+	struct rspi_data *rspi = spi_master_get_devdata(master);
-+	int ret = 0;
-+
-+	if (xfer->tx_buf) {
-+		ret = qspi_send_pio(rspi, xfer);
-+		if (ret < 0)
-+			return ret;
- 	}
-+	if (xfer->rx_buf)
-+		ret = qspi_receive_pio(rspi, xfer);
- 	return ret;
- }
- 
-@@ -948,7 +960,7 @@ static int rspi_probe(struct platform_device *pdev)
- 
- 	master->bus_num = pdev->id;
- 	master->setup = rspi_setup;
--	master->transfer_one = rspi_transfer_one;
-+	master->transfer_one = ops->transfer_one;
- 	master->cleanup = rspi_cleanup;
- 	master->prepare_message = rspi_prepare_message;
- 	master->unprepare_message = rspi_unprepare_message;
-@@ -990,14 +1002,12 @@ error1:
- 
- static struct spi_ops rspi_ops = {
- 	.set_config_register =		rspi_set_config_register,
--	.send_pio =			rspi_send_pio,
--	.receive_pio =			rspi_receive_pio,
-+	.transfer_one =			rspi_transfer_one,
- };
- 
- static struct spi_ops qspi_ops = {
- 	.set_config_register =		qspi_set_config_register,
--	.send_pio =			qspi_send_pio,
--	.receive_pio =			qspi_receive_pio,
-+	.transfer_one =			qspi_transfer_one,
- };
- 
- static struct platform_device_id spi_driver_ids[] = {
--- 
-1.7.9.5
+Applied, thanks.
 
+--Q5Q2TEEGbX9oWZOX
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS5ruHAAoJELSic+t+oim9OVwP/RUKKneqqsdAxda0ogJbni5a
+opa1q2B7GCxPwv3Ld3zz+BbPId9QykreCp+prg2acAPnKly8syHHV1wLvuTkwaB/
+YWwPq0plHlleCefhMLmCmXFJzJvnnkbMUpSnqWOhPyF6I5NTs1u59R5kWKU6tXwh
+4OZsEoWQTjeK4MiwSJKG9I5X4QZ4rlAlchd+bA8DD1YvImsk5eV6A3c5UEwEce2c
+hs5c6lGeUCU7R4hOG234g45Z0kjgKKBKOPlpj8qoxVzQyrlff6HuendWVGCp05zZ
+a3j38yuKI3QWpoPPiQobyj8ULxNjBjOn+tb9/i+sWYD9KqCE5ODLzYhTJ45VLJUP
+YYMkqLVwIleI16NdMSUO7Uy23o7qRdZqfwuU2gLondJDoZw+xlEbnZy0hx88cePD
+Tm2JWaPTmhjkaxmnSyoOJKFwbWldG9mGbfspcC1SktlEXTs4E8Z2W+OBsqeme1t5
+IbhvNPYxstUGXhKfoSS5HBsAF2YJMTh4PP62VEiX5tgiS9O6EGmXX2PvaM0QyZJH
+bh8+vyZhMsmyyaqEt9nGq5SsecP2padwzxPkgUNu/J75OQsJl34kskJD3S630OyV
+iqUExS2wM2HETFscwzRqxpPBrFRg48jg4+NyT+sscSS570lxwv7mfISWR7Iypz/z
+36wB+4uSGtw8gPjjSTsr
+=8kJe
+-----END PGP SIGNATURE-----
+
+--Q5Q2TEEGbX9oWZOX--
