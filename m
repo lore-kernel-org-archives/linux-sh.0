@@ -1,98 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:44:00 +0000
-Subject: [PATCH v3 10/14] spi: rspi: Add support for loopback mode
-Message-Id: <1390553044-11860-11-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:08:05 +0000
+Subject: Re: [PATCH v3 10/14] spi: rspi: Add support for loopback mode
+Message-Id: <20140127200805.GL11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="G4uQRTjNk52FNqRv"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+ <1390553044-11860-11-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-11-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add support for specifying loopback mode.
+--G4uQRTjNk52FNqRv
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
-v3:
-  - This became a lot simpler after merging the send_pio() and
-    receive_pio() methods
+On Fri, Jan 24, 2014 at 09:44:00AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> Add support for specifying loopback mode.
 
- drivers/spi/spi-rspi.c |   22 ++++++++++++++--------
- 1 file changed, 14 insertions(+), 8 deletions(-)
+Applied, thanks.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 0c7556978d2e..28db8770aaf3 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -183,8 +183,9 @@ struct rspi_data {
- 	struct spi_master *master;
- 	wait_queue_head_t wait;
- 	struct clk *clk;
--	u8 spsr;
- 	u16 spcmd;
-+	u8 spsr;
-+	u8 sppcr;
- 	int rx_irq, tx_irq;
- 	const struct spi_ops *ops;
- 
-@@ -252,8 +253,8 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
- {
- 	int spbr;
- 
--	/* Sets output mode(CMOS) and MOSI signal(from previous transfer) */
--	rspi_write8(rspi, 0x00, RSPI_SPPCR);
-+	/* Sets output mode, MOSI signal, and (optionally) loopback */
-+	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
- 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz) - 1;
-@@ -288,8 +289,8 @@ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
- {
- 	int spbr;
- 
--	/* Sets output mode */
--	rspi_write8(rspi, 0x00, RSPI_SPPCR);
-+	/* Sets output mode, MOSI signal, and (optionally) loopback */
-+	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
- 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz) - 1;
-@@ -322,8 +323,8 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
- 	u16 spcmd;
- 	int spbr;
- 
--	/* Sets output mode(CMOS) and MOSI signal(from previous transfer) */
--	rspi_write8(rspi, 0x00, RSPI_SPPCR);
-+	/* Sets output mode, MOSI signal, and (optionally) loopback */
-+	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
- 	spbr = clk_get_rate(rspi->clk) / (2 * rspi->max_speed_hz);
-@@ -829,6 +830,11 @@ static int rspi_setup(struct spi_device *spi)
- 	if (spi->mode & SPI_CPHA)
- 		rspi->spcmd |= SPCMD_CPHA;
- 
-+	/* CMOS output mode and MOSI signal from previous transfer */
-+	rspi->sppcr = 0;
-+	if (spi->mode & SPI_LOOP)
-+		rspi->sppcr |= SPPCR_SPLP;
-+
- 	set_config_register(rspi, 8);
- 
- 	return 0;
-@@ -1050,7 +1056,7 @@ static int rspi_probe(struct platform_device *pdev)
- 	master->cleanup = rspi_cleanup;
- 	master->prepare_message = rspi_prepare_message;
- 	master->unprepare_message = rspi_unprepare_message;
--	master->mode_bits = SPI_CPHA | SPI_CPOL;
-+	master->mode_bits = SPI_CPHA | SPI_CPOL | SPI_LOOP;
- 
- 	ret = platform_get_irq_byname(pdev, "rx");
- 	if (ret < 0) {
--- 
-1.7.9.5
+--G4uQRTjNk52FNqRv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS5ryhAAoJELSic+t+oim9uhoP/AhEF0qm72WlfBJL/epbgPL+
+GYkSTIM2kSQT8z+ITFtotIFxwvqpOo0DOIXKhlv59ZoQ8GWlZXwjY4zxmrvAyvcL
+Veu16BwXNk0xhR+zXJbIcqJ3hYA5VODqfcSD1/3eXVX4FfKmyFvK3b96CTBMDc8G
+nFt3Kbn8QrFKHOFYljKoWwUgl3+qauM8WdAHmaSDvj+1Z8a6+ReNAtQzyBA/rJqY
+LUnsArliBN2ttCxsO7vbMaBDSOLeIOa1C3k6g17Mjj0bQ1m9/V5ScVKg3oOhymBz
+7zze9PKQ1gnStgzyU5NuyLmqY2CmsCsfcx9V+/F9gjORiCIoShRBOLpwPVNW69iU
++B1YYoYsl0Z+ttT9CCz4s8XyC13GNxjlDYJIYgFTeKBptB43vl1PWiwcSBedm5RA
+ljILSKTzeQeMsX/Up3WDRrSG/pr6IkWmjf54pnoy0zkOY7eAC2NRaEiaXyOoyY5g
+WGOh8Ussm5+MR6c74GciYRiPHWqc3RaXkn+cnrDG6qNzx7FTSSTLulR6Qd/yPRVA
+UDUU2RqmOM5jcEPDJ/4nulMzX6GC12DSo31adoQyY3HbzeyvhyfS1a3OPPFJXcel
+SldvPnkRc+5V2EYwdwbFrJbZ/rA4iUI5GGT6qCfsAb8M/NrwRN4XqpPCgNv5pOHj
+UfGbnLu/GMRK1zaQQUOm
+=8Mg6
+-----END PGP SIGNATURE-----
+
+--G4uQRTjNk52FNqRv--
