@@ -1,50 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:44:02 +0000
-Subject: [PATCH v2 12/14] spi: rspi: Use NULL as the clock ID
-Message-Id: <1390553044-11860-13-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:08:31 +0000
+Subject: Re: [PATCH v2 12/14] spi: rspi: Use NULL as the clock ID
+Message-Id: <20140127200831.GN11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="aglTZS2R0flMmvQN"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1390553044-11860-13-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-13-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-There's only one RSPI/QSPI clock, so we can use NULL as the clock ID
+--aglTZS2R0flMmvQN
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
-v2:
-  - No changes
+On Fri, Jan 24, 2014 at 09:44:02AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> There's only one RSPI/QSPI clock, so we can use NULL as the clock ID
 
- drivers/spi/spi-rspi.c |    4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+Applied, thanks.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index a648b40c271b..d79a7ed9b92e 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1004,7 +1004,6 @@ static int rspi_probe(struct platform_device *pdev)
- 	struct spi_master *master;
- 	struct rspi_data *rspi;
- 	int ret;
--	char clk_name[16];
- 	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
- 	const struct spi_ops *ops;
- 	const struct platform_device_id *id_entry = pdev->id_entry;
-@@ -1034,8 +1033,7 @@ static int rspi_probe(struct platform_device *pdev)
- 		goto error1;
- 	}
- 
--	snprintf(clk_name, sizeof(clk_name), "%s%d", id_entry->name, pdev->id);
--	rspi->clk = devm_clk_get(&pdev->dev, clk_name);
-+	rspi->clk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(rspi->clk)) {
- 		dev_err(&pdev->dev, "cannot get clock\n");
- 		ret = PTR_ERR(rspi->clk);
--- 
-1.7.9.5
+--aglTZS2R0flMmvQN
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS5ry8AAoJELSic+t+oim9+/EQAJzqq6Q3+qAC0xWTGL8W8vm3
+sXQG1XPX2SiaKI4Wj9aVo/NFMmf59ASkMm2SqU7Ns+z6ZXeAqi1CrAr0wE9/iAn0
+7UhV9g3x6uhryBSSKXkAf905+C6S7KNS9lIsKUhFfs0zO+OWL4iXpHJlQh0K/DK2
+68bZ51eBRD9oMd29ddJTjQ4j96KJz2cZU70HWovISbnz1z0CaPQpGfKrUwuZvfOY
+XXAE6jHW9sWa5/D8083xf2gazYevogRggrGh8HkT8kLWd3QgzmzIMCz8+yj/ZF3j
+hJ+dNIz7CkbTKcbIGe8pnHIGVy0S8EJQ1jVv1tNdpqHQgVsdMHSd8vwLkuAxIE9W
+NiY41nzaPHN1l9uaVlAEIatgBw+pP5gSJLSkwjqcY+r/w4Q4bZr+ufpnVBqjab/l
+b+YDE9TvxD688oTIt6VOmgP8FuIHwsV/7uGT4gorGMzxvvm7xcdoNhc4kk92xl/U
+5VxBUgSz/Fy5D9kmcNdTm0wbjDxZTwr7kBS6fZCq7Nu02ccVaUwNWJJ15sp80nWX
+D4h31T6nRSel8Ux2f3vR1yPX3RWWCh1ECmGqzyg1W5qZ1rqBAC6NhNknA01yDIYK
+6ElWrQfxh9m76EdWhqDxe2wddVjPQ5rpsswqA5mdIYTvmInQ01+33M1clZrE9rdZ
+Q9R81XxEz6EKHSMZpT/e
+=POqp
+-----END PGP SIGNATURE-----
+
+--aglTZS2R0flMmvQN--
