@@ -1,52 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 29 Jan 2014 12:35:44 +0000
-Subject: Re: [PATCH] phy-rcar-usb-gen2: add device tree support
-Message-Id: <20140129123543.GB24573@verge.net.au>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Mon, 27 Jan 2014 06:08:16 +0000
+Subject: [PATCH 1/9] ARM: get rid of arch_cpu_idle_prepare()
+Message-Id: <1390802904-28399-2-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390754945-28142-6-git-send-email-ben.dooks@codethink.co.uk>
- <1390755901-3743-1-git-send-email-ben.dooks@codethink.co.uk>
- <52E6A436.5090408@cogentembedded.com>
- <52E6AE32.5050906@codethink.co.uk>
- <20140129062212.GD23833@verge.net.au>
- <52E8DAF6.5090105@cogentembedded.com>
- <20140129122202.GB26253@verge.net.au>
- <52E8F38F.9030609@cogentembedded.com>
-In-Reply-To: <52E8F38F.9030609-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: Valentine Barshak <valentine.barshak-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 29, 2014 at 04:26:55PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 29-01-2014 16:22, Simon Horman wrote:
-> 
-> >>>>[snip]
-> 
-> >>>>>>+static struct of_device_id rcar_gen2_usb_phy_ofmatch[] = {
-> >>>>>>+    { .compatible = "renesas,usb-phy-r8a7790", },
-> >>>>>>+    { .compatible = "renesas,rcar-gen2-usb-phy", },
-> 
-> >>>>>    Frankly speaking, I don't understand the need for the clearly
-> >>>>>duplicate entries.
-> 
-> >>>>Thanks, will look into remove it.
-> >>>>Anyone else have any comments on this?
-> 
-> >>>I would like you to leave it there.
-> 
-> >>>As we know the r8a7790 is an R-Car Gen2 SoC.  But there are other R-Car
-> >>>Gen2 SoCs, such as the r8a7791, they it could plausibly make use of
-> >>>rcar-gen2-usb-phy until the driver is updated with a usb-phy-r8a7791 entry.
-> 
-> >>    Why not just "update" the driver this way now, may I ask?
-> 
-> >Because I don't believe that Ben has access to r8a7791 hardware
-> >to test the change and thus it makes sense to handle it separately.
-> 
->    I believe Valentine has already tested the driver with both SoCs.
+ARM and ARM64 are the only two architectures implementing
+arch_cpu_idle_prepare() simply to call local_fiq_enable().
 
-Oh, great. Then I guess the compat string for r8a7791 can be added
-as you suggest.
+We have secondary_start_kernel() already calling local_fiq_enable() and
+this is done a second time in arch_cpu_idle_prepare() in that case. And
+enabling FIQs has nothing to do with idling the CPU to start with.
+
+So let's introduce init_fiq_boot_cpu() to take care of FIQs on the boot
+CPU and remove arch_cpu_idle_prepare(). This is now done a bit earlier
+at late_initcall time but this shouldn't make a difference in practice
+i.e. when FIQs are actually used.
+
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+---
+ arch/arm/kernel/process.c | 5 -----
+ arch/arm/kernel/setup.c   | 7 +++++++
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/kernel/process.c b/arch/arm/kernel/process.c
+index 92f7b15dd2..725b8c95e0 100644
+--- a/arch/arm/kernel/process.c
++++ b/arch/arm/kernel/process.c
+@@ -142,11 +142,6 @@ static void default_idle(void)
+ 	local_irq_enable();
+ }
+ 
+-void arch_cpu_idle_prepare(void)
+-{
+-	local_fiq_enable();
+-}
+-
+ void arch_cpu_idle_enter(void)
+ {
+ 	ledtrig_cpu(CPU_LED_IDLE_START);
+diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
+index 987a7f5bce..d027b1a6fe 100644
+--- a/arch/arm/kernel/setup.c
++++ b/arch/arm/kernel/setup.c
+@@ -789,6 +789,13 @@ static int __init init_machine_late(void)
+ }
+ late_initcall(init_machine_late);
+ 
++static int __init init_fiq_boot_cpu(void)
++{
++	local_fiq_enable();
++	return 0;
++}
++late_initcall(init_fiq_boot_cpu);
++
+ #ifdef CONFIG_KEXEC
+ static inline unsigned long long get_total_mem(void)
+ {
+-- 
+1.8.4.108.g55ea5f6
+
