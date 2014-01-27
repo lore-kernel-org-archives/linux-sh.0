@@ -1,260 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:43:58 +0000
-Subject: [PATCH v3 08/14] spi: rspi: Add support for more than one interrupt
-Message-Id: <1390553044-11860-9-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:05:45 +0000
+Subject: Re: [PATCH v3 08/14] spi: rspi: Add support for more than one interrupt
+Message-Id: <20140127200545.GJ11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="A1+ljxmNgwU2bK8G"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+ <1390553044-11860-9-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-9-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add support for multiple interrupts, based on the SDK reference code.
-This is needed for RZ/A1H, which supports 3 interrupts.
+--A1+ljxmNgwU2bK8G
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-When using multiple interrupts, they must be called "rx" (SPRI) and "tx"
-(SPTI). The error interrupt (SPEI) is not used, as it matters for slave
-mode only.
+On Fri, Jan 24, 2014 at 09:43:58AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> Add support for multiple interrupts, based on the SDK reference code.
+> This is needed for RZ/A1H, which supports 3 interrupts.
 
-When using a single interrupt, it may be called "mux". If it cannot be
-found, the first interrupt in the device's resources will be used.
+Applied, thanks.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
-v2:
-  - s/irq[]/irqs[]/
-  - s/numirq/num_irqs/
-  - Use unsigned int for loop counters that cannot be negative
-  - Merge the platform_get_irq() and devm_request_irq() loops
-  - Do not update copyright header in further untouched rspi.h
-v3:
-  - Do not request the unused error interrupt
-  - Add suffixes ":mux", ":rx" and ":tx" to the registered interrupt names
-  - Use named interrupts
+--A1+ljxmNgwU2bK8G
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
- drivers/spi/spi-rspi.c |  106 +++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 87 insertions(+), 19 deletions(-)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 5d39cd3eba62..d2ade5e09f58 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1,7 +1,7 @@
- /*
-  * SH RSPI driver
-  *
-- * Copyright (C) 2012  Renesas Solutions Corp.
-+ * Copyright (C) 2012, 2013  Renesas Solutions Corp.
-  *
-  * Based on spi-sh.c:
-  * Copyright (C) 2011 Renesas Solutions Corp.
-@@ -183,12 +183,12 @@ struct rspi_data {
- 	struct clk *clk;
- 	u8 spsr;
- 	u16 spcmd;
-+	int rx_irq, tx_irq;
- 	const struct spi_ops *ops;
- 
- 	/* for dmaengine */
- 	struct dma_chan *chan_tx;
- 	struct dma_chan *chan_rx;
--	int irq;
- 
- 	unsigned dma_width_16bit:1;
- 	unsigned dma_callbacked:1;
-@@ -440,7 +440,7 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 	struct scatterlist sg;
- 	const void *buf = NULL;
- 	struct dma_async_tx_descriptor *desc;
--	unsigned len;
-+	unsigned int len;
- 	int ret = 0;
- 
- 	if (rspi->dma_width_16bit) {
-@@ -478,7 +478,7 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 	 * DMAC needs SPTIE, but if SPTIE is set, this IRQ routine will be
- 	 * called. So, this driver disables the IRQ while DMA transfer.
- 	 */
--	disable_irq(rspi->irq);
-+	disable_irq(rspi->tx_irq);
- 
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD, RSPI_SPCR);
- 	rspi_enable_irq(rspi, SPCR_SPTIE);
-@@ -497,7 +497,7 @@ static int rspi_send_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 		ret = -ETIMEDOUT;
- 	rspi_disable_irq(rspi, SPCR_SPTIE);
- 
--	enable_irq(rspi->irq);
-+	enable_irq(rspi->tx_irq);
- 
- end:
- 	rspi_dma_unmap_sg(&sg, rspi->chan_tx, DMA_TO_DEVICE);
-@@ -536,7 +536,7 @@ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 	struct scatterlist sg, sg_dummy;
- 	void *dummy = NULL, *rx_buf = NULL;
- 	struct dma_async_tx_descriptor *desc, *desc_dummy;
--	unsigned len;
-+	unsigned int len;
- 	int ret = 0;
- 
- 	if (rspi->dma_width_16bit) {
-@@ -594,7 +594,9 @@ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 	 * DMAC needs SPTIE, but if SPTIE is set, this IRQ routine will be
- 	 * called. So, this driver disables the IRQ while DMA transfer.
- 	 */
--	disable_irq(rspi->irq);
-+	disable_irq(rspi->tx_irq);
-+	if (rspi->rx_irq != rspi->tx_irq)
-+		disable_irq(rspi->rx_irq);
- 
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD, RSPI_SPCR);
- 	rspi_enable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
-@@ -617,7 +619,9 @@ static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
- 		ret = -ETIMEDOUT;
- 	rspi_disable_irq(rspi, SPCR_SPTIE | SPCR_SPRIE);
- 
--	enable_irq(rspi->irq);
-+	enable_irq(rspi->tx_irq);
-+	if (rspi->rx_irq != rspi->tx_irq)
-+		enable_irq(rspi->rx_irq);
- 
- end:
- 	rspi_dma_unmap_sg(&sg, rspi->chan_rx, DMA_FROM_DEVICE);
-@@ -775,7 +779,7 @@ static int rspi_unprepare_message(struct spi_master *master,
- 	return 0;
- }
- 
--static irqreturn_t rspi_irq(int irq, void *_sr)
-+static irqreturn_t rspi_irq_mux(int irq, void *_sr)
- {
- 	struct rspi_data *rspi = _sr;
- 	u8 spsr;
-@@ -797,6 +801,36 @@ static irqreturn_t rspi_irq(int irq, void *_sr)
- 	return ret;
- }
- 
-+static irqreturn_t rspi_irq_rx(int irq, void *_sr)
-+{
-+	struct rspi_data *rspi = _sr;
-+	u8 spsr;
-+
-+	rspi->spsr = spsr = rspi_read8(rspi, RSPI_SPSR);
-+	if (spsr & SPSR_SPRF) {
-+		rspi_disable_irq(rspi, SPCR_SPRIE);
-+		wake_up(&rspi->wait);
-+		return IRQ_HANDLED;
-+	}
-+
-+	return 0;
-+}
-+
-+static irqreturn_t rspi_irq_tx(int irq, void *_sr)
-+{
-+	struct rspi_data *rspi = _sr;
-+	u8 spsr;
-+
-+	rspi->spsr = spsr = rspi_read8(rspi, RSPI_SPSR);
-+	if (spsr & SPSR_SPTEF) {
-+		rspi_disable_irq(rspi, SPCR_SPTIE);
-+		wake_up(&rspi->wait);
-+		return IRQ_HANDLED;
-+	}
-+
-+	return 0;
-+}
-+
- static int rspi_request_dma(struct rspi_data *rspi,
- 				      struct platform_device *pdev)
- {
-@@ -868,12 +902,25 @@ static int rspi_remove(struct platform_device *pdev)
- 	return 0;
- }
- 
-+static int rspi_request_irq(struct device *dev, unsigned int irq,
-+			    irq_handler_t handler, const char *suffix,
-+			    void *dev_id)
-+{
-+	const char *base = dev_name(dev);
-+	size_t len = strlen(base) + strlen(suffix) + 2;
-+	char *name = devm_kzalloc(dev, len, GFP_KERNEL);
-+	if (!name)
-+		return -ENOMEM;
-+	snprintf(name, len, "%s:%s", base, suffix);
-+	return devm_request_irq(dev, irq, handler, 0, name, dev_id);
-+}
-+
- static int rspi_probe(struct platform_device *pdev)
- {
- 	struct resource *res;
- 	struct spi_master *master;
- 	struct rspi_data *rspi;
--	int ret, irq;
-+	int ret;
- 	char clk_name[16];
- 	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
- 	const struct spi_ops *ops;
-@@ -886,12 +933,6 @@ static int rspi_probe(struct platform_device *pdev)
- 		return -ENODEV;
- 	}
- 
--	irq = platform_get_irq(pdev, 0);
--	if (irq < 0) {
--		dev_err(&pdev->dev, "platform_get_irq error\n");
--		return -ENODEV;
--	}
--
- 	master = spi_alloc_master(&pdev->dev, sizeof(struct rspi_data));
- 	if (master = NULL) {
- 		dev_err(&pdev->dev, "spi_alloc_master error.\n");
-@@ -934,14 +975,41 @@ static int rspi_probe(struct platform_device *pdev)
- 	master->unprepare_message = rspi_unprepare_message;
- 	master->mode_bits = SPI_CPHA | SPI_CPOL;
- 
--	ret = devm_request_irq(&pdev->dev, irq, rspi_irq, 0,
--			       dev_name(&pdev->dev), rspi);
-+	ret = platform_get_irq_byname(pdev, "rx");
-+	if (ret < 0) {
-+		ret = platform_get_irq_byname(pdev, "mux");
-+		if (ret < 0)
-+			ret = platform_get_irq(pdev, 0);
-+		if (ret >= 0)
-+			rspi->rx_irq = rspi->tx_irq = ret;
-+	} else {
-+		rspi->rx_irq = ret;
-+		ret = platform_get_irq_byname(pdev, "tx");
-+		if (ret >= 0)
-+			rspi->tx_irq = ret;
-+	}
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "platform_get_irq error\n");
-+		goto error2;
-+	}
-+
-+	if (rspi->rx_irq = rspi->tx_irq) {
-+		/* Single multiplexed interrupt */
-+		ret = rspi_request_irq(&pdev->dev, rspi->rx_irq, rspi_irq_mux,
-+				       "mux", rspi);
-+	} else {
-+		/* Multi-interrupt mode, only SPRI and SPTI are used */
-+		ret = rspi_request_irq(&pdev->dev, rspi->rx_irq, rspi_irq_rx,
-+				       "rx", rspi);
-+		if (!ret)
-+			ret = rspi_request_irq(&pdev->dev, rspi->tx_irq,
-+					       rspi_irq_tx, "tx", rspi);
-+	}
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "request_irq error\n");
- 		goto error2;
- 	}
- 
--	rspi->irq = irq;
- 	ret = rspi_request_dma(rspi, pdev);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
--- 
-1.7.9.5
+iQIcBAEBAgAGBQJS5rwWAAoJELSic+t+oim9vhAP/2qSvhUVg1t3v0UxelkRzfYb
+F3uMf2ixd9suE8qA+PI1YUT92uymJwoIJkjcFuBQYZMROKkmerfNGKMfcdb8o+ju
+vjbZptnbrRnZHFNYvtDi1ktwY+heW4dPYIcvAjdu4wEDjOdYfuAujHYxOM1I9XJR
+bbsC8NAxSd2lE3sYx4bCxJOTRFCk+t7MWBOCncc9WfzIs7bJFs+jiWL9mbbaxLLV
+oofER0HV2SmAOa9pe+gFr2gQ2K90GKaKjB1LD4JbzjptU8kfhxGm2N+yDYTh+n5G
+h+FBHESR3qSTGAhoN1ie1Z2DzodOhy7Ma7EbNS9zCOLZU7gNQJCb2zDqQrmUV7op
+rNiyB89CPUssnOpNPicJqXHSMXJ6O76kHmHIKufEhGz0PoZmTRr1r0J0prP8Zay5
+ycKx7GDryQjC2/xEwouGOPJ//0Z84VUAb9pdpXIDU13Aij200XUptzIXPRH+fPib
+K/Uw7iYkoE7HkmgboKo68PcM4vQ2dWl2WMv3fPI1GDL97P5bFu0FW2wDDXTjQnpF
+3oY+JVibS4z87Ld53o5W+dM2Iq9fs1Esj4RkLkCXLcx3uCg60a/uYmGtb83XH6+G
+4ypJyDqg/IQkGwYLYmnZF5qo1TJT/slNh48D0XUHjIjympjusuOlfrJPWBDvGX/o
+W1ESbC6XRUo63v2Z57yP
+=Rx4P
+-----END PGP SIGNATURE-----
 
+--A1+ljxmNgwU2bK8G--
