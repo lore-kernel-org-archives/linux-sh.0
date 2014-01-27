@@ -1,60 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 08 Jan 2014 04:35:59 +0000
-Subject: Re: [PATCH 15/15] sh: intc: Enable driver compilation with COMPILE_TEST
-Message-Id: <20140108043558.GG15891@verge.net.au>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Mon, 27 Jan 2014 06:08:23 +0000
+Subject: [PATCH 8/9] X86: remove redundant cpuidle_idle_call()
+Message-Id: <1390802904-28399-9-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <3670569.dVXQxeaJBM@avalon> <2305561.CqXvNryyXG@avalon>
-In-Reply-To: <2305561.CqXvNryyXG@avalon>
+References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 07, 2014 at 10:54:41AM +0100, Laurent Pinchart wrote:
-> On Wednesday 11 December 2013 13:52:31 Laurent Pinchart wrote:
-> > Hi Magnus,
-> > 
-> > Could you tell me who is responsible for merging drivers/sh patches ? If
-> > that's one of you, could you please pick this patch up for v3.14 ?
-> 
-> Ping ?
+The core idle loop now takes care of it.
 
-I am happy to take this if no one objects.
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+---
+ arch/x86/kernel/process.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-> 
-> > On Wednesday 27 November 2013 02:18:37 Laurent Pinchart wrote:
-> > > This helps increasing build testing coverage.
-> > > 
-> > > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > > 
-> > >  drivers/sh/intc/Kconfig | 2 +-
-> > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > > 
-> > > diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-> > > index a305731..f7d9061 100644
-> > > --- a/drivers/sh/intc/Kconfig
-> > > +++ b/drivers/sh/intc/Kconfig
-> > > @@ -6,7 +6,7 @@ comment "Interrupt controller options"
-> > > 
-> > >  config INTC_USERIMASK
-> > >  
-> > >  	bool "Userspace interrupt masking support"
-> > > 
-> > > -	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
-> > > +	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-> > > 
-> > >  	help
-> > >  	
-> > >  	  This enables support for hardware-assisted userspace hardirq
-> > >  	  masking.
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
+index 3fb8d95ab8..4505e2a950 100644
+--- a/arch/x86/kernel/process.c
++++ b/arch/x86/kernel/process.c
+@@ -298,10 +298,7 @@ void arch_cpu_idle_dead(void)
+  */
+ void arch_cpu_idle(void)
+ {
+-	if (cpuidle_idle_call())
+-		x86_idle();
+-	else
+-		local_irq_enable();
++	x86_idle();
+ }
+ 
+ /*
+-- 
+1.8.4.108.g55ea5f6
+
