@@ -1,201 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:43:54 +0000
-Subject: [PATCH 04/14] spi: rspi: Add rspi_data_{out,in,out_in}() helpers
-Message-Id: <1390553044-11860-5-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:03:10 +0000
+Subject: Re: [PATCH 04/14] spi: rspi: Add rspi_data_{out,in,out_in}() helpers
+Message-Id: <20140127200310.GF11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ULkDCyeHsmlwbqED"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1390553044-11860-5-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-5-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add helpers rspi_data_{out,in,out_in}() to write, read, or write and
-read data to/from the Data Register, taking care of waiting until data
-or space is available in the buffers.
+--ULkDCyeHsmlwbqED
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-rspi.c |  117 +++++++++++++++++++++++-------------------------
- 1 file changed, 56 insertions(+), 61 deletions(-)
+On Fri, Jan 24, 2014 at 09:43:54AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> Add helpers rspi_data_{out,in,out_in}() to write, read, or write and
+> read data to/from the Data Register, taking care of waiting until data
+> or space is available in the buffers.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index a0bb3c28ae91..4b27513e7204 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -356,22 +356,51 @@ static int rspi_wait_for_interrupt(struct rspi_data *rspi, u8 wait_mask,
- 	return 0;
- }
- 
-+static int rspi_data_out(struct rspi_data *rspi, u8 data)
-+{
-+	if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
-+		dev_err(&rspi->master->dev, "transmit timeout\n");
-+		return -ETIMEDOUT;
-+	}
-+	rspi_write_data(rspi, data);
-+	return 0;
-+}
-+
-+static int rspi_data_in(struct rspi_data *rspi)
-+{
-+	u8 data;
-+
-+	if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
-+		dev_err(&rspi->master->dev, "receive timeout\n");
-+		return -ETIMEDOUT;
-+	}
-+	data = rspi_read_data(rspi);
-+	return data;
-+}
-+
-+static int rspi_data_out_in(struct rspi_data *rspi, u8 data)
-+{
-+	int ret;
-+
-+	ret = rspi_data_out(rspi, data);
-+	if (ret < 0)
-+		return ret;
-+
-+	return rspi_data_in(rspi);
-+}
-+
- static int rspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
--	int remain = t->len;
-+	int remain = t->len, ret;
- 	const u8 *data = t->tx_buf;
-+
- 	while (remain > 0) {
- 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
- 			    RSPI_SPCR);
- 
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: tx empty timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
--
--		rspi_write_data(rspi, *data);
--		data++;
-+		ret = rspi_data_out(rspi, *data++);
-+		if (ret < 0)
-+			return ret;
- 		remain--;
- 	}
- 
-@@ -383,28 +412,17 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- 
- static int qspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
--	int remain = t->len;
-+	int remain = t->len, ret;
- 	const u8 *data = t->tx_buf;
- 
- 	rspi_write8(rspi, SPBFCR_TXRST, QSPI_SPBFCR);
- 	rspi_write8(rspi, 0x00, QSPI_SPBFCR);
- 
- 	while (remain > 0) {
--
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: tx empty timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
--		rspi_write_data(rspi, *data++);
--
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: receive timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
--		rspi_read_data(rspi);
--
-+		/* dummy read */
-+		ret = rspi_data_out_in(rspi, *data++);
-+		if (ret < 0)
-+			return ret;
- 		remain--;
- 	}
- 
-@@ -549,32 +567,20 @@ static void rspi_receive_init(const struct rspi_data *rspi)
- 
- static int rspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
--	int remain = t->len;
--	u8 *data;
-+	int remain = t->len, ret;
-+	u8 *data = t->rx_buf;
- 
- 	rspi_receive_init(rspi);
- 
--	data = t->rx_buf;
- 	while (remain > 0) {
- 		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
- 			    RSPI_SPCR);
- 
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: tx empty timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
--		/* dummy write for generate clock */
--		rspi_write_data(rspi, DUMMY_DATA);
--
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: receive timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
--		*data = rspi_read_data(rspi);
--
--		data++;
-+		/* dummy write data for generate clock */
-+		ret = rspi_data_out_in(rspi, DUMMY_DATA);
-+		if (ret < 0)
-+			return ret;
-+		*data++ = ret;
- 		remain--;
- 	}
- 
-@@ -594,28 +600,17 @@ static void qspi_receive_init(const struct rspi_data *rspi)
- 
- static int qspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
--	int remain = t->len;
--	u8 *data;
-+	int remain = t->len, ret;
-+	u8 *data = t->rx_buf;
- 
- 	qspi_receive_init(rspi);
- 
--	data = t->rx_buf;
- 	while (remain > 0) {
--
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: tx empty timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
- 		/* dummy write for generate clock */
--		rspi_write_data(rspi, DUMMY_DATA);
--
--		if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
--			dev_err(&rspi->master->dev,
--				"%s: receive timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
--		*data++ = rspi_read_data(rspi);
-+		ret = rspi_data_out_in(rspi, DUMMY_DATA);
-+		if (ret < 0)
-+			return ret;
-+		*data++ = ret;
- 		remain--;
- 	}
- 
--- 
-1.7.9.5
+Applied, thanks.
 
+--ULkDCyeHsmlwbqED
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS5rt7AAoJELSic+t+oim9FQQP/iomgH/DOOHk+sZBNJfQ2kpN
+S+SbtJyr1h+z0914RyNkNj8SseM7oGAHl7JvGRE1XoIill7+LMNb++rAFSMk5ZIO
+7HnAT6akH5YxLjg8c7rjJX+Sck7xwKQBw6iMZn1IV8dxLT7GwVd/QmDw+vB5ZW23
+eV9ps1tx82sau6PCppgYQgJeZV0hYcGS7+FkaGY5NkNFocJ9Wqv0+Stj8gIpcKgc
+5sQcmlogwDFTaRHkyJMjDaEbJ+Ptnm7FugS40UEX5C2pHLkIHz5/lDDV0Wejr04J
+7faNl+j6XU+NBaYaxcpNWAOmuSeReGw0WLvHsTQ1jy0e4S0zJPGjIeE7WuvG+SO9
+0NYYS5W+JcU/28Wrc5hnPzLbIVXaonwj1obRoPM/LHHXJs3xzcWE22jjRKHxUS/7
+6QtUBW1NQmjjolc37RihNFlk1+Soanh5deb+Ug8No1Kh9lMyP+kqpi6ybYP+ISiG
+B3X2GqiQHvvFbdBeItHUnKyECIXVuwZNdG0HRu/EIc/v1KxeoIGxAMgayZGX2n/D
+Is7ImryNhzQRxKzeRTeaW+b5RH0jJnJUs378Wkw9vAIn9GGonCauk25oNOpbOI8q
+r/GKOM8VRA9OlsYiD5a82Ckax8EdLXGmkv+edeE3bw5WiTG9mKmAWz7JrEZwgKO7
+S0iIMY51Ma8M/YqBVP2j
+=nH6z
+-----END PGP SIGNATURE-----
+
+--ULkDCyeHsmlwbqED--
