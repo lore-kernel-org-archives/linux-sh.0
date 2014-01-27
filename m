@@ -1,117 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:43:51 +0000
-Subject: [PATCH 01/14] spi: rspi: Remove unused mesg parameter from {send,receive}_pio()
-Message-Id: <1390553044-11860-2-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:02:24 +0000
+Subject: Re: [PATCH 01/14] spi: rspi: Remove unused mesg parameter from {send,receive}_pio()
+Message-Id: <20140127200224.GC11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Dy3pjCZLf6+6NySR"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+ <1390553044-11860-2-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-2-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-rspi.c |   27 ++++++++++-----------------
- 1 file changed, 10 insertions(+), 17 deletions(-)
+--Dy3pjCZLf6+6NySR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 28987d9fcfe5..ccd5cf201d04 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -228,11 +228,8 @@ static u16 rspi_read16(const struct rspi_data *rspi, u16 offset)
- struct spi_ops {
- 	int (*set_config_register)(const struct rspi_data *rspi,
- 				   int access_size);
--	int (*send_pio)(struct rspi_data *rspi, struct spi_message *mesg,
--			struct spi_transfer *t);
--	int (*receive_pio)(struct rspi_data *rspi, struct spi_message *mesg,
--			   struct spi_transfer *t);
--
-+	int (*send_pio)(struct rspi_data *rspi, struct spi_transfer *t);
-+	int (*receive_pio)(struct rspi_data *rspi, struct spi_transfer *t);
- };
- 
- /*
-@@ -358,8 +355,7 @@ static void rspi_negate_ssl(const struct rspi_data *rspi)
- 	rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_SPE, RSPI_SPCR);
- }
- 
--static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
--			 struct spi_transfer *t)
-+static int rspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	int remain = t->len;
- 	const u8 *data = t->tx_buf;
-@@ -384,8 +380,7 @@ static int rspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	return 0;
- }
- 
--static int qspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
--			 struct spi_transfer *t)
-+static int qspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	int remain = t->len;
- 	const u8 *data = t->tx_buf;
-@@ -418,7 +413,7 @@ static int qspi_send_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	return 0;
- }
- 
--#define send_pio(spi, mesg, t) spi->ops->send_pio(spi, mesg, t)
-+#define send_pio(spi, t) spi->ops->send_pio(spi, t)
- 
- static void rspi_dma_complete(void *arg)
- {
-@@ -551,8 +546,7 @@ static void rspi_receive_init(const struct rspi_data *rspi)
- 			    RSPI_SPSR);
- }
- 
--static int rspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
--			    struct spi_transfer *t)
-+static int rspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	int remain = t->len;
- 	u8 *data;
-@@ -598,8 +592,7 @@ static void qspi_receive_init(const struct rspi_data *rspi)
- 	rspi_write8(rspi, 0x00, QSPI_SPBFCR);
- }
- 
--static int qspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
--			    struct spi_transfer *t)
-+static int qspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	int remain = t->len;
- 	u8 *data;
-@@ -630,7 +623,7 @@ static int qspi_receive_pio(struct rspi_data *rspi, struct spi_message *mesg,
- 	return 0;
- }
- 
--#define receive_pio(spi, mesg, t) spi->ops->receive_pio(spi, mesg, t)
-+#define receive_pio(spi, t) spi->ops->receive_pio(spi, t)
- 
- static int rspi_receive_dma(struct rspi_data *rspi, struct spi_transfer *t)
- {
-@@ -771,7 +764,7 @@ static void rspi_work(struct work_struct *work)
- 				if (rspi_is_dma(rspi, t))
- 					ret = rspi_send_dma(rspi, t);
- 				else
--					ret = send_pio(rspi, mesg, t);
-+					ret = send_pio(rspi, t);
- 				if (ret < 0)
- 					goto error;
- 			}
-@@ -779,7 +772,7 @@ static void rspi_work(struct work_struct *work)
- 				if (rspi_is_dma(rspi, t))
- 					ret = rspi_receive_dma(rspi, t);
- 				else
--					ret = receive_pio(rspi, mesg, t);
-+					ret = receive_pio(rspi, t);
- 				if (ret < 0)
- 					goto error;
- 			}
--- 
-1.7.9.5
+On Fri, Jan 24, 2014 at 09:43:51AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
+Applied, thanks.
+
+--Dy3pjCZLf6+6NySR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS5rtNAAoJELSic+t+oim9OzUQAIWghbso0r/bFpuruOLSQVGA
+rzUT5d1qi4Vgfjw6hXCQKUd92gX/dDWwIBPx26/N2HxxCSkw0pGtDnq0UTfK2pCk
+qgH/Uf38enzmJq+qHHiYqxHxqX1A1NbzOwgAFDKyrw+3AoQe4bC66ZNBQgMNq9y+
+UT0r0+xJc0b/TNEXMY15dYAN9ZaT6GGCfI1ZGMLxFdrXZ6Z4Xm/uD7ZrGwX8bw0P
+6OdV2dP78muLdLQXx9AujNLW1NIo0yTPCDxahYGjcPIgnvRx114M3/y/OIuoS1zC
+kuo6Rj0Dzdn2uvNg1bVw1YAZsLSXuNtYRbXqMJ9v0AjncbuUP7JCOihPFJ8WN2Vx
+eC6jJ1DojHX4gPHfoHUOTr9B1GnSOUyTIpefmrCd1K7s6a2//WGvhcw05uax1asG
+1Jqt30t8BKwcMisWnkLEHipmzYi3CyjNdUVZFHfb8juoFwRDnkqS43n5l8ywO44z
+yA5PGWAsguzmw91Sc39buT1NunWpPfoQybBFMwm/sZiGTlc5jAZsLMIi/iJS+UuA
+Ij21qwfCuuuhWkXzTJ2Nu5cfWvHA9p1OGhyP+ipzXCU4NgsRXlh/DiHS5iH+6Gov
+GBX2DNYSVxIuhw9ki1ReRat7hX0m/vzy0Yqhcl+S9jtEgglnb8lJBNeBTMM5qcR9
+zchC78RsboxwaZWavnel
+=mVJR
+-----END PGP SIGNATURE-----
+
+--Dy3pjCZLf6+6NySR--
