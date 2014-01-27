@@ -1,80 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 12:49:48 +0000
-Subject: [PATCH v2 12/15] ARM: shmobile: koelsch dts: Add QSPI nodes
-Message-Id: <1390567791-8988-13-git-send-email-geert@linux-m68k.org>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Mon, 27 Jan 2014 06:08:24 +0000
+Subject: [PATCH 9/9] cpu/idle.c: move to sched/idle.c
+Message-Id: <1390802904-28399-10-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Integration of cpuidle with the scheduler requires that the idle loop be
+closely integrated with the scheduler proper. Moving cpu/idle.c into the
+sched directory will allow for a smoother integration, and eliminate a
+subdirectory which contained only one source file.
 
-Add pinctrl and SPI devices for QSPI on Koelsch.
-Add Spansion s25fl512s SPI FLASH and MTD partitions.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
 ---
-v2:
-  - No changes
+ kernel/Makefile              | 1 -
+ kernel/cpu/Makefile          | 1 -
+ kernel/sched/Makefile        | 2 +-
+ kernel/{cpu => sched}/idle.c | 0
+ 4 files changed, 1 insertion(+), 3 deletions(-)
+ delete mode 100644 kernel/cpu/Makefile
+ rename kernel/{cpu => sched}/idle.c (100%)
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |   36 +++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 55ec36e2a1f1..42fd5ebe9119 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -123,6 +123,11 @@
- 		renesas,groups = "scif1_data_d";
- 		renesas,function = "scif1";
- 	};
-+
-+	qspi_pins: spi {
-+		renesas,groups = "qspi_ctrl", "qspi_data4";
-+		renesas,function = "qspi";
-+	};
- };
+diff --git a/kernel/Makefile b/kernel/Makefile
+index bc010ee272..6f1c7e5cfc 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -22,7 +22,6 @@ obj-y += sched/
+ obj-y += locking/
+ obj-y += power/
+ obj-y += printk/
+-obj-y += cpu/
+ obj-y += irq/
+ obj-y += rcu/
  
- &sata0 {
-@@ -142,3 +147,34 @@
+diff --git a/kernel/cpu/Makefile b/kernel/cpu/Makefile
+deleted file mode 100644
+index 59ab052ef7..0000000000
+--- a/kernel/cpu/Makefile
++++ /dev/null
+@@ -1 +0,0 @@
+-obj-y	= idle.o
+diff --git a/kernel/sched/Makefile b/kernel/sched/Makefile
+index 7b621409cf..ac3e0ea68f 100644
+--- a/kernel/sched/Makefile
++++ b/kernel/sched/Makefile
+@@ -11,7 +11,7 @@ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
+ CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
+ endif
  
- 	status = "okay";
- };
-+
-+&spi {
-+	pinctrl-0 = <&qspi_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl512s";
-+		reg = <0>;
-+		spi-max-frequency = <30000000>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "loader";
-+			reg = <0x00000000 0x00080000>;
-+			read-only;
-+		};
-+		partition@80000 {
-+			label = "bootenv";
-+			reg = <0x00080000 0x00080000>;
-+			read-only;
-+		};
-+		partition@100000 {
-+			label = "data";
-+			reg = <0x00100000 0x03f00000>;
-+		};
-+	};
-+};
+-obj-y += core.o proc.o clock.o cputime.o idle_task.o fair.o rt.o stop_task.o
++obj-y += core.o proc.o clock.o cputime.o idle_task.o idle.o fair.o rt.o stop_task.o
+ obj-y += wait.o completion.o
+ obj-$(CONFIG_SMP) += cpupri.o
+ obj-$(CONFIG_SCHED_AUTOGROUP) += auto_group.o
+diff --git a/kernel/cpu/idle.c b/kernel/sched/idle.c
+similarity index 100%
+rename from kernel/cpu/idle.c
+rename to kernel/sched/idle.c
 -- 
-1.7.9.5
+1.8.4.108.g55ea5f6
 
