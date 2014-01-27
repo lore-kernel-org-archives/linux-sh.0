@@ -1,165 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 08:43:56 +0000
-Subject: [PATCH 06/14] spi: rspi: Merge rspi_send_pio() and rspi_receive_pio()
-Message-Id: <1390553044-11860-7-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 27 Jan 2014 20:04:07 +0000
+Subject: Re: [PATCH 06/14] spi: rspi: Merge rspi_send_pio() and rspi_receive_pio()
+Message-Id: <20140127200407.GH11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="XyBMaHrM0hrbbr/O"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+ <1390553044-11860-7-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1390553044-11860-7-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-rspi_send_pio() and rspi_receive_pio() are very similar:
-  - the former only sends data, using TX Only Mode,
-  - the latter sends and receives full duplex data to/from the hardware,
-    but uses dummy transmit data.
-Merge them into rspi_transfer_out_in(), now supporting full duplex if
-needed.
+--XyBMaHrM0hrbbr/O
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-rspi.c |  101 ++++++++++++++++++++++--------------------------
- 1 file changed, 46 insertions(+), 55 deletions(-)
+On Fri, Jan 24, 2014 at 09:43:56AM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> rspi_send_pio() and rspi_receive_pio() are very similar:
+>   - the former only sends data, using TX Only Mode,
+>   - the latter sends and receives full duplex data to/from the hardware,
+>     but uses dummy transmit data.
+> Merge them into rspi_transfer_out_in(), now supporting full duplex if
+> needed.
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index d837c5029308..cc90136d02c8 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -389,27 +389,6 @@ static int rspi_data_out_in(struct rspi_data *rspi, u8 data)
- 	return rspi_data_in(rspi);
- }
- 
--static int rspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
--{
--	int remain = t->len, ret;
--	const u8 *data = t->tx_buf;
--
--	while (remain > 0) {
--		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) | SPCR_TXMD,
--			    RSPI_SPCR);
--
--		ret = rspi_data_out(rspi, *data++);
--		if (ret < 0)
--			return ret;
--		remain--;
--	}
--
--	/* Waiting for the last transmission */
--	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
--
--	return 0;
--}
--
- static int qspi_send_pio(struct rspi_data *rspi, struct spi_transfer *t)
- {
- 	int remain = t->len, ret;
-@@ -563,28 +542,6 @@ static void rspi_receive_init(const struct rspi_data *rspi)
- 			    RSPI_SPSR);
- }
- 
--static int rspi_receive_pio(struct rspi_data *rspi, struct spi_transfer *t)
--{
--	int remain = t->len, ret;
--	u8 *data = t->rx_buf;
--
--	rspi_receive_init(rspi);
--
--	while (remain > 0) {
--		rspi_write8(rspi, rspi_read8(rspi, RSPI_SPCR) & ~SPCR_TXMD,
--			    RSPI_SPCR);
--
--		/* dummy write data for generate clock */
--		ret = rspi_data_out_in(rspi, DUMMY_DATA);
--		if (ret < 0)
--			return ret;
--		*data++ = ret;
--		remain--;
--	}
--
--	return 0;
--}
--
- static void qspi_receive_init(const struct rspi_data *rspi)
- {
- 	u8 spsr;
-@@ -729,27 +686,61 @@ static int rspi_is_dma(const struct rspi_data *rspi, struct spi_transfer *t)
- 	return 0;
- }
- 
-+static int rspi_transfer_out_in(struct rspi_data *rspi,
-+				struct spi_transfer *xfer)
-+{
-+	int remain = xfer->len, ret;
-+	const u8 *tx_buf = xfer->tx_buf;
-+	u8 *rx_buf = xfer->rx_buf;
-+	u8 spcr, data;
-+
-+	rspi_receive_init(rspi);
-+
-+	spcr = rspi_read8(rspi, RSPI_SPCR);
-+	if (rx_buf)
-+		spcr &= ~SPCR_TXMD;
-+	else
-+		spcr |= SPCR_TXMD;
-+	rspi_write8(rspi, spcr, RSPI_SPCR);
-+
-+	while (remain > 0) {
-+		data = tx_buf ? *tx_buf++ : DUMMY_DATA;
-+		ret = rspi_data_out(rspi, data);
-+		if (ret < 0)
-+			return ret;
-+		if (rx_buf) {
-+			ret = rspi_data_in(rspi);
-+			if (ret < 0)
-+				return ret;
-+			*rx_buf++ = ret;
-+		}
-+		remain--;
-+	}
-+
-+	/* Wait for the last transmission */
-+	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
-+
-+	return 0;
-+}
-+
- static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- 			     struct spi_transfer *xfer)
- {
- 	struct rspi_data *rspi = spi_master_get_devdata(master);
--	int ret = 0;
-+	int ret;
-+
-+	if (!rspi_is_dma(rspi, xfer))
-+		return rspi_transfer_out_in(rspi, xfer);
- 
- 	if (xfer->tx_buf) {
--		if (rspi_is_dma(rspi, xfer))
--			ret = rspi_send_dma(rspi, xfer);
--		else
--			ret = rspi_send_pio(rspi, xfer);
-+		ret = rspi_send_dma(rspi, xfer);
- 		if (ret < 0)
- 			return ret;
- 	}
--	if (xfer->rx_buf) {
--		if (rspi_is_dma(rspi, xfer))
--			ret = rspi_receive_dma(rspi, xfer);
--		else
--			ret = rspi_receive_pio(rspi, xfer);
--	}
--	return ret;
-+	if (xfer->rx_buf)
-+		return rspi_receive_dma(rspi, xfer);
-+
-+	return 0;
- }
- 
- static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
--- 
-1.7.9.5
+Applied, thanks.
 
+--XyBMaHrM0hrbbr/O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS5ru0AAoJELSic+t+oim94QkP/RsQrcl8qsEkVB+FjlnlwqkS
+iI3jsXQMZXgrTRxz7EhbcWMGjpimZB/4cuKhNYEwIi8NIjwjs31k4YEySPyY5OMR
+kkLU+3q4aA78NT3it8ZSsZJx5O2sKekP43Q0ty9E79HTicapJ23E3m3ICmwFa8Kn
+k/AGG7IoA8FnzC4U1nW0VgfqikArPLcSpFDnrfgIIeZS82q6rwdwrkdcXK+c/YLm
+sPW9v/uIN5KgFD8eDIej4uUA1y6MC1/AQpGYpQRzdGUkWxPzX7WrpmrVtJNqsnHH
+4a6N0/7+5UtLC1uUVGVXFM/N8+iWsyiQYjvBGdnmZwUrL7gzS80QLD7IlEt6h2NK
+irT5ahuUQE9QYyqV4Ymec4KpGdXVQsJxBx9K11ms5WmZmMGnSqEJgqFTKsnyc8tA
+hbGbrl9WlpKbILDB/EddjRiPG1Xvfru+uW/d47fgweyNTWmRjBHAW1JErmtkO8IA
+BWzRKv2Ao4oA1In0n4/eIRqQweyYJR/t+KtaYsCPTjrYnNoR0P6nUKoBIfsmnWvy
+Mf+UseqSME4M2CzsH8afwtGtn69zVmfsf3aXeq/IukH8sORLMHW9N3OTnKYH9yLU
+LuRGf/U+YJcjvNgp0m3xBx7Keg2X55szmTmG7CCvN03YzAcljGmduZBdCfr9DR3S
+5V0yhp2yDLQkB6Q8xXXF
+=O7Zi
+-----END PGP SIGNATURE-----
+
+--XyBMaHrM0hrbbr/O--
