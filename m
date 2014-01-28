@@ -1,26 +1,29 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Jan 2014 05:36:41 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7779: removed unnecessary mmc option
-Message-Id: <8738k47lw9.wl%kuninori.morimoto.gx@gmail.com>
+Date: Tue, 28 Jan 2014 04:45:24 +0000
+Subject: [PATCH 3/4] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
+Message-Id: <87ha8o90kf.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-	<8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>
-Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-r8a7779 specific MMC options are cared by driver.
-This driver removes these from DTSI
+This patch updates r8a7779 DT data to have SoC specific settings.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch disables it as default,
+but we can use wp-gpios property to enable it.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7779.dtsi |    8 --------
- 1 file changed, 8 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi    |    8 --------
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ 2 files changed, 1 insertion(+), 9 deletions(-)
 
 diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
 index d0561d4..2105059 100644
@@ -62,6 +65,19 @@ index d0561d4..2105059 100644
  		status = "disabled";
  	};
  
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 6442286..322cd35 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+ };
 -- 
 1.7.9.5
 
