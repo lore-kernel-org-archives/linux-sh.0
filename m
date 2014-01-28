@@ -1,58 +1,69 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 30 Jan 2014 11:25:58 +0000
-Subject: Re: [PATCH v5] spi: rspi: Add DT support
-Message-Id: <20140130112558.GJ22609@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="x+RZeZVNR8VILNfK"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 28 Jan 2014 09:47:48 +0000
+Subject: [PATCH 3/3] PCI: rcar: fix bridge logic abort
+Message-Id: <1390902468-7753-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390900898-31579-1-git-send-email-geert@linux-m68k.org>
- <20140129180009.GF22609@sirena.org.uk>
- <CAMuHMdX+EUUHxOgc8RF=C=qdYiOc8h+su4r-=HAhWXUqEivSvw@mail.gmail.com>
-In-Reply-To: <CAMuHMdX+EUUHxOgc8RF=C=qdYiOc8h+su4r-=HAhWXUqEivSvw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <1390902468-7753-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390902468-7753-1-git-send-email-ben.dooks@codethink.co.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@lists.codethink.co.uk
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
+The bridge logic at slot 0 only supports reads up to 0x40 and the
+rest of the PCI configuration space for this slot is marked as
+reserved in the manual.
 
---x+RZeZVNR8VILNfK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Trying a read from offset 0x100 is producing an error from the
+bridge. With error interrupts enabled, the following is printed:
 
-On Wed, Jan 29, 2014 at 08:10:34PM +0100, Geert Uytterhoeven wrote:
-> On Wed, Jan 29, 2014 at 7:00 PM, Mark Brown <broonie@kernel.org> wrote:
+pci-rcar-gen2 ee0d0000.pci: error irq: status 00000014
 
-> > well?
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+ drivers/pci/host/pci-rcar-gen2.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-> As there were no code changes in v5 of "spi: rspi: Add DT support",
-> Patch "[14/14] spi: rspi: Add support for Quad and Dual SPI Transfers on QSPI"
-> should still apply fine.
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index 01ba069..17ad857 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -119,6 +119,10 @@ static void __iomem *rcar_pci_cfg_base(struct pci_bus *bus, unsigned int devfn,
+ 	if (slot > 2)
+ 		return NULL;
+ 
++	/* bridge logic only has registers to 0x40 */
++	if (slot = 0x0 && where >= 0x40)
++		return NULL;
++
+ 	val = slot ? RCAR_AHBPCI_WIN1_DEVICE | RCAR_AHBPCI_WIN_CTR_CFG :
+ 		     RCAR_AHBPCI_WIN1_HOST | RCAR_AHBPCI_WIN_CTR_CFG;
+ 
+@@ -134,6 +138,8 @@ static int rcar_pci_read_config(struct pci_bus *bus, unsigned int devfn,
+ 	if (!reg)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
++	dev_info(&bus->dev, "fn %08x, read %08x, size %d\n", devfn, where, size);
++
+ 	switch (size) {
+ 	case 1:
+ 		*val = ioread8(reg);
+@@ -157,6 +163,8 @@ static int rcar_pci_write_config(struct pci_bus *bus, unsigned int devfn,
+ 	if (!reg)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
++	dev_info(&bus->dev, "devfn %08x: write %08x to %08x, size %d\n", devfn, val, where, size);
++
+ 	switch (size) {
+ 	case 1:
+ 		iowrite8(val, reg);
+-- 
+1.8.5.2
 
-> Do you want me to resubmit?
-
-I see you did actually resend before I saw this but yes, in general it's
-better to resend stuff.  If you start applying version X of one patch
-with version Y of another it's more work and there's a lot of things
-that can go wrong between user error and unexpected dependencies.
-
---x+RZeZVNR8VILNfK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS6jbDAAoJELSic+t+oim9rAAP/ilbsPSWzOwHbOccXYNkFtmv
-i29xa74m/5BXZQo5k8tG/kqzhRs+6/s90ZML3f0HlFMWXDdUmN1KVBtHxZAuU4C4
-r9I+AyEdbqw1hyiqZ9D9goJxYHzu3Tg1sQv5WUCK81aUVHiC6cc2t3dyNau+HHO0
-zAtUAC6E/AtZ5rXtKhNgkkJ1SOTNg7/O4IVq88Q2Ft4/Kd9I0/QvkOjGRU5Y+UDY
-GwyFnbu3henK57WAa7VQc02SQVKr+4MWa9PzRMfoYTpaXzy6iMyXkOe+PGpRfbQh
-c2IFTCwOk5LAqFyAvdB8KU38ZytxE09ex9ZRACTRG2hxsExCNMGdtwgJJDAp1aS1
-5qTNrzFhbfZIE9MpQddHEl8QHjQGh8UtjysAyZQz46ghyF110aKjIsyzQxCcTqLr
-mnHSZCSHNHUejfuhK8htvwoqg4Ii6UWwGta3hhNVSKICHuQZx+IiOzqr7IEDk39F
-y6hhzuGm+q3uDCnr2CdLUuQ0Dty9rcvXfezkhtTbh3eKPK6S01g4b8L7VNQNj0//
-orIiTbn3p23BmmH2jub6LE91eReUAcy8R+Csq6jq0un0UfyhGaFYussTgtGX2P24
-zk3+z3+wkVe0uap3rZbyhKO7cR92Y5sevPcvJgZw2kQgkKau+hQMbxz2rbvQBwDD
-GdUCNteEXwVyjhSzagak
-=9TkV
------END PGP SIGNATURE-----
-
---x+RZeZVNR8VILNfK--
