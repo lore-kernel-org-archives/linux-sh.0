@@ -1,74 +1,283 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 20 Jan 2014 15:29:33 +0000
-Subject: Re: [PATCH] libata, dt: Add clocks to sata_rcar bindings
-Message-Id: <5453735.fEby5SBpD0@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 28 Jan 2014 09:21:38 +0000
+Subject: [PATCH v5] spi: rspi: Add DT support
+Message-Id: <1390900898-31579-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389910062-17777-1-git-send-email-valentine.barshak@cogentembedded.com> <2218997.BjldcaRU33@avalon> <20140120093119.GA28747@e106331-lin.cambridge.arm.com>
-In-Reply-To: <20140120093119.GA28747@e106331-lin.cambridge.arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Rutland <mark.rutland@arm.com>
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-ide@vger.kernel.org" <linux-ide@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Hi Mark,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Monday 20 January 2014 09:31:19 Mark Rutland wrote:
-> On Sun, Jan 19, 2014 at 08:16:42PM +0000, Laurent Pinchart wrote:
-> > On Friday 17 January 2014 02:07:42 Valentine Barshak wrote:
-> > > Now that the clocks are available in the R-Car Gen2 DT,
-> > > add clocks property description to the sata_rcar bindings.
-> > > The clocks have been tested on r8a7791 so we use that
-> > > as an example of the R-Car SATA node.
-> > > 
-> > > The patch is against for-next branch of the libata git repo.
-> > > 
-> > > Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> > > ---
-> > > 
-> > >  Documentation/devicetree/bindings/ata/sata_rcar.txt | 10 ++++++----
-> > >  1 file changed, 6 insertions(+), 4 deletions(-)
-> > > 
-> > > diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> > > b/Documentation/devicetree/bindings/ata/sata_rcar.txt index
-> > > 1e61113..6da60c0 100644
-> > > --- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> > > +++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
-> > > 
-> > > @@ -7,12 +7,14 @@ Required properties:
-> > >  			  - "renesas,sata-r8a7791" for R-Car M2
-> > >  - reg			: address and length of the SATA registers;
-> > >  - interrupts		: must consist of one interrupt specifier.
-> > > +- clocks		: must contain a phandle and clock-specifier pair.
-> > 
-> > I would say "must contain a reference to the functional clock.", as the
-> > clock could be referenced by a phandle only depending on the SATA IP core
-> > integration in the SoC.
-> 
-> In that case the clock-specifier is simply zero cells (though admittedly
-> a pair including a zero-cells element is a bit odd).
-> 
-> The wording in the patch is consistent with the form I've been
-> recommending elsewhere:
-> 
-> - clocks: A list of phandles + clock-specifier pairs, one for each
->   entry in clock-names.
-> - clock-names: Should contain:
->   * "fclk" - the functional clock
->   * "other_clk" - some other clock.
-> 
-> > Wouldn't it be time to have standard wordings for clocks (and interrupt)
-> > bindings ?
-> 
-> I would certainly like to see consistent wording across bindings
-> (especially for interrupts given the addition of the interrupts-extended
-> binding).
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+v5:
+  - Define interrupts in terms of interrupt-names in bindings
+  - No code changes
+v4:
+  - Clarify SoCtype and interrupts
+  - Add clock property
+  - Add QSPI example
+  - Add interrupt-names
+  - Add link to Renesas pinctrl
+  - Rename "renesas,rspi-sh" to "renesas,rspi", to match platform device
+    naming
+  - spi-rspi.c:
+      - Remove Soc-specific matching from spi-rspi.c given the fallback is
+	mandatory
+      - Things became a lot simpler due to the replacement of platform_data
+        fields by the "rspi-rz" platform device binding.
+v3:
+  - Add renesas,rspi-sh
+  - Drop -rcar suffix for QSPI
+  - Clarify num-cs
+  - Implement DT support in driver
+  - Changed one-line summary from "Documentation: dt: Add Renesas RSPI/QSPI
+    bindings" to "spi: rspi: Add DT support"
+v2:
+  - Clarify RSPI/QSPI
+  - Add interrupt-parent
+  - s/should/must/ for #address-cells and #size-cells
 
-What about creating a new file in Documentation/devicetree/bindings/ with 
-reference wordings for common properties ?
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |   59 +++++++++++
+ drivers/spi/spi-rspi.c                             |  106 ++++++++++++++------
+ 2 files changed, 136 insertions(+), 29 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/spi/spi-rspi.txt
 
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+new file mode 100644
+index 000000000000..95f9b21d239f
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -0,0 +1,59 @@
++Device tree configuration for Renesas RSPI/QSPI driver
++
++Required properties:
++- compatible       : For Renesas Serial Peripheral Interface on legacy SH:
++		     "renesas,rspi-<soctype>", "renesas,rspi" as fallback.
++		     For Renesas Serial Peripheral Interface on RZ/A1H:
++		     "renesas,rspi-<soctype>", "renesas,rspi-rz" as fallback.
++		     For Quad Serial Peripheral Interface on R-Car Gen2:
++		     "renesas,qspi-<soctype>", "renesas,qspi" as fallback.
++		     Examples of valid soctypes are "sh7757" (SH),
++		     "r7s72100" (RZ/A1H), "r8a7790" (R-Car H2), and
++		     "r8a7791" (R-Car M2).
++- reg              : Address start and address range size of the device
++- interrupts       : A list of interrupt-specifiers, one for each entry in
++		     interrupt-names.
++		     If interrupt-names is not present, an interrupt specifier
++		     for a single muxed interrupt.
++- interrupt-names  : A list of interrupt names. Should contain (if present):
++		       - "error" for SPEI,
++		       - "rx" for SPRI,
++		       - "tx" to SPTI,
++		       - "mux" for a single muxed interrupt.
++- interrupt-parent : The phandle for the interrupt controller that
++		     services interrupts for this device.
++- num-cs	   : Number of chip selects. Some RSPI cores have more than 1.
++- #address-cells   : Must be <1>
++- #size-cells      : Must be <0>
++
++Optional properties:
++- clocks:           : Must contain a reference to the functional clock.
++
++Pinctrl properties might be needed, too.  See
++Documentation/devicetree/bindings/pinctrl/renesas,*.
++
++Examples:
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		interrupt-parent = <&gic>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++
++	spi: spi@e6b10000 {
++		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
++		reg = <0 0xe6b10000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index d79a7ed9b92e..e56fcb5f7f99 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -31,6 +31,7 @@
+ #include <linux/clk.h>
+ #include <linux/dmaengine.h>
+ #include <linux/dma-mapping.h>
++#include <linux/of_device.h>
+ #include <linux/sh_dma.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/rspi.h>
+@@ -985,6 +986,56 @@ static int rspi_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct spi_ops rspi_ops = {
++	.set_config_register =		rspi_set_config_register,
++	.transfer_one =			rspi_transfer_one,
++};
++
++static const struct spi_ops rspi_rz_ops = {
++	.set_config_register =		rspi_rz_set_config_register,
++	.transfer_one =			rspi_rz_transfer_one,
++};
++
++static const struct spi_ops qspi_ops = {
++	.set_config_register =		qspi_set_config_register,
++	.transfer_one =			qspi_transfer_one,
++};
++
++#ifdef CONFIG_OF
++static const struct of_device_id rspi_of_match[] = {
++	/* RSPI on legacy SH */
++	{ .compatible = "renesas,rspi", .data = &rspi_ops },
++	/* RSPI on RZ/A1H */
++	{ .compatible = "renesas,rspi-rz", .data = &rspi_rz_ops },
++	/* QSPI on R-Car Gen2 */
++	{ .compatible = "renesas,qspi", .data = &qspi_ops },
++	{ /* sentinel */ }
++};
++
++MODULE_DEVICE_TABLE(of, rspi_of_match);
++
++static int rspi_parse_dt(struct device *dev, struct spi_master *master)
++{
++	u32 num_cs;
++	int error;
++
++	/* Parse DT properties */
++	error = of_property_read_u32(dev->of_node, "num-cs", &num_cs);
++	if (error) {
++		dev_err(dev, "of_property_read_u32 num-cs failed %d\n", error);
++		return error;
++	}
++
++	master->num_chipselect = num_cs;
++	return 0;
++}
++#else
++static inline int rspi_parse_dt(struct device *dev, struct spi_master *master)
++{
++	return -EINVAL;
++}
++#endif /* CONFIG_OF */
++
+ static int rspi_request_irq(struct device *dev, unsigned int irq,
+ 			    irq_handler_t handler, const char *suffix,
+ 			    void *dev_id)
+@@ -1004,16 +1055,9 @@ static int rspi_probe(struct platform_device *pdev)
+ 	struct spi_master *master;
+ 	struct rspi_data *rspi;
+ 	int ret;
+-	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
++	const struct of_device_id *of_id;
++	const struct rspi_plat_data *rspi_pd;
+ 	const struct spi_ops *ops;
+-	const struct platform_device_id *id_entry = pdev->id_entry;
+-
+-	ops = (struct spi_ops *)id_entry->driver_data;
+-	/* ops parameter check */
+-	if (!ops->set_config_register) {
+-		dev_err(&pdev->dev, "there is no set_config_register\n");
+-		return -ENODEV;
+-	}
+ 
+ 	master = spi_alloc_master(&pdev->dev, sizeof(struct rspi_data));
+ 	if (master = NULL) {
+@@ -1021,6 +1065,28 @@ static int rspi_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
++	of_id = of_match_device(rspi_of_match, &pdev->dev);
++	if (of_id) {
++		ops = of_id->data;
++		ret = rspi_parse_dt(&pdev->dev, master);
++		if (ret)
++			goto error1;
++	} else {
++		ops = (struct spi_ops *)pdev->id_entry->driver_data;
++		rspi_pd = dev_get_platdata(&pdev->dev);
++		if (rspi_pd && rspi_pd->num_chipselect)
++			master->num_chipselect = rspi_pd->num_chipselect;
++		else
++			master->num_chipselect = 2; /* default */
++	};
++
++	/* ops parameter check */
++	if (!ops->set_config_register) {
++		dev_err(&pdev->dev, "there is no set_config_register\n");
++		ret = -ENODEV;
++		goto error1;
++	}
++
+ 	rspi = spi_master_get_devdata(master);
+ 	platform_set_drvdata(pdev, rspi);
+ 	rspi->ops = ops;
+@@ -1048,11 +1114,6 @@ static int rspi_probe(struct platform_device *pdev)
+ 
+ 	init_waitqueue_head(&rspi->wait);
+ 
+-	if (rspi_pd && rspi_pd->num_chipselect)
+-		master->num_chipselect = rspi_pd->num_chipselect;
+-	else
+-		master->num_chipselect = 2; /* default */
+-
+ 	master->bus_num = pdev->id;
+ 	master->setup = rspi_setup;
+ 	master->transfer_one = ops->transfer_one;
+@@ -1060,6 +1121,7 @@ static int rspi_probe(struct platform_device *pdev)
+ 	master->prepare_message = rspi_prepare_message;
+ 	master->unprepare_message = rspi_unprepare_message;
+ 	master->mode_bits = SPI_CPHA | SPI_CPOL | SPI_LOOP;
++	master->dev.of_node = pdev->dev.of_node;
+ 
+ 	ret = platform_get_irq_byname(pdev, "rx");
+ 	if (ret < 0) {
+@@ -1122,21 +1184,6 @@ error1:
+ 	return ret;
+ }
+ 
+-static struct spi_ops rspi_ops = {
+-	.set_config_register =		rspi_set_config_register,
+-	.transfer_one =			rspi_transfer_one,
+-};
+-
+-static struct spi_ops rspi_rz_ops = {
+-	.set_config_register =		rspi_rz_set_config_register,
+-	.transfer_one =			rspi_rz_transfer_one,
+-};
+-
+-static struct spi_ops qspi_ops = {
+-	.set_config_register =		qspi_set_config_register,
+-	.transfer_one =			qspi_transfer_one,
+-};
+-
+ static struct platform_device_id spi_driver_ids[] = {
+ 	{ "rspi",	(kernel_ulong_t)&rspi_ops },
+ 	{ "rspi-rz",	(kernel_ulong_t)&rspi_rz_ops },
+@@ -1153,6 +1200,7 @@ static struct platform_driver rspi_driver = {
+ 	.driver		= {
+ 		.name = "renesas_spi",
+ 		.owner	= THIS_MODULE,
++		.of_match_table = of_match_ptr(rspi_of_match),
+ 	},
+ };
+ module_platform_driver(rspi_driver);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
