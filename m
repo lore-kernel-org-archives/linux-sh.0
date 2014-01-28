@@ -1,7 +1,7 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 28 Jan 2014 10:34:47 +0000
+From: Valentine <valentine.barshak@cogentembedded.com>
+Date: Tue, 28 Jan 2014 18:23:26 +0000
 Subject: Re: [PATCH V2 2/3] ARM: shmobile: r8a7790: Add PCI USB host clock support
-Message-Id: <52E787C7.7040601@codethink.co.uk>
+Message-Id: <52E7F59E.5090803@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1389982854-20680-3-git-send-email-valentine.barshak@cogentembedded.com>
 In-Reply-To: <1389982854-20680-3-git-send-email-valentine.barshak@cogentembedded.com>
@@ -10,46 +10,89 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 28/01/14 10:29, Magnus Damm wrote:
-> Hi Ben,
->
-> On Tue, Jan 28, 2014 at 7:20 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> On 28/01/14 08:35, Ben Dooks wrote:
->>
->>> Yes, although I have been doing my initial testing with the RAM size
->>> limited to 1GiB of memory.
+On 01/28/2014 04:28 AM, Magnus Damm wrote:
+> On Fri, Jan 24, 2014 at 8:37 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>> On 24/01/14 04:47, Magnus Damm wrote:
 >>>
->>> I've found a couple of minor issues with the PCI bridge driver that
->>> so far have not actually fixed my problem which I hope to get reviewed
->>> and sent to the lists today.
+>>> On Sat, Jan 18, 2014 at 3:20 AM, Valentine Barshak
+>>> <valentine.barshak@cogentembedded.com> wrote:
+>>>>
+>>>> This adds internal PCI USB host clock support.
+>>>>
+>>>> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+>>>> ---
+>>>>    arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++++-
+>>>>    1 file changed, 5 insertions(+), 1 deletion(-)
+>>>>
+>>>> Changes in V2:
+>>>> * capitalized ARM in the subject;
+>>>> * rebased on top the latest devel tag.
 >>>
->>> I am going to try the 'legacy' boot method today and see if I get the
->>> same problems, just to verify if the problem is with the fdt conversion
->>> or there is an issue with my board/code.
+>>>
+>>> This patch for PCI USB clock support seems fine to me.
+>>>
+>>> Acked-by: Magnus Damm <damm@opensource.se>
+>>>
+>>> It is common practice that maintainers reject code to encourage people
+>>> to do further development. I don't think that will help us in this
+>>> particular case, so I think it is best to merge this as-is but also
+>>> request you to spend your future time on DT development.
+>>>
+>>> So please work on DT reference support together with CCF for PCI USB.
 >>
 >>
->> I've sent the test/fix patches to the list, and have tried building
->> with the legacy H2 code which seems to do the same thing.
+>> I've already posted a series for getting this device treeed.
 >
-> Ok, thanks for checking.
+> Thanks for that!
 >
->> I cannot seem to currently build a working 3.4-ltsi release, so will
->> have to wait to see if that will work on my board or not.
+>> As a note, does channel 0 work for you? we are getting a lot of
+>> failures with the OHCI controller failing to start with what looks
+>> like a bus-master failure.
 >
-> So I prefer to focus on moving forward upstream, but if you're
-> blocking on this then feel free to ask Simon about LTSI and he can
-> most likely guide you. This includes stuff in renesas-backport git
-> repo but excludes the BSP bits.
+> I've only used USB0 as USBHS, and due to lack of cable detection
+> hardware support on Lager (and me missing the cable needed for host) I
+> plan on simply fixing USB0 as USBHS Function. Anyone wanting to test
+> USB PCI Host should in my opinion use USB1 on Lager. USB2 is also fine
+> until USB 3.0 support is tied in there.
+>
+> As both you and I have noted, the USB PCI stuff can't work well as-is
+> due to mismatch in physical address space between the PCI hardware and
+> the actual memory on Lager. So as we discussed, bounce buffers would
+> be needed and perhaps also IOMMU support but my feeling is that may as
+> well be for later in case of USB.
 
-Yeah, we've had some weird bit-rot issue with this. I will try a clean
-checkout later. The ltsi is just really to see if our Lager board has
-some issue with the USB0 channel (verify the hardware has not been
-broken at some point)
+As I have said earlier I have not experienced any issues with the current kernel configuration.
+Enabling highmem also didn't show any harm. I'm currently testing LPAE and have not been able
+to see any issues as well. I've been using memtest and reading/writing USB storage at the same time.
 
-I am going to leave the CH0 issue for the moment and wait until we've
-cleared this release so that we can then look at rebasing on 3.14-rc1
-after FOSDEM.
+AFAIU, the DMA is allocated in the lowmem for all USB transfers. Even when disk buffers are allocated
+in the highmem, the contents is still copied to a lowmem buffer by the USB storage driver.
+If anyone tried to allocate DMA buffer in highmem, using DMA bounce buffers would not help
+since bouncing of highmem is not supported.
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+>
+> So until I see USB PCI bounce buffer support or similar I will simply
+> assume all errors on USB PCI on r8a7790 and r8a7791 are related to
+> physical address size mismatch and lacking software support. Do you
+> have anything that points in a different direction?
+
+The only case that I have been able to see any errors is when a different memory split
+model is used in the kernel. For example, if 2G/2G user/kernel memory model is used
+instead of the default 3G/1G one. In this case DMA-able low memory is 2G and the bounce buffer
+is needed.
+
+Thanks,
+Val.
+
+>
+> Does USB1 and/or USB2 work for you as-is today?
+>
+> Thanks,
+>
+> / magnus
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
