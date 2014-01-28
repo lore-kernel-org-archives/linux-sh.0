@@ -1,43 +1,69 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 24 Jan 2014 04:43:12 +0000
-Subject: Re: [PATCH V2 1/3] ARM: shmobile: lager: Add USBHS support
-Message-Id: <CANqRtoQjqdYOxkb3c5wfyKMgpWORPiPrOk78hrcXa1r+r+S+oQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 28 Jan 2014 04:45:00 +0000
+Subject: [PATCH 1/4] mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
+Message-Id: <87k3dk90l2.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389982854-20680-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1389982854-20680-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Sat, Jan 18, 2014 at 3:20 AM, Valentine Barshak
-<valentine.barshak@cogentembedded.com> wrote:
-> This adds USBHS PHY and registers USBHS device if the driver is enabled.
->
-> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-> ---
->  arch/arm/mach-shmobile/board-lager.c | 138 +++++++++++++++++++++++++++++++++++
->  1 file changed, 138 insertions(+)
->
-> Changes in V2:
-> * capitalized ARM in the subject;
-> * rebased on top the latest devel tag;
-> * added pipe_type array to the usbhs platform info since it differs from the default.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Valentine,
+it is easy to read if sh_mobile_sdhi_of_cfg and
+sh_mobile_sdhi_of_match are closer
 
-Thanks for this. I have now tested this on my Lager board.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-Acked-by: Magnus Damm <damm@opensource.se>
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 2d6ce25..8901acd 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -45,6 +45,19 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ 	},
+ };
+ 
++static const struct of_device_id sh_mobile_sdhi_of_match[] = {
++	{ .compatible = "renesas,sdhi-shmobile" },
++	{ .compatible = "renesas,sdhi-sh7372" },
++	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{},
++};
++MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
++
+ struct sh_mobile_sdhi {
+ 	struct clk *clk;
+ 	struct tmio_mmc_data mmc_data;
+@@ -114,19 +127,6 @@ static const struct sh_mobile_sdhi_ops sdhi_ops = {
+ 	.cd_wakeup = sh_mobile_sdhi_cd_wakeup,
+ };
+ 
+-static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+-	{ .compatible = "renesas,sdhi-shmobile" },
+-	{ .compatible = "renesas,sdhi-sh7372" },
+-	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+-
+ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *of_id -- 
+1.7.9.5
 
-Simon, please queue this up.
-
-I have incremental patches for this that I've cooked up myself. Please
-stay tuned.
-
-Valentine, after Simon has merged this then please look into fixing up
-Runtime PM for USBHS on r8a7790.
-
-Thanks,
-
-/ magnus
