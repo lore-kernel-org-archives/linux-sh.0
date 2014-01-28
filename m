@@ -1,42 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 26 Jan 2014 19:07:02 +0000
-Subject: Re: [PATCH 6/8] phy-rcar-usb-gen2: add device tree documentation
-Message-Id: <CAMuHMdV=_guap4ZpkifB+3pcYVM_myc-d2vJgoVPMLni+QFyrg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 28 Jan 2014 07:13:43 +0000
+Subject: BockW 4th sound doesn't work on latest linus/master
+Message-Id: <878uu08tp8.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
-	<1390754945-28142-7-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390754945-28142-7-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, horms+renesas@verge.net.au
+To: Simon <horms@verge.net.au>, Mark Brown <broonie@kernel.org>
+Cc: Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>
 
-On Sun, Jan 26, 2014 at 5:49 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
-> @@ -0,0 +1,16 @@
-> +Renesas RCar gen2 USB PHY bindings
-> +
-> +Required properties:
-> + - compatible: "renesas,usb-phy-r8a7790" for the R8A7790 SoC or
-> +    "renesas,rcar-gen2-usb-phy" for any generic comaptible device.
-> + - reg : A single region to access device registers
-> + - clocks : The reference to the clock to use for this block
-> + - clock-names : The name for the clock at index 0 (must be "usbhs")
-> +
-> +Note, interrupt is currently not supported by the driver, but there should
-> +be a node in the device tree for it.
 
-s/node/property/?
+Hi Simon, Mark
 
-Gr{oetje,eeting}s,
+I noticed that bockw 4th sound device doesn't work on
+latest linus/master.
 
-                        Geert
+My git bisect said the trigger is this patch
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+e14ee5deab24200e4b70fe31a8c806f0acd3d37c
+(ARM: shmobile: bockw: Do not enable CONFIG_DEVTMPFS defconfig)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+This patch removed below from defconfig
+
+-CONFIG_DEVTMPFS=y
+-CONFIG_DEVTMPFS_MOUNT=y
+
+But, why this has relationship to sound ??
+
+#0 - #3 sound device have no problem.
+But #4 sound device will be broken by this patch
+Do you have any idea ?
+
+--- my kernel log -------
+...
+ALSA device list:
+  #0: SSI56-AK4643
+  #1: SSI3-AK4554(playback)
+  #2: SSI4-AK4554(capture)
+  #3: SSI7-AK4554(playback)
+  #4: SSI8-AK4554(capture)
+
+--- test result of 4th device (bad case) ---
+
+# /home/arecord -c 2 -t wav -d 10 -r 48000 -f S16_LE -D hw:4 /tmp/hoge
+ALSA lib pcm_hw.c:1433:(_snd_pcm_hw_open) Invalid value for card
+arecord: main:608: audio open error: No such file or directory
+
+--- test result of 4th device (good case) ---
+
+# /home/arecord -c 2 -t wav -d 10 -r 48000 -f S16_LE -D hw:4 /tmp/hoge
+Recording WAVE '/tmp/hoge' : Signed 16 bit Little Endian, Rate 48000 Hz, Stereo
