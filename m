@@ -1,15 +1,15 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 28 Jan 2014 09:47:46 +0000
+Date: Tue, 28 Jan 2014 10:06:54 +0000
 Subject: [PATCH 1/3] PCI: rcar: check platform_get_irq() return code
-Message-Id: <1390902468-7753-2-git-send-email-ben.dooks@codethink.co.uk>
+Message-Id: <1390903616-8073-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390902468-7753-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390902468-7753-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1390903616-8073-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1390903616-8073-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@lists.codethink.co.uk
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-pci@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
 The current code does not check the return from platform_get_irq()
 so add an error check and return if this call does fail.
