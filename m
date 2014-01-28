@@ -1,56 +1,131 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Fri, 24 Jan 2014 22:29:03 +0000
-Subject: [PATCH V3 1/4] ARM: shmobile: r8a7791: Add USBHS clock support
-Message-Id: <1390602546-11911-2-git-send-email-valentine.barshak@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 28 Jan 2014 04:45:09 +0000
+Subject: [PATCH 2/4] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7778
+Message-Id: <87iot490kt.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-This adds USBHS clocks to the R8A7791 SoC.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+This patch updates r8a7778 DT data to have SoC specific settings.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch disables it as default,
+but we can use wp-gpios property to enable it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
+ arch/arm/boot/dts/r8a7778.dtsi                |    6 ------
+ drivers/mmc/host/sh_mobile_sdhi.c             |    9 ++++++++-
+ 3 files changed, 11 insertions(+), 8 deletions(-)
 
-Changes in V3:
-* none.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index e4e4dfa..ab1ef2e 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -140,6 +140,7 @@ enum {
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
-+	MSTP704,
- 	MSTP522,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
-@@ -169,6 +170,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
-+	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
-@@ -234,6 +236,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
- 	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
-+	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-+	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index bb62c7a..06cda19 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -17,6 +17,7 @@
+ /dts-v1/;
+ #include "r8a7778.dtsi"
+ #include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "bockw";
+@@ -84,7 +85,7 @@
+ 
+ 	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd", "sdhi0_wp";
++				  "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+@@ -101,6 +102,7 @@
+ 	vmmc-supply = <&fixedregulator3v3>;
+ 	bus-width = <4>;
+ 	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
  };
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+ &hspi0 {
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ddb3bd7..c309430 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -178,8 +178,6 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -188,8 +186,6 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+@@ -198,8 +194,6 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 8901acd..6442286 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -37,6 +37,7 @@
+ 
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
++	unsigned long capabilities;
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+@@ -45,13 +46,18 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ 	},
+ };
+ 
++static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++};
++
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-shmobile" },
+ 	{ .compatible = "renesas,sdhi-sh7372" },
+ 	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+@@ -212,6 +218,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
++		mmc_data->capabilities |= of_data->capabilities;
+ 	}
+ 
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
 -- 
-1.8.3.1
+1.7.9.5
 
