@@ -1,86 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 03 Jan 2014 15:34:15 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7791: add QSPI clock
-Message-Id: <1388763256-25851-3-git-send-email-geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 28 Jan 2014 04:44:26 +0000
+Subject: mmc: sh_mobile_sdhi: DT update for R-Car
+Message-Id: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- arch/arm/mach-shmobile/clock-r8a7791.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+Hi Chris
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index f5461262ee25..740c06968994 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -93,6 +93,7 @@ static struct clk main_clk = {
-  */
- SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
- SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
-+SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
- 
- /* fixed ratio clock */
- SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
-@@ -114,6 +115,7 @@ static struct clk *main_clks[] = {
- 	&pll3_clk,
- 	&hp_clk,
- 	&p_clk,
-+	&qspi_clk,
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-@@ -122,6 +124,7 @@ static struct clk *main_clks[] = {
- 
- /* MSTP */
- enum {
-+	MSTP917,
- 	MSTP813,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
-@@ -133,6 +136,7 @@ enum {
- };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP917] = SH_CLK_MSTP32(&qspi_clk, SMSTPCR9, 17, 0), /* QSPI */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
-@@ -167,6 +171,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pll3",		&pll3_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
-+	CLKDEV_CON_ID("qspi",		&qspi_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
- 	CLKDEV_CON_ID("mp",		&mp_clk),
- 	CLKDEV_CON_ID("cp",		&cp_clk),
-@@ -192,6 +197,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
-@@ -232,6 +238,11 @@ void __init r8a7791_clock_init(void)
- 		break;
- 	}
- 
-+	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
-+	else
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
-+
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
--- 
-1.7.9.5
+These patches updates code for R-Car.
+Basically, these clarifies chip dependent settings
+inside driver, and, removed unneeded settings from dtsi file.
+These are based on latest linus/master branch
+(ba635f8cd20ebc7bddf1eb8e1f4eae28a034e916)
 
+Kuninori Morimoto (4):
+      mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
+      mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7778
+      mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7779
+      mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7790
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 ++-
+ arch/arm/boot/dts/r8a7778.dtsi                |    6 ----
+ arch/arm/boot/dts/r8a7779.dtsi                |    8 -----
+ arch/arm/boot/dts/r8a7790.dtsi                |    4 ---
+ drivers/mmc/host/sh_mobile_sdhi.c             |   41 +++++++++++++++++--------
+ 5 files changed, 31 insertions(+), 32 deletions(-)
