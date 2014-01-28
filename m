@@ -1,69 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 07 Jan 2014 16:47:52 +0000
-Subject: [PATCH 1/2] clk: shmobile: rcar-gen2: Fix clock parent all non-PLL clocks
-Message-Id: <1389113273-10364-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 28 Jan 2014 18:53:31 +0000
+Subject: [PATCH RFC 0/2] ARM: shmobile: lager: Enable DMA bounce for PCI
+Message-Id: <1390935213-12896-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The lb, qspi, sdh, sd0 and sd1 clocks have the PLL1 (divided by 2) as
-their parent, not the main clock. Fix it.
+This enables DMA bounce for PCI since the controller does
+not support more than 2G PCI-AHB memory window.
+The problems with DMA transfers can be observed when
+setting 2G/2G user/kernel memory split model
+(CONFIG_VMSPLIT_2G=y)
+These patches help to avoid it.
 
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clk/shmobile/clk-rcar-gen2.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+The patches should be applied on top of the 
+"[PATCH V3 0/3] ARM: shmobile: lager: Add USB support" series at
+http://marc.info/?l=linux-sh&m9060253506760&w=2
 
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index a59ec21..8c7bcbd 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -186,7 +186,7 @@ rcar_gen2_cpg_register_clock(struct device_node *np, struct rcar_gen2_cpg *cpg,
- 			     const char *name)
- {
- 	const struct clk_div_table *table = NULL;
--	const char *parent_name = "main";
-+	const char *parent_name;
- 	unsigned int shift;
- 	unsigned int mult = 1;
- 	unsigned int div = 1;
-@@ -201,23 +201,31 @@ rcar_gen2_cpg_register_clock(struct device_node *np, struct rcar_gen2_cpg *cpg,
- 		 * the multiplier value.
- 		 */
- 		u32 value = clk_readl(cpg->reg + CPG_PLL0CR);
-+		parent_name = "main";
- 		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
- 	} else if (!strcmp(name, "pll1")) {
-+		parent_name = "main";
- 		mult = config->pll1_mult / 2;
- 	} else if (!strcmp(name, "pll3")) {
-+		parent_name = "main";
- 		mult = config->pll3_mult;
- 	} else if (!strcmp(name, "lb")) {
-+		parent_name = "pll1_div2";
- 		div = cpg_mode & BIT(18) ? 36 : 24;
- 	} else if (!strcmp(name, "qspi")) {
-+		parent_name = "pll1_div2";
- 		div = (cpg_mode & (BIT(3) | BIT(2) | BIT(1))) = BIT(2)
- 		    ? 16 : 20;
- 	} else if (!strcmp(name, "sdh")) {
-+		parent_name = "pll1_div2";
- 		table = cpg_sdh_div_table;
- 		shift = 8;
- 	} else if (!strcmp(name, "sd0")) {
-+		parent_name = "pll1_div2";
- 		table = cpg_sd01_div_table;
- 		shift = 4;
- 	} else if (!strcmp(name, "sd1")) {
-+		parent_name = "pll1_div2";
- 		table = cpg_sd01_div_table;
- 		shift = 0;
- 	} else if (!strcmp(name, "z")) {
+Valentine Barshak (2):
+  ARM: shmobile: lager: Use DMA bounce for PCI devices
+  ARM: shmobile: lager: Increase the size of ARM corehent DMA pool
+
+ arch/arm/boot/dts/r8a7790-lager.dts  |  2 +-
+ arch/arm/mach-shmobile/Kconfig       |  2 ++
+ arch/arm/mach-shmobile/board-lager.c | 38 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 41 insertions(+), 1 deletion(-)
+
 -- 
-1.8.3.2
+1.8.3.1
 
