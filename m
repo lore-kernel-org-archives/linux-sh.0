@@ -1,55 +1,42 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 27 Jan 2014 08:43:12 +0000
-Subject: Re: [PATCH 8/9] X86: remove redundant cpuidle_idle_call()
-Message-Id: <52E61C20.50804@linaro.org>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Wed, 29 Jan 2014 17:45:07 +0000
+Subject: [PATCH v2 0/6] setting the table for integration of cpuidle with the scheduler
+Message-Id: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
- <1390802904-28399-9-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1390802904-28399-9-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 01/27/2014 07:08 AM, Nicolas Pitre wrote:
-> The core idle loop now takes care of it.
->
-> Signed-off-by: Nicolas Pitre <nico@linaro.org>
+As everyone should know by now, we want to integrate the cpuidle
+governor with the scheduler for a more efficient idling of CPUs.
+In order to help the transition, this small patch series moves the
+existing interaction with cpuidle from architecture code to generic
+core code.  The ARM, PPC, SH and X86 architectures are concerned.
+No functional change should have occurred yet.
 
-Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+@peterz: Are you willing to pick up those patches?
 
-> ---
->   arch/x86/kernel/process.c | 5 +----
->   1 file changed, 1 insertion(+), 4 deletions(-)
->
-> diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
-> index 3fb8d95ab8..4505e2a950 100644
-> --- a/arch/x86/kernel/process.c
-> +++ b/arch/x86/kernel/process.c
-> @@ -298,10 +298,7 @@ void arch_cpu_idle_dead(void)
->    */
->   void arch_cpu_idle(void)
->   {
-> -	if (cpuidle_idle_call())
-> -		x86_idle();
-> -	else
-> -		local_irq_enable();
+Change from v1:
 
-For the record, it was pointless to enable the local irq here because it=20
-is handled by the cpuidle framework when exiting the idle state.
-
-> +	x86_idle();
->   }
->
->   /*
->
+- dropped removal of arch_cpu_idle_prepare()
 
 
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
+ arch/arm/kernel/process.c                       | 16 +++------
+ arch/powerpc/platforms/pseries/processor_idle.c |  5 +++
+ arch/powerpc/platforms/pseries/setup.c          | 34 ++++++++-----------
+ arch/sh/kernel/idle.c                           |  4 +--
+ arch/x86/kernel/process.c                       |  5 +--
+ kernel/Makefile                                 |  1 -
+ kernel/cpu/Makefile                             |  1 -
+ kernel/sched/Makefile                           |  2 +-
+ kernel/{cpu => sched}/idle.c                    |  4 ++-
+ 9 files changed, 30 insertions(+), 42 deletions(-)
 
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+
+Nicolas
+
+
+
+
 
