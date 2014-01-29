@@ -1,39 +1,48 @@
-From: Nicolas Pitre <nicolas.pitre@linaro.org>
-Date: Wed, 29 Jan 2014 17:45:12 +0000
-Subject: [PATCH v2 5/6] X86: remove redundant cpuidle_idle_call()
-Message-Id: <1391017513-12995-6-git-send-email-nicolas.pitre@linaro.org>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 29 Jan 2014 19:02:28 +0000
+Subject: Re: [PATCH v2 5/6] X86: remove redundant cpuidle_idle_call()
+Message-Id: <CAOesGMjvOkuxCopog91SAV1-gB9GaEYXpuXwhV1EJQor_pKjBA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+ <1391017513-12995-6-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1391017513-12995-6-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The core idle loop now takes care of it.
+Hi,
 
-Signed-off-by: Nicolas Pitre <nico@linaro.org>
-Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
----
- arch/x86/kernel/process.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+On Wed, Jan 29, 2014 at 9:45 AM, Nicolas Pitre <nicolas.pitre@linaro.org> wrote:
+> The core idle loop now takes care of it.
+>
+> Signed-off-by: Nicolas Pitre <nico@linaro.org>
+> Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> ---
+>  arch/x86/kernel/process.c | 5 +----
+>  1 file changed, 1 insertion(+), 4 deletions(-)
+>
+> diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
+> index 3fb8d95ab8..4505e2a950 100644
+> --- a/arch/x86/kernel/process.c
+> +++ b/arch/x86/kernel/process.c
+> @@ -298,10 +298,7 @@ void arch_cpu_idle_dead(void)
+>   */
+>  void arch_cpu_idle(void)
+>  {
+> -       if (cpuidle_idle_call())
+> -               x86_idle();
+> -       else
+> -               local_irq_enable();
+> +       x86_idle();
 
-diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
-index 3fb8d95ab8..4505e2a950 100644
---- a/arch/x86/kernel/process.c
-+++ b/arch/x86/kernel/process.c
-@@ -298,10 +298,7 @@ void arch_cpu_idle_dead(void)
-  */
- void arch_cpu_idle(void)
- {
--	if (cpuidle_idle_call())
--		x86_idle();
--	else
--		local_irq_enable();
-+	x86_idle();
- }
- 
- /*
--- 
-1.8.4.108.g55ea5f6
+You're taking out the local_irq_enable() here but I don't see the
+equivalent of adding it back in the 1/6 patch that moves the
+cpuidle_idle_call() up to common code. It seems that one of the call
+paths through cpuidle_idle_call() don't re-enable it on its own.
 
+Even if this is the right thing to do, why it's OK to do so should
+probably be documented in the patch description.
+
+
+-Olof
