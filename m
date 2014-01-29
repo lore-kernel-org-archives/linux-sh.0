@@ -1,36 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 29 Jan 2014 08:38:19 +0000
-Subject: About gpio-regulator setting on DT
-Message-Id: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 29 Jan 2014 12:45:16 +0000
+Subject: Re: About gpio-regulator setting on DT
+Message-Id: <20140129124516.GZ11841@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="COrbquG2VC1mW6F2"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@linaro.org>, Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+References: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
 
-Hi Lee, Mark, Liam
+--COrbquG2VC1mW6F2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I would like to use ${LINUX}/drivers/gpio-regulator.c
-via DT.
-My board needs "GPIOF_OUT_INIT_HIGH" on
-struct gpio :: flags
+On Wed, Jan 29, 2014 at 12:38:19AM -0800, Kuninori Morimoto wrote:
 
-But, current of_get_gpio_regulator_config()
-seems doesn't have such setting method.
-This means it will be "GPIOF_OUT_INIT_LOW"
+> How to set GPIOF_OUT_INIT_HIGH via DT ?
+> Or, am I misunderstanding ?
 
-	for (i = 0; i < config->nr_gpios; i++) {
-		gpio = of_get_named_gpio(np, "gpios", i);
-		if (gpio < 0)
-			break;
-		config->gpios[i].gpio = gpio;
+The combination of the enable-active-high and enable-at-boot properties
+ought be able to cause the driver to do the right thing, the flags do
+this:
+
+	if (config->enabled_at_boot) {
+		if (config->enable_high)
+			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
+		else
+			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
+	} else {
+		if (config->enable_high)
+			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
+		else
+			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
 	}
 
-How to set GPIOF_OUT_INIT_HIGH via DT ?
-Or, am I misunderstanding ?
+of_get_named_gpio() just looks up the GPIO number, it doesn't request
+the GPIO.
 
-Best regards
----
-Kuninori Morimoto
+--COrbquG2VC1mW6F2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS6PfZAAoJELSic+t+oim9EooP/29aTH7RKotfUbBPuaxLsICz
+ENTlnaOBfy6a0aL40mvvjaOwU4x5wsJGsfn7F4XGpJCCygriaBiv1e+vwaTWHlkR
+VfoiMWsOyrvwRRz6BX00Wbco7ftke1bPHDl+i591oWrKJMKJxSFE+vO9m21AecHb
+0bDiui9jxzcIxQNDMAfslThaFXnO9X15nah6LE4xldGKiBDcyR/tOy7s4IqjutH0
+kb9e99CbbW8uFHjzVt9LE3c0XDl/xwwPbp1L0Eweav5+OBx6g86pidLNQYGEsrxr
+W1ig/GtCINcdfJJmM/+yFVlAD9DJVxx3NJ65PYquJfkuAHRzSsKtt1wn2iXj9iCl
+dZThLXH16XYO5CFYuztk8o9LyHdywtz25mldpT6Apk2d3NplrcRR5zC8OYYJ1k2d
+bke6YpVd18Bd8iFnPR9vnoS1hhZeHWJvepnqm2/fXt4T/yrcUeLQbEyyrJYeYwtW
+sPqTwDHV2fvZXFwhIb20M1pvc5O0ClHOKkeM1H1Zhccbdq9AMdNBkWhYh9H3ymYb
+vobAdEWs8c4ceeryxxzRCSF3A5sqLDhsDt8eRVJ0dt7KlOWRvq6uBsCJ+E8GXni0
+N7zHRPacni+zQ9AVKz1RqJZBPxUUOtpdvxeKKX3LlVCoqudNgZS37nozr4knOFOD
+sIzFmoZnl+sIb1A9xCvu
+=K4cz
+-----END PGP SIGNATURE-----
+
+--COrbquG2VC1mW6F2--
