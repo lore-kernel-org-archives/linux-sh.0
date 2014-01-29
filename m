@@ -1,68 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Jan 2014 05:32:11 +0000
-Subject: [PATCH 4/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7790
-Message-Id: <877g9g7m3r.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Jan 2014 23:10:09 +0000
+Subject: [PATCH 01/03] ARM: shmobile: Remove Lager USBHS UDC ifdefs
+Message-Id: <20140129231009.22655.45084.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
+References: <20140129230959.22655.55645.sendpatchset@w520>
+In-Reply-To: <20140129230959.22655.55645.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-This patch updates r8a7790 DT data to have SoC specific settings.
+Remove ifdefs to make the Lager USBHS device always present.
+This makes it more like other devices, no need to be special.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Also, these ifdefs by themselves do not hurt much, but combined
+with USB Host device ifdefs that were proposed earlier we could
+basically end up with a kernel that drives VBUS incorrectly
+depending on the kernel configuration - lets not do that.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 322cd35..7498f5b 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -38,6 +38,7 @@
- struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
- 	unsigned long capabilities;
-+	unsigned long capabilities2;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -51,6 +52,12 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
-+static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
-+};
-+
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-shmobile" },
- 	{ .compatible = "renesas,sdhi-sh7372" },
-@@ -59,7 +66,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
--	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-@@ -219,6 +226,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
- 		mmc_data->capabilities |= of_data->capabilities;
-+		mmc_data->capabilities2 |= of_data->capabilities2;
- 	}
- 
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
--- 
-1.7.9.5
+ arch/arm/mach-shmobile/board-lager.c |    4 ----
+ 1 file changed, 4 deletions(-)
 
+--- 0003/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2014-01-24 10:16:15.000000000 +0900
+@@ -368,7 +368,6 @@ static const struct platform_device_info
+ };
+ 
+ /* USBHS */
+-#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
+ static const struct resource usbhs_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6590000, 0x100),
+ 	DEFINE_RES_IRQ(gic_spi(107)),
+@@ -478,9 +477,6 @@ static void __init lager_register_usbhs(
+ 					  &usbhs_priv.info,
+ 					  sizeof(usbhs_priv.info));
+ }
+-#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
+-static inline void lager_register_usbhs(void) { }
+-#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
+ 
+ /* USBHS PHY */
+ static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
