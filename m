@@ -1,52 +1,36 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 27 Jan 2014 20:27:09 +0000
-Subject: Re: [PATCH 14/14] spi: rspi: Add support for Quad and Dual SPI Transfers on QSPI
-Message-Id: <20140127202709.GS11841@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="w/cbcIkiD1zHilas"
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 29 Jan 2014 08:38:19 +0000
+Subject: About gpio-regulator setting on DT
+Message-Id: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390553044-11860-1-git-send-email-geert@linux-m68k.org>
- <1390553044-11860-15-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390553044-11860-15-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@linaro.org>, Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
 
---w/cbcIkiD1zHilas
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hi Lee, Mark, Liam
 
-On Fri, Jan 24, 2014 at 09:44:04AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> Add support for Quad and Dual SPI Transfers on the Renesas Quad Serial
-> Peripheral Interface, as found in R-Car Gen2 SoCs like R-Car H2 (r8a7790)
-> and R-Car M2 (r8a7791):
+I would like to use ${LINUX}/drivers/gpio-regulator.c
+via DT.
+My board needs "GPIOF_OUT_INIT_HIGH" on
+struct gpio :: flags
 
-This looks fine but depends on the DT bindings patch so it'll need to
-wait for that.
+But, current of_get_gpio_regulator_config()
+seems doesn't have such setting method.
+This means it will be "GPIOF_OUT_INIT_LOW"
 
---w/cbcIkiD1zHilas
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+	for (i = 0; i < config->nr_gpios; i++) {
+		gpio = of_get_named_gpio(np, "gpios", i);
+		if (gpio < 0)
+			break;
+		config->gpios[i].gpio = gpio;
+	}
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+How to set GPIOF_OUT_INIT_HIGH via DT ?
+Or, am I misunderstanding ?
 
-iQIcBAEBAgAGBQJS5sEZAAoJELSic+t+oim9hAEP/RXF0qxwGhAlp4SAwP2QQZKH
-6+WKys6IPShkR1QoQO7mpuigR3iY0eSKNtI5eapmKhgjMvU80EY6vjFG1k03Ryrg
-XndUtr09mRxNWu4VPg5F0RPu6vxFrPAPXmX95KgmdOn4JwLbCI4oC7tmdmLfsNLw
-bWjWgnutni0EWeejMinPwGd0nCzqkkfQLC3XrjNYD7N3ynrZSy6GRmTVjt4xlIMQ
-hjE1mLiXGyAUwVH1Xk34AsHapBTz3TNXqMWdgemnZx5Q7ZekvnG/XjWkMyNutikK
-/hl6CFYgOjIHHk0NpldB005t9EOfBjtt7uL+fv0lOIN0OrXSOKW4kuOdXgEXkIHI
-kY84yHJsdhruNiw/GaFbMrldNZ6dvHLvqLaKpdeeu6A/VoTuTjIQT9dau4HTkyAT
-Qf2jPDkILJ9PnV3YVAwAQRRWG3dkcPO2Pt2IvshhE3rJ+LoUbuWCK1+sdmQ19e/L
-GrI1FVuBBq3EjViB0vIoiTEOjP3gzhnR7R1CwHvSKvaKopc2oEq5aLddMG9HZuup
-GdnOZ+mZ8ml9qvC3uBHGe5w/WVLi09bjgIGQ1Uqr1+mg3kvIq0g+oQ4rtIPCPUMO
-3VVQ1K4xXzMedUtVPLbX/viVp2apSwDtjOLGXFRVrtqdOU6gFKZYezwXjatixlT0
-OVgOCM3Oe7WLUXYEgabI
-=o2h4
------END PGP SIGNATURE-----
-
---w/cbcIkiD1zHilas--
+Best regards
+---
+Kuninori Morimoto
