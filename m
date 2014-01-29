@@ -1,38 +1,64 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Jan 2014 12:49:51 +0000
-Subject: [PATCH 15/15] ARM: shmobile: koelsch dts: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <1390567791-8988-16-git-send-email-geert@linux-m68k.org>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Wed, 29 Jan 2014 17:45:09 +0000
+Subject: [PATCH v2 2/6] ARM: remove redundant cpuidle_idle_call()
+Message-Id: <1391017513-12995-3-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1390567791-8988-1-git-send-email-geert@linux-m68k.org>
+References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The core idle loop now takes care of it.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 ---
-This depends on spi-rspi and m25p80 updates
+ arch/arm/kernel/process.c | 16 +++++-----------
+ 1 file changed, 5 insertions(+), 11 deletions(-)
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 42fd5ebe9119..d4ca21cd2c34 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -160,6 +160,8 @@
- 		compatible = "spansion,s25fl512s";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
-+		spi-tx-bus-width = <4>;
-+		spi-rx-bus-width = <4>;
- 		m25p,fast-read;
+diff --git a/arch/arm/kernel/process.c b/arch/arm/kernel/process.c
+index 92f7b15dd2..adabeababe 100644
+--- a/arch/arm/kernel/process.c
++++ b/arch/arm/kernel/process.c
+@@ -30,7 +30,6 @@
+ #include <linux/uaccess.h>
+ #include <linux/random.h>
+ #include <linux/hw_breakpoint.h>
+-#include <linux/cpuidle.h>
+ #include <linux/leds.h>
+ #include <linux/reboot.h>
  
- 		partition@0 {
+@@ -133,7 +132,11 @@ EXPORT_SYMBOL_GPL(arm_pm_restart);
+ 
+ void (*arm_pm_idle)(void);
+ 
+-static void default_idle(void)
++/*
++ * Called from the core idle loop.
++ */
++
++void arch_cpu_idle(void)
+ {
+ 	if (arm_pm_idle)
+ 		arm_pm_idle();
+@@ -168,15 +171,6 @@ void arch_cpu_idle_dead(void)
+ #endif
+ 
+ /*
+- * Called from the core idle loop.
+- */
+-void arch_cpu_idle(void)
+-{
+-	if (cpuidle_idle_call())
+-		default_idle();
+-}
+-
+-/*
+  * Called by kexec, immediately prior to machine_kexec().
+  *
+  * This must completely disable all secondary CPUs; simply causing those CPUs
 -- 
-1.7.9.5
+1.8.4.108.g55ea5f6
 
