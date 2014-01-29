@@ -1,44 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Jan 2014 08:20:03 +0000
-Subject: Re: [PATCH] ARM: shmobile: emev2: Use __initconst for const init definition
-Message-Id: <20140106082003.GS24653@verge.net.au>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Wed, 29 Jan 2014 17:45:11 +0000
+Subject: [PATCH v2 4/6] SH: remove redundant cpuidle_idle_call()
+Message-Id: <1391017513-12995-5-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388114048-3630-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1388114048-3630-1-git-send-email-horms+renesas@verge.net.au>
+References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 27, 2013 at 12:14:08PM +0900, Simon Horman wrote:
-> __initconst must be used instead of __initdata for
-> const init definitions.
-> 
-> This problem was introduced by 3d5de27174955702 ("mach-shmobile: Emma
-> Mobile EV2 DT support V3") in v3.4-rc7.
+The core idle loop now takes care of it.
 
-I have queued this up.
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ arch/sh/kernel/idle.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-> 
-> Reported-by: Fengguang Wu <fengguang.wu@intel.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/mach-shmobile/setup-emev2.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-> index c8f2a1a..c71d667 100644
-> --- a/arch/arm/mach-shmobile/setup-emev2.c
-> +++ b/arch/arm/mach-shmobile/setup-emev2.c
-> @@ -58,7 +58,7 @@ static void __init emev2_add_standard_devices_dt(void)
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  }
->  
-> -static const char *emev2_boards_compat_dt[] __initdata = {
-> +static const char *emev2_boards_compat_dt[] __initconst = {
->  	"renesas,emev2",
->  	NULL,
->  };
-> -- 
-> 1.8.4
-> 
+diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
+index 2ea4483fd7..be616ee0cf 100644
+--- a/arch/sh/kernel/idle.c
++++ b/arch/sh/kernel/idle.c
+@@ -16,7 +16,6 @@
+ #include <linux/thread_info.h>
+ #include <linux/irqflags.h>
+ #include <linux/smp.h>
+-#include <linux/cpuidle.h>
+ #include <linux/atomic.h>
+ #include <asm/pgalloc.h>
+ #include <asm/smp.h>
+@@ -40,8 +39,7 @@ void arch_cpu_idle_dead(void)
+ 
+ void arch_cpu_idle(void)
+ {
+-	if (cpuidle_idle_call())
+-		sh_idle();
++	sh_idle();
+ }
+ 
+ void __init select_idle_routine(void)
+-- 
+1.8.4.108.g55ea5f6
+
