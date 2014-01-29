@@ -1,30 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 07 Jan 2014 01:20:15 +0000
-Subject: Re: [PATCH 0/3] Add QSPI support on r8a7791/koelsch
-Message-Id: <20140107012015.GC2196@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Jan 2014 23:09:59 +0000
+Subject: [PATCH 00/03] ARM: shmobile: Lager USBHS update
+Message-Id: <20140129230959.22655.55645.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1388763256-25851-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 03, 2014 at 04:34:13PM +0100, Geert Uytterhoeven wrote:
-> This series adds support for the Spansion s25fl512s SPI FLASH on the
-> r8a7791-based Koelsch board:
-> 
->     [1/3] pinctrl: sh-pfc: r8a7791: Add QSPI pin groups
+ARM: shmobile: Lager USBHS update
 
-I believe that Laurent should handle patch 1/3.
+[PATCH 01/03] ARM: shmobile: Remove Lager USBHS UDC ifdefs
+[PATCH 02/03] pinctrl: sh-pfc: r8a7790: Break out USB0 OVC/VBUS
+[PATCH 03/03] ARM: shmobile: Lager USB0 cable detection workaround
 
->     [2/3] ARM: shmobile: r8a7791: add QSPI clock
->     [3/3] ARM: shmobile: Koelsch: Add QSPI support
+Update the Lager USB0 code to let the USBHS device always be present
+and check for DIP switch configuration. To be able to check the DIP
+switch configuration the r8a7790 PINCTRL bits need to be updated too.
 
-I believe that patch 3/3 depends on patch 1/3.
-So I would like to wait for Laurent to handle patch 1/3.
+With this series USB0 on Lager will be fixed to USB Function via the
+USBHS driver. In theory the SoC can also use USB Host on this port
+either via USBHS or PCI USB, but since cable detection is missing
+it is possible for the user to misconfigure USB Host and drive VBUS
+with the wrong cable. Because of that USB0 will be forced to stick
+to Function-only in the Lager board code.
 
-Also, please post a patch to update the koelsch defconfig.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> This applies to non-multiplatform Koelsch only.  Multi-platform Koelsch
-> support will be added when the spi-rspi driver gains DT support.
+ Written against renesas.git tag renesas-devel-v3.13-20140127
+
+ arch/arm/mach-shmobile/board-lager.c |   29 ++++++++++++++++++++++-------
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |    9 +++++++++
+ 2 files changed, 31 insertions(+), 7 deletions(-)
