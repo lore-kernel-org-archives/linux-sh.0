@@ -1,51 +1,87 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Mon, 27 Jan 2014 15:57:55 +0000
-Subject: Re: [PATCH 2/9] ARM64: get rid of arch_cpu_idle_prepare()
-Message-Id: <20140127155755.GH32608@arm.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Jan 2014 23:10:29 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Lager USB0 cable detection workaround
+Message-Id: <20140129231029.22655.58864.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
- <1390802904-28399-3-git-send-email-nicolas.pitre@linaro.org>
- <20140127154315.GG32608@arm.com>
- <alpine.LFD.2.11.1401271047240.1652@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.11.1401271047240.1652@knanqh.ubzr>
+References: <20140129230959.22655.55645.sendpatchset@w520>
+In-Reply-To: <20140129230959.22655.55645.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jan 27, 2014 at 03:51:02PM +0000, Nicolas Pitre wrote:
-> On Mon, 27 Jan 2014, Catalin Marinas wrote:
-> 
-> > On Mon, Jan 27, 2014 at 06:08:17AM +0000, Nicolas Pitre wrote:
-> > > ARM and ARM64 are the only two architectures implementing
-> > > arch_cpu_idle_prepare() simply to call local_fiq_enable().
-> > > 
-> > > We have secondary_start_kernel() already calling local_fiq_enable() and
-> > > this is done a second time in arch_cpu_idle_prepare() in that case. And
-> > > enabling FIQs has nothing to do with idling the CPU to start with.
-> > > 
-> > > So let's introduce init_fiq_boot_cpu() to take care of FIQs on the boot
-> > > CPU and remove arch_cpu_idle_prepare(). This is now done a bit earlier
-> > > at late_initcall time but this shouldn't make a difference in practice
-> > > given that FIQs are not currently used on ARM64.
-> > > 
-> > > Signed-off-by: Nicolas Pitre <nico@linaro.org>
-> > 
-> > For arm64, we could simply remove any reference to FIQs. I'm not aware
-> > of anyone using them.
-> 
-> OK. What if I sumply remove arch_cpu_idle_prepare() and let you do the 
-> remove the rest?
-> 
-> IMHO I'd simply remove local_fiq_{enable/disable}() from 
-> arm64/kernel/smp.c and leave the infrastructure in place in case someone 
-> needs it eventually.  In which case I could include that into my patch 
-> as well.
+From: Magnus Damm <damm@opensource.se>
 
-Sounds good. We can keep the local_fiq_*() functions but remove about 4
-calling sites (process.c and smp.c) until needed.
+Add Lager board code to check the PWEN GPIO signal and refuse to
+allow probe of the USBHS driver in case of DIP misconfiguration.
 
-Thanks.
+For correct operation Lager DIP switches SW5 and SW6 shall be
+configured in 2-3 position to enable USB Function support.
 
--- 
-Catalin
+If the DIP switch is configured incorrectly then the user can
+simply adjust the hardware and either reboot or use the bind interface
+to try to probe again:
+
+# echo renesas_usbhs > /sys/bus/platform/drivers/renesas_usbhs/bind
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Depends on "[PATCH 02/03] pinctrl: sh-pfc: r8a7790: Break out USB0 OVC/VBUS"
+
+ arch/arm/mach-shmobile/board-lager.c |   25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+--- 0004/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2014-01-24 10:17:20.000000000 +0900
+@@ -406,13 +406,30 @@ static int usbhs_hardware_init(struct pl
+ {
+ 	struct usbhs_private *priv = usbhs_get_priv(pdev);
+ 	struct usb_phy *phy;
++	int ret;
++
++	/* USB0 Function - use PWEN as GPIO input to detect DIP Switch SW5
++	 * setting to avoid VBUS short circuit due to wrong cable.
++	 * PWEN should be pulled up high if USB Function is selected by SW5
++	 */
++	gpio_request_one(RCAR_GP_PIN(5, 18), GPIOF_IN, NULL); /* USB0_PWEN */
++	if (!gpio_get_value(RCAR_GP_PIN(5, 18))) {
++		pr_warn("Error: USB Function not selected - check SW5 + SW6\n");
++		ret = -ENOTSUPP;
++		goto error;
++	}
+ 
+ 	phy = usb_get_phy_dev(&pdev->dev, 0);
+-	if (IS_ERR(phy))
+-		return PTR_ERR(phy);
++	if (IS_ERR(phy)) {
++		ret = PTR_ERR(phy);
++		goto error;
++	}
+ 
+ 	priv->phy = phy;
+ 	return 0;
++ error:
++	gpio_free(RCAR_GP_PIN(5, 18));
++	return ret;
+ }
+ 
+ static int usbhs_hardware_exit(struct platform_device *pdev)
+@@ -424,6 +441,8 @@ static int usbhs_hardware_exit(struct pl
+ 
+ 	usb_put_phy(priv->phy);
+ 	priv->phy = NULL;
++
++	gpio_free(RCAR_GP_PIN(5, 18));
+ 	return 0;
+ }
+ 
+@@ -534,7 +553,7 @@ static const struct pinctrl_map lager_pi
+ 				  "vin1_clk", "vin1"),
+ 	/* USB0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
+-				  "usb0", "usb0"),
++				  "usb0_ovc_vbus", "usb0"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
