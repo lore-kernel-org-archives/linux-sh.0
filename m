@@ -1,56 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 29 Jan 2014 12:20:38 +0000
-Subject: Re: [PATCH 1/8] pci-rcar-gen2: add of match table
-Message-Id: <20140129122038.GA26253@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 29 Jan 2014 23:10:19 +0000
+Subject: [PATCH 02/03] pinctrl: sh-pfc: r8a7790: Break out USB0 OVC/VBUS
+Message-Id: <20140129231019.22655.41456.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390754945-28142-1-git-send-email-ben.dooks@codethink.co.uk>
- <1390754945-28142-2-git-send-email-ben.dooks@codethink.co.uk>
- <52E6559D.6090708@cogentembedded.com>
- <52E65EAD.9000909@codethink.co.uk>
- <20140129061722.GB23833@verge.net.au>
- <CAMuHMdVSWM5wYeA1OarFEv_yYCJR1FSm5Ercjyc5qtcVameSsw@mail.gmail.com>
-In-Reply-To: <CAMuHMdVSWM5wYeA1OarFEv_yYCJR1FSm5Ercjyc5qtcVameSsw@mail.gmail.com>
+References: <20140129230959.22655.55645.sendpatchset@w520>
+In-Reply-To: <20140129230959.22655.55645.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@lists.codethink.co.uk, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 29, 2014 at 11:06:42AM +0100, Geert Uytterhoeven wrote:
-> On Wed, Jan 29, 2014 at 7:17 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> >>+static struct of_device_id rcar_pci_of_match[] = {
-> >> >>+    { .compatible = "renesas,pci-r8a7790", },
-> >> >
-> >> >    Why only H2 SoC, if the driver is for both Gen2 SoCs?
-> >>
-> >> I can add a "renesas,pci-rcar-gen2" as a fallback match however
-> >> I've not got anything other than an r8a7790 to test on. Also the
-> >> compatible properties are preferably named after the soc.
-> >
-> > I'm not sure what the "best practice" is here but I propose that
-> > you add both "renesas,pci-rcar-gen2" and "renesas,pci-r8a7790" now.
-> 
-> To the driver or to the '90 DTS?
-> 
-> If the DTS says
-> 
->     compatible = "renesas,pci-r8a7790", "renesas,pci-rcar-gen2"
-> 
-> then the driver can just live with "renesas,pci-rcar-gen2" for now.
-> 
-> > And that "renesas,pci-r8a7791" can be added once the code has been
-> > integrated and tested on that platform.
-> 
-> And later we can add
-> 
->     compatible = "renesas,pci-r8a7791", "renesas,pci-rcar-gen2"
-> 
-> to the '91 DTS if it turns out to be compatible.
-> 
-> If the '91 turns out to be incompatible, or partially compatible, the driver
-> can be updated later to handle both "renesas,pci-r8a7790" and
-> "renesas,pci-r8a7791" and differentiate between them.
-> 
-> (That's what I was instructed to do with SPI ;-)
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, that is more or less how I thought things work :)
+Create a new group for the USB0 OVC/VBUS pin by itself. This
+allows us to monitor PWEN as GPIO on the Lager board.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- 0001/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ work/drivers/pinctrl/sh-pfc/pfc-r8a7790.c	2014-01-24 10:23:32.000000000 +0900
+@@ -3231,6 +3231,13 @@ static const unsigned int usb0_pins[]  static const unsigned int usb0_mux[] = {
+ 	USB0_PWEN_MARK, USB0_OVC_VBUS_MARK,
+ };
++static const unsigned int usb0_ovc_vbus_pins[] = {
++	/* OVC/VBUS */
++	RCAR_GP_PIN(5, 19),
++};
++static const unsigned int usb0_ovc_vbus_mux[] = {
++	USB0_OVC_VBUS_MARK,
++};
+ /* - USB1 ------------------------------------------------------------------- */
+ static const unsigned int usb1_pins[] = {
+ 	/* PWEN, OVC */
+@@ -3789,6 +3796,7 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(tpu0_to2),
+ 	SH_PFC_PIN_GROUP(tpu0_to3),
+ 	SH_PFC_PIN_GROUP(usb0),
++	SH_PFC_PIN_GROUP(usb0_ovc_vbus),
+ 	SH_PFC_PIN_GROUP(usb1),
+ 	SH_PFC_PIN_GROUP(usb2),
+ 	VIN_DATA_PIN_GROUP(vin0_data, 24),
+@@ -4134,6 +4142,7 @@ static const char * const tpu0_groups[]
+ 
+ static const char * const usb0_groups[] = {
+ 	"usb0",
++	"usb0_ovc_vbus",
+ };
+ 
+ static const char * const usb1_groups[] = {
