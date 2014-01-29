@@ -1,25 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 09 Jan 2014 05:10:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: Remove unused clock constants
-Message-Id: <20140109051033.GG2132@verge.net.au>
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Wed, 29 Jan 2014 17:45:13 +0000
+Subject: [PATCH v2 6/6] cpu/idle.c: move to sched/idle.c
+Message-Id: <1391017513-12995-7-git-send-email-nicolas.pitre@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389155679-27667-1-git-send-email-horms+renesas@verge.net.au>
- <2593623.Zsmb6Gy4Sn@avalon>
-In-Reply-To: <2593623.Zsmb6Gy4Sn@avalon>
+References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 08, 2014 at 08:52:28AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Wednesday 08 January 2014 13:34:39 Simon Horman wrote:
-> > Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Integration of cpuidle with the scheduler requires that the idle loop be
+closely integrated with the scheduler proper. Moving cpu/idle.c into the
+sched directory will allow for a smoother integration, and eliminate a
+subdirectory which contained only one source file.
 
-Thanks, I will queue this up.
+Signed-off-by: Nicolas Pitre <nico@linaro.org>
+---
+ kernel/Makefile              | 1 -
+ kernel/cpu/Makefile          | 1 -
+ kernel/sched/Makefile        | 2 +-
+ kernel/{cpu => sched}/idle.c | 0
+ 4 files changed, 1 insertion(+), 3 deletions(-)
+ delete mode 100644 kernel/cpu/Makefile
+ rename kernel/{cpu => sched}/idle.c (100%)
+
+diff --git a/kernel/Makefile b/kernel/Makefile
+index bc010ee272..6f1c7e5cfc 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -22,7 +22,6 @@ obj-y += sched/
+ obj-y += locking/
+ obj-y += power/
+ obj-y += printk/
+-obj-y += cpu/
+ obj-y += irq/
+ obj-y += rcu/
+ 
+diff --git a/kernel/cpu/Makefile b/kernel/cpu/Makefile
+deleted file mode 100644
+index 59ab052ef7..0000000000
+--- a/kernel/cpu/Makefile
++++ /dev/null
+@@ -1 +0,0 @@
+-obj-y	= idle.o
+diff --git a/kernel/sched/Makefile b/kernel/sched/Makefile
+index 7b621409cf..ac3e0ea68f 100644
+--- a/kernel/sched/Makefile
++++ b/kernel/sched/Makefile
+@@ -11,7 +11,7 @@ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
+ CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
+ endif
+ 
+-obj-y += core.o proc.o clock.o cputime.o idle_task.o fair.o rt.o stop_task.o
++obj-y += core.o proc.o clock.o cputime.o idle_task.o idle.o fair.o rt.o stop_task.o
+ obj-y += wait.o completion.o
+ obj-$(CONFIG_SMP) += cpupri.o
+ obj-$(CONFIG_SCHED_AUTOGROUP) += auto_group.o
+diff --git a/kernel/cpu/idle.c b/kernel/sched/idle.c
+similarity index 100%
+rename from kernel/cpu/idle.c
+rename to kernel/sched/idle.c
+-- 
+1.8.4.108.g55ea5f6
+
