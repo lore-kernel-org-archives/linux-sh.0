@@ -1,42 +1,24 @@
-From: Nicolas Pitre <nicolas.pitre@linaro.org>
-Date: Wed, 29 Jan 2014 17:45:07 +0000
-Subject: [PATCH v2 0/6] setting the table for integration of cpuidle with the scheduler
-Message-Id: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Thu, 30 Jan 2014 09:28:35 +0000
+Subject: Re: [PATCH v2 0/6] setting the table for integration of cpuidle with the scheduler
+Message-Id: <20140130092835.GL11314@laptop.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
+In-Reply-To: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As everyone should know by now, we want to integrate the cpuidle
-governor with the scheduler for a more efficient idling of CPUs.
-In order to help the transition, this small patch series moves the
-existing interaction with cpuidle from architecture code to generic
-core code.  The ARM, PPC, SH and X86 architectures are concerned.
-No functional change should have occurred yet.
+On Wed, Jan 29, 2014 at 12:45:07PM -0500, Nicolas Pitre wrote:
+> As everyone should know by now, we want to integrate the cpuidle
+> governor with the scheduler for a more efficient idling of CPUs.
+> In order to help the transition, this small patch series moves the
+> existing interaction with cpuidle from architecture code to generic
+> core code.  The ARM, PPC, SH and X86 architectures are concerned.
+> No functional change should have occurred yet.
+> 
+> @peterz: Are you willing to pick up those patches?
 
-@peterz: Are you willing to pick up those patches?
-
-Change from v1:
-
-- dropped removal of arch_cpu_idle_prepare()
-
-
- arch/arm/kernel/process.c                       | 16 +++------
- arch/powerpc/platforms/pseries/processor_idle.c |  5 +++
- arch/powerpc/platforms/pseries/setup.c          | 34 ++++++++-----------
- arch/sh/kernel/idle.c                           |  4 +--
- arch/x86/kernel/process.c                       |  5 +--
- kernel/Makefile                                 |  1 -
- kernel/cpu/Makefile                             |  1 -
- kernel/sched/Makefile                           |  2 +-
- kernel/{cpu => sched}/idle.c                    |  4 ++-
- 9 files changed, 30 insertions(+), 42 deletions(-)
-
-
-Nicolas
-
-
-
-
-
+Yeah.. no objections. Should I pick these up or will you be sending
+another round?
