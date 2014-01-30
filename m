@@ -1,76 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 12 Jan 2014 11:13:42 +0000
-Subject: [PATCH 9/9] ARM: shmobile: koelsch: Add QSPI nodes
-Message-Id: <1389525222-3482-10-git-send-email-geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 30 Jan 2014 00:56:17 +0000
+Subject: [PATCH 02/10] ARM: shmobile: mackerel: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <87iot2i8y8.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1389525222-3482-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add pinctrl and SPI devices for QSPI on Koelsch.
-Add Spansion s25fl512s SPI FLASH and MTD partitions.
+DEVTMPFS is needed for udev
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |   36 +++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ arch/arm/configs/mackerel_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index d5e42b396ef7..885b61e09638 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -123,6 +123,11 @@
- 		renesas,groups = "scif1_data_d";
- 		renesas,function = "scif1";
- 	};
-+
-+	qspi_pins: spi {
-+		renesas,groups = "qspi_ctrl", "qspi_data4";
-+		renesas,function = "qspi";
-+	};
- };
- 
- &scif0 {
-@@ -138,3 +143,34 @@
- 
- 	status = "okay";
- };
-+
-+&spi {
-+	pinctrl-0 = <&qspi_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl512s";
-+		reg = <0>;
-+		spi-max-frequency = <30000000>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "loader";
-+			reg = <0x00000000 0x00080000>;
-+			read-only;
-+		};
-+		partition@80000 {
-+			label = "bootenv";
-+			reg = <0x00080000 0x00080000>;
-+			read-only;
-+		};
-+		partition@100000 {
-+			label = "data";
-+			reg = <0x00100000 0x03f00000>;
-+		};
-+	};
-+};
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index a61e165..57ececb 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -42,6 +42,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CONCAT=y
 -- 
 1.7.9.5
 
