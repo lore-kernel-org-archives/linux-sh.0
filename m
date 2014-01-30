@@ -1,51 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 13 Jan 2014 00:12:44 +0000
-Subject: Re: [PATCH] ARM: shmobile: clk_get() returns error code on failure
-Message-Id: <20140113001244.GB15296@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 30 Jan 2014 00:56:33 +0000
+Subject: [PATCH 03/10] ARM: shmobile: lager: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <87ha8mi8xt.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389281623-10253-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1389281623-10253-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jan 10, 2014 at 11:36:10AM +0000, Ben Dooks wrote:
-> On 10/01/14 01:23, Simon Horman wrote:
-> >On Thu, Jan 09, 2014 at 06:42:38PM +0100, Laurent Pinchart wrote:
-> >>Hi Ben,
-> >>
-> >>Thank you for the patch.
-> >>
-> >>On Thursday 09 January 2014 15:33:43 Ben Dooks wrote:
-> >>>The lager_add_standard_devices() function calls clk_get() but then fails
-> >>>to check that it returns an error pointer instead of NULL on failure.
-> >>>
-> >>>Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> >>>Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-> >>
-> >>Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> >>
-> >>Do you plan to submit a similar patch for board-koelsch-reference.c ? I don't
-> >>mind doing it.
-> >
-> >Hi Ben,
-> >
-> >does this fix a problem that you have obvserved in practice.
-> >If so it might be worth trying to get it included as a fix
-> >for v3.14 rather than queueing it up for v3.15.
-> >
-> >Regardless, as it is a fix of sorts, could you please include some
-> >information along the following lines in the changelog:
-> >
-> >----
-> >This problem has been present since xyz was added by
-> >deadbeef0123456789f ("ARM: shmobile: lager: something goes here")
-> >in v3.1X-rcY.
-> >----
-> 
-> Ok, will update. However it is not actually a bug we've noticed
-> yet, just an observation whilst hunting down other issues.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks. In that case I will queue if up for v3.15 once you have
-revised the changelog.
+DEVTMPFS is needed for udev
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/lager_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 883443f..494a6d0 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -49,6 +49,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CORE is not set
+ # CONFIG_NET_VENDOR_ARC is not set
+-- 
+1.7.9.5
+
