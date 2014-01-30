@@ -1,77 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 30 Jan 2014 00:08:30 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 30 Jan 2014 12:12:51 +0000
 Subject: Re: About gpio-regulator setting on DT
-Message-Id: <87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
+Message-Id: <20140130121251.GO22609@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="GTGEtWEe6jD60dxL"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
-	<20140129124516.GZ11841@sirena.org.uk>
-In-Reply-To: <20140129124516.GZ11841@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <20140129124516.GZ11841@sirena.org.uk>
+ <87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
 
-Hi Mark
+--GTGEtWEe6jD60dxL
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> The combination of the enable-active-high and enable-at-boot properties
-> ought be able to cause the driver to do the right thing, the flags do
-> this:
-> 
-> 	if (config->enabled_at_boot) {
-> 		if (config->enable_high)
-> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
-> 		else
-> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
-> 	} else {
-> 		if (config->enable_high)
-> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
-> 		else
-> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
-> 	}
-> 
-> of_get_named_gpio() just looks up the GPIO number, it doesn't request
-> the GPIO.
+On Wed, Jan 29, 2014 at 04:08:30PM -0800, Kuninori Morimoto wrote:
 
-Hmm...
-I'm not sure detail,
-but, I need config->gpios[ptr].flags instead of cfg.ena_gpio_flags.
-Because it is used for drvdata->state.
+>     /* build initial state from gpio init data. */
+>     state = 0;
+>     for (ptr = 0; ptr < drvdata->nr_gpios; ptr++) {
+>         if (config->gpios[ptr].flags & GPIOF_OUT_INIT_HIGH)     <== we need this
+>                state |= (1 << ptr);
+>     }
+>     drvdata->state = state;
 
-static int gpio_regulator_probe(struct platform_device *pdev)
-{
-    if (np) {
-        config = of_get_gpio_regulator_config(&pdev->dev, np);
-        if (IS_ERR(config))
-            return PTR_ERR(config);
-    }
-    ...
+So this just looks like a bug in the code - the DT has all the data
+needed but the parsing code isn't setting everything up that the rest of
+the code needs and/or we should drop one of the ways of configuring
+things in the main probe function.  Avoiding having two ways of doing
+the same thing in the main probe would definitely be good.
 
-    /* build initial state from gpio init data. */
-    state = 0;
-    for (ptr = 0; ptr < drvdata->nr_gpios; ptr++) {
-        if (config->gpios[ptr].flags & GPIOF_OUT_INIT_HIGH)     <= we need this
-               state |= (1 << ptr);
-    }
-    drvdata->state = state;
-    ...
+--GTGEtWEe6jD60dxL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-    cfg.ena_gpio_invert = !config->enable_high;
-    if (config->enabled_at_boot) {
-        if (config->enable_high)
-             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
-        else
-             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
-    } else {
-         if (config->enable_high)
-             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
-         else
-             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
-    }
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-)
+iQIcBAEBAgAGBQJS6kG/AAoJELSic+t+oim9s0cP/16C9I4fzfxkSMAmMu56Qlww
+TMWA/wKctewkQm/Wa53Ij2+ttrlak0GolARyxUfbUCMhWVb35q1cWVwmNEy4pbAI
+rfWzjl55pCYYo0r42Ag704vcM4evnNPaVXW0QYuJjqwsO+8sY6XONti3+JeBh9a/
+oJr5tr8hwxnk5n9p44Q1kdaPHaWHUlwpD9nN3QkwXJMsndDb2M05U1DcM9u6eMSs
+dvyR9jMVOGLBE3kYkGr2KrrbkL5ztDNY6sLJGatJGJWDMwG6zaTxck1RnE8PzgWL
+1wC0MFX4rs0V1y4jbpeKs6ynexhvmkehHMD7UTkIUIHJMKYixTLaYbWdq76sBvdG
+Cio2zkOystmDCLtwkwPx4Ryos2rHPTtbyepnsmzc3os7hNNFMzxDxFtFKxtxFEY7
+q7SUrJ6CK8DCcxGpGrnBg65zFDMJWXcm9Ol/HvMLfOnkImqvENvVxkYP5w6K0G+L
+qKyUKSexSNmskNPx4d1JyWSZLCU0ghWEjhw/IS0uC/GTtefRskoFm37rcvmLsOAn
+UsEQDGtJ8qQpwWQDGDf5tqhBfP3nCyfhS8P1dJTBQwmbbUPVo+eqfhB/g3BV1oUH
+n9PPXTA3qt4wLKAMR+0lAu3ZgPQYKEIAnhDwJsDuMH9c2Fo7k8Tpib6FBGo3JDuR
+Ko1m09anoEO3llBbc6Cu
+=nakD
+-----END PGP SIGNATURE-----
 
-Best regards
----
-Kuninori Morimoto
+--GTGEtWEe6jD60dxL--
