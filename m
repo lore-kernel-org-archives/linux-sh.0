@@ -1,64 +1,77 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 29 Jan 2014 16:51:05 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 30 Jan 2014 00:08:30 +0000
 Subject: Re: About gpio-regulator setting on DT
-Message-Id: <20140129165105.GD22609@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="IMjqdzrDRly81ofr"
+Message-Id: <87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
- <20140129124516.GZ11841@sirena.org.uk>
- <52E92943.8010401@codethink.co.uk>
-In-Reply-To: <52E92943.8010401@codethink.co.uk>
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+	<20140129124516.GZ11841@sirena.org.uk>
+In-Reply-To: <20140129124516.GZ11841@sirena.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@kernel.org>
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
 
---IMjqdzrDRly81ofr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hi Mark
 
-On Wed, Jan 29, 2014 at 04:16:03PM +0000, Ben Dooks wrote:
-> On 29/01/14 12:45, Mark Brown wrote:
+> The combination of the enable-active-high and enable-at-boot properties
+> ought be able to cause the driver to do the right thing, the flags do
+> this:
+> 
+> 	if (config->enabled_at_boot) {
+> 		if (config->enable_high)
+> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
+> 		else
+> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
+> 	} else {
+> 		if (config->enable_high)
+> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
+> 		else
+> 			cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
+> 	}
+> 
+> of_get_named_gpio() just looks up the GPIO number, it doesn't request
+> the GPIO.
 
-> >of_get_named_gpio() just looks up the GPIO number, it doesn't request
-> >the GPIO.
+Hmm...
+I'm not sure detail,
+but, I need config->gpios[ptr].flags instead of cfg.ena_gpio_flags.
+Because it is used for drvdata->state.
 
-> I think you've just run in to the same problem that we've found
-> with the GPIO regulator code for the vmmcq on the lager where the
-> DT probed version is getting 1800mV for MMC whereas the platform
-> probed version gets 3300mV for MMC (and thus works better).
+static int gpio_regulator_probe(struct platform_device *pdev)
+{
+    if (np) {
+        config = of_get_gpio_regulator_config(&pdev->dev, np);
+        if (IS_ERR(config))
+            return PTR_ERR(config);
+    }
+    ...
 
-> My view is that we should really add an initialisation voltage
-> setting to the regulators so that if there is >2 states we can
-> select the state it starts in.
+    /* build initial state from gpio init data. */
+    state = 0;
+    for (ptr = 0; ptr < drvdata->nr_gpios; ptr++) {
+        if (config->gpios[ptr].flags & GPIOF_OUT_INIT_HIGH)     <= we need this
+               state |= (1 << ptr);
+    }
+    drvdata->state = state;
+    ...
 
-The drivers using the regulator should be doing that if the regulator
-has variable supplies, the expectation is that trying to provide
-something outside of a driver that's actively managing this is just
-going to give more opportunity for the system to become fragile.  A
-write only driver like the GPIO regulator may want to provide something
-but it's not clear to me that this would help for generic regulators.
+    cfg.ena_gpio_invert = !config->enable_high;
+    if (config->enabled_at_boot) {
+        if (config->enable_high)
+             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
+        else
+             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
+    } else {
+         if (config->enable_high)
+             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_LOW;
+         else
+             cfg.ena_gpio_flags |= GPIOF_OUT_INIT_HIGH;
+    }
 
---IMjqdzrDRly81ofr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS6TF2AAoJELSic+t+oim9oxkP/1cbaeUt41RPMJr+fx6910ZT
-lT/sPTV/ADZXwh4n/XlUwIsni7VQuX7MbhNKJ3vLL6hglY8iUBgeW8WZeG2C7NTe
-Zrl9H+kBVsAv2xI4Od1TPMt2rLQET5C3zCxjTY/ol5bjHeBYv3ca0koRLnPYhy5U
-o6NEOW5nzsG3J+kAbndKETLDPl52RTqpSIjwj3FBIr+n9w7U4jjvFCfmmqk3ivWC
-EBBr2J0dFluRQ3v+Q+8kjskxIO1Td0SM5TB+wz/bflSZ7KCKY2SqN9FspCELus9c
-HjrGc2h/h5z695OPvxlte1nWRhReauCOqM0Gu2JaJpF4aeMCh6LUDyO0AbrELZXV
-YxzntMh/g4m23LeUY4jU+PySts5eQ86qJakEzcWPwzQckKe4RwMA69YblrqxNVwh
-yvp/a5vQhl8855Wv7Adds/c/GXD0Cq8NHhhvO9VuUpGf0hR3aI8bnAlSnDvIehBb
-+TRrMctq4i05glTSP9YMxDo6GVqH7LUs++0zXS0U/zWD+ORvsq+KYwu/soa7k6Y8
-R179RPI4aecAEN7CT460Isk8LDebbKdlDpK2qTzhzFkrJjVKZ6AeoUI1vMkfyTJ0
-SQRAuoyKaoDOJ7JafbnSf1vO6EcRLO+hlUSnblS8iePFj0yxEtpI/2GVjfETYMUg
-QptjXgpRPfPiN0mgxrFz
-=4sgu
------END PGP SIGNATURE-----
-
---IMjqdzrDRly81ofr--
+Best regards
+---
+Kuninori Morimoto
