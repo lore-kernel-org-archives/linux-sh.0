@@ -1,59 +1,64 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 30 Jan 2014 09:11:33 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Jan 2014 00:00:12 +0000
 Subject: Re: [PATCH] arm: shmobile: r7s72100: really add i2c clocks
-Message-Id: <20140130091133.GA2608@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="5vNYLRcllDrimb99"
+Message-Id: <20140131000010.GA14663@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1388117724-11103-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1388117724-11103-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Thu, Jan 30, 2014 at 10:11:33AM +0100, Wolfram Sang wrote:
+> 
+> > > >> From: Wolfram Sang <wsa@sang-engineering.com>
+> > > >>
+> > > >> Due to a merge conflict, addition of the clocks was lost. Tested with
+> > > >> RIIC2 on a genmai board. Others untested but hopefully trivial enough to
+> > > >> be added.
+> > > >>
+> > > >> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> > > >
+> > > > Thanks, I will queue this up.
+> > > 
+> > > This still seems to be missing?
+> > 
+> > Thanks, I have now queued it up.
+> 
+> It is not upstream yet?
 
---5vNYLRcllDrimb99
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-
-> > >> From: Wolfram Sang <wsa@sang-engineering.com>
-> > >>
-> > >> Due to a merge conflict, addition of the clocks was lost. Tested with
-> > >> RIIC2 on a genmai board. Others untested but hopefully trivial enoug=
-h to
-> > >> be added.
-> > >>
-> > >> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> > >
-> > > Thanks, I will queue this up.
-> >=20
-> > This still seems to be missing?
->=20
-> Thanks, I have now queued it up.
-
-It is not upstream yet?
+the following is in the devel branch of my renesas tree, queued up for v3.15.
 
 
---5vNYLRcllDrimb99
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-iQIcBAEBAgAGBQJS6hdFAAoJEBQN5MwUoCm2y6gQAIKx4DxCE7YGSfcYzEgOkJvY
-u5fg1QGUN3UH3wlhlXfl1sF5XXwNEXw4fuq9Wi+iSims/E0E4Nn+ukFdLGoaJooW
-cFyZz//zr5eNI7Sdq44qtGYJpa6c0LAXUyYkxEdbbU6eWMvGoem/J8y/CwxPrwZ3
-Sep/cK3LRFWycNNm6mjx3bviBuOnfpiZgd8zH1scWTe9JQYR3OOVrncpWohGFG36
-B0iZyaLT+/xr7wqfQYBvsHfEUvE0U6TwqQpW2oo1e+/O+mZ/Ri4iwzf+yNXUtVEx
-qZbD2jnHiUt8x5jtL3ldVT2moDxN0rPK1LbG+zOOmTsvk80Ai9OAyBatM/qFeQqO
-qMYqhf7g9STZgqYvhrb47ISJzXQPw8HrwLGHkOiWaR9BrZKKCcyAnQ+z7NsdMbwp
-Q+8VnG5iJU68cT1giXfr131Raq/RT2kHE2/za7es17D2Bv//7ljw2JjQLQnRXu0g
-NT99wH9kaUsFM3ElpecdzWcLTo2VGKJYzHVxqmaeV/CM1fMHc69hLn+AVZP+gzgX
-OJHi0exYezDjkfAZ4soteASyVzkR7KCnfsAuZJvrYbCfuWXMiTLnpka8qUukkQz+
-NzAdvLDFF7Lab9Z6LJkLnhCcbFYv9CCvBgJbRp+3iloROXzqdsD3kdDUZ/houiZg
-G//ss+3JurzA5uwnYytm
-=Lgoz
------END PGP SIGNATURE-----
+ARM: shmobile: r7s72100: really add i2c clocks
 
---5vNYLRcllDrimb99--
+Due to a merge conflict, addition of the clocks was lost. Tested with
+RIIC2 on a genmai board. Others untested but hopefully trivial enough to
+be added.
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+[horms+renesas@verge.net.au: Capitalised "ARM" in subject]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index e6ab0cd..dd8ce87 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -176,6 +176,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
++	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
++	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
++	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
+
