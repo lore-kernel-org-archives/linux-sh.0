@@ -1,60 +1,58 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 31 Jan 2014 11:54:29 +0000
-Subject: [PATCH 2/3] mmc: sh-mmcif: add DMA SG synchronisation
-Message-Id: <Pine.LNX.4.64.1401311249070.3234@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Jan 2014 05:36:33 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r8a7778: removed unnecessary mmc option
+Message-Id: <874n4k7lwh.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>
+Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-According to the DMA API data has to be synchronised before starting
-a DMA transfer to device and after completing a DMA transfer from device.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+r8a7778 specific MMC options are cared by driver.
+This driver removes these from DTSI
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/sh_mmcif.c |   18 ++++++++++--------
- 1 files changed, 10 insertions(+), 8 deletions(-)
+ arch/arm/boot/dts/r8a7778.dtsi |    6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index d032b08..902780c 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -345,6 +345,8 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
- 			 DMA_TO_DEVICE);
- 	if (ret > 0) {
- 		host->dma_active = true;
-+		dma_sync_sg_for_device(chan->device->dev, sg, data->sg_len,
-+				       DMA_TO_DEVICE);
- 		desc = dmaengine_prep_slave_sg(chan, sg, ret,
- 			DMA_MEM_TO_DEV, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	}
-@@ -1118,14 +1120,14 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
- 	time = wait_for_completion_interruptible_timeout(&host->dma_complete,
- 							 host->timeout);
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ddb3bd7..c309430 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -178,8 +178,6 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
  
--	if (data->flags & MMC_DATA_READ)
--		dma_unmap_sg(host->chan_rx->device->dev,
--			     data->sg, data->sg_len,
--			     DMA_FROM_DEVICE);
--	else
--		dma_unmap_sg(host->chan_tx->device->dev,
--			     data->sg, data->sg_len,
--			     DMA_TO_DEVICE);
-+	if (data->flags & MMC_DATA_READ) {
-+		struct device *dev = host->chan_rx->device->dev;
-+		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
-+		dma_sync_sg_for_cpu(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
-+	} else {
-+		struct device *dev = host->chan_tx->device->dev;
-+		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_TO_DEVICE);
-+	}
+@@ -188,8 +186,6 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
  
- 	if (host->sd_error) {
- 		dev_err(host->mmc->parent,
+@@ -198,8 +194,6 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
+-		cap-sd-highspeed;
+-		cap-sdio-irq;
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.7.2.5
+1.7.9.5
 
