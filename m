@@ -1,109 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 31 Jan 2014 01:14:34 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 31 Jan 2014 03:35:51 +0000
 Subject: Re: [PATCH 03/03] ARM: shmobile: Lager USB0 cable detection workaround
-Message-Id: <1682649.H5bjffAvcD@avalon>
+Message-Id: <CANqRtoQ6HErKuV01Mg2oV7S8UwTayCcsJAQtxhJGJcy8UeYCNQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140129230959.22655.55645.sendpatchset@w520>
  <20140129231029.22655.58864.sendpatchset@w520>
-In-Reply-To: <20140129231029.22655.58864.sendpatchset@w520>
+ <1682649.H5bjffAvcD@avalon>
+In-Reply-To: <1682649.H5bjffAvcD@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hi Laurent,
 
-Thank you for the patch.
+[CC Morimoto-san, the author of the USBHS driver]
 
-On Thursday 30 January 2014 08:10:29 Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add Lager board code to check the PWEN GPIO signal and refuse to
-> allow probe of the USBHS driver in case of DIP misconfiguration.
-> 
-> For correct operation Lager DIP switches SW5 and SW6 shall be
-> configured in 2-3 position to enable USB Function support.
-> 
-> If the DIP switch is configured incorrectly then the user can
-> simply adjust the hardware and either reboot or use the bind interface
-> to try to probe again:
-> 
-> # echo renesas_usbhs > /sys/bus/platform/drivers/renesas_usbhs/bind
+On Fri, Jan 31, 2014 at 10:14 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
+>
+> On Thursday 30 January 2014 08:10:29 Magnus Damm wrote:
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Add Lager board code to check the PWEN GPIO signal and refuse to
+>> allow probe of the USBHS driver in case of DIP misconfiguration.
+>>
+>> For correct operation Lager DIP switches SW5 and SW6 shall be
+>> configured in 2-3 position to enable USB Function support.
+>>
+>> If the DIP switch is configured incorrectly then the user can
+>> simply adjust the hardware and either reboot or use the bind interface
+>> to try to probe again:
+>>
+>> # echo renesas_usbhs > /sys/bus/platform/drivers/renesas_usbhs/bind
+>
+> Our of curiosity, and I know you will love the question, have you thought
+> about how to implement this on multiplatform kernels without a board file ?
+> :-)
 
-Our of curiosity, and I know you will love the question, have you thought 
-about how to implement this on multiplatform kernels without a board file ? 
-:-)
+Thanks for asking. =)
 
-This might be one of the valid cases where we won't be able to do without a 
-board file. The callback functions in platform data, however, probably need to 
-go.
+Actually I've been giving this some thought already. And it happens to
+be that the sister board "Koelsch" has similar but slightly improved
+hardware.
 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Depends on "[PATCH 02/03] pinctrl: sh-pfc: r8a7790: Break out USB0
-> OVC/VBUS"
-> 
->  arch/arm/mach-shmobile/board-lager.c |   25 ++++++++++++++++++++++---
->  1 file changed, 22 insertions(+), 3 deletions(-)
-> 
-> --- 0004/arch/arm/mach-shmobile/board-lager.c
-> +++ work/arch/arm/mach-shmobile/board-lager.c	2014-01-24 
-10:17:20.000000000
-> +0900 @@ -406,13 +406,30 @@ static int usbhs_hardware_init(struct pl
->  {
->  	struct usbhs_private *priv = usbhs_get_priv(pdev);
->  	struct usb_phy *phy;
-> +	int ret;
-> +
-> +	/* USB0 Function - use PWEN as GPIO input to detect DIP Switch SW5
-> +	 * setting to avoid VBUS short circuit due to wrong cable.
-> +	 * PWEN should be pulled up high if USB Function is selected by SW5
-> +	 */
-> +	gpio_request_one(RCAR_GP_PIN(5, 18), GPIOF_IN, NULL); /* USB0_PWEN */
-> +	if (!gpio_get_value(RCAR_GP_PIN(5, 18))) {
-> +		pr_warn("Error: USB Function not selected - check SW5 + SW6\n");
-> +		ret = -ENOTSUPP;
-> +		goto error;
-> +	}
-> 
->  	phy = usb_get_phy_dev(&pdev->dev, 0);
-> -	if (IS_ERR(phy))
-> -		return PTR_ERR(phy);
-> +	if (IS_ERR(phy)) {
-> +		ret = PTR_ERR(phy);
-> +		goto error;
-> +	}
-> 
->  	priv->phy = phy;
->  	return 0;
-> + error:
-> +	gpio_free(RCAR_GP_PIN(5, 18));
-> +	return ret;
->  }
-> 
->  static int usbhs_hardware_exit(struct platform_device *pdev)
-> @@ -424,6 +441,8 @@ static int usbhs_hardware_exit(struct pl
-> 
->  	usb_put_phy(priv->phy);
->  	priv->phy = NULL;
-> +
-> +	gpio_free(RCAR_GP_PIN(5, 18));
->  	return 0;
->  }
-> 
-> @@ -534,7 +553,7 @@ static const struct pinctrl_map lager_pi
->  				  "vin1_clk", "vin1"),
->  	/* USB0 */
->  	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
-> -				  "usb0", "usb0"),
-> +				  "usb0_ovc_vbus", "usb0"),
->  };
-> 
->  static void __init lager_add_standard_devices(void)
+In the Lager case we can only support USB Function properly and
+safely, and to avoid shooting ourselves in the foot we need a check
+like this patch implements. So on Lager RCAR_GP_PIN(5, 18) needs to be
+high for proper USB Function operation. If not we give up.
 
--- 
-Regards,
+In case of Koelsch a MAX3355E chip is hooked up to handle dual
+function or OTG. So on that platform we can use either Function or
+Host. To figure out which cable is hooked up we can check the ID pin
+of the USB connector through the MAX3355E ID_OUT signal.
 
-Laurent Pinchart
+In general with a USB connector (and the MAX3355E chip) there are
+standard signal levels for ID pin detection. The ID signal for the USB
+micro-AB connector will be High in case of Function cable (pull-up,
+left open), and Low in case of Host (tied to GND).
 
+So, to answer your question about how to support this without
+board-specific code written in C, I believe we need to add
+abstractions to support the MAX3355E chip and/or external ID pin
+somehow. Perhaps there is almost nothing to abstract there?
+
+Regarding how to support Lager then I think we can use the same code
+as Koelsch because the ID pin signal is following the same signal
+level. So perhaps it is enough to add support for the USBHS driver to
+handle the ID pin as GPIO? If so, then we can use the same style for
+both Lager and Koelsch, but on Lager we also somehow need to tell the
+the USBHS driver that only Function is OK.
+
+> This might be one of the valid cases where we won't be able to do without a
+> board file. The callback functions in platform data, however, probably need to
+> go.
+
+I think it is possible to get rid of the board file. And especially if
+we can reuse the code for multiple boards or SoC then this starts
+making sense - even to me! =)
+
+Thanks,
+
+/ magnus
