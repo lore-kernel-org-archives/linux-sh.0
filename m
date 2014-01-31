@@ -1,39 +1,66 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Thu, 09 Jan 2014 15:23:19 +0000
-Subject: [PATCH V2 0/4] ARM: shmobile: koelsh: Add SATA support
-Message-Id: <1389281003-10253-1-git-send-email-valentine.barshak@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Jan 2014 05:31:53 +0000
+Subject: [PATCH 2/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7778
+Message-Id: <87a9ec7m48.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-This adds SATA0/1 clocks to R8A7791 SoC and adds SATA0 to Koelsch board.
-SATA1 is not available on Koelsch since MD24 selection is fixed to PCIe.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-It depends on the following commit available in the libata git tree:
-https://git.kernel.org/cgit/linux/kernel/git/tj/libata.git/commit/?h=3Dfor-=
-3.14&id=E67adb4e669db834c1f95cbdf99bb4e9ec8455b3
+This patch updates r8a7778 DT data to have SoC specific settings.
 
-Changes in V2:
- * capitalized ARM in the subject;
- * used zs_clk as parent clock for SATA, according to the feedback from Ren=
-esas;
- * rebased on top of "ARM: shmobile: r8a7791: Wait for status on all MSTP c=
-locks";
- * enabled SATA in koelsch_defconfig
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-Valentine Barshak (4):
-  ARM: shmobile: r8a7791: Add ZS clock
-  ARM: shmobile: r8a7791: Add SATA clocks
-  ARM: shmobile: koelsch: Add SATA0 support
-  ARM: shmobile: koelsch: Enable SATA in defconfig
-
- arch/arm/configs/koelsch_defconfig     |  4 +++-
- arch/arm/mach-shmobile/board-koelsch.c | 17 +++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7791.c |  8 ++++++++
- 3 files changed, 28 insertions(+), 1 deletion(-)
-
---=20
-1.8.3.1
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 8901acd..6442286 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -37,6 +37,7 @@
+ 
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
++	unsigned long capabilities;
+ };
+ 
+ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+@@ -45,13 +46,18 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+ 	},
+ };
+ 
++static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++};
++
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-shmobile" },
+ 	{ .compatible = "renesas,sdhi-sh7372" },
+ 	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+-	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+@@ -212,6 +218,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	if (of_id && of_id->data) {
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
++		mmc_data->capabilities |= of_data->capabilities;
+ 	}
+ 
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+-- 
+1.7.9.5
 
