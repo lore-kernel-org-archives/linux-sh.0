@@ -1,24 +1,39 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 20 Jan 2014 11:44:44 +0000
-Subject: Re: [PATCH] [V3] ARM: shmobile: r8a7790.dtsi: ficx i2c[0-3] clock reference
-Message-Id: <52DD0C2C.5020700@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Jan 2014 05:32:03 +0000
+Subject: [PATCH 3/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7779
+Message-Id: <878utw7m3z.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390218113-13715-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1390218113-13715-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On 20/01/14 11:44, Laurent Pinchart wrote:
-> On Monday 20 January 2014 11:41:53 Ben Dooks wrote:
->> The R8A7790's dtsi file i2c0, i2c1, i2c2, and i2c3 nodes have clock
->> refrences to the mstp3_clks clock node, however these clocks are in the
->
-> Nearly there, s/refrences/references/ :-)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I will go and die quietly in the corner...
+This patch updates r8a7779 DT data to have SoC specific settings.
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 6442286..322cd35 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
+ };
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
