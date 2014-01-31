@@ -1,74 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 31 Jan 2014 05:25:14 +0000
-Subject: [PATCH] regulator: gpio: bugfix: add gpios-status for DT
-Message-Id: <87eh3o7mfc.wl%kuninori.morimoto.gx@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 31 Jan 2014 11:54:29 +0000
+Subject: [PATCH 2/3] mmc: sh-mmcif: add DMA SG synchronisation
+Message-Id: <Pine.LNX.4.64.1401311249070.3234@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r47r6v48.wl%kuninori.morimoto.gx@gmail.com>
-	<20140129124516.GZ11841@sirena.org.uk>
-	<87mwieib5x.wl%kuninori.morimoto.gx@gmail.com>
-	<20140130121251.GO22609@sirena.org.uk>
-In-Reply-To: <20140130121251.GO22609@sirena.org.uk>
+References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+According to the DMA API data has to be synchronised before starting
+a DMA transfer to device and after completing a DMA transfer from device.
 
-config->gpios[x].flags indicates initial pin status,
-and it will be used for drvdata->state
-on gpio_regulator_probe().
-But, current of_get_gpio_regulator_config() doesn't care
-about this flags.
-This patch adds new gpios-status property in order to
-care about initial pin status.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- .../bindings/regulator/gpio-regulator.txt          |    1 +
- drivers/regulator/gpio-regulator.c                 |   11 +++++++++++
- 2 files changed, 12 insertions(+)
+ drivers/mmc/host/sh_mmcif.c |   18 ++++++++++--------
+ 1 files changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
-index 63c6598..3ecb585 100644
---- a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
-+++ b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
-@@ -8,6 +8,7 @@ Required properties:
- Optional properties:
- - enable-gpio		: GPIO to use to enable/disable the regulator.
- - gpios			: GPIO group used to control voltage.
-+- gpios-states		: gpios pin's initial states. 1 means HIGH
- - startup-delay-us	: Startup time in microseconds.
- - enable-active-high	: Polarity of GPIO is active high (default is low).
- 
-diff --git a/drivers/regulator/gpio-regulator.c b/drivers/regulator/gpio-regulator.c
-index c0a1d00..7c8e37a 100644
---- a/drivers/regulator/gpio-regulator.c
-+++ b/drivers/regulator/gpio-regulator.c
-@@ -172,11 +172,22 @@ of_get_gpio_regulator_config(struct device *dev, struct device_node *np)
- 	if (!config->gpios)
- 		return ERR_PTR(-ENOMEM);
- 
-+	prop = of_find_property(np, "gpios-states", NULL);
-+	if (prop) {
-+		proplen = prop->length / sizeof(int);
-+		if (proplen != config->nr_gpios) {
-+			/* gpios <-> gpios-states mismatch */
-+			prop = NULL;
-+		}
-+	}
-+
- 	for (i = 0; i < config->nr_gpios; i++) {
- 		gpio = of_get_named_gpio(np, "gpios", i);
- 		if (gpio < 0)
- 			break;
- 		config->gpios[i].gpio = gpio;
-+		if (prop && be32_to_cpup((int *)prop->value + i))
-+			config->gpios[i].flags = GPIOF_OUT_INIT_HIGH;
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d032b08..902780c 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -345,6 +345,8 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 			 DMA_TO_DEVICE);
+ 	if (ret > 0) {
+ 		host->dma_active = true;
++		dma_sync_sg_for_device(chan->device->dev, sg, data->sg_len,
++				       DMA_TO_DEVICE);
+ 		desc = dmaengine_prep_slave_sg(chan, sg, ret,
+ 			DMA_MEM_TO_DEV, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
  	}
+@@ -1118,14 +1120,14 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 	time = wait_for_completion_interruptible_timeout(&host->dma_complete,
+ 							 host->timeout);
  
- 	/* Fetch states. */
+-	if (data->flags & MMC_DATA_READ)
+-		dma_unmap_sg(host->chan_rx->device->dev,
+-			     data->sg, data->sg_len,
+-			     DMA_FROM_DEVICE);
+-	else
+-		dma_unmap_sg(host->chan_tx->device->dev,
+-			     data->sg, data->sg_len,
+-			     DMA_TO_DEVICE);
++	if (data->flags & MMC_DATA_READ) {
++		struct device *dev = host->chan_rx->device->dev;
++		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
++		dma_sync_sg_for_cpu(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
++	} else {
++		struct device *dev = host->chan_tx->device->dev;
++		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_TO_DEVICE);
++	}
+ 
+ 	if (host->sd_error) {
+ 		dev_err(host->mmc->parent,
 -- 
-1.7.9.5
+1.7.2.5
 
