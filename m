@@ -1,57 +1,65 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 27 Jan 2014 08:35:44 +0000
-Subject: Re: [PATCH 7/9] SH: remove redundant cpuidle_idle_call()
-Message-Id: <52E61A60.3030202@linaro.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 31 Jan 2014 11:54:19 +0000
+Subject: [PATCH 1/3] mmc: tmio-mmc: add DMA SG synchronisation
+Message-Id: <Pine.LNX.4.64.1401311248320.3234@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390802904-28399-1-git-send-email-nicolas.pitre@linaro.org>
- <1390802904-28399-8-git-send-email-nicolas.pitre@linaro.org>
-In-Reply-To: <1390802904-28399-8-git-send-email-nicolas.pitre@linaro.org>
+References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
-On 01/27/2014 07:08 AM, Nicolas Pitre wrote:
-> The core idle loop now takes care of it.
->
-> Signed-off-by: Nicolas Pitre <nico@linaro.org>
+According to the DMA API data has to be synchronised before starting
+a DMA transfer to device and after completing a DMA transfer from device.
 
-Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc_dma.c |   21 ++++++++++++---------
+ 1 files changed, 12 insertions(+), 9 deletions(-)
 
-> ---
->   arch/sh/kernel/idle.c | 4 +---
->   1 file changed, 1 insertion(+), 3 deletions(-)
->
-> diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
-> index 2ea4483fd7..be616ee0cf 100644
-> --- a/arch/sh/kernel/idle.c
-> +++ b/arch/sh/kernel/idle.c
-> @@ -16,7 +16,6 @@
->   #include <linux/thread_info.h>
->   #include <linux/irqflags.h>
->   #include <linux/smp.h>
-> -#include <linux/cpuidle.h>
->   #include <linux/atomic.h>
->   #include <asm/pgalloc.h>
->   #include <asm/smp.h>
-> @@ -40,8 +39,7 @@ void arch_cpu_idle_dead(void)
->
->   void arch_cpu_idle(void)
->   {
-> -	if (cpuidle_idle_call())
-> -		sh_idle();
-> +	sh_idle();
->   }
->
->   void __init select_idle_routine(void)
->
-
-
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 65edb4a..a997b94 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -168,9 +168,12 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+ 	}
+ 
+ 	ret = dma_map_sg(chan->device->dev, sg, host->sg_len, DMA_TO_DEVICE);
+-	if (ret > 0)
++	if (ret > 0) {
++		dma_sync_sg_for_device(chan->device->dev, sg, host->sg_len,
++				       DMA_TO_DEVICE);
+ 		desc = dmaengine_prep_slave_sg(chan, sg, ret,
+ 			DMA_MEM_TO_DEV, DMA_CTRL_ACK);
++	}
+ 
+ 	if (desc) {
+ 		cookie = dmaengine_submit(desc);
+@@ -247,14 +250,14 @@ static void tmio_mmc_tasklet_fn(unsigned long arg)
+ 	if (!host->data)
+ 		goto out;
+ 
+-	if (host->data->flags & MMC_DATA_READ)
+-		dma_unmap_sg(host->chan_rx->device->dev,
+-			     host->sg_ptr, host->sg_len,
+-			     DMA_FROM_DEVICE);
+-	else
+-		dma_unmap_sg(host->chan_tx->device->dev,
+-			     host->sg_ptr, host->sg_len,
+-			     DMA_TO_DEVICE);
++	if (host->data->flags & MMC_DATA_READ) {
++		struct device *dev = host->chan_rx->device->dev;
++		dma_unmap_sg(dev, host->sg_ptr, host->sg_len, DMA_FROM_DEVICE);
++		dma_sync_sg_for_cpu(dev, host->sg_ptr, host->sg_len, DMA_FROM_DEVICE);
++	} else {
++		struct device *dev = host->chan_tx->device->dev;
++		dma_unmap_sg(dev, host->sg_ptr, host->sg_len, DMA_TO_DEVICE);
++	}
+ 
+ 	tmio_mmc_do_data_irq(host);
+ out:
+-- 
+1.7.2.5
 
