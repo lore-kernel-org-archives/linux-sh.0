@@ -1,38 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 07 Jan 2014 08:48:03 +0000
-Subject: [PATCH 3/8] ARM: shmobile: bockw: Sort Kconfig node's selections
-Message-Id: <1389084488-25984-4-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Jan 2014 05:32:11 +0000
+Subject: [PATCH 4/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7790
+Message-Id: <877g9g7m3r.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch updates r8a7790 DT data to have SoC specific settings.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/Kconfig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index b624b5a..6f16983 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -207,11 +207,11 @@ config MACH_BOCKW
- 	bool "BOCK-W platform"
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
--	select RENESAS_INTC_IRQPIN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
-+	select RENESAS_INTC_IRQPIN
- 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select USE_OF
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 322cd35..7498f5b 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -38,6 +38,7 @@
+ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ 	unsigned long capabilities;
++	unsigned long capabilities2;
+ };
  
- config MACH_BOCKW_REFERENCE
- 	bool "BOCK-W  - Reference Device Tree Implementation"
+ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+@@ -51,6 +52,12 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ };
+ 
++static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
++};
++
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-shmobile" },
+ 	{ .compatible = "renesas,sdhi-sh7372" },
+@@ -59,7 +66,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+@@ -219,6 +226,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 		mmc_data->capabilities |= of_data->capabilities;
++		mmc_data->capabilities2 |= of_data->capabilities2;
+ 	}
+ 
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
 -- 
-1.8.4
+1.7.9.5
 
