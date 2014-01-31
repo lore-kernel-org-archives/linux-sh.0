@@ -1,43 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 16 Jan 2014 01:15:07 +0000
-Subject: Re: [PATCH v5 net-next 1/4] sh_eth: Use bool as return type of sh_eth_is_gether()
-Message-Id: <20140116011506.GA18995@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 31 Jan 2014 05:39:40 +0000
+Subject: [PATCH] ARM: shmobile: bockw: use wp-gpios instead of WP pin
+Message-Id: <87zjmc676u.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389766341-14001-1-git-send-email-horms+renesas@verge.net.au>
- <1389766341-14001-2-git-send-email-horms+renesas@verge.net.au>
- <1389778520.14001.16.camel@joe-AO722>
-In-Reply-To: <1389778520.14001.16.camel@joe-AO722>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>
+Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Wed, Jan 15, 2014 at 01:35:20AM -0800, Joe Perches wrote:
-> On Wed, 2014-01-15 at 15:12 +0900, Simon Horman wrote:
-> > Return a boolean and use true and false.
-> []
-> > diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> []
-> > @@ -310,12 +310,12 @@ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
-> >  	[TSU_ADRL31]	= 0x01fc,
-> >  };
-> >  
-> > -static int sh_eth_is_gether(struct sh_eth_private *mdp)
-> > +static bool sh_eth_is_gether(struct sh_eth_private *mdp)
-> >  {
-> >  	if (mdp->reg_offset = sh_eth_offset_gigabit)
-> > -		return 1;
-> > +		return true;
-> >  	else
-> > -		return 0;
-> > +		return false;
-> >  }
-> 
-> Or maybe:
-> 
-> static bool sh_eth_is_gether(struct sh_eth_private *mdp)
-> {
-> 	return mdp->reg_offset = sh_eth_offset_gigabit;
-> }
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, will do.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch decides new policy whch indicates
+WP is disabled as default.
+But, we can use wp-gpios property to enable it as
+other method.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+Simon
+
+This was included on v1 patch series,
+but no relationship with mmc part patches.
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index bb62c7a..06cda19 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -17,6 +17,7 @@
+ /dts-v1/;
+ #include "r8a7778.dtsi"
+ #include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "bockw";
+@@ -84,7 +85,7 @@
+ 
+ 	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd", "sdhi0_wp";
++				  "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+@@ -101,6 +102,7 @@
+ 	vmmc-supply = <&fixedregulator3v3>;
+ 	bus-width = <4>;
+ 	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
+ };
+ 
+ &hspi0 {
+-- 
+1.7.9.5
+
