@@ -1,10 +1,11 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 28 Jan 2014 04:45:00 +0000
+Date: Fri, 31 Jan 2014 05:31:40 +0000
 Subject: [PATCH 1/4] mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
-Message-Id: <87k3dk90l2.wl%kuninori.morimoto.gx@gmail.com>
+Message-Id: <87bnys7m4m.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
