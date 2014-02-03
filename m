@@ -1,58 +1,62 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 03 Feb 2014 15:17:21 +0000
+From: Rob Herring <robherring2@gmail.com>
+Date: Mon, 03 Feb 2014 21:45:16 +0000
 Subject: Re: [PATCH] spi: rspi: fix build error when CONFIG_OF is not set
-Message-Id: <20140203151721.GA22609@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="9989e9MCpLPr9Uiv"
+Message-Id: <CAL_JsqK7F7a5PSoE1aZTna35wP1SXs4BbpWxsSyuT5b2Cd8cQA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <52EEF452.4060205@renesas.com>
- <alpine.DEB.2.02.1402030939520.25794@ayla.of.borg>
-In-Reply-To: <alpine.DEB.2.02.1402030939520.25794-97SZ98TBZzA1xEWliksxXw@public.gmane.org>
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Kernel Development <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+	<alpine.DEB.2.02.1402030939520.25794@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.02.1402030939520.25794@ayla.of.borg>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, Mark Brown <broonie@kernel.org>, "linux-spi@vger.kernel.org" <linux-spi@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux Kernel Development <linux-kernel@vger.kernel.org>
 
-
---9989e9MCpLPr9Uiv
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Feb 03, 2014 at 09:47:25AM +0100, Geert Uytterhoeven wrote:
-
+On Mon, Feb 3, 2014 at 2:47 AM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+>         Hi Shimoda-san,
+>
+> On Mon, 3 Feb 2014, Shimoda, Yoshihiro wrote:
+>> This patch fixes an issue that the following build error happens when
+>> the CONFIG_OF is not set:
+>>
+>> drivers/spi/spi-rspi.c: In function 'rspi_probe':
+>> drivers/spi/spi-rspi.c:1203:26: error: 'rspi_of_match' undeclared (first use in this function)
+>>
+>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>> ---
+>>  This patch is based on the latest origin/topic/rspi branch in the spi.git.
+>>
+>>  drivers/spi/spi-rspi.c |    1 +
+>>  1 files changed, 1 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+>> index 34ad4bc..e5cfc3d 100644
+>> --- a/drivers/spi/spi-rspi.c
+>> +++ b/drivers/spi/spi-rspi.c
+>> @@ -1164,6 +1164,7 @@ static int rspi_parse_dt(struct device *dev, struct spi_master *master)
+>>       return 0;
+>>  }
+>>  #else
+>> +#define rspi_of_match        NULL
+>>  static inline int rspi_parse_dt(struct device *dev, struct spi_master *master)
+>>  {
+>>       return -EINVAL;
+>> --
+>> 1.7.1
+>
 > Thanks, obviously I missed that of_match_device() still uses the ID table
 > parameter if CONFIG_OF=n :-(
-
+>
 > Below I have two alternative solutions:
 >   1. Uses rspi_of_match() to nullify the ID table pointer, like is done in
 >      the platform_driver structure,
 >   2. Fixes it at the OF subsystem level, by nullifying the ID table pointer
 >      inside of_match_device().
-
+>
 > If 2 is accepted, drivers don't have to care about this anymore.
+>
+> What do you think?
 
-I think if we can fix it at the subsystem level that's clearly nicer
-since it means nothing else will run into the same issue.  Your patch
-looks OK to me, I'd suggest submitting it.
+I'll apply the 2nd one.
 
---9989e9MCpLPr9Uiv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJS77L+AAoJELSic+t+oim9zuoP/2cjnKAG84aAxFK/gcB7lzHd
-iPdkAwcBIgGY8dDqxaMSVJVbRQflKHO2UXimmClAf1kmU4Xg386bWrNoPHuATdy3
-5M07hQlzBnCeJkPWkizvr/0viJn3bW/HAv0eJPcVzWpHBpNSKq03U5C/WFtYS8VL
-2nBAf/qYitKX73dT2AiD3DJETr2TgtAQkA1Zfvm0JC9pZa7Ayx/OpDvrLl3wH6zg
-E4lmPVdhG14N/pYQ4EsnGLvQV3Y1wBwVvxei23yA5blgf5tu/vmHW5CS08lGNQJr
-9RyFETv45blrQQyqg9fpxw98krahGAHEDrrrdfMi+jdMCq5L4/Mr0cAQx3kkMyNs
-1C+CF/YLIakGD+WyAA2YJ+RcS0BjnP+JXjAaUR2YyasK9xs/8dW8RMto2p6mx2Ea
-dfUA4nRT47KG9WDDvk9DDuzTqikuYXHQ+n+DbOM8HYq5pdVVssKIiGvl1ZMhDctW
-CbH1LSZ/DllDa9YfCb+q+qxt8OAhBdHB5+eIj+wEwFKRWBw7ITA/NCCE6+a/pHvd
-zmV46VkjEnCFXrvJNJjMcqYqOUtgPk6352H7t2EExoLExXXmNxncdNO8RB+yq5y1
-Pv1ucKVSpYlAzIEroPsG5UjlU0hEHjTnWXeGX26vie75n0kaVjDRzf87pco0ZWIw
-eE3CanuYUNvpzTKjp6yA
-=GCNg
------END PGP SIGNATURE-----
-
---9989e9MCpLPr9Uiv--
+Rob
