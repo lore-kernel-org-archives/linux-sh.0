@@ -1,56 +1,29 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 13 Feb 2014 09:02:47 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7778/r8a7779 dtsi: Improve and correct HSPI bindings
-Message-Id: <87wqgzbd1p.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 03 Feb 2014 06:34:28 +0000
+Subject: Re: mmc: sh_mobile_sdhi: DT update for R-Car
+Message-Id: <20140203063425.GC30047@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392109008-29941-1-git-send-email-geert@linux-m68k.org>
-	<20140213055600.GF17183@verge.net.au>
-	<87zjlvbi7l.wl%kuninori.morimoto.gx@gmail.com>
-	<CAMuHMdX9H5Nvvwy4J=UYE=82nx1nm+v5be2JHLWrUp2xkCO=Hg@mail.gmail.com>
-In-Reply-To: <CAMuHMdX9H5Nvvwy4J=UYE=82nx1nm+v5be2JHLWrUp2xkCO=Hg@mail.gmail.com>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+ <8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8761p07lx8.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Mark Brown <broonie@linaro.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-
-Hi Geert
-CC Simon
-
-Thank you for your help
-
->  * Based on the value of the compatible property, this routine will attempt
->  * to choose an appropriate modalias value for a particular device tree node.
->  * It does this by stripping the manufacturer prefix (as delimited by a ',')
->  * from the first entry in the compatible list property.
+On Thu, Jan 30, 2014 at 09:36:06PM -0800, Kuninori Morimoto wrote:
+> Hi Simon
 > 
-> Which is used by drivers/spi/spi.c:of_register_spi_devices().
+> These are v2 of updates code for R-Car.
+> I separated v1 patches into for mmc, and for SH-ARM.
+> This is "SH-ARM" part patches.
 > 
-> >    So, I quick-hacked this issue in my local environment.
-> 
-> Was there anything else you needed to do, besides adding support for
-> s25fl008k to m25p80.c?
+> These need my previous mmc part patches.
 
-I re-tested cleanly this patch.
-Yes, indeed, my local-hack was not needed.
-It was my fault.
+Thanks Morimoto-san,
 
-> > 2) it needs Geert's this patch
-> >
-> >    Subject: [PATCH] mtd: m25p80: add support for the Spansion s25fl008k chip
-> >    Date:        Tue, 11 Feb 2014 09:51:18 +0100
-> >
-> >    Kernel will hung-up without this patch
-> 
-> Hang up? Not just ignoring the device?
+could you please repost these patches once the driver
+patches are present in an rc release?
 
-It works without Hang-up in my re-test now.
-My previous test seems something wrong.
-Thank you
-
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
----
-Kuninori Morimoto
+Thanks
