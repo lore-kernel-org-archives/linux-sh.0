@@ -1,149 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 03 Feb 2014 08:47:25 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 03 Feb 2014 13:14:36 +0000
 Subject: Re: [PATCH] spi: rspi: fix build error when CONFIG_OF is not set
-Message-Id: <alpine.DEB.2.02.1402030939520.25794@ayla.of.borg>
+Message-Id: <20140203131436.GZ22609@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="rYAl11fiF69JSutc"
 List-Id: <linux-sh.vger.kernel.org>
 References: <52EEF452.4060205@renesas.com>
-In-Reply-To: <52EEF452.4060205@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>
-Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, devicetree@vger.kernel.org, Linux Kernel Development <linux-kernel@vger.kernel.org>
+In-Reply-To: <52EEF452.4060205-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-	Hi Shimoda-san,
 
-On Mon, 3 Feb 2014, Shimoda, Yoshihiro wrote:
+--rYAl11fiF69JSutc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Mon, Feb 03, 2014 at 10:43:46AM +0900, Shimoda, Yoshihiro wrote:
 > This patch fixes an issue that the following build error happens when
 > the CONFIG_OF is not set:
-> 
+>=20
 > drivers/spi/spi-rspi.c: In function 'rspi_probe':
-> drivers/spi/spi-rspi.c:1203:26: error: 'rspi_of_match' undeclared (first use in this function)
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  This patch is based on the latest origin/topic/rspi branch in the spi.git.
-> 
->  drivers/spi/spi-rspi.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-> index 34ad4bc..e5cfc3d 100644
-> --- a/drivers/spi/spi-rspi.c
-> +++ b/drivers/spi/spi-rspi.c
-> @@ -1164,6 +1164,7 @@ static int rspi_parse_dt(struct device *dev, struct spi_master *master)
->  	return 0;
->  }
->  #else
-> +#define rspi_of_match	NULL
->  static inline int rspi_parse_dt(struct device *dev, struct spi_master *master)
->  {
->  	return -EINVAL;
-> -- 
-> 1.7.1
+> drivers/spi/spi-rspi.c:1203:26: error: 'rspi_of_match' undeclared (first =
+use in this function)
 
-Thanks, obviously I missed that of_match_device() still uses the ID table
-parameter if CONFIG_OF=n :-(
+Applied, thanks.
 
-Below I have two alternative solutions:
-  1. Uses rspi_of_match() to nullify the ID table pointer, like is done in
-     the platform_driver structure,
-  2. Fixes it at the OF subsystem level, by nullifying the ID table pointer
-     inside of_match_device().
+--rYAl11fiF69JSutc
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-If 2 is accepted, drivers don't have to care about this anymore.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-What do you think?
+iQIcBAEBAgAGBQJS75Y5AAoJELSic+t+oim9Y8QQAIGucJU4B4r+nhecNg21/JmZ
+I6sVgYiBWusVgu3lhsSpN+rtBMnj3JEjnHuFhMD1RrbbQoagt0tamb1L1JfL2+S4
+GOmwmQ6gGZGcA9Z9ZJiqEHpP9jUp/t2xp2fpiURstDr9gXhvazzmpGuLLAHEZpf9
+9dXx1SoGpi/2UoQGP54wlSmSgE1YYKBCoBGK3yuEjSmk0DbTkeJ5QiUdPtZSWZu3
+Rv6LPL15CDxOA37B1mjh5pBojZmOjFpWLXGveIKkw4Wed1JGnfstlM4RT0Xbin+W
+wh/V1F5F6AJEhf9yqRBqmOJAL1wCDUjKosrtmkbUwMae6Apnw/lple1Dl4I+Yl0H
+U284xcvA+BBI8aox3urV8kBW+4OYyu3kQwQPwh1zzJYHrMaIw1+BxpDXhUFS3lvI
+/9JKWyDnI1Hkt/hjoqjiRW3SMpGMZs7BJ5vHWZv3XbfEyaONpvumiNCVP8VAit89
+FtHqx2L7lqDf/u7iA4XQ6gM4MigMdXXq7OLFNZ0E+KkIWavWhUBJtM5xyRD0S/lh
+v6UpS4EprZAZNPbpLygdyVYebYSh1g3dCHhmgQbEPo5IaqFKd7ZFJOyNI/A4Z7jU
+/UfwIIqo9bsrx34poNXhjDT7twbxuSaCVgaPHImGG/A3B2QCrvYXgZA1F+RPM+kE
+cBuodf0/dT0iGcRztKgE
+=/yp6
+-----END PGP SIGNATURE-----
 
-From 060b8577e95441ee3b29e966a9fdd19b2a870bdf Mon Sep 17 00:00:00 2001
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Mon, 3 Feb 2014 09:22:06 +0100
-Subject: [PATCH 1/2] spi: rspi: fix build error when CONFIG_OF is not set
-
-If CONFIG_OF=n:
-
-drivers/spi/spi-rspi.c: In function 'rspi_probe':
-drivers/spi/spi-rspi.c:1203:26: error: 'rspi_of_match' undeclared (first use in this function)
-drivers/spi/spi-rspi.c:1203:26: note: each undeclared identifier is reported only once for each function it appears in
-
-Use of_match_ptr() to fix this.
-
-Reported-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-rspi.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 1c3aed63a2e0..df637184f6f0 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1200,7 +1200,7 @@ static int rspi_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
- 
--	of_id = of_match_device(rspi_of_match, &pdev->dev);
-+	of_id = of_match_device(of_match_ptr(rspi_of_match), &pdev->dev);
- 	if (of_id) {
- 		ops = of_id->data;
- 		ret = rspi_parse_dt(&pdev->dev, master);
--- 
-1.7.9.5
-
-
-From 477ab825d43524959d68c3974e6e9536bd83bcde Mon Sep 17 00:00:00 2001
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Mon, 3 Feb 2014 09:27:40 +0100
-Subject: [PATCH 2/2] [RFC] of/device: Nullify match table in
- of_match_device() for CONFIG_OF=n
-
-If the of_device_id table inside a device driver is protected by #ifdef
-CONFIG_OF, the driver still has to provide a dummy declaration of the
-table, or wrap it inside of_match_ptr(), when calling of_match_device()
-in the CONFIG_OF=n case, else the driver fails to compile with e.g.
-
-drivers/spi/spi-rspi.c: In function 'rspi_probe':
-drivers/spi/spi-rspi.c:1203:26: error: 'rspi_of_match' undeclared (first use in this function)
-drivers/spi/spi-rspi.c:1203:26: note: each undeclared identifier is reported only once for each function it appears in
-
-Make of_match_device() nullify the table pointer if CONFIG_OF=n to fix
-this.
-
-Reported-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- include/linux/of_device.h |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/include/linux/of_device.h b/include/linux/of_device.h
-index 82ce324fdce7..dac8bd2890ca 100644
---- a/include/linux/of_device.h
-+++ b/include/linux/of_device.h
-@@ -72,11 +72,13 @@ static inline int of_device_uevent_modalias(struct device *dev,
- 
- static inline void of_device_node_put(struct device *dev) { }
- 
--static inline const struct of_device_id *of_match_device(
-+static inline const struct of_device_id *__of_match_device(
- 		const struct of_device_id *matches, const struct device *dev)
- {
- 	return NULL;
- }
-+#define of_match_device(matches, dev)	\
-+	__of_match_device(of_match_ptr(matches), (dev))
- 
- static inline struct device_node *of_cpu_device_node_get(int cpu)
- {
--- 
-1.7.9.5
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+--rYAl11fiF69JSutc--
