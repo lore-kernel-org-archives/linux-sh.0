@@ -1,32 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Feb 2014 00:29:18 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: lager: add sound support
-Message-Id: <20140207002915.GA2842@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:23:54 +0000
+Subject: [PATCH 00/11] ARM: shmobile: RSPI RZ and QSPI SoC and board integration
+Message-Id: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877ga3guz8.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <877ga3guz8.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 05, 2014 at 11:18:07PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > > This patch adds sound support for Lager board.
-> > > But, it is using PIO transfer at this point.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > ---
-> > >  arch/arm/mach-shmobile/Kconfig       |    1 +
-> > >  arch/arm/mach-shmobile/board-lager.c |  100 ++++++++++++++++++++++++++++++++++
-> > 
-> > Thanks, I have queued up the following.
-> > There was a conflict in the very last hunk, please check that I resolved it
-> > correctly.
-> 
-> Thank you
-> In my quick check, it seems perfect !
+	Hi Simon, Magnus,
 
-Perfect is good enough for me :)
+This patch series contains SoC and board integration for
+  1. RSPI in the r7s72100 aka RZ/A1H SoC on the Genmai reference board,
+  2. QSPI in the r8a7791 aka R-Car M2 SoC on the Koelsch reference board.
+It was rebased on top of renesas-devel-v3.14-rc1-20140204.
+
+It was tested on the r7s72100-based Genmai reference board using loopback
+mode, and on the r8a7791-based Koelsch reference board using the Spansion
+s25fl512s SPI FLASH.
+
+  - [v5 01/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+  - [v5 02/11] ARM: shmobile: genmai legacy: Add RSPI support
+  - [v3 03/11] ARM: shmobile: genmai defconfig: Enable RSPI
+  - [v3 04/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+  - [v5 05/11] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+  - [v4 06/11] ARM: shmobile: r8a7791 clock: add QSPI clocks
+  - [v4 07/11] ARM: shmobile: koelsch legacy: Add QSPI support
+  - [v4 08/11] ARM: shmobile: koelsch defconfig: Enable RSPI and
+  - [v3 09/11] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+  - [v3 10/11] ARM: shmobile: koelsch dts: Add QSPI nodes
+  - [v2 11/11] ARM: shmobile: lager legacy: Switch QSPI to named IRQs
+
+All of these should be safe to apply, without compile-time or run-time
+dependencies on other parts.
+Actual functioning for some parts may depend on RSPI work queued up for
+3.15 in the spi tree.
+
+Compared to previous submission, the following have been postponed:
+  - [v4 03/15] [WIP] ARM: shmobile: genmai legacy: Add preliminary RSPI
+               pinmux setup
+    This depends on the to-be-written non-DT pinmux configuration for
+    r7s72100.
+  - [v4 07/15] ARM: shmobile: genmai reference dts: Add RSPI nodes
+    This depends on Magnus' "ARM: shmobile: r7s72100 GPIO and PINCTRL device
+    nodes"
+  - [v1 14/15] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for
+               the SPI FLASH
+  - [v1 15/15] ARM: shmobile: koelsch dts: Enable Quad SPI transfers
+    These two depend on the RSPI Dual/Quad work queued up in the spi tree.
+    After applying the r8a7791/Koelsch patches above, the mainline RSPI/QSPI
+    driver will work fine. But enabling Quad SPI transfers in board support
+    code or DT without the corresponding support in the RSPI driver would
+    cause a regression.
+
+Please apply this series, Thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
