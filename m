@@ -1,77 +1,109 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Feb 2014 04:37:50 +0000
-Subject: Re: [PATCH 00/04] PCI: rcar: Driver model and physical address space update
-Message-Id: <20140213043750.GA11908@verge.net.au>
+Date: Tue, 04 Feb 2014 12:44:22 +0000
+Subject: Re: [PATCH 1/3] arm: shmobile: lager: Add USBHS support
+Message-Id: <20140204124422.GI17028@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140205065243.29445.76593.sendpatchset@w520>
- <20140212205911.GB5554@google.com>
-In-Reply-To: <20140212205911.GB5554@google.com>
+References: <1387548804-20829-2-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387548804-20829-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk
+To: linux-sh@vger.kernel.org
 
-On Wed, Feb 12, 2014 at 01:59:11PM -0700, Bjorn Helgaas wrote:
-> On Wed, Feb 05, 2014 at 03:52:43PM +0900, Magnus Damm wrote:
-> > PCI: rcar: Driver model and physical address space update
-> > 
-> > [PATCH 01/04] PCI: rcar: Register each instance independently
-> > [PATCH 02/04] PCI: rcar: Break out window size handling
-> > [PATCH 03/04] PCI: rcar: Add DMABOUNCE support
-> > [PATCH 04/04] PCI: rcar: Enable BOUNCE in case of HIGHMEM
-> > 
-> > These patches update the pci-rcar-gen2.c driver in various ways
-> > including cleanups for driver model interface (1/4), readability
-> > update (2/4) and also bounce buffer support (3/4, 4/4). Basically
-> > the first two are just cleanups and the rest are fixes.
-> > 
-> > As it is today without these patches the system memory start address
-> > is hard coded at 0x4000000 and the window is fixed at 1GiB. So we
-> > have board specific code hidden in the driver which is good to avoid.
-> > 
-> > With these hard coded board specific constants there are some error cases
-> > that are not handled, in particular the issue that only maximum 1GiB of
-> > physical address space can be used for bus mastering with a single window.
-> > The common case of using ARM CONFIG_VMSPLIT_3G results in no visible issues
-> > as long as CONFIG_BOUNCE is used, but other CONFIG_VMSPLIT settings will
-> > break due to the hard coded 1GiB window not being enough. It has been
-> > verified that reducing the window size to 256MB makes the driver behave
-> > the same with VMSPLIT_3G as 1GiB window size and other VMSPLIT settings.
-> > 
-> > To handle the maximum 1GiB physical address space limitation two types
-> > of bounce buffers are added. The ARM specific DMABOUNCE code is in 3/4
-> > hooked up to a chunk of local memory that is also handed of as coherent
-> > memory to the pci devices hanging off the PCI bridge. The driver makes
-> > sure to set the window so the local memory is always included. When the
-> > PCI devices are operating and in case memory is used outside the window
-> > then the DMABOUNCE buffers kicks in. This makes the driver support all
-> > kinds of VMSPLIT settings and window sizes. The BOUNCE code in 4/4 is
-> > selected to make sure bounce buffers are used for HIGHMEM.
-> > 
-> > With these patches this driver can be used with or without CMA and
-> > with or without DMA zone. Basically the system wide memory setup is
-> > left to the user. If a DMA zone is used then the PCI window will
-> > be setup to cover that. Same thing with CMA.
-> > 
-> > Tested with USB storage using LPAE and various VMSPLIT settings together
-> > with renesas git tag renesas-devel-v3.14-rc1-20140204 from kernel.org
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > ---
-> > 
-> >  Written against renesas.git tag renesas-devel-v3.14-rc1-20140204
-> > 
-> >  drivers/pci/host/Kconfig         |    3 
-> >  drivers/pci/host/pci-rcar-gen2.c |  367 +++++++++++++++++++++++++++++++-------
-> >  2 files changed, 306 insertions(+), 64 deletions(-)
+On Wed, Jan 29, 2014 at 01:21:49PM +0400, Valentine wrote:
+> On 01/29/2014 10:11 AM, Simon Horman wrote:
+> >On Mon, Jan 27, 2014 at 07:26:53PM +0900, Magnus Damm wrote:
+> >>Hi Valentine,
+> >>
+> >>On Sat, Jan 25, 2014 at 8:05 AM, Valentine
+> >><valentine.barshak@cogentembedded.com> wrote:
+> >>>On 01/24/2014 08:40 AM, Magnus Damm wrote:
+> >>>>
+> >>>>Hi Valentine,
+> >>>>
+> >>>
+> >>>Hi Magnus,
+> >>>
+> >>>
+> >>>>On Sat, Jan 18, 2014 at 3:31 AM, Valentine
+> >>>><valentine.barshak@cogentembedded.com> wrote:
+> >>>>>
+> >>>>>On 01/15/2014 04:39 PM, Magnus Damm wrote:
+> >>>>>>
+> >>>>>>
+> >>>>>>On Fri, Dec 20, 2013 at 11:13 PM, Valentine Barshak
+> >>>>>><valentine.barshak@cogentembedded.com> wrote:
+> >>>>>>>
+> >>>>>>>
+> >>>>>>>This adds USBHS PHY and registers USBHS device if the driver is
+> >>>>>>>enabled.
+> >>>>>>>
+> >>>>>>>Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> >>>>>>>---
+> >>>>>>>    arch/arm/mach-shmobile/board-lager.c | 117
+> >>>>>>>+++++++++++++++++++++++++++++++++++
+> >>>>>>>    1 file changed, 117 insertions(+)
+> >>>>>>
+> >>>>>>
+> >>>>>>
+> >>>>>>Hi Valentine,
+> >>>>>
+> >>>>>
+> >>>>>
+> >>>>>Magnus, Simon,
+> >>>>>
+> >>>>>
+> >>>>>>
+> >>>>>>Thanks for this USB function patch. I'd like to switch focus to USB
+> >>>>>>function soon.
+> >>>>>>
+> >>>>>>By the way, I'm happy to see that SATA platform device support is
+> >>>>>>picked up by Simon. I intend to give your SATA DTS patches a go later
+> >>>>>>this week, they should be ready to queue up rather soon I believe.
+> >>>>>>
+> >>>>>>Would it be possible for you to update your USB function platform
+> >>>>>>device patches for Lager and Koelsch? I'd like to merge those after
+> >>>>>>SATA, and the platform device files shouldn't change now so USB can go
+> >>>>>>next now unless I'm mistaken. Please send a complete per-board series
+> >>>>>>for USB function so patch pick up and testing gets easy - same style
+> >>>>>>as SATA would be great.
+> >>>>>
+> >>>>>
+> >>>>>
+> >>>>>Just respinned the USB series for Lager and Koelsch.
+> >>>>>I did not include defconfig changes yet.
+> >>>>
+> >>>>
+> >>>>Thanks!
+> >>>>
+> >>>>>I think we need to enable kernel modules in the defconfig first,
+> >>>>>so that multiple USB gadgets can be selected as modules.
+> >>>>
+> >>>>
+> >>>>I agree that for testing something is needed., but perhaps a simple
+> >>>>composite device is enough?
+> >>>>
+> >>>>In general I think the USB gadget kernel configuration is something
+> >>>>that it is left for the distributions to select since it depends on
+> >>>>each use case. Also, using modules is fine but I also think there is
+> >>>>some configfs interface that can be used to configure the USB gadget
+> >>>>during run time.
+> >>>
+> >>>
+> >>>I've sent a couple of patches that enable modules for lager and koelsch.
+> >>>I think this is useful even if we decide to go with composite gadget.
+> >>
+> >>Ok, thanks, I will duck and let Simon decide about this!
+> >
+> >I think it would be better to wait until we need modules
+> >before turning them on.
+> >
 > 
-> Simon, if you want to ack these, I'll be happy to merge them for v3.15.
-> I'm not really qualified to review them myself.
+> Well, you may never need them and have everything built-in.
+> 
+> Thought you might want modules for USB gadgets.
+> What configuration do you propose for the USBHS gadget?
+> Do you want me to add composite gadget built-in?
 
-Hi Bjorn,
-
-Magnus has reposted these patches as part of a larger series
-which includes some patches of his own. That series is
-"[PATCH 00/08] PCI: rcar: Recent driver patches from Ben Dooks and me".
-I am happy with it and will Ack it. Could you consider merging it?
+I had assumed that they needed to be modules if there was to be
+more than one of them. Is there an alternate approach?
