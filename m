@@ -1,63 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 03:19:22 +0000
-Subject: Re: [PATCH 0/5] enable i2c on koelsch-dt (and cleanup lager)
-Message-Id: <20140217031919.GF7772@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 04 Feb 2014 18:48:19 +0000
+Subject: [PATCH 0/4] Rebased pending Koelsch patches on v3.14-rc1
+Message-Id: <1391539703-5787-1-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392543658-5030-1-git-send-email-wsa@the-dreams.de>
- <CANqRtoRvB5zqEPFJBaC548+_S_+KXY5+acQ-zXFPG5DSxp2L7g@mail.gmail.com>
-In-Reply-To: <CANqRtoRvB5zqEPFJBaC548+_S_+KXY5+acQ-zXFPG5DSxp2L7g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 17, 2014 at 12:13:09PM +0900, Magnus Damm wrote:
-> Hi Wolfram,
-> 
-> On Sun, Feb 16, 2014 at 6:40 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> > This series adds all rcar cores to the r8a7791 dtsi and enables bus 2 on the
-> > koelsch board. Functionality was tested with reading/writing to an eeprom. Some
-> > rcar driver issues have been observed, but they are independent from the dt
-> > binding provided here. On the way, some cleanups were found which apply to
-> > r8a7790 as well, yet those are only compile tested since I don't have HW access
-> > to the lager board (yet).
-> >
-> > The series is based on tag 'renesas-devel-v3.14-rc2-20140213' and can be found here
-> > git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r8a7791-i2c
-> >
-> > Please review/apply.
-> 
-> Thanks for your patches. I think they look good in general, but patch
-> [2/5] needs to be reworked to exclude the r8a7790 compatible string.
-> Patch [3/5] probably depends on [2/5] so it needs to wait too.
-> 
-> > Wolfram Sang (5):
-> >   ARM: shmobile: r8a7791: remove superfluous interrupt-parents
-> [1/5] looks fine
-> 
-> >   ARM: shmobile: r8a7791: add i2c master nodes to dtsi
-> >   ARM: shmobile: r8a7791: add i2c2 bus to koelsch dt
-> [2/5] needs rework
-> [3/5] depends on [2/5] - needs to wait
-> 
-> >   ARM: shmobile: r8a7790: remove superfluous interrupt-parents
-> >   ARM: shmobile: r8a7790: add i2c aliases to dtsi
-> [4/5] looks good
-> [5/5] looks good
-> 
-> For the patches [1/5], [4/5], [5/5]
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+This is a rebase of I2C and VIN1 support for Koelsch
+as requested by Simon here:
+http://marc.info/?l=linux-sh&m8898894707395&w=2
+http://marc.info/?l=linux-sh&m8899483408459&w=2
 
-Thanks, I will queue those up.
+Also I2C and VIN SoC camera support have been added
+to koelsch_defconfig.
 
-> Let us discuss [2/5] in a separate thread.
-> 
-> Thanks for your help!
-> 
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I've decided to combine them in a single series
+since VIN depends on I2C support.
+
+Valentine Barshak (4):
+  ARM: shmobile: koelsch: Add I2C support
+  ARM: shmobile: koelsch: Add VIN1 SoC camera support
+  ARM: shmobile: koelsch: Enable I2C in defconfig
+  ARM: shmobile: koelsch: Enable VIN SoC camera in defconfig
+
+ arch/arm/configs/koelsch_defconfig     |   9 +++
+ arch/arm/mach-shmobile/board-koelsch.c | 122 +++++++++++++++++++++++++++++++++
+ 2 files changed, 131 insertions(+)
+
+-- 
+1.8.3.1
+
