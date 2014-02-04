@@ -1,40 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:47:38 +0000
-Subject: [PATCH 0/2] sh_sci updates for v3.15
-Message-Id: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:24:05 +0000
+Subject: [PATCH v2 11/11] ARM: shmobile: lager legacy: Switch QSPI to named IRQs
+Message-Id: <1391527445-14881-12-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Greg,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-for the v3.14 release you asked me to handle merging sh_sci
-updates through my renesas tree as there were circular dependencies between
-sh_sci and Renesas SoC code.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+v2:
+  - s/DEFINE_RES_IRQ/DEFINE_RES_IRQ_NAMED/
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
 
-While I am happy to keep doing this for v3.15 and beyond as the
-motivation above no longer exists I assume that you would like
-to go back to handling sh_sci patches through your tree.
+ arch/arm/mach-shmobile/board-lager.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-If that is the case then please consider this series for v3.15.
-It consists of two patches that were sitting in my tree but
-didn't make the cut for v3.14 (the arm-soc window for that closed
-over a month ago).
-
-Otherwise I will queue them, and other sh_sci patches that have been
-more recently posted by others, up in my renesas tree.
-
-
-Laurent Pinchart (2):
-  serial: sh-sci: Restrict non-COMPILE_TEST compilation
-  serial: sh-sci: Fix compatible string in DT bindings example
-
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 +-
- drivers/tty/serial/Kconfig                                      | 3 ++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index fdcc868de1fa..3fe982b5ca87 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -293,7 +293,7 @@ static const struct spi_board_info spi_info[] __initconst = {
+ /* QSPI resource */
+ static const struct resource qspi_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6b10000, 0x1000),
+-	DEFINE_RES_IRQ(gic_spi(184)),
++	DEFINE_RES_IRQ_NAMED(gic_spi(184), "mux"),
+ };
+ 
+ /* VIN */
 -- 
-1.8.5.2
+1.7.9.5
 
