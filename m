@@ -1,48 +1,47 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 26 Feb 2014 18:25:01 +0000
-Subject: Re: [PATCH] sh_net: runtime pm wrap mdio read and write
-Message-Id: <530E317D.3070807@codethink.co.uk>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Tue, 04 Feb 2014 18:17:36 +0000
+Subject: [PATCH 1/3] clk: rcar-h2: fix sd0/sd1 divisor table
+Message-Id: <1391537858-28593-2-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393433319-22685-1-git-send-email-ben.dooks@codethink.co.uk> <530E3EBC.5060408@cogentembedded.com>
-In-Reply-To: <530E3EBC.5060408@cogentembedded.com>
+References: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, magnus.damn@opensource.se, horms@verge.net.au
+To: linux-arm-kernel@lists.infradead.org
 
-On 26/02/14 19:21, Sergei Shtylyov wrote:
-> On 02/26/2014 07:48 PM, Ben Dooks wrote:
->
->> On the R8A7790, if the device has been suspended by pm_runtime
->> and the MII code tries to access the bus then there is a possiblity
->
->     s/possiblity/possibility/.
+The clk_div_table for cpg_sd01_div_table[] concurs with the manual
+but not with values found in the device itself (which are also the
+same as the ones in arch/arm/mach-shmobile/clock-r8a7790.c).
 
-ta, will fix.
+Update the clk-rcar-gen2.c driver to have the same table as the one
+used by the mach-shmobile driver which work once further issues are
+fixed in the clk-rcar-gen2.c driver.
 
->> that it will fail to read any data from the MII bus.
->
->> Change the MDIO read and write calls to be wrappered by calls to
->
->     s/wrappered/wrapped/.
+Part of the fix for the following error where the driver reports the
+output as 1MHz but is really 97.5MHz:
+    sh_mobile_sdhi ee100000.sd: mmc0 base at 0xee100000 clock rate 1 MHz
 
-ta.
+[ben.dooks@codethink.co.uk: updated patch description]
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
+Reviewed-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/clk/shmobile/clk-rcar-gen2.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-
->> pm_runtime_{get,put}_sync so that the device will be enabled during
->> these calls. It is put here to avoid having to enable and disable
->> the clock for every bit that is sent by the MII bit-banging code.
->
->> This has been exposed by the change to using OF and a fix to enable
->> the pm_runtime clock management which seems to have been broken for
->> some time for the device-tree booted Renesas kernels.
->
->     What fix to enable run-time PM are you talking about?
-
-building drivers/sh/pm_runtime.c for the multiplatform case.
-
-
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
+index a59ec21..df4a1e6 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -170,6 +170,8 @@ static const struct clk_div_table cpg_sdh_div_table[] = {
+ };
+ 
+ static const struct clk_div_table cpg_sd01_div_table[] = {
++	{  0,  2 }, {  1,  3 }, {  2,  4 }, {  3,  6 },
++	{  4,  8 },
+ 	{  5, 12 }, {  6, 16 }, {  7, 18 }, {  8, 24 },
+ 	{ 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
+ };
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.10.4
+
