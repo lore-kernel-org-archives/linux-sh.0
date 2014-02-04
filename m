@@ -1,65 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:18:55 +0000
-Subject: [PATCH 03/21] ARM: shmobile: bockw: use HPBIF DMAEngine for sound
-Message-Id: <88bf7f6846dea22bd50f8abf4c30530bbe2b6424.1391665225.git.horms+renesas@verge.net.au>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 04 Feb 2014 18:48:23 +0000
+Subject: [PATCH 4/4] ARM: shmobile: koelsch: Enable VIN SoC camera in defconfig
+Message-Id: <1391539703-5787-5-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This enables R-Car VIN SoC camera along with
+the ADV7180 I2C decoder in koelsch_defconfig.
 
-R-Car sound driver is supporting Mem <-> SRU <-> SSI
-transfer via DMAEngine.
-The sound will be less noise if it uses SRU path
-since it has FIFO.
-This patch supports it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 22 +++++++++++++++-------
- 1 file changed, 15 insertions(+), 7 deletions(-)
+ arch/arm/configs/koelsch_defconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index bdb78a7..24b4161 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -332,16 +332,24 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
- 	RSND_SSI_UNUSED, /* SSI 0 */
- 	RSND_SSI_UNUSED, /* SSI 1 */
- 	RSND_SSI_UNUSED, /* SSI 2 */
--	RSND_SSI_SET(1, HPBDMA_SLAVE_SSI3_TX, gic_iid(0x85), RSND_SSI_PLAY),
--	RSND_SSI_SET(2, HPBDMA_SLAVE_SSI4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
--	RSND_SSI_SET(0, HPBDMA_SLAVE_SSI5_TX, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(0, HPBDMA_SLAVE_SSI6_RX, gic_iid(0x86), 0),
--	RSND_SSI_SET(3, HPBDMA_SLAVE_SSI7_TX, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(4, HPBDMA_SLAVE_SSI8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
-+	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
-+	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
-+	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
-+	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
- };
- 
- static struct rsnd_scu_platform_info rsnd_scu[9] = {
--	/* no member at this point */
-+	{ .flags = 0, }, /* SRU 0 */
-+	{ .flags = 0, }, /* SRU 1 */
-+	{ .flags = 0, }, /* SRU 2 */
-+	{ .flags = RSND_SCU_USE_HPBIF, },
-+	{ .flags = RSND_SCU_USE_HPBIF, },
-+	{ .flags = RSND_SCU_USE_HPBIF, },
-+	{ .flags = RSND_SCU_USE_HPBIF, },
-+	{ .flags = RSND_SCU_USE_HPBIF, },
-+	{ .flags = RSND_SCU_USE_HPBIF, },
- };
- 
- enum {
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index c3b3c9d..96563fd 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -67,6 +67,13 @@ CONFIG_I2C_RCAR=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_VIDEO_RCAR_VIN=y
++# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
++CONFIG_VIDEO_ADV7180=y
+ # CONFIG_HID is not set
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_NEW_LEDS=y
 -- 
-1.8.5.2
+1.8.3.1
 
