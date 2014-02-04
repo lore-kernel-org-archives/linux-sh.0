@@ -1,26 +1,36 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 24 Feb 2014 00:28:49 +0000
-Subject: Re: [PATCH v2 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
-Message-Id: <20140224002849.GB3898@verge.net.au>
+Date: Tue, 04 Feb 2014 06:47:27 +0000
+Subject: Re: [PATCH 0/8] ARM: shmobile: Conditionally select SMSC_PHY
+Message-Id: <20140204064727.GA25513@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392908239-22645-1-git-send-email-geert@linux-m68k.org>
- <1392908239-22645-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392908239-22645-2-git-send-email-geert@linux-m68k.org>
+References: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1389084488-25984-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 20, 2014 at 03:57:19PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Tue, Jan 07, 2014 at 05:48:00PM +0900, Simon Horman wrote:
+> Select the SMSC_PHY if ethernet is enabled on shmbile boards
+> that have an SMSC phy. This allows the SMSC-specific phy driver
+> to be used rather than relying on generic phy code.
 > 
-> Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
-> board code.
+> Based on the renesas-devel-v3.13-rc7-20140107 tag
+> of my renesas tree.
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v2:
->   - Add Tested-by
+> Simon Horman (8):
+>   ARM: shmobile: ape6evm: Conditionally select SMSC_PHY
+>   ARM: shmobile: armadillo800eva: Conditionally select SMSC_PHY
+>   ARM: shmobile: bockw: Sort Kconfig node's selections
+>   ARM: shmobile: bockw: Conditionally select SMSC_PHY
+>   ARM: shmobile: kzm9d: Conditionally select SMSC_PHY
+>   ARM: shmobile: kzm9g: Conditionally select SMSC_PHY
+>   ARM: shmobile: mackerel: Conditionally select SMSC_PHY
+>   ARM: shmobile: marzen: Conditionally select SMSC_PHY
+> 
+>  arch/arm/mach-shmobile/Kconfig | 16 ++++++++++++++--
+>  1 file changed, 14 insertions(+), 2 deletions(-)
 
-Thanks, I have queued this up.
+To my surprise I have discovered that the bockw and kzm9g boards
+do not boot using NFS root if SMSC_PHY enabled. I have dropped
+the SMSC_PHY patches for those boards pending investigation.
