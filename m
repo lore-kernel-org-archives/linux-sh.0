@@ -1,125 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:42 +0000
-Subject: [PATCH 04/27] clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
-Message-Id: <1392339605-20691-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:24:02 +0000
+Subject: [PATCH v4 08/11] ARM: shmobile: koelsch defconfig: Enable RSPI and MTD_M25P80
+Message-Id: <1391527445-14881-9-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The mapbase variable points to the mapped base address of the channel,
-rename it to mapbase_sh. mapbase_str points to the mapped base address
-of the CMT device, rename it to mapbase.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This enables support for the Spansion s25fl512s SPI FLASH on QSPI.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/clocksource/sh_cmt.c | 34 +++++++++++++++++-----------------
- 1 file changed, 17 insertions(+), 17 deletions(-)
+v4:
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+v3:
+  - No changes
+v2:
+  - No changes
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 3a3cc83..1ac84ff 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -57,8 +57,8 @@ struct sh_cmt_channel {
- struct sh_cmt_device {
- 	struct platform_device *pdev;
- 
-+	void __iomem *mapbase_ch;
- 	void __iomem *mapbase;
--	void __iomem *mapbase_str;
- 	struct clk *clk;
- 
- 	struct sh_cmt_channel channel;
-@@ -127,41 +127,41 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
- 
- static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->cmt->mapbase_str, 0);
-+	return ch->cmt->read_control(ch->cmt->mapbase, 0);
- }
- 
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->cmt->mapbase, CMCSR);
-+	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
- }
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_count(ch->cmt->mapbase, CMCNT);
-+	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
- }
- 
- static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->cmt->mapbase_str, 0, value);
-+	ch->cmt->write_control(ch->cmt->mapbase, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->cmt->mapbase, CMCSR, value);
-+	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->cmt->mapbase, CMCNT, value);
-+	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
- }
- 
- static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->cmt->mapbase, CMCOR, value);
-+	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
- }
- 
- static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
-@@ -767,18 +767,18 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 	/* optional resource for the shared timer start/stop register */
- 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
- 
--	/* map memory, let mapbase point to our channel */
--	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
--	if (cmt->mapbase = NULL) {
-+	/* map memory, let mapbase_ch point to our channel */
-+	cmt->mapbase_ch = ioremap_nocache(res->start, resource_size(res));
-+	if (cmt->mapbase_ch = NULL) {
- 		dev_err(&cmt->pdev->dev, "failed to remap I/O memory\n");
- 		goto err0;
- 	}
- 
- 	/* map second resource for CMSTR */
--	cmt->mapbase_str = ioremap_nocache(res2 ? res2->start :
--					   res->start - cfg->channel_offset,
--					   res2 ? resource_size(res2) : 2);
--	if (cmt->mapbase_str = NULL) {
-+	cmt->mapbase = ioremap_nocache(res2 ? res2->start :
-+				       res->start - cfg->channel_offset,
-+				       res2 ? resource_size(res2) : 2);
-+	if (cmt->mapbase = NULL) {
- 		dev_err(&cmt->pdev->dev, "failed to remap I/O second memory\n");
- 		goto err1;
- 	}
-@@ -830,9 +830,9 @@ err4:
- err3:
- 	clk_put(cmt->clk);
- err2:
--	iounmap(cmt->mapbase_str);
--err1:
- 	iounmap(cmt->mapbase);
-+err1:
-+	iounmap(cmt->mapbase_ch);
- err0:
- 	return ret;
- }
+ arch/arm/configs/koelsch_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 30157975998a..ca8aa070befe 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -40,6 +40,8 @@ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_ATA=y
+ CONFIG_SATA_RCAR=y
++CONFIG_MTD=y
++CONFIG_MTD_M25P80=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_ARC is not set
+ # CONFIG_NET_CADENCE is not set
+@@ -62,6 +64,8 @@ CONFIG_SH_ETH=y
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
++CONFIG_SPI=y
++CONFIG_SPI_RSPI=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
 -- 
-1.8.3.2
+1.7.9.5
 
