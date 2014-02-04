@@ -1,51 +1,67 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Fri, 28 Feb 2014 17:28:42 +0000
-Subject: [PATCH 6/7] PCI: designware: use new OF interrupt mapping when possible
-Message-Id: <1393608523-17509-7-git-send-email-l.stach@pengutronix.de>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Tue, 04 Feb 2014 18:17:38 +0000
+Subject: [PATCH 3/3] clk: shmobile: handle multiple parent clocks for cpg clocks
+Message-Id: <1391537858-28593-4-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+References: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is the recommended method of doing the IRQ
-mapping. For old devicetrees we fall back to the
-previous practice.
+The current action on registering the cpg_clocks is to have
+them all registered with a single parent clock. This is not
+the correct action, as some of the clocks such as the SDHI
+and QSPI are actually parented to PLL1 or PLL1/2.
 
-Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+This also requires a change to the device-tree files to make
+sure that appropriate parent clocks are assigned.
+
+[ben.dooks@codethink.co.uk: updated patch description]
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
+Reviewed-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- drivers/pci/host/pcie-designware.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ drivers/clk/shmobile/clk-rcar-gen2.c |   11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
-index 17ce88f79d2b..3e0c2af11528 100644
---- a/drivers/pci/host/pcie-designware.c
-+++ b/drivers/pci/host/pcie-designware.c
-@@ -17,6 +17,7 @@
- #include <linux/module.h>
- #include <linux/msi.h>
- #include <linux/of_address.h>
-+#include <linux/of_pci.h>
- #include <linux/pci.h>
- #include <linux/pci_regs.h>
- #include <linux/types.h>
-@@ -738,8 +739,13 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
- static int dw_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
+index df4a1e6..57bc2e4 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -185,7 +185,7 @@ static u32 cpg_mode __initdata;
+ static struct clk * __init
+ rcar_gen2_cpg_register_clock(struct device_node *np, struct rcar_gen2_cpg *cpg,
+ 			     const struct cpg_pll_config *config,
+-			     const char *name)
++			     const char *name, int index)
  {
- 	struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
-+	int irq;
+ 	const struct clk_div_table *table = NULL;
+ 	const char *parent_name = "main";
+@@ -193,8 +193,13 @@ rcar_gen2_cpg_register_clock(struct device_node *np, struct rcar_gen2_cpg *cpg,
+ 	unsigned int mult = 1;
+ 	unsigned int div = 1;
  
--	return pp->irq;
-+	irq = of_irq_parse_and_map_pci(dev, slot, pin);
-+	if (!irq)
-+		irq = pp->irq;
++	parent_name = of_clk_get_parent_name(np, index);
++	if (!parent_name) {
++		pr_err("no parent set for clocks array\n");
++		return ERR_PTR(-ENOENT);
++	}
 +
-+	return irq;
- }
+ 	if (!strcmp(name, "main")) {
+-		parent_name = of_clk_get_parent_name(np, 0);
+ 		div = config->extal_div;
+ 	} else if (!strcmp(name, "pll0")) {
+ 		/* PLL0 is a configurable multiplier clock. Register it as a
+@@ -279,7 +284,7 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
+ 		of_property_read_string_index(np, "clock-output-names", i,
+ 					      &name);
  
- static void dw_pcie_add_bus(struct pci_bus *bus)
+-		clk = rcar_gen2_cpg_register_clock(np, cpg, config, name);
++		clk = rcar_gen2_cpg_register_clock(np, cpg, config, name, i);
+ 		if (IS_ERR(clk))
+ 			pr_err("%s: failed to register %s %s clock (%ld)\n",
+ 			       __func__, np->name, name, PTR_ERR(clk));
 -- 
-1.8.5.3
+1.7.10.4
 
