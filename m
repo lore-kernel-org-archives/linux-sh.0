@@ -1,65 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:36 +0000
-Subject: [PATCH 9/9] ARM: shmobile: Remove legacy r8a7790 DT clocks
-Message-Id: <df55f6685a04a259cf59cd3fde02212b294461cc.1393401266.git.horms+renesas@verge.net.au>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 04 Feb 2014 18:43:27 +0000
+Subject: Re: [PATCH] regulator: gpio: bugfix: add gpios-status for DT
+Message-Id: <20140204184327.GS22609@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="0Cw7BmXaMEMLlkEt"
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393401266.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <87eh3o7mfc.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87eh3o7mfc.wl%kuninori.morimoto.gx@gmail.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-The DT device case is handled by CCF these days, so get
-rid of DT devices from the legacy clocks for r8a7790.
+--0Cw7BmXaMEMLlkEt
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 11 -----------
- 1 file changed, 11 deletions(-)
+On Thu, Jan 30, 2014 at 09:25:14PM -0800, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> config->gpios[x].flags indicates initial pin status,
+> and it will be used for drvdata->state
+> on gpio_regulator_probe().
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 08a2803..02b94036 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -328,34 +328,23 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
--	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
--	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
--	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
--	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
- 	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
- 	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
- 	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
--	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
- 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP501]),
--	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
--- 
-1.8.5.2
+I've applied this, thanks.  However, a couple of things that it'd be
+nice to improve with followup patches:
 
+> +- gpios-states		: gpios pin's initial states. 1 means HIGH
+
+A mention that this is an array of values would be good (it's clear from
+the code but not from the document), as would saying that the defualt is
+low if nothing is specified.
+
+> +		if (proplen !=3D config->nr_gpios) {
+> +			/* gpios <-> gpios-states mismatch */
+> +			prop =3D NULL;
+> +		}
+> +	}
+
+It's probably worth printing a warning here.
+
+--0Cw7BmXaMEMLlkEt
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS8TTMAAoJELSic+t+oim9W6UP/3PDE+LPAIdzs3IBanyL823M
+/+Jty5iOx7QATH17C5e/RDvk3CKFTGHE+8AqtJnF3GogJzQ8DGI4kjJ41ZshxSNA
+6b6d3QhLU71DWYc1VBINqpFIJEIZricE/wNTsgLDLvhwVjYd4ujwds+YSLLHIcSG
+s6V2bkll5owymtibpYZteAr7wbTOt9/yZSuysxTYX/Ry0AUA7xvTn0UEy0nJ7gv+
+BbinLY2tLqoR6fjdiEZZDbosZb1MSj09bKpAL5cAgukTkqZFyJtvfhEkrOxMZgml
+X4EfbcihiPIijpFeeRPhyuj9dyY5SflfgWkVjdLaDpLeAIM/lMhA+cONj/i8SnPM
+wmUiIVcm8el99YrjXTup9M2f7qRsan+TeEAsM5RVwZTU8A4CGdVh1BRVMG2gsSE4
+3ucfPXyL0eea+aOWDUfKD3UGWomm6d6gXZ+tjve85Z5ZhJPNon0mI+VYinVSLKPu
+K7FoUraohY9ZKbBMwqyhIHAf5Hr265T2a2/q0zRms5wMm8XLdb7y8vHfSns9DdIz
+WXA/cdKYJ+ogeyeI8Ymw25Py4Gsedlddi4k7lwN4KIJ8JjKmogneDpuaQCvTv3UL
+3QymemnNj9ttgDVXryQXTSUfWmTQvEgfjyJrlMUmPy8tyBUvjM2oiuq8dGcLjaFl
+ZR1DBIay4JW9EWNPcz7N
+=yvkP
+-----END PGP SIGNATURE-----
+
+--0Cw7BmXaMEMLlkEt--
