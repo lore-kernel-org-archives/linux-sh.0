@@ -1,47 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:18:53 +0000
-Subject: [PATCH 01/21] ARM: shmobile: Lager: conditionally select CONFIG_MICREL_PHY
-Message-Id: <a2a4759b5262979cbe4bc1f681ec5a6ab064fce3.1391665225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:23:58 +0000
+Subject: [PATCH v3 04/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+Message-Id: <1391527445-14881-5-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Now that support for KSZ8041RNLI is added to the Micrel PHY driver and we intend
-to support PHY IRQs on the Lager board, we have to enable the Micrel driver.
-Do this by selecting CONFIG_MICREL_PHY for Lager if CONFIG_SH_ETH is enabled.
+Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
+clock framework yet.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+v3:
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+v2:
+  - No changes
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 3386406..a127252 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -54,6 +54,7 @@ config MACH_KZM9D
- config MACH_LAGER
- 	bool "Lager board"
- 	depends on ARCH_R8A7790
-+	select MICREL_PHY if SH_ETH
- 
- comment "Renesas ARM SoCs System Configuration"
- endif
-@@ -261,6 +262,7 @@ config MACH_LAGER
- 	bool "Lager board"
- 	depends on ARCH_R8A7790
- 	select USE_OF
-+	select MICREL_PHY if SH_ETH
- 
- config MACH_KOELSCH
- 	bool "Koelsch board"
+ arch/arm/mach-shmobile/clock-r7s72100.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index ffb0fff41375..71c99feeff01 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -191,6 +191,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
++	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
 -- 
-1.8.5.2
+1.7.9.5
 
