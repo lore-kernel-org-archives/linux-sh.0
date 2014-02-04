@@ -1,118 +1,109 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:13:56 +0000
-Subject: [PATCH 07/12] ARM: shmobile: r8a7790: add audio clock
-Message-Id: <03850dd7aaa922424529e9c1374f2724bc7c33be.1392278855.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:23:56 +0000
+Subject: [PATCH v5 02/11] ARM: shmobile: genmai legacy: Add RSPI support
+Message-Id: <1391527445-14881-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
+References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Current audio clock doesn't have dependency to device/driver,
-but, it is not good design for DT support.
-To avoid branch merge conflict issue,
-it uses this load map, and this patch is 1) part.
- 1) add old/new style clock in platform
- 2) add new style clock method in driver
- 3) remove old tyle clock from platform
+Add RSPI platform device, resources, platform data, and SPI child.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On this board, only rspi4 is in use. Its bus contains a single device
+(a wm8978 audio codec).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7790.dtsi         | 23 +++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7790.c | 20 ++++++++++++++++++++
- 2 files changed, 43 insertions(+)
+v5:
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+v4:
+  - The platform device basename was changed from "rspi" to "rspi-rz",
+    dropping the platform data flags in the process
+  - Switch to named IRQs
+v3:
+  - Move platform devices from setup-r7s72100.c to board-genmai.c, as
+    genmai-reference will use devices instantiated from DT
+  - Merge with "ARM: shmobile: genmai: Add RSPI children", as this now
+    touches the same file
+  - Instantiate SPI children in C on genmai only, as genmai-reference will
+    instantiate them from DT
+v2:
+  - Correct platform device names ("rspi%u.0" -> "rspi.%u")
+  - Add missing platform data
+  - Correct summary (resources -> platform devices)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 71b1251..67a6d96 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -313,6 +313,29 @@
- 			clock-output-names = "extal";
- 		};
+ arch/arm/mach-shmobile/board-genmai.c |   44 +++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 3e92e3c62d4c..c4064610e223 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,15 +20,59 @@
  
-+		/*
-+		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
-+		 * default. Boards that provide audio clocks should override them.
-+		 */
-+		audio_clk_a: audio_clk_a {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_a";
-+		};
-+		audio_clk_b: audio_clk_b {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_b";
-+		};
-+		audio_clk_c: audio_clk_c {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "audio_clk_c";
-+		};
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/spi/rspi.h>
++#include <linux/spi/spi.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* RSPI */
++#define RSPI_RESOURCE(idx, baseaddr, irq)				\
++static const struct resource rspi##idx##_resources[] __initconst = {	\
++	DEFINE_RES_MEM(baseaddr, 0x24),					\
++	DEFINE_RES_IRQ_NAMED(irq, "error"),				\
++	DEFINE_RES_IRQ_NAMED(irq + 1, "rx"),				\
++	DEFINE_RES_IRQ_NAMED(irq + 2, "tx"),				\
++}
 +
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7790-cpg-clocks",
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 507073e..08a2803 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -91,6 +91,15 @@ static struct clk main_clk = {
- 	.ops	= &followparent_clk_ops,
- };
- 
-+static struct clk audio_clk_a = {
++RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
++RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
++RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
++RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
++RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
++
++static const struct rspi_plat_data rspi_pdata __initconst = {
++	.num_chipselect	= 1,
 +};
 +
-+static struct clk audio_clk_b = {
++#define r7s72100_register_rspi(idx)					   \
++	platform_device_register_resndata(&platform_bus, "rspi-rz", idx,   \
++					rspi##idx##_resources,		   \
++					ARRAY_SIZE(rspi##idx##_resources), \
++					&rspi_pdata, sizeof(rspi_pdata))
++
++static const struct spi_board_info spi_info[] __initconst = {
++	{
++		.modalias               = "wm8978",
++		.max_speed_hz           = 5000000,
++		.bus_num                = 4,
++		.chip_select            = 0,
++	},
 +};
 +
-+static struct clk audio_clk_c = {
-+};
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
 +
- /*
-  * clock ratio of these clock will be updated
-  * on r8a7790_clock_init()
-@@ -124,6 +133,9 @@ SH_FIXED_RATIO_CLK_SET(ddr_clk,			pll3_clk,	1, 8);
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
++	r7s72100_register_rspi(0);
++	r7s72100_register_rspi(1);
++	r7s72100_register_rspi(2);
++	r7s72100_register_rspi(3);
++	r7s72100_register_rspi(4);
++	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ }
  
- static struct clk *main_clks[] = {
-+	&audio_clk_a,
-+	&audio_clk_b,
-+	&audio_clk_c,
- 	&extal_clk,
- 	&extal_div2_clk,
- 	&main_clk,
-@@ -267,6 +279,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- static struct clk_lookup lookups[] = {
- 
- 	/* main clocks */
-+	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
-+	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
-+	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
-+	CLKDEV_CON_ID("audio_clk_internal",	&m2_clk),
- 	CLKDEV_CON_ID("extal",		&extal_clk),
- 	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
- 	CLKDEV_CON_ID("main",		&main_clk),
-@@ -357,6 +373,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
- 	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
- 	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
-+	CLKDEV_ICK_ID("clk_a", "rcar_sound", &audio_clk_a),
-+	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
-+	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
-+	CLKDEV_ICK_ID("clk_i", "rcar_sound", &m2_clk),
- 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP1015]),
- 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP1014]),
- 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP1013]),
+ static const char * const genmai_boards_compat_dt[] __initconst = {
 -- 
-1.8.5.2
+1.7.9.5
 
