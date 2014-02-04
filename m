@@ -1,89 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 18 Feb 2014 11:45:42 +0000
-Subject: Re: [PATCH 23/27] clocksource: sh_cmt: Add DT support
-Message-Id: <7960294.4iO1tboz2Y@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Feb 2014 00:57:41 +0000
+Subject: Re: [PATCH 1/3] mmc: tmio-mmc: add DMA SG synchronisation
+Message-Id: <20140204005741.GC24787@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <3240866.imZR2oMAtf@avalon>
- <CANqRtoQFeX0y3A9ojKMo8ao+PRFiCzcmjfOqexBRzv-4P1s7Uw@mail.gmail.com>
-In-Reply-To: <CANqRtoQFeX0y3A9ojKMo8ao+PRFiCzcmjfOqexBRzv-4P1s7Uw@mail.gmail.com>
+References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
+ <Pine.LNX.4.64.1401311248320.3234@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1401311248320.3234@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
-
-On Tuesday 18 February 2014 09:51:30 Magnus Damm wrote:
-> On Tue, Feb 18, 2014 at 6:43 AM, Laurent Pinchart wrote:
-> > On Monday 17 February 2014 10:48:55 Magnus Damm wrote:
-> >> On Mon, Feb 17, 2014 at 10:45 AM, Laurent Pinchart wrote:
-> >> > On Saturday 15 February 2014 02:22:00 Magnus Damm wrote:
-> >> >> On Sat, Feb 15, 2014 at 1:12 AM, Laurent Pinchart wrote:
-> >> >> > On Saturday 15 February 2014 01:01:30 Magnus Damm wrote:
-> >> >> >> On Sat, Feb 15, 2014 at 12:53 AM, Laurent Pinchart wrote:
-
-[snip]
-
-> >> >> >> > There's still one piece of Linux-specific data I need though, as
-> >> >> >> > I need to specify for each channel whether to use it as a clock
-> >> >> >> > source device, a clock event device, both of them or none. That's
-> >> >> >> > configuration information that needs to be provided somehow.
-> >> >> >> 
-> >> >> >> I think you can decide clock source or clock event assignment based
-> >> >> >> on number of channels available. If you have only a single channel
-> >> >> >> then both clock event and clock source need to be supported.
-> >> >> >> Otherwise use one channel for clock source and the rest for clock
-> >> >> >> events.
-> >> >> > 
-> >> >> > That won't match the current situation. Look at CMT0 in r8a7790 for
-> >> >> > instance. There's two hardware channels available, and we only use
-> >> >> > the first one, for clock events only.
-> >> >> 
-> >> >> You are correct. The reason for that is that the CMT driver today is
-> >> >> optimized for combined clock event and clock source operation.
-> >> >> 
-> >> >> Historically the hardware it initially was written for (sh-mobile on
-> >> >> the SH arch) only had a single timer channel so combined operation was
-> >> >> required for tickless to work. But since you're asking how to allocate
-> >> >> channels then I propose checking numbers of channels available and go
-> >> >> from there. With that the r8a7790 support can only get better. =)
-
-[snip]
-
-> > Nonetheless, specifying which timer channel to use as a clock source and
-> > which channel to use as a clock event device might need to be specified
-> > in DT (or somewhere else, but I'm not sure what other options we have
-> > here).
->
-> I disagree about the need for specifying clock source or clock event channel
-> in DT.  Since per-cpu timers is out of scope for now then why don't we
-> simply just let the driver automatically allocate the during run-time?
+On Fri, Jan 31, 2014 at 12:54:19PM +0100, Guennadi Liakhovetski wrote:
+> According to the DMA API data has to be synchronised before starting
+> a DMA transfer to device and after completing a DMA transfer from device.
 > 
-> In case one CMT channel exists:
-> Use that for both clock source and clock event.
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
+> ---
+>  drivers/mmc/host/tmio_mmc_dma.c |   21 ++++++++++++---------
+>  1 files changed, 12 insertions(+), 9 deletions(-)
 > 
-> In case more than one CMT channel exists:
-> Use one separate channel for clock source and one separate channel for clock
-> event.
+> diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+> index 65edb4a..a997b94 100644
+> --- a/drivers/mmc/host/tmio_mmc_dma.c
+> +++ b/drivers/mmc/host/tmio_mmc_dma.c
+> @@ -168,9 +168,12 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
+>  	}
+>  
+>  	ret = dma_map_sg(chan->device->dev, sg, host->sg_len, DMA_TO_DEVICE);
+> -	if (ret > 0)
+> +	if (ret > 0) {
+> +		dma_sync_sg_for_device(chan->device->dev, sg, host->sg_len,
+> +				       DMA_TO_DEVICE);
+>  		desc = dmaengine_prep_slave_sg(chan, sg, ret,
+>  			DMA_MEM_TO_DEV, DMA_CTRL_ACK);
+> +	}
+>  
+>  	if (desc) {
+>  		cookie = dmaengine_submit(desc);
+> @@ -247,14 +250,14 @@ static void tmio_mmc_tasklet_fn(unsigned long arg)
+>  	if (!host->data)
+>  		goto out;
+>  
+> -	if (host->data->flags & MMC_DATA_READ)
+> -		dma_unmap_sg(host->chan_rx->device->dev,
+> -			     host->sg_ptr, host->sg_len,
+> -			     DMA_FROM_DEVICE);
+> -	else
+> -		dma_unmap_sg(host->chan_tx->device->dev,
+> -			     host->sg_ptr, host->sg_len,
+> -			     DMA_TO_DEVICE);
+> +	if (host->data->flags & MMC_DATA_READ) {
+> +		struct device *dev = host->chan_rx->device->dev;
+> +		dma_unmap_sg(dev, host->sg_ptr, host->sg_len, DMA_FROM_DEVICE);
+> +		dma_sync_sg_for_cpu(dev, host->sg_ptr, host->sg_len, DMA_FROM_DEVICE);
+> +	} else {
+> +		struct device *dev = host->chan_tx->device->dev;
+> +		dma_unmap_sg(dev, host->sg_ptr, host->sg_len, DMA_TO_DEVICE);
+> +	}
+>  
+>  	tmio_mmc_do_data_irq(host);
+>  out:
+> -- 
+> 1.7.2.5
 > 
-> That would cover our existing use case, no?
-
-One of the issues with that approach is that the decision on what to use a 
-channel for will be taken locally from a timer point of view, without a global 
-system-wide view. When more than one timer is available for a given platform 
-(several CMT instances for instance, or CMT + TMU) the driver will decide on 
-how to configure each instance without taking the other timers into account. 
-Beside leading to creating more clock sources and clock event devices than 
-today (is that a problem ?), couldn't it also lead to taking sub-optimal 
-decisions ?
-
-You also mentioned that only a subset of channels have the ability to run 
-during sleep states. I suppose this needs to be taken into account as well. 
-Could you please elaborate on our requirements in that area ?
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
