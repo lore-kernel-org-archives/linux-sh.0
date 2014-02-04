@@ -1,39 +1,107 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 13 Feb 2014 05:35:54 +0000
-Subject: Re: [PATCH 0/2 v3]: ARM: shmobile: lager: add SDHI0/2 support for legacy/DT
-Message-Id: <878utfd16w.wl%kuninori.morimoto.gx@gmail.com>
+From: Balaji T K <balajitk@ti.com>
+Date: Tue, 04 Feb 2014 12:48:47 +0000
+Subject: Re: [PATCH/RFC] dmaengine: omap-dma: split header file
+Message-Id: <52F0DEDF.1080704@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fvnnd4aw.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87fvnnd4aw.wl%kuninori.morimoto.gx@gmail.com>
+References: <20140119100235.GN27282@n2100.arm.linux.org.uk>
+ <1390582316-4765-1-git-send-email-balajitk@ti.com>
+In-Reply-To: <1390582316-4765-1-git-send-email-balajitk@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+On Friday 24 January 2014 10:21 PM, Balaji T K wrote:
+> To Resolve build failure seen with sh-allmodconfig:
+>      include/linux/omap-dma.h:171:8: error: expected identifier before numeric constant
+>      make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
+> due to CCR redefinition, move dmaengine consumer specific function to omap-dmaengine.h
+>
+> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Signed-off-by: Balaji T K <balajitk@ti.com>
+Hi Russell,
 
-Hi Simon
+Ping,
+If this patch looks OK, I can drop RFC and post as Patch, let me know.
 
-Sorry many times...
-Magnus pointed that this #2 patch was not based on r-car-sdhi driver
-Give me v4 chance
+Thanks and Regards,
+Balaji T K
 
-> Cc Magnus
-> 
-> These are v3 patch of SDHI0/2 support for lager.
-> These are based on...
-> 
->   renesas-devel-v3.14-rc1-20140207
-> + sh-arm/topic/r-car-sdhi
-> + git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git :: /topic/gpio
-> 
-> 
-> > These are v2 patch of SDHI0/2 support for Lager.
-> > #1 is same one, #2 patch was updated
-> > 
-> > Kuninori Morimoto (2):
-> >       ARM: shmobile: lager: add SDHI0/2 support
-> >       ARM: shmobile: lager: add SDHI0/2 support on DTS
-> > 
-> >  arch/arm/boot/dts/r8a7790-lager.dts  |   84 ++++++++++++++++++++++++++++++++++
-> >  arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++
-> >  2 files changed, 148 insertions(+)
+> ---
+>   drivers/mmc/host/omap_hsmmc.c  |    2 +-
+>   include/linux/omap-dma.h       |   19 +------------------
+>   include/linux/omap-dmaengine.h |   21 +++++++++++++++++++++
+>   3 files changed, 23 insertions(+), 19 deletions(-)
+>   create mode 100644 include/linux/omap-dmaengine.h
+>
+> diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
+> index dbd32ad..2f57e36 100644
+> --- a/drivers/mmc/host/omap_hsmmc.c
+> +++ b/drivers/mmc/host/omap_hsmmc.c
+> @@ -31,7 +31,7 @@
+>   #include <linux/of.h>
+>   #include <linux/of_gpio.h>
+>   #include <linux/of_device.h>
+> -#include <linux/omap-dma.h>
+> +#include <linux/omap-dmaengine.h>
+>   #include <linux/mmc/host.h>
+>   #include <linux/mmc/core.h>
+>   #include <linux/mmc/mmc.h>
+> diff --git a/include/linux/omap-dma.h b/include/linux/omap-dma.h
+> index 7af25a9..6aa97e5 100644
+> --- a/include/linux/omap-dma.h
+> +++ b/include/linux/omap-dma.h
+> @@ -1,23 +1,6 @@
+> -/*
+> - * OMAP DMA Engine support
+> - *
+> - * This program is free software; you can redistribute it and/or modify
+> - * it under the terms of the GNU General Public License version 2 as
+> - * published by the Free Software Foundation.
+> - */
+>   #ifndef __LINUX_OMAP_DMA_H
+>   #define __LINUX_OMAP_DMA_H
+> -
+> -struct dma_chan;
+> -
+> -#if defined(CONFIG_DMA_OMAP) || defined(CONFIG_DMA_OMAP_MODULE)
+> -bool omap_dma_filter_fn(struct dma_chan *, void *);
+> -#else
+> -static inline bool omap_dma_filter_fn(struct dma_chan *c, void *d)
+> -{
+> -	return false;
+> -}
+> -#endif
+> +#include <linux/omap-dmaengine.h>
+>
+>   /*
+>    *  Legacy OMAP DMA handling defines and functions
+> diff --git a/include/linux/omap-dmaengine.h b/include/linux/omap-dmaengine.h
+> new file mode 100644
+> index 0000000..2b0b6aa
+> --- /dev/null
+> +++ b/include/linux/omap-dmaengine.h
+> @@ -0,0 +1,21 @@
+> +/*
+> + * OMAP DMA Engine support
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License version 2 as
+> + * published by the Free Software Foundation.
+> + */
+> +#ifndef __LINUX_OMAP_DMAENGINE_H
+> +#define __LINUX_OMAP_DMAENGINE_H
+> +
+> +struct dma_chan;
+> +
+> +#if defined(CONFIG_DMA_OMAP) || defined(CONFIG_DMA_OMAP_MODULE)
+> +bool omap_dma_filter_fn(struct dma_chan *, void *);
+> +#else
+> +static inline bool omap_dma_filter_fn(struct dma_chan *c, void *d)
+> +{
+> +	return false;
+> +}
+> +#endif
+> +#endif /* __LINUX_OMAP_DMAENGINE_H */
+>
+
