@@ -1,224 +1,146 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 22 Feb 2014 14:03:39 +0000
-Subject: [PATCH] sh: Prefix sh-specific "CCR" and "CCR2" by "SH_"
-Message-Id: <1393077819-18872-1-git-send-email-geert@linux-m68k.org>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Tue, 04 Feb 2014 18:48:21 +0000
+Subject: [PATCH V4 2/4] ARM: shmobile: koelsch: Add VIN1 SoC camera support
+Message-Id: <1391539703-5787-3-git-send-email-valentine.barshak@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-commit bcf24e1daa94f4c52ef7a3f657e43cc6bc50d46b ("mmc: omap_hsmmc: use the
-generic config for omap2plus devices"), enabled the build for other
-platforms for compile testing.
+This adds VIN1 SoC camera along with ADV7180 subdevice support to Koelsch.
+VIN0 camera is not registered because it has ADV7612 I2C subdevice
+which is not supported yet.
 
-sh-allmodconfig now fails with:
-
-    include/linux/omap-dma.h:171:8: error: expected identifier before numeric constant
-    make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
-
-This happens because SuperH #defines "CCR", which is one of the enum values
-in include/linux/omap-dma.h. There's a similar issue with "CCR2" on sh2a.
-
-As "CCR" and "CCR2" are too generic names for global #defines, prefix them
-with "SH_" to fix this.
-
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 ---
- arch/sh/include/cpu-sh2/cpu/cache.h  |    2 +-
- arch/sh/include/cpu-sh2a/cpu/cache.h |    4 ++--
- arch/sh/include/cpu-sh3/cpu/cache.h  |    2 +-
- arch/sh/include/cpu-sh4/cpu/cache.h  |    2 +-
- arch/sh/kernel/cpu/init.c            |    4 ++--
- arch/sh/mm/cache-debugfs.c           |    2 +-
- arch/sh/mm/cache-sh2.c               |    4 ++--
- arch/sh/mm/cache-sh2a.c              |    6 ++++--
- arch/sh/mm/cache-sh4.c               |    4 ++--
- arch/sh/mm/cache-shx3.c              |    4 ++--
- arch/sh/mm/cache.c                   |    4 ++--
- 11 files changed, 20 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 76 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-diff --git a/arch/sh/include/cpu-sh2/cpu/cache.h b/arch/sh/include/cpu-sh2/cpu/cache.h
-index 673515bc4135..aa1b2b9088a7 100644
---- a/arch/sh/include/cpu-sh2/cpu/cache.h
-+++ b/arch/sh/include/cpu-sh2/cpu/cache.h
-@@ -18,7 +18,7 @@
- #define SH_CACHE_ASSOC		8
+Changes in V2:
+* made koelsch_add_vin_device function static;
+
+Changes in V3:
+* capitalized ARM in the subject;
+
+Changes in V4:
+* rebased on top of renesas-devel-v3.14-rc1-20140204 tag.
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index b9f638e..5bfd910 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -27,6 +27,7 @@
+ #include <linux/leds.h>
+ #include <linux/phy.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+@@ -35,6 +36,7 @@
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
++#include <media/soc_camera.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
- #if defined(CONFIG_CPU_SUBTYPE_SH7619)
--#define CCR		0xffffffec
-+#define SH_CCR		0xffffffec
+@@ -195,6 +197,62 @@ static void __init koelsch_add_i2c(unsigned idx)
+ 					i2c_resources + res_idx, 2);
+ }
  
- #define CCR_CACHE_CE	0x01	/* Cache enable */
- #define CCR_CACHE_WT	0x02    /* CCR[bit1=1,bit2=1] */
-diff --git a/arch/sh/include/cpu-sh2a/cpu/cache.h b/arch/sh/include/cpu-sh2a/cpu/cache.h
-index defb0baa5a06..b27ce92cb600 100644
---- a/arch/sh/include/cpu-sh2a/cpu/cache.h
-+++ b/arch/sh/include/cpu-sh2a/cpu/cache.h
-@@ -17,8 +17,8 @@
- #define SH_CACHE_COMBINED	4
- #define SH_CACHE_ASSOC		8
++/* VIN */
++static const struct resource vin_resources[] __initconst = {
++	/* VIN0 */
++	DEFINE_RES_MEM(0xe6ef0000, 0x1000),
++	DEFINE_RES_IRQ(gic_spi(188)),
++	/* VIN1 */
++	DEFINE_RES_MEM(0xe6ef1000, 0x1000),
++	DEFINE_RES_IRQ(gic_spi(189)),
++};
++
++static void __init koelsch_add_vin_device(unsigned idx,
++					  struct rcar_vin_platform_data *pdata)
++{
++	struct platform_device_info vin_info = {
++		.parent		= &platform_bus,
++		.name		= "r8a7791-vin",
++		.id		= idx,
++		.res		= &vin_resources[idx * 2],
++		.num_res	= 2,
++		.dma_mask	= DMA_BIT_MASK(32),
++		.data		= pdata,
++		.size_data	= sizeof(*pdata),
++	};
++
++	BUG_ON(idx > 1);
++
++	platform_device_register_full(&vin_info);
++}
++
++#define KOELSCH_CAMERA(idx, name, addr, pdata, flag)			\
++static struct i2c_board_info i2c_cam##idx##_device = {			\
++	I2C_BOARD_INFO(name, addr),					\
++};									\
++									\
++static struct rcar_vin_platform_data vin##idx##_pdata = {		\
++	.flags = flag,							\
++};									\
++									\
++static struct soc_camera_link cam##idx##_link = {			\
++	.bus_id = idx,							\
++	.board_info = &i2c_cam##idx##_device,				\
++	.i2c_adapter_id = 2,						\
++	.module_name = name,						\
++	.priv = pdata,							\
++}
++
++/* Camera 0 is not currently supported due to adv7612 support missing */
++KOELSCH_CAMERA(1, "adv7180", 0x20, NULL, RCAR_VIN_BT656);
++
++static void __init koelsch_add_camera1_device(void)
++{
++	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 1,
++				      &cam1_link, sizeof(cam1_link));
++	koelsch_add_vin_device(1, &vin1_pdata);
++}
++
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* DU */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
+@@ -227,6 +285,22 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* I2C4 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.4", "pfc-r8a7791",
+ 				  "i2c4_c", "i2c4"),
++	/* VIN0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
++				  "vin0_data24", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
++				  "vin0_sync", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
++				  "vin0_field", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
++				  "vin0_clkenb", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
++				  "vin0_clk", "vin0"),
++	/* VIN1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.1", "pfc-r8a7791",
++				  "vin1_data8", "vin1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.1", "pfc-r8a7791",
++				  "vin1_clk", "vin1"),
+ };
  
--#define CCR		0xfffc1000 /* CCR1 */
--#define CCR2		0xfffc1004
-+#define SH_CCR		0xfffc1000 /* CCR1 */
-+#define SH_CCR2		0xfffc1004
+ static void __init koelsch_add_standard_devices(void)
+@@ -255,6 +329,8 @@ static void __init koelsch_add_standard_devices(void)
+ 	koelsch_add_i2c(2);
+ 	koelsch_add_i2c(4);
+ 	koelsch_add_i2c(5);
++
++	koelsch_add_camera1_device();
+ }
  
  /*
-  * Most of the SH-2A CCR1 definitions resemble the SH-4 ones. All others not
-diff --git a/arch/sh/include/cpu-sh3/cpu/cache.h b/arch/sh/include/cpu-sh3/cpu/cache.h
-index bee2d81c56bf..29700fd88c75 100644
---- a/arch/sh/include/cpu-sh3/cpu/cache.h
-+++ b/arch/sh/include/cpu-sh3/cpu/cache.h
-@@ -17,7 +17,7 @@
- #define SH_CACHE_COMBINED	4
- #define SH_CACHE_ASSOC		8
- 
--#define CCR		0xffffffec	/* Address of Cache Control Register */
-+#define SH_CCR		0xffffffec	/* Address of Cache Control Register */
- 
- #define CCR_CACHE_CE	0x01	/* Cache Enable */
- #define CCR_CACHE_WT	0x02	/* Write-Through (for P0,U0,P3) (else writeback) */
-diff --git a/arch/sh/include/cpu-sh4/cpu/cache.h b/arch/sh/include/cpu-sh4/cpu/cache.h
-index 7bfb9e8b069c..92c4cd119b66 100644
---- a/arch/sh/include/cpu-sh4/cpu/cache.h
-+++ b/arch/sh/include/cpu-sh4/cpu/cache.h
-@@ -17,7 +17,7 @@
- #define SH_CACHE_COMBINED	4
- #define SH_CACHE_ASSOC		8
- 
--#define CCR		0xff00001c	/* Address of Cache Control Register */
-+#define SH_CCR		0xff00001c	/* Address of Cache Control Register */
- #define CCR_CACHE_OCE	0x0001	/* Operand Cache Enable */
- #define CCR_CACHE_WT	0x0002	/* Write-Through (for P0,U0,P3) (else writeback)*/
- #define CCR_CACHE_CB	0x0004	/* Copy-Back (for P1) (else writethrough) */
-diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
-index ecf83cd158dc..0d7360d549c1 100644
---- a/arch/sh/kernel/cpu/init.c
-+++ b/arch/sh/kernel/cpu/init.c
-@@ -112,7 +112,7 @@ static void cache_init(void)
- 	unsigned long ccr, flags;
- 
- 	jump_to_uncached();
--	ccr = __raw_readl(CCR);
-+	ccr = __raw_readl(SH_CCR);
- 
- 	/*
- 	 * At this point we don't know whether the cache is enabled or not - a
-@@ -189,7 +189,7 @@ static void cache_init(void)
- 
- 	l2_cache_init();
- 
--	__raw_writel(flags, CCR);
-+	__raw_writel(flags, SH_CCR);
- 	back_to_cached();
- }
- #else
-diff --git a/arch/sh/mm/cache-debugfs.c b/arch/sh/mm/cache-debugfs.c
-index 115725198038..777e50f33c00 100644
---- a/arch/sh/mm/cache-debugfs.c
-+++ b/arch/sh/mm/cache-debugfs.c
-@@ -36,7 +36,7 @@ static int cache_seq_show(struct seq_file *file, void *iter)
- 	 */
- 	jump_to_uncached();
- 
--	ccr = __raw_readl(CCR);
-+	ccr = __raw_readl(SH_CCR);
- 	if ((ccr & CCR_CACHE_ENABLE) = 0) {
- 		back_to_cached();
- 
-diff --git a/arch/sh/mm/cache-sh2.c b/arch/sh/mm/cache-sh2.c
-index defcf719f2e8..a74259f2f981 100644
---- a/arch/sh/mm/cache-sh2.c
-+++ b/arch/sh/mm/cache-sh2.c
-@@ -63,9 +63,9 @@ static void sh2__flush_invalidate_region(void *start, int size)
- 	local_irq_save(flags);
- 	jump_to_uncached();
- 
--	ccr = __raw_readl(CCR);
-+	ccr = __raw_readl(SH_CCR);
- 	ccr |= CCR_CACHE_INVALIDATE;
--	__raw_writel(ccr, CCR);
-+	__raw_writel(ccr, SH_CCR);
- 
- 	back_to_cached();
- 	local_irq_restore(flags);
-diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
-index 949e2d3138a0..ee87d081259b 100644
---- a/arch/sh/mm/cache-sh2a.c
-+++ b/arch/sh/mm/cache-sh2a.c
-@@ -134,7 +134,8 @@ static void sh2a__flush_invalidate_region(void *start, int size)
- 
- 	/* If there are too many pages then just blow the cache */
- 	if (((end - begin) >> PAGE_SHIFT) >= MAX_OCACHE_PAGES) {
--		__raw_writel(__raw_readl(CCR) | CCR_OCACHE_INVALIDATE, CCR);
-+		__raw_writel(__raw_readl(SH_CCR) | CCR_OCACHE_INVALIDATE,
-+			     SH_CCR);
- 	} else {
- 		for (v = begin; v < end; v += L1_CACHE_BYTES)
- 			sh2a_invalidate_line(CACHE_OC_ADDRESS_ARRAY, v);
-@@ -167,7 +168,8 @@ static void sh2a_flush_icache_range(void *args)
- 	/* I-Cache invalidate */
- 	/* If there are too many pages then just blow the cache */
- 	if (((end - start) >> PAGE_SHIFT) >= MAX_ICACHE_PAGES) {
--		__raw_writel(__raw_readl(CCR) | CCR_ICACHE_INVALIDATE, CCR);
-+		__raw_writel(__raw_readl(SH_CCR) | CCR_ICACHE_INVALIDATE,
-+			     SH_CCR);
- 	} else {
- 		for (v = start; v < end; v += L1_CACHE_BYTES)
- 			sh2a_invalidate_line(CACHE_IC_ADDRESS_ARRAY, v);
-diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
-index 0e529285b28d..51d8f7f31d1d 100644
---- a/arch/sh/mm/cache-sh4.c
-+++ b/arch/sh/mm/cache-sh4.c
-@@ -133,9 +133,9 @@ static void flush_icache_all(void)
- 	jump_to_uncached();
- 
- 	/* Flush I-cache */
--	ccr = __raw_readl(CCR);
-+	ccr = __raw_readl(SH_CCR);
- 	ccr |= CCR_CACHE_ICI;
--	__raw_writel(ccr, CCR);
-+	__raw_writel(ccr, SH_CCR);
- 
- 	/*
- 	 * back_to_cached() will take care of the barrier for us, don't add
-diff --git a/arch/sh/mm/cache-shx3.c b/arch/sh/mm/cache-shx3.c
-index c0adbee97b5f..24c58b7dc022 100644
---- a/arch/sh/mm/cache-shx3.c
-+++ b/arch/sh/mm/cache-shx3.c
-@@ -19,7 +19,7 @@ void __init shx3_cache_init(void)
- {
- 	unsigned int ccr;
- 
--	ccr = __raw_readl(CCR);
-+	ccr = __raw_readl(SH_CCR);
- 
- 	/*
- 	 * If we've got cache aliases, resolve them in hardware.
-@@ -40,5 +40,5 @@ void __init shx3_cache_init(void)
- 	ccr |= CCR_CACHE_IBE;
- #endif
- 
--	writel_uncached(ccr, CCR);
-+	writel_uncached(ccr, SH_CCR);
- }
-diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
-index 616966a96cba..097c2cdd117f 100644
---- a/arch/sh/mm/cache.c
-+++ b/arch/sh/mm/cache.c
-@@ -285,8 +285,8 @@ void __init cpu_cache_init(void)
- {
- 	unsigned int cache_disabled = 0;
- 
--#ifdef CCR
--	cache_disabled = !(__raw_readl(CCR) & CCR_CACHE_ENABLE);
-+#ifdef SH_CCR
-+	cache_disabled = !(__raw_readl(SH_CCR) & CCR_CACHE_ENABLE);
- #endif
- 
- 	compute_alias(&boot_cpu_data.icache);
 -- 
-1.7.9.5
+1.8.3.1
 
