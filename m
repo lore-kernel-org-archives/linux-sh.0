@@ -1,84 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:41:16 +0000
-Subject: [PATCH 02/12] ARM: shmobile: Rework include path for sh7372
-Message-Id: <20140224054116.1143.83938.sendpatchset@w520>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Tue, 04 Feb 2014 18:17:37 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7790: specify multiple parents for cpg_clks
+Message-Id: <1391537858-28593-3-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
+References: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The current drivers/clk/shmobile/clk-rcar-gen2.c uses the
+extal_clk reference for the parent of all the clocks that
+it registers. However the lb, qspi, sdh, sd0 and sd1 clocks
+are all parented to either pll1 or pll1_div2 which means
+that the clock rates are incorrect.
 
-Convert sh7372 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
+This is part of the fix that corrects the SDHI0 clock
+rate error where it reports 1MHz instead of 97.5:
+    sh_mobile_sdhi ee100000.sd: mmc0 base at 0xee100000 clock rate 1 MHz
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Notes:
+- May require cross-merge with clk-rcar-gen2.c fix
+- Also not clear which clock "z" is to fix it.
+
+[ben.dooks@codethink.co.uk: updated patch description]
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
+Reviewed-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
+ arch/arm/boot/dts/r8a7790.dtsi |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/clock-sh7372.c |    4 ++--
- arch/arm/mach-shmobile/intc-sh7372.c  |    4 ++--
- arch/arm/mach-shmobile/pm-sh7372.c    |    6 +++---
- arch/arm/mach-shmobile/setup-sh7372.c |    8 ++++----
- 4 files changed, 11 insertions(+), 11 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ff55c6e..242e6e2 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -446,7 +446,13 @@
+ 			compatible = "renesas,r8a7790-cpg-clocks",
+ 				     "renesas,rcar-gen2-cpg-clocks";
+ 			reg = <0 0xe6150000 0 0x1000>;
+-			clocks = <&extal_clk>;
++			clocks = <&extal_clk>, <&extal_clk>, <&extal_clk>, <&extal_clk>,
++				<&cpg_clocks R8A7790_CLK_PLL1>,
++				<&pll1_div2_clk>,
++				<&cpg_clocks R8A7790_CLK_PLL1>,
++				<&cpg_clocks R8A7790_CLK_PLL1>,
++				<&cpg_clocks R8A7790_CLK_PLL1>
++				/* not known for "z" ...,<> */;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "sd1",
+-- 
+1.7.10.4
 
---- 0001/arch/arm/mach-shmobile/clock-sh7372.c
-+++ work/arch/arm/mach-shmobile/clock-sh7372.c	2014-02-24 13:13:46.000000000 +0900
-@@ -21,8 +21,8 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/clock.h>
--#include <mach/common.h>
-+#include "clock.h"
-+#include "common.h"
- 
- /* SH7372 registers */
- #define FRQCRA		IOMEM(0xe6150000)
---- 0001/arch/arm/mach-shmobile/intc-sh7372.c
-+++ work/arch/arm/mach-shmobile/intc-sh7372.c	2014-02-24 13:13:46.000000000 +0900
-@@ -23,8 +23,8 @@
- #include <linux/irq.h>
- #include <linux/io.h>
- #include <linux/sh_intc.h>
--#include <mach/intc.h>
--#include <mach/irqs.h>
-+#include "intc.h"
-+#include "irqs.h"
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
---- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-+++ work/arch/arm/mach-shmobile/pm-sh7372.c	2014-02-24 13:26:42.000000000 +0900
-@@ -25,9 +25,9 @@
- #include <asm/io.h>
- #include <asm/tlbflush.h>
- #include <asm/suspend.h>
--#include <mach/common.h>
--#include <mach/sh7372.h>
--#include <mach/pm-rmobile.h>
-+#include "common.h"
-+#include "sh7372.h"
-+#include "pm-rmobile.h"
- 
- /* DBG */
- #define DBGREG1 IOMEM(0xe6100020)
---- 0001/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2014-02-24 13:13:46.000000000 +0900
-@@ -34,10 +34,10 @@
- #include <linux/pm_domain.h>
- #include <linux/dma-mapping.h>
- #include <linux/platform_data/sh_ipmmu.h>
--#include <mach/dma-register.h>
--#include <mach/irqs.h>
--#include <mach/sh7372.h>
--#include <mach/common.h>
-+#include "dma-register.h"
-+#include "irqs.h"
-+#include "sh7372.h"
-+#include "common.h"
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
