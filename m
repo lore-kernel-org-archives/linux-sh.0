@@ -1,65 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:27 +0000
-Subject: [PATCH v3 11/20] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board
-Message-Id: <1393400016-23433-12-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 04 Feb 2014 14:55:14 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: Koelsch: pass Ether PHY IRQ
+Message-Id: <201402041855.32618.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+References: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Move the clock initialisation and OF device population from
-SoC to board code. This is in keeping with the pattern used by Lager.
-And the clock portion is part of decoupling clock initialisation
-from SoC code in preparation for moving to the common clock framework.
+Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+trigger type to be low-level as per the Micrel PHY driver's setup.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
- arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
- 2 files changed, 3 insertions(+), 4 deletions(-)
+Changes in version 2:
+- refreshed the patch.
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 2773936..c22e5c2 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -27,7 +28,9 @@
- 
- static void __init marzen_init(void)
- {
-+	r8a7779_clock_init();
- 	r8a7779_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
- }
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index f28b8c7..3471a9b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -784,12 +784,8 @@ void __init r8a7779_init_delay(void)
- 
- void __init r8a7779_add_standard_devices_dt(void)
- {
--	/* clocks are setup late during boot in the case of DT */
--	r8a7779_clock_init();
--
- 	platform_add_devices(r8a7779_devices_dt,
- 			     ARRAY_SIZE(r8a7779_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- #define MODEMR		0xffcc0020
--- 
-1.8.5.2
+ arch/arm/mach-shmobile/board-koelsch.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
+Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
++++ renesas/arch/arm/mach-shmobile/board-koelsch.c
+@@ -23,6 +23,7 @@
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
++#include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/phy.h>
+@@ -92,6 +93,7 @@ static void __init koelsch_add_du_device
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+ 	.phy			= 0x1,
++	.phy_irq		= irq_pin(0),
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+@@ -232,6 +234,8 @@ static void __init koelsch_init(void)
+ {
+ 	koelsch_add_standard_devices();
+ 
++	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++
+ 	if (IS_ENABLED(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7791-ether-ff:01",
+ 					  koelsch_ksz8041_fixup);
