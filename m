@@ -1,69 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 03 Feb 2014 06:35:51 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 04 Feb 2014 01:32:08 +0000
 Subject: Re: [PATCH] ARM: shmobile: bockw: use wp-gpios instead of WP pin
-Message-Id: <20140203063549.GD30047@verge.net.au>
+Message-Id: <87zjm7fyst.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
- <87zjmc676u.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87zjmc676u.wl%kuninori.morimoto.gx@gmail.com>
+	<87zjmc676u.wl%kuninori.morimoto.gx@gmail.com>
+	<20140203063549.GD30047@verge.net.au>
+In-Reply-To: <20140203063549.GD30047@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: Simon Horman <horms@verge.net.au>
 Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Thu, Jan 30, 2014 at 09:39:40PM -0800, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Latest Renesas Chip has some SDHI channels and the WP pin
-> availability depends on its channel or HW implementation.
-> Thus, this patch decides new policy whch indicates
-> WP is disabled as default.
-> But, we can use wp-gpios property to enable it as
-> other method.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> Simon
-> 
-> This was included on v1 patch series,
-> but no relationship with mmc part patches.
 
-So I could take this patch into the renesas tree now?
+Hi Simon
 
+> > Latest Renesas Chip has some SDHI channels and the WP pin
+> > availability depends on its channel or HW implementation.
+> > Thus, this patch decides new policy whch indicates
+> > WP is disabled as default.
+> > But, we can use wp-gpios property to enable it as
+> > other method.
+> > 
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > ---
+> > Simon
+> > 
+> > This was included on v1 patch series,
+> > but no relationship with mmc part patches.
 > 
->  arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> index bb62c7a..06cda19 100644
-> --- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-> @@ -17,6 +17,7 @@
->  /dts-v1/;
->  #include "r8a7778.dtsi"
->  #include <dt-bindings/interrupt-controller/irq.h>
-> +#include <dt-bindings/gpio/gpio.h>
->  
->  / {
->  	model = "bockw";
-> @@ -84,7 +85,7 @@
->  
->  	sdhi0_pins: sd0 {
->  		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
-> -				  "sdhi0_cd", "sdhi0_wp";
-> +				  "sdhi0_cd";
->  		renesas,function = "sdhi0";
->  	};
->  
-> @@ -101,6 +102,7 @@
->  	vmmc-supply = <&fixedregulator3v3>;
->  	bus-width = <4>;
->  	status = "okay";
-> +	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
->  };
->  
->  &hspi0 {
-> -- 
-> 1.7.9.5
-> 
+> So I could take this patch into the renesas tree now?
+
+Yes, I guess so
+
+# my PC broken this morning somehow...
+
+Best regards
+---
+Kuninori Morimoto
