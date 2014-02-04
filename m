@@ -1,239 +1,80 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 20 Feb 2014 11:54:47 +0000
-Subject: [PATCH V7 3/3] sh: Remove Kconfig entries for TMU, CMT and MTU2
-Message-Id: <1392897287-11614-4-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:24:04 +0000
+Subject: [PATCH v3 10/11] ARM: shmobile: koelsch dts: Add QSPI nodes
+Message-Id: <1391527445-14881-11-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
+References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <damm@opensource.se>, "Cc: Wolfram Sang" <wsa@the-dreams.de>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU and MTU2
-it is safe to remove these from SH.
+Add pinctrl and SPI devices for QSPI on Koelsch.
+Add Spansion s25fl512s SPI FLASH and MTD partitions.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-[wsa: rebased to timers/core]
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/sh/Kconfig | 76 +++++++++++++++++----------------------------------------
- 1 file changed, 23 insertions(+), 53 deletions(-)
+v3:
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+v2:
+  - No changes
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 6357710..364d204 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -123,15 +123,6 @@ config SYS_SUPPORTS_NUMA
- config SYS_SUPPORTS_PCI
- 	bool
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   36 +++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 74f098596b5c..d4b9bba38685 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -121,8 +121,44 @@
+ 		renesas,groups = "scif1_data_d";
+ 		renesas,function = "scif1";
+ 	};
++
++	qspi_pins: spi {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
  
--config SYS_SUPPORTS_CMT
--	bool
--
--config SYS_SUPPORTS_MTU2
--	bool
--
--config SYS_SUPPORTS_TMU
--	bool
--
- config STACKTRACE_SUPPORT
- 	def_bool y
- 
-@@ -191,14 +182,14 @@ config CPU_SH3
- 	bool
- 	select CPU_HAS_INTEVT
- 	select CPU_HAS_SR_RB
--	select SYS_SUPPORTS_TMU
-+	select SYS_SUPPORTS_SH_TMU
- 
- config CPU_SH4
- 	bool
- 	select CPU_HAS_INTEVT
- 	select CPU_HAS_SR_RB
- 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
--	select SYS_SUPPORTS_TMU
-+	select SYS_SUPPORTS_SH_TMU
- 	select SYS_SUPPORTS_HUGETLBFS if MMU
- 
- config CPU_SH4A
-@@ -213,7 +204,7 @@ config CPU_SH4AL_DSP
- config CPU_SH5
- 	bool
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_TMU
-+	select SYS_SUPPORTS_SH_TMU
- 	select SYS_SUPPORTS_HUGETLBFS if MMU
- 
- config CPU_SHX2
-@@ -250,7 +241,7 @@ choice
- config CPU_SUBTYPE_SH7619
- 	bool "Support SH7619 processor"
- 	select CPU_SH2
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 
- # SH-2A Processor Support
- 
-@@ -258,50 +249,50 @@ config CPU_SUBTYPE_SH7201
- 	bool "Support SH7201 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_MTU2
-  
- config CPU_SUBTYPE_SH7203
- 	bool "Support SH7203 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 
- config CPU_SUBTYPE_SH7206
- 	bool "Support SH7206 processor"
- 	select CPU_SH2A
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 
- config CPU_SUBTYPE_SH7263
- 	bool "Support SH7263 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 
- config CPU_SUBTYPE_SH7264
- 	bool "Support SH7264 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 	select PINCTRL
- 
- config CPU_SUBTYPE_SH7269
- 	bool "Support SH7269 processor"
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
--	select SYS_SUPPORTS_CMT
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_MTU2
- 	select PINCTRL
- 
- config CPU_SUBTYPE_MXG
- 	bool "Support MX-G processor"
- 	select CPU_SH2A
--	select SYS_SUPPORTS_MTU2
-+	select SYS_SUPPORTS_SH_MTU2
- 	help
- 	  Select MX-G if running on an R8A03022BG part.
- 
-@@ -354,7 +345,7 @@ config CPU_SUBTYPE_SH7720
- 	bool "Support SH7720 processor"
- 	select CPU_SH3
- 	select CPU_HAS_DSP
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select USB_ARCH_HAS_OHCI
- 	select USB_OHCI_SH if USB_OHCI_HCD
-@@ -366,7 +357,7 @@ config CPU_SUBTYPE_SH7721
- 	bool "Support SH7721 processor"
- 	select CPU_SH3
- 	select CPU_HAS_DSP
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select USB_ARCH_HAS_OHCI
- 	select USB_OHCI_SH if USB_OHCI_HCD
- 	help
-@@ -422,7 +413,7 @@ config CPU_SUBTYPE_SH7723
- 	select CPU_SHX2
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 	help
-@@ -434,7 +425,7 @@ config CPU_SUBTYPE_SH7724
- 	select CPU_SHX2
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 	help
-@@ -514,7 +505,7 @@ config CPU_SUBTYPE_SH7343
- 	bool "Support SH7343 processor"
- 	select CPU_SH4AL_DSP
- 	select ARCH_SHMOBILE
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 
- config CPU_SUBTYPE_SH7722
- 	bool "Support SH7722 processor"
-@@ -523,7 +514,7 @@ config CPU_SUBTYPE_SH7722
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_NUMA
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select PINCTRL
- 
-@@ -534,7 +525,7 @@ config CPU_SUBTYPE_SH7366
- 	select ARCH_SHMOBILE
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_NUMA
--	select SYS_SUPPORTS_CMT
-+	select SYS_SUPPORTS_SH_CMT
- 
- endchoice
- 
-@@ -567,27 +558,6 @@ source "arch/sh/boards/Kconfig"
- 
- menu "Timer and clock configuration"
- 
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	depends on SYS_SUPPORTS_TMU
--	default y
--	help
--	  This enables the build of the TMU timer driver.
--
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	depends on SYS_SUPPORTS_CMT
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_MTU2
--	bool "MTU2 timer driver"
--	depends on SYS_SUPPORTS_MTU2
--	default y
--	help
--	  This enables build of the MTU2 timer driver.
--
- config SH_PCLK_FREQ
- 	int "Peripheral clock frequency (in Hz)"
- 	depends on SH_CLK_CPG_LEGACY
+ &sata0 {
+ 	status = "okay";
+ };
++
++&spi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00080000>;
++			read-only;
++		};
++		partition@80000 {
++			label = "bootenv";
++			reg = <0x00080000 0x00080000>;
++			read-only;
++		};
++		partition@100000 {
++			label = "data";
++			reg = <0x00100000 0x03f00000>;
++		};
++	};
++};
 -- 
-1.8.5.1
+1.7.9.5
 
