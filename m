@@ -1,69 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 01:00:03 +0000
-Subject: [PATCH 25/27] ARM: shmobile: r8a7791: Add CMT devices to DT
-Message-Id: <1392339605-20691-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 04 Feb 2014 00:57:53 +0000
+Subject: Re: [PATCH 2/3] mmc: sh-mmcif: add DMA SG synchronisation
+Message-Id: <20140204005752.GD24787@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
+ <Pine.LNX.4.64.1401311249070.3234@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1401311249070.3234@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791.dtsi | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+On Fri, Jan 31, 2014 at 12:54:29PM +0100, Guennadi Liakhovetski wrote:
+> According to the DMA API data has to be synchronised before starting
+> a DMA transfer to device and after completing a DMA transfer from device.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 240c4ec..bcfb998 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -162,6 +162,44 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
- 
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_CMT0>;
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_CMT1>;
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
- 		#interrupt-cells = <2>;
--- 
-1.8.3.2
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
+> ---
+>  drivers/mmc/host/sh_mmcif.c |   18 ++++++++++--------
+>  1 files changed, 10 insertions(+), 8 deletions(-)
+> 
+> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> index d032b08..902780c 100644
+> --- a/drivers/mmc/host/sh_mmcif.c
+> +++ b/drivers/mmc/host/sh_mmcif.c
+> @@ -345,6 +345,8 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+>  			 DMA_TO_DEVICE);
+>  	if (ret > 0) {
+>  		host->dma_active = true;
+> +		dma_sync_sg_for_device(chan->device->dev, sg, data->sg_len,
+> +				       DMA_TO_DEVICE);
+>  		desc = dmaengine_prep_slave_sg(chan, sg, ret,
+>  			DMA_MEM_TO_DEV, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+>  	}
+> @@ -1118,14 +1120,14 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+>  	time = wait_for_completion_interruptible_timeout(&host->dma_complete,
+>  							 host->timeout);
+>  
+> -	if (data->flags & MMC_DATA_READ)
+> -		dma_unmap_sg(host->chan_rx->device->dev,
+> -			     data->sg, data->sg_len,
+> -			     DMA_FROM_DEVICE);
+> -	else
+> -		dma_unmap_sg(host->chan_tx->device->dev,
+> -			     data->sg, data->sg_len,
+> -			     DMA_TO_DEVICE);
+> +	if (data->flags & MMC_DATA_READ) {
+> +		struct device *dev = host->chan_rx->device->dev;
+> +		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
+> +		dma_sync_sg_for_cpu(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
+> +	} else {
+> +		struct device *dev = host->chan_tx->device->dev;
+> +		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_TO_DEVICE);
+> +	}
+>  
+>  	if (host->sd_error) {
+>  		dev_err(host->mmc->parent,
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
