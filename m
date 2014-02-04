@@ -1,79 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:45 +0000
-Subject: [PATCH 04/13] ARM: shmobile: r8a7778 dtsi: Remove duplicate i2c nodes
-Message-Id: <08517b212726e90b1755e3c917ba064b24e97cbe.1392961872.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 04 Feb 2014 14:53:32 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
+Message-Id: <201402041853.51460.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961872.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
+References: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+trigger type to be low-level as per the Micrel PHY driver's setup.
 
-"ARM: shmobile: r8a7778: add I2C support on DTSI" was applied twice:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-    commit ae4273ec7b25c8b9c895a4aae31f2fced980b7bf
-    commit 3acb51b9215bd99da403ecf8200f8425176b1926
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 40 ----------------------------------------
- 1 file changed, 40 deletions(-)
+Changes in version 2:
+- refreshed the patch.
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index ddb3bd7..85c5b3b 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -203,46 +203,6 @@
- 		status = "disabled";
- 	};
+ arch/arm/mach-shmobile/board-lager.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/mach-shmobile/board-lager.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-lager.c
++++ renesas/arch/arm/mach-shmobile/board-lager.c
+@@ -22,6 +22,7 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/mmc/host.h>
+@@ -233,6 +234,7 @@ static const struct resource mmcif1_reso
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+ 	.phy			= 0x1,
++	.phy_irq		= irq_pin(0),
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+@@ -618,6 +620,8 @@ static void __init lager_init(void)
+ {
+ 	lager_add_standard_devices();
  
--	i2c0: i2c@ffc70000 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7778";
--		reg = <0xffc70000 0x1000>;
--		interrupt-parent = <&gic>;
--		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>;
--		status = "disabled";
--	};
--
--	i2c1: i2c@ffc71000 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7778";
--		reg = <0xffc71000 0x1000>;
--		interrupt-parent = <&gic>;
--		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
--		status = "disabled";
--	};
--
--	i2c2: i2c@ffc72000 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7778";
--		reg = <0xffc72000 0x1000>;
--		interrupt-parent = <&gic>;
--		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
--		status = "disabled";
--	};
--
--	i2c3: i2c@ffc73000 {
--		#address-cells = <1>;
--		#size-cells = <0>;
--		compatible = "renesas,i2c-r8a7778";
--		reg = <0xffc73000 0x1000>;
--		interrupt-parent = <&gic>;
--		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
--		status = "disabled";
--	};
--
- 	hspi0: spi@fffc7000 {
- 		compatible = "renesas,hspi";
- 		reg = <0xfffc7000 0x18>;
--- 
-1.8.5.2
-
++	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++
+ 	if (IS_ENABLED(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
+ 					  lager_ksz8041_fixup);
