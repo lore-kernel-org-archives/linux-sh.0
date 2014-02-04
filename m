@@ -1,90 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:58:08 +0000
-Subject: [PATCH v2 38/40] ARM: shmobile: r8a7791: Switch to new style CMT device
-Message-Id: <1393603090-23144-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 04 Feb 2014 15:23:55 +0000
+Subject: [PATCH v5 01/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+Message-Id: <1391527445-14881-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
- arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
- 3 files changed, 9 insertions(+), 12 deletions(-)
+v5:
+  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+v4:
+  - The platform device basename was changed from "rspi" to "rspi-rz"
+v3:
+  - No changes
+v2:
+  - Correct platform device names ("rspi%u" -> "rspi.%u")
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index a3fd302..3b2a498 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -93,7 +93,7 @@ static void __init koelsch_add_standard_devices(void)
- 		const char *con_id;
- 		const char *dev_id;
- 	} clk_names[] = {
--		{ "cmt0", NULL, "sh_cmt.0" },
-+		{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 		{ "scifa0", NULL, "sh-sci.0" },
- 		{ "scifa1", NULL, "sh-sci.1" },
- 		{ "scifb0", NULL, "sh-sci.2" },
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 605fc77..24f7583 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -265,7 +265,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index e28404e..561653d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -128,20 +128,17 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
- 					  &scif##index##_platform_data,	       \
- 					  sizeof(scif##index##_platform_data))
+ arch/arm/mach-shmobile/clock-r7s72100.c |   21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index dd8ce87596de..ffb0fff41375 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -22,12 +22,14 @@
+ #include <mach/common.h>
+ #include <mach/r7s72100.h>
  
--static const struct sh_timer_config cmt00_platform_data __initconst = {
--	.name = "CMT00",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_config cmt0_platform_data = {
-+	.channels_mask = 0x60,
+-/* registers */
++/* Frequency Control Registers */
+ #define FRQCR		0xfcfe0010
+ #define FRQCR2		0xfcfe0014
++/* Standby Control Registers */
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
+ #define STBCR9		0xfcfe0438
++#define STBCR10		0xfcfe043c
+ 
+ #define PLL_RATE 30
+ 
+@@ -145,11 +147,19 @@ struct clk div4_clks[DIV4_NR] = {
+ 					| CLK_ENABLE_ON_INIT),
  };
  
--static const struct resource cmt00_resources[] __initconst = {
--	DEFINE_RES_MEM(0xffca0510, 0x0c),
--	DEFINE_RES_MEM(0xffca0500, 0x04),
--	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+static struct resource cmt0_resources[] = {
-+	DEFINE_RES_MEM(0xffca0000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(142)),
- };
+-enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++enum {
++	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
++	MSTP97, MSTP96, MSTP95, MSTP94,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+-	MSTP33,	MSTP_NR };
++	MSTP33,	MSTP_NR
++};
  
- #define r8a7791_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -200,7 +197,7 @@ void __init r8a7791_add_dt_devices(void)
- 	r8a7791_register_scif(12);
- 	r8a7791_register_scif(13);
- 	r8a7791_register_scif(14);
--	r8a7791_register_cmt(00);
-+	r8a7791_register_cmt(0);
- }
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
++	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
++	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
++	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
++	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
+ 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+@@ -176,6 +186,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
  
- void __init r8a7791_add_standard_devices(void)
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("rspi-rz.0", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("rspi-rz.1", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
 -- 
-1.8.3.2
+1.7.9.5
 
