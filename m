@@ -1,56 +1,141 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 13 Feb 2014 18:18:15 +0000
-Subject: Re: [PATCH 2/5] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-Message-Id: <52FD0C67.4030802@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Feb 2014 06:52:54 +0000
+Subject: [PATCH 01/04] PCI: rcar: Register each instance independently
+Message-Id: <20140205065254.29445.77939.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1375892397-5822-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140205065243.29445.76593.sendpatchset@w520>
+In-Reply-To: <20140205065243.29445.76593.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, horms@verge.net.au, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>, ben.dooks@codethink.co.uk
 
-On 12/02/14 20:55, Sergei Shtylyov wrote:
-> On 02/12/2014 08:59 PM, Ben Dooks wrote:
->
->     No signoff but that's again intentional?
->
->> ---
->>   arch/arm/boot/dts/r8a7790.dtsi | 89
->> ++++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 89 insertions(+)
->
->> diff --git a/arch/arm/boot/dts/r8a7790.dtsi
->> b/arch/arm/boot/dts/r8a7790.dtsi
->> index 700e0a1..ae65270 100644
->> --- a/arch/arm/boot/dts/r8a7790.dtsi
->> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> [...]
->> @@ -79,6 +80,94 @@
->>           };
->>       };
->>
->> +#define CHCR_RX_32BIT    SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
->> +#define CHCR_TX_32BIT    SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
->> +#define CHCR_RX_256BIT    SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
->> +#define CHCR_TX_256BIT    SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
->> +
->> +    dma0: dma-mux@0 {
->> +        compatible = "renesas,shdma-mux";
->> +        #dma-cells = <1>;
->> +        dma-channels = <20>;
->> +                dma-requests = <256>;
->> +                #address-cells = <2>;
->> +                #size-cells = <2>;
->> +                ranges;
->
->     The above 4 lines are indented with spaces instead of tabs.
->
-> WBR, Sergei
+From: Magnus Damm <damm@opensource.se>
 
-Missed indentation, will fix thanks.
+Convert the code to allow per-device probe() like other device
+drivers. This also delays driver registration due to change from
+subsys_initcall() to regular module_platform_driver().
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+ drivers/pci/host/pci-rcar-gen2.c |   74 ++++++++------------------------------
+ 1 file changed, 16 insertions(+), 58 deletions(-)
+
+--- 0001/drivers/pci/host/pci-rcar-gen2.c
++++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-04 16:38:46.000000000 +0900
+@@ -74,9 +74,6 @@
+ 
+ #define RCAR_PCI_UNIT_REV_REG		(RCAR_AHBPCI_PCICOM_OFFSET + 0x48)
+ 
+-/* Number of internal PCI controllers */
+-#define RCAR_PCI_NR_CONTROLLERS		3
+-
+ struct rcar_pci_priv {
+ 	struct device *dev;
+ 	void __iomem *reg;
+@@ -228,6 +225,8 @@ static int __init rcar_pci_setup(int nr,
+ 	pci_add_resource(&sys->resources, &priv->io_res);
+ 	pci_add_resource(&sys->resources, &priv->mem_res);
+ 
++	/* Setup bus number based on platform device id */
++	sys->busnr = to_platform_device(priv->dev)->id;
+ 	return 1;
+ }
+ 
+@@ -236,48 +235,12 @@ static struct pci_ops rcar_pci_ops = {
+ 	.write	= rcar_pci_write_config,
+ };
+ 
+-static struct hw_pci rcar_hw_pci __initdata = {
+-	.map_irq	= rcar_pci_map_irq,
+-	.ops		= &rcar_pci_ops,
+-	.setup		= rcar_pci_setup,
+-};
+-
+-static int rcar_pci_count __initdata;
+-
+-static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
+-{
+-	void **private_data;
+-	int count;
+-
+-	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
+-		goto add_priv;
+-
+-	/* (Re)allocate private data pointer array if needed */
+-	count = rcar_pci_count + RCAR_PCI_NR_CONTROLLERS;
+-	private_data = kzalloc(count * sizeof(void *), GFP_KERNEL);
+-	if (!private_data)
+-		return -ENOMEM;
+-
+-	rcar_pci_count = count;
+-	if (rcar_hw_pci.private_data) {
+-		memcpy(private_data, rcar_hw_pci.private_data,
+-		       rcar_hw_pci.nr_controllers * sizeof(void *));
+-		kfree(rcar_hw_pci.private_data);
+-	}
+-
+-	rcar_hw_pci.private_data = private_data;
+-
+-add_priv:
+-	/* Add private data pointer to the array */
+-	rcar_hw_pci.private_data[rcar_hw_pci.nr_controllers++] = priv;
+-	return 0;
+-}
+-
+-static int __init rcar_pci_probe(struct platform_device *pdev)
++static int rcar_pci_probe(struct platform_device *pdev)
+ {
+ 	struct resource *cfg_res, *mem_res;
+ 	struct rcar_pci_priv *priv;
+ 	void __iomem *reg;
++	struct hw_pci hw;
+ 
+ 	cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	reg = devm_ioremap_resource(&pdev->dev, cfg_res);
+@@ -308,31 +271,26 @@ static int __init rcar_pci_probe(struct
+ 	priv->reg = reg;
+ 	priv->dev = &pdev->dev;
+ 
+-	return rcar_pci_add_controller(priv);
++	memset(&hw, 0, sizeof(hw));
++	hw.nr_controllers = 1;
++	hw.private_data = (void **)&priv;
++	hw.map_irq = rcar_pci_map_irq;
++	hw.ops = &rcar_pci_ops;
++	hw.setup = rcar_pci_setup;
++	pci_common_init_dev(&pdev->dev, &hw);
++	return 0;
+ }
+ 
+ static struct platform_driver rcar_pci_driver = {
+ 	.driver = {
+ 		.name = "pci-rcar-gen2",
++		.owner = THIS_MODULE,
++		.suppress_bind_attrs = true,
+ 	},
++	.probe = rcar_pci_probe,
+ };
+ 
+-static int __init rcar_pci_init(void)
+-{
+-	int retval;
+-
+-	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
+-	if (!retval)
+-		pci_common_init(&rcar_hw_pci);
+-
+-	/* Private data pointer array is not needed any more */
+-	kfree(rcar_hw_pci.private_data);
+-	rcar_hw_pci.private_data = NULL;
+-
+-	return retval;
+-}
+-
+-subsys_initcall(rcar_pci_init);
++module_platform_driver(rcar_pci_driver);
+ 
+ MODULE_LICENSE("GPL v2");
+ MODULE_DESCRIPTION("Renesas R-Car Gen2 internal PCI");
