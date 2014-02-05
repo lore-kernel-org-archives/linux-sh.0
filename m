@@ -1,57 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:21:10 +0000
-Subject: [PATCH 13/13] ARM: shmobile: r8a7790: Add PCI USB host clock support
-Message-Id: <012a7069b5a10a0851584d71a1facdc40a972319.1391666228.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 10:19:06 +0000
+Subject: [PATCH 03/11] ARM: shmbobile: r8a7790.dtsi: add pci0/1/2 nodes
+Message-Id: <1391595554-20640-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391666228.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Add nodes for USB PCI bridge devices.
 
-This adds internal PCI USB host clock support.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+Cc: devicetree@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: horms+renesas@verge.net.au
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index f25b43a..507073e 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -201,7 +201,7 @@ enum {
- 	MSTP811, MSTP810, MSTP809, MSTP808,
- 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
- 	MSTP717, MSTP716,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP502, MSTP501,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
-@@ -244,6 +244,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP717] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 17, MSTPSR7, 0), /* HSCIF0 */
- 	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
- 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP502] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 2, MSTPSR5, 0), /* Audio-DMAC low */
- 	[MSTP501] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 1, MSTPSR5, 0), /* Audio-DMAC hi */
-@@ -343,6 +344,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
- 	CLKDEV_DEV_ID("sata-r8a7790.0", &mstp_clks[MSTP815]),
- 	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
- 
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ba0ef9a..d52d32e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -752,4 +752,34 @@
+ 				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 	};
++
++	pci0: pci@ee090000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	pci1: pci@ee0b0000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0b0000 0x0 0xc00>,
++		      <0x0 0xee0a0000 0x0 0x1100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	pci2: pci@ee0d0000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0d0000 0x0 0xc00>,
++		      <0x0 0xee0c0000 0x0 0x1100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
+ };
 -- 
-1.8.5.2
+1.8.5.3
 
