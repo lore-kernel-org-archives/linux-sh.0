@@ -1,70 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 03:30:19 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: Enable SDHI, GPIO and regulators in defconfig
-Message-Id: <20140217033019.GA19146@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 10:19:11 +0000
+Subject: [PATCH 08/11] ARM: shmobile: lager.dtb: add usbphy reference
+Message-Id: <1391595554-20640-9-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392273587-12196-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1392273587-12196-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Feb 13, 2014 at 03:39:47PM +0900, Simon Horman wrote:
-> Enable the following:
-> * regulators (needed for SDHI)
-> * SDHI
-> * GPIO
-> * GPIO keys
-> * GPIO LEDs
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Enable the usbphy node so that the phy driver is available.
 
-I have queued this up.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+---
+Cc: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-> ---
->  arch/arm/configs/koelsch_defconfig | 9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-> index 9561139..86faab5 100644
-> --- a/arch/arm/configs/koelsch_defconfig
-> +++ b/arch/arm/configs/koelsch_defconfig
-> @@ -59,6 +59,7 @@ CONFIG_SH_ETH=y
->  # CONFIG_NET_VENDOR_VIA is not set
->  # CONFIG_NET_VENDOR_WIZNET is not set
->  # CONFIG_INPUT_MOUSEDEV_PSAUX is not set
-> +CONFIG_KEYBOARD_GPIO=y
->  # CONFIG_INPUT_MOUSE is not set
->  # CONFIG_LEGACY_PTYS is not set
->  CONFIG_SERIAL_SH_SCI=y
-> @@ -68,13 +69,21 @@ CONFIG_I2C=y
->  CONFIG_I2C_RCAR=y
->  CONFIG_SPI=y
->  CONFIG_SPI_RSPI=y
-> +CONFIG_GPIOLIB=y
-> +CONFIG_GPIO_RCAR=y
->  # CONFIG_HWMON is not set
->  CONFIG_THERMAL=y
->  CONFIG_RCAR_THERMAL=y
-> +CONFIG_REGULATOR=y
-> +CONFIG_REGULATOR_FIXED_VOLTAGE=y
-> +CONFIG_REGULATOR_GPIO=y
->  # CONFIG_HID is not set
->  # CONFIG_USB_SUPPORT is not set
-> +CONFIG_MMC=y
-> +CONFIG_MMC_SDHI=y
->  CONFIG_NEW_LEDS=y
->  CONFIG_LEDS_CLASS=y
-> +CONFIG_LEDS_GPIO=y
->  # CONFIG_IOMMU_SUPPORT is not set
->  # CONFIG_DNOTIFY is not set
->  CONFIG_TMPFS=y
-> -- 
-> 1.8.5.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 15e21d0..f6d795d 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -129,3 +129,7 @@
+ 	pinctrl-0 = <&usb2_pins>;
+ 	pinctrl-names = "default";
+ };
++
++&usbphy {
++	status = "okay";
++};
+-- 
+1.8.5.3
+
