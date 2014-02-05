@@ -1,54 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:24:57 +0000
-Subject: [PATCH 0/2] Renesas VMSA-compatible IPMMU driver
-Message-Id: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 10:19:10 +0000
+Subject: [PATCH 07/11] ARM: shmobile: r8a7790.dtsi: add usbphy node
+Message-Id: <1391595554-20640-8-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-Hello,
+Add node for USB PHY driver to the base R8A7790 device tree include file.
+It is up to the board file to enable and configure it as necessary.
 
-This patch set adds a new driver for the Renesas IOMMU found in the R-Car H2
-(r8a7790) and R-Car M2 (r8a7791) SoCs. Despite being called IPMMU like the
-IOMMU present in older ARM Sh Mobile SoCs, the hardware has nothing in common
-with the previous versions and thus requires a separate driver.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+---
+Cc: devicetree@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-This IPMMU is compatible with the ARM VMSA short- and long-descriptor formats
-(although some minor differences seem to exist, most probably due to hardware
-bugs). The register set, however, is not compatible with the MMU-400 or
-MMU-500. The existing arm-smmu driver can't thus be reused.
-
-The second patch (not meant to be merged) in the set instanciates a platform
-device for the IPMMU MX and associates it with the DU. The IPMMU can then be
-tested using the rcar-du-drm driver. No modification is required to that
-driver, as IOMMU integration is handled transparently by the ARM DMA
-implementation.
-
-One major problem still exist, in that the ARM DMA IOMMU backend doesn't seem
-to mmap memory correctly to userspace. Tests carried on with the KMS modetest
-application left the display hopelessly blank, until I decided to fill the KMS
-buffers with a test pattern from inside the kernel. Although this makes the
-IPMMU unusable at the moment, it shouldn't block review of the driver as it
-shouldn't be involved in the problem. I'm of course investigating this.
-
-Laurent Pinchart (2):
-  iommu: Add driver for Renesas VMSA-compatible IPMMU
-  [TEST] ARM: shmobile: koelsch-reference: Instantiate IPMMU-MX
-
- arch/arm/mach-shmobile/board-koelsch-reference.c |   30 +
- drivers/iommu/Kconfig                            |   12 +
- drivers/iommu/Makefile                           |    1 +
- drivers/iommu/ipmmu-vmsa.c                       | 1070 ++++++++++++++++++++++
- include/linux/platform_data/ipmmu-vmsa.h         |   24 +
- 5 files changed, 1137 insertions(+)
- create mode 100644 drivers/iommu/ipmmu-vmsa.c
- create mode 100644 include/linux/platform_data/ipmmu-vmsa.h
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d52d32e..c758ebc 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -782,4 +782,12 @@
+ 		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
+ 		status = "disabled";
+ 	};
++
++	usbphy: usbphy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		clock-names = "usbhs";
++		reg = < 0x0 0xe6590100 0x0 0x100>;
++		status = "disabled";
++	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.3
 
