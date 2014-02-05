@@ -1,61 +1,48 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Sun, 23 Feb 2014 18:00:57 +0000
-Subject: [PATCH V4 2/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
-Message-Id: <1393178459-14637-3-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 10:19:14 +0000
+Subject: [PATCH 11/11] PCI: rcar: fix bridge logic configuration accesses
+Message-Id: <1391595554-20640-12-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+The bridge logic at slot 0 only supports reads up to 0x40 and the
+rest of the PCI configuration space for this slot is marked as
+reserved in the manual.
 
-This adds internal PCI USB host clock support to R-Car M2 SoC.
+Trying a read from offset 0x100 is producing an error from the
+bridge. With error interrupts enabled, the following is printed:
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+pci-rcar-gen2 ee0d0000.pci: error irq: status 00000014
 
-Changes in V4:
-Changes in V3:
-* none.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+ drivers/pci/host/pci-rcar-gen2.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
-=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
-+++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:57.446571701 +0400
-@@ -177,7 +177,7 @@
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP314, MSTP312, MSTP311,
- 	MSTP216, MSTP207, MSTP206,
-@@ -210,6 +210,7 @@
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
- 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
- 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
-@@ -285,6 +286,8 @@
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
- };
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index ddaa3e8..4b35ac5 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -119,6 +119,10 @@ static void __iomem *rcar_pci_cfg_base(struct pci_bus *bus, unsigned int devfn,
+ 	if (slot > 2)
+ 		return NULL;
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++	/* bridge logic only has registers to 0x40 */
++	if (slot = 0x0 && where >= 0x40)
++		return NULL;
++
+ 	val = slot ? RCAR_AHBPCI_WIN1_DEVICE | RCAR_AHBPCI_WIN_CTR_CFG :
+ 		     RCAR_AHBPCI_WIN1_HOST | RCAR_AHBPCI_WIN_CTR_CFG;
+ 
+-- 
+1.8.5.3
+
