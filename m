@@ -1,34 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:29:21 +0000
-Subject: [PATCH 00/03] ARM: shmobile: Break out and extend clock workaround
-Message-Id: <20140224072921.3522.55023.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 05 Feb 2014 10:31:41 +0000
+Subject: Re: [PATCH 0/2] clk: shmobile rcar-gen2 fixes
+Message-Id: <15127900.Wy8QsPfEr8@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <CAMuHMdUVGAL_h8iezPHZsmfC+77xXE9+irNywk4LYcqAMk9JGg@mail.gmail.com>
+ <1591253.8BzYfubhGS@avalon>
+In-Reply-To: <1591253.8BzYfubhGS@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Break out and extend clock workaround
+Mike,
 
-[PATCH 01/03] ARM: shmobile: Introduce shmobile_clk_workaround()
-[PATCH 02/03] ARM: shmobile: Use shmobile_clk_workaround() on Lager
-[PATCH 03/03] ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
+Ping ?
 
-These patches consolidates the clkdev workaround present in the DT
-reference version of board code for Lager and Koelsch, and it also
-extends it to allow static enablement of a selected set of clocks
-during boot. The latter is needed for USB PCI support patches that
-will be posted shortly.
+v3.14-rc1 is out, and those are bug fixes.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+On Wednesday 08 January 2014 00:06:39 Laurent Pinchart wrote:
+> On Tuesday 07 January 2014 17:59:01 Geert Uytterhoeven wrote:
+> > On Tue, Jan 7, 2014 at 5:47 PM, Laurent Pinchart wrote:
+> > > Geert, could you please verify that the series fixes your QSPI clock
+> > > issues with the Koelsch board ?
+> > > 
+> > > Laurent Pinchart (2):
+> > >   clk: shmobile: rcar-gen2: Fix clock parent all non-PLL clocks
+> > >   clk: shmobile: rcar-gen2: Fix qspi divisor
+> > 
+> > Thanks, both:
+> > 
+> > Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> 
+> Thank you.
+> 
+> Mike, could you please pick those patches up for v3.14 ?
 
- Written against renesas.git tag renesas-devel-v3.14-rc3-20140224
- on top of "[PATCH 00/12] ARM: shmobile: Rework include path for SoC files"
+-- 
+Regards,
 
- arch/arm/mach-shmobile/Makefile                  |    2 
- arch/arm/mach-shmobile/board-koelsch-reference.c |   71 ++++++++--------------
- arch/arm/mach-shmobile/board-lager-reference.c   |   65 +++++++-------------
- arch/arm/mach-shmobile/clock.c                   |   29 ++++++++
- arch/arm/mach-shmobile/include/mach/clock.h      |   16 ++++
- 5 files changed, 99 insertions(+), 84 deletions(-)
+Laurent Pinchart
+
