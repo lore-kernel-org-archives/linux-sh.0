@@ -1,67 +1,96 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:38 +0000
-Subject: [PATCH 10/11] ARM: shmobile: lager dts: Add MSIOF nodes
-Message-Id: <1392907779-22053-11-git-send-email-geert@linux-m68k.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Feb 2014 06:53:15 +0000
+Subject: [PATCH 02/04] PCI: rcar: Break out window size handling
+Message-Id: <20140205065315.29445.65734.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+References: <20140205065243.29445.76593.sendpatchset@w520>
+In-Reply-To: <20140205065243.29445.76593.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, horms@verge.net.au, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>, ben.dooks@codethink.co.uk
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-Add pinctrl and SPI device for MSIOF on Lager.
-On this board, only MSIOF1 is in use. Its bus contains a single device
-(a Renesas R2A11302FT PMIC), for which no bindings are defined yet.
+Break out the hard coded window size code to allow
+dynamic setup. The window size is still left at 1GiB
+but with this patch changing window size is easy for
+testing.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 5d53def10c42..0658c881687e 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -148,6 +148,12 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	msiof1_pins: spi2 {
-+		renesas,groups = "msiof1_clk", "msiof1_sync", "msiof1_rx",
-+				 "msiof1_tx";
-+		renesas,function = "msiof1";
-+	};
+ drivers/pci/host/pci-rcar-gen2.c |   31 ++++++++++++++++++++++++++++---
+ 1 file changed, 28 insertions(+), 3 deletions(-)
+
+--- 0005/drivers/pci/host/pci-rcar-gen2.c
++++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-04 17:22:41.000000000 +0900
+@@ -18,6 +18,7 @@
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/sizes.h>
+ #include <linux/slab.h>
+ 
+ /* AHB-PCI Bridge PCI communication registers */
+@@ -81,6 +82,7 @@ struct rcar_pci_priv {
+ 	struct resource mem_res;
+ 	struct resource *cfg_res;
+ 	int irq;
++	unsigned long window_size;
  };
  
- &mmcif1 {
-@@ -195,6 +201,22 @@
- 	};
- };
+ /* PCI configuration space operations */
+@@ -180,10 +182,31 @@ static int __init rcar_pci_setup(int nr,
+ 	iowrite32(val, reg + RCAR_USBCTR_REG);
+ 	udelay(4);
  
-+&msiof1 {
-+	pinctrl-0 = <&msiof1_pins>;
-+	pinctrl-names = "default";
+-	/* De-assert reset and set PCIAHB window1 size to 1GB */
++	/* De-assert reset and reset PCIAHB window1 size */
+ 	val &= ~(RCAR_USBCTR_PCIAHB_WIN1_MASK | RCAR_USBCTR_PCICLK_MASK |
+ 		 RCAR_USBCTR_USBH_RST | RCAR_USBCTR_PLL_RST);
+-	iowrite32(val | RCAR_USBCTR_PCIAHB_WIN1_1G, reg + RCAR_USBCTR_REG);
 +
-+	status = "okay";
++	/* Setup PCIAHB window1 size */
++	switch (priv->window_size) {
++	case SZ_2G:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_2G;
++		break;
++	case SZ_1G:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_1G;
++		break;
++	case SZ_512M:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_512M;
++		break;
++	default:
++		pr_warn("unknown window size %ld - defaulting to 256M\n",
++			priv->window_size);
++		priv->window_size = SZ_256M;
++		/* fall-through */
++	case SZ_256M:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_256M;
++		break;
++	}
++	iowrite32(val, reg + RCAR_USBCTR_REG);
+ 
+ 	/* Configure AHB master and slave modes */
+ 	iowrite32(RCAR_AHB_BUS_MODE, reg + RCAR_AHB_BUS_CTR_REG);
+@@ -194,7 +217,7 @@ static int __init rcar_pci_setup(int nr,
+ 	       RCAR_PCI_ARBITER_PCIBP_MODE;
+ 	iowrite32(val, reg + RCAR_PCI_ARBITER_CTR_REG);
+ 
+-	/* PCI-AHB mapping: 0x40000000-0x80000000 */
++	/* PCI-AHB mapping: 0x40000000 base */
+ 	iowrite32(0x40000000 | RCAR_PCIAHB_PREFETCH16,
+ 		  reg + RCAR_PCIAHB_WIN1_CTR_REG);
+ 
+@@ -271,6 +294,8 @@ static int rcar_pci_probe(struct platfor
+ 	priv->reg = reg;
+ 	priv->dev = &pdev->dev;
+ 
++	priv->window_size = SZ_1G;
 +
-+	pmic: pmic@0 {
-+		compatible = "renesas,r2a11302ft";
-+		reg = <0>;
-+		spi-max-frequency = <6000000>;
-+		spi-cpol;
-+		spi-cpha;
-+	};
-+
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
- 	pinctrl-names = "default";
--- 
-1.7.9.5
-
+ 	memset(&hw, 0, sizeof(hw));
+ 	hw.nr_controllers = 1;
+ 	hw.private_data = (void **)&priv;
