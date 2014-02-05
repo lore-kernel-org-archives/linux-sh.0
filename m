@@ -1,82 +1,66 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 18 Feb 2014 08:23:30 +0000
-Subject: Re: [PATCH] [PATCH v2] sh_eth: call of_mdiobus_register() to register phys
-Message-Id: <53031882.8070701@codethink.co.uk>
+Date: Wed, 05 Feb 2014 09:15:31 +0000
+Subject: Re: [Linux-kernel] [PATCH 2/3] ARM: shmobile: r8a7790: specify multiple parents for cpg_clks
+Message-Id: <52F20133.6080107@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392656266-5244-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1392656266-5244-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
+ <1391537858-28593-3-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1391537858-28593-3-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 17/02/14 21:09, Sergei Shtylyov wrote:
-> Hello.
+On 04/02/14 18:17, William Towle wrote:
+> The current drivers/clk/shmobile/clk-rcar-gen2.c uses the
+> extal_clk reference for the parent of all the clocks that
+> it registers. However the lb, qspi, sdh, sd0 and sd1 clocks
+> are all parented to either pll1 or pll1_div2 which means
+> that the clock rates are incorrect.
 >
-> On 02/17/2014 07:57 PM, Ben Dooks wrote:
+> This is part of the fix that corrects the SDHI0 clock
+> rate error where it reports 1MHz instead of 97.5:
+>      sh_mobile_sdhi ee100000.sd: mmc0 base at 0xee100000 clock rate 1 MHz
 >
->> If the sh_eth device is registered using OF, then the driver
->> should call of_mdiobus_register() to register any PHYs connected
->> to the system.
->
->> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->
->> --
->> v2:
->>     - allocate mdio->irq array at init time
->
->     Did this also fix something?
->
->>     - set devdata after succesful mdio registration
->> ---
->>   drivers/net/ethernet/renesas/sh_eth.c | 13 +++++++++++++
->>   1 file changed, 13 insertions(+)
->>
->> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
->> b/drivers/net/ethernet/renesas/sh_eth.c
->> index 06970ac..1244509 100644
->> --- a/drivers/net/ethernet/renesas/sh_eth.c
->> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->> @@ -40,6 +40,7 @@
->>   #include <linux/if_vlan.h>
->>   #include <linux/clk.h>
->>   #include <linux/sh_eth.h>
->> +#include <linux/of_mdio.h>
->>
->>   #include "sh_eth.h"
->>
->> @@ -2638,6 +2639,18 @@ static int sh_mdio_init(struct net_device
->> *ndev, int id,
->>           goto out_free_bus;
->>       }
->>
->> +    if (ndev->dev.parent->of_node) {
->> +        ret = of_mdiobus_register(mdp->mii_bus,
->> +                      ndev->dev.parent->of_node);
->> +        if (ret != 0) {
->
->     Why not just (ret)?
->
->> +            dev_err(&ndev->dev, "of_mdiobus_register() failed\n");
->> +            goto out_free_bus;
->> +        }
->> +
->> +        dev_set_drvdata(&ndev->dev, mdp->mii_bus);
->> +        return 0;
->> +    }
->> +
->>       for (i = 0; i < PHY_MAX_ADDR; i++)
->>           mdp->mii_bus->irq[i] = PHY_POLL;
->>       if (pd->phy_irq > 0)
->
->     With this code I don't have to call irq_of_parse_and_map() myself
-> when parsing the device node, it seems. What if you insert your code
-> after these initializers? Or could you please base off my patch and
-> remove that superfluous irq_of_parse_and_map() call from
-> sh_eth_parse_dt()? I'm going to post v4 on netdev RSN.
+> Notes:
+> - May require cross-merge with clk-rcar-gen2.c fix
+> - Also not clear which clock "z" is to fix it.
 
-Aha, I will look into that and adding some LED properties to
-the KSZ8041 micrel PHYs.
+Laurent, if you could give us an idea of how to fix this then
+it would be helpful to get this patch fully fixed.
+
+>
+> [ben.dooks@codethink.co.uk: updated patch description]
+> Signed-off-by: William Towle <william.towle@codethink.co.uk>
+> Reviewed-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+>   arch/arm/boot/dts/r8a7790.dtsi |    8 +++++++-
+>   1 file changed, 7 insertions(+), 1 deletion(-)
+>
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index ff55c6e..242e6e2 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -446,7 +446,13 @@
+>   			compatible = "renesas,r8a7790-cpg-clocks",
+>   				     "renesas,rcar-gen2-cpg-clocks";
+>   			reg = <0 0xe6150000 0 0x1000>;
+> -			clocks = <&extal_clk>;
+> +			clocks = <&extal_clk>, <&extal_clk>, <&extal_clk>, <&extal_clk>,
+> +				<&cpg_clocks R8A7790_CLK_PLL1>,
+> +				<&pll1_div2_clk>,
+> +				<&cpg_clocks R8A7790_CLK_PLL1>,
+> +				<&cpg_clocks R8A7790_CLK_PLL1>,
+> +				<&cpg_clocks R8A7790_CLK_PLL1>
+
+Should we add a pll1_clk node, or leave this as is?
+
+> +				/* not known for "z" ...,<> */;
+>   			#clock-cells = <1>;
+>   			clock-output-names = "main", "pll0", "pll1", "pll3",
+>   					     "lb", "qspi", "sdh", "sd0", "sd1",
+>
+
 
 -- 
 Ben Dooks				http://www.codethink.co.uk/
