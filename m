@@ -1,40 +1,88 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 18:54:51 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 05 Feb 2014 00:56:31 +0000
 Subject: Re: [PATCH 00/11] ARM: shmobile: RSPI RZ and QSPI SoC and board integration
-Message-Id: <CAMuHMdUHP8ptyjXh1n+iucygfAEAZCuwwe1tB1JjrTuGrhD3Pg@mail.gmail.com>
+Message-Id: <20140205005631.GA7664@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
- <20140204173733.GI22609@sirena.org.uk>
-In-Reply-To: <20140204173733.GI22609@sirena.org.uk>
+In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+Magnus, could you Ack these or otherwise?
 
-On Tue, Feb 4, 2014 at 6:37 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Tue, Feb 04, 2014 at 04:23:54PM +0100, Geert Uytterhoeven wrote:
->>       Hi Simon, Magnus,
->>
->> This patch series contains SoC and board integration for
->>   1. RSPI in the r7s72100 aka RZ/A1H SoC on the Genmai reference board,
->>   2. QSPI in the r8a7791 aka R-Car M2 SoC on the Koelsch reference board.
->> It was rebased on top of renesas-devel-v3.14-rc1-20140204.
->
-> Can you please stop CCing arch/arm only patch serieses like this to the
-> SPI list - they just mean I have to go through patchwork and mark them
-> as not applicable.
+On Tue, Feb 04, 2014 at 04:23:54PM +0100, Geert Uytterhoeven wrote:
+> 	Hi Simon, Magnus,
+> 
+> This patch series contains SoC and board integration for
+>   1. RSPI in the r7s72100 aka RZ/A1H SoC on the Genmai reference board,
+>   2. QSPI in the r8a7791 aka R-Car M2 SoC on the Koelsch reference board.
+> It was rebased on top of renesas-devel-v3.14-rc1-20140204.
+> 
+> It was tested on the r7s72100-based Genmai reference board using loopback
+> mode, and on the r8a7791-based Koelsch reference board using the Spansion
+> s25fl512s SPI FLASH.
+> 
+>   - [v5 01/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+>   - [v5 02/11] ARM: shmobile: genmai legacy: Add RSPI support
+>   - [v3 03/11] ARM: shmobile: genmai defconfig: Enable RSPI
+>   - [v3 04/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+>   - [v5 05/11] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+>   - [v4 06/11] ARM: shmobile: r8a7791 clock: add QSPI clocks
+>   - [v4 07/11] ARM: shmobile: koelsch legacy: Add QSPI support
+>   - [v4 08/11] ARM: shmobile: koelsch defconfig: Enable RSPI and
+>   - [v3 09/11] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+>   - [v3 10/11] ARM: shmobile: koelsch dts: Add QSPI nodes
+>   - [v2 11/11] ARM: shmobile: lager legacy: Switch QSPI to named IRQs
 
-Sorry, you're right. Only a few of them contained SPI-specific code.
+Above I see v2, v3, v4 and v5 patches.
 
-Gr{oetje,eeting}s,
+While I can make sense of this it makes it cumbersome to refer to the
+series as a whole.
 
-                        Geert
+Bob, can you take a look at '"[PATCH 00/11] ARM: shmobile: RSPI RZ and
+QSPI SoC and board", posted on Tuesday the 2nd, which includes v2, v3,
+v4 and v5 patches'?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+What would make my life easier would be if the entire series was v5 and
+all the patches contained in it were v5. Then I could just ask Bob to look
+at "[PATCH v5 00/11] ARM: shmobile: RSPI RZ and QSPI SoC and board"
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+There is no Bob but I do ask people these kind of questions :)
+
+> All of these should be safe to apply, without compile-time or run-time
+> dependencies on other parts.
+> Actual functioning for some parts may depend on RSPI work queued up for
+> 3.15 in the spi tree.
+> 
+> Compared to previous submission, the following have been postponed:
+>   - [v4 03/15] [WIP] ARM: shmobile: genmai legacy: Add preliminary RSPI
+>                pinmux setup
+>     This depends on the to-be-written non-DT pinmux configuration for
+>     r7s72100.
+>   - [v4 07/15] ARM: shmobile: genmai reference dts: Add RSPI nodes
+>     This depends on Magnus' "ARM: shmobile: r7s72100 GPIO and PINCTRL device
+>     nodes"
+>   - [v1 14/15] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for
+>                the SPI FLASH
+>   - [v1 15/15] ARM: shmobile: koelsch dts: Enable Quad SPI transfers
+>     These two depend on the RSPI Dual/Quad work queued up in the spi tree.
+>     After applying the r8a7791/Koelsch patches above, the mainline RSPI/QSPI
+>     driver will work fine. But enabling Quad SPI transfers in board support
+>     code or DT without the corresponding support in the RSPI driver would
+>     cause a regression.
+> 
+> Please apply this series, Thanks!
+> 
+> Gr{oetje,eeting}s,
+> 
+> 						Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+> 							    -- Linus Torvalds
+> 
