@@ -1,110 +1,62 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:29:56 +0000
-Subject: [PATCH 02/03] ARM: shmobile: Use shmobile_clk_workaround() on Lager
-Message-Id: <20140224072956.3522.60446.sendpatchset@w520>
+Date: Wed, 05 Feb 2014 06:52:43 +0000
+Subject: [PATCH 00/04] PCI: rcar: Driver model and physical address space update
+Message-Id: <20140205065243.29445.76593.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224072921.3522.55023.sendpatchset@w520>
-In-Reply-To: <20140224072921.3522.55023.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, horms@verge.net.au, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>, ben.dooks@codethink.co.uk
 
-From: Magnus Damm <damm@opensource.se>
+PCI: rcar: Driver model and physical address space update
 
-Convert the Lager DT reference code to use the newly introduced
-function shmobile_clk_workaround().
+[PATCH 01/04] PCI: rcar: Register each instance independently
+[PATCH 02/04] PCI: rcar: Break out window size handling
+[PATCH 03/04] PCI: rcar: Add DMABOUNCE support
+[PATCH 04/04] PCI: rcar: Enable BOUNCE in case of HIGHMEM
+
+These patches update the pci-rcar-gen2.c driver in various ways
+including cleanups for driver model interface (1/4), readability
+update (2/4) and also bounce buffer support (3/4, 4/4). Basically
+the first two are just cleanups and the rest are fixes.
+
+As it is today without these patches the system memory start address
+is hard coded at 0x4000000 and the window is fixed at 1GiB. So we
+have board specific code hidden in the driver which is good to avoid.
+
+With these hard coded board specific constants there are some error cases
+that are not handled, in particular the issue that only maximum 1GiB of
+physical address space can be used for bus mastering with a single window.
+The common case of using ARM CONFIG_VMSPLIT_3G results in no visible issues
+as long as CONFIG_BOUNCE is used, but other CONFIG_VMSPLIT settings will
+break due to the hard coded 1GiB window not being enough. It has been
+verified that reducing the window size to 256MB makes the driver behave
+the same with VMSPLIT_3G as 1GiB window size and other VMSPLIT settings.
+
+To handle the maximum 1GiB physical address space limitation two types
+of bounce buffers are added. The ARM specific DMABOUNCE code is in 3/4
+hooked up to a chunk of local memory that is also handed of as coherent
+memory to the pci devices hanging off the PCI bridge. The driver makes
+sure to set the window so the local memory is always included. When the
+PCI devices are operating and in case memory is used outside the window
+then the DMABOUNCE buffers kicks in. This makes the driver support all
+kinds of VMSPLIT settings and window sizes. The BOUNCE code in 4/4 is
+selected to make sure bounce buffers are used for HIGHMEM.
+
+With these patches this driver can be used with or without CMA and
+with or without DMA zone. Basically the system wide memory setup is
+left to the user. If a DMA zone is used then the PCI window will
+be setup to cover that. Same thing with CMA.
+
+Tested with USB storage using LPAE and various VMSPLIT settings together
+with renesas git tag renesas-devel-v3.14-rc1-20140204 from kernel.org
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/board-lager-reference.c |   65 +++++++++---------------
- 1 file changed, 25 insertions(+), 40 deletions(-)
+ Written against renesas.git tag renesas-devel-v3.14-rc1-20140204
 
---- 0001/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-02-24 16:17:32.000000000 +0900
-@@ -18,12 +18,11 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/clk.h>
--#include <linux/clkdev.h>
- #include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/rcar-gen2.h>
-@@ -86,46 +85,32 @@ static void __init lager_add_du_device(v
- 	platform_device_register_full(&info);
- }
- 
-+/*
-+ * This is a really crude hack to provide clkdev support to platform
-+ * devices until they get moved to DT.
-+ */
-+static const struct clk_name clk_names[] = {
-+	{ "cmt0", NULL, "sh_cmt.0" },
-+	{ "scifa0", NULL, "sh-sci.0" },
-+	{ "scifa1", NULL, "sh-sci.1" },
-+	{ "scifb0", NULL, "sh-sci.2" },
-+	{ "scifb1", NULL, "sh-sci.3" },
-+	{ "scifb2", NULL, "sh-sci.4" },
-+	{ "scifa2", NULL, "sh-sci.5" },
-+	{ "scif0", NULL, "sh-sci.6" },
-+	{ "scif1", NULL, "sh-sci.7" },
-+	{ "hscif0", NULL, "sh-sci.8" },
-+	{ "hscif1", NULL, "sh-sci.9" },
-+	{ "du0", "du.0", "rcar-du-r8a7790" },
-+	{ "du1", "du.1", "rcar-du-r8a7790" },
-+	{ "du2", "du.2", "rcar-du-r8a7790" },
-+	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
-+	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
-+};
-+
- static void __init lager_add_standard_devices(void)
- {
--	/*
--	 * This is a really crude hack to provide clkdev support to platform
--	 * devices until they get moved to DT.
--	 */
--	static const struct clk_name {
--		const char *clk;
--		const char *con_id;
--		const char *dev_id;
--	} clk_names[] = {
--		{ "cmt0", NULL, "sh_cmt.0" },
--		{ "scifa0", NULL, "sh-sci.0" },
--		{ "scifa1", NULL, "sh-sci.1" },
--		{ "scifb0", NULL, "sh-sci.2" },
--		{ "scifb1", NULL, "sh-sci.3" },
--		{ "scifb2", NULL, "sh-sci.4" },
--		{ "scifa2", NULL, "sh-sci.5" },
--		{ "scif0", NULL, "sh-sci.6" },
--		{ "scif1", NULL, "sh-sci.7" },
--		{ "hscif0", NULL, "sh-sci.8" },
--		{ "hscif1", NULL, "sh-sci.9" },
--		{ "du0", "du.0", "rcar-du-r8a7790" },
--		{ "du1", "du.1", "rcar-du-r8a7790" },
--		{ "du2", "du.2", "rcar-du-r8a7790" },
--		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
--		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
--	};
--	struct clk *clk;
--	unsigned int i;
--
--	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
--		clk = clk_get(NULL, clk_names[i].clk);
--		if (!IS_ERR(clk)) {
--			clk_register_clkdev(clk, clk_names[i].con_id,
--					    clk_names[i].dev_id);
--			clk_put(clk);
--		}
--	}
--
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
+ drivers/pci/host/Kconfig         |    3 
+ drivers/pci/host/pci-rcar-gen2.c |  367 +++++++++++++++++++++++++++++++-------
+ 2 files changed, 306 insertions(+), 64 deletions(-)
