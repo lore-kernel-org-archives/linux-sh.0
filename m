@@ -1,44 +1,42 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 05 Feb 2014 10:19:05 +0000
-Subject: [PATCH 02/11] pci-rcar-gen2: add initial device tree documentation
-Message-Id: <1391595554-20640-3-git-send-email-ben.dooks@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Feb 2014 12:04:22 +0000
+Subject: Re: [PATCH 02/11] pci-rcar-gen2: add initial device tree documentation
+Message-Id: <CANqRtoROdrHXOT8jin9ks9PgeCc_KgjeH+Cfv2OOPDijs7zBdg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1391595554-20640-3-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1391595554-20640-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add initial documentation for the pci-rcar-gen2 driver device tree bindings.
-This is not yet complete and needs work on the sub-nodes for the PCI bus.
+On Wed, Feb 5, 2014 at 7:19 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> Add initial documentation for the pci-rcar-gen2 driver device tree bindings.
+> This is not yet complete and needs work on the sub-nodes for the PCI bus.
+>
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+> Cc: linux-sh@vger.kernel.org
+> Cc: devicetree@vger.kernel.org
+> Cc: horms+renesas@verge.net.au
+> ---
+>  .../devicetree/bindings/pci/renessas,pci-r8a7790.txt         | 12 ++++++++++++
+>  1 file changed, 12 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
-Cc: linux-sh@vger.kernel.org
-Cc: devicetree@vger.kernel.org
-Cc: horms+renesas@verge.net.au
----
- .../devicetree/bindings/pci/renessas,pci-r8a7790.txt         | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
+Hi Ben,
 
-diff --git a/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
-new file mode 100644
-index 0000000..a6fd432
---- /dev/null
-+++ b/Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
-@@ -0,0 +1,12 @@
-+Renesas internal AHB to PCI bridge
-+
-+This is the bridge used internally to connect the USB controllers to the
-+AHB.
-+
-+Required properties:
-+ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC
-+ - reg : A list of physical regions to access the device. The first is
-+         the operational registers for the OHCI/EHCI controller and the
-+	 second region is for the bridge configuration and control registers.
-+ - interrupts : interrupt for the device
-+ - clocks : The reference to the device clock
--- 
-1.8.5.3
+Thanks for this. Regarding DT bindings, I agree about using the SoC as
+suffix in the compatible string since this is in line with what we do
+for other device drivers. I much prefer that over "gen2" or something
+else that may or may not apply to newer SoCs.
 
+As you probably know, the pci-rcar-gen2.c driver is intended to be
+used both on r8a7790 and r8a7791. Regarding this binding document, is
+it possible to make it one file for the driver instead of r8a7790
+specific? That would match what we do for DT binding documentation for
+other device drivers.
+
+Cheers,
+
+/ magnus
