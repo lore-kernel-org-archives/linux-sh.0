@@ -1,54 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Feb 2014 05:34:46 +0000
-Subject: Re: [PATCH 0/7] ARM: shmobile: r8a7790/Lager QSPI SoC/board integration
-Message-Id: <20140213053443.GA17183@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 10:19:09 +0000
+Subject: [PATCH 06/11] phy-rcar-usb-gen2: add device tree documentation
+Message-Id: <1391595554-20640-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
- <CANqRtoQZBTYXwDcfzxqs9X-o2Yftvr=TM4dLgeMagr-LGdm1uw@mail.gmail.com>
-In-Reply-To: <CANqRtoQZBTYXwDcfzxqs9X-o2Yftvr=TM4dLgeMagr-LGdm1uw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Feb 12, 2014 at 02:01:01PM +0900, Magnus Damm wrote:
-> Hi Geert, Simon,
-> 
-> On Mon, Feb 10, 2014 at 7:47 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> >         Hi Simon, Magnus,
-> >
-> > The following patch series completes r8a7790 SoC and Lager board
-> > integration for the Renesas Quad Serial Peripheral Interface. It brings
-> > r8a7790/Lager to the same support level as r8a7791/Koelsch, allowing access
-> > to the Spansion s25fl512s SPI FLASH for both legacy and multi-platform
-> > kernels.
-> >
-> >     [1/7] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
-> >     [2/7] ARM: shmobile: lager legacy: Add QSPI pinmux
-> >     [3/7] ARM: shmobile: r8a7790 dtsi: Add QSPI node
-> >     [4/7] ARM: shmobile: lager dts: Add QSPI nodes
-> >     [5/7] ARM: shmobile: lager defconfig: Enable RSPI and MTD_M25P80
-> 
-> Thanks a lot for this! All patches included in this series look great to me.
-> 
-> I noticed that 1/7 turned into a v2, so feel free to omit or include
-> the below ack.
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
-> 
-> >     [6/7] ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI
-> >           FLASH
-> >     [7/7] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI
-> >          FLASH
-> >
-> > Please do _not_ apply patches [6/7] and [7/7] yet, as these have a runtime
-> > dependency on Quad SPI support in the RSPI/QSPI driver, which is queued up
-> > in the linux-spi tree for v3.15.
-> 
-> That makes sense, thanks for pointing that out. You still have my Ack
-> though, so please include that when you resend.
-> 
-> Simon, can you please pick up 2-5?
+Documentation for phy-rcar-usb-gen2 device tree binding.
 
-Done.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+--
+Cc: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org
+Cc: horms+renesas@verge.net.au
+---
+ .../bindings/usb/renesas,rcar-gen2-usb-phy.txt           | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
+
+diff --git a/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt b/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
+new file mode 100644
+index 0000000..e1d2dd9
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
+@@ -0,0 +1,16 @@
++Renesas RCar gen2 USB PHY bindings
++
++Required properties:
++ - compatible: "renesas,usb-phy-r8a7790" for the R8A7790 SoC or
++    "renesas,rcar-gen2-usb-phy" for any generic comaptible device.
++ - reg : A single region to access device registers
++ - clocks : The reference to the clock to use for this block
++ - clock-names : The name for the clock at index 0 (must be "usbhs")
++
++Note, interrupt is currently not supported by the driver, but there should
++be a node in the device tree for it.
++
++Optional properties:
++
++ - renesas,usb0-hs: boolean, if present USB0 is connected to HS device.
++ - renesas,usb2-ss: boolean, if present USB2 is connected to XHCI controller.
+-- 
+1.8.5.3
+
