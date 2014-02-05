@@ -1,55 +1,129 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 05 Feb 2014 08:02:53 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 08:29:46 +0000
 Subject: Re: [PATCH 01/04] PCI: rcar: Register each instance independently
-Message-Id: <CAMuHMdVrkPybrONnw5fZaMZ-vuaq_arrBMZvnRYZ9EnvE8Y4cA@mail.gmail.com>
+Message-Id: <52F1F67A.6070509@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140205065243.29445.76593.sendpatchset@w520>
-	<20140205065254.29445.77939.sendpatchset@w520>
+References: <20140205065243.29445.76593.sendpatchset@w520> <20140205065254.29445.77939.sendpatchset@w520>
 In-Reply-To: <20140205065254.29445.77939.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-pci@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Valentine <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>, Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, horms@verge.net.au, bhelgaas@google.com
 
-On Wed, Feb 5, 2014 at 7:52 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+On 05/02/14 06:52, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+>
+> Convert the code to allow per-device probe() like other device
+> drivers. This also delays driver registration due to change from
+> subsys_initcall() to regular module_platform_driver().
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+>
+>   drivers/pci/host/pci-rcar-gen2.c |   74 ++++++++------------------------------
+>   1 file changed, 16 insertions(+), 58 deletions(-)
+>
+> --- 0001/drivers/pci/host/pci-rcar-gen2.c
+> +++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-04 16:38:46.000000000 +0900
+> @@ -74,9 +74,6 @@
+>
+>   #define RCAR_PCI_UNIT_REV_REG		(RCAR_AHBPCI_PCICOM_OFFSET + 0x48)
+>
+> -/* Number of internal PCI controllers */
+> -#define RCAR_PCI_NR_CONTROLLERS		3
+> -
+>   struct rcar_pci_priv {
+>   	struct device *dev;
+>   	void __iomem *reg;
+> @@ -228,6 +225,8 @@ static int __init rcar_pci_setup(int nr,
+>   	pci_add_resource(&sys->resources, &priv->io_res);
+>   	pci_add_resource(&sys->resources, &priv->mem_res);
+>
+> +	/* Setup bus number based on platform device id */
+> +	sys->busnr = to_platform_device(priv->dev)->id;
+>   	return 1;
+>   }
+>
+> @@ -236,48 +235,12 @@ static struct pci_ops rcar_pci_ops = {
+>   	.write	= rcar_pci_write_config,
+>   };
+>
+> -static struct hw_pci rcar_hw_pci __initdata = {
+> -	.map_irq	= rcar_pci_map_irq,
+> -	.ops		= &rcar_pci_ops,
+> -	.setup		= rcar_pci_setup,
+> -};
+> -
+> -static int rcar_pci_count __initdata;
+> -
+> -static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
+> -{
+> -	void **private_data;
+> -	int count;
+> -
+> -	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
+> -		goto add_priv;
+> -
+> -	/* (Re)allocate private data pointer array if needed */
+> -	count = rcar_pci_count + RCAR_PCI_NR_CONTROLLERS;
+> -	private_data = kzalloc(count * sizeof(void *), GFP_KERNEL);
+> -	if (!private_data)
+> -		return -ENOMEM;
+> -
+> -	rcar_pci_count = count;
+> -	if (rcar_hw_pci.private_data) {
+> -		memcpy(private_data, rcar_hw_pci.private_data,
+> -		       rcar_hw_pci.nr_controllers * sizeof(void *));
+> -		kfree(rcar_hw_pci.private_data);
+> -	}
+> -
+> -	rcar_hw_pci.private_data = private_data;
+> -
+> -add_priv:
+> -	/* Add private data pointer to the array */
+> -	rcar_hw_pci.private_data[rcar_hw_pci.nr_controllers++] = priv;
+> -	return 0;
+> -}
+> -
+> -static int __init rcar_pci_probe(struct platform_device *pdev)
 > +static int rcar_pci_probe(struct platform_device *pdev)
->  {
->         struct resource *cfg_res, *mem_res;
->         struct rcar_pci_priv *priv;
->         void __iomem *reg;
-> +       struct hw_pci hw;
+>   {
+>   	struct resource *cfg_res, *mem_res;
+>   	struct rcar_pci_priv *priv;
+>   	void __iomem *reg;
+> +	struct hw_pci hw;
 >
->         cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
->         reg = devm_ioremap_resource(&pdev->dev, cfg_res);
+>   	cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+>   	reg = devm_ioremap_resource(&pdev->dev, cfg_res);
 > @@ -308,31 +271,26 @@ static int __init rcar_pci_probe(struct
->         priv->reg = reg;
->         priv->dev = &pdev->dev;
+>   	priv->reg = reg;
+>   	priv->dev = &pdev->dev;
 >
-> -       return rcar_pci_add_controller(priv);
-> +       memset(&hw, 0, sizeof(hw));
-> +       hw.nr_controllers = 1;
-> +       hw.private_data = (void **)&priv;
+> -	return rcar_pci_add_controller(priv);
+> +	memset(&hw, 0, sizeof(hw));
+> +	hw.nr_controllers = 1;
+> +	hw.private_data = (void **)&priv;
+> +	hw.map_irq = rcar_pci_map_irq;
+> +	hw.ops = &rcar_pci_ops;
+> +	hw.setup = rcar_pci_setup;
+> +	pci_common_init_dev(&pdev->dev, &hw);
+> +	return 0;
+>   }
 
-This raised a red flag: taking the address of a variable on the stack.
-I know it's correct, as hw.private_data is an array of pointers copied
-by pci_common_init_dev() below.
-But perhaps it's a good idea to turn priv into an array with one element,
-to make this clearer, and avoid the ugly cast?
+Do we really want to explicitly set the bus number here?
 
-> +       hw.map_irq = rcar_pci_map_irq;
-> +       hw.ops = &rcar_pci_ops;
-> +       hw.setup = rcar_pci_setup;
-> +       pci_common_init_dev(&pdev->dev, &hw);
-> +       return 0;
+>
+>   static struct platform_driver rcar_pci_driver = {
+>   	.driver = {
+>   		.name = "pci-rcar-gen2",
+> +		.owner = THIS_MODULE,
+> +		.suppress_bind_attrs = true,
+>   	},
+> +	.probe = rcar_pci_probe,
+>   };
 
-Gr{oetje,eeting}s,
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
