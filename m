@@ -1,43 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:13:58 +0000
-Subject: [PATCH 09/12] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
-Message-Id: <9c25f63d91d1ca7e894faf70cbf6ba1801758cbc.1392278855.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 05 Feb 2014 10:19:12 +0000
+Subject: [PATCH 09/11] PCI: rcar: check platform_get_irq() return code
+Message-Id: <1391595554-20640-10-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The current code does not check the return from platform_get_irq()
+so add an error check and return if this call does fail.
 
-Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
-clock framework yet.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 5 +++++
+Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+ drivers/pci/host/pci-rcar-gen2.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index ffb0fff..71c99fe 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -191,6 +191,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
-+	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index ea65bac..674f7fe 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -308,6 +308,11 @@ static int __init rcar_pci_probe(struct platform_device *pdev)
+ 	priv->reg = reg;
+ 	priv->dev = &pdev->dev;
+ 
++	if (priv->irq < 0) {
++		dev_err(&pdev->dev, "no valid irq found\n");
++		return priv->irq;
++	}
++
+ 	return rcar_pci_add_controller(priv);
+ }
+ 
 -- 
-1.8.5.2
+1.8.5.3
 
