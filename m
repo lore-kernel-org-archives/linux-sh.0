@@ -1,154 +1,189 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Feb 2014 13:17:07 +0000
-Subject: Re: [PATCH v3 05/20] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
-Message-Id: <2446490.l97kFWPEOi@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Feb 2014 07:23:26 +0000
+Subject: Re: [PATCH V3 0/3] ARM: shmobile: lager: Add USB support
+Message-Id: <CANqRtoR0-vL5cPkcAYmvZxFx=8sC++A73cG=6vUNgSVn7AAwrA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
- <1393400016-23433-6-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-6-git-send-email-horms+renesas@verge.net.au>
+References: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hi Valentine,
 
-Thank you for the patch.
+On Thu, Jan 30, 2014 at 9:08 AM, Valentine
+<valentine.barshak@cogentembedded.com> wrote:
+> On 01/30/2014 03:39 AM, Magnus Damm wrote:
+>>
+>> Hi Valentine,
+>>
+>> Thanks a lot for your efforts.
+>>
+>> On Wed, Jan 29, 2014 at 3:34 AM, Valentine
+>> <valentine.barshak@cogentembedded.com> wrote:
+>>>
+>>> On 01/27/2014 03:25 PM, Magnus Damm wrote:
+>>>>
+>>>> On Mon, Jan 27, 2014 at 7:45 PM, Valentine
+>>>> <valentine.barshak@cogentembedded.com> wrote:
+>>>>>
+>>>>> On 01/27/2014 02:31 PM, Magnus Damm wrote:
+>>>>>>
+>>>>>> I don't think DMA pool by itself is enough though, HIGHMEM is probably
+>>>>>> used for cached disk contents so to also cover the USB storage case I
+>>>>>> believe we need to use bounce buffers. I recall something similar was
+>>>>>> needed for SM501 with local memory, I may be wrong about this case
+>>>>>> though. As-is is probably not enough though.
+>>>>>
+>>>>>
+>>>>> I have played with this a bit. I haven't seen any issues with HIGHMEM.
+>>>>> As long as the kernel uses 1G/3G memory split (kernel/user-space) I
+>>>>> have
+>>>>> not
+>>>>> seen any issues.
+>>>>
+>>>>
+>>>> Ok, thanks, I see. Can you please share your test cases with us?
+>>>
+>>>
+>>>
+>>> I've been doing disk reads/writes with dd using direct flags and various
+>>> buffer sizes in parallel with memtest.
+>>
+>>
+>> The "direct flag" thing here sticks out a bit. Have you tried using a
+>> file system?
+>
+>
+> Yes, I actually switched to direct after I had tested without it,
+> I did some extensive copying back and forth from one USB storage to another
+> and stuff like that with some memory consuming processes in the background.
 
-On Wednesday 26 February 2014 16:33:21 Simon Horman wrote:
-> Copy the device nodes from Marzen reference into the Marzen device tree
-> file. This will allow us to use a single DTS file regardless of kernel
-> configuration. In case of legacy C board code the device nodes may or
-> may not be used, but in the multiplatform case all the DT device nodes
-> will be used.
-> 
-> Based on a similar change for the Lager board by Laurent Pinchart.
-> 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Ok, thanks for the clarification.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+>>>> My half-educated guess is that devices that do not use HIGHMEM will
+>>>> most likely function. Whatever serial ports and keyboards will be
+>>>> fine. USB storage will most likely fail if you stress test, and it is
+>>>> a pretty important feature IMO so I'd like to make sure that it is
+>>>> working as expected.
+>>>>
+>>>> If you have not tested USB storage yet, would it be possible for you
+>>>> to perform some basic testing?
+>>>
+>>>
+>>>
+>>> Yes, I've been doing it with USB storage. HIGHMEM is not a problem
+>>> since USB storage driver copies everything to lowmem. Besides DMA
+>>> bouncing of HIGHMEM is not supported.
+>>
+>>
+>> I see. Can you point out where this code is located to I can have a look?
+>
+>
+> grep -r  "HIGHMEM" arch/arm/common/dmabounce.c
+> # dev_err(dev, "DMA buffer bouncing of HIGHMEM pages is not supported\n");
 
-> 
-> ---
-> v3
-> * Updated for recent changes to Marzen reference DTS
-> ---
->  arch/arm/boot/dts/r8a7779-marzen.dts | 93
-> ++++++++++++++++++++++++++++++++++++ 1 file changed, 93 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts
-> b/arch/arm/boot/dts/r8a7779-marzen.dts index a7af2c2..eda6240 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-> @@ -11,6 +11,8 @@
-> 
->  /dts-v1/;
->  #include "r8a7779.dtsi"
-> +#include <dt-bindings/gpio/gpio.h>
-> +#include <dt-bindings/interrupt-controller/irq.h>
-> 
->  / {
->  	model = "marzen";
-> @@ -24,4 +26,95 @@
->  		device_type = "memory";
->  		reg = <0x60000000 0x40000000>;
->  	};
-> +
-> +	fixedregulator3v3: fixedregulator@0 {
-> +		compatible = "regulator-fixed";
-> +		regulator-name = "fixed-3.3V";
-> +		regulator-min-microvolt = <3300000>;
-> +		regulator-max-microvolt = <3300000>;
-> +		regulator-boot-on;
-> +		regulator-always-on;
-> +	};
-> +
-> +	lan0@18000000 {
-> +		compatible = "smsc,lan9220", "smsc,lan9115";
-> +		reg = <0x18000000 0x100>;
-> +		pinctrl-0 = <&lan0_pins>;
-> +		pinctrl-names = "default";
-> +
-> +		phy-mode = "mii";
-> +		interrupt-parent = <&irqpin0>;
-> +		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
-> +		reg-io-width = <4>;
-> +		vddvario-supply = <&fixedregulator3v3>;
-> +		vdd33a-supply = <&fixedregulator3v3>;
-> +	};
-> +
-> +	leds {
-> +		compatible = "gpio-leds";
-> +		led2 {
-> +			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-> +		};
-> +		led3 {
-> +			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-> +		};
-> +		led4 {
-> +			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-> +		};
-> +	};
-> +};
-> +
-> +&irqpin0 {
-> +	status = "okay";
-> +};
-> +
-> +&pfc {
-> +	pinctrl-0 = <&scif2_pins &scif4_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	lan0_pins: lan0 {
-> +		intc {
-> +			renesas,groups = "intc_irq1_b";
-> +			renesas,function = "intc";
-> +		};
-> +		lbsc {
-> +			renesas,groups = "lbsc_ex_cs0";
-> +			renesas,function = "lbsc";
-> +		};
-> +	};
-> +
-> +	scif2_pins: serial2 {
-> +		renesas,groups = "scif2_data_c";
-> +		renesas,function = "scif2";
-> +	};
-> +
-> +	scif4_pins: serial4 {
-> +		renesas,groups = "scif4_data";
-> +		renesas,function = "scif4";
-> +	};
-> +
-> +	sdhi0_pins: sd0 {
-> +		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-> +		renesas,function = "sdhi0";
-> +	};
-> +
-> +	hspi0_pins: hspi0 {
-> +		renesas,groups = "hspi0";
-> +		renesas,function = "hspi0";
-> +	};
-> +};
-> +
-> +&sdhi0 {
-> +	pinctrl-0 = <&sdhi0_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	vmmc-supply = <&fixedregulator3v3>;
-> +	bus-width = <4>;
-> +	status = "okay";
-> +};
-> +
-> +&hspi0 {
-> +	pinctrl-0 = <&hspi0_pins>;
-> +	pinctrl-names = "default";
-> +	status = "okay";
->  };
+So I think there has been some confusion in our discussion related to
+the bounce buffers. You are correct that DMABOUNCE does not support
+HIGHMEM.
 
--- 
-Regards,
+>>>>> I have not tested the PAE yet. I planned to play more with it and send
+>>>>> incremental patches
+>>>>> for that later.
+>>>>
+>>>>
+>>>>
+>>>> The thing is that LPAE is needed to support all physical memory on the
+>>>> Lager board. So it's not really optional in my opinion.
+>>>>
+>>>> To be fair, actual board support for 4GiB of memory was added rather
+>>>> recently due to upstream ARM architecture code wasn't working as
+>>>> expected in some cases. I expect that the defconfig for Lager will
+>>>> enable LPAE. For multiplatform distro kernels this is something that
+>>>> the distribution will select. Regardless of setting we want the USB
+>>>> code to work as expected.
+>>>>
+>>>>> Using bounce buffers with different memory model works fine for DMA
+>>>>> transfers but it involves
+>>>>> changes to the board-specific code which should limit DMA zone to just
+>>>>> 1GB
+>>>>> for all DMA
+>>>>> allocations.
+>>>>
+>>>>
+>>>>
+>>>> Uhm, I don't think this has anything to do with the DMA zone. You can
+>>>> write code that specifically allocates from DMA or DMA32 zones, but in
+>>>> case of general purpose OS disk caching we cannot select that. And if
+>>>> we could then all HIGHMEM would be pretty darn useless since we
+>>>> couldn't use it for disk caching. So HIGHMEM will be around -
+>>>> especially on 32-bit ARM and especially especially on systems that use
+>>>> LPAE. =)
+>>>>
+>>>>> Unfortunately ARM PCI doesn't seem to have specific DMA memory
+>>>>> limitation
+>>>>> support as PowerPC does.
+>>>>> So I used platform notifiers to fix up DMA mask for PCI devices.
+>>>>
+>>>>
+>>>>
+>>>> Is this enough really? I think you can use the ixp4xx implementation
+>>>> as a reference to see how to make use of bounce buffer support on ARM.
+>>>
+>>>
+>>>
+>>> This is exactly what ixp4xx is doing. I'll send RFC patches for you to
+>>> test.
+>>> I also needed adjust the size of the default ARM coherent DMA pool since
+>>> 256K
+>>> was not enough for bouncing USB DMA buffers.
 
-Laurent Pinchart
+Thanks for your efforts there. I can see that you planned to use the
+DMA zone and also board specific bounce buffer setup. In my mind the
+1GiB limitation comes from the actual PCI hardware so it should be
+handled by the driver. Please see the following series for my
+proposal:
 
+[PATCH 00/04] PCI: rcar: Driver model and physical address space update
+
+>> Thanks for your work on that!
+>>
+>>> As I have said before I have not been able to see any problems so far
+>>> with
+>>> HIGHMEM.
+>>> Enabling LPAE doesn't seem to hard either. Besides we may want to revisit
+>>> other
+>>> drivers that set 32-bit DMA mask for LPAE support as well.
+>>>
+>>> The problems were observed with memory split other than 3G/1G
+>>> user/kernel,
+>>> when
+>>> more than 1G was available in lowmem for DMA.
+>>
+>>
+>> I'm not so concerned about the user/kernel split, but I understand
+>> that it may affect things. My main concern is that HIGHMEM should be
+>> handled correctly at this point.
+>
+>
+> Haven't seen any problems with HIGHMEM (and no dmabounce) so far.
+> AFAIU, the USB storage protocol copies all data from HIGHMEM to the internal
+> buffer before the transfer:
+> drivers/usb/storage/protocol.c:unsigned int
+> usb_stor_access_xfer_buf(unsigned char *buffer,
+
+Thanks for the pointer, but I don't think that function is used by the
+general purpose usb storage code. Instead I believe you mean to refer
+to the CONFIG_BOUNCE code in block/blk-settings.c.
+
+So without any modifications to the driver and CONFIG_BOUNCE=n we get
+some broken runtime behaviour in case of HIGHMEM.
+
+By the way, USB1 is working well on my Lager board. Regardless of
+kernel configuration and pci-rcar-gen2.c patches I can't get USB2 to
+work well though. Is USB2 working well on your Lager board?
+
+Thanks,
+
+/ magnus
