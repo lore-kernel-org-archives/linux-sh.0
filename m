@@ -1,109 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:38 +0000
-Subject: [PATCH 00/27] Renesas CMT (Compare Match Timer) DT bindings
-Message-Id: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:44 +0000
+Subject: [PATCH 09/17] ARM: shmobile: r8a7791: Add VIN clocks to device tree
+Message-Id: <09c983463dd576d005c95dfdc0997f064629d321.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch set adds DT support to the Renesas CMT driver.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-The first 14 patches are a bunch of necessary cleanups that reorganize the
-driver, its platform data, and the memory, interrupt and clock resources it
-expects. As a result the driver accepts a new platform data model close to the
-hardware with supports for all the timer channels using a single device.
-
-The next 7 patches (15 to 21) move all platforms from the old to the new
-platform data model. Patch 22 then drops support for the old model, and patch
-23 finally adds DT support.
-
-Patches 24 to 27 then add the CMT devices to the r8a7790 and r8a7791 device
-trees, and enable them for the lager-reference and koelsch-reference boards.
-
-The patches are based on top of Simon's latest devel branch with the
-"[PATCH v4 0/2] [RESEND] Lager and Koelsch reference serial port support"
-series applied.
-
-Laurent Pinchart (27):
-  clocksource: sh_cmt: Split channel fields from sh_cmt_priv
-  clocksource: sh_cmt: Rename struct sh_cmt_priv to sh_cmt_device
-  clocksource: sh_cmt: Split channel setup to separate function
-  clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
-  clocksource: sh_cmt: Add memory base to sh_cmt_channel structure
-  clocksource: sh_cmt: Add index to struct sh_cmt_channel
-  clocksource: sh_cmt: Replace kmalloc + memset with kzalloc
-  clocksource: sh_cmt: Allocate channels dynamically
-  clocksource: sh_cmt: Split static information from sh_cmt_device
-  clocksource: sh_cmt: Replace hardcoded register values with macros
-  clocksource: sh_cmt: Add support for multiple channels per device
-  clocksource: sh_cmt: Acquire default clock in the non-legacy case
-  clocksource: sh_cmt: Remove FSF mail address from GPL notice
-  clocksource: sh_cmt: Sort headers alphabetically
-  sh: Switch to new style CMT device
-  ARM: shmobile: sh7372: Switch to new style CMT device
-  ARM: shmobile: sh73a0: Switch to new style CMT device
-  ARM: shmobile: r8a73a4: Switch to new style CMT device
-  ARM: shmobile: r8a7740: Switch to new style CMT device
-  ARM: shmobile: r8a7790: Switch to new style CMT device
-  ARM: shmobile: r8a7791: Switch to new style CMT device
-  clocksource: sh_cmt: Drop support for legacy platform data
-  clocksource: sh_cmt: Add DT support
-  ARM: shmobile: r8a7790: Add CMT devices to DT
-  ARM: shmobile: r8a7791: Add CMT devices to DT
-  ARM: shmobile: lager-reference: Enable CMT0 in device tree
-  ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-
- .../devicetree/bindings/timer/renesas,cmt.txt      |  75 ++
- arch/arm/boot/dts/r8a7790-lager.dts                |   9 +
- arch/arm/boot/dts/r8a7790.dtsi                     |  38 +
- arch/arm/boot/dts/r8a7791-koelsch.dts              |   9 +
- arch/arm/boot/dts/r8a7791.dtsi                     |  38 +
- arch/arm/mach-shmobile/board-koelsch-reference.c   |  15 +-
- arch/arm/mach-shmobile/board-lager-reference.c     |  15 +-
- arch/arm/mach-shmobile/clock-r8a73a4.c             |   2 +-
- arch/arm/mach-shmobile/clock-r8a7740.c             |   2 +-
- arch/arm/mach-shmobile/clock-r8a7790.c             |   2 +-
- arch/arm/mach-shmobile/clock-r8a7791.c             |   2 +-
- arch/arm/mach-shmobile/clock-sh7372.c              |   6 +-
- arch/arm/mach-shmobile/clock-sh73a0.c              |   2 +-
- arch/arm/mach-shmobile/include/mach/r8a7790.h      |   1 -
- arch/arm/mach-shmobile/include/mach/r8a7791.h      |   1 -
- arch/arm/mach-shmobile/setup-r8a73a4.c             |  25 +-
- arch/arm/mach-shmobile/setup-r8a7740.c             |  45 +-
- arch/arm/mach-shmobile/setup-r8a7790.c             |  31 +-
- arch/arm/mach-shmobile/setup-r8a7791.c             |  31 +-
- arch/arm/mach-shmobile/setup-sh7372.c              |  30 +-
- arch/arm/mach-shmobile/setup-sh73a0.c              |  45 +-
- arch/sh/kernel/cpu/clock-cpg.c                     |   3 +-
- arch/sh/kernel/cpu/sh2/setup-sh7619.c              |  73 +-
- arch/sh/kernel/cpu/sh2a/clock-sh7264.c             |   2 +-
- arch/sh/kernel/cpu/sh2a/clock-sh7269.c             |   2 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  73 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  73 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c             |  76 +-
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c             |  73 +-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c              | 155 +---
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c             |   2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c             |   2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c             |   2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c             |   2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c             |   2 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7343.c             |  28 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7366.c             |  27 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c             |  28 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7723.c             |  28 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7724.c             |  28 +-
- drivers/clocksource/sh_cmt.c                       | 903 +++++++++++++--------
- include/linux/sh_timer.h                           |   9 +
- 42 files changed, 1078 insertions(+), 937 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 00ed0e0..93c6f4d 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -655,10 +655,13 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&p_clk>;
++			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7791_CLK_ETHER>;
+-			clock-output-names = "ether";
++			renesas,clock-indices = <
++				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
++				R8A7791_CLK_ETHER
++			>;
++			clock-output-names = "vin2", "vin1", "vin0", "ether";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
