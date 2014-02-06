@@ -1,69 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:34 +0000
-Subject: [PATCH 06/11] ARM: shmobile: r8a7790/lager dts: Rename label spi to qspi, add spi0 alias
-Message-Id: <1392907779-22053-7-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:26 +0000
+Subject: [PATCH 06/13] ARM: shmobile: mackerel: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <97b3fbccfae2d1fee679073f1690e2428868754c.1391651074.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1391651074.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Prepare for the advent of MSIOF SPI, which will be spi1 to spi4.
+DEVTMPFS is needed for udev
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    4 ++--
- arch/arm/boot/dts/r8a7790.dtsi      |    3 ++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/configs/mackerel_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 26a90106e96c..5d53def10c42 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -144,7 +144,7 @@
- 		renesas,function = "mmc1";
- 	};
- 
--	qspi_pins: spi {
-+	qspi_pins: spi0 {
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-@@ -164,7 +164,7 @@
- 	status = "okay";
- };
- 
--&spi {
-+&qspi {
- 	pinctrl-0 = <&qspi_pins>;
- 	pinctrl-names = "default";
- 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a1e7c396afea..bc652a2848e7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -23,6 +23,7 @@
- 		i2c1 = &i2c1;
- 		i2c2 = &i2c2;
- 		i2c3 = &i2c3;
-+		spi0 = &qspi;
- 	};
- 
- 	cpus {
-@@ -753,7 +754,7 @@
- 		};
- 	};
- 
--	spi: spi@e6b10000 {
-+	qspi: spi@e6b10000 {
- 		compatible = "renesas,qspi-r8a7790", "renesas,qspi";
- 		reg = <0 0xe6b10000 0 0x2c>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index a61e165..57ececb 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -42,6 +42,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_FIRMWARE_IN_KERNEL is not set
+ CONFIG_MTD=y
+ CONFIG_MTD_CONCAT=y
 -- 
-1.7.9.5
+1.8.5.2
 
