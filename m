@@ -1,159 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:39 +0000
-Subject: [PATCH v2 09/40] clocksource: sh_cmt: Add index to struct sh_cmt_channel
-Message-Id: <1393603090-23144-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:01 +0000
+Subject: [PATCH 04/13] ARM: shmobile: r8a7791: Add VIN clocks
+Message-Id: <5f3fbe63b39923294cfd4bce84ab16948467d30f.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Use the index when printing messages to identify the channel.
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds VIN[0-2] clock support to R8A7791 SoC.
+
+Changes in V2:
+* none.
+
+Changes in V3:
+* capitalized ARM in the subject.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 37 ++++++++++++++++++++++++-------------
- 1 file changed, 24 insertions(+), 13 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 4fcb05d..6b65621 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -39,6 +39,7 @@ struct sh_cmt_device;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index fe4a774..191ad60 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
+ SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
+ SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
+ SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
++SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
+ SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
  
- struct sh_cmt_channel {
- 	struct sh_cmt_device *cmt;
-+	unsigned int index;
+ static struct clk *main_clks[] = {
+@@ -117,6 +118,7 @@ static struct clk *main_clks[] = {
+ 	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
++	&zg_clk,
+ 	&zx_clk,
+ };
  
- 	void __iomem *base;
+@@ -124,6 +126,7 @@ static struct clk *main_clks[] = {
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+ 	MSTP813,
++	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP522,
+@@ -141,6 +144,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP927] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 27, 0), /* I2C4 */
+ 	[MSTP925] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 25, 0), /* I2C5 */
+ 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
++	[MSTP811] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 11, 0), /* VIN0 */
++	[MSTP810] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 10, 0), /* VIN1 */
++	[MSTP809] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  9, 0), /* VIN2 */
+ 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
+ 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
+ 	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
+@@ -172,6 +178,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pll1",		&pll1_clk),
+ 	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
+ 	CLKDEV_CON_ID("pll3",		&pll3_clk),
++	CLKDEV_CON_ID("zg",		&zg_clk),
+ 	CLKDEV_CON_ID("hp",		&hp_clk),
+ 	CLKDEV_CON_ID("p",		&p_clk),
+ 	CLKDEV_CON_ID("rclk",		&rclk_clk),
+@@ -208,6 +215,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.4", &mstp_clks[MSTP927]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.5", &mstp_clks[MSTP925]),
+ 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
++	CLKDEV_DEV_ID("r8a7791-vin.0", &mstp_clks[MSTP811]),
++	CLKDEV_DEV_ID("r8a7791-vin.1", &mstp_clks[MSTP810]),
++	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
+ };
  
-@@ -216,7 +217,8 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
- 	/* enable clock */
- 	ret = clk_enable(ch->cmt->clk);
- 	if (ret) {
--		dev_err(&ch->cmt->pdev->dev, "cannot enable clock\n");
-+		dev_err(&ch->cmt->pdev->dev, "ch%u: cannot enable clock\n",
-+			ch->index);
- 		goto err0;
- 	}
- 
-@@ -253,7 +255,8 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
- 	}
- 
- 	if (sh_cmt_read_cmcnt(ch)) {
--		dev_err(&ch->cmt->pdev->dev, "cannot clear CMCNT\n");
-+		dev_err(&ch->cmt->pdev->dev, "ch%u: cannot clear CMCNT\n",
-+			ch->index);
- 		ret = -ETIMEDOUT;
- 		goto err1;
- 	}
-@@ -371,7 +374,8 @@ static void sh_cmt_clock_event_program_verify(struct sh_cmt_channel *ch,
- 			delay = 1;
- 
- 		if (!delay)
--			dev_warn(&ch->cmt->pdev->dev, "too long delay\n");
-+			dev_warn(&ch->cmt->pdev->dev, "ch%u: too long delay\n",
-+				 ch->index);
- 
- 	} while (delay);
- }
-@@ -379,7 +383,8 @@ static void sh_cmt_clock_event_program_verify(struct sh_cmt_channel *ch,
- static void __sh_cmt_set_next(struct sh_cmt_channel *ch, unsigned long delta)
- {
- 	if (delta > ch->max_match_value)
--		dev_warn(&ch->cmt->pdev->dev, "delta out of range\n");
-+		dev_warn(&ch->cmt->pdev->dev, "ch%u: delta out of range\n",
-+			 ch->index);
- 
- 	ch->next_match_value = delta;
- 	sh_cmt_clock_event_program_verify(ch, 0);
-@@ -565,7 +570,8 @@ static int sh_cmt_register_clocksource(struct sh_cmt_channel *ch,
- 	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
- 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
- 
--	dev_info(&ch->cmt->pdev->dev, "used as clock source\n");
-+	dev_info(&ch->cmt->pdev->dev, "ch%u: used as clock source\n",
-+		 ch->index);
- 
- 	/* Register with dummy 1 Hz value, gets updated in ->enable() */
- 	clocksource_register_hz(cs, 1);
-@@ -614,12 +620,12 @@ static void sh_cmt_clock_event_mode(enum clock_event_mode mode,
- 	switch (mode) {
- 	case CLOCK_EVT_MODE_PERIODIC:
- 		dev_info(&ch->cmt->pdev->dev,
--			 "used for periodic clock events\n");
-+			 "ch%u: used for periodic clock events\n", ch->index);
- 		sh_cmt_clock_event_start(ch, 1);
- 		break;
- 	case CLOCK_EVT_MODE_ONESHOT:
- 		dev_info(&ch->cmt->pdev->dev,
--			 "used for oneshot clock events\n");
-+			 "ch%u: used for oneshot clock events\n", ch->index);
- 		sh_cmt_clock_event_start(ch, 0);
- 		break;
- 	case CLOCK_EVT_MODE_SHUTDOWN:
-@@ -678,7 +684,8 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
- 	ced->suspend = sh_cmt_clock_event_suspend;
- 	ced->resume = sh_cmt_clock_event_resume;
- 
--	dev_info(&ch->cmt->pdev->dev, "used for clock events\n");
-+	dev_info(&ch->cmt->pdev->dev, "ch%u: used for clock events\n",
-+		 ch->index);
- 	clockevents_register_device(ced);
- }
- 
-@@ -695,7 +702,7 @@ static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
- 	return 0;
- }
- 
--static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
-+static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 				struct sh_cmt_device *cmt)
- {
- 	struct sh_timer_config *cfg = cmt->pdev->dev.platform_data;
-@@ -705,10 +712,12 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
- 	memset(ch, 0, sizeof(*ch));
- 	ch->cmt = cmt;
- 	ch->base = cmt->mapbase_ch;
-+	ch->index = index;
- 
- 	irq = platform_get_irq(cmt->pdev, 0);
- 	if (irq < 0) {
--		dev_err(&cmt->pdev->dev, "failed to get irq\n");
-+		dev_err(&cmt->pdev->dev, "ch%u: failed to get irq\n",
-+			ch->index);
- 		return irq;
- 	}
- 
-@@ -724,7 +733,8 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
- 			      cfg->clockevent_rating,
- 			      cfg->clocksource_rating);
- 	if (ret) {
--		dev_err(&cmt->pdev->dev, "registration failed\n");
-+		dev_err(&cmt->pdev->dev, "ch%u: registration failed\n",
-+			ch->index);
- 		return ret;
- 	}
- 	ch->cs_enabled = false;
-@@ -733,7 +743,8 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
- 			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
- 			  dev_name(&cmt->pdev->dev), ch);
- 	if (ret) {
--		dev_err(&cmt->pdev->dev, "failed to request irq %d\n", irq);
-+		dev_err(&cmt->pdev->dev, "ch%u: failed to request irq %d\n",
-+			ch->index, irq);
- 		return ret;
- 	}
- 
-@@ -815,7 +826,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 		cmt->clear_bits = ~0xc000;
- 	}
- 
--	ret = sh_cmt_setup_channel(&cmt->channel, cmt);
-+	ret = sh_cmt_setup_channel(&cmt->channel, cfg->timer_bit, cmt);
- 	if (ret < 0)
- 		goto err4;
- 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
 -- 
-1.8.3.2
+1.8.5.2
 
