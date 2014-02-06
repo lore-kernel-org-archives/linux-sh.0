@@ -1,62 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:41:34 +0000
-Subject: [PATCH 04/12] ARM: shmobile: Rework include path for EMEV2
-Message-Id: <20140224054134.1143.15635.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:00 +0000
+Subject: [PATCH 08/21] ARM: shmobile: kzm9d: Use common clock framework
+Message-Id: <ef5ecd1f20de2d1919714f029f5016bf6d061e66.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Convert EMEV2 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
+Use common clock framework version of clock
+ drivers/clk/shmobile/clk-emev2.c
+instead of sh-clkfwk version
+ arch/arm/mach-shmobile/clock-emev2.c
+when it is configured as a part of multi-platform.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-kzm9d-reference.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
- arch/arm/mach-shmobile/clock-emev2.c |    2 +-
- arch/arm/mach-shmobile/setup-emev2.c |    4 ++--
- arch/arm/mach-shmobile/smp-emev2.c   |    4 ++--
- 3 files changed, 5 insertions(+), 5 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/clock-emev2.c
-+++ work/arch/arm/mach-shmobile/clock-emev2.c	2014-02-24 13:28:21.000000000 +0900
-@@ -21,7 +21,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/common.h>
-+#include "common.h"
+diff --git a/arch/arm/mach-shmobile/board-kzm9d-reference.c b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+index 054d8d5..853003c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9d-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9d-reference.c
+@@ -20,15 +20,14 @@
  
- #define EMEV2_SMU_BASE 0xe0110000
- 
---- 0001/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-02-24 13:28:37.000000000 +0900
-@@ -20,8 +20,8 @@
- #include <linux/kernel.h>
  #include <linux/init.h>
  #include <linux/of_platform.h>
--#include <mach/common.h>
--#include <mach/emev2.h>
-+#include "common.h"
-+#include "emev2.h"
- #include <asm/mach-types.h>
++#include <linux/clk-provider.h>
+ #include <mach/emev2.h>
+ #include <mach/common.h>
  #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
---- 0001/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2014-02-24 13:28:58.000000000 +0900
-@@ -23,8 +23,8 @@
- #include <linux/spinlock.h>
- #include <linux/io.h>
- #include <linux/delay.h>
--#include <mach/common.h>
--#include <mach/emev2.h>
-+#include "common.h"
-+#include "emev2.h"
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
  
+ static void __init kzm9d_add_standard_devices(void)
+ {
+-	if (!IS_ENABLED(CONFIG_COMMON_CLK))
+-		emev2_clock_init();
+-
++	of_clk_init(NULL);
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-- 
+1.8.5.2
+
