@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Feb 2014 00:57:41 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 06 Feb 2014 12:01:16 +0000
 Subject: Re: [PATCH 1/3] mmc: tmio-mmc: add DMA SG synchronisation
-Message-Id: <20140204005741.GC24787@verge.net.au>
+Message-Id: <52F3798C.4040906@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
  <Pine.LNX.4.64.1401311248320.3234@axis700.grange>
@@ -11,64 +11,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 31, 2014 at 12:54:19PM +0100, Guennadi Liakhovetski wrote:
+On 31/01/14 11:54, Guennadi Liakhovetski wrote:
 > According to the DMA API data has to be synchronised before starting
 > a DMA transfer to device and after completing a DMA transfer from device.
-> 
+>
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+I've got 1/3 and 2/3, but not 3/3 ?
 
-> ---
->  drivers/mmc/host/tmio_mmc_dma.c |   21 ++++++++++++---------
->  1 files changed, 12 insertions(+), 9 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-> index 65edb4a..a997b94 100644
-> --- a/drivers/mmc/host/tmio_mmc_dma.c
-> +++ b/drivers/mmc/host/tmio_mmc_dma.c
-> @@ -168,9 +168,12 @@ static void tmio_mmc_start_dma_tx(struct tmio_mmc_host *host)
->  	}
->  
->  	ret = dma_map_sg(chan->device->dev, sg, host->sg_len, DMA_TO_DEVICE);
-> -	if (ret > 0)
-> +	if (ret > 0) {
-> +		dma_sync_sg_for_device(chan->device->dev, sg, host->sg_len,
-> +				       DMA_TO_DEVICE);
->  		desc = dmaengine_prep_slave_sg(chan, sg, ret,
->  			DMA_MEM_TO_DEV, DMA_CTRL_ACK);
-> +	}
->  
->  	if (desc) {
->  		cookie = dmaengine_submit(desc);
-> @@ -247,14 +250,14 @@ static void tmio_mmc_tasklet_fn(unsigned long arg)
->  	if (!host->data)
->  		goto out;
->  
-> -	if (host->data->flags & MMC_DATA_READ)
-> -		dma_unmap_sg(host->chan_rx->device->dev,
-> -			     host->sg_ptr, host->sg_len,
-> -			     DMA_FROM_DEVICE);
-> -	else
-> -		dma_unmap_sg(host->chan_tx->device->dev,
-> -			     host->sg_ptr, host->sg_len,
-> -			     DMA_TO_DEVICE);
-> +	if (host->data->flags & MMC_DATA_READ) {
-> +		struct device *dev = host->chan_rx->device->dev;
-> +		dma_unmap_sg(dev, host->sg_ptr, host->sg_len, DMA_FROM_DEVICE);
-> +		dma_sync_sg_for_cpu(dev, host->sg_ptr, host->sg_len, DMA_FROM_DEVICE);
-> +	} else {
-> +		struct device *dev = host->chan_tx->device->dev;
-> +		dma_unmap_sg(dev, host->sg_ptr, host->sg_len, DMA_TO_DEVICE);
-> +	}
->  
->  	tmio_mmc_do_data_irq(host);
->  out:
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
