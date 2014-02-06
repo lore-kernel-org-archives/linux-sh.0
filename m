@@ -1,99 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 11 Feb 2014 17:01:25 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: koelsch: add Ether DT support
-Message-Id: <2679079.Rucv1O0jLA@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 08:36:13 +0000
+Subject: [PATCH v8 2/2] ARM: shmobile: genmai: Enable r7s72100-ether
+Message-Id: <1391675773-5430-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402070110.18561.sergei.shtylyov@cogentembedded.com>
- <201402070114.27279.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402070114.27279.sergei.shtylyov@cogentembedded.com>
+References: <1391675773-5430-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1391675773-5430-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Signed-off-by: Simon Horman <horms@verge.net.au>
+Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thanks a lot for the patch.
+---
+v3 - v8
+* No change
 
-On Friday 07 February 2014 01:14:26 Sergei Shtylyov wrote:
-> Define the Koelsch board dependent part of the Ether device node.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
->  arch/arm/boot/dts/r8a7791-koelsch.dts |   31 +++++++++++++++++++++++++++++-
->  1 file changed, 30 insertions(+), 1 deletion(-)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
-> +++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-> @@ -2,7 +2,8 @@
->   * Device Tree Source for the Koelsch board
->   *
->   * Copyright (C) 2013 Renesas Electronics Corporation
-> - * Copyright (C) 2013 Renesas Solutions Corp.
-> + * Copyright (C) 2013-2014 Renesas Solutions Corp.
-> + * Copyright (C) 2014 Cogent Embedded, Inc.
->   *
->   * This file is licensed under the terms of the GNU General Public License
->   * version 2.  This program is licensed "as is" without any warranty of any
-> @@ -122,12 +123,40 @@
->  		renesas,function = "scif1";
->  	};
-> 
-> +	ether_pins: ether {
-> +		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-> +		renesas,function = "eth";
-> +	};
-> +
-> +	phy1_pins: phy1 {
-> +		renesas,groups = "intc_irq0";
-> +		renesas,function = "intc";
-> +	};
-> +
->  	qspi_pins: spi {
->  		renesas,groups = "qspi_ctrl", "qspi_data4";
->  		renesas,function = "qspi";
->  	};
->  };
-> 
-> +&ether {
-> +	pinctrl-0 = <&ether_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	phy-handle = <&phy1>;
-> +	renesas,ether-link-active-low;
-> +	status = "ok";
-> +
-> +	phy1: ethernet-phy@1 {
-> +		reg = <1>;
-> +		interrupt-parent = <&irqc0>;
-> +		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-> +
-> +		pinctrl-0 = <&phy1_pins>;
-> +		pinctrl-names = "default";
+v2
+* As suggested by Magnus Damm and Sergei Shtylyov
+  - r7s72100 ethernet is not gigabit so do not refer to it as such
 
-I think the PHY pins should be moved to the ethernet device. The reason for 
-this is that the PHY device is discovered dynamically at runtime, and has thus 
-no DT node associated with its struct device to control pinctrl automatically. 
-This should probably be fixed, but in the meantime moving the PHY pins to the 
-ethernet device should fix the problem.
+* As suggested by Sergei Shtylyov
+  - set no_ether_link as there is no LINK signal documented
+    in the manual
+---
+ arch/arm/mach-shmobile/board-genmai.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-As a last step we're missing a DT equivalent to our board code 
-koelsch_ksz8041_fixup() workaround. Adding a property to specify LEDs usage to 
-the PHY DT node shouldn't be difficult, but associating that node to the PHY 
-device and handling the property in the PHY driver will require a bit of work. 
-Is this on your to-do list ?
-
-> +	};
-> +};
-> +
->  &sata0 {
->  	status = "okay";
->  };
-
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 3e92e3c..a1f6fe1 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,15 +20,36 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/sh_eth.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* Ether */
++static const struct sh_eth_plat_data ether_pdata __initconst = {
++	.phy			= 0x00, /* PD60610 */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++	.no_ether_link		= 1
++};
++
++static const struct resource ether_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe8203000, 0x800),
++	DEFINE_RES_MEM(0xe8204800, 0x200),
++	DEFINE_RES_IRQ(gic_iid(359)),
++};
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
++
++	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  &ether_pdata, sizeof(ether_pdata));
+ }
+ 
+ static const char * const genmai_boards_compat_dt[] __initconst = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
