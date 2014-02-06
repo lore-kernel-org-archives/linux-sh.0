@@ -1,32 +1,32 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Feb 2014 15:36:36 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 06 Feb 2014 06:34:23 +0000
 Subject: Re: [PATCH 0/2] Add Ether's PHY IRQ support for Lager/Koelsh boards
-Message-Id: <52F268AA.6070808@cogentembedded.com>
+Message-Id: <20140206063423.GB13435@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
  <CANqRtoRj9EVVZ+0Xx+7cm8s2=iBOfgNUXXR7uS=T-fKBUkczsw@mail.gmail.com>
-In-Reply-To: <CANqRtoRj9EVVZ+0Xx+7cm8s2=iBOfgNUXXR7uS=T-fKBUkczsw@mail.gmail.com>
+ <52F268AA.6070808@cogentembedded.com>
+In-Reply-To: <52F268AA.6070808@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Wed, Feb 05, 2014 at 07:36:58PM +0300, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 02/05/2014 10:25 AM, Magnus Damm wrote:
+> 
+> >>    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+> >>'renesas-devel-v3.14-rc1-20130204' tag. Here we add support for the Ether's PHY
+> >>IRQ to the R8A7790/Lager and R8A7791/Koelsch boards.
+> 
+> >>[1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
+> >>[1/2] ARM: shmobile: Koelsch: pass Ether PHY IRQ
+> 
+> >Thanks, looking good!
+> 
+>    Not at all, you've already tested these patches, IIRC.
 
-On 02/05/2014 10:25 AM, Magnus Damm wrote:
-
->>     Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
->> 'renesas-devel-v3.14-rc1-20130204' tag. Here we add support for the Ether's PHY
->> IRQ to the R8A7790/Lager and R8A7791/Koelsch boards.
-
->> [1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
->> [1/2] ARM: shmobile: Koelsch: pass Ether PHY IRQ
-
-> Thanks, looking good!
-
-    Not at all, you've already tested these patches, IIRC.
-
-> / magnus
-
-WBR, Sergei
-
+Thanks, I have queued these up with Magnus's ack which
+he supplied the previous time that you posted them.
