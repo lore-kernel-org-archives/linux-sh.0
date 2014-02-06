@@ -1,92 +1,148 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:13:59 +0000
-Subject: [PATCH 10/12] ARM: shmobile: r8a7791 clock: add QSPI clocks
-Message-Id: <39e6191cfa96d80da5bf4223dbfe9e9ac9266270.1392278855.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:18:59 +0000
+Subject: [PATCH 07/21] ARM: shmobile: lager: Add VIN1 SoC camera support
+Message-Id: <094a804aa6943de0e9939e1c48341e87be93b3d2.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-The QSPI clock divider value depends on the MD1, MD2, and MD3 mode
-switches.
+This adds VIN1 SoC camera along with ADV7180 subdevice support to Lager.
+VIN0 camera is not registered because it has ADV7612 I2C subdevice
+which is not supported yet.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+Changes in V2:
+* made lager_add_vin_device function static.
+
+Changes in V3:
+* capitalized ARM in the subject.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 76 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index e4e4dfa..c8227b3 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -101,6 +101,7 @@ static struct clk main_clk = {
-  */
- SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
- SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
-+SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f20c10a..c5643e1 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -27,6 +27,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
+@@ -39,6 +40,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7790.h>
++#include <media/soc_camera.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <linux/mtd/partitions.h>
+@@ -291,6 +293,62 @@ static const struct resource qspi_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(184)),
+ };
  
- /* fixed ratio clock */
- SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
-@@ -124,6 +125,7 @@ static struct clk *main_clks[] = {
- 	&pll3_clk,
- 	&hp_clk,
- 	&p_clk,
-+	&qspi_clk,
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-@@ -135,6 +137,7 @@ static struct clk *main_clks[] = {
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
-+	MSTP917,
- 	MSTP815, MSTP814,
- 	MSTP813,
- 	MSTP811, MSTP810, MSTP809,
-@@ -154,6 +157,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
- 	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
- 	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
-+	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
- 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
- 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
- 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
-@@ -195,6 +199,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("zs",		&zs_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
-+	CLKDEV_CON_ID("qspi",		&qspi_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
- 	CLKDEV_CON_ID("mp",		&mp_clk),
- 	CLKDEV_CON_ID("cp",		&cp_clk),
-@@ -220,6 +225,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
-@@ -271,6 +277,11 @@ void __init r8a7791_clock_init(void)
- 		break;
- 	}
- 
-+	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
-+	else
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
++/* VIN */
++static const struct resource vin_resources[] __initconst = {
++	/* VIN0 */
++	DEFINE_RES_MEM(0xe6ef0000, 0x1000),
++	DEFINE_RES_IRQ(gic_spi(188)),
++	/* VIN1 */
++	DEFINE_RES_MEM(0xe6ef1000, 0x1000),
++	DEFINE_RES_IRQ(gic_spi(189)),
++};
 +
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
++static void __init lager_add_vin_device(unsigned idx,
++					struct rcar_vin_platform_data *pdata)
++{
++	struct platform_device_info vin_info = {
++		.parent		= &platform_bus,
++		.name		= "r8a7790-vin",
++		.id		= idx,
++		.res		= &vin_resources[idx * 2],
++		.num_res	= 2,
++		.dma_mask	= DMA_BIT_MASK(32),
++		.data		= pdata,
++		.size_data	= sizeof(*pdata),
++	};
++
++	BUG_ON(idx > 1);
++
++	platform_device_register_full(&vin_info);
++}
++
++#define LAGER_CAMERA(idx, name, addr, pdata, flag)			\
++static struct i2c_board_info i2c_cam##idx##_device = {			\
++	I2C_BOARD_INFO(name, addr),					\
++};									\
++									\
++static struct rcar_vin_platform_data vin##idx##_pdata = {		\
++	.flags = flag,							\
++};									\
++									\
++static struct soc_camera_link cam##idx##_link = {			\
++	.bus_id = idx,							\
++	.board_info = &i2c_cam##idx##_device,				\
++	.i2c_adapter_id = 2,						\
++	.module_name = name,						\
++	.priv = pdata,							\
++}
++
++/* Camera 0 is not currently supported due to adv7612 support missing */
++LAGER_CAMERA(1, "adv7180", 0x20, NULL, RCAR_VIN_BT656);
++
++static void __init lager_add_camera1_device(void)
++{
++	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 1,
++				      &cam1_link, sizeof(cam1_link));
++	lager_add_vin_device(1, &vin1_pdata);
++}
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -319,6 +377,22 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 				  "eth_rmii", "eth"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
+ 				  "intc_irq0", "intc"),
++	/* VIN0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
++				  "vin0_data24", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
++				  "vin0_sync", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
++				  "vin0_field", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
++				  "vin0_clkenb", "vin0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
++				  "vin0_clk", "vin0"),
++	/* VIN1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.1", "pfc-r8a7790",
++				  "vin1_data8", "vin1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.1", "pfc-r8a7790",
++				  "vin1_clk", "vin1"),
+ };
  
+ static void __init lager_add_standard_devices(void)
+@@ -368,6 +442,8 @@ static void __init lager_add_standard_devices(void)
+ 				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
+ 	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
+ 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
++
++	lager_add_camera1_device();
+ }
+ 
+ /*
 -- 
 1.8.5.2
 
