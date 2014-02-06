@@ -1,66 +1,119 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:08 +0000
-Subject: [PATCH 09/10] spi: sh-msiof: Convert to let spi core validate xfer->bits_per_word
-Message-Id: <1392907389-21798-10-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:52 +0000
+Subject: [PATCH 17/17] ARM: shmobile: r8a7790: Replace IRQ type numerical values with macros
+Message-Id: <1f4c745b2c5a083c49dc11d2f0827d9a381f1ee1.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Takashi Yoshii <takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Set bits_per_word_mask so the spi core will reject transfers that attempt
-to use an unsupported bits_per_word value.
+Replace the hardcoded value 4 with IRQ_TYPE_LEVEL_HIGH.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-sh-msiof.c |   19 ++-----------------
- 1 file changed, 2 insertions(+), 17 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 7add4be37987..bd300fcb7116 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -441,22 +441,6 @@ static u32 sh_msiof_spi_hz(struct spi_device *spi, struct spi_transfer *t)
- 	return hz;
- }
- 
--static int sh_msiof_spi_setup_transfer(struct spi_device *spi,
--				       struct spi_transfer *t)
--{
--	int bits;
--
--	/* noting to check hz values against since parent clock is disabled */
--
--	bits = sh_msiof_spi_bits(spi, t);
--	if (bits < 8)
--		return -EINVAL;
--	if (bits > 32)
--		return -EINVAL;
--
--	return spi_bitbang_setup_transfer(spi, t);
--}
--
- static int sh_msiof_spi_setup(struct spi_device *spi)
- {
- 	struct device_node	*np = spi->master->dev.of_node;
-@@ -822,10 +806,11 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	master->cleanup = spi_bitbang_cleanup;
- 	master->prepare_message = sh_msiof_prepare_message;
- 	master->unprepare_message = sh_msiof_unprepare_message;
-+	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 32);
- 
- 	p->bitbang.master = master;
- 	p->bitbang.chipselect = sh_msiof_spi_chipselect;
--	p->bitbang.setup_transfer = sh_msiof_spi_setup_transfer;
-+	p->bitbang.setup_transfer = spi_bitbang_setup_transfer;
- 	p->bitbang.txrx_bufs = sh_msiof_spi_txrx;
- 	p->bitbang.txrx_word[SPI_MODE_0] = sh_msiof_spi_txrx_word;
- 	p->bitbang.txrx_word[SPI_MODE_1] = sh_msiof_spi_txrx_word;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 51c8978..ba0ef9a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -304,7 +304,7 @@
+ 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupt-parent = <&gic>;
+-		interrupts = <0 144 4>;
++		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -314,7 +314,7 @@
+ 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c50000 0 64>;
+-		interrupts = <0 145 4>;
++		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -324,7 +324,7 @@
+ 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c60000 0 64>;
+-		interrupts = <0 151 4>;
++		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -334,7 +334,7 @@
+ 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c20000 0 64>;
+-		interrupts = <0 148 4>;
++		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -344,7 +344,7 @@
+ 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6c30000 0 64>;
+-		interrupts = <0 149 4>;
++		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -354,7 +354,7 @@
+ 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6ce0000 0 64>;
+-		interrupts = <0 150 4>;
++		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -364,7 +364,7 @@
+ 		compatible = "renesas,scif-r8a7790", "renesas,scif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6e60000 0 64>;
+-		interrupts = <0 152 4>;
++		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -374,7 +374,7 @@
+ 		compatible = "renesas,scif-r8a7790", "renesas,scif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe6e68000 0 64>;
+-		interrupts = <0 153 4>;
++		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -384,7 +384,7 @@
+ 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe62c0000 0 96>;
+-		interrupts = <0 154 4>;
++		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
+@@ -394,7 +394,7 @@
+ 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
+ 		interrupt-parent = <&gic>;
+ 		reg = <0 0xe62c8000 0 96>;
+-		interrupts = <0 155 4>;
++		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
+ 		clock-names = "sci_ick";
+ 		status = "disabled";
 -- 
-1.7.9.5
+1.8.5.2
 
