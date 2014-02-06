@@ -1,39 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 15:24:05 +0000
-Subject: [PATCH v2 11/11] ARM: shmobile: lager legacy: Switch QSPI to named IRQs
-Message-Id: <1391527445-14881-12-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:46 +0000
+Subject: [PATCH 11/17] ARM: shmobile: r8a7791: Add SATA clocks to device tree
+Message-Id: <65f05c38749f393f775c360b9b247fa4d63b72de.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - s/DEFINE_RES_IRQ/DEFINE_RES_IRQ_NAMED/
-  - Rebased on top of renesas-devel-v3.14-rc1-20140204
+ arch/arm/boot/dts/r8a7791.dtsi | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
- arch/arm/mach-shmobile/board-lager.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index fdcc868de1fa..3fe982b5ca87 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -293,7 +293,7 @@ static const struct spi_board_info spi_info[] __initconst = {
- /* QSPI resource */
- static const struct resource qspi_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6b10000, 0x1000),
--	DEFINE_RES_IRQ(gic_spi(184)),
-+	DEFINE_RES_IRQ_NAMED(gic_spi(184), "mux"),
- };
- 
- /* VIN */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 93c6f4d..94e3cc1 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -655,13 +655,15 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
++			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>, <&zs_clk>,
++				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+-				R8A7791_CLK_ETHER
++				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+ 			>;
+-			clock-output-names = "vin2", "vin1", "vin0", "ether";
++			clock-output-names +				"vin2", "vin1", "vin0", "ether", "sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.7.9.5
+1.8.5.2
 
