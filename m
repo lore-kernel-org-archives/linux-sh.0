@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:48 +0000
-Subject: [PATCH 13/17] ARM: shmobile: koelsch: Enable SATA0 in r8a7791-koelsch.dts
-Message-Id: <760c277b23973a3db181b2ae98d9a87f6e8f843e.1391665761.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:05 +0000
+Subject: [PATCH 08/13] ARM: shmobile: r8a7790: Add VIN clock support
+Message-Id: <b89dfdfad949798e1624dd2ff494bdb7ac943b04.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,29 +12,49 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-This enables SATA0 in Koelsch device tree.
-SATA1 is not available on Koelsch since
-its pinmux configuration is fixed to PCIe.
+This adds VIN[0-3] clock support to R8A7790 SoC.
 
 Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: manually applied]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index d30527d..74f0985 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -122,3 +122,7 @@
- 		renesas,function = "scif1";
- 	};
- };
-+
-+&sata0 {
-+	status = "okay";
-+};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 58f3dcf..b2b2323 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -197,6 +197,7 @@ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928,
+ 	MSTP917,
+ 	MSTP813,
++	MSTP811, MSTP810, MSTP809, MSTP808,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+ 	MSTP704,
+@@ -226,6 +227,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+ 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+ 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
++	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
++	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
++	[MSTP809] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  9, MSTPSR8, 0), /* VIN2 */
++	[MSTP808] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8,  8, MSTPSR8, 0), /* VIN3 */
+ 	[MSTP726] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 26, MSTPSR7, 0), /* LVDS0 */
+ 	[MSTP725] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 25, MSTPSR7, 0), /* LVDS1 */
+ 	[MSTP724] = SH_CLK_MSTP32_STS(&zx_clk, SMSTPCR7, 24, MSTPSR7, 0), /* DU0 */
+@@ -312,6 +317,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
++	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
++	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
++	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
++	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
 -- 
 1.8.5.2
 
