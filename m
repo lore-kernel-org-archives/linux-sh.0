@@ -1,146 +1,44 @@
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Date: Tue, 04 Feb 2014 18:48:21 +0000
-Subject: [PATCH V4 2/4] ARM: shmobile: koelsch: Add VIN1 SoC camera support
-Message-Id: <1391539703-5787-3-git-send-email-valentine.barshak@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:38 +0000
+Subject: [PATCH 03/17] ARM: shmobile: koelsch: (1+1)GiB memory in DT
+Message-Id: <4cd1bad45182c7f1426353d73a481e0260d236b1.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds VIN1 SoC camera along with ADV7180 subdevice support to Koelsch.
-VIN0 camera is not registered because it has ADV7612 I2C subdevice
-which is not supported yet.
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Fix dts to have memory 1GiB @ 0_4000_0000 + 1GiB @ 2_0000_0000
+according to Koelsch's hardware manual.
+
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 76 ++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-Changes in V2:
-* made koelsch_add_vin_device function static;
-
-Changes in V3:
-* capitalized ARM in the subject;
-
-Changes in V4:
-* rebased on top of renesas-devel-v3.14-rc1-20140204 tag.
-
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index b9f638e..5bfd910 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -27,6 +27,7 @@
- #include <linux/leds.h>
- #include <linux/phy.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
- #include <linux/platform_device.h>
-@@ -35,6 +36,7 @@
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
- #include <mach/rcar-gen2.h>
-+#include <media/soc_camera.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index c6f5de3..d30527d 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -23,7 +23,12 @@
  
-@@ -195,6 +197,62 @@ static void __init koelsch_add_i2c(unsigned idx)
- 					i2c_resources + res_idx, 2);
- }
- 
-+/* VIN */
-+static const struct resource vin_resources[] __initconst = {
-+	/* VIN0 */
-+	DEFINE_RES_MEM(0xe6ef0000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(188)),
-+	/* VIN1 */
-+	DEFINE_RES_MEM(0xe6ef1000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(189)),
-+};
-+
-+static void __init koelsch_add_vin_device(unsigned idx,
-+					  struct rcar_vin_platform_data *pdata)
-+{
-+	struct platform_device_info vin_info = {
-+		.parent		= &platform_bus,
-+		.name		= "r8a7791-vin",
-+		.id		= idx,
-+		.res		= &vin_resources[idx * 2],
-+		.num_res	= 2,
-+		.dma_mask	= DMA_BIT_MASK(32),
-+		.data		= pdata,
-+		.size_data	= sizeof(*pdata),
+ 	memory@40000000 {
+ 		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
++		reg = <0 0x40000000 0 0x40000000>;
 +	};
 +
-+	BUG_ON(idx > 1);
-+
-+	platform_device_register_full(&vin_info);
-+}
-+
-+#define KOELSCH_CAMERA(idx, name, addr, pdata, flag)			\
-+static struct i2c_board_info i2c_cam##idx##_device = {			\
-+	I2C_BOARD_INFO(name, addr),					\
-+};									\
-+									\
-+static struct rcar_vin_platform_data vin##idx##_pdata = {		\
-+	.flags = flag,							\
-+};									\
-+									\
-+static struct soc_camera_link cam##idx##_link = {			\
-+	.bus_id = idx,							\
-+	.board_info = &i2c_cam##idx##_device,				\
-+	.i2c_adapter_id = 2,						\
-+	.module_name = name,						\
-+	.priv = pdata,							\
-+}
-+
-+/* Camera 0 is not currently supported due to adv7612 support missing */
-+KOELSCH_CAMERA(1, "adv7180", 0x20, NULL, RCAR_VIN_BT656);
-+
-+static void __init koelsch_add_camera1_device(void)
-+{
-+	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 1,
-+				      &cam1_link, sizeof(cam1_link));
-+	koelsch_add_vin_device(1, &vin1_pdata);
-+}
-+
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -227,6 +285,22 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* I2C4 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.4", "pfc-r8a7791",
- 				  "i2c4_c", "i2c4"),
-+	/* VIN0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_data24", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_sync", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_field", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_clkenb", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.0", "pfc-r8a7791",
-+				  "vin0_clk", "vin0"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.1", "pfc-r8a7791",
-+				  "vin1_data8", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-vin.1", "pfc-r8a7791",
-+				  "vin1_clk", "vin1"),
- };
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
+ 	};
  
- static void __init koelsch_add_standard_devices(void)
-@@ -255,6 +329,8 @@ static void __init koelsch_add_standard_devices(void)
- 	koelsch_add_i2c(2);
- 	koelsch_add_i2c(4);
- 	koelsch_add_i2c(5);
-+
-+	koelsch_add_camera1_device();
- }
- 
- /*
+ 	lbsc {
 -- 
-1.8.3.1
+1.8.5.2
 
