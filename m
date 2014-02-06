@@ -1,63 +1,126 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:02 +0000
-Subject: [PATCH 10/21] ARM: shmobile: lager: Add SATA support
-Message-Id: <1e0d2c495316862fa3da73150ee86ba30c9faf0c.1391665225.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:15:26 +0000
+Subject: [PATCH] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
+Message-Id: <a028c6da34d434e35ba8322568c756ea97ff3c18.1391651474.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <cover.1391651474.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391651474.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-This adds SATA support to Lager board. Only SATA1 port is available.
+On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
+enable and disable peripheral clocks. To make sure the clock has really
+started we have to read back its status register until it confirms success.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: resolved trivial conflicts]
-[horms+renesas@verge.net.au: capitalised "ARM" in subject]
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ drivers/sh/clk/cpg.c   | 38 ++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h | 19 ++++++++++++-------
+ 2 files changed, 50 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index aa8f1d9..8dde446 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -349,6 +349,21 @@ static void __init lager_add_camera1_device(void)
- 	lager_add_vin_device(1, &vin1_pdata);
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 1ebe67c..7442bc1 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
+ 		iowrite32(value, clk->mapped_reg);
  }
  
-+/* SATA1 */
-+static const struct resource sata1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee500000, 0x2000),
-+	DEFINE_RES_IRQ(gic_spi(106)),
-+};
++static unsigned int r8(const void __iomem *addr)
++{
++	return ioread8(addr);
++}
 +
-+static const struct platform_device_info sata1_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "sata-r8a7790",
-+	.id		= 1,
-+	.res		= sata1_resources,
-+	.num_res	= ARRAY_SIZE(sata1_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
++static unsigned int r16(const void __iomem *addr)
++{
++	return ioread16(addr);
++}
 +
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -444,6 +459,8 @@ static void __init lager_add_standard_devices(void)
- 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
- 
- 	lager_add_camera1_device();
++static unsigned int r32(const void __iomem *addr)
++{
++	return ioread32(addr);
++}
 +
-+	platform_device_register_full(&sata1_info);
+ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+ 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
++	if (clk->status_reg) {
++		unsigned int (*read)(const void __iomem *addr);
++		int i;
++		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
++			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
++
++		if (clk->flags & CLK_ENABLE_REG_8BIT)
++			read = r8;
++		else if (clk->flags & CLK_ENABLE_REG_16BIT)
++			read = r16;
++		else
++			read = r32;
++
++		for (i = 1000;
++		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
++		     i--)
++			cpu_relax();
++		if (!i) {
++			pr_err("cpg: failed to enable %p[%d]\n",
++			       clk->enable_reg, clk->enable_bit);
++			return -ETIMEDOUT;
++		}
++	}
+ 	return 0;
  }
  
- /*
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 60c7239..1f208b2 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -52,6 +52,7 @@ struct clk {
+ 	unsigned long		flags;
+ 
+ 	void __iomem		*enable_reg;
++	void __iomem		*status_reg;
+ 	unsigned int		enable_bit;
+ 	void __iomem		*mapped_reg;
+ 
+@@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		      unsigned long *best_freq, unsigned long *parent_freq,
+ 		      unsigned int div_min, unsigned int div_max);
+ 
+-#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
++#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg, _flags) \
+ {									\
+ 	.parent		= _parent,					\
+ 	.enable_reg	= (void __iomem *)_enable_reg,			\
+ 	.enable_bit	= _enable_bit,					\
++	.status_reg	= _status_reg,					\
+ 	.flags		= _flags,					\
+ }
+ 
+-#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
++#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
+ 
+-#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
++#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
++	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
+ 
+-#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
+-	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
++#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
++
++#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
++	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
+ 
+ int sh_clk_mstp_register(struct clk *clks, int nr);
+ 
 -- 
 1.8.5.2
 
