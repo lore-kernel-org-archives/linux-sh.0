@@ -1,63 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:13:53 +0000
-Subject: [PATCH 04/12] ARM: shmobile: r8a7790 CA7-SCU enablement
-Message-Id: <e14cc0f3837c129cd279e16c43eb31bf3c9616fb.1392278855.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:39 +0000
+Subject: [PATCH 04/17] ARM: shmobile: r8a7791: Add thermal clock in device tree
+Message-Id: <563bc8eb0243783afd7a71204ad696e8bdf44391.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Power on CA7 SCU in case of booting from a CA15 core.
+Add the missing thermal MSTP clock to the thermal device node.
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7790.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index 015e275..beb47ae 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -19,6 +19,8 @@
- #include <linux/io.h>
- #include <asm/smp_plat.h>
- #include <mach/common.h>
-+#include <mach/pm-rcar.h>
-+#include <mach/r8a7790.h>
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 19c6550..34f5d39 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -151,6 +151,7 @@
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A7791_CLK_THERMAL>;
+ 	};
  
- #define RST		0xe6160000
- #define CA15BAR		0x0020
-@@ -27,6 +29,11 @@
- #define CA7RESCNT	0x0044
- #define MERAM		0xe8080000
- 
-+static struct rcar_sysc_ch r8a7790_ca7_scu = {
-+	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
-+	.isr_bit = 21, /* CA7-SCU */
-+};
-+
- static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
- {
- 	void __iomem *p;
-@@ -54,6 +61,10 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
- 	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
- 		       p + CA7RESCNT);
- 	iounmap(p);
-+
-+	/* turn on power to SCU */
-+	r8a7790_pm_init();
-+	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
- 
- struct smp_operations r8a7790_smp_ops __initdata = {
+ 	timer {
 -- 
 1.8.5.2
 
