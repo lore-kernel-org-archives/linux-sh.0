@@ -1,55 +1,36 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:21:03 +0000
-Subject: [PATCH 06/13] ARM: shmobile: r8a7790: add Audio DMAC clock
-Message-Id: <f5b2947e4a6589f07d485ca149d606283294979f.1391666228.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:01 +0000
+Subject: [PATCH 09/21] ARM: shmobile: lager: Make spi_flash_data const
+Message-Id: <d422c451a9795c7a10c3ae1ab7ca87ce7518546b.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391666228.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Audio DMAC can be controlled via sh-dma-engine
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7790.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index a028f96..58f3dcf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -201,6 +201,7 @@ enum {
- 	MSTP717, MSTP716,
- 	MSTP704,
- 	MSTP522,
-+	MSTP502, MSTP501,
- 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
- 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
- 	MSTP124,
-@@ -236,6 +237,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
- 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
-+	[MSTP502] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 2, MSTPSR5, 0), /* Audio-DMAC low */
-+	[MSTP501] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 1, MSTPSR5, 0), /* Audio-DMAC hi */
- 	[MSTP315] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, MSTPSR3, 0), /* MMC0 */
- 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
- 	[MSTP313] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD1], SMSTPCR3, 13, MSTPSR3, 0), /* SDHI1 */
-@@ -311,6 +314,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-+	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
-+	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP501]),
- 	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index c5643e1..aa8f1d9 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -265,7 +265,7 @@ static struct mtd_partition spi_flash_part[] = {
+ 	},
+ };
+ 
+-static struct flash_platform_data spi_flash_data = {
++static const struct flash_platform_data spi_flash_data = {
+ 	.name           = "m25p80",
+ 	.parts          = spi_flash_part,
+ 	.nr_parts       = ARRAY_SIZE(spi_flash_part),
 -- 
 1.8.5.2
 
