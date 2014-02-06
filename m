@@ -1,132 +1,148 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 12 Feb 2014 06:25:44 +0000
-Subject: [PATCH 2/2 v2] ARM: shmobile: lager: add SDHI0/2 support on DTS
-Message-Id: <87vbwk97a2.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:36 +0000
+Subject: [PATCH 01/17] ARM: shmobile: dts: Remove r8a7791-koelsch-reference.dts
+Message-Id: <52e62f7f4b25d4f087395f805768e985e9d91bd0.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The dts file has been superseded by r8a7791-koelsch.dts and been removed
+from the ARCH_SHMOBILE_LEGACY dtb target. Remove it.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v1 -> v2
+ arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 115 ------------------------
+ 1 file changed, 115 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
 
- - add Acked-by: Magnus Damm <damm@opensource.se>
- - SDHI0 -> SDHI2
-
- arch/arm/boot/dts/r8a7790-lager.dts |   84 +++++++++++++++++++++++++++++++++++
- 1 file changed, 84 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 1081c5e..58484e4 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -56,6 +56,54 @@
- 		regulator-boot-on;
- 		regulator-always-on;
- 	};
-+
-+	vcc_sdhi0: regulator@1 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio5 24 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi0: regulator@2 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI0 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio5 29 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
-+
-+	vcc_sdhi2: regulator@3 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI2 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio5 25 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi2: regulator@4 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI2 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio5 30 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
- };
- 
- &extal_clk {
-@@ -76,6 +124,16 @@
- 		renesas,function = "scif1";
- 	};
- 
-+	sdhi0_pins: sd0 {
-+		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl", "sdhi2_cd";
-+		renesas,function = "sdhi2";
-+	};
-+
- 	mmc1_pins: mmc1 {
- 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
- 		renesas,function = "mmc1";
-@@ -95,3 +153,29 @@
- &sata1 {
- 	status = "okay";
- };
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi0>;
-+	vqmmc-supply = <&vccq_sdhi0>;
-+	cap-sd-highspeed;
-+	cap-sdio-irq;
-+	cap-power-off-card;
-+	toshiba,mmc-wrprotect-disable;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi2>;
-+	vqmmc-supply = <&vccq_sdhi2>;
-+	cap-sd-highspeed;
-+	cap-sdio-irq;
-+	cap-power-off-card;
-+	toshiba,mmc-wrprotect-disable;
-+	status = "okay";
-+};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+deleted file mode 100644
+index 588ca17..0000000
+--- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/*
+- * Device Tree Source for the Koelsch board
+- *
+- * Copyright (C) 2013 Renesas Electronics Corporation
+- * Copyright (C) 2013 Renesas Solutions Corp.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7791.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Koelsch";
+-	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
+-
+-	chosen {
+-		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x80000000>;
+-	};
+-
+-	lbsc {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-	};
+-
+-	gpio-keys {
+-		compatible = "gpio-keys";
+-
+-		key-a {
+-			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+-			linux,code = <30>;
+-			label = "SW30";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-b {
+-			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
+-			linux,code = <48>;
+-			label = "SW31";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-c {
+-			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
+-			linux,code = <46>;
+-			label = "SW32";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-d {
+-			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
+-			linux,code = <32>;
+-			label = "SW33";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-e {
+-			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
+-			linux,code = <18>;
+-			label = "SW34";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-f {
+-			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
+-			linux,code = <33>;
+-			label = "SW35";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-		key-g {
+-			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
+-			linux,code = <34>;
+-			label = "SW36";
+-			gpio-key,wakeup;
+-			debounce-interval = <20>;
+-		};
+-	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-		led6 {
+-			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+-		};
+-		led7 {
+-			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+-		};
+-		led8 {
+-			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-};
+-
+-&pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
+-	pinctrl-names = "default";
+-
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data_d";
+-		renesas,function = "scif0";
+-	};
+-
+-	scif1_pins: serial1 {
+-		renesas,groups = "scif1_data_d";
+-		renesas,function = "scif1";
+-	};
+-};
 -- 
-1.7.9.5
+1.8.5.2
 
