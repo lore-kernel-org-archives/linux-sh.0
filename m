@@ -1,93 +1,91 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:03:55 +0000
-Subject: [PATCH 08/11] ARM: shmobile: genmai legacy: Add RSPI support
-Message-Id: <664517474c4993c5d560d0e394c36583b7c99535.1392276547.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:37 +0000
+Subject: [PATCH 02/17] ARM: shmobile: Add GPIO keys to Koelsch DTS
+Message-Id: <aff5274fdc5b53a44d906c39a834efa6ba9c30ef.1391665761.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
+References: <cover.1391665761.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add RSPI platform device, resources, platform data, and SPI child.
+The Koelsh reference device tree is going away, copy the missing GPIO
+keys device node to the Koeslch device tree file.
 
-On this board, only rspi4 is in use. Its bus contains a single device
-(a wm8978 audio codec).
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-genmai.c | 44 +++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 54 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c..c406461 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,59 @@
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index fd556c3..c6f5de3 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -31,6 +31,60 @@
+ 		#size-cells = <1>;
+ 	};
  
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* RSPI */
-+#define RSPI_RESOURCE(idx, baseaddr, irq)				\
-+static const struct resource rspi##idx##_resources[] __initconst = {	\
-+	DEFINE_RES_MEM(baseaddr, 0x24),					\
-+	DEFINE_RES_IRQ_NAMED(irq, "error"),				\
-+	DEFINE_RES_IRQ_NAMED(irq + 1, "rx"),				\
-+	DEFINE_RES_IRQ_NAMED(irq + 2, "tx"),				\
-+}
++	gpio-keys {
++		compatible = "gpio-keys";
 +
-+RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
-+RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
-+RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
-+RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
-+RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
++		key-a {
++			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
++			linux,code = <30>;
++			label = "SW30";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-b {
++			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
++			linux,code = <48>;
++			label = "SW31";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-c {
++			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
++			linux,code = <46>;
++			label = "SW32";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-d {
++			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
++			linux,code = <32>;
++			label = "SW33";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-e {
++			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
++			linux,code = <18>;
++			label = "SW34";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-f {
++			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
++			linux,code = <33>;
++			label = "SW35";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-g {
++			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
++			linux,code = <34>;
++			label = "SW36";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++	};
 +
-+static const struct rspi_plat_data rspi_pdata __initconst = {
-+	.num_chipselect	= 1,
-+};
-+
-+#define r7s72100_register_rspi(idx)					   \
-+	platform_device_register_resndata(&platform_bus, "rspi-rz", idx,   \
-+					rspi##idx##_resources,		   \
-+					ARRAY_SIZE(rspi##idx##_resources), \
-+					&rspi_pdata, sizeof(rspi_pdata))
-+
-+static const struct spi_board_info spi_info[] __initconst = {
-+	{
-+		.modalias               = "wm8978",
-+		.max_speed_hz           = 5000000,
-+		.bus_num                = 4,
-+		.chip_select            = 0,
-+	},
-+};
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
-+
-+	r7s72100_register_rspi(0);
-+	r7s72100_register_rspi(1);
-+	r7s72100_register_rspi(2);
-+	r7s72100_register_rspi(3);
-+	r7s72100_register_rspi(4);
-+	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led6 {
 -- 
 1.8.5.2
 
