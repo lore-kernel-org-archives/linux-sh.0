@@ -1,101 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:25 +0000
-Subject: [PATCH v3 09/20] ARM: shmobile: r8a7779: Add helper to read mode pins
-Message-Id: <1393400016-23433-10-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:11 +0000
+Subject: [PATCH 19/21] ARM: shmobile: koelsch: fix error return code check from clk_get()
+Message-Id: <ca1187521b78ce4f980cd1b457f8c634dd401021.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add and use helper to read mode pins.
-This will be re-used when moving marzen-reference to
-the common clock framework.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
+The koelsch_add_standard_devices() function calls clk_get() but then fails
+to check that it returns an error pointer instead of NULL on failure.
+
+This was added by f31239ef ("ARM: shmobile: koelsch-reference:
+Instantiate clkdevs for SCIF and CMT") in Simon Horman's
+renesas-boards2-for-v3.14 tag.
+
+The issue is not serious as it does not cause a crash and seems to not be
+actually causing any issues now the other clock bugs have been fixed.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+[horms+renesas@verge.net.au: tweaked changelog]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
- 3 files changed, 17 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 8e403ae..b1a5065 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -25,6 +25,7 @@
- #include <linux/clkdev.h>
- #include <mach/clock.h>
- #include <mach/common.h>
-+#include <mach/r8a7779.h>
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 652b592..feb8d97 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -45,14 +45,14 @@ static void __init koelsch_add_standard_devices(void)
  
- /*
-  *		MD1 = 1			MD1 = 0
-@@ -52,9 +53,6 @@
- #define MSTPCR3		IOMEM(0xffc8003c)
- #define MSTPSR1		IOMEM(0xffc80044)
+ 	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+ 		clk = clk_get(NULL, scif_names[i]);
+-		if (clk) {
++		if (!IS_ERR(clk)) {
+ 			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
+ 			clk_put(clk);
+ 		}
+ 	}
  
--#define MODEMR		0xffcc0020
--
--
- /* ioremap() through clock mapping mandatory to avoid
-  * collision with ARM coherent DMA virtual memory range.
-  */
-@@ -209,14 +207,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7779_clock_init(void)
- {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
- 
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	if (mode & MD(1)) {
- 		plla_clk.rate = 1500000000;
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 88eecea..d5ba2d8 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -32,6 +32,7 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_init_late(void);
-+extern u32 r8a7779_read_mode_pins(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8e860b3..f6aeb7f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -802,6 +802,20 @@ void __init r8a7779_add_standard_devices_dt(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-+#define MODEMR		0xffcc0020
-+
-+u32 __init r8a7779_read_mode_pins(void)
-+{
-+	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-+	u32 mode;
-+
-+	BUG_ON(!modemr);
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+
-+	return mode;
-+}
-+
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
+ 	clk = clk_get(NULL, "cmt0");
+-	if (clk) {
++	if (!IS_ERR(clk)) {
+ 		clk_register_clkdev(clk, NULL, "sh_cmt.0");
+ 		clk_put(clk);
+ 	}
 -- 
 1.8.5.2
 
