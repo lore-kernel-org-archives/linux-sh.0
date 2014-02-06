@@ -1,61 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:36 +0000
-Subject: [PATCH v2 06/40] clocksource: sh_cmt: Constify name argument to sh_cmt_register()
-Message-Id: <1393603090-23144-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:03 +0000
+Subject: [PATCH 06/13] ARM: shmobile: r8a7790: add Audio DMAC clock
+Message-Id: <f5b2947e4a6589f07d485ca149d606283294979f.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The name argument is assigned to const structure fields only, constify
-it.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Audio DMAC can be controlled via sh-dma-engine
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 26f73cf..febd6bf 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -549,7 +549,7 @@ static void sh_cmt_clocksource_resume(struct clocksource *cs)
- }
- 
- static int sh_cmt_register_clocksource(struct sh_cmt_channel *ch,
--				       char *name, unsigned long rating)
-+				       const char *name, unsigned long rating)
- {
- 	struct clocksource *cs = &ch->cs;
- 
-@@ -660,7 +660,7 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
- }
- 
- static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
--				       char *name, unsigned long rating)
-+				       const char *name, unsigned long rating)
- {
- 	struct clock_event_device *ced = &ch->ced;
- 
-@@ -680,7 +680,7 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
- 	clockevents_register_device(ced);
- }
- 
--static int sh_cmt_register(struct sh_cmt_channel *ch, char *name,
-+static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
- 			   unsigned long clockevent_rating,
- 			   unsigned long clocksource_rating)
- {
-@@ -717,7 +717,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
- 	ch->match_value = ch->max_match_value;
- 	raw_spin_lock_init(&ch->lock);
- 
--	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
-+	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
- 			      cfg->clockevent_rating,
- 			      cfg->clocksource_rating);
- 	if (ret) {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a028f96..58f3dcf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -201,6 +201,7 @@ enum {
+ 	MSTP717, MSTP716,
+ 	MSTP704,
+ 	MSTP522,
++	MSTP502, MSTP501,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+ 	MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP202,
+ 	MSTP124,
+@@ -236,6 +237,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
+ 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
++	[MSTP502] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 2, MSTPSR5, 0), /* Audio-DMAC low */
++	[MSTP501] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 1, MSTPSR5, 0), /* Audio-DMAC hi */
+ 	[MSTP315] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_MMC0], SMSTPCR3, 15, MSTPSR3, 0), /* MMC0 */
+ 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
+ 	[MSTP313] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD1], SMSTPCR3, 13, MSTPSR3, 0), /* SDHI1 */
+@@ -311,6 +314,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
++	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP501]),
+ 	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
 -- 
-1.8.3.2
+1.8.5.2
 
