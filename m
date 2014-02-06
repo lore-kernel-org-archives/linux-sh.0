@@ -1,65 +1,70 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:13:09 +0000
-Subject: [PATCH 2/3] ARM: shmobile: Remove legacy r8a7790 DT clocks
-Message-Id: <074e25ac68b40603345a257504de0f4a125326e7.1392961497.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:27 +0000
+Subject: [GIT PULL 00/13] Renesas ARM based SoC Defconfig Updates for v3.15
+Message-Id: <cover.1391651074.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961497.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-The DT device case is handled by CCF these days, so get
-rid of DT devices from the legacy clocks for r8a7790.
+please consider these Renesas ARM based SoC defconfig updates for v3.15.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 11 -----------
- 1 file changed, 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 08a2803..02b94036 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -328,34 +328,23 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
- 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
- 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
--	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
--	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
--	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
--	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
- 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
- 	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
- 	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
- 	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
- 	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
--	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
- 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP501]),
--	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
--	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
--	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
--	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
--	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
--- 
-1.8.5.2
+The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
 
+  Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.15
+
+for you to fetch changes up to 0771ddff31186836f62a20c42e7958bd37f7b4ed:
+
+  ARM: shmobile: ape6evm: enable CONFIG_DEVTMPFS in defconfig (2014-02-04 10:26:04 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC Defconfig Updates for v3.15
+
+* Renesas ARM based SoC boards (Global)
+  enable CONFIG_DEVTMPFS in defconfig
+
+* r8a7791 SoC (R-Car M2) based Koelsch board
+  - Enable SATA
+
+* r8a7790 SoC (R-Car H2) based Lager board
+  - Enable SATA, VIN and ADV7180 decoder in defconfig
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: koelsch: Enable DEVTMPFS_MOUNT in defconfig
+
+Kuninori Morimoto (9):
+      ARM: shmobile: marzen: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: mackerel: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: lager: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: kzm9g: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: kzm9d: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: genmai: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: bockw: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: armadillo: enable CONFIG_DEVTMPFS in defconfig
+      ARM: shmobile: ape6evm: enable CONFIG_DEVTMPFS in defconfig
+
+Valentine Barshak (3):
+      ARM: shmobile: lager: Enable VIN along with ADV7180 decoder in defconfig
+      ARM: shmobile: koelsch: Enable SATA in defconfig
+      ARM: shmobile: lager: Enable SATA in defconfig
+
+ arch/arm/configs/ape6evm_defconfig         |  2 ++
+ arch/arm/configs/armadillo800eva_defconfig |  2 ++
+ arch/arm/configs/bockw_defconfig           |  2 ++
+ arch/arm/configs/genmai_defconfig          |  2 ++
+ arch/arm/configs/koelsch_defconfig         |  6 +++++-
+ arch/arm/configs/kzm9d_defconfig           |  2 ++
+ arch/arm/configs/kzm9g_defconfig           |  2 ++
+ arch/arm/configs/lager_defconfig           | 13 +++++++++++++
+ arch/arm/configs/mackerel_defconfig        |  2 ++
+ arch/arm/configs/marzen_defconfig          |  2 ++
+ 10 files changed, 34 insertions(+), 1 deletion(-)
