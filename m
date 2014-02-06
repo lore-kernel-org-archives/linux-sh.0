@@ -1,60 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:52 +0000
-Subject: [PATCH 14/27] clocksource: sh_cmt: Sort headers alphabetically
-Message-Id: <1392339605-20691-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 08:36:11 +0000
+Subject: [PATCH v8 0/4] Add ethernet support for r7s72100
+Message-Id: <1391675773-5430-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This helps locating duplicates and inserting new headers.
+From: Simon Horman <horms@verge.net.au>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clocksource/sh_cmt.c | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+Hi,
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 9f5616b..077879b 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -13,23 +13,23 @@
-  * GNU General Public License for more details.
-  */
- 
-+#include <linux/clk.h>
-+#include <linux/clockchips.h>
-+#include <linux/clocksource.h>
-+#include <linux/delay.h>
-+#include <linux/err.h>
- #include <linux/init.h>
--#include <linux/platform_device.h>
--#include <linux/spinlock.h>
- #include <linux/interrupt.h>
--#include <linux/ioport.h>
- #include <linux/io.h>
--#include <linux/clk.h>
-+#include <linux/ioport.h>
- #include <linux/irq.h>
--#include <linux/err.h>
--#include <linux/delay.h>
--#include <linux/clocksource.h>
--#include <linux/clockchips.h>
--#include <linux/sh_timer.h>
--#include <linux/slab.h>
- #include <linux/module.h>
-+#include <linux/platform_device.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
-+#include <linux/sh_timer.h>
-+#include <linux/slab.h>
-+#include <linux/spinlock.h>
- 
- struct sh_cmt_device;
- 
+this series integrates ethernet support to sh-pfc for the r7s72100 SoC
+and Genmai board.
+
+This series is based on renesas-devel-v3.14-rc1-20140204
+but patches from topic/r7s72100-v3.14-rc1-20140206 are required
+in order to boot the Genmai board.
+
+
+There are no changes to these patches since v7,
+however driver patches included in that series have
+been dropped as they are present in v3.14-rc1.
+
+Simon Horman (2):
+  ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+  ARM: shmobile: genmai: Enable r7s72100-ether
+
+ arch/arm/mach-shmobile/board-genmai.c   | 21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r7s72100.c |  4 ++++
+ 2 files changed, 25 insertions(+)
+
 -- 
-1.8.3.2
+1.8.5.2
 
