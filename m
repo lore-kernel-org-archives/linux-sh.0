@@ -1,69 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:35 +0000
-Subject: [PATCH 07/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi, add spi0 alias
-Message-Id: <1392907779-22053-8-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:08 +0000
+Subject: [PATCH 16/21] ARM: shmobile: mackerel: Conditionally select SMSC_PHY
+Message-Id: <c5c2a294a4b24778cd3cab880bf05becee471edb.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The mackerel board uses has an SMSC911X ethernet controller which uses an
+SMSC phy. Select SMSC_PHY for mackerel if SMSC911X is enabled to make use of the
+SMSC-specific phy driver rather than relying on the generic phy driver.
 
-Prepare for the advent of MSIOF SPI, which will be spi1 to spi3.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++--
- arch/arm/boot/dts/r8a7791.dtsi        |    3 ++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index bf6ba0c7faa0..cc6e63914f7c 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -146,7 +146,7 @@
- 		renesas,function = "scif1";
- 	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index b735ea8..f8005ef 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -177,6 +177,7 @@ config MACH_MACKEREL
+ 	depends on ARCH_SH7372
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SMSC911X
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 	select USE_OF
  
--	qspi_pins: spi {
-+	qspi_pins: spi0 {
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-@@ -156,7 +156,7 @@
- 	status = "okay";
- };
- 
--&spi {
-+&qspi {
- 	pinctrl-0 = <&qspi_pins>;
- 	pinctrl-names = "default";
- 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 224f4a7ee52a..da5ce503d214 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -26,6 +26,7 @@
- 		i2c3 = &i2c3;
- 		i2c4 = &i2c4;
- 		i2c5 = &i2c5;
-+		spi0 = &qspi;
- 	};
- 
- 	cpus {
-@@ -750,7 +751,7 @@
- 		};
- 	};
- 
--	spi: spi@e6b10000 {
-+	qspi: spi@e6b10000 {
- 		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
- 		reg = <0 0xe6b10000 0 0x2c>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.7.9.5
+1.8.5.2
 
