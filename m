@@ -1,10 +1,9 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Feb 2014 06:24:45 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 06 Feb 2014 11:01:44 +0000
 Subject: Re: [PATCH 02/03] pinctrl: sh-pfc: r8a7790: Break out USB0 OVC/VBUS
-Message-Id: <20140206062442.GA17591@verge.net.au>
+Message-Id: <4378236.uXc5XaI3pM@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140129230959.22655.55645.sendpatchset@w520>
- <20140129231019.22655.41456.sendpatchset@w520>
  <1397857.qyLQY9XTlp@avalon>
  <CANqRtoSubhvfgzn590k9oePLv04V00Z7aEuKw2Ofxi8FeCObbA@mail.gmail.com>
 In-Reply-To: <CANqRtoSubhvfgzn590k9oePLv04V00Z7aEuKw2Ofxi8FeCObbA@mail.gmail.com>
@@ -13,29 +12,22 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Magnus,
 
-On Fri, Jan 31, 2014 at 12:10:05PM +0900, Magnus Damm wrote:
-> Hi Laurent,
-> 
-> On Fri, Jan 31, 2014 at 10:17 AM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > Hi Magnus,
-> >
-> > Thank you for the patch.
-> >
+On Friday 31 January 2014 12:10:05 Magnus Damm wrote:
+> On Fri, Jan 31, 2014 at 10:17 AM, Laurent Pinchart wrote:
 > > On Thursday 30 January 2014 08:10:19 Magnus Damm wrote:
 > >> From: Magnus Damm <damm@opensource.se>
-> >>
+> >> 
 > >> Create a new group for the USB0 OVC/VBUS pin by itself. This
 > >> allows us to monitor PWEN as GPIO on the Lager board.
-> >>
+> >> 
 > >> Signed-off-by: Magnus Damm <damm@opensource.se>
 > >> ---
-> >>
+> >> 
 > >>  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |    9 +++++++++
 > >>  1 file changed, 9 insertions(+)
-> >>
+> >> 
 > >> --- 0001/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
 > >> +++ work/drivers/pinctrl/sh-pfc/pfc-r8a7790.c 2014-01-24
 > > 10:23:32.000000000
@@ -49,30 +41,38 @@ On Fri, Jan 31, 2014 at 12:10:05PM +0900, Magnus Damm wrote:
 > >> +static const unsigned int usb0_ovc_vbus_mux[] = {
 > >> +     USB0_OVC_VBUS_MARK,
 > >> +};
-> >
-> > Another option would have been to split the existing usb0 group in usb0_pwen
-> > and usb0_ovc. I'm not sure which is better though, I'd just like to know if
-> > you had given it a thought.
+> > 
+> > Another option would have been to split the existing usb0 group in
+> > usb0_pwen and usb0_ovc. I'm not sure which is better though, I'd just
+> > like to know if you had given it a thought.
 > 
 > I actually did just that in my first local attempt, but I decided not
 > to since it will only cause potential breakage.
-> 
-> > Regardless, what about naming the new group usb0_ovc instead of usb0_ovc_bus
-> > to keep names short ?
+
+OK. I assume that using PWEN without OVC/VBUS doesn't make sense, right ?
+
+> > Regardless, what about naming the new group usb0_ovc instead of
+> > usb0_ovc_bus to keep names short ?
 > 
 > Is there any particular reason why you want shorter names?
-> 
-> >From my side, I prefer to keep the names in sync with the data sheet.
-> In this particular case it is a shared pin so OVC is used for Host
-> while VBUS is used for gadget, so if you're proposing to ditch VBUS
-> then this feels somewhat inconsistent with the current gadget use
-> case. =)
 
-Hi Laurent,
+When it doesn't reduce clarity I prefer to keep names short, as that makes the 
+code easier to read and write, and (slightly) lowers the memory footprint.
 
-I would like to move this patch forwards somehow.
-If you are happy with it as-is could you consider merging it?
-Otherwise, could you let me know what changes you would like made
-so I can see about making it so?
+> From my side, I prefer to keep the names in sync with the data sheet. In
+> this particular case it is a shared pin so OVC is used for Host while VBUS
+> is used for gadget, so if you're proposing to ditch VBUS then this feels
+> somewhat inconsistent with the current gadget use case. =)
 
-Thanks
+I thought the pin was used for over current detection only, but that doesn't 
+make sense for function mode, you're right. Let's keep the name as-is then.
+
+Provided PWEN without OVC/VBUS doesn't make sense and won't be needed,
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+-- 
+Regards,
+
+Laurent Pinchart
+
