@@ -1,100 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:03:50 +0000
-Subject: [PATCH 03/11] ARM: shmobile: koelsch: Add I2C support
-Message-Id: <12c1d5a54e874f26d08fa27f13f63ef7ccf38a2a.1392276547.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:33 +0000
+Subject: [PATCH 13/13] ARM: shmobile: ape6evm: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <0771ddff31186836f62a20c42e7958bd37f7b4ed.1391651074.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
+References: <cover.1391651074.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This adds I2C[1245] busses support to Koelsch board.
-I2C[03] do not have any slave devices connected and
-are not used because of the following:
-* I2C0 pins are multiplexed with LBSC pins;
-* I2C3 pins are multiplexed with EtherMAC and VIN0 pins.
+DEVTMPFS is needed for udev
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 46 ++++++++++++++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
+ arch/arm/configs/ape6evm_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 1ec3b91..2741dba 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -165,6 +165,38 @@ static const struct platform_device_info sata0_info __initconst = {
- 	.dma_mask	= DMA_BIT_MASK(32),
- };
- 
-+/* I2C */
-+static const struct resource i2c_resources[] __initconst = {
-+	/* I2C0 */
-+	DEFINE_RES_MEM(0xE6508000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(287)),
-+	/* I2C1 */
-+	DEFINE_RES_MEM(0xE6518000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(288)),
-+	/* I2C2 */
-+	DEFINE_RES_MEM(0xE6530000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(286)),
-+	/* I2C3 */
-+	DEFINE_RES_MEM(0xE6540000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(290)),
-+	/* I2C4 */
-+	DEFINE_RES_MEM(0xE6520000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(19)),
-+	/* I2C5 */
-+	DEFINE_RES_MEM(0xE6528000, 0x40),
-+	DEFINE_RES_IRQ(gic_spi(20)),
-+};
-+
-+static void __init koelsch_add_i2c(unsigned idx)
-+{
-+	unsigned res_idx = idx * 2;
-+
-+	BUG_ON(res_idx >= ARRAY_SIZE(i2c_resources));
-+
-+	platform_device_register_simple("i2c-rcar_gen2", idx,
-+					i2c_resources + res_idx, 2);
-+}
-+
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -188,6 +220,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* SCIF1 (CN20: DEBUG SERIAL1) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7791",
- 				  "scif1_data_d", "scif1"),
-+	/* I2C1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.1", "pfc-r8a7791",
-+				  "i2c1_e", "i2c1"),
-+	/* I2C2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.2", "pfc-r8a7791",
-+				  "i2c2", "i2c2"),
-+	/* I2C4 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.4", "pfc-r8a7791",
-+				  "i2c4_c", "i2c4"),
- };
- 
- static void __init koelsch_add_standard_devices(void)
-@@ -211,6 +252,11 @@ static void __init koelsch_add_standard_devices(void)
- 	koelsch_add_du_device();
- 
- 	platform_device_register_full(&sata0_info);
-+
-+	koelsch_add_i2c(1);
-+	koelsch_add_i2c(2);
-+	koelsch_add_i2c(4);
-+	koelsch_add_i2c(5);
- }
- 
- /*
+diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
+index cb26c62..bb396c0 100644
+--- a/arch/arm/configs/ape6evm_defconfig
++++ b/arch/arm/configs/ape6evm_defconfig
+@@ -48,6 +48,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6_SIT is not set
+ CONFIG_NETFILTER=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_FW_LOADER_USER_HELPER is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CADENCE is not set
 -- 
 1.8.5.2
 
