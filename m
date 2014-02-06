@@ -1,42 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Feb 2014 08:59:07 +0000
-Subject: Re: [PATCH v2] serial: sh_sci: remove HAVE_CLK build dependecy
-Message-Id: <20140206085906.GA18648@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:14:00 +0000
+Subject: [GIT PULL] Renesas CPG update for v3.15
+Message-Id: <cover.1391651474.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <72da63d627f18c6b5907e7d9ef342242a8f985e6.1391676772.git.baruch@tkos.co.il>
-In-Reply-To: <72da63d627f18c6b5907e7d9ef342242a8f985e6.1391676772.git.baruch@tkos.co.il>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Baruch Siach <baruch@tkos.co.il>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 06, 2014 at 10:52:52AM +0200, Baruch Siach wrote:
-> Since 93abe8e4 (clk: add non CONFIG_HAVE_CLK routines) code using clk.h
-> like this driver needs not depend on HAVE_CLK.
-> 
-> Signed-off-by: Baruch Siach <baruch@tkos.co.il>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+please consider this Renesas CPG update for v3.15.
 
-> ---
-> v2: rebase on Laurent's patch
-> ---
->  drivers/tty/serial/Kconfig | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-> index 923d3dea77cb..ec7f3a6d5764 100644
-> --- a/drivers/tty/serial/Kconfig
-> +++ b/drivers/tty/serial/Kconfig
-> @@ -708,7 +708,6 @@ config SERIAL_IP22_ZILOG_CONSOLE
->  
->  config SERIAL_SH_SCI
->  	tristate "SuperH SCI(F) serial port support"
-> -	depends on HAVE_CLK
->  	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
->  	select SERIAL_CORE
->  
-> -- 
-> 1.8.5.3
-> 
+
+The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
+
+  Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cpg-for-v3.15
+
+for you to fetch changes up to a028c6da34d434e35ba8322568c756ea97ff3c18:
+
+  ARM: shmobile: wait for MSTP clock status to toggle, when enabling it (2014-02-04 10:22:39 +0900)
+
+----------------------------------------------------------------
+Renesas CPG update for v3.15
+
+* Wait for MSTP clock status to toggle when enabling it
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
+
+ drivers/sh/clk/cpg.c   | 38 ++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h | 19 ++++++++++++-------
+ 2 files changed, 50 insertions(+), 7 deletions(-)
+
