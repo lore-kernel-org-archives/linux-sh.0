@@ -1,51 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:13:54 +0000
-Subject: [PATCH 05/12] ARM: shmobile: r8a7790 CA15-SCU enablement
-Message-Id: <f5046cf88c3232492d776a86262f0ba0b192e575.1392278855.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:09 +0000
+Subject: [PATCH 12/13] ARM: shmobile: r7s72100: really add i2c clocks
+Message-Id: <3440cb28627d7fbaf25c0d60cb9c6cf6d66d61ad.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Power on CA15 SCU in case of booting from a CA7 core.
+Due to a merge conflict, addition of the clocks was lost. Tested with
+RIIC2 on a genmai board. Others untested but hopefully trivial enough to
+be added.
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+[horms+renesas@verge.net.au: Capitalised "ARM" in subject]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7790.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index beb47ae..5910527 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -29,6 +29,11 @@
- #define CA7RESCNT	0x0044
- #define MERAM		0xe8080000
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index e6ab0cd..dd8ce87 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -176,6 +176,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
  
-+static struct rcar_sysc_ch r8a7790_ca15_scu = {
-+	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
-+	.isr_bit = 12, /* CA15-SCU */
-+};
-+
- static struct rcar_sysc_ch r8a7790_ca7_scu = {
- 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
- 	.isr_bit = 21, /* CA7-SCU */
-@@ -64,6 +69,7 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
++	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
++	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
++	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
  
- 	/* turn on power to SCU */
- 	r8a7790_pm_init();
-+	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
- 
+ 	/* ICK */
 -- 
 1.8.5.2
 
