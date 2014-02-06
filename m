@@ -1,40 +1,31 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Feb 2014 05:20:53 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: Koelsch legacy SDHI support
-Message-Id: <20140213052049.GA17910@verge.net.au>
+Date: Thu, 06 Feb 2014 07:00:40 +0000
+Subject: Re: [PATCH 03/03] ARM: shmobile: Lager USB0 cable detection workaround
+Message-Id: <20140206070037.GF17591@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140212042552.10516.10308.sendpatchset@w520>
-In-Reply-To: <20140212042552.10516.10308.sendpatchset@w520>
+References: <20140129230959.22655.55645.sendpatchset@w520>
+ <20140129231029.22655.58864.sendpatchset@w520>
+In-Reply-To: <20140129231029.22655.58864.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 12, 2014 at 01:25:52PM +0900, Magnus Damm wrote:
-> ARM: shmobile: Koelsch legacy SDHI support
+On Thu, Jan 30, 2014 at 08:10:29AM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
 > 
-> [PATCH 01/03] ARM: shmobile: Add r8a7791 legacy SDHI clocks
-> [PATCH 02/03] pinctrl: sh-pfc: r8a7791: SD1_CLK fix
-> [PATCH 03/03] ARM: shmobile: Add SDHI devices for legacy Koelsch
-
-
+> Add Lager board code to check the PWEN GPIO signal and refuse to
+> allow probe of the USBHS driver in case of DIP misconfiguration.
 > 
-> Add SDHI devices to the legacy Koelsch board support. While at it
-> fix missing PFC bits for SDHI1 and also add legacy clocks. Each
-> of the patches can be merged independently without compile
-> failure, but all of them are required for correct SDHI run time
-> operation on the Koelsch board. Next step is DTSI and DTS which
-> will be handled in a separate series.
+> For correct operation Lager DIP switches SW5 and SW6 shall be
+> configured in 2-3 position to enable USB Function support.
+> 
+> If the DIP switch is configured incorrectly then the user can
+> simply adjust the hardware and either reboot or use the bind interface
+> to try to probe again:
+> 
+> # echo renesas_usbhs > /sys/bus/platform/drivers/renesas_usbhs/bind
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  arch/arm/mach-shmobile/board-koelsch.c |  155 ++++++++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/clock-r8a7791.c |   51 ++++++++++
->  drivers/pinctrl/sh-pfc/pfc-r8a7791.c   |    6 -
->  3 files changed, 208 insertions(+), 4 deletions(-)
 
-Thanks Magnus.
-
-I have queued up patches 1 and 3 for v3.15.
-I believe that patch 2 is for Laurent.
+Thanks, I have queue this up.
