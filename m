@@ -1,54 +1,53 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 13 Feb 2014 19:03:00 +0000
-Subject: Re: [PATCH] regulator: gpio: reborn necessary prop
-Message-Id: <20140213190300.GZ28112@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="vD4R8EutdGn5UgVK"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:06 +0000
+Subject: [GIT PULL 0/3] Renesas ARM Based SoC Clean-Ups for v3.15
+Message-Id: <cover.1391650702.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iosjd6lj.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87iosjd6lj.wl%kuninori.morimoto.gx@gmail.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
+References: <cover.1380523393.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380523393.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Olof, Hi Kevin, Hi Arnd,
+
+please consider these Renesas ARM Based SoC clean-ups for v3.15.
 
 
---vD4R8EutdGn5UgVK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
 
-On Wed, Feb 12, 2014 at 07:39:07PM -0800, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> 934624d6e9f0b3d41557c4105c286e8daeaadb4e
-> (regulator: gpio-regulator: do not open-code counting and access of dt ar=
-ray elements)
-> removed struct property *prop from of_get_gpio_regulator_config()
-> but, it is still used on
-> 0094050d783bbadffe83effef11a0bda901153ce
-> (regulator: gpio: add gpios-status for DT)
+  Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
 
-Applied, thanks.
+are available in the git repository at:
 
---vD4R8EutdGn5UgVK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.15
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+for you to fetch changes up to d24d1780c340777942061ef3445edcf228e8d35b:
 
-iQIcBAEBAgAGBQJS/RbhAAoJELSic+t+oim9NNIP/jpdLtn9p988zshkrOVcniFm
-LbPgxrk1cYssNvR++qIf+fz+93vcjZqQ4SDBgjkjgCIJmBcY6wqys4vkiGxR9YJX
-loam9V2ZqUqhxy9NC+xn8EidJLAJHcRH4QiVc0H+X7fIh1Q9UiD3CRUCMJCCVIKL
-va16klszc8PIDwmMm+zoXj/dC2QX8Vuj9nh2Et/p+Xu+sD3awA3m2LcxB0wh3Ce+
-0cYRwOo11Ht4qL9xReYVwd2/Ref0xwfidLBd8eborRw7xc+WR2X/XMoBcaVnIH6D
-1QgvR+YsW06HOAVnQiC3GSNCzfnlUEVr00u+BrdU31O58hTws9+hdslRU4SXB9uq
-S/XAA1PUX9ektk2Lhw6TrCa+lOUsMUQeSzN+AT/UfdS1qIKSWQqRMN9qrr5JWSlb
-/NA0cP1aB38wNrGWXTTkygaoT1O7y/NXgvBZXjULw5dB/R4oVhPLD0igWDCX1so5
-4/JX3g2CQsHU/eW++itZok6g3YfY5AOsgTPTj53Bv8emaqNi4lpTGVGEQ/Nv2B9o
-1UqmQ3ZFFQy4jVYe7pWyojP1RrENDNR4hJFSFe+0cqX3qQQn3+XDJN/+RpT6BcJ5
-m0iylqJq6/orYP9qxKi2V2QJDWntmpcW0x7uwIwzVCYpQpO7v/YrsO4+xyR+YSJA
-eKTGeiFKErVL6rmYq7nC
-=lA6k
------END PGP SIGNATURE-----
+  ARM: shmobile: emev2: Use __initconst for const init definition (2014-02-04 10:24:28 +0900)
 
---vD4R8EutdGn5UgVK--
+----------------------------------------------------------------
+Renesas ARM Based SoC Clean-Ups for v3.15
+
+* Renesas SoCs (Global)
+  - Remove duplicate shmobile_invalidate_start() declaration
+
+* emev2 SoC (Emma Mobile)
+  - Use __initconst for const init definition
+
+* r8a7779 SoC (R-Car H1)
+  - Remove unused clock constants
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: Remove duplicate shmobile_invalidate_start() declaration
+
+Simon Horman (2):
+      ARM: shmobile: r8a7779: Remove unused clock constants
+      ARM: shmobile: emev2: Use __initconst for const init definition
+
+ arch/arm/mach-shmobile/clock-r8a7779.c       | 7 -------
+ arch/arm/mach-shmobile/include/mach/common.h | 1 -
+ arch/arm/mach-shmobile/setup-emev2.c         | 2 +-
+ 3 files changed, 1 insertion(+), 9 deletions(-)
