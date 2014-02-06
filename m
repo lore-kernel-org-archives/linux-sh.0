@@ -1,203 +1,64 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:12 +0000
-Subject: [PATCH 20/21] ARM: shmobile: lager: Add USBHS support
-Message-Id: <1eabe028f8aacd7367fbdda9596cd3d64659a49f.1391665225.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:58 +0000
+Subject: [PATCH 01/13] ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
+Message-Id: <017410f686b8d9928ce30e4eb146175ea672f4c9.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-This adds USBHS PHY and registers USBHS device if the driver is enabled.
+When enabling some of the module clocks by clearing stop bits in the
+MSTP control registers, the CPG requires waiting for the status
+registers to signal that the clocks have started. Failure to do so will
+result in returning from the clk_enable() call with the clock
+potentially still disabled, leading to various race conditions and
+difficult to debug errors.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Acked-by: Magnus Damm <damm@opensource.se>
+Enable status wait for all the r8a7779 MSTP clocks that report their
+status.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c | 138 +++++++++++++++++++++++++++++++++++
- 1 file changed, 138 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 8dde446..4a95a45 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -30,6 +30,7 @@
- #include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <linux/platform_data/usb-rcar-gen2-phy.h>
- #include <linux/platform_device.h>
- #include <linux/phy.h>
- #include <linux/regulator/driver.h>
-@@ -37,6 +38,8 @@
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
-+#include <linux/usb/phy.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7790.h>
-@@ -364,6 +367,131 @@ static const struct platform_device_info sata1_info __initconst = {
- 	.dma_mask	= DMA_BIT_MASK(32),
- };
- 
-+/* USBHS */
-+#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
-+static const struct resource usbhs_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590000, 0x100),
-+	DEFINE_RES_IRQ(gic_spi(107)),
-+};
-+
-+struct usbhs_private {
-+	struct renesas_usbhs_platform_info info;
-+	struct usb_phy *phy;
-+};
-+
-+#define usbhs_get_priv(pdev) \
-+	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
-+
-+static int usbhs_power_ctrl(struct platform_device *pdev,
-+				void __iomem *base, int enable)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return -ENODEV;
-+
-+	if (enable) {
-+		int retval = usb_phy_init(priv->phy);
-+
-+		if (!retval)
-+			retval = usb_phy_set_suspend(priv->phy, 0);
-+		return retval;
-+	}
-+
-+	usb_phy_set_suspend(priv->phy, 1);
-+	usb_phy_shutdown(priv->phy);
-+	return 0;
-+}
-+
-+static int usbhs_hardware_init(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+	struct usb_phy *phy;
-+
-+	phy = usb_get_phy_dev(&pdev->dev, 0);
-+	if (IS_ERR(phy))
-+		return PTR_ERR(phy);
-+
-+	priv->phy = phy;
-+	return 0;
-+}
-+
-+static int usbhs_hardware_exit(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return 0;
-+
-+	usb_put_phy(priv->phy);
-+	priv->phy = NULL;
-+	return 0;
-+}
-+
-+static int usbhs_get_id(struct platform_device *pdev)
-+{
-+	return USBHS_GADGET;
-+}
-+
-+static u32 lager_usbhs_pipe_type[] = {
-+	USB_ENDPOINT_XFER_CONTROL,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+};
-+
-+static struct usbhs_private usbhs_priv __initdata = {
-+	.info = {
-+		.platform_callback = {
-+			.power_ctrl	= usbhs_power_ctrl,
-+			.hardware_init	= usbhs_hardware_init,
-+			.hardware_exit	= usbhs_hardware_exit,
-+			.get_id		= usbhs_get_id,
-+		},
-+		.driver_param = {
-+			.buswait_bwait	= 4,
-+			.pipe_type = lager_usbhs_pipe_type,
-+			.pipe_size = ARRAY_SIZE(lager_usbhs_pipe_type),
-+		},
-+	}
-+};
-+
-+static void __init lager_register_usbhs(void)
-+{
-+	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_resndata(&platform_bus,
-+					  "renesas_usbhs", -1,
-+					  usbhs_resources,
-+					  ARRAY_SIZE(usbhs_resources),
-+					  &usbhs_priv.info,
-+					  sizeof(usbhs_priv.info));
-+}
-+#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
-+static inline void lager_register_usbhs(void) { }
-+#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
-+
-+/* USBHS PHY */
-+static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
-+	.chan0_pci = 0,	/* Channel 0 is USBHS */
-+	.chan2_pci = 1,	/* Channel 2 is PCI USB */
-+};
-+
-+static const struct resource usbhs_phy_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590100, 0x100),
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -408,6 +536,9 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 				  "vin1_data8", "vin1"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.1", "pfc-r8a7790",
- 				  "vin1_clk", "vin1"),
-+	/* USB0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
-+				  "usb0", "usb0"),
- };
- 
- static void __init lager_add_standard_devices(void)
-@@ -461,6 +592,13 @@ static void __init lager_add_standard_devices(void)
- 	lager_add_camera1_device();
- 
- 	platform_device_register_full(&sata1_info);
-+
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	lager_register_usbhs();
- }
- 
- /*
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index f1fb89b..93a5625 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -127,16 +127,16 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&clkp_clk, MSTPCR3, 20, 0), /* SDHI3 */
+-	[MSTP120] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 20, 0), /* VIN3 */
+-	[MSTP116] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 16, 0), /* PCIe */
+-	[MSTP115] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 15, 0), /* SATA */
+-	[MSTP114] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1, 14, 0), /* Ether */
+-	[MSTP110] = SH_CLK_MSTP32(&clks_clk, MSTPCR1, 10, 0), /* VIN0 */
+-	[MSTP109] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  9, 0), /* VIN1 */
+-	[MSTP108] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  8, 0), /* VIN2 */
+-	[MSTP103] = SH_CLK_MSTP32(&clks_clk, MSTPCR1,  3, 0), /* DU */
+-	[MSTP101] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  1, 0), /* USB2 */
+-	[MSTP100] = SH_CLK_MSTP32(&clkp_clk, MSTPCR1,  0, 0), /* USB0/1 */
++	[MSTP120] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1, 20, MSTPSR1, 0), /* VIN3 */
++	[MSTP116] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 16, MSTPSR1, 0), /* PCIe */
++	[MSTP115] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 15, MSTPSR1, 0), /* SATA */
++	[MSTP114] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1, 14, MSTPSR1, 0), /* Ether */
++	[MSTP110] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1, 10, MSTPSR1, 0), /* VIN0 */
++	[MSTP109] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  9, MSTPSR1, 0), /* VIN1 */
++	[MSTP108] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  8, MSTPSR1, 0), /* VIN2 */
++	[MSTP103] = SH_CLK_MSTP32_STS(&clks_clk, MSTPCR1,  3, MSTPSR1, 0), /* DU */
++	[MSTP101] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1,  1, MSTPSR1, 0), /* USB2 */
++	[MSTP100] = SH_CLK_MSTP32_STS(&clkp_clk, MSTPCR1,  0, MSTPSR1, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 30, 0), /* I2C0 */
+ 	[MSTP029] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 29, 0), /* I2C1 */
+ 	[MSTP028] = SH_CLK_MSTP32(&clkp_clk, MSTPCR0, 28, 0), /* I2C2 */
 -- 
 1.8.5.2
 
