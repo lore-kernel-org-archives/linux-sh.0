@@ -1,58 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:59 +0000
-Subject: [PATCH v2 29/40] clocksource: sh_tmu: Replace kmalloc + memset with kzalloc
-Message-Id: <1393603090-23144-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:13 +0000
+Subject: [PATCH 21/21] ARM: shmobile: Remove Lager USBHS UDC ifdefs
+Message-Id: <235cda29e4d5047622ff9b82b1f0b4cb6cf95f6c.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-One kzalloc a day keeps the bugs away.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Remove ifdefs to make the Lager USBHS device always present.
+This makes it more like other devices, no need to be special.
+
+Also, these ifdefs by themselves do not hurt much, but combined
+with USB Host device ifdefs that were proposed earlier we could
+basically end up with a kernel that drives VBUS incorrectly
+depending on the kernel configuration - lets not do that.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_tmu.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 10d68b4..05abfbe 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -397,8 +397,6 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
- 	struct clock_event_device *ced = &ch->ced;
- 	int ret;
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 4a95a45..fdcc868 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -368,7 +368,6 @@ static const struct platform_device_info sata1_info __initconst = {
+ };
  
--	memset(ced, 0, sizeof(*ced));
--
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
- 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
-@@ -441,7 +439,6 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch,
- {
- 	struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
+ /* USBHS */
+-#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
+ static const struct resource usbhs_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6590000, 0x100),
+ 	DEFINE_RES_IRQ(gic_spi(107)),
+@@ -478,9 +477,6 @@ static void __init lager_register_usbhs(void)
+ 					  &usbhs_priv.info,
+ 					  sizeof(usbhs_priv.info));
+ }
+-#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
+-static inline void lager_register_usbhs(void) { }
+-#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
  
--	memset(ch, 0, sizeof(*ch));
- 	ch->tmu = tmu;
- 
- 	/*
-@@ -474,7 +471,6 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	int ret;
- 	ret = -ENXIO;
- 
--	memset(tmu, 0, sizeof(*tmu));
- 	tmu->pdev = pdev;
- 
- 	if (!cfg) {
-@@ -546,7 +542,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 		goto out;
- 	}
- 
--	tmu = kmalloc(sizeof(*tmu), GFP_KERNEL);
-+	tmu = kzalloc(sizeof(*tmu), GFP_KERNEL);
- 	if (tmu = NULL) {
- 		dev_err(&pdev->dev, "failed to allocate driver data\n");
- 		return -ENOMEM;
+ /* USBHS PHY */
+ static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
 -- 
-1.8.3.2
+1.8.5.2
 
