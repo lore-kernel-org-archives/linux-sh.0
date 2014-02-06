@@ -1,109 +1,56 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 15:23:56 +0000
-Subject: [PATCH v5 02/11] ARM: shmobile: genmai legacy: Add RSPI support
-Message-Id: <1391527445-14881-3-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:10 +0000
+Subject: [PATCH 18/21] ARM: shmobile: lager: fix error return code check from clk_get()
+Message-Id: <7a543d8124e7e23190d36e7c57d3b9c394c4e4c1.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Add RSPI platform device, resources, platform data, and SPI child.
+The lager_add_standard_devices() function calls clk_get() but then fails
+to check that it returns an error pointer instead of NULL on failure.
 
-On this board, only rspi4 is in use. Its bus contains a single device
-(a wm8978 audio codec).
+This was added by 4a606af2 ("ARM: shmobile: lager-reference: Instantiate
+clkdevs for SCIF and CMT") patch in Simon Horman's renesas-boards2-for-v3.14
+tag.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The issue is not serious as it does not cause a crash and seems to not be
+actually causing any issues now the other clock bugs have been fixed.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+[horms+renesas@verge.net.au: tweaked changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5:
-  - Rebased on top of renesas-devel-v3.14-rc1-20140204
-v4:
-  - The platform device basename was changed from "rspi" to "rspi-rz",
-    dropping the platform data flags in the process
-  - Switch to named IRQs
-v3:
-  - Move platform devices from setup-r7s72100.c to board-genmai.c, as
-    genmai-reference will use devices instantiated from DT
-  - Merge with "ARM: shmobile: genmai: Add RSPI children", as this now
-    touches the same file
-  - Instantiate SPI children in C on genmai only, as genmai-reference will
-    instantiate them from DT
-v2:
-  - Correct platform device names ("rspi%u.0" -> "rspi.%u")
-  - Add missing platform data
-  - Correct summary (resources -> platform devices)
+ arch/arm/mach-shmobile/board-lager-reference.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/board-genmai.c |   44 +++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 3e92e3c62d4c..c4064610e223 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -20,15 +20,59 @@
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index a6e271d..dc8d76b 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -44,14 +44,14 @@ static void __init lager_add_standard_devices(void)
  
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+ 	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+ 		clk = clk_get(NULL, scif_names[i]);
+-		if (clk) {
++		if (!IS_ERR(clk)) {
+ 			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
+ 			clk_put(clk);
+ 		}
+ 	}
  
-+/* RSPI */
-+#define RSPI_RESOURCE(idx, baseaddr, irq)				\
-+static const struct resource rspi##idx##_resources[] __initconst = {	\
-+	DEFINE_RES_MEM(baseaddr, 0x24),					\
-+	DEFINE_RES_IRQ_NAMED(irq, "error"),				\
-+	DEFINE_RES_IRQ_NAMED(irq + 1, "rx"),				\
-+	DEFINE_RES_IRQ_NAMED(irq + 2, "tx"),				\
-+}
-+
-+RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
-+RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
-+RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
-+RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
-+RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
-+
-+static const struct rspi_plat_data rspi_pdata __initconst = {
-+	.num_chipselect	= 1,
-+};
-+
-+#define r7s72100_register_rspi(idx)					   \
-+	platform_device_register_resndata(&platform_bus, "rspi-rz", idx,   \
-+					rspi##idx##_resources,		   \
-+					ARRAY_SIZE(rspi##idx##_resources), \
-+					&rspi_pdata, sizeof(rspi_pdata))
-+
-+static const struct spi_board_info spi_info[] __initconst = {
-+	{
-+		.modalias               = "wm8978",
-+		.max_speed_hz           = 5000000,
-+		.bus_num                = 4,
-+		.chip_select            = 0,
-+	},
-+};
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
- 	r7s72100_add_dt_devices();
-+
-+	r7s72100_register_rspi(0);
-+	r7s72100_register_rspi(1);
-+	r7s72100_register_rspi(2);
-+	r7s72100_register_rspi(3);
-+	r7s72100_register_rspi(4);
-+	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
+ 	clk = clk_get(NULL, "cmt0");
+-	if (clk) {
++	if (!IS_ERR(clk)) {
+ 		clk_register_clkdev(clk, NULL, "sh_cmt.0");
+ 		clk_put(clk);
+ 	}
 -- 
-1.7.9.5
+1.8.5.2
 
