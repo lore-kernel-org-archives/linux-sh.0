@@ -1,39 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Feb 2014 02:10:51 +0000
-Subject: [PATCH 01/08] PCI: rcar: check platform_get_irq() return code
-Message-Id: <20140218021051.14164.6194.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:06 +0000
+Subject: [PATCH 09/13] ARM: shmobile: r8a7790: Add SATA clocks
+Message-Id: <64b7f9aca549db8a8bbcf68c911e9bd24efe76f7.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140218021041.14164.56411.sendpatchset@w520>
-In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-The current code does not check the return from platform_get_irq()
-so add an error check and return if this call does fail.
+This adds SATA[01] clock support to R8A7790 SoC.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+[horms+renesas@verge.net.au: resolved trivial conflicts]
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-
- drivers/pci/host/pci-rcar-gen2.c |    5 +++++
+ arch/arm/mach-shmobile/clock-r8a7790.c | 5 +++++
  1 file changed, 5 insertions(+)
 
---- 0001/drivers/pci/host/pci-rcar-gen2.c
-+++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-13 09:41:55.000000000 +0900
-@@ -308,6 +308,11 @@ static int __init rcar_pci_probe(struct
- 	priv->reg = reg;
- 	priv->dev = &pdev->dev;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index b2b2323..f25b43a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -196,6 +196,7 @@ enum {
+ 	MSTP1009, MSTP1008, MSTP1007, MSTP1006, MSTP1005,
+ 	MSTP931, MSTP930, MSTP929, MSTP928,
+ 	MSTP917,
++	MSTP815, MSTP814,
+ 	MSTP813,
+ 	MSTP811, MSTP810, MSTP809, MSTP808,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+@@ -226,6 +227,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
+ 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+ 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
++	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
++	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+ 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
+ 	[MSTP811] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 11, MSTPSR8, 0), /* VIN0 */
+ 	[MSTP810] = SH_CLK_MSTP32_STS(&zg_clk, SMSTPCR8, 10, MSTPSR8, 0), /* VIN1 */
+@@ -340,6 +343,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_DEV_ID("sata-r8a7790.0", &mstp_clks[MSTP815]),
++	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
  
-+	if (priv->irq < 0) {
-+		dev_err(&pdev->dev, "no valid irq found\n");
-+		return priv->irq;
-+	}
-+
- 	return rcar_pci_add_controller(priv);
- }
- 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+-- 
+1.8.5.2
+
