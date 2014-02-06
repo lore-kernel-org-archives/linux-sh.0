@@ -1,51 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:51:54 +0000
-Subject: [PATCH 01/02] ARM: shmobile: Lager DT USB PCI pinctrl setup via DTS
-Message-Id: <20140224075154.20255.72319.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 06 Feb 2014 20:58:05 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager: add Ether DT support
+Message-Id: <201402070058.31405.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224075144.20255.59443.sendpatchset@w520>
-In-Reply-To: <20140224075144.20255.59443.sendpatchset@w520>
+References: <201402070054.39989.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402070054.39989.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Define the Lager board dependent part of the Ether device node. 
 
-Add USB1 and USB2 pin configuration for Lager DT reference to
-the default pinctrl setup.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
+ arch/arm/boot/dts/r8a7790-lager.dts |   31 ++++++++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
 
- arch/arm/boot/dts/r8a7790-lager.dts |   12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/boot/dts/r8a7790-lager.dts
-+++ work/arch/arm/boot/dts/r8a7790-lager.dts	2014-02-18 11:35:09.000000000 +0900
-@@ -111,7 +111,7 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
-+	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins &usb1_pins &usb2_pins>;
- 	pinctrl-names = "default";
- 
- 	du_pins: du {
-@@ -148,6 +148,16 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -1,7 +1,8 @@
+ /*
+  * Device Tree Source for the Lager board
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded, Inc.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -76,12 +77,40 @@
+ 		renesas,function = "scif1";
  	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
+ 
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
 +	};
 +
-+	usb2_pins: usb2 {
-+		renesas,groups = "usb2";
-+		renesas,function = "usb2";
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq0";
++		renesas,function = "intc";
 +	};
++
+ 	mmc1_pins: mmc1 {
+ 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+ 		renesas,function = "mmc1";
+ 	};
  };
  
++&ether {
++	pinctrl-0 = <&ether_pins>;
++	pinctrl-names = "default";
++
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "ok";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++
++		pinctrl-0 = <&phy1_pins>;
++		pinctrl-names = "default";
++	};
++};
++
  &mmcif1 {
+ 	pinctrl-0 = <&mmc1_pins>;
+ 	pinctrl-names = "default";
