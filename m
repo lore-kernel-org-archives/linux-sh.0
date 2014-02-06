@@ -1,57 +1,57 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:14:00 +0000
-Subject: [PATCH 11/12] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
-Message-Id: <ad2576ecc8cfada53b77c650ace3397921234503.1392278855.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:10 +0000
+Subject: [PATCH 13/13] ARM: shmobile: r8a7790: Add PCI USB host clock support
+Message-Id: <012a7069b5a10a0851584d71a1facdc40a972319.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
+References: <cover.1391666228.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+
+This adds internal PCI USB host clock support.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 71c99fe..f17a5db 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -28,6 +28,7 @@
- /* Standby Control Registers */
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
-+#define STBCR7		0xfcfe0430
- #define STBCR9		0xfcfe0438
- #define STBCR10		0xfcfe043c
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index f25b43a..507073e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -201,7 +201,7 @@ enum {
+ 	MSTP811, MSTP810, MSTP809, MSTP808,
+ 	MSTP726, MSTP725, MSTP724, MSTP723, MSTP722, MSTP721, MSTP720,
+ 	MSTP717, MSTP716,
+-	MSTP704,
++	MSTP704, MSTP703,
+ 	MSTP522,
+ 	MSTP502, MSTP501,
+ 	MSTP315, MSTP314, MSTP313, MSTP312, MSTP311, MSTP305, MSTP304,
+@@ -244,6 +244,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP717] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 17, MSTPSR7, 0), /* HSCIF0 */
+ 	[MSTP716] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR7, 16, MSTPSR7, 0), /* HSCIF1 */
+ 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
++	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP502] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 2, MSTPSR5, 0), /* Audio-DMAC low */
+ 	[MSTP501] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR5, 1, MSTPSR5, 0), /* Audio-DMAC hi */
+@@ -343,6 +344,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.2", &mstp_clks[MSTP703]),
+ 	CLKDEV_DEV_ID("sata-r8a7790.0", &mstp_clks[MSTP815]),
+ 	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
  
-@@ -150,6 +151,7 @@ struct clk div4_clks[DIV4_NR] = {
- enum {
- 	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
- 	MSTP97, MSTP96, MSTP95, MSTP94,
-+	MSTP74,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
- 	MSTP33,	MSTP_NR
- };
-@@ -164,6 +166,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
- 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
-+	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
- 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
- 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
- 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
-@@ -200,6 +203,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
- 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
-+	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
 -- 
 1.8.5.2
 
