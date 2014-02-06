@@ -1,39 +1,43 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 20 Feb 2014 09:26:28 +0000
-Subject: Re: [GIT PULL 00/11] Second Round of Renesas ARM Based SoC Board Updates for v3.15
-Message-Id: <20140220092628.GO19089@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 00:25:01 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: Correct SYS DMAC clock defines
+Message-Id: <1391646301-20197-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
+References: <1383714098-28770-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1383714098-28770-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 13, 2014 at 05:03:52PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> please consider this second round of Renesas ARM based SoC board updates
-> for v3.15.
-> 
-> This pull-request is based on the first round of such updates,
-> tagged as renesas-boards-for-v3.15, which I have previously sent a
-> pull-request for.
-> 
-> 
-> The following changes since commit 235cda29e4d5047622ff9b82b1f0b4cb6cf95f6c:
-> 
->   ARM: shmobile: Remove Lager USBHS UDC ifdefs (2014-02-04 14:28:33 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.15
-> 
-> for you to fetch changes up to 03fec7dee502d43114f384a1588ce84a3c9bf38d:
-> 
->   ARM: shmobile: genmai: Enable r7s72100-ether (2014-02-07 09:20:03 +0900)
+This brings the implementation into line with the documentation.
 
-Merged, thanks. Same comment as last board pull request reply though. :)
+This problem was introduced when SYS DMAC clock defines were added by
+ac991dce6498b5fc ("ARM: shmobile: r8a7790: Add clock index macros for DT
+sources") in v3.13-rc2. I do not believe this results in any problems as
+these defines do not appear to be used anywhere yet.
 
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ include/dt-bindings/clock/r8a7790-clock.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
--Olof
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 859e9be..6548a5f 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -46,8 +46,8 @@
+ #define R8A7790_CLK_MSIOF1		8
+ #define R8A7790_CLK_MSIOF3		15
+ #define R8A7790_CLK_SCIFB2		16
+-#define R8A7790_CLK_SYS_DMAC0		18
+-#define R8A7790_CLK_SYS_DMAC1		19
++#define R8A7790_CLK_SYS_DMAC1		18
++#define R8A7790_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
+ #define R8A7790_CLK_TPU0		4
+-- 
+1.8.5.2
+
