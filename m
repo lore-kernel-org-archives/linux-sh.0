@@ -1,82 +1,40 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 20 Feb 2014 11:54:45 +0000
-Subject: [PATCH V7 1/3] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
-Message-Id: <1392897287-11614-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:19:07 +0000
+Subject: [PATCH 15/21] ARM: shmobile: kzm9d: Conditionally select SMSC_PHY
+Message-Id: <682100f59c0051e2b6f5af294da79df2419db157.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <damm@opensource.se>, "Cc: Wolfram Sang" <wsa@the-dreams.de>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The kzm9d board uses has an SMSC911X ethernet controller which uses an
+SMSC phy. Select SMSC_PHY for kzm9d if SMSC911X is enabled to make use of the
+SMSC-specific phy driver rather than relying on the generic phy driver.
 
-Add Kconfig entries for CMT, MTU2, TMU and STI to
-drivers/clocksource/Kconfig. This will allow us to
-get rid of duplicated entires in architecture code
-such as arch/sh and arch/arm/mach-shmobile.
+This only covers the case of multiplatform kzm9d
+as there is currently no Kconfig node for non-multiplatform kzm9d.
+One could be added if desired.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[wsa: rebased to timers/core]
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/Kconfig | 44 ++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ arch/arm/mach-shmobile/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index cd6950f..4f754a9 100644
---- a/drivers/clocksource/Kconfig
-+++ b/drivers/clocksource/Kconfig
-@@ -140,3 +140,47 @@ config VF_PIT_TIMER
- 	bool
- 	help
- 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
-+
-+config SYS_SUPPORTS_SH_CMT
-+        bool
-+
-+config SYS_SUPPORTS_SH_MTU2
-+        bool
-+
-+config SYS_SUPPORTS_SH_TMU
-+        bool
-+
-+config SYS_SUPPORTS_EM_STI
-+        bool
-+
-+config SH_TIMER_CMT
-+	bool "Renesas CMT timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_SH_CMT
-+	help
-+	  This enables build of a clocksource and clockevent driver for
-+	  the Compare Match Timer (CMT) hardware available in 16/32/48-bit
-+	  variants on a wide range of Mobile and Automotive SoCs from Renesas.
-+
-+config SH_TIMER_MTU2
-+	bool "Renesas MTU2 timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_SH_MTU2
-+	help
-+	  This enables build of a clockevent driver for the Multi-Function
-+	  Timer Pulse Unit 2 (TMU2) hardware available on SoCs from Renesas.
-+	  This hardware comes with 16 bit-timer registers.
-+
-+config SH_TIMER_TMU
-+	bool "Renesas TMU timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_SH_TMU
-+	help
-+	  This enables build of a clocksource and clockevent driver for
-+	  the 32-bit Timer Unit (TMU) hardware available on a wide range
-+	  SoCs from Renesas.
-+
-+config EM_TIMER_STI
-+	bool "Renesas STI timer driver" if COMPILE_TEST
-+	default SYS_SUPPORTS_EM_STI
-+	help
-+	  This enables build of a clocksource and clockevent driver for
-+	  the 48-bit System Timer (STI) hardware available on a SoCs
-+	  such as EMEV2 from former NEC Electronics.
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 6f16983..b735ea8 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -51,6 +51,7 @@ config MACH_KZM9D
+ 	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SMSC_PHY if SMSC911X
+ 
+ config MACH_LAGER
+ 	bool "Lager board"
 -- 
-1.8.5.1
+1.8.5.2
 
