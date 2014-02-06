@@ -1,43 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:31 +0000
-Subject: [PATCH 4/9] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
-Message-Id: <3fc3e908d25ad04de1a01b3f659ecabefcca74c5.1393401266.git.horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:29 +0000
+Subject: [PATCH 09/13] ARM: shmobile: kzm9d: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <c5aa40f8485b9b6aaeae14e5bddd5e569829ac2f.1391651074.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393401266.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
+References: <cover.1391651074.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
-clock framework yet.
+DEVTMPFS is needed for udev
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/configs/kzm9d_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index ffb0fff..71c99fe 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -191,6 +191,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
-+	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+index e42ce37..1cc330b 100644
+--- a/arch/arm/configs/kzm9d_defconfig
++++ b/arch/arm/configs/kzm9d_defconfig
+@@ -50,6 +50,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_BLK_DEV is not set
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
 -- 
 1.8.5.2
 
