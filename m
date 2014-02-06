@@ -1,46 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 13 Feb 2014 14:48:04 +0000
-Subject: Re: [PATCH v2 0/2] ARM: shmobile: r8a779[01]: Add SSI clocks in device tree
-Message-Id: <5275812.0DfTgYCuTW@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:25 +0000
+Subject: [PATCH 05/13] ARM: shmobile: marzen: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <edcde600a0bf778d98d945bd27f51c941e35bb8c.1391651074.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391651074.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mike,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wednesday 25 December 2013 21:34:33 Laurent Pinchart wrote:
-> Hello,
-> 
-> These two patches add the SSI clocks to the r8a7790 and r8a7791 device tree.
-> 
-> Compared to v1, the SSIn clocks now reference their parent using index 0
-> instead of index R8A779[01]_CLK_SSI (which is equal to 5). The clocks
-> property is used to look up the clock parent name (possibly before the
-> clock parent is even registered), not the clock parent itself. As clock
-> parent names are always looked up directly by index, replace the clock
-> provider index by the parent index in the clock-output-names list.
-> 
-> Mike, is this the correct thing to do ? The different meanings of the clocks
-> property depending on whether it's located in a clock provider node or a
-> clock consumer node are not really intuitive. This should probably be
-> documented in Documentation/devicetree/bindings/clock/clock-bindings.txt.
+This reverts commit 41307133da4b6f242ecbb45950b9d043c0b21b96
+("ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig").
 
-Ping ?
+DEVTMPFS is needed for udev.
 
-> Laurent Pinchart (2):
->   ARM: shmobile: r8a7790: Add SSI clocks in device tree
->   ARM: shmobile: r8a7791: Add SSI clocks in device tree
-> 
->  arch/arm/boot/dts/r8a7790.dtsi            | 18 ++++++++++++++++++
->  arch/arm/boot/dts/r8a7791.dtsi            | 18 ++++++++++++++++++
->  include/dt-bindings/clock/r8a7790-clock.h | 13 +++++++++++++
->  include/dt-bindings/clock/r8a7791-clock.h | 13 +++++++++++++
->  4 files changed, 62 insertions(+)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+[horms+renesas@verge.net.au: Added subject of reverted patch to changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/marzen_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index f21bd40..92994f7 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -43,6 +43,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
