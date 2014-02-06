@@ -1,91 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:36 +0000
-Subject: [PATCH 08/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-Message-Id: <1392907779-22053-9-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:18:55 +0000
+Subject: [PATCH 03/21] ARM: shmobile: bockw: use HPBIF DMAEngine for sound
+Message-Id: <88bf7f6846dea22bd50f8abf4c30530bbe2b6424.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1391665225.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+R-Car sound driver is supporting Mem <-> SRU <-> SSI
+transfer via DMAEngine.
+The sound will be less noise if it uses SRU path
+since it has FIFO.
+This patch supports it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   52 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 52 insertions(+)
+ arch/arm/mach-shmobile/board-bockw.c | 22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index bc652a2848e7..aab5f4cf6ce2 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -24,6 +24,10 @@
- 		i2c2 = &i2c2;
- 		i2c3 = &i2c3;
- 		spi0 = &qspi;
-+		spi1 = &msiof0;
-+		spi2 = &msiof1;
-+		spi3 = &msiof2;
-+		spi4 = &msiof3;
- 	};
- 
- 	cpus {
-@@ -764,4 +768,52 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	msiof0: spi@e6e20000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e20000 0 0x0064>;
-+		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
-+		num-cs = <1>;
-+		renesas,rx-fifo-size = <256>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof1: spi@e6e10000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e10000 0 0x0064>;
-+		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
-+		num-cs = <1>;
-+		renesas,rx-fifo-size = <256>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof2: spi@e6e00000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e00000 0 0x0064>;
-+		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
-+		num-cs = <1>;
-+		renesas,rx-fifo-size = <256>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof3: spi@e6c90000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6c90000 0 0x0064>;
-+		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
-+		num-cs = <1>;
-+		renesas,rx-fifo-size = <256>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index bdb78a7..24b4161 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -332,16 +332,24 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_UNUSED, /* SSI 0 */
+ 	RSND_SSI_UNUSED, /* SSI 1 */
+ 	RSND_SSI_UNUSED, /* SSI 2 */
+-	RSND_SSI_SET(1, HPBDMA_SLAVE_SSI3_TX, gic_iid(0x85), RSND_SSI_PLAY),
+-	RSND_SSI_SET(2, HPBDMA_SLAVE_SSI4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
+-	RSND_SSI_SET(0, HPBDMA_SLAVE_SSI5_TX, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, HPBDMA_SLAVE_SSI6_RX, gic_iid(0x86), 0),
+-	RSND_SSI_SET(3, HPBDMA_SLAVE_SSI7_TX, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(4, HPBDMA_SLAVE_SSI8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
++	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
++	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
++	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
++	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
  };
+ 
+ static struct rsnd_scu_platform_info rsnd_scu[9] = {
+-	/* no member at this point */
++	{ .flags = 0, }, /* SRU 0 */
++	{ .flags = 0, }, /* SRU 1 */
++	{ .flags = 0, }, /* SRU 2 */
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
++	{ .flags = RSND_SCU_USE_HPBIF, },
+ };
+ 
+ enum {
 -- 
-1.7.9.5
+1.8.5.2
 
