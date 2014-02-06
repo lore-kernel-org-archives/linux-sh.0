@@ -1,61 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Feb 2014 08:31:12 +0000
-Subject: [PATCH] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
-Message-Id: <1392971472-21679-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:47:40 +0000
+Subject: [PATCH 2/2] serial: sh-sci: Fix compatible string in DT bindings example
+Message-Id: <1391669260-23970-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Remove the -generic suffix from the compatible string in the serial port
+DT bindings example.
+
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This should have been part of the series "[PATCH 00/11] ARM: shmobile:
-MSIOF integration on r8a7790/lager and r8a7791/koelsch"
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/configs/koelsch_defconfig  |    1 +
- arch/arm/configs/lager_defconfig    |    1 +
- arch/arm/configs/shmobile_defconfig |    1 +
- 3 files changed, 3 insertions(+)
-
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 93919e8c92ce..0c3709e81842 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -69,6 +69,7 @@ CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
- # CONFIG_HWMON is not set
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index b17fc23ae676..dfb0c21fb767 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -90,6 +90,7 @@ CONFIG_I2C_GPIO=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIO_SH_PFC=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 83b07258a385..2a27d4622cc9 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -78,6 +78,7 @@ CONFIG_I2C_GPIO=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIO_EM=y
- CONFIG_GPIO_RCAR=y
- # CONFIG_HWMON is not set
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index f372cf2..53e6c17 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -37,7 +37,7 @@ Example:
+ 	};
+ 
+ 	scifa0: serial@e6c40000 {
+-		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
++		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.7.9.5
+1.8.5.2
 
