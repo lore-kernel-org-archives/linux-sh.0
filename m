@@ -1,68 +1,49 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Sun, 23 Feb 2014 18:00:55 +0000
-Subject: [PATCH V4 0/4] ARM: shmobile: koelsch: Add USB support
-Message-Id: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 06 Feb 2014 07:16:14 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7790/r8a7778: audio support
+Message-Id: <20140206071612.GJ17591@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+On Mon, Jan 13, 2014 at 06:24:40PM -0800, Kuninori Morimoto wrote:
+> 
+> Hi Simon, Laurent
+> 
+> These are r8a7790 audio clock support v2 patch
+> and lager sound support.
+> These are based on renesas-devel-v3.13-rc8-20140113 tag
+> 
+> Kuninori Morimoto (4):
+>       1) ARM: shmobile: r8a7778: add audio clock in new style
+>       2) ARM: shmobile: r8a7790: add audio clock
+>       3) ARM: shmobile: lager: add sound support
+>       4) ARM: shmobile: lager: add sound support on defconfig
+> 
+>  arch/arm/boot/dts/r8a7790.dtsi         |   23 ++++++++
+>  arch/arm/configs/lager_defconfig       |    4 ++
+>  arch/arm/mach-shmobile/Kconfig         |    1 +
+>  arch/arm/mach-shmobile/board-lager.c   |  100 ++++++++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/clock-r8a7778.c |    4 ++
+>  arch/arm/mach-shmobile/clock-r8a7790.c |   20 +++++++
+>  6 files changed, 152 insertions(+)
+> 
+> I will fixup sound driver side after merge for DT supporting.
+> To avoid merging conflict issue, platform needs new/old style clock now.
+>  => #1, #2
+> 
+> #2 has common clock support too.
+> 
+> #3 needs below branch
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: topic/rcar
+> 
+> especially, this commit
+> 
+> 507d466c733e28d132a7be87040a3da126df7947
+> (ASoC: rcar: add Gen2 sound support)
 
-These patch series add the USBHS and PCI USB support to Koelsch board
-
-The patches depend on the following commits:
-
-USBHS and PCI USB host:
-* http://git.linuxtv.org/pinchartl/fbdev.git/commit/9770d221130e18c2d0ffe13=
-cd07365d473 \
-                114549
-* http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=
-=C8ba8115a2 \
-                1226fba3211085f570b128fa271e31
-* http://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?id=C3e5=
-d2985ef720c \
-bbdc63546a5c545ac4450d96e PCI USB host:
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=103 \
-                e127d1f8f985e8a662da6537ebc5e08902ee3
-* http://git.kernel.org/cgit/linux/kernel/git/gregkh/usb.git/commit/?h=3Dus=
-b-next&id=1Ae \
-                5799ef63176cc75ec10e545cb65f620a82747
-* http://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/commit/?h=3Dp=
-ci/host-rcar& \
-id=FB178d8b2fab3f2a9f203c13ffe80cfd6e01bdf1
-
-GPIO R-Car:
-* https://lkml.org/lkml/2014/2/23/60
-
-Changes in V4:
-* folded USBHS and internal PCI USB related patches together
-* added handling of ID pin from MAX3355E chip
-* removed ifdefs
-* added USB and PCI to koelsch_defconfig
-
-Changes in V3:
-* fixed the USB1 device name in the pinmux table;
-* fixed a typo in the "Add internal PCI support" log message.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag;
-* added pipe_type array to the usbhs platform info since it differs from th=
-e default.
-
-Valentine Barshak, Vladimir Barinov (4):
-  ARM: shmobile: r8a7791: Add USBHS clock support
-  ARM: shmobile: r8a7791: Add PCI USB host clock support
-  ARM: shmobile: koelsch: Add USBHS and internal PCI USB support
-  ARM: shmobile: koelsch: Add USB and PCI to defconfig
-
----
- arch/arm/configs/koelsch_defconfig     |   16 ++
- arch/arm/mach-shmobile/board-koelsch.c |  183 ++++++++++++++++++++++++++++=
-+++++
- arch/arm/mach-shmobile/clock-r8a7791.c |    7 +
- 3 files changed, 205 insertions(+), 1 deletion(-)
+Thanks, that dependency is present in v3.14-rc1 and I have queued-up
+this series.
