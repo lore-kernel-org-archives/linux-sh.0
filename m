@@ -1,49 +1,23 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Feb 2014 05:36:28 +0000
-Subject: [PATCH] ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
-Message-Id: <20140205053628.29078.92360.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 06 Feb 2014 06:31:17 +0000
+Subject: Re: [PATCH] ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
+Message-Id: <20140206063115.GA13435@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140205053628.29078.92360.sendpatchset@w520>
+In-Reply-To: <20140205053628.29078.92360.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Feb 05, 2014 at 02:36:28PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Some on-chip devices on r8a7790 and r8a7791 can do
+> bus mastering and access more than 32-bits of address
+> space. Select ARCH_DMA_ADDR_T_64BIT when LPAE is set
+> in case of multiplatform and legacy SoC support.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Some on-chip devices on r8a7790 and r8a7791 can do
-bus mastering and access more than 32-bits of address
-space. Select ARCH_DMA_ADDR_T_64BIT when LPAE is set
-in case of multiplatform and legacy SoC support.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/Kconfig |    3 +++
- 1 file changed, 3 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2014-02-04 17:04:53.000000000 +0900
-@@ -13,6 +13,7 @@ config ARCH_SHMOBILE_MULTI
- 	select ARM_GIC
- 	select MIGHT_HAVE_CACHE_L2X0
- 	select MIGHT_HAVE_PCI
-+	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 	select NO_IOPORT
- 	select PINCTRL
- 	select ARCH_REQUIRE_GPIOLIB
-@@ -126,6 +127,7 @@ config ARCH_R8A7790
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-@@ -135,6 +137,7 @@ config ARCH_R8A7791
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
+Thanks, I will queue this up.
