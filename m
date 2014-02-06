@@ -1,104 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:52:03 +0000
-Subject: [PATCH 02/02] ARM: shmobile: Lager DT USB PCI platform devices
-Message-Id: <20140224075203.20255.88334.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:47:39 +0000
+Subject: [PATCH 1/2] serial: sh-sci: Restrict non-COMPILE_TEST compilation
+Message-Id: <1391669260-23970-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224075144.20255.59443.sendpatchset@w520>
-In-Reply-To: <20140224075144.20255.59443.sendpatchset@w520>
+References: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add USB1 and USB2 as PCI USB platform devices to the Lager DT Reference
-board code. For this to work the PFC needs to be configured separately
-via board specific DT code.
+Hardware supported by the driver is only found on SUPERH or
+ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
 
-The Lager legacy code supports USB1 and USB2 already, and this patch
-is moving us one step closer to being able to have equal software
-support level for legacy Lager and DT reference Lager. The goal is to
-be able to retire the legacy Lager code and to use DT to describe all
-devices including these PCI USB devices. Plenty of complex bining work
-is however needed for 4 different interconnected pieces of USB hardware,
-so in the mean time use platform devices to allow us to retire legacy
-code sooner.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-serial@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/tty/serial/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- Depends on "[PATCH 00/03] ARM: shmobile: Break out and extend clock workaround"
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index a3815ea..923d3de 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -708,7 +708,8 @@ config SERIAL_IP22_ZILOG_CONSOLE
+ 
+ config SERIAL_SH_SCI
+ 	tristate "SuperH SCI(F) serial port support"
+-	depends on HAVE_CLK && (SUPERH || ARM || COMPILE_TEST)
++	depends on HAVE_CLK
++	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+ 	select SERIAL_CORE
+ 
+ config SERIAL_SH_SCI_NR_UARTS
+-- 
+1.8.5.2
 
- arch/arm/mach-shmobile/board-lager-reference.c |   46 ++++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
-
---- 0018/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-02-24 16:35:28.000000000 +0900
-@@ -85,6 +85,44 @@ static void __init lager_add_du_device(v
- 	platform_device_register_full(&info);
- }
- 
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(112)),
-+};
-+
-+static const struct platform_device_info pci1_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "pci-rcar-gen2",
-+	.id		= 1,
-+	.res		= pci1_resources,
-+	.num_res	= ARRAY_SIZE(pci1_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
-+/* Internal PCI2 */
-+static const struct resource pci2_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static const struct platform_device_info pci2_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "pci-rcar-gen2",
-+	.id		= 2,
-+	.res		= pci2_resources,
-+	.num_res	= ARRAY_SIZE(pci2_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
-+static void __init lager_add_usb1_usb2_devices(void)
-+{
-+	platform_device_register_full(&pci1_info);
-+	platform_device_register_full(&pci2_info);
-+}
-+
- /*
-  * This is a really crude hack to provide clkdev support to platform
-  * devices until they get moved to DT.
-@@ -108,6 +146,11 @@ static const struct clk_name clk_names[]
- 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
- };
- 
-+static const struct clk_name clk_ena_names[] = {
-+	{ "ehci", NULL, "pci-rcar-gen2.1" },
-+	{ "ehci", NULL, "pci-rcar-gen2.2" },
-+};
-+
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-@@ -115,6 +158,9 @@ static void __init lager_add_standard_de
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	lager_add_du_device();
-+
-+	shmobile_clk_workaround(clk_ena_names, ARRAY_SIZE(clk_ena_names), true);
-+	lager_add_usb1_usb2_devices();
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
