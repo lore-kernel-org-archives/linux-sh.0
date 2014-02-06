@@ -1,49 +1,84 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 26 Feb 2014 16:08:10 +0000
-Subject: [PATCH 2/5] ARM: shmobile: r8a7791: Add PCIe clock
-Message-Id: <1393430893-2466-3-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:21:05 +0000
+Subject: [GIT PULL 00/13] Renesas ARM Based SoC Updates for v3.15
+Message-Id: <cover.1391666228.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/mach-shmobile/clock-r8a7791.c |    3 +++
- 1 file changed, 3 insertions(+)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index c574292..cba9b3c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -123,6 +123,7 @@ enum {
- 	MSTP813,
- 	MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
-+	MSTP319,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
- 	MSTP124,
-@@ -137,6 +138,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP718] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 18, 0), /* SCIF3 */
- 	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
-+	[MSTP319] = SH_CLK_MSTP32(&mp_clk, SMSTPCR3, 19, 0), /* PCIEC */
- 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
- 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
-@@ -166,6 +168,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
- 
- 	/* MSTP */
-+	CLKDEV_DEV_ID("r8a7791-pcie", &mstp_clks[MSTP319]),
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]), /* SCIFB0 */
--- 
-1.7.9.5
+please consider these Renesas ARM based SoC updates for v3.15.
 
+This pull request is based on "Renesas CPG update for v3.15",
+tagged as renesas-cpg-for-v3.15, which I am also sending a pull request for
+today. The reason for the dependency is to provide driver support for
+the "Wait for status on selected MSTP clocks" patches in this pull-request.
+These are correctness fixes.
+
+
+The following changes since commit a028c6da34d434e35ba8322568c756ea97ff3c18:
+
+  ARM: shmobile: wait for MSTP clock status to toggle, when enabling it (2014-02-04 10:22:39 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.15
+
+for you to fetch changes up to 012a7069b5a10a0851584d71a1facdc40a972319:
+
+  ARM: shmobile: r8a7790: Add PCI USB host clock support (2014-02-04 10:25:03 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Updates for v3.15
+
+* r7s72100 SoC (RZ/A1H)
+  - Add i2c clocks (portion missing from previous patch due to miss-merge)
+
+* r8a7791 (R-Car M2)
+  - Add SATA clocks
+  - Add ZS clock
+  - Wait for status on all MSTP clocks
+ -- Add I2C and VIN clocks
+
+* r8a7790 (R-Car H2)
+  - Add PCI USB host clock support
+  - Add Audio DMAC, SATA and VIN clocks
+  - Add Audio DMAC support
+
+* r8a7779 (R-Car H1)
+  - Wait for status on selected MSTP clocks
+
+----------------------------------------------------------------
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: add Audio DMAC clock
+      ARM: shmobile: r8a7790: add Audio DMAC support
+
+Laurent Pinchart (1):
+      ARM: shmobile: r8a7779: Wait for status on selected MSTP clocks
+
+Shinya Kuribayashi (2):
+      ARM: shmobile: r8a7790: Wait for status on all MSTP clocks
+      ARM: shmobile: r8a7791: Wait for status on all MSTP clocks
+
+Valentine Barshak (7):
+      ARM: shmobile: r8a7791: Add I2C clocks
+      ARM: shmobile: r8a7791: Add VIN clocks
+      ARM: shmobile: r8a7790: Add VIN clock support
+      ARM: shmobile: r8a7790: Add SATA clocks
+      ARM: shmobile: r8a7791: Add ZS clock
+      ARM: shmobile: r8a7791: Add SATA clocks
+      ARM: shmobile: r8a7790: Add PCI USB host clock support
+
+Wolfram Sang (1):
+      ARM: shmobile: r7s72100: really add i2c clocks
+
+ arch/arm/mach-shmobile/clock-r7s72100.c       |   4 +
+ arch/arm/mach-shmobile/clock-r8a7779.c        |  20 ++--
+ arch/arm/mach-shmobile/clock-r8a7790.c        | 140 ++++++++++++++++----------
+ arch/arm/mach-shmobile/clock-r8a7791.c        |  81 +++++++++++----
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  25 +++++
+ arch/arm/mach-shmobile/setup-r8a7790.c        |  90 +++++++++++++++++
+ 6 files changed, 275 insertions(+), 85 deletions(-)
