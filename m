@@ -1,131 +1,109 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 28 Jan 2014 04:45:09 +0000
-Subject: [PATCH 2/4] mmc: SDHI: updata sh_mobile_sdhi_of_data for r8a7778
-Message-Id: <87iot490kt.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:17:08 +0000
+Subject: [GIT PULL 00/21] Renesas ARM based SoC Board Updates for v3.15
+Message-Id: <cover.1391665225.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>
-Cc: Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Olof, Hi Kevin, Hi Arnd,
 
-This patch updates r8a7778 DT data to have SoC specific settings.
-Latest Renesas Chip has some SDHI channels and the WP pin
-availability depends on its channel or HW implementation.
-Thus, this patch disables it as default,
-but we can use wp-gpios property to enable it.
+please consider these Renesas ARM based SoC board updates for v3.15.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |    4 +++-
- arch/arm/boot/dts/r8a7778.dtsi                |    6 ------
- drivers/mmc/host/sh_mobile_sdhi.c             |    9 ++++++++-
- 3 files changed, 11 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index bb62c7a..06cda19 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -17,6 +17,7 @@
- /dts-v1/;
- #include "r8a7778.dtsi"
- #include <dt-bindings/interrupt-controller/irq.h>
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "bockw";
-@@ -84,7 +85,7 @@
- 
- 	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
--				  "sdhi0_cd", "sdhi0_wp";
-+				  "sdhi0_cd";
- 		renesas,function = "sdhi0";
- 	};
- 
-@@ -101,6 +102,7 @@
- 	vmmc-supply = <&fixedregulator3v3>;
- 	bus-width = <4>;
- 	status = "okay";
-+	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
- };
- 
- &hspi0 {
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index ddb3bd7..c309430 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -178,8 +178,6 @@
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -188,8 +186,6 @@
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-@@ -198,8 +194,6 @@
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
--		cap-sd-highspeed;
--		cap-sdio-irq;
- 		status = "disabled";
- 	};
- 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 8901acd..6442286 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -37,6 +37,7 @@
- 
- struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
-+	unsigned long capabilities;
- };
- 
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -45,13 +46,18 @@ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
- 	},
- };
- 
-+static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+};
-+
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-shmobile" },
- 	{ .compatible = "renesas,sdhi-sh7372" },
- 	{ .compatible = "renesas,sdhi-sh73a0", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
--	{ .compatible = "renesas,sdhi-r8a7778", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
-@@ -212,6 +218,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	if (of_id && of_id->data) {
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
-+		mmc_data->capabilities |= of_data->capabilities;
- 	}
- 
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
--- 
-1.7.9.5
+The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
 
+  Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.15
+
+for you to fetch changes up to 235cda29e4d5047622ff9b82b1f0b4cb6cf95f6c:
+
+  ARM: shmobile: Remove Lager USBHS UDC ifdefs (2014-02-04 14:28:33 +0900)
+
+----------------------------------------------------------------
+Renesas ARM based SoC Board Updates for v3.15
+
+* r8a7791 (R-Car M2) based Koelsch board
+  - Fix error return code check from clk_get()
+  - Add SATA0 support
+  - Conditionally select MICREL_PHY for Multiplatform
+
+* r8a7790 (R-Car H2) based Lager board
+  - Add USBHS support
+  - Fix error return code check from clk_get()
+  - Add SATA support
+  - Make spi_flash_data const
+  - Add VIN1 SoC camera support
+  - Conditionally select CONFIG_MICREL_PHY
+
+* r8a7778 (R-Car M1) based Bock-W board
+  - Add USB Func DMAEngine support
+  - Use HPBIF DMAEngine for sound
+  - Use SSI DMAEngine for sound
+
+* emev2 (Emma Mobile EV2) based kzm9d board
+  - Use common clock framework
+
+* r8a773a0 (SH-Mobile AG5) based kzm9g board
+  - Add zboot support
+
+* Many boards
+  - Conditionally select SMSC_PHY
+
+----------------------------------------------------------------
+Ben Dooks (2):
+      ARM: shmobile: lager: fix error return code check from clk_get()
+      ARM: shmobile: koelsch: fix error return code check from clk_get()
+
+Geert Uytterhoeven (1):
+      ARM: shmobile: lager: Make spi_flash_data const
+
+Kuninori Morimoto (3):
+      ARM: shmobile: bockw: use SSI DMAEngine for sound
+      ARM: shmobile: bockw: use HPBIF DMAEngine for sound
+      ARM: shmobile: bockw: add USB Func DMAEngine support
+
+Magnus Damm (1):
+      ARM: shmobile: Remove Lager USBHS UDC ifdefs
+
+Sergei Shtylyov (1):
+      ARM: shmobile: Lager: conditionally select CONFIG_MICREL_PHY
+
+Simon Horman (7):
+      ARM: shmobile: koelsch: Conditionally select MICREL_PHY for Multiplatform
+      ARM: shmobile: ape6evm: Conditionally select SMSC_PHY
+      ARM: shmobile: armadillo800eva: Conditionally select SMSC_PHY
+      ARM: shmobile: bockw: Sort Kconfig node's selections
+      ARM: shmobile: kzm9d: Conditionally select SMSC_PHY
+      ARM: shmobile: mackerel: Conditionally select SMSC_PHY
+      ARM: shmobile: marzen: Conditionally select SMSC_PHY
+
+Takashi Yoshii (1):
+      ARM: shmobile: kzm9d: Use common clock framework
+
+Ulrich Hecht (1):
+      ARM: mach-shmobile: kzm9g: add zboot support
+
+Valentine Barshak (4):
+      ARM: shmobile: lager: Add VIN1 SoC camera support
+      ARM: shmobile: lager: Add SATA support
+      ARM: shmobile: koelsch: Add SATA0 support
+      ARM: shmobile: lager: Add USBHS support
+
+ arch/arm/mach-shmobile/Kconfig                     |  15 +-
+ arch/arm/mach-shmobile/board-bockw.c               |  24 +-
+ arch/arm/mach-shmobile/board-koelsch-reference.c   |   4 +-
+ arch/arm/mach-shmobile/board-koelsch.c             |  17 +
+ arch/arm/mach-shmobile/board-kzm9d-reference.c     |   5 +-
+ arch/arm/mach-shmobile/board-lager-reference.c     |   4 +-
+ arch/arm/mach-shmobile/board-lager.c               | 229 +++++++++++-
+ arch/arm/mach-shmobile/include/mach/head-kzm9g.txt | 410 +++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/zboot.h        |   3 +
+ arch/arm/mach-shmobile/include/mach/zboot_macros.h |  43 +++
+ 10 files changed, 737 insertions(+), 17 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/head-kzm9g.txt
