@@ -1,20 +1,40 @@
-From: Karen Williams <KWilliams@gloversvilleschools.org>
-Date: Wed, 26 Feb 2014 06:32:14 +0000
-Subject: Outlook gebruiker waarschuwing.
-Message-Id: <34AEC189DE25054ABC8B6B969C68365215080226@GESDMBX01.gesda.gesd.gsd>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Feb 2014 06:20:27 +0000
+Subject: [PATCH 07/13] ARM: shmobile: lager: enable CONFIG_DEVTMPFS in defconfig
+Message-Id: <6ea8b5ff7ca2d200875ddd774faa8ca40d990d86.1391651074.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1391651074.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "acount-security-noreply@account.microsoft.com" <acount-security-noreply@account.microsoft.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Geachte Webmail Gebruiker,
-Uw twee inkomende mails hangende toestand geplaatst als gevolg van de recente upgrade in onze database.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-in volgorde te ontvangen uw berichten KLIK HIER<http://goorsoicuesaeorusdoisda.webs.com/>
+DEVTMPFS is needed for udev
 
-Login met uw juiste Webmail informatie en wachten op antwoordt van onze data service.
-Onze excuses voor het ongemak en waarderen uw begrip.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+[horms+renesas@verge.net.au: resolved trivial conflict]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/lager_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Exchange administrator
-The Microsoft Account Team 2014.
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index ee93b8a..3e7e0ae 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -49,6 +49,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_ATA=y
+ CONFIG_SATA_RCAR=y
+-- 
+1.8.5.2
+
