@@ -1,44 +1,127 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 01:44:31 +0000
-Subject: Re: [PATCH 02/03] ARM: shmobile: Remove KZM9D board code
-Message-Id: <20140217014427.GA25228@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 07 Feb 2014 08:34:14 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: add SDHI0/2 support
+Message-Id: <87sirvb9to.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213082558.30630.93034.sendpatchset@w520>
- <20140213082618.30630.64196.sendpatchset@w520>
- <20140217000202.GA18898@verge.net.au>
- <CANqRtoRrm12Fb1gxHKCSi=MzywvdcoPPpCESsff6BofPwuSvCw@mail.gmail.com>
-In-Reply-To: <CANqRtoRrm12Fb1gxHKCSi=MzywvdcoPPpCESsff6BofPwuSvCw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 17, 2014 at 10:36:25AM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Mon, Feb 17, 2014 at 9:02 AM, Simon Horman <horms@verge.net.au> wrote:
-> > Hi Magnus,
-> >
-> > I'm not clear on the motivation for removing emev2_smp_ops from
-> > emev2.h only to have to add it as an extern to setup-emev2.c.
-> > But if thats how you like to roll then I have no objections.
-> 
-> Hehe, I suppose I felt a sudden urge to remove that particular header file.
-> 
-> > However, what I would like to ask is that the emev2.h shuffling,
-> > that is the changes to emev2.h, setup-emev2.c and smp-emev2.c
-> > could be moved into a follow-up patch that I will queue up at a later date.
-> 
-> That's fine.
-> 
-> > The reason is that these really seem to be SoC changes but
-> > the main portion of this patch is a board change. And as you
-> > know the arm-soc people like soc and board changes split into
-> > different branches.
-> 
-> Sure. Would you like me to redo 2/3 to break out the header file bits?
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Ideally, yes.
+SDHI0 (CN8) needs JP/SW settings
 
-Alternatively, I can just drop them from 2/3 and you can send
-a follow-up patch at a later date.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 3175748..90d7e81 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -26,8 +26,10 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+@@ -68,6 +70,19 @@
+  * # amixer set "LINEOUT Mixer DACL" on
+  */
+ 
++/*
++ * SDHI0 (CN8)
++ *
++ * JP3:  pin1
++ * SW20: pin1
++
++ * GP5_24:	1:  VDD  3.3V (defult)
++ *		0:  VDD  0.0V
++ * GP5_29:	1:  VccQ 3.3V (defult)
++ *		0:  VccQ 1.8V
++ *
++ */
++
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+ 	{
+@@ -595,6 +610,34 @@ static void __init lager_add_rsnd_device(void)
+ 	platform_device_register_full(&cardinfo);
+ }
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee100000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI2 */
++static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee140000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(167)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -612,6 +655,20 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_cd", "sdhi0"),
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_ctrl", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_cd", "sdhi2"),
+ 	/* SSI (CN17: sound) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7790",
+ 				  "ssi0129_ctrl", "ssi"),
+@@ -716,6 +773,13 @@ static void __init lager_add_standard_devices(void)
+ 	lager_register_usbhs();
+ 
+ 	lager_add_rsnd_device();
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
++					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
++					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
+ }
+ 
+ /*
+-- 
+1.7.9.5
+
