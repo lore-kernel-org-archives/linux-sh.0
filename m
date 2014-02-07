@@ -1,76 +1,126 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:04:48 +0000
-Subject: [PATCH 3/3] ARM: shmobile: koelsch dts: Add QSPI nodes
-Message-Id: <e02ee513eed4bb780848a5cedbd4b39afb395d3e.1392275963.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 07 Feb 2014 08:34:26 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager: add SDHI0/2 support on DTS
+Message-Id: <87r47fb9tc.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392275963.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392275963.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add pinctrl and SPI devices for QSPI on Koelsch.
-Add Spansion s25fl512s SPI FLASH and MTD partitions.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 36 +++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts |   84 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 84 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 74f0985..d4b9bba 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -121,8 +121,44 @@
- 		renesas,groups = "scif1_data_d";
- 		renesas,function = "scif1";
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 1081c5e..972c75a 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -56,6 +56,54 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
  	};
 +
-+	qspi_pins: spi {
-+		renesas,groups = "qspi_ctrl", "qspi_data4";
-+		renesas,function = "qspi";
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio5 24 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi0: regulator@2 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio5 29 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi2: regulator@3 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio5 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi2: regulator@4 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio5 30 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
 +	};
  };
  
- &sata0 {
+ &extal_clk {
+@@ -76,6 +124,16 @@
+ 		renesas,function = "scif1";
+ 	};
+ 
++	sdhi0_pins: sd0 {
++		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sd2 {
++		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl", "sdhi2_cd";
++		renesas,function = "sdhi2";
++	};
++
+ 	mmc1_pins: mmc1 {
+ 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+ 		renesas,function = "mmc1";
+@@ -95,3 +153,29 @@
+ &sata1 {
  	status = "okay";
  };
 +
-+&spi {
-+	pinctrl-0 = <&qspi_pins>;
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
 +	pinctrl-names = "default";
 +
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	cap-power-off-card;
++	toshiba,mmc-wrprotect-disable;
 +	status = "okay";
++};
 +
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl512s";
-+		reg = <0>;
-+		spi-max-frequency = <30000000>;
-+		m25p,fast-read;
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
 +
-+		partition@0 {
-+			label = "loader";
-+			reg = <0x00000000 0x00080000>;
-+			read-only;
-+		};
-+		partition@80000 {
-+			label = "bootenv";
-+			reg = <0x00080000 0x00080000>;
-+			read-only;
-+		};
-+		partition@100000 {
-+			label = "data";
-+			reg = <0x00100000 0x03f00000>;
-+		};
-+	};
++	vmmc-supply = <&vcc_sdhi2>;
++	vqmmc-supply = <&vccq_sdhi2>;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	cap-power-off-card;
++	toshiba,mmc-wrprotect-disable;
++	status = "okay";
 +};
 -- 
-1.8.5.2
+1.7.9.5
 
