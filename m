@@ -1,7 +1,7 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Thu, 06 Feb 2014 16:43:36 +0000
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Fri, 07 Feb 2014 11:09:23 +0000
 Subject: Re: [PATCH v2 6/6] cpu/idle.c: move to sched/idle.c
-Message-Id: <20140206164336.GU2936@laptop.programming.kicks-ass.net>
+Message-Id: <alpine.LFD.2.11.1402071051140.1906@knanqh.ubzr>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
  <1391017513-12995-7-git-send-email-nicolas.pitre@linaro.org>
@@ -9,31 +9,36 @@ References: <1391017513-12995-1-git-send-email-nicolas.pitre@linaro.org>
  <alpine.LFD.2.11.1401301102210.1652@knanqh.ubzr>
  <20140130162753.GF5002@laptop.programming.kicks-ass.net>
  <alpine.LFD.2.11.1402061152550.1906@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.11.1402061152550.1906@knanqh.ubzr>
+ <20140206164336.GU2936@laptop.programming.kicks-ass.net>
+In-Reply-To: <20140206164336.GU2936@laptop.programming.kicks-ass.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 06, 2014 at 02:09:59PM +0000, Nicolas Pitre wrote:
-> Hi Peter,
+On Thu, 6 Feb 2014, Peter Zijlstra wrote:
+
+> On Thu, Feb 06, 2014 at 02:09:59PM +0000, Nicolas Pitre wrote:
+> > Hi Peter,
+> > 
+> > Did you merge those patches in your tree? 
 > 
-> Did you merge those patches in your tree? 
+> tree, tree, what's in a word.
 
-tree, tree, what's in a word. Its in my patch stack yes. I should get
-some of that into tip I suppose, been side-tracked a bit this week.
-Sorry for the delay.
+Something you may plant on a patch of grass?  "Merging" becomes a 
+strange concept in that context though.  :-)
 
-> If so, is it published somewhere?  
+> Its in my patch stack yes. 
 
-http://programming.kicks-ass.net/sekrit/patches.tar.bz2
+Quilt I suppose?? (yet another word.)
 
-It is of varying quality at best.
+> I should get some of that into tip I suppose, been side-tracked a bit 
+> this week. Sorry for the delay.
 
-> That would be a good idea if that could appear in linux-next 
-> so to prevent people from adding more calls to cpuidle_idle_call() from 
-> architecture code.  I'm sending you 2 additional patches right away to 
-> remove those that appeared in v3.14-rc1.
+If you prefer we pile those patches (and future ones after revew) 
+ourselves just let me know.  Future patches are likely to be more 
+intimate with the scheduler so I just need to know who to upstream them 
+through afterwards.
 
-Yeah, once they land in tip they'll end up in -next automagically. I'll
-try and get that sorted tomorrow somewhere.
+
+Nicolas
