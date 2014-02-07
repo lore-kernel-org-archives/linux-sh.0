@@ -1,76 +1,60 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 24 Feb 2014 22:51:19 +0000
-Subject: Re: [PATCH V6 0/3] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
-Message-Id: <530BCCE7.7060902@linaro.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 07 Feb 2014 12:45:07 +0000
+Subject: Re: [PATCH] sh: sh7757: switch RSPI clock to dev ID match
+Message-Id: <CAMuHMdUYc8Ceid2z3c2Bm1ZDteu2iV-O4cPX4LdxiTnzhsh_Rw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>	<5305C13D.7040907@linaro.org> <CANqRtoT6+6no5fT-6o7jD9k0hF+mMvU4z0ZmUCLksOsJTS0X8Q@mail.gmail.com>
-In-Reply-To: <CANqRtoT6+6no5fT-6o7jD9k0hF+mMvU4z0ZmUCLksOsJTS0X8Q@mail.gmail.com>
+References: <1389522649-1753-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1389522649-1753-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-kernel <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@linaro.org>, Arnd Bergmann <arnd@arndb.de>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, John Stultz <john.stultz@linaro.org>, Olof Johansson <olof@lixom.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On 02/24/2014 11:48 PM, Magnus Damm wrote:
-> On Thu, Feb 20, 2014 at 5:47 PM, Daniel Lezcano
-> <daniel.lezcano@linaro.org> wrote:
->> On 02/17/2014 09:55 PM, Wolfram Sang wrote:
->>>
->>> This is V6 of the SH and ARM mach-shmobile clocksource Kconfig
->>> consolidation
->>> series. It is a rebased version of V5 (which did not get any comments) =
-on
->>> top
->>> of the latest renesas/devel tag. This series is not just an optimizatio=
-n,
->>> it
->>> also makes it possible to enable the clocksource for the r7s72100
->>> platform.
->>> Without it, the current kernel is hardly usable for these devices at the
->>> moment
->>> (broken userland). So, it would be nice to have the series in 3.15. For
->>> more
->>> details, I quote the cover-letter from Magnus for V5 at the end. I
->>> successfully
->>> tested the patches on r7s72100 and r8a7791 platforms. The branch can be
->>> found
->>> here:
->>>
->>> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git
->>> renesas/rework-clock-configs
->>
->>
->> Hi Wolfram,
->>
->> actually I was waiting for Magnus to send me the patchset respinned agai=
-nst
->> timers/core [1].
+On Sun, Jan 12, 2014 at 11:30 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 >
-> Hi Daniel,
+> Switch the RSPI MSTP clock on SH7757 from a con ID match to a dev ID
+> match, so we can start looking it up using clk_get() with a NULL ID.
 >
-> Thanks for your help and my apologies for this confusion. I moved
-> house during December and a couple of things got dropped including
-> this one.
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> ---
+> Untested, as I don't have the hardware, but this is a prerequisite for
+> "spi: rspi: Use NULL as the clock ID".
 
-No problem, that happens ;)
+Is there anyone who can test this?
 
->> So if you mind, please refresh the series against timers/core as this se=
-ries
->> does not apply for my tree.
+"spi: rspi: Use NULL as the clock ID" is queued for v3.15:
+https://git.kernel.org/cgit/linux/kernel/git/broonie/spi.git/commit/drivers/spi/spi-rspi.c?h=for-next&id)f397b739ceef90c8b848f6579cbacd088e896e
+and this patch should go in first.
+
+Thanks!
+
+>  arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 >
-> I noticed that Wolfram picked it up, thanks to both of you - I
-> appreciate your help!
+> diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+> index e84a43229b9c..5c0e3c335161 100644
+> --- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+> +++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+> @@ -132,7 +132,7 @@ static struct clk_lookup lookups[] = {
+>         CLKDEV_CON_ID("usb_fck", &mstp_clks[MSTP103]),
+>         CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP102]),
+>         CLKDEV_CON_ID("mmc0", &mstp_clks[MSTP220]),
+> -       CLKDEV_CON_ID("rspi2", &mstp_clks[MSTP127]),
+> +       CLKDEV_DEV_ID("rspi.2", &mstp_clks[MSTP127]),
+>  };
+>
+>  int __init arch_clk_init(void)
 
-Thanks to Wolfram.
+Gr{oetje,eeting}s,
 
-   -- Daniel
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
