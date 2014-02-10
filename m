@@ -1,51 +1,94 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 26 Feb 2014 14:23:27 +0000
-Subject: Re: [PATCH v3 07/20] ARM: shmobile: marzen: Reference clocks
-Message-Id: <530E06E3.9070901@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 10 Feb 2014 10:47:27 +0000
+Subject: [PATCH 1/7] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
+Message-Id: <1392029254-15400-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
- <1393400016-23433-8-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-8-git-send-email-horms+renesas@verge.net.au>
+References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 02/26/2014 10:33 AM, Simon Horman wrote:
+A QSPI function set consists of 3 groups:
+  - qspi_ctrl (2 control wires)
+  - qspi_data2 (2 data wires, for Single/Dual SPI)
+  - qspi_data4 (4 data wires, for Quad SPI)
 
-> Reference clocks using a "clocks" property in all nodes corresponding to
-> devices that require a clock: that is, the lan0 node.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
-    Simon, "lan0" (should be "ethernet" BTW) is the SMC chip, it can't use 
-Ether clock.
-
-> Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoCs.
-
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->
-> ---
-> v3
-> * New
-> ---
->   arch/arm/boot/dts/r8a7779-marzen.dts | 1 +
->   1 file changed, 1 insertion(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-> index 2c727cd..30f57e9 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-> @@ -41,6 +41,7 @@
->   		reg = <0x18000000 0x100>;
->   		pinctrl-0 = <&lan0_pins>;
->   		pinctrl-names = "default";
-> +		clocks = <&mstp1_clks R8A7779_CLK_ETHER>;
->
->   		phy-mode = "mii";
->   		interrupt-parent = <&irqpin0>;
-
-WBR, Sergei
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index c381ae63c508..bc9ced3ccd58 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2389,6 +2389,29 @@ static const unsigned int msiof3_tx_pins[] = {
+ static const unsigned int msiof3_tx_mux[] = {
+ 	MSIOF3_TXD_MARK,
+ };
++/* - QSPI ------------------------------------------------------------------- */
++static const unsigned int qspi_ctrl_pins[] = {
++	/* SPCLK, SSL */
++	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 9),
++};
++static const unsigned int qspi_ctrl_mux[] = {
++	SPCLK_MARK, SSL_MARK,
++};
++static const unsigned int qspi_data2_pins[] = {
++	/* MOSI_IO0, MISO_IO1 */
++	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
++};
++static const unsigned int qspi_data2_mux[] = {
++	MOSI_IO0_MARK, MISO_IO1_MARK,
++};
++static const unsigned int qspi_data4_pins[] = {
++	/* MOSI_IO0, MISO_IO1, IO2, IO3 */
++	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
++	RCAR_GP_PIN(1, 8),
++};
++static const unsigned int qspi_data4_mux[] = {
++	MOSI_IO0_MARK, MISO_IO1_MARK, IO2_MARK, IO3_MARK,
++};
+ /* - SCIF0 ------------------------------------------------------------------ */
+ static const unsigned int scif0_data_pins[] = {
+ 	/* RX, TX */
+@@ -3671,6 +3694,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(msiof3_ss2),
+ 	SH_PFC_PIN_GROUP(msiof3_rx),
+ 	SH_PFC_PIN_GROUP(msiof3_tx),
++	SH_PFC_PIN_GROUP(qspi_ctrl),
++	SH_PFC_PIN_GROUP(qspi_data2),
++	SH_PFC_PIN_GROUP(qspi_data4),
+ 	SH_PFC_PIN_GROUP(scif0_data),
+ 	SH_PFC_PIN_GROUP(scif0_clk),
+ 	SH_PFC_PIN_GROUP(scif0_ctrl),
+@@ -3970,6 +3996,12 @@ static const char * const msiof3_groups[] = {
+ 	"msiof3_tx",
+ };
+ 
++static const char * const qspi_groups[] = {
++	"qspi_ctrl",
++	"qspi_data2",
++	"qspi_data4",
++};
++
+ static const char * const scif0_groups[] = {
+ 	"scif0_data",
+ 	"scif0_clk",
+@@ -4212,6 +4244,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(msiof0),
+ 	SH_PFC_FUNCTION(msiof1),
+ 	SH_PFC_FUNCTION(msiof2),
++	SH_PFC_FUNCTION(qspi),
+ 	SH_PFC_FUNCTION(msiof3),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+-- 
+1.7.9.5
 
