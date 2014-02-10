@@ -1,92 +1,26 @@
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Date: Mon, 10 Feb 2014 13:00:57 +0000
-Subject: [PATCH v2] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
-Message-Id: <1392037257-20607-1-git-send-email-geert+renesas@linux-m68k.org>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 10 Feb 2014 18:36:33 +0000
+Subject: Re: [PATCH v2] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
+Message-Id: <52F91C31.8060509@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392037257-20607-1-git-send-email-geert+renesas@linux-m68k.org>
+In-Reply-To: <1392037257-20607-1-git-send-email-geert+renesas@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-A QSPI function set consists of 3 groups:
-  - qspi_ctrl (2 control wires)
-  - qspi_data2 (2 data wires, for Single/Dual SPI)
-  - qspi_data4 (4 data wires, for Quad SPI)
+On 10/02/14 13:00, Geert Uytterhoeven wrote:
+> A QSPI function set consists of 3 groups:
+>    - qspi_ctrl (2 control wires)
+>    - qspi_data2 (2 data wires, for Single/Dual SPI)
+>    - qspi_data4 (4 data wires, for Quad SPI)
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
-v2: Insert line at correct position in pinmux_functions[]
+Hi, do you have a branch with all your SPI/QSPI work on that we
+could have a test with please?
 
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-index c381ae63c508..2ca319f15d31 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -2389,6 +2389,29 @@ static const unsigned int msiof3_tx_pins[] = {
- static const unsigned int msiof3_tx_mux[] = {
- 	MSIOF3_TXD_MARK,
- };
-+/* - QSPI ------------------------------------------------------------------- */
-+static const unsigned int qspi_ctrl_pins[] = {
-+	/* SPCLK, SSL */
-+	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 9),
-+};
-+static const unsigned int qspi_ctrl_mux[] = {
-+	SPCLK_MARK, SSL_MARK,
-+};
-+static const unsigned int qspi_data2_pins[] = {
-+	/* MOSI_IO0, MISO_IO1 */
-+	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
-+};
-+static const unsigned int qspi_data2_mux[] = {
-+	MOSI_IO0_MARK, MISO_IO1_MARK,
-+};
-+static const unsigned int qspi_data4_pins[] = {
-+	/* MOSI_IO0, MISO_IO1, IO2, IO3 */
-+	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
-+	RCAR_GP_PIN(1, 8),
-+};
-+static const unsigned int qspi_data4_mux[] = {
-+	MOSI_IO0_MARK, MISO_IO1_MARK, IO2_MARK, IO3_MARK,
-+};
- /* - SCIF0 ------------------------------------------------------------------ */
- static const unsigned int scif0_data_pins[] = {
- 	/* RX, TX */
-@@ -3671,6 +3694,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(msiof3_ss2),
- 	SH_PFC_PIN_GROUP(msiof3_rx),
- 	SH_PFC_PIN_GROUP(msiof3_tx),
-+	SH_PFC_PIN_GROUP(qspi_ctrl),
-+	SH_PFC_PIN_GROUP(qspi_data2),
-+	SH_PFC_PIN_GROUP(qspi_data4),
- 	SH_PFC_PIN_GROUP(scif0_data),
- 	SH_PFC_PIN_GROUP(scif0_clk),
- 	SH_PFC_PIN_GROUP(scif0_ctrl),
-@@ -3970,6 +3996,12 @@ static const char * const msiof3_groups[] = {
- 	"msiof3_tx",
- };
- 
-+static const char * const qspi_groups[] = {
-+	"qspi_ctrl",
-+	"qspi_data2",
-+	"qspi_data4",
-+};
-+
- static const char * const scif0_groups[] = {
- 	"scif0_data",
- 	"scif0_clk",
-@@ -4213,6 +4245,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(msiof1),
- 	SH_PFC_FUNCTION(msiof2),
- 	SH_PFC_FUNCTION(msiof3),
-+	SH_PFC_FUNCTION(qspi),
- 	SH_PFC_FUNCTION(scif0),
- 	SH_PFC_FUNCTION(scif1),
- 	SH_PFC_FUNCTION(scif2),
 -- 
-1.7.9.5
-
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
