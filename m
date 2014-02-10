@@ -1,45 +1,37 @@
-From: Benoit Cousson <bcousson@baylibre.com>
-Date: Wed, 26 Feb 2014 23:09:49 +0000
-Subject: [RFC 3/4] ARM: shmobile: lager-reference: Add cpufreq-cpu0 device for CPUFreq support
-Message-Id: <1393456190-7870-4-git-send-email-bcousson@baylibre.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 10 Feb 2014 10:47:33 +0000
+Subject: [PATCH 7/7] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI FLASH
+Message-Id: <1392029254-15400-8-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Statically create a cpufreq-cpu0 device during machine init to allow
-the cpufreq-cpu0 driver to be bound to this device.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Since this device is a fake one, it cannot be created by devicetree
-devices population.
-
-Signed-off-by: Benoit Cousson <bcousson+renesas@baylibre.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 3 +++
- 1 file changed, 3 insertions(+)
+This depends on spi-rspi updates
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 440aac3..bedc5c3 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -27,6 +27,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/rcar-gen2.h>
-+#include <linux/platform_device.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
+ arch/arm/boot/dts/r8a7790-lager.dts |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index adff2dc4012d..0b47ade38340 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -113,6 +113,8 @@
+ 		compatible = "spansion,s25fl512s";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
+ 		m25p,fast-read;
  
-@@ -130,6 +131,8 @@ static void __init lager_add_standard_devices(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	lager_add_du_device();
-+
-+	platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
+ 		partition@0 {
 -- 
-1.8.3.2
+1.7.9.5
 
