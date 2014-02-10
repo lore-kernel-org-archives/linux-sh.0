@@ -1,48 +1,92 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 27 Feb 2014 12:20:19 +0000
-Subject: Re: [RFC 1/4] ARM: dts: r8a7790-lager: Add VDD MPU regulator for DVFS
-Message-Id: <530F2D83.3050008@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Date: Mon, 10 Feb 2014 13:00:57 +0000
+Subject: [PATCH v2] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
+Message-Id: <1392037257-20607-1-git-send-email-geert+renesas@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393456190-7870-2-git-send-email-bcousson@baylibre.com>
-In-Reply-To: <1393456190-7870-2-git-send-email-bcousson@baylibre.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 26/02/14 23:09, Benoit Cousson wrote:
-> The CA15 cluster is capable of voltage scaling. Add the regulator
-> in the i2c3 node, to allow the generic CPUFreq driver to use it.
->
-> Enable the i2c3 pin mux and the device node as well since the
-> da9210 is connected to that bus.
->
-> Note: Vmin is set to 0.8v to allow experimentation only.
-> There is no guaranty that the CPUs will still work at this
-> voltage.
->
-> Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
-> ---
->   arch/arm/boot/dts/r8a7790-lager.dts | 21 +++++++++++++++++++++
->   1 file changed, 21 insertions(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index 6e99eb2..5f77e3a 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -159,6 +159,11 @@
->   		renesas,groups = "qspi_ctrl", "qspi_data4";
->   		renesas,function = "qspi";
->   	};
-> +
-> +	i2c3_pins: i2c3 {
-> +		renesas,groups = "i2c3";
-> +		renesas,function = "i2c3";
-> +	};
->   };
+A QSPI function set consists of 3 groups:
+  - qspi_ctrl (2 control wires)
+  - qspi_data2 (2 data wires, for Single/Dual SPI)
+  - qspi_data4 (4 data wires, for Quad SPI)
 
-I thought i2c3 was a single function set of pins?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v2: Insert line at correct position in pinmux_functions[]
 
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index c381ae63c508..2ca319f15d31 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2389,6 +2389,29 @@ static const unsigned int msiof3_tx_pins[] = {
+ static const unsigned int msiof3_tx_mux[] = {
+ 	MSIOF3_TXD_MARK,
+ };
++/* - QSPI ------------------------------------------------------------------- */
++static const unsigned int qspi_ctrl_pins[] = {
++	/* SPCLK, SSL */
++	RCAR_GP_PIN(1, 4), RCAR_GP_PIN(1, 9),
++};
++static const unsigned int qspi_ctrl_mux[] = {
++	SPCLK_MARK, SSL_MARK,
++};
++static const unsigned int qspi_data2_pins[] = {
++	/* MOSI_IO0, MISO_IO1 */
++	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6),
++};
++static const unsigned int qspi_data2_mux[] = {
++	MOSI_IO0_MARK, MISO_IO1_MARK,
++};
++static const unsigned int qspi_data4_pins[] = {
++	/* MOSI_IO0, MISO_IO1, IO2, IO3 */
++	RCAR_GP_PIN(1, 5), RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
++	RCAR_GP_PIN(1, 8),
++};
++static const unsigned int qspi_data4_mux[] = {
++	MOSI_IO0_MARK, MISO_IO1_MARK, IO2_MARK, IO3_MARK,
++};
+ /* - SCIF0 ------------------------------------------------------------------ */
+ static const unsigned int scif0_data_pins[] = {
+ 	/* RX, TX */
+@@ -3671,6 +3694,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(msiof3_ss2),
+ 	SH_PFC_PIN_GROUP(msiof3_rx),
+ 	SH_PFC_PIN_GROUP(msiof3_tx),
++	SH_PFC_PIN_GROUP(qspi_ctrl),
++	SH_PFC_PIN_GROUP(qspi_data2),
++	SH_PFC_PIN_GROUP(qspi_data4),
+ 	SH_PFC_PIN_GROUP(scif0_data),
+ 	SH_PFC_PIN_GROUP(scif0_clk),
+ 	SH_PFC_PIN_GROUP(scif0_ctrl),
+@@ -3970,6 +3996,12 @@ static const char * const msiof3_groups[] = {
+ 	"msiof3_tx",
+ };
+ 
++static const char * const qspi_groups[] = {
++	"qspi_ctrl",
++	"qspi_data2",
++	"qspi_data4",
++};
++
+ static const char * const scif0_groups[] = {
+ 	"scif0_data",
+ 	"scif0_clk",
+@@ -4213,6 +4245,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(msiof1),
+ 	SH_PFC_FUNCTION(msiof2),
+ 	SH_PFC_FUNCTION(msiof3),
++	SH_PFC_FUNCTION(qspi),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+ 	SH_PFC_FUNCTION(scif2),
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
