@@ -1,56 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 Feb 2014 04:30:33 +0000
-Subject: [PATCH] ARM: shmobile: Add r8a7791 SDHI devices to DTSI
-Message-Id: <20140212043033.10712.81556.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 10 Feb 2014 10:47:31 +0000
+Subject: [PATCH 5/7] ARM: shmobile: lager defconfig: Enable RSPI and MTD_M25P80
+Message-Id: <1392029254-15400-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add SDHI0, SDHI1 and SDHI2 to the r8a7791 DTSI.
+This enables support for the Spansion s25fl512s SPI FLASH on QSPI.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
+ arch/arm/configs/lager_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
 
- arch/arm/boot/dts/r8a7791.dtsi |   27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 235772f7c81d..b17fc23ae676 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -51,6 +51,8 @@ CONFIG_IP_PNP_DHCP=y
+ # CONFIG_WIRELESS is not set
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_MTD=y
++CONFIG_MTD_M25P80=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_ATA=y
+ CONFIG_SATA_RCAR=y
+@@ -86,6 +88,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_I2C=y
+ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RCAR=y
++CONFIG_SPI=y
++CONFIG_SPI_RSPI=y
+ CONFIG_GPIO_SH_PFC=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_RCAR=y
+-- 
+1.7.9.5
 
---- 0001/arch/arm/boot/dts/r8a7791.dtsi
-+++ work/arch/arm/boot/dts/r8a7791.dtsi	2014-02-10 16:35:25.000000000 +0900
-@@ -186,6 +186,33 @@
- 		#gpio-range-cells = <3>;
- 	};
- 
-+	sdhi0: sd@ee100000 {
-+		compatible = "renesas,sdhi-r8a7791";
-+		reg = <0 0xee100000 0 0x200>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
-+		status = "disabled";
-+	};
-+
-+	sdhi1: sd@ee140000 {
-+		compatible = "renesas,sdhi-r8a7791";
-+		reg = <0 0xee140000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
-+		status = "disabled";
-+	};
-+
-+	sdhi2: sd@ee160000 {
-+		compatible = "renesas,sdhi-r8a7791";
-+		reg = <0 0xee160000 0 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
-+		status = "disabled";
-+	};
-+
- 	scifa0: serial@e6c40000 {
- 		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 64>;
