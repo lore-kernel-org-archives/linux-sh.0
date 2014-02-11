@@ -1,36 +1,162 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:08 +0000
-Subject: [PATCH 16/21] ARM: shmobile: mackerel: Conditionally select SMSC_PHY
-Message-Id: <c5c2a294a4b24778cd3cab880bf05becee471edb.1391665225.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Feb 2014 20:49:49 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager-reference: Add DU device
+Message-Id: <1392151790-11262-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The mackerel board uses has an SMSC911X ethernet controller which uses an
-SMSC phy. Select SMSC_PHY for mackerel if SMSC911X is enabled to make use of the
-SMSC-specific phy driver rather than relying on the generic phy driver.
+The DU device has no DT bindings yet, instantiate it as a platform
+device for now.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Kconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7790-lager.dts            |  8 +++
+ arch/arm/mach-shmobile/board-lager-reference.c | 89 ++++++++++++++++++++++++--
+ 2 files changed, 91 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index b735ea8..f8005ef 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -177,6 +177,7 @@ config MACH_MACKEREL
- 	depends on ARCH_SH7372
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SMSC_PHY if SMSC911X
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	select USE_OF
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index af7e081..d48a7e2 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -69,6 +69,14 @@
+ };
  
+ &pfc {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
++
++	du_pins: du {
++		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
++		renesas,function = "du";
++	};
++
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data";
+ 		renesas,function = "scif0";
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 35fc0f2..fbfe582 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -20,26 +20,101 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/clkdev.h>
++#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
++
++static struct rcar_du_platform_data lager_du_pdata = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
++
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfeb00000, 0x70000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++	DEFINE_RES_IRQ(gic_spi(269)),
++};
++
++static void __init lager_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7790",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &lager_du_pdata,
++		.size_data = sizeof(lager_du_pdata),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ static void __init lager_add_standard_devices(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+ 	/*
+-	 * This is a really crude hack to provide clkdev support to the CMT
+-	 * device until it gets moved to DT.
++	 * This is a really crude hack to provide clkdev support to the CMT and
++	 * DU devices until they get moved to DT.
+ 	 */
++	static const struct clk_name {
++		const char *clk;
++		const char *con_id;
++		const char *dev_id;
++	} clk_names[] = {
++		{ "cmt0", NULL, "sh_cmt.0" },
++		{ "du0", "du.0", "rcar-du-r8a7790" },
++		{ "du1", "du.1", "rcar-du-r8a7790" },
++		{ "du2", "du.2", "rcar-du-r8a7790" },
++		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
++		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
++	};
+ 	struct clk *clk;
++	unsigned int i;
+ 
+-	clk = clk_get(NULL, "cmt0");
+-	if (!IS_ERR(clk)) {
+-		clk_register_clkdev(clk, NULL, "sh_cmt.0");
+-		clk_put(clk);
++	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
++		clk = clk_get(NULL, clk_names[i].clk);
++		if (!IS_ERR(clk)) {
++			clk_register_clkdev(clk, clk_names[i].con_id,
++					    clk_names[i].dev_id);
++			clk_put(clk);
++		}
+ 	}
+ #else
+ 	r8a7790_clock_init();
+@@ -47,6 +122,8 @@ static void __init lager_add_standard_devices(void)
+ 
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++
++	lager_add_du_device();
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.8.5.2
+1.8.3.2
 
