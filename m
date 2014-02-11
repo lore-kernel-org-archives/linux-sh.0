@@ -1,38 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:06 +0000
-Subject: [PATCH 14/21] ARM: shmobile: bockw: Sort Kconfig node's selections
-Message-Id: <2b2fd2755182d43e149259330c7b1fe0aa3243d6.1391665225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Feb 2014 08:56:48 +0000
+Subject: [PATCH 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
+Message-Id: <1392109008-29941-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <1392109008-29941-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392109008-29941-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+
+Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
+board code.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/Kconfig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Untested due to lack of hardware
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index b624b5a..6f16983 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -207,11 +207,11 @@ config MACH_BOCKW
- 	bool "BOCK-W platform"
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
--	select RENESAS_INTC_IRQPIN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
-+	select RENESAS_INTC_IRQPIN
- 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select USE_OF
- 
- config MACH_BOCKW_REFERENCE
- 	bool "BOCK-W  - Reference Device Tree Implementation"
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 06cda19dac6a..f76f6ec01e19 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -109,4 +109,18 @@
+ 	pinctrl-0 = <&hspi0_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
+ };
 -- 
-1.8.5.2
+1.7.9.5
 
