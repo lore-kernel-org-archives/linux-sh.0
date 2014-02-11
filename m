@@ -1,46 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Feb 2014 08:28:02 +0000
-Subject: Re: [PATCH] serial: sh_sci: remove HAVE_CLK build dependecy
-Message-Id: <20140206082802.GA4152@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Feb 2014 08:51:18 +0000
+Subject: [PATCH] mtd: m25p80: add support for the Spansion s25fl008k chip
+Message-Id: <1392108678-29099-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2f1dd25b19bf588948fbebc734eebe5d61ca7007.1391628518.git.baruch@tkos.co.il>
- <20140206064056.GB17591@verge.net.au>
- <20140206071821.GC4125@tarshish>
- <20140206072557.GA24865@verge.net.au>
- <20140206073801.GD4125@tarshish>
-In-Reply-To: <20140206073801.GD4125@tarshish>
+References: <87ip2jwg4z.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ip2jwg4z.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Baruch Siach <baruch@tkos.co.il>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: David Woodhouse <dwmw2@infradead.org>, Brian Norris <computersforpeace@gmail.com>
+Cc: Yusuke Goda <yusuke.goda.sx@renesas.com>, linux-mtd@lists.infradead.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org
 
-On Thu, Feb 06, 2014 at 09:38:01AM +0200, Baruch Siach wrote:
-> Hi Simon,
-> 
-> On Thu, Feb 06, 2014 at 04:25:57PM +0900, Simon Horman wrote:
-> > On Thu, Feb 06, 2014 at 09:18:21AM +0200, Baruch Siach wrote:
-> > > On Thu, Feb 06, 2014 at 03:40:56PM +0900, Simon Horman wrote:
-> > > > On Wed, Feb 05, 2014 at 09:28:38PM +0200, Baruch Siach wrote:
-> > > > > Since 93abe8e4 (clk: add non CONFIG_HAVE_CLK routines) code using clk.h
-> > > > > like this driver needs not depend on HAVE_CLK.
-> > > > > 
-> > > > > Signed-off-by: Baruch Siach <baruch@tkos.co.il>
-> > > > 
-> > > > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> > > 
-> > > Thanks. This patch conflicts with another sh_sci patch you have just posted 
-> > > (http://article.gmane.org/gmane.linux.serial/13640). How would you like this 
-> > > to be handled?
-> > 
-> > Indeed it does, sorry for not noticing that.
-> > 
-> > Perhaps it would be best to drop the patch that I posted?
-> 
-> Why drop? There is no logical conflict between the patches, only textual. So 
-> we just need to serialize them to solve the conflict, and have them go via the 
-> same tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Ok. Could you rebase and repost your patch on top of the patches that
-I posted earlier. The reason that I suggest this is that the patches
-I posted have been around publicly for some time, albeit not merged by Greg.
+Signed-off-by: Yusuke Goda <yusuke.goda.sx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+"s25fl008k" is in active use since v3.11-rc1
+
+ drivers/mtd/devices/m25p80.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index b5d4b1ee01ee..db8575cf5408 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -972,6 +972,7 @@ static const struct spi_device_id m25p_ids[] = {
+ 	{ "s25sl016a",  INFO(0x010214,      0,  64 * 1024,  32, 0) },
+ 	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
+ 	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
++	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K) },
+ 	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K) },
+ 	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
+ 
+-- 
+1.7.9.5
+
