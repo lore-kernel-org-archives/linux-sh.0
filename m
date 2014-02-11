@@ -1,60 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 08:09:15 +0000
-Subject: Re: [PATCH 07/10] spi: sh-msiof: Add support for R-Car H2 and M2
-Message-Id: <CANqRtoT6G6mxce=cN05mNNtYCcyCvMPzpHQ7RyzPE8XfkFjMyQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 11 Feb 2014 20:49:48 +0000
+Subject: [PATCH 0/2] Lager and Koelsh reference DU support
+Message-Id: <1392151790-11262-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-	<1392907389-21798-8-git-send-email-geert@linux-m68k.org>
-	<CANqRtoQVJzEgo_AdVxrPSRUY6ocyPaQ=RKQJyxoExDrfYxiJ3w@mail.gmail.com>
-	<CAMuHMdUByWPcYM8M_m5NVM4QP5cQE_tOLGQg=2fTNF7gqkUhig@mail.gmail.com>
-	<CANqRtoSJTROkkbGxV_p+B2S7b7jZ7jgHQ+q4_WG54m+Pxgfcpw@mail.gmail.com>
-	<CAMuHMdV1iDHz4ewFAG-QTba_wUF76Ei-VQpP+MRoNGV2mfHrpw@mail.gmail.com>
-In-Reply-To: <CAMuHMdV1iDHz4ewFAG-QTba_wUF76Ei-VQpP+MRoNGV2mfHrpw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Mark Brown <broonie@kernel.org>, Takashi Yoshii <takasi-y@ops.dti.ne.jp>, linux-spi <linux-spi@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hello,
 
-On Mon, Feb 24, 2014 at 4:39 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Magnus,
->
-> On Mon, Feb 24, 2014 at 3:45 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> On Fri, Feb 21, 2014 at 1:13 AM, Geert Uytterhoeven
->> <geert@linux-m68k.org> wrote:
->>> On Thu, Feb 20, 2014 at 4:41 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>>> On thing stuck out a bit with the bindings. I can see that you specify
->>>> both fifo size and use the SoC suffix for the r8a7790 and r8a7791
->>>> bindings. Isn't that a bit of redundant information there, if we know
->>>> that the SoC is r8a7790 or r8a7791 then can't we simply put that
->>>> information in r8a779x_data above and perhaps keep the binding
->>>> simpler? Perhaps same thing applies to other properties as well?
->>>
->>> "renesas,tx-fifo-size" and "renesas,rx-fifo-size" are part of the existing
->>> bindings, so I'm a bit reluctant to change these.
->>> Hmm, since the original bindings didn't specify the default values,
->>> I could make them chip-specific, though.
->>
->> Thanks, yes I think treating the "renesas,tx-fifo-size" and
->> "renesas,rx-fifo-size" bindings as optional and allow us to rely on
->> chip-specific default values makes sense.
->>
->>> The only other property is "num-cs", which can have any value if you
->>> start using the generic "cs-gpios".
->>
->> I see. It looks to me that such a setting is board-specific, so what
->> is a sane default in the SoC DTSI? You seem to have it set to "1"
->> today, but if the board is supposed to override it anyway then do we
->> need to set it?
->>
->> Anyway, "num-cs" is a minor detail so no need to bother about that too much!
->
-> In v2, I'll drop the "num-cs" from the dtsi, so it will default to the driver's
-> default (which is 1, for the simple case of using hardware controlled CS).
+These two patches add support for the Display Unit to the Lager and Koelsch
+reference board files. The device should ideally be instantiated through DT,
+but given the lack of DT bindings for the foreseeable future platform devices
+are used as a temporary solution.
 
-Sounds good, thanks for your help!
+The patches are based on top of the "[PATCH v4 0/2] [RESEND] Lager and Koelsch
+reference serial port support" series that I've posted earlier today.
 
-/ magnus
+Laurent Pinchart (2):
+  ARM: shmobile: lager-reference: Add DU device
+  ARM: shmobile: koelsch-reference: Add DU device
+
+ arch/arm/boot/dts/r8a7790-lager.dts              |  8 +++
+ arch/arm/boot/dts/r8a7791-koelsch.dts            |  8 +++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 82 ++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-lager-reference.c   | 89 ++++++++++++++++++++++--
+ 4 files changed, 175 insertions(+), 12 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
