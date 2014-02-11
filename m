@@ -1,37 +1,45 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 05 Feb 2014 12:05:15 +0000
-Subject: Re: [PATCH 1/2] clk: shmobile: rcar-gen2: Fix clock parent all non-PLL clocks
-Message-Id: <52F228FB.5090900@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Feb 2014 17:35:49 +0000
+Subject: Re: Build regressions/improvements in v3.14-rc2
+Message-Id: <CAMuHMdWVx3CCgUo0eWNwmghBvwhmmJYjyC0a1XVebO+kfg3DMQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1389113273-10364-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <52F213C9.2020501@codethink.co.uk> <4232876.LkjsLLbJbc@avalon>
-In-Reply-To: <4232876.LkjsLLbJbc@avalon>
+References: <1392140035-31263-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392140035-31263-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, sparclinux <sparclinux@vger.kernel.org>
 
-On 05/02/14 10:51, Laurent Pinchart wrote:
-> Hi Ben,
->
-> On Wednesday 05 February 2014 10:34:49 Ben Dooks wrote:
->> On 07/01/14 16:47, Laurent Pinchart wrote:
->>> The lb, qspi, sdh, sd0 and sd1 clocks have the PLL1 (divided by 2) as
->>> their parent, not the main clock. Fix it.
->>
->> William Towle has already sent a patch to move this to device tree
->> which I think is a better solution for this.
->
-> I actually disagree. The CPG is an IP core that generates a bunch of clocks
-> from a single external parent. The fact that clocks are not flat but organized
-> as a tree internally is an internal property of the CPG, and I prefer keeping
-> it that way instead of exposing it in the device tree.
+On Tue, Feb 11, 2014 at 6:33 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.14-rc2[1]  to v3.14-rc1[3], the summaries are:
+>   - build errors: +3/-2
 
-If you feel that the block is unlikely to change if it gets
-re-used then that'll be fine. We can always revisit the changes
-if needed.
+  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
+implicit declaration of function 'dma_alloc_writecombine'
+[-Werror=implicit-function-declaration]:  => 91:2
+  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
+implicit declaration of function 'dma_free_writecombine'
+[-Werror=implicit-function-declaration]:  => 176:3
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+sh4/sh-randconfig
+
+  + error: jump_label.c: undefined reference to
+`arch_jump_label_transform':  => .text+0x85dbc)
+
+sparc64/sparc-allmodconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/7167/ (119 out of 119 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/7145/ (119 out of 119 configs)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
