@@ -1,63 +1,46 @@
-From: Benoit Cousson <bcousson@baylibre.com>
-Date: Fri, 28 Feb 2014 16:34:55 +0000
-Subject: Re: [RFC 0/4] ARM: shmobile: Add CPUFreq support for r8a7790-lager platform
-Message-Id: <5310BAAF.5030709@baylibre.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Feb 2014 15:06:53 +0000
+Subject: Re: [PATCH 11/11] ARM: shmobile: koelsch: spidev for r2a11302
+Message-Id: <CAMuHMdWxA+EBPWhQ+-RNa9A4xKTJDWxiZw+-T2_JuY0hZy40Rg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393456190-7870-1-git-send-email-bcousson@baylibre.com>
-In-Reply-To: <1393456190-7870-1-git-send-email-bcousson@baylibre.com>
+References: <20131202031557.162e78d407d82effdee627ac@ops.dti.ne.jp>
+	<1385921962-19843-1-git-send-email-takasi-y@ops.dti.ne.jp>
+	<1385921962-19843-11-git-send-email-takasi-y@ops.dti.ne.jp>
+	<20131202132426.GF27568@sirena.org.uk>
+In-Reply-To: <20131202132426.GF27568@sirena.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: takasi-y@ops.dti.ne.jp
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, linux-spi <linux-spi@vger.kernel.org>, Mark Brown <broonie@kernel.org>
 
-On 28/02/2014 15:54, Geert Uytterhoeven wrote:
-> On Fri, Feb 28, 2014 at 3:15 PM, Benoit Cousson <bcousson@baylibre.com> w=
-rote:
->> For the voltage, it should be similar, but I do not have any information=
- and
->> I'm not sure that the regulator used on the Koelsh board is the same
->> (da9210).
+Hi Yoshii-san,
+
+On Mon, Dec 2, 2013 at 2:24 PM, Mark Brown <broonie@kernel.org> wrote:
+> On Mon, Dec 02, 2013 at 03:19:22AM +0900, takasi-y@ops.dti.ne.jp wrote:
+>> From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+>>
+>> Add board info for r2a11302 on-board PMIC to access with spidev.
 >
-> Koelsch also has a DA9210 regulator. At first sight, the wiring seems sim=
-ilar.
-> It's connected to i2c6 instead of i2c3, though.
+> This doesn't sound clever - why is the PMIC being accessed with spidev
+> and not with an MFD integrated into the relevant kernel frameworks?
+> Apart from the issue of integrating in the normal way for Linus the PMIC
+> typically has the ability to cause lasting physical damage to the
+> system.
 
-OK, that's a good news. Thanks for checking.
+Do you have a test application to talk to the PMIC, so I can test if everything
+works?
+Perhaps this can be turned into a proper PMIC driver?
 
+Thanks in advance!
 
-Laurent,
+Gr{oetje,eeting}s,
 
-In order to check the voltage, just enable the DA9210 driver but do not=20
-enable cpufreq.
+                        Geert
 
-Then just check the regulator voltage. It was 1.08v by default on the Lager.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Regards,
-Benoit
-
->
-> Gr{oetje,eeting}s,
->
->                          Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m6=
-8k.org
->
-> In personal conversations with technical people, I call myself a hacker. =
-But
-> when I'm talking to journalists I just say "programmer" or something like=
- that.
->                                  -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
-
---=20
-Beno=C3=AEt Cousson
-BayLibre
-Embedded Linux Technology Lab
-www.baylibre.com
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
