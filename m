@@ -1,33 +1,33 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 14 Feb 2014 13:47:45 +0000
-Subject: Re: [PATCH 27/27] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-Message-Id: <52FE1E81.2040101@cogentembedded.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 12 Feb 2014 17:59:23 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7790: Add DMA for MMCIF1
+Message-Id: <1392227964-7088-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1392339605-20691-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Updated dtsi file with DMA info for MMCIF1
 
-On 14-02-2014 5:00, Laurent Pinchart wrote:
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
-> Enable the CMT0 device and configure channel 0 as a clock event
-> provider.
-
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->   arch/arm/boot/dts/r8a7791-koelsch.dts            |  9 +++++++++
->   arch/arm/mach-shmobile/board-koelsch-reference.c | 15 +--------------
->   arch/arm/mach-shmobile/include/mach/r8a7791.h    |  1 -
->   arch/arm/mach-shmobile/setup-r8a7791.c           |  7 +------
-
-    The latter 2 files are worth splitting into a separate patch as well...
-
->   4 files changed, 11 insertions(+), 21 deletions(-)
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ae65270..e45e795 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -340,6 +340,8 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
++		dmas = <&dma0 0xe2>, <&dma0 0xe1>;
++		dma-names = "rx", "tx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+-- 
+1.8.5.3
 
