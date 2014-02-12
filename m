@@ -1,46 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:28 +0000
-Subject: [PATCH 1/9] ARM: shmobile: r8a7778: add audio clock in new style
-Message-Id: <ba349c08bea1bfddddb7cfc0af140d368274f869.1393401266.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 12 Feb 2014 01:27:27 +0000
+Subject: [PATCH 2/2] regulator: gpio: explain detail of gpios-states
+Message-Id: <87ha859l37.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393401266.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
+References: <87eh3o7mfc.wl%kuninori.morimoto.gx@gmail.com>
+	<20140204184327.GS22609@sirena.org.uk>
+In-Reply-To: <20140204184327.GS22609@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current audio clock doesn't have dependency to device/driver,
-but, it is not good design for DT support.
-To avoid branch merge conflict issue,
-it uses this load map, and this patch is 1) part.
- 1) add new style clock in platform
- 2) add new style clock method in driver
- 3) remove old tyle clock from platform
+gpios-states is array, and default is 0
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ .../bindings/regulator/gpio-regulator.txt          |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 9783945..2009a9b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -221,6 +221,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
- 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP008]), /* SRU */
+diff --git a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
+index 3ecb585..356e8bb 100644
+--- a/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
++++ b/Documentation/devicetree/bindings/regulator/gpio-regulator.txt
+@@ -8,7 +8,8 @@ Required properties:
+ Optional properties:
+ - enable-gpio		: GPIO to use to enable/disable the regulator.
+ - gpios			: GPIO group used to control voltage.
+-- gpios-states		: gpios pin's initial states. 1 means HIGH
++- gpios-states		: gpios pin's initial states array. 0: LOW, 1: HIGH.
++			  defualt is LOW if nothing is specified.
+ - startup-delay-us	: Startup time in microseconds.
+ - enable-active-high	: Polarity of GPIO is active high (default is low).
  
-+	CLKDEV_ICK_ID("clk_a", "rcar_sound", &audio_clk_a),
-+	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
-+	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
-+	CLKDEV_ICK_ID("clk_i", "rcar_sound", &s1_clk),
- 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP012]),
- 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP011]),
- 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP010]),
 -- 
-1.8.5.2
+1.7.9.5
 
