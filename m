@@ -1,43 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2014 12:58:32 +0000
-Subject: Re: [PATCH 1/7] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
-Message-Id: <CAMuHMdXAhZ0i4NcpymGADfN3wwxRZxpcwRVQEqsqpoGw_O0_Ug@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Feb 2014 09:53:45 +0000
+Subject: [PATCH v2 00/02] ARM: shmobile: Koelsch SDHI DT support V2
+Message-Id: <20140212095345.4832.6546.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
- <1392029254-15400-2-git-send-email-geert@linux-m68k.org>
- <8438484.DB7cn7tjVR@avalon>
-In-Reply-To: <8438484.DB7cn7tjVR@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 10, 2014 at 1:48 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> @@ -4212,6 +4244,7 @@ static const struct sh_pfc_function pinmux_functions[]
->> = { SH_PFC_FUNCTION(msiof0),
->>       SH_PFC_FUNCTION(msiof1),
->>       SH_PFC_FUNCTION(msiof2),
->> +     SH_PFC_FUNCTION(qspi),
->>       SH_PFC_FUNCTION(msiof3),
->
-> I believe qspi comes after msiof3 :-)
+ARM: shmobile: Koelsch SDHI DT support V2
 
-Doh... silly me...
+[PATCH v3 01/02] ARM: shmobile: Add SDHI devices to r8a7791 DTSI
+[PATCH v2 02/02] ARM: shmobile: Add SDHI devices for Koelsch DTS
 
-> Apart from that the patch looks good.
->
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Add SDHI devices to the Koelsch DT board support. The same run
+time dependencies as SDHI for Lager applies here too, and there
+is a PFC fix for SD1_CLK that is needed for r8a7791 as well.
 
-Thanks!
+Needs SDHI driver patches.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-                        Geert
+ Written against "origin/topic/r-car-sdhi" of renesas git.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ Requires the following patches for correct run time operation:
+ [PATCH 02/03] pinctrl: sh-pfc: r8a7791: SD1_CLK fix
+ "regulator: gpio: add gpios-status for DT"
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ arch/arm/boot/dts/r8a7791-koelsch.dts |  119 +++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi        |   27 +++++++
+ 2 files changed, 146 insertions(+)
