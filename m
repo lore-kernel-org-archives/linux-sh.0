@@ -1,78 +1,44 @@
-From: Benoit Cousson <bcousson@baylibre.com>
-Date: Fri, 28 Feb 2014 10:22:14 +0000
-Subject: Re: [PATCH v3] clk: shmobile: rcar-gen2: Use kick bit to allow Z clock frequency change
-Message-Id: <53106356.6060003@baylibre.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 12 Feb 2014 05:35:50 +0000
+Subject: [PATCH 5/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7791
+Message-Id: <8738joao5o.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393521820-21805-1-git-send-email-bcousson@baylibre.com>
-In-Reply-To: <1393521820-21805-1-git-send-email-bcousson@baylibre.com>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-Hi Sergei,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 27/02/2014 20:55, Sergei Shtylyov wrote:
-> Hello.
->
-> On 02/27/2014 08:23 PM, Benoit Cousson wrote:
->
->> The Z clock frequency change is effective only after setting the kick
->> bit located in the FRQCRB register.
->> Without that, the CA15 CPUs clock rate will never change.
->
->> Fix that by checking if the kick bit is cleared and enable it to make
->> the clock rate change effective. The bit is cleared automatically upon
->> completion.
->
->> Signed-off-by: Benoit Cousson <bcousson+renesas@baylibre.com>
->> Cc: Mike Turquette <mturquette@linaro.org>
->> Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
->
-> [...]
->
->> diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c
->> b/drivers/clk/shmobile/clk-rcar-gen2.c
->> index a59ec21..cbf8c59 100644
->> --- a/drivers/clk/shmobile/clk-rcar-gen2.c
->> +++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-> [...]
->> @@ -83,17 +86,45 @@ static int cpg_z_clk_set_rate(struct clk_hw *hw,
->> unsigned long rate,
-> [...]
->> +    /*
->> +     * Note: There is no HW information about the worst case latency.
->> +     *
->> +     * Using experimental measurements, it seems that no more than
->> +     * ~10 iterations are needed, independently of the CPU rate.
->> +     * Since this value might be dependant of external xtal rate, pll1
->> +     * rate or even the other emulation clocks rate, use 1000 as a
->> +     * "super" safe value.
->> +     */
->> +    for (i =3D 1000; i; i--) {
->> +        if (clk_readl(zclk->kick_reg) & CPG_FRQCRB_KICK)
->> +            cpu_relax();
->> +        else
->> +            return 0;
->
->      This can be coded shorter:
+This patch updates r8a7791 DT data to have SoC specific settings.
 
-Shorter, not necesserally since I will add an extra blank line :-)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Chris
 
->          if (!(clk_readl(zclk->kick_reg) & CPG_FRQCRB_KICK))
->              return 0;
->          cpu_relax();
+I add this patch to my previous
+"Re: mmc: sh_mobile_sdhi: DT update for R-Car" patch-set as [5/4]
+Please let me know if you want re-send these patch-set again
 
-But maybe slighty more readable...
+ drivers/mmc/host/sh_mobile_sdhi.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-OK, I'll go for a next round and repost it.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 1622b03..d54169f 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -65,6 +65,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
++	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+-- 
+1.7.9.5
 
-Thanks,
-Benoit
-
-
---=20
-Beno=EEt Cousson
-BayLibre
-Embedded Linux Technology Lab
-www.baylibre.com
