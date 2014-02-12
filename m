@@ -1,158 +1,58 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 28 Feb 2014 21:09:27 +0000
-Subject: [PATCH 3/4] clk: shmobile: add CPG driver for rz-platforms
-Message-Id: <1393621768-12568-4-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Feb 2014 04:09:37 +0000
+Subject: [PATCH] ARM: shmobile: Remove legacy r8a7790 DT clocks
+Message-Id: <20140212040937.9955.38466.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+The DT device case is handled by CCF these days, so get
+rid of DT devices from the legacy clocks for r8a7790.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-Mike: if you are fine with this driver, it would be good if you could apply it.
-Then, we can deal with the orthogonal dependencies in mach-shmobile seperately
-and know that the driver is already in place when the rest gets resolved.
-Thanks!
+ arch/arm/mach-shmobile/clock-r8a7790.c |   11 -----------
+ 1 file changed, 11 deletions(-)
 
- drivers/clk/shmobile/Makefile |   1 +
- drivers/clk/shmobile/clk-rz.c | 112 ++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 113 insertions(+)
- create mode 100644 drivers/clk/shmobile/clk-rz.c
-
-diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-index 9ecef14..5404cb9 100644
---- a/drivers/clk/shmobile/Makefile
-+++ b/drivers/clk/shmobile/Makefile
-@@ -1,4 +1,5 @@
- obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
-+obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
- obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
- obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
- obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
-diff --git a/drivers/clk/shmobile/clk-rz.c b/drivers/clk/shmobile/clk-rz.c
-new file mode 100644
-index 0000000..ec1c795
---- /dev/null
-+++ b/drivers/clk/shmobile/clk-rz.c
-@@ -0,0 +1,112 @@
-+/*
-+ * rz Core CPG Clocks
-+ *
-+ * Copyright (C) 2013 Ideas On Board SPRL
-+ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ */
-+
-+#include <linux/clk-provider.h>
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/slab.h>
-+
-+struct rz_cpg {
-+	struct clk_onecell_data data;
-+	void __iomem *reg;
-+};
-+
-+#define CPG_FRQCR	0x10
-+#define CPG_FRQCR2	0x14
-+
-+/* -----------------------------------------------------------------------------
-+ * Initialization
-+ */
-+
-+static struct clk * __init
-+rz_cpg_register_clock(struct device_node *np, struct rz_cpg *cpg, const char *name)
-+{
-+	u32 val;
-+	unsigned mult, frqcr_tab[4] = { 3, 2, 0, 1 };
-+
-+	if (strcmp(name, "pll") = 0) {
-+		/* FIXME: cpg_mode should be read from GPIO. But no GPIO support yet */
-+		unsigned cpg_mode = 0; /* hardcoded to EXTAL for now */
-+		const char *parent_name = of_clk_get_parent_name(np, 0);
-+
-+		mult = cpg_mode ? (32 / 4) : 30;
-+		return clk_register_fixed_factor(NULL, name, parent_name, 0, mult, 1);
-+	}
-+
-+	/* FIXME:"i" and "g" are variable clocks with non-integer dividers (e.g. 2/3)
-+	 * and the constraint that always g <= i. To get the rz platform started,
-+	 * let them run at fixed current speed and implement the details later.
-+	 */
-+	if (strcmp(name, "i") = 0)
-+		val = (clk_readl(cpg->reg + CPG_FRQCR) >> 8) & 3;
-+	else if (strcmp(name, "g") = 0)
-+		val = clk_readl(cpg->reg + CPG_FRQCR2) & 3;
-+	else
-+		return ERR_PTR(-EINVAL);
-+
-+	mult = frqcr_tab[val];
-+	return clk_register_fixed_factor(NULL, name, "pll", 0, mult, 3);
-+}
-+
-+static void __init rz_cpg_clocks_init(struct device_node *np)
-+{
-+	struct rz_cpg *cpg;
-+	struct clk **clks;
-+	unsigned i;
-+	int num_clks;
-+
-+	num_clks = of_property_count_strings(np, "clock-output-names");
-+	if (WARN(num_clks < 0, "can't count CPG clocks\n"))
-+		goto out;
-+
-+	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-+	if (WARN(!cpg, "out of memory!\n"))
-+		goto out;
-+
-+	clks = kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
-+	if (WARN(!clks, "out of memory!\n"))
-+		goto free_cpg;
-+
-+	cpg->data.clks = clks;
-+	cpg->data.clk_num = num_clks;
-+
-+	cpg->reg = of_iomap(np, 0);
-+	if (WARN(!cpg->reg, "can't remap CPG registers!\n"))
-+		goto free_clks;
-+
-+	for (i = 0; i < num_clks; ++i) {
-+		const char *name;
-+		struct clk *clk;
-+
-+		of_property_read_string_index(np, "clock-output-names", i, &name);
-+
-+		clk = rz_cpg_register_clock(np, cpg, name);
-+		if (IS_ERR(clk))
-+			pr_err("%s: failed to register %s %s clock (%ld)\n",
-+			       __func__, np->name, name, PTR_ERR(clk));
-+		else
-+			cpg->data.clks[i] = clk;
-+	}
-+
-+	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+	return;
-+
-+free_clks:
-+	kfree(clks);
-+free_cpg:
-+	kfree(cpg);
-+out:
-+	return;
-+}
-+CLK_OF_DECLARE(rz_cpg_clks, "renesas,rz-cpg-clocks",
-+	       rz_cpg_clocks_init);
--- 
-1.8.5.1
-
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2014-02-10 16:04:29.000000000 +0900
+@@ -328,34 +328,23 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP720]),
+ 	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP717]),
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP716]),
+-	CLKDEV_DEV_ID("e6508000.i2c", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+-	CLKDEV_DEV_ID("e6518000.i2c", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+-	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP929]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
+-	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("r8a7790-ether", &mstp_clks[MSTP813]),
+ 	CLKDEV_DEV_ID("r8a7790-vin.0", &mstp_clks[MSTP811]),
+ 	CLKDEV_DEV_ID("r8a7790-vin.1", &mstp_clks[MSTP810]),
+ 	CLKDEV_DEV_ID("r8a7790-vin.2", &mstp_clks[MSTP809]),
+ 	CLKDEV_DEV_ID("r8a7790-vin.3", &mstp_clks[MSTP808]),
+-	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP502]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP501]),
+-	CLKDEV_DEV_ID("ee200000.mmc", &mstp_clks[MSTP315]),
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP315]),
+-	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+-	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]),
+-	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+-	CLKDEV_DEV_ID("ee160000.sd", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
