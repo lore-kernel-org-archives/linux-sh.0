@@ -1,35 +1,134 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Feb 2014 02:37:18 +0000
-Subject: Re: [PATCH 0/3] add i2c support to genmai
-Message-Id: <20140218023714.GA32417@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 12 Feb 2014 06:25:04 +0000
+Subject: [PATCH 1/2 v2] ARM: shmobile: lager: add SDHI0/2 support
+Message-Id: <87wqh097bb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392671959-22834-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1392671959-22834-1-git-send-email-wsa@the-dreams.de>
+References: <878uwqo2df.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878uwqo2df.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Feb 18, 2014 at 10:14:06AM +0900, Magnus Damm wrote:
-> On Tue, Feb 18, 2014 at 6:19 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> > Since I got renesas-devel-v3.14-rc3-20140217 to boot with r7s72100 again [1], I
-> > could now verify that this series in deed makes I2C2 work with the genmai
-> > board. The missing PFC patch can be added later once we have PFC support.
-> > Because I2C is the default pinmux setup, it already works without PFC. Please
-> > apply.
-> >
-> > [1] http://thread.gmane.org/gmane.linux.kernel/1649638
-> 
-> Thanks for breaking out the bits that are ready to merge.
-> 
-> > Wolfram Sang (3):
-> >   arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-> >   arm: shmobile: genmai: adapt dts to use native i2c driver
-> >   ARM: shmobile: r7s72100: update defconfig for I2C usage
-> 
-> All look good to me. Thanks.
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued these up after capatalising "arm" in the subject
-of the first two patches.
+SDHI0 (CN8) needs JP/SW settings
+
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+
+ - add Acked-by: Magnus Damm <damm@opensource.se>
+
+ arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 3175748..90d7e81 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -26,8 +26,10 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/camera-rcar.h>
+ #include <linux/platform_data/gpio-rcar.h>
+@@ -68,6 +70,19 @@
+  * # amixer set "LINEOUT Mixer DACL" on
+  */
+ 
++/*
++ * SDHI0 (CN8)
++ *
++ * JP3:  pin1
++ * SW20: pin1
++
++ * GP5_24:	1:  VDD  3.3V (defult)
++ *		0:  VDD  0.0V
++ * GP5_29:	1:  VccQ 3.3V (defult)
++ *		0:  VccQ 1.8V
++ *
++ */
++
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+ 	{
+@@ -595,6 +610,34 @@ static void __init lager_add_rsnd_device(void)
+ 	platform_device_register_full(&cardinfo);
+ }
+ 
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee100000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI2 */
++static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee140000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(167)),
++};
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -612,6 +655,20 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* SCIF1 (CN20: DEBUG SERIAL1) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
+ 				  "scif1_data", "scif1"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
++				  "sdhi0_cd", "sdhi0"),
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_ctrl", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
++				  "sdhi2_cd", "sdhi2"),
+ 	/* SSI (CN17: sound) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7790",
+ 				  "ssi0129_ctrl", "ssi"),
+@@ -716,6 +773,13 @@ static void __init lager_add_standard_devices(void)
+ 	lager_register_usbhs();
+ 
+ 	lager_add_rsnd_device();
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
++					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
++					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
+ }
+ 
+ /*
+-- 
+1.7.9.5
+
