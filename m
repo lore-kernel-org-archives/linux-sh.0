@@ -1,37 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 03:24:44 +0000
-Subject: Re: [PATCH v4] ARM: shmobile: Add defconfig for shmobile mulitplatfom
-Message-Id: <20140217032441.GJ7772@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 12 Feb 2014 17:04:33 +0000
+Subject: [PATCH 1/2] ARM: lager: enable i2c devices
+Message-Id: <1392224674-5328-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392354403-30260-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoT5C432uQF6yG76PeMopF7HfqQDSyJ5SMF_77RsyC9DxA@mail.gmail.com>
-In-Reply-To: <CANqRtoT5C432uQF6yG76PeMopF7HfqQDSyJ5SMF_77RsyC9DxA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 14, 2014 at 06:07:16PM +0900, Magnus Damm wrote:
-> On Fri, Feb 14, 2014 at 2:06 PM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > This is intended to be a base for a defconfig to cover all
-> > shmobile multiplatform boards. It currently includes configuration
-> > for the following boards:
-> >
-> > * KZM9D
-> > * Lager
-> > * Koelsch
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> > ---
-> > v4
-> > * Account for removal of CONFIG_KZM9D
-> >   - Do not select CONFIG_MACH_KZM9D
-> >   - Select CONFIG_SMSC_PHY and CONFIG_REGULATOR_FIXED_VOLTAGE
-> 
-> Thanks Simon!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+Add i2c0, i2c1, i2c2 and i2c3 nodes to the Lager reference device tree as
+these busses all have devices on them that can be probed even if they
+are no drivers yet.
 
-Thanks, I have queued this up after correcting my typo in the subject.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 1081c5e..890e39d 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -95,3 +95,19 @@
+ &sata1 {
+ 	status = "okay";
+ };
++
++&i2c0	{
++	status = "ok";
++};
++
++&i2c1	{
++	status = "ok";
++};
++
++&i2c2	{
++	status = "ok";
++};
++
++&i2c3	{
++	status = "ok";
++};
+-- 
+1.8.5.3
+
