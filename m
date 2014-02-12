@@ -1,23 +1,30 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 13 Feb 2014 23:10:24 +0000
-Subject: Re: [PATCH] sh_eth: use ETH_ZLEN instead of home-grown #define
-Message-Id: <20140213.181024.1230943968416385018.davem@davemloft.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Feb 2014 04:25:52 +0000
+Subject: [PATCH 00/03] ARM: shmobile: Koelsch legacy SDHI support
+Message-Id: <20140212042552.10516.10308.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402140305.42833.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402140305.42833.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 14 Feb 2014 03:05:42 +0300
+ARM: shmobile: Koelsch legacy SDHI support
 
-> The driver #define's and uses ETHERSMALL macro for the minimum Ethernet frame
-> size for which we have a standard macro ETH_ZLEN.  Use the latter  instead of
-> the home-grown one.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+[PATCH 01/03] ARM: shmobile: Add r8a7791 legacy SDHI clocks
+[PATCH 02/03] pinctrl: sh-pfc: r8a7791: SD1_CLK fix
+[PATCH 03/03] ARM: shmobile: Add SDHI devices for legacy Koelsch
 
-Applied, thanks.
+Add SDHI devices to the legacy Koelsch board support. While at it
+fix missing PFC bits for SDHI1 and also add legacy clocks. Each
+of the patches can be merged independently without compile
+failure, but all of them are required for correct SDHI run time
+operation on the Koelsch board. Next step is DTSI and DTS which
+will be handled in a separate series.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-koelsch.c |  155 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7791.c |   51 ++++++++++
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c   |    6 -
+ 3 files changed, 208 insertions(+), 4 deletions(-)
