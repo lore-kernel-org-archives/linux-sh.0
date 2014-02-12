@@ -1,32 +1,56 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 Feb 2014 07:41:10 +0000
-Subject: [PATCH 00/02] ARM: shmobile: Koelsch SDHI DT support
-Message-Id: <20140212074110.23493.41073.sendpatchset@w520>
+Date: Wed, 12 Feb 2014 04:30:33 +0000
+Subject: [PATCH] ARM: shmobile: Add r8a7791 SDHI devices to DTSI
+Message-Id: <20140212043033.10712.81556.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ARM: shmobile: Koelsch SDHI DT support
+From: Magnus Damm <damm@opensource.se>
 
-[PATCH v2 01/02] ARM: shmobile: Add SDHI devices to r8a7791 DTSI
-[PATCH 02/02] ARM: shmobile: Add SDHI devices for Koelsch DTS
-
-Add SDHI devices to the Koelsch DT board support. The same run
-time dependencies as SDHI for Lager applies here too, and there
-is a PFC fix for SD1_CLK that is needed for r8a7791 as well.
-
-Can be merged independently without waiting for v3.15 patches.
+Add SDHI0, SDHI1 and SDHI2 to the r8a7791 DTSI.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Written against renesas-devel-v3.14-rc1-20140207
+ arch/arm/boot/dts/r8a7791.dtsi |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
- Requires the following patch for correct run time operation:
- [PATCH 02/03] pinctrl: sh-pfc: r8a7791: SD1_CLK fix
-
- arch/arm/boot/dts/r8a7791-koelsch.dts |  131 +++++++++++++++++++++++++++++++++
- arch/arm/boot/dts/r8a7791.dtsi        |   27 ++++++
- 2 files changed, 158 insertions(+)
+--- 0001/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2014-02-10 16:35:25.000000000 +0900
+@@ -186,6 +186,33 @@
+ 		#gpio-range-cells = <3>;
+ 	};
+ 
++	sdhi0: sd@ee100000 {
++		compatible = "renesas,sdhi-r8a7791";
++		reg = <0 0xee100000 0 0x200>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
++		status = "disabled";
++	};
++
++	sdhi1: sd@ee140000 {
++		compatible = "renesas,sdhi-r8a7791";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
++		status = "disabled";
++	};
++
++	sdhi2: sd@ee160000 {
++		compatible = "renesas,sdhi-r8a7791";
++		reg = <0 0xee160000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
++		status = "disabled";
++	};
++
+ 	scifa0: serial@e6c40000 {
+ 		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
