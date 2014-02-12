@@ -1,44 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2014 10:47:26 +0000
-Subject: [PATCH 0/7] ARM: shmobile: r8a7790/Lager QSPI SoC/board integration
-Message-Id: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Feb 2014 05:01:01 +0000
+Subject: Re: [PATCH 0/7] ARM: shmobile: r8a7790/Lager QSPI SoC/board integration
+Message-Id: <CANqRtoQZBTYXwDcfzxqs9X-o2Yftvr=TM4dLgeMagr-LGdm1uw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+Hi Geert, Simon,
 
-The following patch series completes r8a7790 SoC and Lager board
-integration for the Renesas Quad Serial Peripheral Interface. It brings
-r8a7790/Lager to the same support level as r8a7791/Koelsch, allowing access
-to the Spansion s25fl512s SPI FLASH for both legacy and multi-platform
-kernels.
+On Mon, Feb 10, 2014 at 7:47 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>         Hi Simon, Magnus,
+>
+> The following patch series completes r8a7790 SoC and Lager board
+> integration for the Renesas Quad Serial Peripheral Interface. It brings
+> r8a7790/Lager to the same support level as r8a7791/Koelsch, allowing access
+> to the Spansion s25fl512s SPI FLASH for both legacy and multi-platform
+> kernels.
+>
+>     [1/7] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
+>     [2/7] ARM: shmobile: lager legacy: Add QSPI pinmux
+>     [3/7] ARM: shmobile: r8a7790 dtsi: Add QSPI node
+>     [4/7] ARM: shmobile: lager dts: Add QSPI nodes
+>     [5/7] ARM: shmobile: lager defconfig: Enable RSPI and MTD_M25P80
 
-    [1/7] pinctrl: sh-pfc: r8a7790: Add QSPI pin groups
-    [2/7] ARM: shmobile: lager legacy: Add QSPI pinmux
-    [3/7] ARM: shmobile: r8a7790 dtsi: Add QSPI node
-    [4/7] ARM: shmobile: lager dts: Add QSPI nodes
-    [5/7] ARM: shmobile: lager defconfig: Enable RSPI and MTD_M25P80
-    [6/7] ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI
-	  FLASH
-    [7/7] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI
-         FLASH
+Thanks a lot for this! All patches included in this series look great to me.
 
-Please do _not_ apply patches [6/7] and [7/7] yet, as these have a runtime
-dependency on Quad SPI support in the RSPI/QSPI driver, which is queued up
-in the linux-spi tree for v3.15.
+I noticed that 1/7 turned into a v2, so feel free to omit or include
+the below ack.
 
-Thanks!
+Acked-by: Magnus Damm <damm@opensource.se>
 
-Gr{oetje,eeting}s,
+>     [6/7] ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI
+>           FLASH
+>     [7/7] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI
+>          FLASH
+>
+> Please do _not_ apply patches [6/7] and [7/7] yet, as these have a runtime
+> dependency on Quad SPI support in the RSPI/QSPI driver, which is queued up
+> in the linux-spi tree for v3.15.
 
-						Geert
+That makes sense, thanks for pointing that out. You still have my Ack
+though, so please include that when you resend.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Simon, can you please pick up 2-5?
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Cheers,
+
+/ magnus
