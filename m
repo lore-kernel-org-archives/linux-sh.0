@@ -1,63 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 01:12:07 +0000
-Subject: Re: [PATCH 00/08] PCI: rcar: Recent driver patches from Ben Dooks and me
-Message-Id: <20140217011207.GB15117@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 12 Feb 2014 01:27:08 +0000
+Subject: [PATCH 1/2] regulator: gpio: print warning if gpios <-> gpios-states mismatch on DT
+Message-Id: <87iosl9l3q.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213030302.10398.37322.sendpatchset@w520>
- <20140213043951.GA22116@verge.net.au>
- <20140214183430.GD31093@google.com>
-In-Reply-To: <20140214183430.GD31093@google.com>
+References: <87eh3o7mfc.wl%kuninori.morimoto.gx@gmail.com>
+	<20140204184327.GS22609@sirena.org.uk>
+In-Reply-To: <20140204184327.GS22609@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
-On Fri, Feb 14, 2014 at 11:34:30AM -0700, Bjorn Helgaas wrote:
-> On Thu, Feb 13, 2014 at 01:39:54PM +0900, Simon Horman wrote:
-> > On Thu, Feb 13, 2014 at 12:03:02PM +0900, Magnus Damm wrote:
-> > > PCI: rcar: Recent driver patches from Ben Dooks and me
-> > > 
-> > > [PATCH 01/08] PCI: rcar: check platform_get_irq() return code
-> > > [PATCH v2 02/08] PCI: rcar: add error interrupt handling
-> > > [PATCH 03/08] PCI: rcar: fix bridge logic configuration accesses
-> > > [PATCH v2 04/08] PCI: rcar: Register each instance independently
-> > > [PATCH v2 05/08] PCI: rcar: Break out window size handling
-> > > [PATCH v2 06/08] PCI: rcar: Add DMABOUNCE support
-> > > [PATCH 07/08] PCI: rcar: Enable BOUNCE in case of HIGHMEM
-> > > [PATCH 08/08] PCI: rcar: Make the Kconfig dependencies more generic
-> > > 
-> > > These patches update the pci-rcar-gen2.c driver with patches from
-> > > Ben Dooks and me. The first 3 are written by Ben (thanks!) and are
-> > > included here to show what I would like to have merged and what I
-> > > rebased my patches on. The following 4 are updated versions of
-> > > 
-> > > [PATCH 00/04] PCI: rcar: Driver model and physical address space update
-> > > 
-> > > The final patch is a new one that fixes up the Kconfig dependencies.
-> > > 
-> > > Patch 1-3:
-> > > Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> > > 
-> > > Patch 4-8:
-> > > Signed-off-by: Magnus Damm <damm@opensource.se>
-> > > ---
-> > > 
-> > >  Written against renesas.git tag renesas-devel-v3.14-rc1-20140207
-> > > 
-> > >  drivers/pci/host/Kconfig         |    5 
-> > >  drivers/pci/host/pci-rcar-gen2.c |  445 ++++++++++++++++++++++++++++++++------
-> > >  2 files changed, 385 insertions(+), 65 deletions(-)
-> > 
-> > Bjorn,
-> > 
-> > I am happy with these.
-> > Could you consider merging this series?
-> > 
-> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Applied to pci/host-rcar for v3.15, thanks!
-> 
-> Bjorn
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks!
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/regulator/gpio-regulator.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/regulator/gpio-regulator.c b/drivers/regulator/gpio-regulator.c
+index ac3a8c7..5491cee 100644
+--- a/drivers/regulator/gpio-regulator.c
++++ b/drivers/regulator/gpio-regulator.c
+@@ -176,7 +176,7 @@ of_get_gpio_regulator_config(struct device *dev, struct device_node *np)
+ 	if (prop) {
+ 		proplen = prop->length / sizeof(int);
+ 		if (proplen != config->nr_gpios) {
+-			/* gpios <-> gpios-states mismatch */
++			dev_warn(dev, "gpios <-> gpios-states mismatch\n");
+ 			prop = NULL;
+ 		}
+ 	}
+-- 
+1.7.9.5
+
