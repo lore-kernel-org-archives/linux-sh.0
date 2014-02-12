@@ -1,71 +1,70 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 05 Feb 2014 10:12:27 +0000
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Wed, 12 Feb 2014 20:59:11 +0000
 Subject: Re: [PATCH 00/04] PCI: rcar: Driver model and physical address space update
-Message-Id: <52F20E8B.4070108@codethink.co.uk>
+Message-Id: <20140212205911.GB5554@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140205065243.29445.76593.sendpatchset@w520> <52F1F74C.2090106@codethink.co.uk> <CANqRtoRMAjBEXjBzivPxqMu8KhFsOkp0wb6jBbuZQx=B-qYuUA@mail.gmail.com> <52F20388.9080109@codethink.co.uk> <CANqRtoRUWC5ioDXJdEM6utQo2uHB3xar3RHzapR--xhjRmRQag@mail.gmail.com>
-In-Reply-To: <CANqRtoRUWC5ioDXJdEM6utQo2uHB3xar3RHzapR--xhjRmRQag@mail.gmail.com>
+References: <20140205065243.29445.76593.sendpatchset@w520>
+In-Reply-To: <20140205065243.29445.76593.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-pci@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Valentine Barshak <valentine.barshak@cogentembedded.com>, "Simon Horman [Horms]" <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, horms@verge.net.au, ben.dooks@codethink.co.uk
 
-On 05/02/14 09:40, Magnus Damm wrote:
-> On Wed, Feb 5, 2014 at 6:25 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> On 05/02/14 09:00, Magnus Damm wrote:
->>>
->>> Hi Ben,
->>
->>
->> [snip]
->>
->>> I think we should try to pick out the stuff that is ready to be merged
->>> first. I think these patches may require a bit of time before people
->>> start looking at them. I don't mind resending in the future.
->>>
->>> To be honest, I have not been paying too much attention to other
->>> patches including yours - been focused trying to get the memory
->>> management part right.. So I'd like to focus on correctness over DT
->>> for now if possible. Of course we it all.
->>>
->>> Would it be possible for you to provide a list of pci-rcar-gen2.c
->>> patches that you posted? Or perhaps you can resend your series and
->>> include acks that you received?
->>
->>
->> I don't think I have any acks, only review comments. I think the code
->> itself is pretty much ready to be merged and has been tested here with
->> the Lager board.
->
-> Ok, thanks. I'd like to go through them myself if possible. I was
-> looking for a cover letter or something that listed the patches but I
-> can't seem to find it. Can you please provide a list?
+On Wed, Feb 05, 2014 at 03:52:43PM +0900, Magnus Damm wrote:
+> PCI: rcar: Driver model and physical address space update
+> 
+> [PATCH 01/04] PCI: rcar: Register each instance independently
+> [PATCH 02/04] PCI: rcar: Break out window size handling
+> [PATCH 03/04] PCI: rcar: Add DMABOUNCE support
+> [PATCH 04/04] PCI: rcar: Enable BOUNCE in case of HIGHMEM
+> 
+> These patches update the pci-rcar-gen2.c driver in various ways
+> including cleanups for driver model interface (1/4), readability
+> update (2/4) and also bounce buffer support (3/4, 4/4). Basically
+> the first two are just cleanups and the rest are fixes.
+> 
+> As it is today without these patches the system memory start address
+> is hard coded at 0x4000000 and the window is fixed at 1GiB. So we
+> have board specific code hidden in the driver which is good to avoid.
+> 
+> With these hard coded board specific constants there are some error cases
+> that are not handled, in particular the issue that only maximum 1GiB of
+> physical address space can be used for bus mastering with a single window.
+> The common case of using ARM CONFIG_VMSPLIT_3G results in no visible issues
+> as long as CONFIG_BOUNCE is used, but other CONFIG_VMSPLIT settings will
+> break due to the hard coded 1GiB window not being enough. It has been
+> verified that reducing the window size to 256MB makes the driver behave
+> the same with VMSPLIT_3G as 1GiB window size and other VMSPLIT settings.
+> 
+> To handle the maximum 1GiB physical address space limitation two types
+> of bounce buffers are added. The ARM specific DMABOUNCE code is in 3/4
+> hooked up to a chunk of local memory that is also handed of as coherent
+> memory to the pci devices hanging off the PCI bridge. The driver makes
+> sure to set the window so the local memory is always included. When the
+> PCI devices are operating and in case memory is used outside the window
+> then the DMABOUNCE buffers kicks in. This makes the driver support all
+> kinds of VMSPLIT settings and window sizes. The BOUNCE code in 4/4 is
+> selected to make sure bounce buffers are used for HIGHMEM.
+> 
+> With these patches this driver can be used with or without CMA and
+> with or without DMA zone. Basically the system wide memory setup is
+> left to the user. If a DMA zone is used then the PCI window will
+> be setup to cover that. Same thing with CMA.
+> 
+> Tested with USB storage using LPAE and various VMSPLIT settings together
+> with renesas git tag renesas-devel-v3.14-rc1-20140204 from kernel.org
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Written against renesas.git tag renesas-devel-v3.14-rc1-20140204
+> 
+>  drivers/pci/host/Kconfig         |    3 
+>  drivers/pci/host/pci-rcar-gen2.c |  367 +++++++++++++++++++++++++++++++-------
+>  2 files changed, 306 insertions(+), 64 deletions(-)
 
-I will re-send the patches once I've applied the relevant fixups from
-the last round, hopefully within the next few hours.
+Simon, if you want to ack these, I'll be happy to merge them for v3.15.
+I'm not really qualified to review them myself.
 
->> The big issue for us is that we /must/ boot with fdt, which means the
->> less fdt support that is in the kernel then the more patches we end up
->> carrying out of tree. This is why we have been pushing patches out to
->> try and get the support in.
->
-> Can you please define "boot with fdt"? As you probably know, both
-> board-lager.c and board-lager-reference.c boot with DT. I suppose you
-> mean that you want DT to describe the entire system, with no C code
-> for the board? Please note that some devices like timers still don't
-> use DT, so if you can live without those then... =)
-
-We currently have enough to use the system. And yes, we boot with
-board-lager-reference.c which current seems to be turning up bugs
-in the up-stream (see the recent new bug with cpg clock code reported
-by my colleague).
-
-Due to issues out of our control we can test with board-lager.c but
-we must use the board-lager-reference.c for actual product test. The
-only way we found around this is ugly hacking of the core driver code
-to link platform and fdt devices...
-
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+Bjorn
