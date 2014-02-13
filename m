@@ -1,68 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:58:10 +0000
-Subject: [PATCH v2 40/40] clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
-Message-Id: <1393603090-23144-41-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:58 +0000
+Subject: [PATCH 09/12] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+Message-Id: <9c25f63d91d1ca7e894faf70cbf6ba1801758cbc.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all CMT channels are handled by a single device instance, use a
-per-device spinlock.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
+clock framework yet.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 2214c73..0672165 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -118,6 +118,8 @@ struct sh_cmt_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
- 
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
-+
- 	struct sh_cmt_channel *channels;
- 	unsigned int num_channels;
- 
-@@ -299,14 +301,12 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
- 	return v2;
- }
- 
--static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
--
- static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
- {
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_cmt_lock, flags);
-+	raw_spin_lock_irqsave(&ch->cmt->lock, flags);
- 	value = sh_cmt_read_cmstr(ch);
- 
- 	if (start)
-@@ -315,7 +315,7 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
- 		value &= ~(1 << ch->timer_bit);
- 
- 	sh_cmt_write_cmstr(ch, value);
--	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->cmt->lock, flags);
- }
- 
- static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
-@@ -926,6 +926,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 
- 	memset(cmt, 0, sizeof(*cmt));
- 	cmt->pdev = pdev;
-+	raw_spin_lock_init(&cmt->lock);
- 
- 	if (!cfg) {
- 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index ffb0fff..71c99fe 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -191,6 +191,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
++	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
 -- 
-1.8.3.2
+1.8.5.2
 
