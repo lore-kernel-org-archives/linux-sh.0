@@ -1,22 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Feb 2014 05:51:21 +0000
-Subject: Re: [PATCH 1/2 v4] ARM: shmobile: lager: add SDHI0/2 support
-Message-Id: <20140213055119.GE17183@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 13 Feb 2014 03:03:12 +0000
+Subject: [PATCH 01/08] PCI: rcar: check platform_get_irq() return code
+Message-Id: <20140213030312.10398.47163.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8761ojd0vb.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8761ojd0vb.wl%kuninori.morimoto.gx@gmail.com>
+References: <20140213030302.10398.37322.sendpatchset@w520>
+In-Reply-To: <20140213030302.10398.37322.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Feb 12, 2014 at 09:42:52PM -0800, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> SDHI0 (CN8) needs JP/SW settings
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v3 -> v4
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Thanks, I had just queued up v3.
+The current code does not check the return from platform_get_irq()
+so add an error check and return if this call does fail.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/pci/host/pci-rcar-gen2.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- 0001/drivers/pci/host/pci-rcar-gen2.c
++++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-13 09:41:55.000000000 +0900
+@@ -308,6 +308,11 @@ static int __init rcar_pci_probe(struct
+ 	priv->reg = reg;
+ 	priv->dev = &pdev->dev;
+ 
++	if (priv->irq < 0) {
++		dev_err(&pdev->dev, "no valid irq found\n");
++		return priv->irq;
++	}
++
+ 	return rcar_pci_add_controller(priv);
+ }
+ 
