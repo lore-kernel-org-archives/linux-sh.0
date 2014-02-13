@@ -1,52 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 28 Feb 2014 02:40:05 +0000
-Subject: Re: [PATCH 00/02] ARM: shmobile: CCI and MCPM support for r8a7790
-Message-Id: <8057177.PCGjXm0ZkO@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 13 Feb 2014 03:03:53 +0000
+Subject: [PATCH v2 05/08] PCI: rcar: Break out window size handling
+Message-Id: <20140213030353.10398.71544.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140226231326.4303.71886.sendpatchset@w520>
-In-Reply-To: <20140226231326.4303.71886.sendpatchset@w520>
+References: <20140213030302.10398.37322.sendpatchset@w520>
+In-Reply-To: <20140213030302.10398.37322.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Magnus,
+From: Magnus Damm <damm@opensource.se>
 
-On Thursday 27 February 2014 08:13:26 Magnus Damm wrote:
-> ARM: shmobile: CCI and MCPM support for r8a7790
-> 
-> [PATCH 01/02] ARM: shmobile: Hook in CCI/MCPM support to shared APMU code
-> [PATCH 02/02] ARM: shmobile: Add CCI nodes to r8a7790 DTS
-> 
-> Add code to interface to the CCI driver and MCPM to mach-shmobile. The
-> shared APMU SMP code is extended to share CPU power domain power on
-> and off support via both regular SMP hooks and MCPM callbacks.
-> 
-> It is worth noting that the APMU code is used for multiple SoCs including
-> the Dual core CA15 r8a7791 where this MCPM support is not needed and the
-> big.LITTLE r8a7790 that needs to program the CCI.
-> 
-> Previously posted as "[PATCH] ARM: shmobile: MCPM and CCI prototype".
+Break out the hard coded window size code to allow
+dynamic setup. The window size is still left at 1GiB
+but with this patch changing window size is easy for
+testing.
 
-I won't review these patches as I have no idea how CCI and MCPM work (I don't 
-even know what the latter stands for), but is there a chance this could be 
-useful for the IPMMU that can use CCI (and DVM) to remove the need for 
-explicit cache management in page tables management ?
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against renesas.git tag renesas-devel-v3.14-rc4-20140226
-> 
->  arch/arm/boot/dts/r8a7790.dtsi               |   28 ++++++
->  arch/arm/mach-shmobile/headsmp.S             |    7 +
->  arch/arm/mach-shmobile/include/mach/common.h |    1
->  arch/arm/mach-shmobile/platsmp-apmu.c        |  111 +++++++++++++++++++++--
->  arch/arm/mach-shmobile/platsmp.c             |    4
->  5 files changed, 144 insertions(+), 7 deletions(-)
+Changes since V1:
+ - Updated to fit on top of patches from Ben Dooks
 
--- 
-Regards,
+ drivers/pci/host/pci-rcar-gen2.c |   31 ++++++++++++++++++++++++++++---
+ 1 file changed, 28 insertions(+), 3 deletions(-)
 
-Laurent Pinchart
-
+--- 0007/drivers/pci/host/pci-rcar-gen2.c
++++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-13 10:16:48.000000000 +0900
+@@ -18,6 +18,7 @@
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/sizes.h>
+ #include <linux/slab.h>
+ 
+ /* AHB-PCI Bridge PCI communication registers */
+@@ -98,6 +99,7 @@ struct rcar_pci_priv {
+ 	struct resource mem_res;
+ 	struct resource *cfg_res;
+ 	int irq;
++	unsigned long window_size;
+ };
+ 
+ /* PCI configuration space operations */
+@@ -241,10 +243,31 @@ static int __init rcar_pci_setup(int nr,
+ 	iowrite32(val, reg + RCAR_USBCTR_REG);
+ 	udelay(4);
+ 
+-	/* De-assert reset and set PCIAHB window1 size to 1GB */
++	/* De-assert reset and reset PCIAHB window1 size */
+ 	val &= ~(RCAR_USBCTR_PCIAHB_WIN1_MASK | RCAR_USBCTR_PCICLK_MASK |
+ 		 RCAR_USBCTR_USBH_RST | RCAR_USBCTR_PLL_RST);
+-	iowrite32(val | RCAR_USBCTR_PCIAHB_WIN1_1G, reg + RCAR_USBCTR_REG);
++
++	/* Setup PCIAHB window1 size */
++	switch (priv->window_size) {
++	case SZ_2G:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_2G;
++		break;
++	case SZ_1G:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_1G;
++		break;
++	case SZ_512M:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_512M;
++		break;
++	default:
++		pr_warn("unknown window size %ld - defaulting to 256M\n",
++			priv->window_size);
++		priv->window_size = SZ_256M;
++		/* fall-through */
++	case SZ_256M:
++		val |= RCAR_USBCTR_PCIAHB_WIN1_256M;
++		break;
++	}
++	iowrite32(val, reg + RCAR_USBCTR_REG);
+ 
+ 	/* Configure AHB master and slave modes */
+ 	iowrite32(RCAR_AHB_BUS_MODE, reg + RCAR_AHB_BUS_CTR_REG);
+@@ -255,7 +278,7 @@ static int __init rcar_pci_setup(int nr,
+ 	       RCAR_PCI_ARBITER_PCIBP_MODE;
+ 	iowrite32(val, reg + RCAR_PCI_ARBITER_CTR_REG);
+ 
+-	/* PCI-AHB mapping: 0x40000000-0x80000000 */
++	/* PCI-AHB mapping: 0x40000000 base */
+ 	iowrite32(0x40000000 | RCAR_PCIAHB_PREFETCH16,
+ 		  reg + RCAR_PCIAHB_WIN1_CTR_REG);
+ 
+@@ -341,6 +364,8 @@ static int rcar_pci_probe(struct platfor
+ 		return priv->irq;
+ 	}
+ 
++	priv->window_size = SZ_1G;
++
+ 	hw_private[0] = priv;
+ 	memset(&hw, 0, sizeof(hw));
+ 	hw.nr_controllers = ARRAY_SIZE(hw_private);
