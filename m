@@ -1,106 +1,90 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:13:52 +0000
-Subject: [PATCH 03/12] ARM: shmobile: r8a7790 SYSC setup code
-Message-Id: <c5db707d70a10f7acb35b909f0f8f8bc97140087.1392278855.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:03:52 +0000
+Subject: [PATCH 05/11] ARM: shmobile: Lager USB0 cable detection workaround
+Message-Id: <36be7686caa05334ca8d52df157b373a41d8d9f1.1392276547.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392277789.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
+References: <cover.1392276547.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Add r8a7790 SYSC power management support.
+Add Lager board code to check the PWEN GPIO signal and refuse to
+allow probe of the USBHS driver in case of DIP misconfiguration.
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
+For correct operation Lager DIP switches SW5 and SW6 shall be
+configured in 2-3 position to enable USB Function support.
+
+If the DIP switch is configured incorrectly then the user can
+simply adjust the hardware and either reboot or use the bind interface
+to try to probe again:
+
+# echo renesas_usbhs > /sys/bus/platform/drivers/renesas_usbhs/bind
+
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Makefile               |  1 +
- arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
- arch/arm/mach-shmobile/pm-r8a7790.c           | 45 +++++++++++++++++++++++++++
- 3 files changed, 47 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/pm-r8a7790.c
+ arch/arm/mach-shmobile/board-lager.c | 25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 7bc450c..d38a636 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 30ebd08..6a7041f 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -408,13 +408,30 @@ static int usbhs_hardware_init(struct platform_device *pdev)
+ {
+ 	struct usbhs_private *priv = usbhs_get_priv(pdev);
+ 	struct usb_phy *phy;
++	int ret;
++
++	/* USB0 Function - use PWEN as GPIO input to detect DIP Switch SW5
++	 * setting to avoid VBUS short circuit due to wrong cable.
++	 * PWEN should be pulled up high if USB Function is selected by SW5
++	 */
++	gpio_request_one(RCAR_GP_PIN(5, 18), GPIOF_IN, NULL); /* USB0_PWEN */
++	if (!gpio_get_value(RCAR_GP_PIN(5, 18))) {
++		pr_warn("Error: USB Function not selected - check SW5 + SW6\n");
++		ret = -ENOTSUPP;
++		goto error;
++	}
  
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 2177325..0b95bab 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -32,6 +32,7 @@ void r8a7790_add_standard_devices(void);
- void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
-+void r8a7790_pm_init(void);
- void r8a7790_init_early(void);
- extern struct smp_operations r8a7790_smp_ops;
+ 	phy = usb_get_phy_dev(&pdev->dev, 0);
+-	if (IS_ERR(phy))
+-		return PTR_ERR(phy);
++	if (IS_ERR(phy)) {
++		ret = PTR_ERR(phy);
++		goto error;
++	}
  
-diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
-new file mode 100644
-index 0000000..fc82839
---- /dev/null
-+++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-@@ -0,0 +1,45 @@
-+/*
-+ * r8a7790 Power management support
-+ *
-+ * Copyright (C) 2013  Renesas Electronics Corporation
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
+ 	priv->phy = phy;
+ 	return 0;
++ error:
++	gpio_free(RCAR_GP_PIN(5, 18));
++	return ret;
+ }
+ 
+ static int usbhs_hardware_exit(struct platform_device *pdev)
+@@ -426,6 +443,8 @@ static int usbhs_hardware_exit(struct platform_device *pdev)
+ 
+ 	usb_put_phy(priv->phy);
+ 	priv->phy = NULL;
 +
-+#include <linux/kernel.h>
-+#include <asm/io.h>
-+#include <mach/pm-rcar.h>
-+#include <mach/r8a7790.h>
-+
-+/* SYSC */
-+#define SYSCIER 0x0c
-+#define SYSCIMR 0x10
-+
-+#if defined(CONFIG_SMP)
-+
-+static void __init r8a7790_sysc_init(void)
-+{
-+	void __iomem *base = rcar_sysc_init(0xe6180000);
-+
-+	/* enable all interrupt sources, but do not use interrupt handler */
-+	iowrite32(0x0131000e, base + SYSCIER);
-+	iowrite32(0, base + SYSCIMR);
-+}
-+
-+#else /* CONFIG_SMP */
-+
-+static inline void r8a7790_sysc_init(void) {}
-+
-+#endif /* CONFIG_SMP */
-+
-+void __init r8a7790_pm_init(void)
-+{
-+	static int once;
-+
-+	if (!once++)
-+		r8a7790_sysc_init();
-+}
++	gpio_free(RCAR_GP_PIN(5, 18));
+ 	return 0;
+ }
+ 
+@@ -536,7 +555,7 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 				  "vin1_clk", "vin1"),
+ 	/* USB0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
+-				  "usb0", "usb0"),
++				  "usb0_ovc_vbus", "usb0"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
 -- 
 1.8.5.2
 
