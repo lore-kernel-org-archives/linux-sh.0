@@ -1,49 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:47 +0000
-Subject: [PATCH 06/13] ARM: shmobile: koelsch-reference: Add DU device to DTS
-Message-Id: <afba941c18985ffd473f7bad85f89eb7c7121de4.1392961872.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:03:51 +0000
+Subject: [PATCH 04/11] ARM: shmobile: bockw: use wp-gpios instead of WP pin
+Message-Id: <f729dd554e9a04a55950693ea8eca0d3aaa28d22.1392276547.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961872.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
+References: <cover.1392276547.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The DU device has no DT bindings yet, instantiate it as a platform
-device for now.
+Latest Renesas Chip has some SDHI channels and the WP pin
+availability depends on its channel or HW implementation.
+Thus, this patch decides new policy whch indicates
+WP is disabled as default.
+But, we can use wp-gpios property to enable it as
+other method.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: broken out of larger patch that
-                             included board changes]
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index d4b9bba..f67d2d0 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -109,9 +109,14 @@
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index bb62c7a..06cda19 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -17,6 +17,7 @@
+ /dts-v1/;
+ #include "r8a7778.dtsi"
+ #include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "bockw";
+@@ -84,7 +85,7 @@
+ 
+ 	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd", "sdhi0_wp";
++				  "sdhi0_cd";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+@@ -101,6 +102,7 @@
+ 	vmmc-supply = <&fixedregulator3v3>;
+ 	bus-width = <4>;
+ 	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
  };
  
- &pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
-+	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
- 
-+	du_pins: du {
-+		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
-+		renesas,function = "du";
-+	};
-+
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data_d";
- 		renesas,function = "scif0";
+ &hspi0 {
 -- 
 1.8.5.2
 
