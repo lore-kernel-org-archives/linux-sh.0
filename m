@@ -1,110 +1,210 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 13 Feb 2014 23:03:03 +0000
-Subject: Re: mstp10 clock bug
-Message-Id: <3356157.J9YWMPQ65T@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 13 Feb 2014 18:02:50 +0000
+Subject: [PATCH 2/3] renesas: change to using clock-indices
+Message-Id: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <52FBC50D.4000907@codethink.co.uk>
-In-Reply-To: <52FBC50D.4000907@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ben,
+With the addition of clock-indices, we need to change the renesas
+clock implementation to use these instead of the local definition.
 
-On Thursday 13 February 2014 17:43:19 Ben Dooks wrote:
-> On 13/02/14 14:51, Laurent Pinchart wrote:
-> > On Wednesday 12 February 2014 19:01:33 Ben Dooks wrote:
-> >> William and I have been looking at the clock bug on mstp10_clks
-> >> from the sound.git patch which reverts all the clocks [1]
-> >> 
-> >> What happens is that when register the node:
-> >>> -		mstp10_clks: mstp10_clks@e6150998 {
-> >>> -			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-
-> > 
-> > mstp-clocks";
-> > 
-> >>> -			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-> >>> -			clocks = <&p_clk>, <&mstp10_clks R8A7790_CLK_SSI>,
-> >>> -				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks
-> > 
-> > R8A7790_CLK_SSI>,
-> > 
-> >>> -				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks
-> > 
-> > R8A7790_CLK_SSI>,
-> > 
-> >>> -				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks
-> > 
-> > R8A7790_CLK_SSI>,
-> > 
-> >>> -				 <&mstp10_clks R8A7790_CLK_SSI>, <&mstp10_clks
-> > 
-> > R8A7790_CLK_SSI>,
-> > 
-> >>> -				 <&mstp10_clks R8A7790_CLK_SSI>;
-> >>> -			#clock-cells = <1>;
-> >>> -			renesas,clock-indices = <
-> >>> -				R8A7790_CLK_SSI R8A7790_CLK_SSI9 R8A7790_CLK_SSI8
-> >>> -				R8A7790_CLK_SSI7 R8A7790_CLK_SSI6 R8A7790_CLK_SSI5
-> >>> -				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2
-> >>> -				R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
-> >>> -			>;
-> >>> -			clock-output-names > >>> -				"ssi", "ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
-> >>> -				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0";
-> >>> -		};
-> >>> 
-> >>>   	};
-> >> 
-> >> The ssi5 clock is registered with a parent of ssi5, not ssi as described
-> >> in the above node.
-> >> 
-> >> This is due to of_clk_get_parent_name() reading the clock-output-names
-> >> property and _assuming_ a 1:1 correspondence for the clock index to the
-> >> clock-output-names position. In the case of the mstp clocks each of
-> >> these nodes has sparse entries, which means the following:
-> >> 
-> >> <&mstp10_clks R8A7790_CLK_SSI> R8A7790_CLK_SSI becomes <&mstp10_clks 5>
-> >> and the 5th entry in clock-output-names is "ssi5".
-> >> 
-> >> This means that the entire machine comes to a halt as the clock layer
-> >> tries to create a clock with itself as a parent (never a good idea)
-> >> 
-> >> Currently we do not know the best way to fix this.
-> >> 
-> >> - we could update the of_clk_get_parent_name() to check the presence of
-> >>   renesas,clock-indices which would be a hack.
-> >> 
-> >> - allow the clock driver to register a parent name callback, but that
-> >>   would assume we never looked up nodes that where not registered yet.
-> >> 
-> >> - change all the clock-output-names arrays for rcar dtsi files to have
-> >>   null entries where needed, which would be not nice.
-> >> 
-> >> - add a new property for mapping numbers to clock indicies and moving
-> >>   the renesas,clock-indices to use that (although that would still end
-> >>   up causing a number of issues with the clock handling as is)
-> >>> 
-> >>> https://git.kernel.org/cgit/linux/kernel/git/broonie/sound.git/commit/?h
-> >>> =topic/rcar&idp8d2aa14d1eefef3dd758242787e837485baad7
-> > 
-> > I've submitted a second version of the SSI clocks patches that fixes the
-> > issue (http://www.spinics.net/lists/linux-sh/msg27013.html). I've just
-> > pinged Mike Turquette and have CC'ed you.
-> > 
-> > As explained in the cover letter, the problem comes from the fact that the
-> > meaning of the DT "clocks" property depends on whether the property is
-> > located in a clock provider node or a clock consumer node. Let's discuss
-> > the issue in the other mail thread.
-> 
-> Ok, I've got a 2-3 patch series that fixes the problem by changing the
-> renesas,clock-indicies to clock-indicies and making the code looking
-> up the name use this to work out the array index of clock-output-names.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt         |  2 +-
+ arch/arm/boot/dts/r8a7790.dtsi                         | 16 ++++++++--------
+ arch/arm/boot/dts/r8a7791.dtsi                         | 18 +++++++++---------
+ drivers/clk/shmobile/clk-mstp.c                        |  2 +-
+ 4 files changed, 19 insertions(+), 19 deletions(-)
 
-Thank you. I'll let Mike comment on that, I have no strong preference.
-
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index a6a352c..f5b4171 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -43,7 +43,7 @@ Example
+ 		clock-output-names  			"tpu0", "mmcif1", "sdhi3", "sdhi2",
+ 			 "sdhi1", "sdhi0", "mmcif0";
+-		renesas,clock-indices = <
++		clock-indices = <
+ 			R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 			R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
+ 			R8A7790_CLK_MMCIF0
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 54ab318..7959323 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -671,7 +671,7 @@
+ 			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
+ 			clocks = <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7790_CLK_MSIOF0>;
++			clock-indices = <R8A7790_CLK_MSIOF0>;
+ 			clock-output-names = "msiof0";
+ 		};
+ 		mstp1_clks: mstp1_clks@e6150134 {
+@@ -681,7 +681,7 @@
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>,
+ 				 <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
+ 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
+ 				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_RT R8A7790_CLK_VSP1_SY
+@@ -696,7 +696,7 @@
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+ 				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
+ 				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
+ 				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
+@@ -712,7 +712,7 @@
+ 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
+ 				 <&mmc0_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
+ 				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
+@@ -726,7 +726,7 @@
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+ 			clocks = <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
++			clock-indices = <R8A7790_CLK_THERMAL R8A7790_CLK_PWM>;
+ 			clock-output-names = "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+@@ -736,7 +736,7 @@
+ 				 <&p_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>,
+ 				 <&zx_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7790_CLK_EHCI R8A7790_CLK_HSUSB R8A7790_CLK_HSCIF1
+ 				R8A7790_CLK_HSCIF0 R8A7790_CLK_SCIF1 R8A7790_CLK_SCIF0
+ 				R8A7790_CLK_DU2 R8A7790_CLK_DU1 R8A7790_CLK_DU0
+@@ -752,7 +752,7 @@
+ 			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>,
+ 				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7790_CLK_VIN3 R8A7790_CLK_VIN2 R8A7790_CLK_VIN1
+ 				R8A7790_CLK_VIN0 R8A7790_CLK_ETHER R8A7790_CLK_SATA1
+ 				R8A7790_CLK_SATA0
+@@ -766,7 +766,7 @@
+ 			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
+ 				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
+ 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
+ 				R8A7790_CLK_I2C0
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 240c4ec..166b986 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -598,7 +598,7 @@
+ 			reg = <0 0xe6150130 0 4>, <0 0xe6150030 0 4>;
+ 			clocks = <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7791_CLK_MSIOF0>;
++			clock-indices = <R8A7791_CLK_MSIOF0>;
+ 			clock-output-names = "msiof0";
+ 		};
+ 		mstp1_clks: mstp1_clks@e6150134 {
+@@ -607,7 +607,7 @@
+ 			clocks = <&p_clk>, <&p_clk>, <&p_clk>, <&rclk_clk>,
+ 				 <&cp_clk>, <&zs_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
+ 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
+ 				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_SY
+@@ -622,7 +622,7 @@
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+ 				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
+ 				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
+ 				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
+@@ -637,7 +637,7 @@
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>,
+ 				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
+ 				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
+ 			>;
+@@ -649,7 +649,7 @@
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+ 			clocks = <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
++			clock-indices = <R8A7791_CLK_THERMAL R8A7791_CLK_PWM>;
+ 			clock-output-names = "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+@@ -659,7 +659,7 @@
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+ 				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
+ 				R8A7791_CLK_SCIF4 R8A7791_CLK_HSCIF1 R8A7791_CLK_HSCIF0
+ 				R8A7791_CLK_SCIF3 R8A7791_CLK_SCIF2 R8A7791_CLK_SCIF1
+@@ -676,7 +676,7 @@
+ 			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>, <&zs_clk>,
+ 				 <&zs_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
+ 				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
+ 			>;
+@@ -690,7 +690,7 @@
+ 				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+ 				 <&p_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD
+ 				R8A7791_CLK_I2C4 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
+ 				R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+@@ -704,7 +704,7 @@
+ 			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+-			renesas,clock-indices = <
++			clock-indices = <
+ 				R8A7791_CLK_SCIFA3 R8A7791_CLK_SCIFA4 R8A7791_CLK_SCIFA5
+ 			>;
+ 			clock-output-names = "scifa3", "scifa4", "scifa5";
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 42d5912..95a2aa7 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -197,7 +197,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 			continue;
+ 
+ 		parent_name = of_clk_get_parent_name(np, i);
+-		ret = of_property_read_u32_index(np, "renesas,clock-indices", i,
++		ret = of_property_read_u32_index(np, "clock-indices", i,
+ 						 &clkidx);
+ 		if (parent_name = NULL || ret < 0)
+ 			break;
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.3
 
