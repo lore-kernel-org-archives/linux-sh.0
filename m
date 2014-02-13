@@ -1,51 +1,37 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:27 +0000
-Subject: [PATCH 15/16] ARM: shmobile: Remove Koelsch DT reference legacy clock bits
-Message-Id: <34b6a241de1d965b1c047a97fad602687218a866.1392960310.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:36 +0000
+Subject: [PATCH 4/4] ARM: shmobile: genmai defconfig: Enable RSPI
+Message-Id: <8f33d31ee270f2a6bcc661815a520f76565674c3.1392276997.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392960310.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
+References: <cover.1392276997.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276997.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Koelsch DT reference is these days built for multiplatform
-only which means that CCF comes with the package. Remove
-unused legacy code ifdefs to clean up the code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/arm/configs/genmai_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 267fe83..a3fd302 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -84,7 +84,6 @@ static void __init koelsch_add_du_device(void)
- 
- static void __init koelsch_add_standard_devices(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	/*
- 	 * This is a really crude hack to provide clkdev support to the CMT and
- 	 * DU devices until they get moved to DT.
-@@ -125,9 +124,7 @@ static void __init koelsch_add_standard_devices(void)
- 			clk_put(clk);
- 		}
- 	}
--#else
--	r8a7791_clock_init();
--#endif
-+
- 	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index c56a7ff..5ee6ac0 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -81,6 +81,8 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_I2C_SH_MOBILE=y
++CONFIG_SPI=y
++CONFIG_SPI_RSPI=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
 -- 
 1.8.5.2
 
