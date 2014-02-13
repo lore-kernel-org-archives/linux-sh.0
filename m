@@ -1,69 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 01:00:02 +0000
-Subject: [PATCH 24/27] ARM: shmobile: r8a7790: Add CMT devices to DT
-Message-Id: <1392339605-20691-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:53 +0000
+Subject: [PATCH 04/12] ARM: shmobile: r8a7790 CA7-SCU enablement
+Message-Id: <e14cc0f3837c129cd279e16c43eb31bf3c9616fb.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 54ab318..a236c7e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -179,6 +179,44 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+Power on CA7 SCU in case of booting from a CA15 core.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7790.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 015e275..beb47ae 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -19,6 +19,8 @@
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7790.h>
  
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
+@@ -27,6 +29,11 @@
+ #define CA7RESCNT	0x0044
+ #define MERAM		0xe8080000
+ 
++static struct rcar_sysc_ch r8a7790_ca7_scu = {
++	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
++	.isr_bit = 21, /* CA7-SCU */
++};
 +
-+		#address-cells = <1>;
-+		#size-cells = <0>;
+ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	void __iomem *p;
+@@ -54,6 +61,10 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ 	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
+ 		       p + CA7RESCNT);
+ 	iounmap(p);
 +
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
-+
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7790", "renesas,irqc";
- 		#interrupt-cells = <2>;
++	/* turn on power to SCU */
++	r8a7790_pm_init();
++	rcar_sysc_power_up(&r8a7790_ca7_scu);
+ }
+ 
+ struct smp_operations r8a7790_smp_ops __initdata = {
 -- 
-1.8.3.2
+1.8.5.2
 
