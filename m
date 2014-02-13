@@ -1,63 +1,46 @@
-From: Patrick Titiano <ptitiano@baylibre.com>
-Date: Fri, 28 Feb 2014 13:10:02 +0000
-Subject: [PATCH 0/2] thermal: rcar-thermal: minor fixes
-Message-Id: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:55 +0000
+Subject: [PATCH 06/12] ARM: shmobile: r8a7778: add audio clock in new style
+Message-Id: <0117ae1a7bad69ca788f9b77af8fd6b1998115b6.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com
-Cc: bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Patrick Titiano <ptitiano@baylibre.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
-Here are 2 minor updates to the rcar-thermal driver.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-First patch removes an unecessary mask applied in a if statement.
-Because the same mask was already applied in the preceding statement,
-the second one can be removed.
+Current audio clock doesn't have dependency to device/driver,
+but, it is not good design for DT support.
+To avoid branch merge conflict issue,
+it uses this load map, and this patch is 1) part.
+ 1) add new style clock in platform
+ 2) add new style clock method in driver
+ 3) remove old tyle clock from platform
 
-Second patch avoids updating the thermal zone in case an IRQ was triggered but
-the temperature didn't effectively change.
-Note this is not a driver issue.
-Below is a captured debug trace illustrating the purpose of this patch:
-out of 8 thermal zone updates, only 2 are actually necessary.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-[   41.120000] rcar_thermal_work(): cctemp%000
-[   41.120000] rcar_thermal_work(): new_ctemp0000
-[   41.120000] rcar_thermal_work(): temp is now 30000C, update thermal zone
-[   58.990000] rcar_thermal_work(): cctemp0000
-[   58.990000] rcar_thermal_work(): nctemp0000
-[   58.990000] rcar_thermal_work(): same temp, do not update thermal zone
-[   59.290000] rcar_thermal_work(): cctemp0000
-[   59.290000] rcar_thermal_work(): nctemp0000
-[   59.290000] rcar_thermal_work(): same temp, do not update thermal zone
-[   59.590000] rcar_thermal_work(): cctemp0000
-[   59.590000] rcar_thermal_work(): nctemp0000
-[   59.590000] rcar_thermal_work(): same temp, do not update thermal zone
-[   59.890000] rcar_thermal_work(): cctemp0000
-[   59.890000] rcar_thermal_work(): nctemp0000
-[   59.890000] rcar_thermal_work(): same temp, do not update thermal zone
-[   60.190000] rcar_thermal_work(): cctemp0000
-[   60.190000] rcar_thermal_work(): nctemp0000
-[   60.190000] rcar_thermal_work(): same temp, do not update thermal zone
-[   60.490000] rcar_thermal_work(): cctemp0000
-[   60.490000] rcar_thermal_work(): nctemp0000
-[   60.490000] rcar_thermal_work(): same temp, do not update thermal zone
-[   60.790000] rcar_thermal_work(): cctemp0000
-[   60.790000] rcar_thermal_work(): nctemp5000
-[   60.790000] rcar_thermal_work(): temp is now 35000C, update thermal zone
-
-I suspect this may be due to sensor sampling accuracy / fluctuation,
-but no formal proof.
-
-Patrick Titiano (2):
-  thermal: rcar-thermal: fix same mask applied twice
-  thermal: rcar-thermal: update thermal zone only when temperature
-    changes
-
- drivers/thermal/rcar_thermal.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 9783945..2009a9b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -221,6 +221,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("fffc6000.spi", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("rcar_sound", &mstp_clks[MSTP008]), /* SRU */
+ 
++	CLKDEV_ICK_ID("clk_a", "rcar_sound", &audio_clk_a),
++	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
++	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
++	CLKDEV_ICK_ID("clk_i", "rcar_sound", &s1_clk),
+ 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP012]),
+ 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP011]),
+ 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP010]),
 -- 
-1.8.3.2
+1.8.5.2
 
