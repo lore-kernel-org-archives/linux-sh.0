@@ -1,42 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:50 +0000
-Subject: [PATCH 09/13] ARM: shmobile: r8a7790: add i2c aliases to dtsi
-Message-Id: <6b1d7c68b255be81ef174d9621869fde5c95bc20.1392961872.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 13 Feb 2014 05:42:02 +0000
+Subject: Re: [PATCH 0/2 v4]: ARM: shmobile: lager: add SDHI0/2 support for legacy/DT
+Message-Id: <877g8zd0wo.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961872.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+Hi Simon again
+Cc Magnus
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d7bde1e..6eb9613 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -18,6 +18,13 @@
- 	#address-cells = <2>;
- 	#size-cells = <2>;
- 
-+	aliases {
-+		i2c0 = &i2c0;
-+		i2c1 = &i2c1;
-+		i2c2 = &i2c2;
-+		i2c3 = &i2c3;
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--- 
-1.8.5.2
+These are v4 patch of SDHI0/2 support for lager.
+These are based on...
 
+  renesas-devel-v3.14-rc1-20140207
++ sh-arm/topic/r-car-sdhi
++ git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git :: /topic/gpio
+
+v3 had SoC specific option on dts file,
+but it is included in driver side.
+v4 removed these from dts
+
+> These are v2 patch of SDHI0/2 support for Lager.
+> #1 is same one, #2 patch was updated
+> 
+> Kuninori Morimoto (2):
+>       ARM: shmobile: lager: add SDHI0/2 support
+>       ARM: shmobile: lager: add SDHI0/2 support on DTS
+> 
+>  arch/arm/boot/dts/r8a7790-lager.dts  |   84 ++++++++++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++
+>  2 files changed, 148 insertions(+)
