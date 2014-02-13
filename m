@@ -1,35 +1,45 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 26 Feb 2014 16:08:13 +0000
-Subject: [PATCH 5/5] ARM: koelsch: Add PCIe to defconfig
-Message-Id: <1393430893-2466-6-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:47 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7791 dtsi: Add QSPI node
+Message-Id: <4d5b59cde5b900a1f4a3a07a7a7b709dac1938f9.1392275963.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1392275963.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392275963.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/koelsch_defconfig |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index c59768e..adb67d5 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -20,6 +20,9 @@ CONFIG_MACH_KOELSCH=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
-+CONFIG_PCIEPORTBUS=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_NR_CPUS=8
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d5cc362..240c4ec 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -710,4 +710,16 @@
+ 			clock-output-names = "scifa3", "scifa4", "scifa5";
+ 		};
+ 	};
++
++	spi: spi@e6b10000 {
++		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
++		reg = <0 0xe6b10000 0 0x2c>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
+ };
 -- 
-1.7.9.5
+1.8.5.2
 
