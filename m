@@ -1,68 +1,59 @@
-From: Phil.Edworthy@renesas.com
-Date: Thu, 27 Feb 2014 10:08:13 +0000
-Subject: Re: [PATCH 1/5 v2 RFC] PCI: host: Add Renesas R-Car PCIe driver
-Message-Id: <OFA9DD1EC8.C9E2E5C8-ON80257C8C.00378F02-80257C8C.0037AF2C@eu.necel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:22 +0000
+Subject: [GIT PULL 0/4] Second Round of Renesas ARM Based SoC Defconfig Updates for v3.15
+Message-Id: <cover.1392276997.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>	<1393438283-10542-2-git-send-email-phil.edworthy@renesas.com> <CANqRtoT8huX5QFqU6M4t=gKCW8wrk13b0nsR2+8C84HUKHrCLg@mail.gmail.com>
-In-Reply-To: <CANqRtoT8huX5QFqU6M4t=gKCW8wrk13b0nsR2+8C84HUKHrCLg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, Valentine Barshak <valentine.barshak@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On 27/02/2014 09:59, Magnus Damm wrote:
-> On Thu, Feb 27, 2014 at 3:11 AM, Phil Edworthy
-> <phil.edworthy@renesas.com> wrote:
-> > This PCIe Host driver currently does not support MSI, so cards
-> > fall back to INTx interrupts.
-> >
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > ---
-> > v2:
-> >  - Use msleep instead of udelay when waiting for the link
-> >  - Use pm_runtime
-> >  - Removed unused definition
-> >  - Also replaced call to devm_request_and_ioremap with 
-devm_ioremap_resource
-> >    and fixed a bug with this when reporting errors.
-> >
-> >  drivers/pci/host/Kconfig     |    6 +
-> >  drivers/pci/host/Makefile    |    1 +
-> >  drivers/pci/host/pcie-rcar.c |  588 
-++++++++++++++++++++++++++++++++++++++++++
-> >  drivers/pci/host/pcie-rcar.h |   82 ++++++
-> >  4 files changed, 677 insertions(+)
-> >  create mode 100644 drivers/pci/host/pcie-rcar.c
-> >  create mode 100644 drivers/pci/host/pcie-rcar.h
-> >
-> > diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
-> > index 47d46c6..b1c1787 100644
-> > --- a/drivers/pci/host/Kconfig
-> > +++ b/drivers/pci/host/Kconfig
-> > @@ -33,4 +33,10 @@ config PCI_RCAR_GEN2
-> >           There are 3 internal PCI controllers available with a single
-> >           built-in EHCI/OHCI host controller present on each one.
-> >
-> > +config PCI_RCAR_GEN2_PCIE
-> > +       bool "Renesas R-Car PCIe controller"
-> > +       depends on ARM && (ARCH_R8A7790 || ARCH_R8A7791 || 
-COMPILE_TEST)
-> 
-> Hi Phil,
-> 
-> Thanks for the patch! Just a minor comment from my side at this point:
-> 
-> Please adjust the Kconfig dependencies into excluding SoC strings to
-> follow same style as our other drivers.
-> 
-> -       depends on ARM && (ARCH_R8A7790 || ARCH_R8A7791 || COMPILE_TEST)
-> +       depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
+please consider this second round of Renesas ARM based SoC defconfig
+updates for v3.15.
 
-Ok, will do!
+This pull-request is based on the first round of such updates,
+tagged as renesas-defconfig-for-v3.15, which I have previously sent
+a pull-request for.
 
-Thanks
-Phil
 
+The following changes since commit 0771ddff31186836f62a20c42e7958bd37f7b4ed:
+
+  ARM: shmobile: ape6evm: enable CONFIG_DEVTMPFS in defconfig (2014-02-04 10:26:04 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v3.15
+
+for you to fetch changes up to 8f33d31ee270f2a6bcc661815a520f76565674c3:
+
+  ARM: shmobile: genmai defconfig: Enable RSPI (2014-02-06 20:53:59 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Defconfig Updates for v3.15
+
+* r7s72100 SoC (RZ/A1H) based Genmai board
+  - Enable RSPI
+
+* r8a7790 (R-Car H2) based Koelsch board
+  - Enable I2C, RSPI and MTD_M25P80
+
+* r8a7779 (R-Car H1) based Lager board
+  - Enable sound
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      ARM: shmobile: koelsch defconfig: Enable RSPI and MTD_M25P80
+      ARM: shmobile: genmai defconfig: Enable RSPI
+
+Kuninori Morimoto (1):
+      ARM: shmobile: lager: add sound support on defconfig
+
+Valentine Barshak (1):
+      ARM: shmobile: koelsch: Enable I2C in defconfig
+
+ arch/arm/configs/genmai_defconfig  | 2 ++
+ arch/arm/configs/koelsch_defconfig | 6 ++++++
+ arch/arm/configs/lager_defconfig   | 4 ++++
+ 3 files changed, 12 insertions(+)
