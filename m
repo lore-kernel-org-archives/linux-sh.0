@@ -1,136 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 15:24:01 +0000
-Subject: [PATCH v4 07/11] ARM: shmobile: koelsch legacy: Add QSPI support
-Message-Id: <1391527445-14881-8-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:03:58 +0000
+Subject: [PATCH 11/11] ARM: shmobile: genmai: Enable r7s72100-ether
+Message-Id: <03fec7dee502d43114f384a1588ce84a3c9bf38d.1392276547.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1392276547.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-
-Enable support for the Spansion s25fl512s SPI FLASH on the Koelsch board:
-  - Add QSPI platform device, resources, platform data, and pinmux,
-  - Add FLASH data and MTD partitions.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-v4:
-  - Rebased on top of renesas-devel-v3.14-rc1-20140204
-v3:
-  - Switch to named IRQs
-v2:
-  - Split in 2 groups (qspi_ctrl/qspi_data4)
+ arch/arm/mach-shmobile/board-genmai.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
- arch/arm/mach-shmobile/board-koelsch.c |   64 ++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 2ab5c75ba2c2..56020d9fa841 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -25,12 +25,17 @@
- #include <linux/input.h>
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index c406461..e240980 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,6 +20,7 @@
+ 
  #include <linux/kernel.h>
- #include <linux/leds.h>
-+#include <linux/mtd/mtd.h>
-+#include <linux/mtd/partitions.h>
- #include <linux/phy.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
  #include <linux/platform_device.h>
- #include <linux/sh_eth.h>
-+#include <linux/spi/flash.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
++#include <linux/sh_eth.h>
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
  #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
-@@ -148,6 +153,55 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
- };
+@@ -28,6 +29,20 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
-+/* QSPI */
-+static const struct resource qspi_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6b10000, 0x1000),
-+	DEFINE_RES_IRQ_NAMED(gic_spi(184), "mux"),
++/* Ether */
++static const struct sh_eth_plat_data ether_pdata __initconst = {
++	.phy			= 0x00, /* PD60610 */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++	.no_ether_link		= 1
 +};
 +
-+static const struct rspi_plat_data qspi_pdata __initconst = {
-+	.num_chipselect = 1,
++static const struct resource ether_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe8203000, 0x800),
++	DEFINE_RES_MEM(0xe8204800, 0x200),
++	DEFINE_RES_IRQ(gic_iid(359)),
 +};
 +
-+/* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
-+static struct mtd_partition spi_flash_part[] = {
-+	{
-+		.name		= "loader",
-+		.offset		= 0x00000000,
-+		.size		= 512 * 1024,
-+		.mask_flags	= MTD_WRITEABLE,
-+	},
-+	{
-+		.name		= "bootenv",
-+		.offset		= MTDPART_OFS_APPEND,
-+		.size		= 512 * 1024,
-+		.mask_flags	= MTD_WRITEABLE,
-+	},
-+	{
-+		.name		= "data",
-+		.offset		= MTDPART_OFS_APPEND,
-+		.size		= MTDPART_SIZ_FULL,
-+	},
-+};
-+
-+static const struct flash_platform_data spi_flash_data = {
-+	.name		= "m25p80",
-+	.parts		= spi_flash_part,
-+	.nr_parts	= ARRAY_SIZE(spi_flash_part),
-+	.type		= "s25fl512s",
-+};
-+
-+static const struct spi_board_info spi_info[] __initconst = {
-+	{
-+		.modalias	= "m25p80",
-+		.platform_data	= &spi_flash_data,
-+		.mode		= SPI_MODE_0,
-+		.max_speed_hz	= 30000000,
-+		.bus_num	= 0,
-+		.chip_select	= 0,
-+	},
-+};
-+
- /* SATA0 */
- static const struct resource sata0_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xee300000, 0x2000),
-@@ -180,6 +234,11 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 				  "eth_rmii", "eth"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
- 				  "intc_irq0", "intc"),
-+	/* QSPI */
-+	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
-+				  "qspi_ctrl", "qspi"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
-+				  "qspi_data4", "qspi"),
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
- 				  "scif0_data_d", "scif0"),
-@@ -205,6 +264,11 @@ static void __init koelsch_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
- 				      &koelsch_keys_pdata,
- 				      sizeof(koelsch_keys_pdata));
-+	platform_device_register_resndata(&platform_bus, "qspi", 0,
-+					  qspi_resources,
-+					  ARRAY_SIZE(qspi_resources),
-+					  &qspi_pdata, sizeof(qspi_pdata));
-+	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ /* RSPI */
+ #define RSPI_RESOURCE(idx, baseaddr, irq)				\
+ static const struct resource rspi##idx##_resources[] __initconst = {	\
+@@ -67,6 +82,11 @@ static void __init genmai_add_standard_devices(void)
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
  
- 	koelsch_add_du_device();
- 
++	platform_device_register_resndata(&platform_bus, "r7s72100-ether", -1,
++					  ether_resources,
++					  ARRAY_SIZE(ether_resources),
++					  &ether_pdata, sizeof(ether_pdata));
++
+ 	r7s72100_register_rspi(0);
+ 	r7s72100_register_rspi(1);
+ 	r7s72100_register_rspi(2);
 -- 
-1.7.9.5
+1.8.5.2
 
