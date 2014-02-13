@@ -1,39 +1,92 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:33 +0000
-Subject: [PATCH 13/13] ARM: shmobile: ape6evm: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <0771ddff31186836f62a20c42e7958bd37f7b4ed.1391651074.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:59 +0000
+Subject: [PATCH 10/12] ARM: shmobile: r8a7791 clock: add QSPI clocks
+Message-Id: <39e6191cfa96d80da5bf4223dbfe9e9ac9266270.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-DEVTMPFS is needed for udev
+The QSPI clock divider value depends on the MD1, MD2, and MD3 mode
+switches.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/ape6evm_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-index cb26c62..bb396c0 100644
---- a/arch/arm/configs/ape6evm_defconfig
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -48,6 +48,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6_SIT is not set
- CONFIG_NETFILTER=y
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_FW_LOADER_USER_HELPER is not set
- CONFIG_NETDEVICES=y
- # CONFIG_NET_CADENCE is not set
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index e4e4dfa..c8227b3 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -101,6 +101,7 @@ static struct clk main_clk = {
+  */
+ SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
+ SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
+ 
+ /* fixed ratio clock */
+ SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
+@@ -124,6 +125,7 @@ static struct clk *main_clks[] = {
+ 	&pll3_clk,
+ 	&hp_clk,
+ 	&p_clk,
++	&qspi_clk,
+ 	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
+@@ -135,6 +137,7 @@ static struct clk *main_clks[] = {
+ /* MSTP */
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
++	MSTP917,
+ 	MSTP815, MSTP814,
+ 	MSTP813,
+ 	MSTP811, MSTP810, MSTP809,
+@@ -154,6 +157,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+ 	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
+ 	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
++	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+ 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
+ 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+ 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
+@@ -195,6 +199,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("zs",		&zs_clk),
+ 	CLKDEV_CON_ID("hp",		&hp_clk),
+ 	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("rclk",		&rclk_clk),
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
+@@ -220,6 +225,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+@@ -271,6 +277,11 @@ void __init r8a7791_clock_init(void)
+ 		break;
+ 	}
+ 
++	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
++	else
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
+ 
 -- 
 1.8.5.2
 
