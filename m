@@ -1,43 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 05 Feb 2014 10:31:41 +0000
-Subject: Re: [PATCH 0/2] clk: shmobile rcar-gen2 fixes
-Message-Id: <15127900.Wy8QsPfEr8@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:56 +0000
+Subject: [GIT PULL 00/12] Second Round of Renesas ARM Based SoC Updates for v3.15
+Message-Id: <cover.1392277789.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389113273-10364-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <CAMuHMdUVGAL_h8iezPHZsmfC+77xXE9+irNywk4LYcqAMk9JGg@mail.gmail.com>
- <1591253.8BzYfubhGS@avalon>
-In-Reply-To: <1591253.8BzYfubhGS@avalon>
+References: <cover.1387891831.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1387891831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Mike,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Ping ?
+please consider this second round of Renesas ARM Based SoC updates for v3.15.
 
-v3.14-rc1 is out, and those are bug fixes.
+This pull-request is based on the first round of such changes,
+tagged as renesas-soc-for-v3.15, which I have previously sent a
+pull-request for.
 
-On Wednesday 08 January 2014 00:06:39 Laurent Pinchart wrote:
-> On Tuesday 07 January 2014 17:59:01 Geert Uytterhoeven wrote:
-> > On Tue, Jan 7, 2014 at 5:47 PM, Laurent Pinchart wrote:
-> > > Geert, could you please verify that the series fixes your QSPI clock
-> > > issues with the Koelsch board ?
-> > > 
-> > > Laurent Pinchart (2):
-> > >   clk: shmobile: rcar-gen2: Fix clock parent all non-PLL clocks
-> > >   clk: shmobile: rcar-gen2: Fix qspi divisor
-> > 
-> > Thanks, both:
-> > 
-> > Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> 
-> Thank you.
-> 
-> Mike, could you please pick those patches up for v3.14 ?
 
--- 
-Regards,
+The following changes since commit 012a7069b5a10a0851584d71a1facdc40a972319:
 
-Laurent Pinchart
+  ARM: shmobile: r8a7790: Add PCI USB host clock support (2014-02-04 10:25:03 +0900)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.15
+
+for you to fetch changes up to 74b9ba5f35fbd071f313781498a9e244bcc6f03e:
+
+  ARM: shmobile: r8a7790: Correct SYS DMAC clock defines (2014-02-07 09:24:07 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Updates for v3.15
+
+* r7s72100 SoC (RZ/A1H)
+  - Add clock for SH Ethernet
+  - Add RSPI clocks
+
+* r8a7791 (R-Car M2)
+  - Add QSPI clocks
+  - Use 64-bit dma_addr_t
+
+* r8a7790 (R-Car H2)
+  - Correct SYS DMAC clock defines
+  - Add audio clock
+  - Add CA15-SCU, CA7-SCU
+  - Add SYSC setup code
+  - Use 64-bit dma_addr_t
+
+----------------------------------------------------------------
+Gaku Inami (1):
+      ARM: shmobile: r8a7790 CA7-SCU enablement
+
+Geert Uytterhoeven (3):
+      ARM: shmobile: r7s72100 clock: Add RSPI clocks
+      ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+      ARM: shmobile: r8a7791 clock: add QSPI clocks
+
+Hisashi Nakamura (1):
+      ARM: shmobile: r8a7790 SYSC setup code
+
+Keita Kobayashi (1):
+      ARM: shmobile: r8a7790 CA15-SCU enablement
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7778: add audio clock in new style
+      ARM: shmobile: r8a7790: add audio clock
+
+Magnus Damm (2):
+      ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
+      ARM: shmobile: Break out R-Car SYSC PM code
+
+Simon Horman (2):
+      ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+      ARM: shmobile: r8a7790: Correct SYS DMAC clock defines
+
+ arch/arm/boot/dts/r8a7790.dtsi                |  23 +++++
+ arch/arm/mach-shmobile/Kconfig                |   3 +
+ arch/arm/mach-shmobile/Makefile               |   3 +-
+ arch/arm/mach-shmobile/clock-r7s72100.c       |  30 +++++-
+ arch/arm/mach-shmobile/clock-r8a7778.c        |   4 +
+ arch/arm/mach-shmobile/clock-r8a7790.c        |  20 ++++
+ arch/arm/mach-shmobile/clock-r8a7791.c        |  11 ++
+ arch/arm/mach-shmobile/include/mach/pm-rcar.h |  15 +++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  13 +--
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |   1 +
+ arch/arm/mach-shmobile/pm-r8a7779.c           | 131 ++----------------------
+ arch/arm/mach-shmobile/pm-r8a7790.c           |  45 ++++++++
+ arch/arm/mach-shmobile/pm-rcar.c              | 142 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7779.c          |  17 +--
+ arch/arm/mach-shmobile/smp-r8a7790.c          |  17 +++
+ include/dt-bindings/clock/r8a7790-clock.h     |   4 +-
+ 16 files changed, 331 insertions(+), 148 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/pm-rcar.h
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7790.c
+ create mode 100644 arch/arm/mach-shmobile/pm-rcar.c
