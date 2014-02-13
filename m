@@ -1,44 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:38 +0000
-Subject: [PATCH 03/17] ARM: shmobile: koelsch: (1+1)GiB memory in DT
-Message-Id: <4cd1bad45182c7f1426353d73a481e0260d236b1.1391665761.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:34 +0000
+Subject: [PATCH 2/4] ARM: shmobile: lager: add sound support on defconfig
+Message-Id: <90bdadf5b05be16e7ba663ba8b9e42d20dcef861.1392276997.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
+References: <cover.1392276997.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276997.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Fix dts to have memory 1GiB @ 0_4000_0000 + 1GiB @ 2_0000_0000
-according to Koelsch's hardware manual.
-
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ arch/arm/configs/lager_defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index c6f5de3..d30527d 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -23,7 +23,12 @@
- 
- 	memory@40000000 {
- 		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+
-+	memory@200000000 {
-+		device_type = "memory";
-+		reg = <2 0x00000000 0 0x40000000>;
- 	};
- 
- 	lbsc {
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 3e7e0ae..b17f487 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -105,6 +105,10 @@ CONFIG_VIDEO_RCAR_VIN=y
+ CONFIG_VIDEO_ADV7180=y
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=y
++CONFIG_SOUND=y
++CONFIG_SND=y
++CONFIG_SND_SOC=y
++CONFIG_SND_SOC_RCAR=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
 -- 
 1.8.5.2
 
