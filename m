@@ -1,77 +1,18 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 19 Feb 2014 22:22:32 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: lager: add Ether DT support
-Message-Id: <201402200222.32265.sergei.shtylyov@cogentembedded.com>
+From: Ian Molton <ian.molton@codethink.co.uk>
+Date: Thu, 13 Feb 2014 11:11:08 +0000
+Subject: Re: [Linux-kernel] [PATCH 5/5] shdmac: wire r8a7790
+Message-Id: <52FCA84C.5000603@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402200218.23099.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402200218.23099.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the Lager board dependent part of the Ether device node. 
+On 12/02/14 22:23, Sergei Shtylyov wrote:
+>     In this case, it might have been worth marking them as RFC (request
+> for comments) in the subject. RFC patches are not applied.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Yes, I think this would be why Ben marked the entire series as RFC in 
+his cover note...
 
----
-Changes in version 2:
-- moved PHY pin node phandle from PHY device node to the Ether device node, thus
-  removing all pin control properties from the PHY node;
-- resolved reject.
-
- arch/arm/boot/dts/r8a7790-lager.dts |   28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
-
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -1,7 +1,8 @@
- /*
-  * Device Tree Source for the Lager board
-  *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded, Inc.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -124,6 +125,16 @@
- 		renesas,function = "scif0";
- 	};
- 
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq0";
-+		renesas,function = "intc";
-+	};
-+
- 	scif1_pins: serial1 {
- 		renesas,groups = "scif1_data";
- 		renesas,function = "scif1";
-@@ -150,6 +161,21 @@
- 	};
- };
- 
-+&ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
-+
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "ok";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+	};
-+};
-+
- &mmcif1 {
- 	pinctrl-0 = <&mmc1_pins>;
- 	pinctrl-names = "default";
+-Ian
