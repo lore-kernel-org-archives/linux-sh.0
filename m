@@ -1,60 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:45 +0000
-Subject: [PATCH 07/27] clocksource: sh_cmt: Replace kmalloc + memset with kzalloc
-Message-Id: <1392339605-20691-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 13 Feb 2014 14:48:04 +0000
+Subject: Re: [PATCH v2 0/2] ARM: shmobile: r8a779[01]: Add SSI clocks in device tree
+Message-Id: <5275812.0DfTgYCuTW@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-One kzalloc a day keeps the bugs away.
+Hi Mike,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clocksource/sh_cmt.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+On Wednesday 25 December 2013 21:34:33 Laurent Pinchart wrote:
+> Hello,
+> 
+> These two patches add the SSI clocks to the r8a7790 and r8a7791 device tree.
+> 
+> Compared to v1, the SSIn clocks now reference their parent using index 0
+> instead of index R8A779[01]_CLK_SSI (which is equal to 5). The clocks
+> property is used to look up the clock parent name (possibly before the
+> clock parent is even registered), not the clock parent itself. As clock
+> parent names are always looked up directly by index, replace the clock
+> provider index by the parent index in the clock-output-names list.
+> 
+> Mike, is this the correct thing to do ? The different meanings of the clocks
+> property depending on whether it's located in a clock provider node or a
+> clock consumer node are not really intuitive. This should probably be
+> documented in Documentation/devicetree/bindings/clock/clock-bindings.txt.
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 0796460..cd3121d 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -673,8 +673,6 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
- {
- 	struct clock_event_device *ced = &ch->ced;
- 
--	memset(ced, 0, sizeof(*ced));
--
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
- 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
-@@ -710,7 +708,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 	int irq;
- 	int ret;
- 
--	memset(ch, 0, sizeof(*ch));
- 	ch->cmt = cmt;
- 	ch->base = cmt->mapbase_ch;
- 	ch->index = index;
-@@ -760,7 +757,6 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 	int ret;
- 	ret = -ENXIO;
- 
--	memset(cmt, 0, sizeof(*cmt));
- 	cmt->pdev = pdev;
- 
- 	if (!cfg) {
-@@ -863,7 +859,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
- 		goto out;
- 	}
- 
--	cmt = kmalloc(sizeof(*cmt), GFP_KERNEL);
-+	cmt = kzalloc(sizeof(*cmt), GFP_KERNEL);
- 	if (cmt = NULL) {
- 		dev_err(&pdev->dev, "failed to allocate driver data\n");
- 		return -ENOMEM;
+Ping ?
+
+> Laurent Pinchart (2):
+>   ARM: shmobile: r8a7790: Add SSI clocks in device tree
+>   ARM: shmobile: r8a7791: Add SSI clocks in device tree
+> 
+>  arch/arm/boot/dts/r8a7790.dtsi            | 18 ++++++++++++++++++
+>  arch/arm/boot/dts/r8a7791.dtsi            | 18 ++++++++++++++++++
+>  include/dt-bindings/clock/r8a7790-clock.h | 13 +++++++++++++
+>  include/dt-bindings/clock/r8a7791-clock.h | 13 +++++++++++++
+>  4 files changed, 62 insertions(+)
+
 -- 
-1.8.3.2
+Regards,
+
+Laurent Pinchart
 
