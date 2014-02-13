@@ -1,58 +1,33 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 12 Feb 2014 17:04:34 +0000
-Subject: [PATCH 2/2] ARM: lager: add i2c1, i2c2 pins
-Message-Id: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 13 Feb 2014 00:27:50 +0000
+Subject: Re: [PATCH 2/2] ARM: lager: add i2c1, i2c2 pins
+Message-Id: <87k3czdfgc.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
-to ensure these are setup correctly at initialisation time. The i2c0
-and i2c3 busses are connected to single function pins.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Hi Ben
+
+> Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
+> to ensure these are setup correctly at initialisation time. The i2c0
+> and i2c3 busses are connected to single function pins.
+> 
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+
+Thank you for your patches,
+but, just "i2c support" patch (= [1/2] + [2/2]) is understandable / readable :)
+
+And, about Subject
+
+- ARM: lager: xxx
++ ARM: shmobile: lager: xxx
+
+Best regards
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 890e39d..300ab20 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -80,6 +80,16 @@
- 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
- 		renesas,function = "mmc1";
- 	};
-+
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
-+
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
- };
- 
- &mmcif1 {
-@@ -102,10 +112,14 @@
- 
- &i2c1	{
- 	status = "ok";
-+	pinctrl-0 = <&i2c1_pins>;
-+	pinctrl-names = "default";
- };
- 
- &i2c2	{
- 	status = "ok";
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
- };
- 
- &i2c3	{
--- 
-1.8.5.3
-
+Kuninori Morimoto
