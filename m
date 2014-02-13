@@ -1,35 +1,56 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 26 Feb 2014 18:11:23 +0000
-Subject: [PATCH 5/5 v2 RFC] ARM: koelsch: Add PCIe to defconfig
-Message-Id: <1393438283-10542-6-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:03:48 +0000
+Subject: [PATCH 01/11] ARM: shmobile: Lager: pass Ether PHY IRQ
+Message-Id: <5812b8b2bcc35e7928c0e5616bbe35a0e97c7749.1392276547.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1392276547.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+trigger type to be low-level as per the Micrel PHY driver's setup.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/koelsch_defconfig |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index c59768e..adb67d5 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -20,6 +20,9 @@ CONFIG_MACH_KOELSCH=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
-+CONFIG_PCIEPORTBUS=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_NR_CPUS=8
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index fdcc868..30ebd08 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -22,6 +22,7 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/mmc/host.h>
+@@ -233,6 +234,7 @@ static const struct resource mmcif1_resources[] __initconst = {
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+ 	.phy			= 0x1,
++	.phy_irq		= irq_pin(0),
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+@@ -618,6 +620,8 @@ static void __init lager_init(void)
+ {
+ 	lager_add_standard_devices();
+ 
++	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++
+ 	if (IS_ENABLED(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
+ 					  lager_ksz8041_fixup);
 -- 
-1.7.9.5
+1.8.5.2
 
