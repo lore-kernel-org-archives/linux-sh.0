@@ -1,66 +1,93 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:46 +0000
-Subject: [PATCH v2 16/40] clocksource: sh_cmt: Hardcode CMT clock source rating to 125
-Message-Id: <1393603090-23144-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:03:55 +0000
+Subject: [PATCH 08/11] ARM: shmobile: genmai legacy: Add RSPI support
+Message-Id: <664517474c4993c5d560d0e394c36583b7c99535.1392276547.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392276547.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All boards use or should use a clock source rating of 125 for the CMT,
-hardcode it in the driver.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add RSPI platform device, resources, platform data, and SPI child.
+
+On this board, only rspi4 is in use. Its bus contains a single device
+(a wm8978 audio codec).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-genmai.c | 44 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 75b1f83..c753efc 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -656,12 +656,12 @@ static void sh_cmt_clocksource_resume(struct clocksource *cs)
- }
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 3e92e3c..c406461 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -20,15 +20,59 @@
  
- static int sh_cmt_register_clocksource(struct sh_cmt_channel *ch,
--				       const char *name, unsigned long rating)
-+				       const char *name)
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/spi/rspi.h>
++#include <linux/spi/spi.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* RSPI */
++#define RSPI_RESOURCE(idx, baseaddr, irq)				\
++static const struct resource rspi##idx##_resources[] __initconst = {	\
++	DEFINE_RES_MEM(baseaddr, 0x24),					\
++	DEFINE_RES_IRQ_NAMED(irq, "error"),				\
++	DEFINE_RES_IRQ_NAMED(irq + 1, "rx"),				\
++	DEFINE_RES_IRQ_NAMED(irq + 2, "tx"),				\
++}
++
++RSPI_RESOURCE(0, 0xe800c800, gic_iid(270));
++RSPI_RESOURCE(1, 0xe800d000, gic_iid(273));
++RSPI_RESOURCE(2, 0xe800d800, gic_iid(276));
++RSPI_RESOURCE(3, 0xe800e000, gic_iid(279));
++RSPI_RESOURCE(4, 0xe800e800, gic_iid(282));
++
++static const struct rspi_plat_data rspi_pdata __initconst = {
++	.num_chipselect	= 1,
++};
++
++#define r7s72100_register_rspi(idx)					   \
++	platform_device_register_resndata(&platform_bus, "rspi-rz", idx,   \
++					rspi##idx##_resources,		   \
++					ARRAY_SIZE(rspi##idx##_resources), \
++					&rspi_pdata, sizeof(rspi_pdata))
++
++static const struct spi_board_info spi_info[] __initconst = {
++	{
++		.modalias               = "wm8978",
++		.max_speed_hz           = 5000000,
++		.bus_num                = 4,
++		.chip_select            = 0,
++	},
++};
++
+ static void __init genmai_add_standard_devices(void)
  {
- 	struct clocksource *cs = &ch->cs;
- 
- 	cs->name = name;
--	cs->rating = rating;
-+	cs->rating = 125;
- 	cs->read = sh_cmt_clocksource_read;
- 	cs->enable = sh_cmt_clocksource_enable;
- 	cs->disable = sh_cmt_clocksource_disable;
-@@ -788,13 +788,13 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ 	r7s72100_clock_init();
+ 	r7s72100_add_dt_devices();
++
++	r7s72100_register_rspi(0);
++	r7s72100_register_rspi(1);
++	r7s72100_register_rspi(2);
++	r7s72100_register_rspi(3);
++	r7s72100_register_rspi(4);
++	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
  }
  
- static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
--			   bool clockevent, unsigned long clocksource_rating)
-+			   bool clockevent, bool clocksource)
- {
- 	if (clockevent)
- 		sh_cmt_register_clockevent(ch, name);
- 
--	if (clocksource_rating)
--		sh_cmt_register_clocksource(ch, name, clocksource_rating);
-+	if (clocksource)
-+		sh_cmt_register_clocksource(ch, name);
- 
- 	return 0;
- }
-@@ -827,7 +827,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 
- 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
- 			      cfg->clockevent_rating != 0,
--			      cfg->clocksource_rating);
-+			      cfg->clocksource_rating != 0);
- 	if (ret) {
- 		dev_err(&cmt->pdev->dev, "ch%u: registration failed\n",
- 			ch->index);
+ static const char * const genmai_boards_compat_dt[] __initconst = {
 -- 
-1.8.3.2
+1.8.5.2
 
