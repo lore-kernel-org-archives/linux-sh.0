@@ -1,16 +1,31 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Feb 2014 06:57:00 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: koelsch: Enable I2C in defconfig
-Message-Id: <20140206065700.GD17591@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 05:19:35 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: Enable SDHI in defconfig
+Message-Id: <1392268775-2072-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391539703-5787-4-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1391539703-5787-4-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 04, 2014 at 10:48:22PM +0400, Valentine Barshak wrote:
-> This enables I2C support in koelsch_defconfig.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/koelsch_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Thanks, I have queued this up.
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 9561139..f4e221f 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -73,6 +73,8 @@ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ # CONFIG_HID is not set
+ # CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
+ CONFIG_NEW_LEDS=y
+ CONFIG_LEDS_CLASS=y
+ # CONFIG_IOMMU_SUPPORT is not set
+-- 
+1.8.5.2
+
