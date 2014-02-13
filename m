@@ -1,91 +1,145 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 19 Feb 2014 16:54:38 +0000
-Subject: Re: [PATCH 2/3] renesas: change to using clock-indices
-Message-Id: <1434831.ezXEVDfyi7@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 13 Feb 2014 08:26:18 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Remove KZM9D board code
+Message-Id: <20140213082618.30630.64196.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <20140213082558.30630.93034.sendpatchset@w520>
+In-Reply-To: <20140213082558.30630.93034.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Magnus Damm <damm@opensource.se>
 
-On Wednesday 19 February 2014 15:34:39 Magnus Damm wrote:
-> On Tue, Feb 18, 2014 at 9:14 PM, Laurent Pinchart wrote:
-> > On Tuesday 18 February 2014 10:50:07 Magnus Damm wrote:
-> >> On Sat, Feb 15, 2014 at 10:20 PM, Geert Uytterhoeven wrote:
-> >> > On Fri, Feb 14, 2014 at 3:34 PM, Laurent Pinchart wrote:
-> >> >>> >> Regarding how to roll it into the SoC code, I feel that this patch
-> >> >>> >> [2/3] and next patch [3/3] potentially causes breakage with the
-> >> >>> >> existing binding that was part of the v3.13 upstream kernel.
-> >> >>> > 
-> >> >>> > If I'm not mistaken that's v3.14, not v3.13.
-> >> >>> 
-> >> >>> Nope, it's merged in v3.13. Looked it up before sending the email. =)
-> >> >> 
-> >> >> I might be missing something, but
-> >> >> 
-> >> >> $ git log v3.13 --oneline -- drivers/clk/shmobile/ | wc
-> >> >>       0       0       0
-> >> >> $ git log v3.14-rc1 --oneline -- drivers/clk/shmobile/ | wc
-> >> >>       6      48     309
-> >> > 
-> >> > It's the published bindings that count, right?
-> >> 
-> >> Good question. I don't know actually.
-> >> 
-> >> > Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> >> > was added in commit f94859c215b6d977794108a1a9a101239e393c09
-> >> > ("clk: shmobile: Add MSTP clock support").
-> >> > 
-> >> > $ git tag --contains f94859c215b6d977794108a1a9a101239e393c09
-> >> > v3.14-rc1
-> >> > v3.14-rc2
-> >> > $
-> >> > 
-> >> > Now, the bindings must be in flux, as the documentation doesn't match
-> >> > the code, nor the example:
-> >> > 
-> >> > Documentation says:
-> >> > 
-> >> > +  - renesas,indices: Indices of the gate clocks into the group (0 to
-> >> > 31)
-> >> > 
-> >> > Example and implementation use "renesas,clock-indices":
-> >> >                 renesas,clock-indices = <
-> >> >                         R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1
-> >> >                         R8A7790_CLK_SDHI3
-> >> >                         R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1
-> >> >                         R8A7790_CLK_SDHI0
-> >> >                         R8A7790_CLK_MMCIF0
-> >> >                 >;
-> >> > 
-> >> > Woops...
-> >> 
-> >> Thanks for spotting this. I believe Laurent will fix this up in the not
-> >> so distant future.
-> > 
-> > I plan to wait for Mike to comment on Ben's patches before addressing
-> > this.
-> 
-> Can you please explain about the reason behind this? I may not have
-> enough detailed understanding about this matter, but to me it looks
-> like two separate issues that somehow are combined together:
-> 
-> A) patch series from ben - development targeted at future merge windows
-> B) patch to fix inconsistency between documentation and actual code -
-> fix for targeted for -rc?
-> 
-> So regardless what the community decision is about A) we probably want
-> to fix B) anyway, no?
+Get rid of KZM9D board code written in C. This version of the
+C board code was used in the case of multiplatform, but these
+days DT can be used instead, so because of that simply get rid
+of the C code to simplify and save space.
 
-My bad, I had v3.15 in mind, for which I thought there would be no need to fix 
-this if Ben's patches were accepted. I'll submit a patch for v3.14-rc.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
--- 
-Regards,
+ arch/arm/mach-shmobile/Kconfig                 |    6 ---
+ arch/arm/mach-shmobile/Makefile                |    1 
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |   47 ------------------------
+ arch/arm/mach-shmobile/include/mach/emev2.h    |    8 ----
+ arch/arm/mach-shmobile/setup-emev2.c           |    3 +
+ arch/arm/mach-shmobile/smp-emev2.c             |    1 
+ 6 files changed, 2 insertions(+), 64 deletions(-)
 
-Laurent Pinchart
-
+--- 0010/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-02-05 18:27:53.000000000 +0900
+@@ -48,12 +48,6 @@ config MACH_KOELSCH
+ 	depends on ARCH_R8A7791
+ 	select MICREL_PHY if SH_ETH
+ 
+-config MACH_KZM9D
+-	bool "KZM9D board"
+-	depends on ARCH_EMEV2
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select SMSC_PHY if SMSC911X
+-
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+--- 0010/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-02-05 18:27:53.000000000 +0900
+@@ -57,7 +57,6 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+-obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+--- 0001/arch/arm/mach-shmobile/board-kzm9d-reference.c
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,47 +0,0 @@
+-/*
+- * kzm9d board support - Reference DT implementation
+- *
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/init.h>
+-#include <linux/of_platform.h>
+-#include <linux/clk-provider.h>
+-#include <mach/emev2.h>
+-#include <mach/common.h>
+-#include <asm/mach/arch.h>
+-
+-static void __init kzm9d_add_standard_devices(void)
+-{
+-	of_clk_init(NULL);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+-static const char *kzm9d_boards_compat_dt[] __initdata = {
+-	"renesas,kzm9d",
+-	"renesas,kzm9d-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(KZM9D_DT, "kzm9d")
+-	.smp		= smp_ops(emev2_smp_ops),
+-	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
+-	.init_machine	= kzm9d_add_standard_devices,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= kzm9d_boards_compat_dt,
+-MACHINE_END
+--- 0010/arch/arm/mach-shmobile/include/mach/emev2.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,8 +0,0 @@
+-#ifndef __ASM_EMEV2_H__
+-#define __ASM_EMEV2_H__
+-
+-extern void emev2_map_io(void);
+-extern void emev2_init_delay(void);
+-extern struct smp_operations emev2_smp_ops;
+-
+-#endif /* __ASM_EMEV2_H__ */
+--- 0010/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-02-05 18:27:53.000000000 +0900
+@@ -21,7 +21,6 @@
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <mach/common.h>
+-#include <mach/emev2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+@@ -59,6 +58,8 @@ static const char *emev2_boards_compat_d
+ 	NULL,
+ };
+ 
++extern struct smp_operations emev2_smp_ops;
++
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+--- 0001/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2014-02-05 18:27:53.000000000 +0900
+@@ -24,7 +24,6 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <mach/common.h>
+-#include <mach/emev2.h>
+ #include <asm/smp_plat.h>
+ #include <asm/smp_scu.h>
+ 
