@@ -1,45 +1,106 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:50 +0000
-Subject: [PATCH 12/27] clocksource: sh_cmt: Acquire default clock in the non-legacy case
-Message-Id: <1392339605-20691-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:52 +0000
+Subject: [PATCH 03/12] ARM: shmobile: r8a7790 SYSC setup code
+Message-Id: <c5db707d70a10f7acb35b909f0f8f8bc97140087.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The sh_cmt driver gets the CMT functional clock using a connection ID of
-"cmt_fck". While all SH SoCs create clock lookup entries with a NULL
-device ID and a "cmt_fck" connection ID, the ARM SoCs use the device ID
-only with a NULL connection ID. This works on legacy platforms but will
-break on ARM with DT boot.
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-Fix the situation by using a NULL connection ID in the non-legacy
-platform data case. Clock lookup entries will be renamed as platforms
-get moved to new platform data. The legacy code will eventually be
-dropped, leaving us with device ID based clock lookup only, compatible
-with DT boot.
+Add r8a7790 SYSC power management support.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Makefile               |  1 +
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
+ arch/arm/mach-shmobile/pm-r8a7790.c           | 45 +++++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7790.c
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 8390f0f..2389e33 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -1013,7 +1013,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 	cmt->legacy = cmt->info ? false : true;
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 7bc450c..d38a636 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
  
- 	/* Get hold of clock. */
--	cmt->clk = clk_get(&cmt->pdev->dev, "cmt_fck");
-+	cmt->clk = clk_get(&cmt->pdev->dev, cmt->legacy ? "cmt_fck" : NULL);
- 	if (IS_ERR(cmt->clk)) {
- 		dev_err(&cmt->pdev->dev, "cannot get clock\n");
- 		return PTR_ERR(cmt->clk);
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 2177325..0b95bab 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -32,6 +32,7 @@ void r8a7790_add_standard_devices(void);
+ void r8a7790_add_dt_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
++void r8a7790_pm_init(void);
+ void r8a7790_init_early(void);
+ extern struct smp_operations r8a7790_smp_ops;
+ 
+diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
+new file mode 100644
+index 0000000..fc82839
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-r8a7790.c
+@@ -0,0 +1,45 @@
++/*
++ * r8a7790 Power management support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/kernel.h>
++#include <asm/io.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7790.h>
++
++/* SYSC */
++#define SYSCIER 0x0c
++#define SYSCIMR 0x10
++
++#if defined(CONFIG_SMP)
++
++static void __init r8a7790_sysc_init(void)
++{
++	void __iomem *base = rcar_sysc_init(0xe6180000);
++
++	/* enable all interrupt sources, but do not use interrupt handler */
++	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0, base + SYSCIMR);
++}
++
++#else /* CONFIG_SMP */
++
++static inline void r8a7790_sysc_init(void) {}
++
++#endif /* CONFIG_SMP */
++
++void __init r8a7790_pm_init(void)
++{
++	static int once;
++
++	if (!once++)
++		r8a7790_sysc_init();
++}
 -- 
-1.8.3.2
+1.8.5.2
 
