@@ -1,64 +1,78 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 05 Feb 2014 10:19:06 +0000
-Subject: [PATCH 03/11] ARM: shmbobile: r8a7790.dtsi: add pci0/1/2 nodes
-Message-Id: <1391595554-20640-4-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:57 +0000
+Subject: [PATCH 08/12] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+Message-Id: <24ae129be242afd58dfbf4de2232a5bc4b0c55ff.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add nodes for USB PCI bridge devices.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Cc: devicetree@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: horms+renesas@verge.net.au
----
- arch/arm/boot/dts/r8a7790.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index ba0ef9a..d52d32e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -752,4 +752,34 @@
- 				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
- 	};
-+
-+	pci0: pci@ee090000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	pci1: pci@ee0b0000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0b0000 0x0 0xc00>,
-+		      <0x0 0xee0a0000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	pci2: pci@ee0d0000  {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index dd8ce87..ffb0fff 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -22,12 +22,14 @@
+ #include <mach/common.h>
+ #include <mach/r7s72100.h>
+ 
+-/* registers */
++/* Frequency Control Registers */
+ #define FRQCR		0xfcfe0010
+ #define FRQCR2		0xfcfe0014
++/* Standby Control Registers */
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
+ #define STBCR9		0xfcfe0438
++#define STBCR10		0xfcfe043c
+ 
+ #define PLL_RATE 30
+ 
+@@ -145,11 +147,19 @@ struct clk div4_clks[DIV4_NR] = {
+ 					| CLK_ENABLE_ON_INIT),
  };
+ 
+-enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++enum {
++	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
++	MSTP97, MSTP96, MSTP95, MSTP94,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+-	MSTP33,	MSTP_NR };
++	MSTP33,	MSTP_NR
++};
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
++	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
++	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
++	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
++	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
+ 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+@@ -176,6 +186,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ 
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("rspi-rz.0", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("rspi-rz.1", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
 -- 
-1.8.5.3
+1.8.5.2
 
