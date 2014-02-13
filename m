@@ -1,101 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:59 +0000
-Subject: [PATCH 21/27] ARM: shmobile: r8a7791: Switch to new style CMT device
-Message-Id: <1392339605-20691-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:33 +0000
+Subject: [PATCH 1/4] ARM: shmobile: koelsch: Enable I2C in defconfig
+Message-Id: <ab44f75f1142edde5737203a0d259853f34686fb.1392276997.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1392276997.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276997.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This enables I2C support in koelsch_defconfig.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
- arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c           | 26 +++++++++++++++---------
- 3 files changed, 18 insertions(+), 12 deletions(-)
+ arch/arm/configs/koelsch_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 46879d6..e67a4be7 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -39,7 +39,7 @@ static void __init koelsch_add_standard_devices(void)
- 
- 	clk = clk_get(NULL, "cmt0");
- 	if (!IS_ERR(clk)) {
--		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_register_clkdev(clk, NULL, "sh-cmt-48-gen2.0");
- 		clk_put(clk);
- 	}
- #else
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index fc9248d..4dac973 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -224,7 +224,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
--	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 605f4cf..a17ebb8 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -128,20 +128,26 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
- 					  &scif##index##_platform_data,	       \
- 					  sizeof(scif##index##_platform_data))
- 
--static const struct sh_timer_config cmt00_platform_data __initconst = {
--	.name = "CMT00",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_channel_config cmt0_channels[] = {
-+	{
-+		.index = 0,
-+		.clockevent_rating = 80,
-+	},
- };
- 
--static const struct resource cmt00_resources[] __initconst = {
--	DEFINE_RES_MEM(0xffca0510, 0x0c),
--	DEFINE_RES_MEM(0xffca0500, 0x04),
--	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+static struct sh_timer_config cmt0_platform_data = {
-+	.channels = cmt0_channels,
-+	.num_channels = ARRAY_SIZE(cmt0_channels),
-+	.channels_mask = 0x1f,
-+};
-+
-+static struct resource cmt0_resources[] = {
-+	DEFINE_RES_MEM(0xffca0000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(142)),
- };
- 
- #define r8a7791_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -185,7 +191,7 @@ static const struct resource thermal_resources[] __initconst = {
- 
- void __init r8a7791_add_dt_devices(void)
- {
--	r8a7791_register_cmt(00);
-+	r8a7791_register_cmt(0);
- }
- 
- void __init r8a7791_add_standard_devices(void)
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 3015797..c3b3c9d 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -62,6 +62,8 @@ CONFIG_SH_ETH=y
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS 
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
 -- 
-1.8.3.2
+1.8.5.2
 
