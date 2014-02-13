@@ -1,263 +1,135 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Mon, 24 Feb 2014 09:30:03 +0000
-Subject: [PATCH V5 3/4] ARM: shmobile: koelsch: Add USBHS and internal PCI USB support
-Message-Id: <1393234204-24096-4-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:04:46 +0000
+Subject: [PATCH 1/3] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
+Message-Id: <4b18e83f5d77c783d2d2092d0015ccda5fecaa8c.1392275963.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
+References: <cover.1392275963.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392275963.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-This adds the following to R-Car M2 Koelsch board:
-- USBHS PHY
-- USBHS device in usb0
-- internal PCI USB host device on usb1
-
-USBHS is configured for usb0 and cable id is checked at probe.
-USB PCI is configured for usb1.
-
-The USB phy is bound to ether USB host or USBHS device respectively, hence
-configured to ether channel 0 or 2 for usb0 and usb1.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
-Changes in V5:
-* get rid from PCI USB on usb0
-* moved MAX3355E ID pin check in usbhs probe
-
-Changes in V4:
-* folded USBHS and internal PCI USB related patches together
-* added handling of ID pin from MAX3355E chip
-* removed ifdefs
-
-Changes in V3:
-* fixed a typo in the log message;
-* fixed the USB1 device name in the pinmux table.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag;
-* added pipe_type array to the usbhs platform info since it differs from the default.
-
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c |  172 +++++++++++++++++++++++++++++++++
- 1 file changed, 172 insertions(+)
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts |  2 +-
+ arch/arm/boot/dts/r7s72100.dtsi                 | 75 +++++++++++++++++++++++++
+ 2 files changed, 76 insertions(+), 1 deletion(-)
 
-Index: build/arch/arm/mach-shmobile/board-koelsch.c
-=================================--- build.orig/arch/arm/mach-shmobile/board-koelsch.c	2014-02-24 11:48:43.221536471 +0400
-+++ build/arch/arm/mach-shmobile/board-koelsch.c	2014-02-24 12:14:30.933504710 +0400
-@@ -36,12 +36,15 @@
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <linux/platform_data/usb-rcar-gen2-phy.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/driver.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/gpio-regulator.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
-+#include <linux/usb/phy.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <linux/spi/flash.h>
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
-@@ -367,6 +370,168 @@
- 	DEFINE_RES_IRQ(gic_spi(168)),
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index da19c70..0849017 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "r7s72100.dtsi"
++#include "r7s72100.dtsi"
+ 
+ / {
+ 	model = "Genmai";
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 46b82aa..9be67a1 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -8,12 +8,22 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/interrupt-controller/irq.h>
++
+ / {
+ 	compatible = "renesas,r7s72100";
+ 	interrupt-parent = <&gic>;
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 
++	aliases {
++		spi0 = &spi0;
++		spi1 = &spi1;
++		spi2 = &spi2;
++		spi3 = &spi3;
++		spi4 = &spi4;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -33,4 +43,69 @@
+ 		reg = <0xe8201000 0x1000>,
+ 			<0xe8202000 0x1000>;
+ 	};
++
++	spi0: spi@e800c800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800c800 0x24>;
++		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi1: spi@e800d000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d000 0x24>;
++		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi2: spi@e800d800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800d800 0x24>;
++		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi3: spi@e800e000 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e000 0x24>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	spi4: spi@e800e800 {
++		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
++		reg = <0xe800e800 0x24>;
++		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error", "rx", "tx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
  };
- 
-+/* USBHS */
-+static const struct resource usbhs_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590000, 0x100),
-+	DEFINE_RES_IRQ(gic_spi(107)),
-+};
-+
-+struct usbhs_private {
-+	struct renesas_usbhs_platform_info info;
-+	struct usb_phy *phy;
-+};
-+
-+#define usbhs_get_priv(pdev) \
-+	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
-+
-+static int usbhs_power_ctrl(struct platform_device *pdev,
-+				void __iomem *base, int enable)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return -ENODEV;
-+
-+	if (enable) {
-+		int retval = usb_phy_init(priv->phy);
-+
-+		if (!retval)
-+			retval = usb_phy_set_suspend(priv->phy, 0);
-+		return retval;
-+	}
-+
-+	usb_phy_set_suspend(priv->phy, 1);
-+	usb_phy_shutdown(priv->phy);
-+	return 0;
-+}
-+
-+static int usbhs_hardware_init(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+	struct usb_phy *phy;
-+	int ret;
-+
-+	/* Check MAX3355E ID pin */
-+	gpio_request_one(RCAR_GP_PIN(5, 31), GPIOF_IN, NULL);
-+	if (!gpio_get_value(RCAR_GP_PIN(5, 31))) {
-+		pr_warn("Error: USB0 cable selects host mode\n");
-+		ret = -ENOTSUPP;
-+		goto error;
-+	}
-+
-+	phy = usb_get_phy_dev(&pdev->dev, 0);
-+	if (IS_ERR(phy))
-+		return PTR_ERR(phy);
-+
-+	priv->phy = phy;
-+	return 0;
-+
-+error:
-+	gpio_free(RCAR_GP_PIN(5, 31));
-+	return ret;
-+}
-+
-+static int usbhs_hardware_exit(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return 0;
-+
-+	usb_put_phy(priv->phy);
-+	priv->phy = NULL;
-+
-+	gpio_free(RCAR_GP_PIN(5, 31));
-+	return 0;
-+}
-+
-+static int usbhs_get_id(struct platform_device *pdev)
-+{
-+	return USBHS_GADGET;
-+}
-+
-+static u32 koelsch_usbhs_pipe_type[] = {
-+	USB_ENDPOINT_XFER_CONTROL,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+};
-+
-+static struct usbhs_private usbhs_priv __initdata = {
-+	.info = {
-+		.platform_callback = {
-+			.power_ctrl	= usbhs_power_ctrl,
-+			.hardware_init	= usbhs_hardware_init,
-+			.hardware_exit	= usbhs_hardware_exit,
-+			.get_id		= usbhs_get_id,
-+		},
-+		.driver_param = {
-+			.buswait_bwait	= 4,
-+			.pipe_type = koelsch_usbhs_pipe_type,
-+			.pipe_size = ARRAY_SIZE(koelsch_usbhs_pipe_type),
-+		},
-+	}
-+};
-+
-+static void __init koelsch_add_usb0_gadget(void)
-+{
-+	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_resndata(&platform_bus,
-+					  "renesas_usbhs", -1,
-+					  usbhs_resources,
-+					  ARRAY_SIZE(usbhs_resources),
-+					  &usbhs_priv.info,
-+					  sizeof(usbhs_priv.info));
-+}
-+
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static void __init koelsch_add_usb1_host(void)
-+{
-+	platform_device_register_simple("pci-rcar-gen2",
-+					1, pci1_resources,
-+					ARRAY_SIZE(pci1_resources));
-+}
-+
-+/* USBHS PHY */
-+static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
-+	.chan0_pci = 0,	/* Channel 0 is USBHS */
-+	.chan2_pci = 1,	/* Channel 2 is PCI USB host */
-+};
-+
-+static const struct resource usbhs_phy_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590100, 0x100),
-+};
-+
-+/* Add all available USB devices */
-+static void __init koelsch_add_usb_devices(void)
-+{
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	koelsch_add_usb0_gadget();
-+	koelsch_add_usb1_host();
-+}
-+
- static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 	/* DU */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
-@@ -429,6 +594,12 @@
- 				  "sdhi2_ctrl", "sdhi2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7791",
- 				  "sdhi2_cd", "sdhi2"),
-+	/* USB0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7791",
-+				  "usb0", "usb0"),
-+	/* USB1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("pci-rcar-gen2.1", "pfc-r8a7791",
-+				  "usb1", "usb1"),
- };
- 
- static void __init koelsch_add_standard_devices(void)
-@@ -485,6 +656,7 @@
- 					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
- 					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
- 
-+	koelsch_add_usb_devices();
- }
- 
- /*
+-- 
+1.8.5.2
+
