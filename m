@@ -1,54 +1,42 @@
-From: Bobby Bingham <koorogi@koorogi.info>
-Date: Wed, 19 Feb 2014 06:03:15 +0000
-Subject: [PATCH v2 2/3] sh: remove unused do_fpu_error
-Message-Id: <0645431563b3c6782171218dc5b65461c8bd7dcd.1392789383.git.koorogi@koorogi.info>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 13 Feb 2014 08:25:58 +0000
+Subject: [PATCH 00/03] ARM: shmobile: Clean up the EMEV2 and KZM9D code base
+Message-Id: <20140213082558.30630.93034.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392789383.git.koorogi@koorogi.info>
-In-Reply-To: <cover.1392789383.git.koorogi@koorogi.info>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, linux-sh@vger.kernel.org
-Cc: Bobby Bingham <koorogi@koorogi.info>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This does not appear to have been used since commit
-74d99a5e262229ee865f6f68528d10b82471ead6 (sh: SH-2A FPU support) in
-2007.
+ARM: shmobile: Clean up the EMEV2 and KZM9D code base
 
-Signed-off-by: Bobby Bingham <koorogi@koorogi.info>
+[PATCH 01/03] ARM: shmobile: Remove legacy EMEV2 SoC support
+[PATCH 02/03] ARM: shmobile: Remove KZM9D board code
+[PATCH 03/03] ARM: shmobile: Get rid of legacy KZM9D defconfig
+
+These patches clean up the EMEV2 SoC and the KZM9D board support code.
+
+With these patches applied:
+ - EMEV2 is enabled for the MULTIPLATFORM case only, making use of CCF
+ - KZM9D is implemented as DT code only, no C code exists
+ - The legacy EMEV2 code is gone, so is the legacy clock framework code
+ - The legacy defconfig is gone, making way for a shared multiplatform defconfig
+
+This means that KZM9D support comes without a Kconfig entry. Also,
+the load address for u-boot needs to be supplied by hand (0x40008000).
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/sh/math-emu/math.c | 18 ------------------
- 1 file changed, 18 deletions(-)
 
-diff --git a/arch/sh/math-emu/math.c b/arch/sh/math-emu/math.c
-index b876780..04aa55f 100644
---- a/arch/sh/math-emu/math.c
-+++ b/arch/sh/math-emu/math.c
-@@ -574,24 +574,6 @@ static int ieee_fpe_handler(struct pt_regs *regs)
- 	return 0;
- }
- 
--asmlinkage void do_fpu_error(unsigned long r4, unsigned long r5,
--			     unsigned long r6, unsigned long r7,
--			     struct pt_regs regs)
--{
--	struct task_struct *tsk = current;
--	siginfo_t info;
--
--	if (ieee_fpe_handler (&regs))
--		return;
--
--	regs.pc += 2;
--	info.si_signo = SIGFPE;
--	info.si_errno = 0;
--	info.si_code = FPE_FLTINV;
--	info.si_addr = (void __user *)regs.pc;
--	force_sig_info(SIGFPE, &info, tsk);
--}
--
- /**
-  * fpu_init - Initialize FPU registers
-  * @fpu: Pointer to software emulated FPU registers.
--- 
-1.8.5.5
+ Written against renesas.git tag renesas-devel-v3.14-rc1-20140207
 
+ arch/arm/boot/dts/Makefile                     |    3 
+ arch/arm/configs/kzm9d_defconfig               |   91 ---------
+ arch/arm/mach-shmobile/Kconfig                 |   15 -
+ arch/arm/mach-shmobile/Makefile                |    2 
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |   47 ----
+ arch/arm/mach-shmobile/clock-emev2.c           |  231 ------------------------
+ arch/arm/mach-shmobile/include/mach/emev2.h    |    9 
+ arch/arm/mach-shmobile/setup-emev2.c           |    7 
+ arch/arm/mach-shmobile/smp-emev2.c             |    1 
+ 9 files changed, 3 insertions(+), 403 deletions(-)
