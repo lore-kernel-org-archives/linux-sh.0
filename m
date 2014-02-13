@@ -1,87 +1,133 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:21:01 +0000
-Subject: [PATCH 04/13] ARM: shmobile: r8a7791: Add VIN clocks
-Message-Id: <5f3fbe63b39923294cfd4bce84ab16948467d30f.1391666228.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 13 Feb 2014 04:30:27 +0000
+Subject: [PATCH 2/2 v3] ARM: shmobile: lager: add SDHI0/2 support on DTS
+Message-Id: <87d2ird47z.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391666228.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This adds VIN[0-2] clock support to R8A7791 SoC.
-
-Changes in V2:
-* none.
-
-Changes in V3:
-* capitalized ARM in the subject.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+v2 -> v3
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index fe4a774..191ad60 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -103,6 +103,7 @@ SH_FIXED_RATIO_CLK_SET(hp_clk,			pll1_clk,	1, 12);
- SH_FIXED_RATIO_CLK_SET(p_clk,			pll1_clk,	1, 24);
- SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
-+SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
- SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
- 
- static struct clk *main_clks[] = {
-@@ -117,6 +118,7 @@ static struct clk *main_clks[] = {
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-+	&zg_clk,
- 	&zx_clk,
+ - based on topic/r-car-sdhi
+ - it is using cd-gpios to avoid pm-runtime issue
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   86 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 86 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 1081c5e..d66f073 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -56,6 +56,54 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio5 24 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi0: regulator@2 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio5 29 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi2: regulator@3 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio5 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi2: regulator@4 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI2 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio5 30 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
  };
  
-@@ -124,6 +126,7 @@ static struct clk *main_clks[] = {
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
- 	MSTP813,
-+	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
- 	MSTP522,
-@@ -141,6 +144,9 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP927] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 27, 0), /* I2C4 */
- 	[MSTP925] = SH_CLK_MSTP32(&p_clk, SMSTPCR9, 25, 0), /* I2C5 */
- 	[MSTP813] = SH_CLK_MSTP32(&p_clk, SMSTPCR8, 13, 0), /* Ether */
-+	[MSTP811] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 11, 0), /* VIN0 */
-+	[MSTP810] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8, 10, 0), /* VIN1 */
-+	[MSTP809] = SH_CLK_MSTP32(&zg_clk, SMSTPCR8,  9, 0), /* VIN2 */
- 	[MSTP726] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 26, 0), /* LVDS0 */
- 	[MSTP724] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 24, 0), /* DU0 */
- 	[MSTP723] = SH_CLK_MSTP32(&zx_clk, SMSTPCR7, 23, 0), /* DU1 */
-@@ -172,6 +178,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pll1",		&pll1_clk),
- 	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
- 	CLKDEV_CON_ID("pll3",		&pll3_clk),
-+	CLKDEV_CON_ID("zg",		&zg_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
-@@ -208,6 +215,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.4", &mstp_clks[MSTP927]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.5", &mstp_clks[MSTP925]),
- 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
-+	CLKDEV_DEV_ID("r8a7791-vin.0", &mstp_clks[MSTP811]),
-+	CLKDEV_DEV_ID("r8a7791-vin.1", &mstp_clks[MSTP810]),
-+	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
- };
+ &extal_clk {
+@@ -76,6 +124,16 @@
+ 		renesas,function = "scif1";
+ 	};
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++	sdhi0_pins: sd0 {
++		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sd2 {
++		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
++
+ 	mmc1_pins: mmc1 {
+ 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+ 		renesas,function = "mmc1";
+@@ -95,3 +153,31 @@
+ &sata1 {
+ 	status = "okay";
+ };
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	cap-power-off-card;
++	toshiba,mmc-wrprotect-disable;
++	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi2>;
++	vqmmc-supply = <&vccq_sdhi2>;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	cap-power-off-card;
++	toshiba,mmc-wrprotect-disable;
++	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
 -- 
-1.8.5.2
+1.7.9.5
 
