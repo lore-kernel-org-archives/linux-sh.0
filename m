@@ -1,49 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 13 Feb 2014 03:39:07 +0000
-Subject: [PATCH] regulator: gpio: reborn necessary prop
-Message-Id: <87iosjd6lj.wl%kuninori.morimoto.gx@gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 13 Feb 2014 19:03:00 +0000
+Subject: Re: [PATCH] regulator: gpio: reborn necessary prop
+Message-Id: <20140213190300.GZ28112@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="vD4R8EutdGn5UgVK"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+References: <87iosjd6lj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87iosjd6lj.wl%kuninori.morimoto.gx@gmail.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 Cc: Liam Girdwood <lgirdwood@gmail.com>, Lee Jones <lee.jones@linaro.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-934624d6e9f0b3d41557c4105c286e8daeaadb4e
-(regulator: gpio-regulator: do not open-code counting and access of dt array elements)
-removed struct property *prop from of_get_gpio_regulator_config()
-but, it is still used on
-0094050d783bbadffe83effef11a0bda901153ce
-(regulator: gpio: add gpios-status for DT)
+--vD4R8EutdGn5UgVK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Compile will fail without this patch
+On Wed, Feb 12, 2014 at 07:39:07PM -0800, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> 934624d6e9f0b3d41557c4105c286e8daeaadb4e
+> (regulator: gpio-regulator: do not open-code counting and access of dt ar=
+ray elements)
+> removed struct property *prop from of_get_gpio_regulator_config()
+> but, it is still used on
+> 0094050d783bbadffe83effef11a0bda901153ce
+> (regulator: gpio: add gpios-status for DT)
 
-gpio-regulator.c: In function 'of_get_gpio_regulator_config':
-gpio-regulator.c:174:2: error: 'prop' undeclared (first use in this function)
-gpio-regulator.c:174:2: note: each undeclared identifier is reported \
-	only once for each function it appears in
+Applied, thanks.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-This is for latest mark-regulator/topic/gpio branch
+--vD4R8EutdGn5UgVK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
- drivers/regulator/gpio-regulator.c |    1 +
- 1 file changed, 1 insertion(+)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-diff --git a/drivers/regulator/gpio-regulator.c b/drivers/regulator/gpio-regulator.c
-index 9fd5561..20248c1 100644
---- a/drivers/regulator/gpio-regulator.c
-+++ b/drivers/regulator/gpio-regulator.c
-@@ -136,6 +136,7 @@ static struct gpio_regulator_config *
- of_get_gpio_regulator_config(struct device *dev, struct device_node *np)
- {
- 	struct gpio_regulator_config *config;
-+	struct property *prop;
- 	const char *regtype;
- 	int proplen, gpio, i;
- 	int ret;
--- 
-1.7.9.5
+iQIcBAEBAgAGBQJS/RbhAAoJELSic+t+oim9NNIP/jpdLtn9p988zshkrOVcniFm
+LbPgxrk1cYssNvR++qIf+fz+93vcjZqQ4SDBgjkjgCIJmBcY6wqys4vkiGxR9YJX
+loam9V2ZqUqhxy9NC+xn8EidJLAJHcRH4QiVc0H+X7fIh1Q9UiD3CRUCMJCCVIKL
+va16klszc8PIDwmMm+zoXj/dC2QX8Vuj9nh2Et/p+Xu+sD3awA3m2LcxB0wh3Ce+
+0cYRwOo11Ht4qL9xReYVwd2/Ref0xwfidLBd8eborRw7xc+WR2X/XMoBcaVnIH6D
+1QgvR+YsW06HOAVnQiC3GSNCzfnlUEVr00u+BrdU31O58hTws9+hdslRU4SXB9uq
+S/XAA1PUX9ektk2Lhw6TrCa+lOUsMUQeSzN+AT/UfdS1qIKSWQqRMN9qrr5JWSlb
+/NA0cP1aB38wNrGWXTTkygaoT1O7y/NXgvBZXjULw5dB/R4oVhPLD0igWDCX1so5
+4/JX3g2CQsHU/eW++itZok6g3YfY5AOsgTPTj53Bv8emaqNi4lpTGVGEQ/Nv2B9o
+1UqmQ3ZFFQy4jVYe7pWyojP1RrENDNR4hJFSFe+0cqX3qQQn3+XDJN/+RpT6BcJ5
+m0iylqJq6/orYP9qxKi2V2QJDWntmpcW0x7uwIwzVCYpQpO7v/YrsO4+xyR+YSJA
+eKTGeiFKErVL6rmYq7nC
+=lA6k
+-----END PGP SIGNATURE-----
 
+--vD4R8EutdGn5UgVK--
