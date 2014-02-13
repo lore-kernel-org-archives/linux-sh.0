@@ -1,51 +1,56 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Feb 2014 08:56:48 +0000
-Subject: [PATCH 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
-Message-Id: <1392109008-29941-2-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:50 +0000
+Subject: [PATCH 01/12] ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
+Message-Id: <2b2e7c65166aa4a7d6ca0352b249b38b45680d45.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392109008-29941-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392109008-29941-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
-board code.
+Some on-chip devices on r8a7790 and r8a7791 can do
+bus mastering and access more than 32-bits of address
+space. Select ARCH_DMA_ADDR_T_64BIT when LPAE is set
+in case of multiplatform and legacy SoC support.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Untested due to lack of hardware
+ arch/arm/mach-shmobile/Kconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |   14 ++++++++++++++
- 1 file changed, 14 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 06cda19dac6a..f76f6ec01e19 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -109,4 +109,18 @@
- 	pinctrl-0 = <&hspi0_pins>;
- 	pinctrl-names = "default";
- 	status = "okay";
-+
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl008k";
-+		reg = <0>;
-+		spi-max-frequency = <104000000>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "data(spi)";
-+			reg = <0x00000000 0x00100000>;
-+		};
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 3386406..0272cd7 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -13,6 +13,7 @@ config ARCH_SHMOBILE_MULTI
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select MIGHT_HAVE_PCI
++	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 	select NO_IOPORT
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
+@@ -123,6 +124,7 @@ config ARCH_R8A7790
+ 	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
++	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+@@ -132,6 +134,7 @@ config ARCH_R8A7791
+ 	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
++	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
 -- 
-1.7.9.5
+1.8.5.2
 
