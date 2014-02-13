@@ -1,52 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 04 Feb 2014 14:53:32 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: Lager: pass Ether PHY IRQ
-Message-Id: <201402041853.51460.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:13:54 +0000
+Subject: [PATCH 05/12] ARM: shmobile: r8a7790 CA15-SCU enablement
+Message-Id: <f5046cf88c3232492d776a86262f0ba0b192e575.1392278855.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
+References: <cover.1392277789.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392277789.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
-trigger type to be low-level as per the Micrel PHY driver's setup.
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Power on CA15 SCU in case of booting from a CA7 core.
 
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes in version 2:
-- refreshed the patch.
+ arch/arm/mach-shmobile/smp-r8a7790.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
- arch/arm/mach-shmobile/board-lager.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-lager.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-lager.c
-+++ renesas/arch/arm/mach-shmobile/board-lager.c
-@@ -22,6 +22,7 @@
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
- #include <linux/interrupt.h>
-+#include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
- #include <linux/mmc/host.h>
-@@ -233,6 +234,7 @@ static const struct resource mmcif1_reso
- /* Ether */
- static const struct sh_eth_plat_data ether_pdata __initconst = {
- 	.phy			= 0x1,
-+	.phy_irq		= irq_pin(0),
- 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
- 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
- 	.ether_link_active_low	= 1,
-@@ -618,6 +620,8 @@ static void __init lager_init(void)
- {
- 	lager_add_standard_devices();
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index beb47ae..5910527 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -29,6 +29,11 @@
+ #define CA7RESCNT	0x0044
+ #define MERAM		0xe8080000
  
-+	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++static struct rcar_sysc_ch r8a7790_ca15_scu = {
++	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
++	.isr_bit = 12, /* CA15-SCU */
++};
 +
- 	if (IS_ENABLED(CONFIG_PHYLIB))
- 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
- 					  lager_ksz8041_fixup);
+ static struct rcar_sysc_ch r8a7790_ca7_scu = {
+ 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+ 	.isr_bit = 21, /* CA7-SCU */
+@@ -64,6 +69,7 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ 
+ 	/* turn on power to SCU */
+ 	r8a7790_pm_init();
++	rcar_sysc_power_up(&r8a7790_ca15_scu);
+ 	rcar_sysc_power_up(&r8a7790_ca7_scu);
+ }
+ 
+-- 
+1.8.5.2
+
