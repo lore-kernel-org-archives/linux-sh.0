@@ -1,44 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:09 +0000
-Subject: [PATCH 17/21] ARM: shmobile: marzen: Conditionally select SMSC_PHY
-Message-Id: <317af6612ee29dfcb5ae04df9c58e9f79fc8d4ff.1391665225.git.horms+renesas@verge.net.au>
+Date: Thu, 13 Feb 2014 08:03:49 +0000
+Subject: [PATCH 02/11] ARM: shmobile: Koelsch: pass Ether PHY IRQ
+Message-Id: <29d9f010d7103f2b83ce1c25999a6f3a1e57f5e2.1392276547.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <cover.1392276547.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The marzen board uses has an SMSC911X ethernet controller which uses an
-SMSC phy. Select SMSC_PHY for marzen if SMSC911X is enabled to make use of the
-SMSC-specific phy driver rather than relying on the generic phy driver.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
+trigger type to be low-level as per the Micrel PHY driver's setup.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f8005ef..7e3f42b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -250,6 +250,7 @@ config MACH_MARZEN
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SMSC_PHY if SMSC911X
- 	select USE_OF
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 2ab5c75..1ec3b91 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -23,6 +23,7 @@
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
++#include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
+ #include <linux/phy.h>
+@@ -92,6 +93,7 @@ static void __init koelsch_add_du_device(void)
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+ 	.phy			= 0x1,
++	.phy_irq		= irq_pin(0),
+ 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
+ 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
+ 	.ether_link_active_low	= 1,
+@@ -232,6 +234,8 @@ static void __init koelsch_init(void)
+ {
+ 	koelsch_add_standard_devices();
  
- config MACH_MARZEN_REFERENCE
-@@ -257,6 +258,7 @@ config MACH_MARZEN_REFERENCE
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SMSC_PHY if SMSC911X
- 	select USE_OF
- 	---help---
- 	   Use reference implementation of Marzen board support
++	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
++
+ 	if (IS_ENABLED(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7791-ether-ff:01",
+ 					  koelsch_ksz8041_fixup);
 -- 
 1.8.5.2
 
