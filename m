@@ -1,60 +1,53 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Feb 2014 16:12:27 +0000
+Date: Fri, 14 Feb 2014 16:15:24 +0000
 Subject: Re: [PATCH 23/27] clocksource: sh_cmt: Add DT support
-Message-Id: <1790131.DSZsj6HrSK@avalon>
+Message-Id: <14506828.ROIfyxOcTT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <107109887.afEv2P92gg@avalon>
- <CANqRtoS-d-CW3XX3_E2dgJ83btRZYWiMCYmWUJAPqh9EeBhLEQ@mail.gmail.com>
-In-Reply-To: <CANqRtoS-d-CW3XX3_E2dgJ83btRZYWiMCYmWUJAPqh9EeBhLEQ@mail.gmail.com>
+ <107109887.afEv2P92gg@avalon> <20140214155951.GA22449@joshc.qualcomm.com>
+In-Reply-To: <20140214155951.GA22449@joshc.qualcomm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+Hi Josh,
 
-On Saturday 15 February 2014 01:01:30 Magnus Damm wrote:
-> On Sat, Feb 15, 2014 at 12:53 AM, Laurent Pinchart wrote:
+On Friday 14 February 2014 09:59:51 Josh Cartwright wrote:
+> On Fri, Feb 14, 2014 at 04:53:08PM +0100, Laurent Pinchart wrote:
 > > On Friday 14 February 2014 10:58:22 Mark Rutland wrote:
-> >> On Fri, Feb 14, 2014 at 01:00:01AM +0000, Laurent Pinchart wrote:
-> >> > +Channels Optional Properties:
-> >> > +
-> >> > +  - clock-source-rating: rating of the timer as a clock source device.
-> >> > +  - clock-event-rating: rating of the timer as a clock event device.
-> >> 
-> >> This feels like a leak of Linux internals. Why do you need this?
+> > > On Fri, Feb 14, 2014 at 01:00:01AM +0000, Laurent Pinchart wrote:
+> > > > +Channels Optional Properties:
+> > > > +
+> > > > +  - clock-source-rating: rating of the timer as a clock source
+> > > > device.
+> > > > +  - clock-event-rating: rating of the timer as a clock event device.
+> > > 
+> > > This feels like a leak of Linux internals. Why do you need this?
 > > 
 > > You're right, it is. The clock source and clock event ratings are
 > > currently configured through platform data, I'll need to find a way to
 > > compute them in the driver instead.
-> 
-> That would be very good!
-
-Any pointer would be appreciated :-) How did you compute the various ratings 
-used in platform data all over the place ?
-
+> > 
 > > There's still one piece of Linux-specific data I need though, as I need to
 > > specify for each channel whether to use it as a clock source device, a
 > > clock event device, both of them or none. That's configuration
 > > information that needs to be provided somehow.
 > 
-> I think you can decide clock source or clock event assignment based on
-> number of channels available. If you have only a single channel then both
-> clock event and clock source need to be supported. Otherwise use one channel
-> for clock source and the rest for clock events.
+> Are all the channels equally capable?  We had this problem for the
+> cadence_ttc timer used on Zynq, and decided to just statically allocate
+> the first timer to be the clocksource, and the second to be the
+> clockevent.
 
-That won't match the current situation. Look at CMT0 in r8a7790 for instance. 
-There's two hardware channels available, and we only use the first one, for 
-clock events only.
+No, they're not. The channels can be implemented with different counter 
+widths, different available prescalers and source clocks and different power 
+management features (not all of them are capable to run in all sleep states).
 
-> This is probably out of scope for this DT conversion, but it would be neat
-> if you somehow could specify the CPU affinity for a channel to tie a clock
-> event to an individual CPU core. This would make a a per-cpu timer unless
-> I'm mistaken. But that's more of a software policy than anything else.
+> Also, should the rating really be user configurable?
 
-Yes, that's a configuration that needs to be specified somewhere. I don't know 
-where though.
+Probably not. I suppose the rating should be computed by the driver based on 
+the source clock frequency, prescaler and counter width. Any help there would 
+be very appreciated, I'm pretty new to clock source and clock event devices.
 
 -- 
 Regards,
