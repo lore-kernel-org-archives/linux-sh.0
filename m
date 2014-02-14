@@ -1,7 +1,7 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 14 Feb 2014 14:03:34 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Feb 2014 14:28:42 +0000
 Subject: Re: [PATCH 2/3] renesas: change to using clock-indices
-Message-Id: <52FE2236.1080107@codethink.co.uk>
+Message-Id: <CANqRtoRcZFJcwQUychmR3y0DU1xiHd24=OOGGETXanQR+TJmNg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,22 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 14/02/14 13:21, Laurent Pinchart wrote:
+Hi Laurent,
+
+On Fri, Feb 14, 2014 at 10:21 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
 > Hi Magnus,
 >
 > On Friday 14 February 2014 11:32:08 Magnus Damm wrote:
 >> On Fri, Feb 14, 2014 at 3:02 AM, Ben Dooks wrote:
->>> With the addition of clock-indices, we need to change the renesas
->>> clock implementation to use these instead of the local definition.
->>>
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> ---
->>>
->>>   .../bindings/clock/renesas,cpg-mstp-clocks.txt   |  2 +-
->>>    arch/arm/boot/dts/r8a7790.dtsi                  | 16 ++++++++--------
->>>   arch/arm/boot/dts/r8a7791.dtsi                   | 18 +++++++++---------
->>>   drivers/clk/shmobile/clk-mstp.c                  |  2 +-
->>>   4 files changed, 19 insertions(+), 19 deletions(-)
+>> > With the addition of clock-indices, we need to change the renesas
+>> > clock implementation to use these instead of the local definition.
+>> >
+>> > Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>> > ---
+>> >
+>> >  .../bindings/clock/renesas,cpg-mstp-clocks.txt   |  2 +-
+>> >   arch/arm/boot/dts/r8a7790.dtsi                  | 16 ++++++++--------
+>> >  arch/arm/boot/dts/r8a7791.dtsi                   | 18 +++++++++---------
+>> >  drivers/clk/shmobile/clk-mstp.c                  |  2 +-
+>> >  4 files changed, 19 insertions(+), 19 deletions(-)
 >>
 >> Thanks for your patches! Good to see more common bindings.
 >>
@@ -34,7 +37,9 @@ On 14/02/14 13:21, Laurent Pinchart wrote:
 >> was part of the v3.13 upstream kernel.
 >
 > If I'm not mistaken that's v3.14, not v3.13.
->
+
+Nope, it's merged in v3.13. Looked it up before sending the email. =)
+
 >> I'd like to maintain backwards compatibility for our users. Also, this patch
 >> crosses subsystems which may not be entirely ideal from a merge perspective.
 >>
@@ -56,12 +61,8 @@ On 14/02/14 13:21, Laurent Pinchart wrote:
 > would rather consider the clocks DT bindings as unstable for at least a couple
 > more kernel versions.
 
-:( as someone who is being paid to do this for a real product
+We need to chat more frequently my friend.
 
-In this case at-least the backwards compatibility is only a couple
-of lines to check for the older name.
+Cheers,
 
-
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+/ magnus
