@@ -1,36 +1,39 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Feb 2014 01:57:50 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 14 Feb 2014 02:19:30 +0000
 Subject: Re: [PATCH/RFC] ARM: shmobile: Add defconfig for shmobile mulitplatfom
-Message-Id: <CANqRtoTT4iY4Bx_EFrXD810ygrXW8WyVN-f5ggnpDY0n1FqPWg@mail.gmail.com>
+Message-Id: <20140214021924.GA29260@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392337944-4000-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1392337944-4000-1-git-send-email-horms+renesas@verge.net.au>
+ <CANqRtoTT4iY4Bx_EFrXD810ygrXW8WyVN-f5ggnpDY0n1FqPWg@mail.gmail.com>
+In-Reply-To: <CANqRtoTT4iY4Bx_EFrXD810ygrXW8WyVN-f5ggnpDY0n1FqPWg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+On Fri, Feb 14, 2014 at 10:57:50AM +0900, Magnus Damm wrote:
+> Hi Simon,
+> 
+> On Fri, Feb 14, 2014 at 9:32 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > This is intended to be a base for a defconfig to cover all
+> > shmobile multiplatform boards. It currently includes configuration
+> > for the following boards:
+> >
+> > * KZM9D
+> > * Lager
+> > * Koelsch
+> >
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> Thanks for this! This shared defconfig looks like a good first step.
+> 
+> Regarding KZM9D, I believe the board is using a SMSC chip for
+> ethernet. Also EMEV2 is using EM_STI for timer. If you go decided to
+> make a V2 then can you please make sure those are included? We can
+> also deal with it incrementally.
 
-On Fri, Feb 14, 2014 at 9:32 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> This is intended to be a base for a defconfig to cover all
-> shmobile multiplatform boards. It currently includes configuration
-> for the following boards:
->
-> * KZM9D
-> * Lager
-> * Koelsch
->
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Sure, I will make v2.
 
-Thanks for this! This shared defconfig looks like a good first step.
-
-Regarding KZM9D, I believe the board is using a SMSC chip for
-ethernet. Also EMEV2 is using EM_STI for timer. If you go decided to
-make a V2 then can you please make sure those are included? We can
-also deal with it incrementally.
-
-Thanks,
-
-/ magnus
+I suspect there are other things I missed.
+But I'm happy to fix up the ones we know about now.
