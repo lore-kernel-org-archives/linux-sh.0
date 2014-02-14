@@ -1,69 +1,91 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Feb 2014 00:57:53 +0000
-Subject: Re: [PATCH 2/3] mmc: sh-mmcif: add DMA SG synchronisation
-Message-Id: <20140204005752.GD24787@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:54 +0000
+Subject: [PATCH 16/27] ARM: shmobile: sh7372: Switch to new style CMT device
+Message-Id: <1392339605-20691-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1401311237080.3234@axis700.grange>
- <Pine.LNX.4.64.1401311249070.3234@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1401311249070.3234@axis700.grange>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 31, 2014 at 12:54:29PM +0100, Guennadi Liakhovetski wrote:
-> According to the DMA API data has to be synchronised before starting
-> a DMA transfer to device and after completing a DMA transfer from device.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-sh7372.c |  6 +++---
+ arch/arm/mach-shmobile/setup-sh7372.c | 30 ++++++++++++++----------------
+ 2 files changed, 17 insertions(+), 19 deletions(-)
 
-> ---
->  drivers/mmc/host/sh_mmcif.c |   18 ++++++++++--------
->  1 files changed, 10 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index d032b08..902780c 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -345,6 +345,8 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
->  			 DMA_TO_DEVICE);
->  	if (ret > 0) {
->  		host->dma_active = true;
-> +		dma_sync_sg_for_device(chan->device->dev, sg, data->sg_len,
-> +				       DMA_TO_DEVICE);
->  		desc = dmaengine_prep_slave_sg(chan, sg, ret,
->  			DMA_MEM_TO_DEV, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
->  	}
-> @@ -1118,14 +1120,14 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
->  	time = wait_for_completion_interruptible_timeout(&host->dma_complete,
->  							 host->timeout);
->  
-> -	if (data->flags & MMC_DATA_READ)
-> -		dma_unmap_sg(host->chan_rx->device->dev,
-> -			     data->sg, data->sg_len,
-> -			     DMA_FROM_DEVICE);
-> -	else
-> -		dma_unmap_sg(host->chan_tx->device->dev,
-> -			     data->sg, data->sg_len,
-> -			     DMA_TO_DEVICE);
-> +	if (data->flags & MMC_DATA_READ) {
-> +		struct device *dev = host->chan_rx->device->dev;
-> +		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
-> +		dma_sync_sg_for_cpu(dev, data->sg, data->sg_len, DMA_FROM_DEVICE);
-> +	} else {
-> +		struct device *dev = host->chan_tx->device->dev;
-> +		dma_unmap_sg(dev, data->sg, data->sg_len, DMA_TO_DEVICE);
-> +	}
->  
->  	if (host->sd_error) {
->  		dev_err(host->mmc->parent,
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 2848997..5557b3d 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -565,10 +565,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
+ 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs.1", &mstp_clks[MSTP406]), /* USB1 */
+-	CLKDEV_DEV_ID("sh_cmt.4", &mstp_clks[MSTP405]), /* CMT4 */
+-	CLKDEV_DEV_ID("sh_cmt.3", &mstp_clks[MSTP404]), /* CMT3 */
++	CLKDEV_DEV_ID("sh-cmt-32-fast.4", &mstp_clks[MSTP405]), /* CMT4 */
++	CLKDEV_DEV_ID("sh-cmt-32-fast.3", &mstp_clks[MSTP404]), /* CMT3 */
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+-	CLKDEV_DEV_ID("sh_cmt.2", &mstp_clks[MSTP400]), /* CMT2 */
++	CLKDEV_DEV_ID("sh-cmt-32-fast.2", &mstp_clks[MSTP400]), /* CMT2 */
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 2730127..3e524d5 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -118,29 +118,27 @@ SH7372_SCIF(PORT_SCIFA, 5, 0xe6cb0000, evt2irq(0x0d40));
+ SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
+ 
+ /* CMT */
++static struct sh_timer_channel_config cmt2_channels[] = {
++	{
++		.index = 0,
++		.clockevent_rating = 125,
++		.clocksource_rating = 125,
++	},
++};
++
+ static struct sh_timer_config cmt2_platform_data = {
+-	.name = "CMT2",
+-	.channel_offset = 0x40,
+-	.timer_bit = 5,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++	.channels = cmt2_channels,
++	.num_channels = ARRAY_SIZE(cmt2_channels),
++	.channels_mask = 0x1f,
+ };
+ 
+ static struct resource cmt2_resources[] = {
+-	[0] = {
+-		.name	= "CMT2",
+-		.start	= 0xe6130040,
+-		.end	= 0xe613004b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0x0b80), /* CMT2 */
+-		.flags	= IORESOURCE_IRQ,
+-	},
++	DEFINE_RES_MEM(0xe6130000, 0x50),
++	DEFINE_RES_IRQ(evt2irq(0x0b80)),
+ };
+ 
+ static struct platform_device cmt2_device = {
+-	.name		= "sh_cmt",
++	.name		= "sh-cmt-32-fast",
+ 	.id		= 2,
+ 	.dev = {
+ 		.platform_data	= &cmt2_platform_data,
+-- 
+1.8.3.2
+
