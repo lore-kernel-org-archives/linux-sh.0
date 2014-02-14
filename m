@@ -1,77 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:23 +0000
-Subject: [PATCH 11/16] ARM: shmobile: Lager: set proper DMA masks for Ether device
-Message-Id: <5d5a87a5b6572426f8eae6e26ebcf9664d2d001a.1392960310.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:52 +0000
+Subject: [PATCH 14/27] clocksource: sh_cmt: Sort headers alphabetically
+Message-Id: <1392339605-20691-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392960310.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This helps locating duplicates and inserting new headers.
 
-Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
-'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
-ability.
-
-Currently, the code works without DMA masks but as we would have to enable
-CONFIG_HIGHMEM to access the full board memory in the future, when support for
-NETIF_F_SG would be added to the 'sh_eth' driver as well, the correct DMA masks
-should start to matter...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+ drivers/clocksource/sh_cmt.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 193dff0..f0104bf 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -1,8 +1,9 @@
- /*
-  * Lager board support
-  *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014  Renesas Solutions Corp.
-  * Copyright (C) 2013  Magnus Damm
-+ * Copyright (C) 2014  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -275,6 +276,17 @@ static const struct resource ether_resources[] __initconst = {
- 	DEFINE_RES_IRQ(gic_spi(162)),
- };
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 9f5616b..077879b 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -13,23 +13,23 @@
+  * GNU General Public License for more details.
+  */
  
-+static const struct platform_device_info ether_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "r8a7790-ether",
-+	.id		= -1,
-+	.res		= ether_resources,
-+	.num_res	= ARRAY_SIZE(ether_resources),
-+	.data		= &ether_pdata,
-+	.size_data	= sizeof(ether_pdata),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
- /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
- static struct mtd_partition spi_flash_part[] = {
- 	/* Reserved for user loader program, read-only */
-@@ -791,10 +803,7 @@ static void __init lager_add_standard_devices(void)
- 					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
- 					  &mmcif1_pdata, sizeof(mmcif1_pdata));
++#include <linux/clk.h>
++#include <linux/clockchips.h>
++#include <linux/clocksource.h>
++#include <linux/delay.h>
++#include <linux/err.h>
+ #include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+-#include <linux/ioport.h>
+ #include <linux/io.h>
+-#include <linux/clk.h>
++#include <linux/ioport.h>
+ #include <linux/irq.h>
+-#include <linux/err.h>
+-#include <linux/delay.h>
+-#include <linux/clocksource.h>
+-#include <linux/clockchips.h>
+-#include <linux/sh_timer.h>
+-#include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
++#include <linux/sh_timer.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
  
--	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
--					  ether_resources,
--					  ARRAY_SIZE(ether_resources),
--					  &ether_pdata, sizeof(ether_pdata));
-+	platform_device_register_full(&ether_info);
- 
- 	lager_add_du_device();
+ struct sh_cmt_device;
  
 -- 
-1.8.5.2
+1.8.3.2
 
