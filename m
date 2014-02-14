@@ -1,56 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Feb 2014 16:15:24 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Feb 2014 17:22:00 +0000
 Subject: Re: [PATCH 23/27] clocksource: sh_cmt: Add DT support
-Message-Id: <14506828.ROIfyxOcTT@avalon>
+Message-Id: <CANqRtoROALpUqi8rKWRpQk7LGc0BqU14AKg-2MgYBMNoEFGA4Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <107109887.afEv2P92gg@avalon> <20140214155951.GA22449@joshc.qualcomm.com>
-In-Reply-To: <20140214155951.GA22449@joshc.qualcomm.com>
+ <107109887.afEv2P92gg@avalon>
+ <CANqRtoS-d-CW3XX3_E2dgJ83btRZYWiMCYmWUJAPqh9EeBhLEQ@mail.gmail.com>
+ <1790131.DSZsj6HrSK@avalon>
+In-Reply-To: <1790131.DSZsj6HrSK@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Josh,
+Hi Laurent,
 
-On Friday 14 February 2014 09:59:51 Josh Cartwright wrote:
-> On Fri, Feb 14, 2014 at 04:53:08PM +0100, Laurent Pinchart wrote:
-> > On Friday 14 February 2014 10:58:22 Mark Rutland wrote:
-> > > On Fri, Feb 14, 2014 at 01:00:01AM +0000, Laurent Pinchart wrote:
-> > > > +Channels Optional Properties:
-> > > > +
-> > > > +  - clock-source-rating: rating of the timer as a clock source
-> > > > device.
-> > > > +  - clock-event-rating: rating of the timer as a clock event device.
-> > > 
-> > > This feels like a leak of Linux internals. Why do you need this?
-> > 
-> > You're right, it is. The clock source and clock event ratings are
-> > currently configured through platform data, I'll need to find a way to
-> > compute them in the driver instead.
-> > 
-> > There's still one piece of Linux-specific data I need though, as I need to
-> > specify for each channel whether to use it as a clock source device, a
-> > clock event device, both of them or none. That's configuration
-> > information that needs to be provided somehow.
-> 
-> Are all the channels equally capable?  We had this problem for the
-> cadence_ttc timer used on Zynq, and decided to just statically allocate
-> the first timer to be the clocksource, and the second to be the
-> clockevent.
+On Sat, Feb 15, 2014 at 1:12 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> On Saturday 15 February 2014 01:01:30 Magnus Damm wrote:
+>> On Sat, Feb 15, 2014 at 12:53 AM, Laurent Pinchart wrote:
+>> > On Friday 14 February 2014 10:58:22 Mark Rutland wrote:
+>> >> On Fri, Feb 14, 2014 at 01:00:01AM +0000, Laurent Pinchart wrote:
+>> >> > +Channels Optional Properties:
+>> >> > +
+>> >> > +  - clock-source-rating: rating of the timer as a clock source device.
+>> >> > +  - clock-event-rating: rating of the timer as a clock event device.
+>> >>
+>> >> This feels like a leak of Linux internals. Why do you need this?
+>> >
+>> > You're right, it is. The clock source and clock event ratings are
+>> > currently configured through platform data, I'll need to find a way to
+>> > compute them in the driver instead.
+>>
+>> That would be very good!
+>
+> Any pointer would be appreciated :-) How did you compute the various ratings
+> used in platform data all over the place ?
 
-No, they're not. The channels can be implemented with different counter 
-widths, different available prescalers and source clocks and different power 
-management features (not all of them are capable to run in all sleep states).
+Historically we used the rating to select between CMT and TMU. For
+clock sources I suppose you also have the jiffy rating to consider.
+And for the SMP parts we have ARM IP for TWD and arch timers that have
+their ratings too. So you need to check all the timers on a particular
+system and consider what you want to have operating by default. The
+ARM IP timers should be preferred if available. For clock sources the
+rule is probably the higher resolution the better.
 
-> Also, should the rating really be user configurable?
+>> > There's still one piece of Linux-specific data I need though, as I need to
+>> > specify for each channel whether to use it as a clock source device, a
+>> > clock event device, both of them or none. That's configuration
+>> > information that needs to be provided somehow.
+>>
+>> I think you can decide clock source or clock event assignment based on
+>> number of channels available. If you have only a single channel then both
+>> clock event and clock source need to be supported. Otherwise use one channel
+>> for clock source and the rest for clock events.
+>
+> That won't match the current situation. Look at CMT0 in r8a7790 for instance.
+> There's two hardware channels available, and we only use the first one, for
+> clock events only.
 
-Probably not. I suppose the rating should be computed by the driver based on 
-the source clock frequency, prescaler and counter width. Any help there would 
-be very appreciated, I'm pretty new to clock source and clock event devices.
+You are correct. The reason for that is that the CMT driver today is
+optimized for combined clock event and clock source operation.
 
--- 
-Regards,
+Historically the hardware it initially was written for (sh-mobile on
+the SH arch) only had a single timer channel so combined operation was
+required for tickless to work. But since you're asking how to allocate
+channels then I propose checking numbers of channels available and go
+from there. With that the r8a7790 support can only get better. =)
 
-Laurent Pinchart
+>> This is probably out of scope for this DT conversion, but it would be neat
+>> if you somehow could specify the CPU affinity for a channel to tie a clock
+>> event to an individual CPU core. This would make a a per-cpu timer unless
+>> I'm mistaken. But that's more of a software policy than anything else.
+>
+> Yes, that's a configuration that needs to be specified somewhere. I don't know
+> where though.
 
+As long as you have per-channel interrupts described in DT you can
+probably handle this in a generic way in the driver.
+
+Thanks,
+
+/ magnus
