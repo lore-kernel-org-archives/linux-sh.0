@@ -1,31 +1,81 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:51:44 +0000
-Subject: [PATCH 00/02] ARM: shmobile: Lager DT Reference USB PCI support
-Message-Id: <20140224075144.20255.59443.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:43 +0000
+Subject: [PATCH 05/27] clocksource: sh_cmt: Add memory base to sh_cmt_channel structure
+Message-Id: <1392339605-20691-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Lager DT Reference USB PCI support
+The channel memory base is channel-specific, add it to the channel
+structure in preparation for support of multiple channels per device.
 
-[PATCH 01/02] ARM: shmobile: Lager DT USB PCI pinctrl setup via DTS
-[PATCH 02/02] ARM: shmobile: Lager DT USB PCI platform devices
-
-Enable USB1 and USB2 on the Lager board in case of Multiplatform
-and DT reference board support. The devices are supported via a mix
-of DTS (for pinctrl) and platform device (actual PCI device) when
-DT bindings are not yet ready. This series allows us to move one
-step closer towards being able to retire the Lager legacy code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/clocksource/sh_cmt.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
- Written against renesas.git tag renesas-devel-v3.14-rc3-20140224
- on top of "[PATCH 00/12] ARM: shmobile: Rework include path for SoC files"
- and "[PATCH 00/03] ARM: shmobile: Break out and extend clock workaround"
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 1ac84ff..ec10cf4 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -40,6 +40,7 @@ struct sh_cmt_device;
+ struct sh_cmt_channel {
+ 	struct sh_cmt_device *cmt;
+ 
++	void __iomem *base;
+ 	struct irqaction irqaction;
+ 
+ 	unsigned long flags;
+@@ -132,12 +133,12 @@ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
++	return ch->cmt->read_control(ch->base, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
++	return ch->cmt->read_count(ch->base, CMCNT);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+@@ -149,19 +150,19 @@ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
++	ch->cmt->write_control(ch->base, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
++	ch->cmt->write_count(ch->base, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
++	ch->cmt->write_count(ch->base, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+@@ -704,6 +705,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
+ 
+ 	memset(ch, 0, sizeof(*ch));
+ 	ch->cmt = cmt;
++	ch->base = cmt->mapbase_ch;
+ 
+ 	/* Request irq using setup_irq() (too early for request_irq()). */
+ 	irq = platform_get_irq(cmt->pdev, 0);
+-- 
+1.8.3.2
 
- arch/arm/boot/dts/r8a7790-lager.dts            |   12 +++++-
- arch/arm/mach-shmobile/board-lager-reference.c |   46 ++++++++++++++++++++++++
- 2 files changed, 57 insertions(+), 1 deletion(-)
