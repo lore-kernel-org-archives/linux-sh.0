@@ -1,111 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 01:00:05 +0000
-Subject: [PATCH 27/27] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-Message-Id: <1392339605-20691-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 14 Feb 2014 13:47:45 +0000
+Subject: Re: [PATCH 27/27] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+Message-Id: <52FE1E81.2040101@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1392339605-20691-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable the CMT0 device and configure channel 0 as a clock event
-provider.
+Hello.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts            |  9 +++++++++
- arch/arm/mach-shmobile/board-koelsch-reference.c | 15 +--------------
- arch/arm/mach-shmobile/include/mach/r8a7791.h    |  1 -
- arch/arm/mach-shmobile/setup-r8a7791.c           |  7 +------
- 4 files changed, 11 insertions(+), 21 deletions(-)
+On 14-02-2014 5:00, Laurent Pinchart wrote:
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 42fd5eb..36e1c33 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -130,6 +130,15 @@
- 	};
- };
- 
-+&cmt0 {
-+	status = "ok";
-+
-+	channel@0 {
-+		reg = <0>;
-+		clock-event-rating = <80>;
-+	};
-+};
-+
- &sata0 {
- 	status = "okay";
- };
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index e67a4be7..abcb8da 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -30,22 +30,9 @@
- 
- static void __init koelsch_add_standard_devices(void)
- {
--#ifdef CONFIG_COMMON_CLK
--	/*
--	 * This is a really crude hack to provide clkdev support to the CMT
--	 * device until they get moved to DT.
--	 */
--	struct clk *clk;
--
--	clk = clk_get(NULL, "cmt0");
--	if (!IS_ERR(clk)) {
--		clk_register_clkdev(clk, NULL, "sh-cmt-48-gen2.0");
--		clk_put(clk);
--	}
--#else
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7791_clock_init();
- #endif
--	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 200fa69..57a37f1 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -2,7 +2,6 @@
- #define __ASM_R8A7791_H__
- 
- void r8a7791_add_standard_devices(void);
--void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
- void r8a7791_init_early(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index a17ebb8..c1e9c0f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -189,11 +189,6 @@ static const struct resource thermal_resources[] __initconst = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
- 
--void __init r8a7791_add_dt_devices(void)
--{
--	r8a7791_register_cmt(0);
--}
--
- void __init r8a7791_add_standard_devices(void)
- {
- 	r8a7791_register_scif(0);
-@@ -211,7 +206,7 @@ void __init r8a7791_add_standard_devices(void)
- 	r8a7791_register_scif(12);
- 	r8a7791_register_scif(13);
- 	r8a7791_register_scif(14);
--	r8a7791_add_dt_devices();
-+	r8a7791_register_cmt(0);
- 	r8a7791_register_irqc(0);
- 	r8a7791_register_thermal();
- }
--- 
-1.8.3.2
+> Enable the CMT0 device and configure channel 0 as a clock event
+> provider.
+
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>   arch/arm/boot/dts/r8a7791-koelsch.dts            |  9 +++++++++
+>   arch/arm/mach-shmobile/board-koelsch-reference.c | 15 +--------------
+>   arch/arm/mach-shmobile/include/mach/r8a7791.h    |  1 -
+>   arch/arm/mach-shmobile/setup-r8a7791.c           |  7 +------
+
+    The latter 2 files are worth splitting into a separate patch as well...
+
+>   4 files changed, 11 insertions(+), 21 deletions(-)
+
+WBR, Sergei
 
