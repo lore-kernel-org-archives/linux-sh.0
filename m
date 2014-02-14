@@ -1,79 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:26 +0000
-Subject: [PATCH v3 10/20] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
-Message-Id: <1393400016-23433-11-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:46 +0000
+Subject: [PATCH 08/27] clocksource: sh_cmt: Allocate channels dynamically
+Message-Id: <1392339605-20691-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-r8a7779_earlytimer_init() calls r8a7779_clock_init() and
-r8a7779_clock_init() is defined in clock-r8a7779.c.
+This prepares the driver for multi-channel support.
 
-If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
-as will be the case when marzen-reference moves to use
-the common clock framework, then setup-r8a7779.c is compiled
-but clock-r8a7779.c is not.
-
-As r8a7779_earlytimer_init() is not used by marzen-reference
-simply move it to clock-r8a7779.c.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
- 2 files changed, 11 insertions(+), 10 deletions(-)
+ drivers/clocksource/sh_cmt.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index b1a5065..e4fc7df 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <linux/sh_timer.h>
- #include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r8a7779.h>
-@@ -263,3 +264,13 @@ void __init r8a7779_clock_init(void)
- 	else
- 		panic("failed to setup r8a7779 clocks\n");
- }
-+
-+/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-+void __init __weak r8a7779_register_twd(void) { }
-+
-+void __init r8a7779_earlytimer_init(void)
-+{
-+	r8a7779_clock_init();
-+	r8a7779_register_twd();
-+	shmobile_earlytimer_init();
-+}
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index f6aeb7f..f28b8c7 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -714,16 +714,6 @@ void __init r8a7779_add_standard_devices(void)
- 	r8a7779_register_hpb_dmae();
- }
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index cd3121d..7a65d64 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -63,7 +63,8 @@ struct sh_cmt_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
  
--/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
--void __init __weak r8a7779_register_twd(void) { }
--
--void __init r8a7779_earlytimer_init(void)
--{
--	r8a7779_clock_init();
--	r8a7779_register_twd();
--	shmobile_earlytimer_init();
--}
--
- void __init r8a7779_add_early_devices(void)
- {
- 	early_platform_add_devices(r8a7779_devices_dt,
+-	struct sh_cmt_channel channel;
++	struct sh_cmt_channel *channels;
++	unsigned int num_channels;
+ 
+ 	unsigned long width; /* 16 or 32 bit version of hardware block */
+ 	unsigned long overflow_bit;
+@@ -824,7 +825,15 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 		cmt->clear_bits = ~0xc000;
+ 	}
+ 
+-	ret = sh_cmt_setup_channel(&cmt->channel, cfg->timer_bit, cmt);
++	cmt->channels = kzalloc(sizeof(*cmt->channels), GFP_KERNEL);
++	if (cmt->channels = NULL) {
++		ret = -ENOMEM;
++		goto err4;
++	}
++
++	cmt->num_channels = 1;
++
++	ret = sh_cmt_setup_channel(&cmt->channels[0], cfg->timer_bit, cmt);
+ 	if (ret < 0)
+ 		goto err4;
+ 
+@@ -832,6 +841,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 
+ 	return 0;
+ err4:
++	kfree(cmt->channels);
+ 	clk_unprepare(cmt->clk);
+ err3:
+ 	clk_put(cmt->clk);
 -- 
-1.8.5.2
+1.8.3.2
 
