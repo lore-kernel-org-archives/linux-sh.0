@@ -1,34 +1,40 @@
-From: Benoit Cousson <bcousson@baylibre.com>
-Date: Wed, 26 Feb 2014 23:09:50 +0000
-Subject: [RFC 4/4] ARM: shmobile: Make r8a77900 CPUFreq capable
-Message-Id: <1393456190-7870-5-git-send-email-bcousson@baylibre.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:51 +0000
+Subject: [PATCH 13/27] clocksource: sh_cmt: Remove FSF mail address from GPL notice
+Message-Id: <1392339605-20691-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Mark r8a77900 platform as CPUFreq capable
-on multiplatform build only.
+Do not include the paragraph about writing to the Free Software
+Foundation's mailing address from the sample GPL notice. The FSF has
+changed addresses in the past, and may do so again. Linux already
+includes a copy of the GPL.
 
-Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/clocksource/sh_cmt.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d27bff3..91faf79 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -32,6 +32,8 @@ config ARCH_R7S72100
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
- 	select RENESAS_IRQC
-+	select ARCH_HAS_CPUFREQ
-+	select ARCH_HAS_OPP
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 2389e33..9f5616b 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -11,10 +11,6 @@
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
  
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
+ #include <linux/init.h>
 -- 
 1.8.3.2
 
