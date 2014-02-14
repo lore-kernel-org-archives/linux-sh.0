@@ -1,130 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:14 +0000
-Subject: [PATCH 02/16] ARM: shmobile: lager: add SDHI0/2 support
-Message-Id: <40e6a51e0cf44e944eed29697eb849140bf8258f.1392960310.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:56 +0000
+Subject: [PATCH 18/27] ARM: shmobile: r8a73a4: Switch to new style CMT device
+Message-Id: <1392339605-20691-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392960310.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-SDHI0 (CN8) needs JP/SW settings
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 64 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a73a4.c |  2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 25 +++++++++++++++----------
+ 2 files changed, 16 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 3175748..90d7e81 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -26,8 +26,10 @@
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
-+#include <linux/mfd/tmio.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
-@@ -68,6 +70,19 @@
-  * # amixer set "LINEOUT Mixer DACL" on
-  */
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 7348d58..cd75821 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -597,7 +597,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
+ 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
+ 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
+-	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index cd36f80..5794229 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -169,20 +169,25 @@ static const struct resource thermal0_resources[] = {
+ 					thermal0_resources,		\
+ 					ARRAY_SIZE(thermal0_resources))
  
-+/*
-+ * SDHI0 (CN8)
-+ *
-+ * JP3:  pin1
-+ * SW20: pin1
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_channel_config cmt1_channels[] = {
++	{
++		.index = 0,
++		.clockevent_rating = 80,
++	},
++};
 +
-+ * GP5_24:	1:  VDD  3.3V (defult)
-+ *		0:  VDD  0.0V
-+ * GP5_29:	1:  VccQ 3.3V (defult)
-+ *		0:  VccQ 1.8V
-+ *
-+ */
-+
- /* DU */
- static struct rcar_du_encoder_data lager_du_encoders[] = {
- 	{
-@@ -595,6 +610,34 @@ static void __init lager_add_rsnd_device(void)
- 	platform_device_register_full(&cardinfo);
++static struct sh_timer_config cmt1_platform_data = {
++	.channels = cmt1_channels,
++	.num_channels = ARRAY_SIZE(cmt1_channels),
+ };
+ 
+-static struct resource cmt10_resources[] = {
+-	DEFINE_RES_MEM(0xe6130010, 0x0c),
+-	DEFINE_RES_MEM(0xe6130000, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6130000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(120)),
+ };
+ 
+ #define r8a7790_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -196,7 +201,7 @@ void __init r8a73a4_add_dt_devices(void)
+ 	r8a73a4_register_scif(3);
+ 	r8a73a4_register_scif(4);
+ 	r8a73a4_register_scif(5);
+-	r8a7790_register_cmt(10);
++	r8a7790_register_cmt(1);
  }
  
-+/* SDHI0 */
-+static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
-+	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+			  TMIO_MMC_WRPROTECT_DISABLE,
-+};
-+
-+static struct resource sdhi0_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xee100000, 0x200),
-+	DEFINE_RES_IRQ(gic_spi(165)),
-+};
-+
-+/* SDHI2 */
-+static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
-+	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+			  TMIO_MMC_WRPROTECT_DISABLE,
-+};
-+
-+static struct resource sdhi2_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xee140000, 0x100),
-+	DEFINE_RES_IRQ(gic_spi(167)),
-+};
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -612,6 +655,20 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* SCIF1 (CN20: DEBUG SERIAL1) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.7", "pfc-r8a7790",
- 				  "scif1_data", "scif1"),
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7790",
-+				  "sdhi0_cd", "sdhi0"),
-+	/* SDHI2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
-+				  "sdhi2_data4", "sdhi2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
-+				  "sdhi2_ctrl", "sdhi2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7790",
-+				  "sdhi2_cd", "sdhi2"),
- 	/* SSI (CN17: sound) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar_sound", "pfc-r8a7790",
- 				  "ssi0129_ctrl", "ssi"),
-@@ -716,6 +773,13 @@ static void __init lager_add_standard_devices(void)
- 	lager_register_usbhs();
- 
- 	lager_add_rsnd_device();
-+
-+	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
-+					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
-+					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
-+	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
-+					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
-+					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
- }
- 
- /*
+ /* DMA */
 -- 
-1.8.5.2
+1.8.3.2
 
