@@ -1,121 +1,101 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:29 +0000
-Subject: [PATCH v3 13/20] ARM: shmobile: r8a7779: Initial multiplatform support
-Message-Id: <1393400016-23433-14-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:59 +0000
+Subject: [PATCH 21/27] ARM: shmobile: r8a7791: Switch to new style CMT device
+Message-Id: <1392339605-20691-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add Marzen and r8a7779 to CONFIG_SHMOBILE_MULTI. At this
-point CCF is not yet supported so you cannot run this code
-yet. For CCF support to happen several different components
-are needed, and this is one simple portion that moves us
-forward. Other patches need to build on top of this one.
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Marzen board support exists in 3 flavours:
-1) SHMOBILE_MULTI, MACH_MARZEN - board-marzen-reference.c (CCF + DT)
-2) SHMOBILE, MACH_MARZEN_REFERENCE - board-marzen-reference.c (DT)
-3) SHMOBILE, MACH_MARZEN - board-marzen.c (legacy C code)
-
-When CCF is done then 2) will be removed. When 1) includes same features
-as 3) then 3) will be removed.
-
-Based on work for the Koelsch and r8a7791 by Magnus Damm.
-
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3
-* Select RENESAS_INTC_IRQPIN
----
- arch/arm/boot/dts/Makefile                      | 3 ++-
- arch/arm/mach-shmobile/Kconfig                  | 9 +++++++++
- arch/arm/mach-shmobile/Makefile                 | 1 +
- arch/arm/mach-shmobile/board-marzen-reference.c | 5 +++++
- 4 files changed, 17 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
+ arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 26 +++++++++++++++---------
+ 3 files changed, 18 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 0320303..cac7179 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -263,7 +263,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
- 	r8a7791-koelsch.dtb \
--	r8a7790-lager.dtb
-+	r8a7790-lager.dtb \
-+	r8a7779-marzen-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
- 	socfpga_cyclone5_sockit.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d27bff3..8ba4172 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -23,6 +23,10 @@ if ARCH_SHMOBILE_MULTI
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 46879d6..e67a4be7 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -39,7 +39,7 @@ static void __init koelsch_add_standard_devices(void)
  
- comment "Renesas ARM SoCs System Type"
+ 	clk = clk_get(NULL, "cmt0");
+ 	if (!IS_ERR(clk)) {
+-		clk_register_clkdev(clk, NULL, "sh_cmt.0");
++		clk_register_clkdev(clk, NULL, "sh-cmt-48-gen2.0");
+ 		clk_put(clk);
+ 	}
+ #else
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index fc9248d..4dac973 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -224,7 +224,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+-	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 605f4cf..a17ebb8 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -128,20 +128,26 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+ 					  &scif##index##_platform_data,	       \
+ 					  sizeof(scif##index##_platform_data))
  
-+config ARCH_R8A7779
-+	bool "R-Car H1 (R8A77790)"
-+	select RENESAS_INTC_IRQPIN
+-static const struct sh_timer_config cmt00_platform_data __initconst = {
+-	.name = "CMT00",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_channel_config cmt0_channels[] = {
++	{
++		.index = 0,
++		.clockevent_rating = 80,
++	},
+ };
+ 
+-static const struct resource cmt00_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xffca0510, 0x0c),
+-	DEFINE_RES_MEM(0xffca0500, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++static struct sh_timer_config cmt0_platform_data = {
++	.channels = cmt0_channels,
++	.num_channels = ARRAY_SIZE(cmt0_channels),
++	.channels_mask = 0x1f,
++};
 +
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
++static struct resource cmt0_resources[] = {
++	DEFINE_RES_MEM(0xffca0000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(142)),
+ };
  
-@@ -53,6 +57,11 @@ config MACH_LAGER
- 	depends on ARCH_R8A7790
- 	select MICREL_PHY if SH_ETH
+ #define r8a7791_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -185,7 +191,7 @@ static const struct resource thermal_resources[] __initconst = {
  
-+config MACH_MARZEN
-+	bool "MARZEN board"
-+	depends on ARCH_R8A7779
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+
- comment "Renesas ARM SoCs System Configuration"
- endif
- 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 4caffc9..b02dac5 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -60,6 +60,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
-+obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index c22e5c2..d3e8319 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk-provider.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -28,7 +29,11 @@
- 
- static void __init marzen_init(void)
+ void __init r8a7791_add_dt_devices(void)
  {
-+#ifdef CONFIG_COMMON_CLK
-+	of_clk_init(NULL);
-+#else
- 	r8a7779_clock_init();
-+#endif
- 	r8a7779_add_standard_devices_dt();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-	r8a7791_register_cmt(00);
++	r8a7791_register_cmt(0);
+ }
+ 
+ void __init r8a7791_add_standard_devices(void)
 -- 
-1.8.5.2
+1.8.3.2
 
