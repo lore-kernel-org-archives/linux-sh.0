@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Feb 2014 14:34:55 +0000
+Date: Fri, 14 Feb 2014 14:50:02 +0000
 Subject: Re: [PATCH 2/3] renesas: change to using clock-indices
-Message-Id: <1627443.Mz6RLWy5la@avalon>
+Message-Id: <6030378.D7I3Rbbqx2@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1392314571-30107-2-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,23 +10,23 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi Ben,
 
-On Friday 14 February 2014 23:28:42 Magnus Damm wrote:
-> On Fri, Feb 14, 2014 at 10:21 PM, Laurent Pinchart wrote:
+On Friday 14 February 2014 14:03:34 Ben Dooks wrote:
+> On 14/02/14 13:21, Laurent Pinchart wrote:
 > > On Friday 14 February 2014 11:32:08 Magnus Damm wrote:
 > >> On Fri, Feb 14, 2014 at 3:02 AM, Ben Dooks wrote:
-> >> > With the addition of clock-indices, we need to change the renesas
-> >> > clock implementation to use these instead of the local definition.
-> >> > 
-> >> > Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> >> > ---
-> >> > 
-> >> >  .../bindings/clock/renesas,cpg-mstp-clocks.txt   |  2 +-
-> >> >   arch/arm/boot/dts/r8a7790.dtsi                  | 16 ++++++++--------
-> >> >  arch/arm/boot/dts/r8a7791.dtsi                   | 18 +++++++---------
-> >> >  drivers/clk/shmobile/clk-mstp.c                  |  2 +-
-> >> >  4 files changed, 19 insertions(+), 19 deletions(-)
+> >>> With the addition of clock-indices, we need to change the renesas
+> >>> clock implementation to use these instead of the local definition.
+> >>> 
+> >>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> >>> ---
+> >>> 
+> >>>  .../bindings/clock/renesas,cpg-mstp-clocks.txt  |  2 +-
+> >>>  arch/arm/boot/dts/r8a7790.dtsi                  | 16 ++++++++--------
+> >>>  arch/arm/boot/dts/r8a7791.dtsi                  | 18 +++++++++---------
+> >>>  drivers/clk/shmobile/clk-mstp.c                 |  2 +-
+> >>>  4 files changed, 19 insertions(+), 19 deletions(-)
 > >> 
 > >> Thanks for your patches! Good to see more common bindings.
 > >> 
@@ -35,16 +35,7 @@ On Friday 14 February 2014 23:28:42 Magnus Damm wrote:
 > >> binding that was part of the v3.13 upstream kernel.
 > > 
 > > If I'm not mistaken that's v3.14, not v3.13.
-> 
-> Nope, it's merged in v3.13. Looked it up before sending the email. =)
-
-I might be missing something, but
-
-$ git log v3.13 --oneline -- drivers/clk/shmobile/ | wc
-      0       0       0
-$ git log v3.14-rc1 --oneline -- drivers/clk/shmobile/ | wc
-      6      48     309
-
+> > 
 > >> I'd like to maintain backwards compatibility for our users. Also, this
 > >> patch crosses subsystems which may not be entirely ideal from a merge
 > >> perspective.
@@ -67,13 +58,19 @@ $ git log v3.14-rc1 --oneline -- drivers/clk/shmobile/ | wc
 > > boards in mainline are virtually useless in real products given their
 > > early stage of development, I would rather consider the clocks DT
 > > bindings as unstable for at least a couple more kernel versions.
-> 
-> We need to chat more frequently my friend.
+>
+> :( as someone who is being paid to do this for a real product
 
-Sure :-)
+I understand that, and I won't nack the patch. The problem at hand is broader 
+than this though, I don't think we should consider DT bindings as stable as 
+soon as they hit mainline. A couple of kernel versions are needed to test the 
+bindings. This has been discussed previously, we need a way to mark bindings 
+as staging and later move them to a stable state.
+
+> In this case at-least the backwards compatibility is only a couple
+> of lines to check for the older name.
 
 -- 
 Regards,
 
 Laurent Pinchart
-
