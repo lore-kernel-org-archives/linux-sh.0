@@ -1,325 +1,107 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:42 +0000
-Subject: [PATCH v2 12/40] clocksource: sh_cmt: Split static information from sh_cmt_device
-Message-Id: <1393603090-23144-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:57 +0000
+Subject: [PATCH 19/27] ARM: shmobile: r8a7740: Switch to new style CMT device
+Message-Id: <1392339605-20691-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Create a new sh_cmt_info structure to hold static information about the
-device model and reference that structure from the sh_cmt_device
-structure.
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c | 192 +++++++++++++++++++++++++++----------------
- 1 file changed, 122 insertions(+), 70 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c | 45 ++++++++++++++++------------------
+ 2 files changed, 22 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index f94db32..879b8c2 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -37,6 +37,52 @@
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index dd989f9..50d3073 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -583,7 +583,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
  
- struct sh_cmt_device;
+-	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("sh-cmt-48.1",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 8f3c681..f88856e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -237,35 +237,32 @@ R8A7740_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(107));
+ R8A7740_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(108));
  
-+/*
-+ * The CMT comes in 5 different identified flavours, depending not only on the
-+ * SoC but also on the particular instance. The following table lists the main
-+ * characteristics of those flavours.
-+ *
-+ *			16B	32B	32B-F	48B	48B-2
-+ * -----------------------------------------------------------------------------
-+ * Channels		2	1/4	1	6	2/8
-+ * Control Width	16	16	16	16	32
-+ * Counter Width	16	32	32	32/48	32/48
-+ * Shared Start/Stop	Y	Y	Y	Y	N
-+ *
-+ * The 48-bit gen2 version has a per-channel start/stop register located in the
-+ * channel registers block. All other versions have a shared start/stop register
-+ * located in the global space.
-+ *
-+ * Note that CMT0 on r8a73a4, r8a7790 and r8a7791, while implementing 32-bit
-+ * channels only, is a 48-bit gen2 CMT with the 48-bit channels unavailable.
-+ */
-+
-+enum sh_cmt_model {
-+	SH_CMT_16BIT,
-+	SH_CMT_32BIT,
-+	SH_CMT_32BIT_FAST,
-+	SH_CMT_48BIT,
-+	SH_CMT_48BIT_GEN2,
-+};
-+
-+struct sh_cmt_info {
-+	enum sh_cmt_model model;
-+
-+	unsigned long width; /* 16 or 32 bit version of hardware block */
-+	unsigned long overflow_bit;
-+	unsigned long clear_bits;
-+
-+	/* callbacks for CMSTR and CMCSR access */
-+	unsigned long (*read_control)(void __iomem *base, unsigned long offs);
-+	void (*write_control)(void __iomem *base, unsigned long offs,
-+			      unsigned long value);
-+
-+	/* callbacks for CMCNT and CMCOR access */
-+	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
-+	void (*write_count)(void __iomem *base, unsigned long offs,
-+			    unsigned long value);
-+};
-+
- struct sh_cmt_channel {
- 	struct sh_cmt_device *cmt;
- 	unsigned int index;
-@@ -58,49 +104,16 @@ struct sh_cmt_channel {
- struct sh_cmt_device {
- 	struct platform_device *pdev;
- 
-+	const struct sh_cmt_info *info;
-+
- 	void __iomem *mapbase_ch;
- 	void __iomem *mapbase;
- 	struct clk *clk;
- 
- 	struct sh_cmt_channel *channels;
- 	unsigned int num_channels;
--
--	unsigned long width; /* 16 or 32 bit version of hardware block */
--	unsigned long overflow_bit;
--	unsigned long clear_bits;
--
--	/* callbacks for CMSTR and CMCSR access */
--	unsigned long (*read_control)(void __iomem *base, unsigned long offs);
--	void (*write_control)(void __iomem *base, unsigned long offs,
--			      unsigned long value);
--
--	/* callbacks for CMCNT and CMCOR access */
--	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
--	void (*write_count)(void __iomem *base, unsigned long offs,
--			    unsigned long value);
+ /* CMT */
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++static struct sh_timer_channel_config cmt1_channels[] = {
++	{
++		.index = 0,
++		.clockevent_rating = 125,
++		.clocksource_rating = 125,
++	},
  };
  
--/* Examples of supported CMT timer register layouts and I/O access widths:
-- *
-- * "16-bit counter and 16-bit control" as found on sh7263:
-- * CMSTR 0xfffec000 16-bit
-- * CMCSR 0xfffec002 16-bit
-- * CMCNT 0xfffec004 16-bit
-- * CMCOR 0xfffec006 16-bit
-- *
-- * "32-bit counter and 16-bit control" as found on sh7372, sh73a0, r8a7740:
-- * CMSTR 0xffca0000 16-bit
-- * CMCSR 0xffca0060 16-bit
-- * CMCNT 0xffca0064 32-bit
-- * CMCOR 0xffca0068 32-bit
-- *
-- * "32-bit counter and 32-bit control" as found on r8a73a4 and r8a7790:
-- * CMSTR 0xffca0500 32-bit
-- * CMCSR 0xffca0510 32-bit
-- * CMCNT 0xffca0514 32-bit
-- * CMCOR 0xffca0518 32-bit
-- */
--
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
- {
- 	return ioread16(base + (offs << 1));
-@@ -123,47 +136,100 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
- 	iowrite32(value, base + (offs << 2));
- }
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(58),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct sh_timer_config cmt1_platform_data = {
++	.channels = cmt1_channels,
++	.num_channels = ARRAY_SIZE(cmt1_channels),
+ };
  
-+static const struct sh_cmt_info sh_cmt_info[] = {
-+	[SH_CMT_16BIT] = {
-+		.model = SH_CMT_16BIT,
-+		.width = 16,
-+		.overflow_bit = 0x80,
-+		.clear_bits = ~0x80,
-+		.read_control = sh_cmt_read16,
-+		.write_control = sh_cmt_write16,
-+		.read_count = sh_cmt_read16,
-+		.write_count = sh_cmt_write16,
-+	},
-+	[SH_CMT_32BIT] = {
-+		.model = SH_CMT_32BIT,
-+		.width = 32,
-+		.overflow_bit = 0x8000,
-+		.clear_bits = ~0xc000,
-+		.read_control = sh_cmt_read16,
-+		.write_control = sh_cmt_write16,
-+		.read_count = sh_cmt_read32,
-+		.write_count = sh_cmt_write32,
-+	},
-+	[SH_CMT_32BIT_FAST] = {
-+		.model = SH_CMT_32BIT_FAST,
-+		.width = 32,
-+		.overflow_bit = 0x8000,
-+		.clear_bits = ~0xc000,
-+		.read_control = sh_cmt_read16,
-+		.write_control = sh_cmt_write16,
-+		.read_count = sh_cmt_read32,
-+		.write_count = sh_cmt_write32,
-+	},
-+	[SH_CMT_48BIT] = {
-+		.model = SH_CMT_48BIT,
-+		.width = 32,
-+		.overflow_bit = 0x8000,
-+		.clear_bits = ~0xc000,
-+		.read_control = sh_cmt_read32,
-+		.write_control = sh_cmt_write32,
-+		.read_count = sh_cmt_read32,
-+		.write_count = sh_cmt_write32,
-+	},
-+	[SH_CMT_48BIT_GEN2] = {
-+		.model = SH_CMT_48BIT_GEN2,
-+		.width = 32,
-+		.overflow_bit = 0x8000,
-+		.clear_bits = ~0xc000,
-+		.read_control = sh_cmt_read32,
-+		.write_control = sh_cmt_write32,
-+		.read_count = sh_cmt_read32,
-+		.write_count = sh_cmt_write32,
-+	},
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6138000, 0x170),
++	DEFINE_RES_IRQ(gic_spi(58)),
 +};
 +
- #define CMCSR 0 /* channel register */
- #define CMCNT 1 /* channel register */
- #define CMCOR 2 /* channel register */
++static struct platform_device cmt1_device = {
++	.name		= "sh-cmt-48",
++	.id		= 1,
+ 	.dev = {
+-		.platform_data	= &cmt10_platform_data,
++		.platform_data	= &cmt1_platform_data,
+ 	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
++	.resource	= cmt1_resources,
++	.num_resources	= ARRAY_SIZE(cmt1_resources),
+ };
  
- static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->cmt->mapbase, 0);
-+	return ch->cmt->info->read_control(ch->cmt->mapbase, 0);
- }
+ /* TMU */
+@@ -400,7 +397,7 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
++	&cmt1_device,
+ };
  
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->base, CMCSR);
-+	return ch->cmt->info->read_control(ch->base, CMCSR);
- }
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_count(ch->base, CMCNT);
-+	return ch->cmt->info->read_count(ch->base, CMCNT);
- }
- 
- static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->cmt->mapbase, 0, value);
-+	ch->cmt->info->write_control(ch->cmt->mapbase, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->base, CMCSR, value);
-+	ch->cmt->info->write_control(ch->base, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->base, CMCNT, value);
-+	ch->cmt->info->write_count(ch->base, CMCNT, value);
- }
- 
- static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->base, CMCOR, value);
-+	ch->cmt->info->write_count(ch->base, CMCOR, value);
- }
- 
- static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
-@@ -172,7 +238,7 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
- 	unsigned long v1, v2, v3;
- 	int o1, o2;
- 
--	o1 = sh_cmt_read_cmcsr(ch) & ch->cmt->overflow_bit;
-+	o1 = sh_cmt_read_cmcsr(ch) & ch->cmt->info->overflow_bit;
- 
- 	/* Make sure the timer value is stable. Stolen from acpi_pm.c */
- 	do {
-@@ -180,7 +246,7 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
- 		v1 = sh_cmt_read_cmcnt(ch);
- 		v2 = sh_cmt_read_cmcnt(ch);
- 		v3 = sh_cmt_read_cmcnt(ch);
--		o1 = sh_cmt_read_cmcsr(ch) & ch->cmt->overflow_bit;
-+		o1 = sh_cmt_read_cmcsr(ch) & ch->cmt->info->overflow_bit;
- 	} while (unlikely((o1 != o2) || (v1 > v2 && v1 < v3)
- 			  || (v2 > v3 && v2 < v1) || (v3 > v1 && v3 < v2)));
- 
-@@ -227,7 +293,7 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
- 	sh_cmt_start_stop_ch(ch, 0);
- 
- 	/* configure channel, periodic mode and maximum timeout */
--	if (ch->cmt->width = 16) {
-+	if (ch->cmt->info->width = 16) {
- 		*rate = clk_get_rate(ch->cmt->clk) / 512;
- 		sh_cmt_write_cmcsr(ch, 0x43);
- 	} else {
-@@ -405,7 +471,8 @@ static irqreturn_t sh_cmt_interrupt(int irq, void *dev_id)
- 	struct sh_cmt_channel *ch = dev_id;
- 
- 	/* clear flags */
--	sh_cmt_write_cmcsr(ch, sh_cmt_read_cmcsr(ch) & ch->cmt->clear_bits);
-+	sh_cmt_write_cmcsr(ch, sh_cmt_read_cmcsr(ch) &
-+			   ch->cmt->info->clear_bits);
- 
- 	/* update clock source counter to begin with if enabled
- 	 * the wrap flag should be cleared by the timer specific
-@@ -719,10 +786,10 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 		return irq;
- 	}
- 
--	if (cmt->width = (sizeof(ch->max_match_value) * 8))
-+	if (cmt->info->width = (sizeof(ch->max_match_value) * 8))
- 		ch->max_match_value = ~0;
- 	else
--		ch->max_match_value = (1 << cmt->width) - 1;
-+		ch->max_match_value = (1 << cmt->info->width) - 1;
- 
- 	ch->match_value = ch->max_match_value;
- 	raw_spin_lock_init(&ch->lock);
-@@ -800,28 +867,13 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 	if (ret < 0)
- 		goto err3;
- 
--	if (res2 && (resource_size(res2) = 4)) {
--		/* assume both CMSTR and CMCSR to be 32-bit */
--		cmt->read_control = sh_cmt_read32;
--		cmt->write_control = sh_cmt_write32;
--	} else {
--		cmt->read_control = sh_cmt_read16;
--		cmt->write_control = sh_cmt_write16;
--	}
--
--	if (resource_size(res) = 6) {
--		cmt->width = 16;
--		cmt->read_count = sh_cmt_read16;
--		cmt->write_count = sh_cmt_write16;
--		cmt->overflow_bit = 0x80;
--		cmt->clear_bits = ~0x80;
--	} else {
--		cmt->width = 32;
--		cmt->read_count = sh_cmt_read32;
--		cmt->write_count = sh_cmt_write32;
--		cmt->overflow_bit = 0x8000;
--		cmt->clear_bits = ~0xc000;
--	}
-+	/* identify the model based on the resources */
-+	if (resource_size(res) = 6)
-+		cmt->info = &sh_cmt_info[SH_CMT_16BIT];
-+	else if (res2 && (resource_size(res2) = 4))
-+		cmt->info = &sh_cmt_info[SH_CMT_48BIT_GEN2];
-+	else
-+		cmt->info = &sh_cmt_info[SH_CMT_32BIT];
- 
- 	cmt->channels = kzalloc(sizeof(*cmt->channels), GFP_KERNEL);
- 	if (cmt->channels = NULL) {
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
 -- 
 1.8.3.2
 
