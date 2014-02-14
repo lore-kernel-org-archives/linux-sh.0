@@ -1,131 +1,125 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:43 +0000
-Subject: [PATCH v2 13/40] clocksource: sh_cmt: Replace hardcoded register values with macros
-Message-Id: <1393603090-23144-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:42 +0000
+Subject: [PATCH 04/27] clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
+Message-Id: <1392339605-20691-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Define symbolic macros for all used registers bits.
+The mapbase variable points to the mapped base address of the channel,
+rename it to mapbase_sh. mapbase_str points to the mapped base address
+of the CMT device, rename it to mapbase.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c | 56 ++++++++++++++++++++++++++++++++++----------
- 1 file changed, 44 insertions(+), 12 deletions(-)
+ drivers/clocksource/sh_cmt.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
 diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 879b8c2..ce00baa 100644
+index 3a3cc83..1ac84ff 100644
 --- a/drivers/clocksource/sh_cmt.c
 +++ b/drivers/clocksource/sh_cmt.c
-@@ -114,6 +114,34 @@ struct sh_cmt_device {
- 	unsigned int num_channels;
- };
+@@ -57,8 +57,8 @@ struct sh_cmt_channel {
+ struct sh_cmt_device {
+ 	struct platform_device *pdev;
  
-+#define SH_CMT16_CMCSR_CMF		(1 << 7)
-+#define SH_CMT16_CMCSR_CMIE		(1 << 6)
-+#define SH_CMT16_CMCSR_CKS8		(0 << 0)
-+#define SH_CMT16_CMCSR_CKS32		(1 << 0)
-+#define SH_CMT16_CMCSR_CKS128		(2 << 0)
-+#define SH_CMT16_CMCSR_CKS512		(3 << 0)
-+#define SH_CMT16_CMCSR_CKS_MASK		(3 << 0)
-+
-+#define SH_CMT32_CMCSR_CMF		(1 << 15)
-+#define SH_CMT32_CMCSR_OVF		(1 << 14)
-+#define SH_CMT32_CMCSR_WRFLG		(1 << 13)
-+#define SH_CMT32_CMCSR_STTF		(1 << 12)
-+#define SH_CMT32_CMCSR_STPF		(1 << 11)
-+#define SH_CMT32_CMCSR_SSIE		(1 << 10)
-+#define SH_CMT32_CMCSR_CMS		(1 << 9)
-+#define SH_CMT32_CMCSR_CMM		(1 << 8)
-+#define SH_CMT32_CMCSR_CMTOUT_IE	(1 << 7)
-+#define SH_CMT32_CMCSR_CMR_NONE		(0 << 4)
-+#define SH_CMT32_CMCSR_CMR_DMA		(1 << 4)
-+#define SH_CMT32_CMCSR_CMR_IRQ		(2 << 4)
-+#define SH_CMT32_CMCSR_CMR_MASK		(3 << 4)
-+#define SH_CMT32_CMCSR_DBGIVD		(1 << 3)
-+#define SH_CMT32_CMCSR_CKS_RCLK8	(4 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK32	(5 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK128	(6 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK1	(7 << 0)
-+#define SH_CMT32_CMCSR_CKS_MASK		(7 << 0)
-+
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
++	void __iomem *mapbase_ch;
+ 	void __iomem *mapbase;
+-	void __iomem *mapbase_str;
+ 	struct clk *clk;
+ 
+ 	struct sh_cmt_channel channel;
+@@ -127,41 +127,41 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
+ 
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
  {
- 	return ioread16(base + (offs << 1));
-@@ -140,8 +168,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_16BIT] = {
- 		.model = SH_CMT_16BIT,
- 		.width = 16,
--		.overflow_bit = 0x80,
--		.clear_bits = ~0x80,
-+		.overflow_bit = SH_CMT16_CMCSR_CMF,
-+		.clear_bits = ~SH_CMT16_CMCSR_CMF,
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read16,
-@@ -150,8 +178,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_32BIT] = {
- 		.model = SH_CMT_32BIT,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read32,
-@@ -160,8 +188,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_32BIT_FAST] = {
- 		.model = SH_CMT_32BIT_FAST,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read32,
-@@ -170,8 +198,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_48BIT] = {
- 		.model = SH_CMT_48BIT,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read32,
- 		.write_control = sh_cmt_write32,
- 		.read_count = sh_cmt_read32,
-@@ -180,8 +208,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_48BIT_GEN2] = {
- 		.model = SH_CMT_48BIT_GEN2,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read32,
- 		.write_control = sh_cmt_write32,
- 		.read_count = sh_cmt_read32,
-@@ -295,10 +323,14 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
- 	/* configure channel, periodic mode and maximum timeout */
- 	if (ch->cmt->info->width = 16) {
- 		*rate = clk_get_rate(ch->cmt->clk) / 512;
--		sh_cmt_write_cmcsr(ch, 0x43);
-+		sh_cmt_write_cmcsr(ch, SH_CMT16_CMCSR_CMIE |
-+				   SH_CMT16_CMCSR_CKS512);
- 	} else {
- 		*rate = clk_get_rate(ch->cmt->clk) / 8;
--		sh_cmt_write_cmcsr(ch, 0x01a4);
-+		sh_cmt_write_cmcsr(ch, SH_CMT32_CMCSR_CMM |
-+				   SH_CMT32_CMCSR_CMTOUT_IE |
-+				   SH_CMT32_CMCSR_CMR_IRQ |
-+				   SH_CMT32_CMCSR_CKS_RCLK8);
+-	return ch->cmt->read_control(ch->cmt->mapbase_str, 0);
++	return ch->cmt->read_control(ch->cmt->mapbase, 0);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase, CMCSR);
++	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_count(ch->cmt->mapbase, CMCNT);
++	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase_str, 0, value);
++	ch->cmt->write_control(ch->cmt->mapbase, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase, CMCSR, value);
++	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase, CMCNT, value);
++	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase, CMCOR, value);
++	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+@@ -767,18 +767,18 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	/* optional resource for the shared timer start/stop register */
+ 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
+ 
+-	/* map memory, let mapbase point to our channel */
+-	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
+-	if (cmt->mapbase = NULL) {
++	/* map memory, let mapbase_ch point to our channel */
++	cmt->mapbase_ch = ioremap_nocache(res->start, resource_size(res));
++	if (cmt->mapbase_ch = NULL) {
+ 		dev_err(&cmt->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
  	}
  
- 	sh_cmt_write_cmcor(ch, 0xffffffff);
+ 	/* map second resource for CMSTR */
+-	cmt->mapbase_str = ioremap_nocache(res2 ? res2->start :
+-					   res->start - cfg->channel_offset,
+-					   res2 ? resource_size(res2) : 2);
+-	if (cmt->mapbase_str = NULL) {
++	cmt->mapbase = ioremap_nocache(res2 ? res2->start :
++				       res->start - cfg->channel_offset,
++				       res2 ? resource_size(res2) : 2);
++	if (cmt->mapbase = NULL) {
+ 		dev_err(&cmt->pdev->dev, "failed to remap I/O second memory\n");
+ 		goto err1;
+ 	}
+@@ -830,9 +830,9 @@ err4:
+ err3:
+ 	clk_put(cmt->clk);
+ err2:
+-	iounmap(cmt->mapbase_str);
+-err1:
+ 	iounmap(cmt->mapbase);
++err1:
++	iounmap(cmt->mapbase_ch);
+ err0:
+ 	return ret;
+ }
 -- 
 1.8.3.2
 
