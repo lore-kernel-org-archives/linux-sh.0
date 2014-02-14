@@ -1,65 +1,133 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 18 Feb 2014 08:24:41 +0000
-Subject: Re: [Linux-kernel] [PATCH] [PATCH v2] sh_eth: call of_mdiobus_register() to register phys
-Message-Id: <530318C9.5040508@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 14 Feb 2014 00:59:48 +0000
+Subject: [PATCH 10/27] clocksource: sh_cmt: Replace hardcoded register values with macros
+Message-Id: <1392339605-20691-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 18/02/14 08:23, Ben Dooks wrote:
-> On 17/02/14 21:09, Sergei Shtylyov wrote:
->> Hello.
->>
->> On 02/17/2014 07:57 PM, Ben Dooks wrote:
->>
->>> If the sh_eth device is registered using OF, then the driver
->>> should call of_mdiobus_register() to register any PHYs connected
->>> to the system.
->>
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>
->>> --
->>> v2:
->>>     - allocate mdio->irq array at init time
->>
->>     Did this also fix something?
->>
->>>     - set devdata after succesful mdio registration
->>> ---
->>>   drivers/net/ethernet/renesas/sh_eth.c | 13 +++++++++++++
->>>   1 file changed, 13 insertions(+)
->>>
->>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
->>> b/drivers/net/ethernet/renesas/sh_eth.c
->>> index 06970ac..1244509 100644
->>> --- a/drivers/net/ethernet/renesas/sh_eth.c
->>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->>> @@ -40,6 +40,7 @@
->>>   #include <linux/if_vlan.h>
->>>   #include <linux/clk.h>
->>>   #include <linux/sh_eth.h>
->>> +#include <linux/of_mdio.h>
->>>
->>>   #include "sh_eth.h"
->>>
->>> @@ -2638,6 +2639,18 @@ static int sh_mdio_init(struct net_device
->>> *ndev, int id,
->>>           goto out_free_bus;
->>>       }
->>>
->>> +    if (ndev->dev.parent->of_node) {
->>> +        ret = of_mdiobus_register(mdp->mii_bus,
->>> +                      ndev->dev.parent->of_node);
->>> +        if (ret != 0) {
->>
->>     Why not just (ret)?
+Define symbolic macros for all used registers bits.
 
-Because of years of people complaining that an integer is not
-a boolean. I'll change that in the next version of the patch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/clocksource/sh_cmt.c | 56 ++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 44 insertions(+), 12 deletions(-)
 
-
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 3946c14..5280231 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -115,6 +115,34 @@ struct sh_cmt_device {
+ 	unsigned int num_channels;
+ };
+ 
++#define SH_CMT16_CMCSR_CMF		(1 << 7)
++#define SH_CMT16_CMCSR_CMIE		(1 << 6)
++#define SH_CMT16_CMCSR_CKS8		(0 << 0)
++#define SH_CMT16_CMCSR_CKS32		(1 << 0)
++#define SH_CMT16_CMCSR_CKS128		(2 << 0)
++#define SH_CMT16_CMCSR_CKS512		(3 << 0)
++#define SH_CMT16_CMCSR_CKS_MASK		(3 << 0)
++
++#define SH_CMT32_CMCSR_CMF		(1 << 15)
++#define SH_CMT32_CMCSR_OVF		(1 << 14)
++#define SH_CMT32_CMCSR_WRFLG		(1 << 13)
++#define SH_CMT32_CMCSR_STTF		(1 << 12)
++#define SH_CMT32_CMCSR_STPF		(1 << 11)
++#define SH_CMT32_CMCSR_SSIE		(1 << 10)
++#define SH_CMT32_CMCSR_CMS		(1 << 9)
++#define SH_CMT32_CMCSR_CMM		(1 << 8)
++#define SH_CMT32_CMCSR_CMTOUT_IE	(1 << 7)
++#define SH_CMT32_CMCSR_CMR_NONE		(0 << 4)
++#define SH_CMT32_CMCSR_CMR_DMA		(1 << 4)
++#define SH_CMT32_CMCSR_CMR_IRQ		(2 << 4)
++#define SH_CMT32_CMCSR_CMR_MASK		(3 << 4)
++#define SH_CMT32_CMCSR_DBGIVD		(1 << 3)
++#define SH_CMT32_CMCSR_CKS_RCLK8	(4 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK32	(5 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK128	(6 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK1	(7 << 0)
++#define SH_CMT32_CMCSR_CKS_MASK		(7 << 0)
++
+ static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+ {
+ 	return ioread16(base + (offs << 1));
+@@ -141,8 +169,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_16BIT] = {
+ 		.model = SH_CMT_16BIT,
+ 		.width = 16,
+-		.overflow_bit = 0x80,
+-		.clear_bits = ~0x80,
++		.overflow_bit = SH_CMT16_CMCSR_CMF,
++		.clear_bits = ~SH_CMT16_CMCSR_CMF,
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read16,
+@@ -151,8 +179,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_32BIT] = {
+ 		.model = SH_CMT_32BIT,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read32,
+@@ -161,8 +189,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_32BIT_FAST] = {
+ 		.model = SH_CMT_32BIT_FAST,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read32,
+@@ -171,8 +199,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_48BIT] = {
+ 		.model = SH_CMT_48BIT,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read32,
+ 		.write_control = sh_cmt_write32,
+ 		.read_count = sh_cmt_read32,
+@@ -181,8 +209,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_48BIT_GEN2] = {
+ 		.model = SH_CMT_48BIT_GEN2,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read32,
+ 		.write_control = sh_cmt_write32,
+ 		.read_count = sh_cmt_read32,
+@@ -296,10 +324,14 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
+ 	/* configure channel, periodic mode and maximum timeout */
+ 	if (ch->cmt->info->width = 16) {
+ 		*rate = clk_get_rate(ch->cmt->clk) / 512;
+-		sh_cmt_write_cmcsr(ch, 0x43);
++		sh_cmt_write_cmcsr(ch, SH_CMT16_CMCSR_CMIE |
++				   SH_CMT16_CMCSR_CKS512);
+ 	} else {
+ 		*rate = clk_get_rate(ch->cmt->clk) / 8;
+-		sh_cmt_write_cmcsr(ch, 0x01a4);
++		sh_cmt_write_cmcsr(ch, SH_CMT32_CMCSR_CMM |
++				   SH_CMT32_CMCSR_CMTOUT_IE |
++				   SH_CMT32_CMCSR_CMR_IRQ |
++				   SH_CMT32_CMCSR_CKS_RCLK8);
+ 	}
+ 
+ 	sh_cmt_write_cmcor(ch, 0xffffffff);
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.3.2
+
