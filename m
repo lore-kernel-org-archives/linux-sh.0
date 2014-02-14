@@ -1,97 +1,83 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Feb 2014 03:29:48 +0000
-Subject: [PATCH] ARM: shmobile: lager: Add internal USB PCI support
-Message-Id: <20140214032948.3287.33351.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 14 Feb 2014 13:54:46 +0000
+Subject: Re: [PATCH] ARM: shmobile: lager: Add internal USB PCI support
+Message-Id: <52FE2026.8040801@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140214032948.3287.33351.sendpatchset@w520>
+In-Reply-To: <20140214032948.3287.33351.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Hello.
 
-This adds internal PCI USB host devices to R-Car H2 Lager board.
+On 14-02-2014 7:29, Magnus Damm wrote:
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-[damm@opensource.se: Rebased and reworked to only include USB1 and USB2]
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+> From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
- Written against renesas-devel-v3.14-rc2-20140213
+> This adds internal PCI USB host devices to R-Car H2 Lager board.
 
- arch/arm/mach-shmobile/board-lager.c |   50 ++++++++++++++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
+> Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+> [damm@opensource.se: Rebased and reworked to only include USB1 and USB2]
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
 
---- 0001/arch/arm/mach-shmobile/board-lager.c
-+++ work/arch/arm/mach-shmobile/board-lager.c	2014-02-14 12:16:26.000000000 +0900
-@@ -638,6 +638,48 @@ static struct resource sdhi2_resources[]
- 	DEFINE_RES_IRQ(gic_spi(167)),
- };
- 
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(112)),
-+};
-+
-+static const struct platform_device_info pci1_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "pci-rcar-gen2",
-+	.id		= 1,
-+	.res		= pci1_resources,
-+	.num_res	= ARRAY_SIZE(pci1_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
-+static void __init lager_add_usb1_device(void)
-+{
-+	platform_device_register_full(&pci1_info);
-+}
-+
-+/* Internal PCI2 */
-+static const struct resource pci2_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static const struct platform_device_info pci2_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "pci-rcar-gen2",
-+	.id		= 2,
-+	.res		= pci2_resources,
-+	.num_res	= ARRAY_SIZE(pci2_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
-+static void __init lager_add_usb2_device(void)
-+{
-+	platform_device_register_full(&pci2_info);
-+}
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -716,6 +758,12 @@ static const struct pinctrl_map lager_pi
- 	/* USB0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
- 				  "usb0_ovc_vbus", "usb0"),
-+	/* USB1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("pci-rcar-gen2.1", "pfc-r8a7790",
-+				  "usb1", "usb1"),
-+	/* USB2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("pci-rcar-gen2.2", "pfc-r8a7790",
-+				  "usb2", "usb2"),
- };
- 
- static void __init lager_add_standard_devices(void)
-@@ -776,6 +824,8 @@ static void __init lager_add_standard_de
- 					  &usbhs_phy_pdata,
- 					  sizeof(usbhs_phy_pdata));
- 	lager_register_usbhs();
-+	lager_add_usb1_device();
-+	lager_add_usb2_device();
- 
- 	lager_add_rsnd_device();
- 
+>   Written against renesas-devel-v3.14-rc2-20140213
+
+>   arch/arm/mach-shmobile/board-lager.c |   50 ++++++++++++++++++++++++++++++++++
+>   1 file changed, 50 insertions(+)
+
+> --- 0001/arch/arm/mach-shmobile/board-lager.c
+> +++ work/arch/arm/mach-shmobile/board-lager.c	2014-02-14 12:16:26.000000000 +0900
+> @@ -638,6 +638,48 @@ static struct resource sdhi2_resources[]
+>   	DEFINE_RES_IRQ(gic_spi(167)),
+>   };
+>
+> +/* Internal PCI1 */
+> +static const struct resource pci1_resources[] __initconst = {
+> +	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
+> +	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
+> +	DEFINE_RES_IRQ(gic_spi(112)),
+> +};
+> +
+> +static const struct platform_device_info pci1_info __initconst = {
+> +	.parent		= &platform_bus,
+> +	.name		= "pci-rcar-gen2",
+> +	.id		= 1,
+> +	.res		= pci1_resources,
+> +	.num_res	= ARRAY_SIZE(pci1_resources),
+> +	.dma_mask	= DMA_BIT_MASK(32),
+> +};
+> +
+> +static void __init lager_add_usb1_device(void)
+
+    Actually, this adds PCI device, not USB, so the name is strange.
+Also, I doubt that such functions are really necessary.
+
+> +{
+> +	platform_device_register_full(&pci1_info);
+> +}
+> +
+> +/* Internal PCI2 */
+> +static const struct resource pci2_resources[] __initconst = {
+> +	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
+> +	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
+> +	DEFINE_RES_IRQ(gic_spi(113)),
+> +};
+> +
+> +static const struct platform_device_info pci2_info __initconst = {
+> +	.parent		= &platform_bus,
+> +	.name		= "pci-rcar-gen2",
+> +	.id		= 2,
+> +	.res		= pci2_resources,
+> +	.num_res	= ARRAY_SIZE(pci2_resources),
+> +	.dma_mask	= DMA_BIT_MASK(32),
+> +};
+> +
+
+    I suspect the PCI resources and info could be wrapped by macros and then 
+instantiated by using only 2 lines.
+
+WBR, Sergei
+
