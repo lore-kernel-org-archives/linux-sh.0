@@ -1,51 +1,63 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Feb 2014 16:01:30 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 14 Feb 2014 16:12:27 +0000
 Subject: Re: [PATCH 23/27] clocksource: sh_cmt: Add DT support
-Message-Id: <CANqRtoS-d-CW3XX3_E2dgJ83btRZYWiMCYmWUJAPqh9EeBhLEQ@mail.gmail.com>
+Message-Id: <1790131.DSZsj6HrSK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1392339605-20691-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20140214105822.GE9907@e106331-lin.cambridge.arm.com>
  <107109887.afEv2P92gg@avalon>
-In-Reply-To: <107109887.afEv2P92gg@avalon>
+ <CANqRtoS-d-CW3XX3_E2dgJ83btRZYWiMCYmWUJAPqh9EeBhLEQ@mail.gmail.com>
+In-Reply-To: <CANqRtoS-d-CW3XX3_E2dgJ83btRZYWiMCYmWUJAPqh9EeBhLEQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Feb 15, 2014 at 12:53 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Friday 14 February 2014 10:58:22 Mark Rutland wrote:
->> On Fri, Feb 14, 2014 at 01:00:01AM +0000, Laurent Pinchart wrote:
->> > +Channels Optional Properties:
->> > +
->> > +  - clock-source-rating: rating of the timer as a clock source device.
->> > +  - clock-event-rating: rating of the timer as a clock event device.
->>
->> This feels like a leak of Linux internals. Why do you need this?
->
-> You're right, it is. The clock source and clock event ratings are currently
-> configured through platform data, I'll need to find a way to compute them in
-> the driver instead.
+Hi Magnus,
 
-That would be very good!
+On Saturday 15 February 2014 01:01:30 Magnus Damm wrote:
+> On Sat, Feb 15, 2014 at 12:53 AM, Laurent Pinchart wrote:
+> > On Friday 14 February 2014 10:58:22 Mark Rutland wrote:
+> >> On Fri, Feb 14, 2014 at 01:00:01AM +0000, Laurent Pinchart wrote:
+> >> > +Channels Optional Properties:
+> >> > +
+> >> > +  - clock-source-rating: rating of the timer as a clock source device.
+> >> > +  - clock-event-rating: rating of the timer as a clock event device.
+> >> 
+> >> This feels like a leak of Linux internals. Why do you need this?
+> > 
+> > You're right, it is. The clock source and clock event ratings are
+> > currently configured through platform data, I'll need to find a way to
+> > compute them in the driver instead.
+> 
+> That would be very good!
 
-> There's still one piece of Linux-specific data I need though, as I need to
-> specify for each channel whether to use it as a clock source device, a clock
-> event device, both of them or none. That's configuration information that
-> needs to be provided somehow.
+Any pointer would be appreciated :-) How did you compute the various ratings 
+used in platform data all over the place ?
 
-I think you can decide clock source or clock event assignment based on
-number of channels available. If you have only a single channel then
-both clock event and clock source need to be supported. Otherwise use
-one channel for clock source and the rest for clock events.
+> > There's still one piece of Linux-specific data I need though, as I need to
+> > specify for each channel whether to use it as a clock source device, a
+> > clock event device, both of them or none. That's configuration
+> > information that needs to be provided somehow.
+> 
+> I think you can decide clock source or clock event assignment based on
+> number of channels available. If you have only a single channel then both
+> clock event and clock source need to be supported. Otherwise use one channel
+> for clock source and the rest for clock events.
 
-This is probably out of scope for this DT conversion, but it would be
-neat if you somehow could specify the CPU affinity for a channel to
-tie a clock event to an individual CPU core. This would make a a
-per-cpu timer unless I'm mistaken. But that's more of a software
-policy than anything else.
+That won't match the current situation. Look at CMT0 in r8a7790 for instance. 
+There's two hardware channels available, and we only use the first one, for 
+clock events only.
 
-Thanks,
+> This is probably out of scope for this DT conversion, but it would be neat
+> if you somehow could specify the CPU affinity for a channel to tie a clock
+> event to an individual CPU core. This would make a a per-cpu timer unless
+> I'm mistaken. But that's more of a software policy than anything else.
 
-/ magnus
+Yes, that's a configuration that needs to be specified somewhere. I don't know 
+where though.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
