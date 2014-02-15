@@ -1,56 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:03:49 +0000
-Subject: [PATCH 02/11] ARM: shmobile: Koelsch: pass Ether PHY IRQ
-Message-Id: <29d9f010d7103f2b83ce1c25999a6f3a1e57f5e2.1392276547.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 15 Feb 2014 00:26:51 +0000
+Subject: [PATCH 1/5] ARM: shmobile: Armadillo 800 EVA: set proper DMA masks for Ether device
+Message-Id: <201402150426.52493.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
+References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
-trigger type to be low-level as per the Micrel PHY driver's setup.
+Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
+'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
+ability.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 2ab5c75..1ec3b91 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -23,6 +23,7 @@
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
-+#include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
- #include <linux/phy.h>
-@@ -92,6 +93,7 @@ static void __init koelsch_add_du_device(void)
- /* Ether */
- static const struct sh_eth_plat_data ether_pdata __initconst = {
- 	.phy			= 0x1,
-+	.phy_irq		= irq_pin(0),
- 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
- 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
- 	.ether_link_active_low	= 1,
-@@ -232,6 +234,8 @@ static void __init koelsch_init(void)
- {
- 	koelsch_add_standard_devices();
- 
-+	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
-+
- 	if (IS_ENABLED(CONFIG_PHYLIB))
- 		phy_register_fixup_for_id("r8a7791-ether-ff:01",
- 					  koelsch_ksz8041_fixup);
--- 
-1.8.5.2
-
+Index: renesas/arch/arm/mach-shmobile/board-armadillo800eva.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ renesas/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -383,6 +383,8 @@ static struct platform_device sh_eth_dev
+ 	.id = -1,
+ 	.dev = {
+ 		.platform_data = &sh_eth_platdata,
++		.dma_mask = &sh_eth_device.dev.coherent_dma_mask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
+ 	},
+ 	.resource = sh_eth_resources,
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
