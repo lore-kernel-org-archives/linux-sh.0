@@ -1,40 +1,68 @@
-From: AKASHI Takahiro <takahiro.akashi@linaro.org>
-Date: Tue, 25 Feb 2014 09:16:23 +0000
-Subject: [PATCH v2 0/1] audit: Add CONFIG_HAVE_ARCH_AUDITSYSCALL
-Message-Id: <1393319784-2758-1-git-send-email-takahiro.akashi@linaro.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 15 Feb 2014 00:28:44 +0000
+Subject: [PATCH 2/5] ARM: shmobile: BOCK-W: set proper DMA masks for Ether device
+Message-Id: <201402150428.44268.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391407232-4623-1-git-send-email-takahiro.akashi@linaro.org>
-In-Reply-To: <1391407232-4623-1-git-send-email-takahiro.akashi@linaro.org>
+References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Currently AUDITSYSCALL has a long list of architecture depencency:
-       depends on AUDIT && (X86 || PARISC || PPC || S390 || IA64 || UML ||
-                SPARC64 || SUPERH || (ARM && AEABI && !OABI_COMPAT) || ALPHA)
-The purpose of this patch is to replace it with HAVE_ARCH_AUDITSYSCALL
-for simplicity.
+Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
+'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
+ability.
 
-Changes v1 -> v2:
-* rebased to 3.14-rcX, and so added a change on ALPHA
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-AKASHI Takahiro (1):
-  audit: Add CONFIG_HAVE_ARCH_AUDITSYSCALL
+---
+ arch/arm/mach-shmobile/board-bockw.c |   21 ++++++++++++++-------
+ 1 file changed, 14 insertions(+), 7 deletions(-)
 
- arch/alpha/Kconfig     |    1 +
- arch/arm/Kconfig       |    1 +
- arch/ia64/Kconfig      |    1 +
- arch/parisc/Kconfig    |    1 +
- arch/powerpc/Kconfig   |    1 +
- arch/s390/Kconfig      |    1 +
- arch/sh/Kconfig        |    1 +
- arch/sparc/Kconfig     |    1 +
- arch/um/Kconfig.common |    1 +
- arch/x86/Kconfig       |    1 +
- init/Kconfig           |    5 ++++-
- 11 files changed, 14 insertions(+), 1 deletion(-)
-
--- 
-1.7.9.5
-
+Index: renesas/arch/arm/mach-shmobile/board-bockw.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-bockw.c
++++ renesas/arch/arm/mach-shmobile/board-bockw.c
+@@ -1,9 +1,9 @@
+ /*
+  * Bock-W board support
+  *
+- * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013-2014  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+- * Copyright (C) 2013  Cogent Embedded, Inc.
++ * Copyright (C) 2013-2014  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -235,6 +235,17 @@ static struct sh_eth_plat_data ether_pla
+ 	.no_ether_link	= 1,
+ };
+ 
++static struct platform_device_info ether_info __initdata = {
++	.parent		= &platform_bus,
++	.name		= "r8a777x-ether",
++	.id		= -1,
++	.res		= ether_resources,
++	.num_res	= ARRAY_SIZE(ether_resources),
++	.data		= &ether_platform_data,
++	.size_data	= sizeof(ether_platform_data),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -592,11 +603,7 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
+ 
+-	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  &ether_platform_data,
+-					  sizeof(ether_platform_data));
++	platform_device_register_full(&ether_info);
+ 
+ 	platform_device_register_full(&vin0_info);
+ 	/* VIN1 has a pin conflict with Ether */
