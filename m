@@ -1,262 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:40 +0000
-Subject: [PATCH 02/27] clocksource: sh_cmt: Rename struct sh_cmt_priv to sh_cmt_device
-Message-Id: <1392339605-20691-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 15 Feb 2014 00:36:22 +0000
+Subject: [PATCH 4/5] ARM: shmobile: Koelsch: set proper DMA masks for Ether device
+Message-Id: <201402150436.20195.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Channel data is private as well, rename priv to device to make the
-distrinction between the core device and the channels clearer.
+Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
+'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
+ability.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Currently, the code works without DMA masks but as we would have to enable
+CONFIG_HIGHMEM to access the full board memory in the future, when support for
+NETIF_F_SG would be added to the 'sh_eth' driver as well, the correct DMA masks
+should start to matter...
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/clocksource/sh_cmt.c | 116 +++++++++++++++++++++----------------------
- 1 file changed, 58 insertions(+), 58 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c |   19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 12ccd11..68cca0a 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -35,10 +35,10 @@
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
- 
--struct sh_cmt_priv;
-+struct sh_cmt_device;
- 
- struct sh_cmt_channel {
--	struct sh_cmt_priv *cmt;
-+	struct sh_cmt_device *cmt;
- 
- 	struct irqaction irqaction;
- 
-@@ -54,7 +54,7 @@ struct sh_cmt_channel {
- 	bool cs_enabled;
+Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
++++ renesas/arch/arm/mach-shmobile/board-koelsch.c
+@@ -2,8 +2,9 @@
+  * Koelsch board support
+  *
+  * Copyright (C) 2013  Renesas Electronics Corporation
+- * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013-2014  Renesas Solutions Corp.
+  * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2014  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -116,6 +117,17 @@ static const struct resource ether_resou
+ 	DEFINE_RES_IRQ(gic_spi(162)),
  };
  
--struct sh_cmt_priv {
-+struct sh_cmt_device {
- 	struct platform_device *pdev;
- 
- 	void __iomem *mapbase;
-@@ -695,136 +695,136 @@ static int sh_cmt_register(struct sh_cmt_channel *ch, char *name,
- 	return 0;
- }
- 
--static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
-+static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
--	struct sh_cmt_channel *ch = &p->channel;
-+	struct sh_cmt_channel *ch = &cmt->channel;
- 	struct resource *res, *res2;
- 	int irq, ret;
- 	ret = -ENXIO;
- 
--	memset(p, 0, sizeof(*p));
--	p->pdev = pdev;
-+	memset(cmt, 0, sizeof(*cmt));
-+	cmt->pdev = pdev;
- 
- 	if (!cfg) {
--		dev_err(&p->pdev->dev, "missing platform data\n");
-+		dev_err(&cmt->pdev->dev, "missing platform data\n");
- 		goto err0;
- 	}
- 
--	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
-+	res = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 0);
- 	if (!res) {
--		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
-+		dev_err(&cmt->pdev->dev, "failed to get I/O memory\n");
- 		goto err0;
- 	}
- 
- 	/* optional resource for the shared timer start/stop register */
--	res2 = platform_get_resource(p->pdev, IORESOURCE_MEM, 1);
-+	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
- 
--	irq = platform_get_irq(p->pdev, 0);
-+	irq = platform_get_irq(cmt->pdev, 0);
- 	if (irq < 0) {
--		dev_err(&p->pdev->dev, "failed to get irq\n");
-+		dev_err(&cmt->pdev->dev, "failed to get irq\n");
- 		goto err0;
- 	}
- 
- 	/* map memory, let mapbase point to our channel */
--	p->mapbase = ioremap_nocache(res->start, resource_size(res));
--	if (p->mapbase = NULL) {
--		dev_err(&p->pdev->dev, "failed to remap I/O memory\n");
-+	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
-+	if (cmt->mapbase = NULL) {
-+		dev_err(&cmt->pdev->dev, "failed to remap I/O memory\n");
- 		goto err0;
- 	}
- 
- 	/* map second resource for CMSTR */
--	p->mapbase_str = ioremap_nocache(res2 ? res2->start :
--					 res->start - cfg->channel_offset,
--					 res2 ? resource_size(res2) : 2);
--	if (p->mapbase_str = NULL) {
--		dev_err(&p->pdev->dev, "failed to remap I/O second memory\n");
-+	cmt->mapbase_str = ioremap_nocache(res2 ? res2->start :
-+					   res->start - cfg->channel_offset,
-+					   res2 ? resource_size(res2) : 2);
-+	if (cmt->mapbase_str = NULL) {
-+		dev_err(&cmt->pdev->dev, "failed to remap I/O second memory\n");
- 		goto err1;
- 	}
- 
- 	/* request irq using setup_irq() (too early for request_irq()) */
--	ch->irqaction.name = dev_name(&p->pdev->dev);
-+	ch->irqaction.name = dev_name(&cmt->pdev->dev);
- 	ch->irqaction.handler = sh_cmt_interrupt;
- 	ch->irqaction.dev_id = ch;
- 	ch->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
- 
- 	/* get hold of clock */
--	p->clk = clk_get(&p->pdev->dev, "cmt_fck");
--	if (IS_ERR(p->clk)) {
--		dev_err(&p->pdev->dev, "cannot get clock\n");
--		ret = PTR_ERR(p->clk);
-+	cmt->clk = clk_get(&cmt->pdev->dev, "cmt_fck");
-+	if (IS_ERR(cmt->clk)) {
-+		dev_err(&cmt->pdev->dev, "cannot get clock\n");
-+		ret = PTR_ERR(cmt->clk);
- 		goto err2;
- 	}
- 
--	ret = clk_prepare(p->clk);
-+	ret = clk_prepare(cmt->clk);
- 	if (ret < 0)
- 		goto err3;
- 
- 	if (res2 && (resource_size(res2) = 4)) {
- 		/* assume both CMSTR and CMCSR to be 32-bit */
--		p->read_control = sh_cmt_read32;
--		p->write_control = sh_cmt_write32;
-+		cmt->read_control = sh_cmt_read32;
-+		cmt->write_control = sh_cmt_write32;
- 	} else {
--		p->read_control = sh_cmt_read16;
--		p->write_control = sh_cmt_write16;
-+		cmt->read_control = sh_cmt_read16;
-+		cmt->write_control = sh_cmt_write16;
- 	}
- 
- 	if (resource_size(res) = 6) {
--		p->width = 16;
--		p->read_count = sh_cmt_read16;
--		p->write_count = sh_cmt_write16;
--		p->overflow_bit = 0x80;
--		p->clear_bits = ~0x80;
-+		cmt->width = 16;
-+		cmt->read_count = sh_cmt_read16;
-+		cmt->write_count = sh_cmt_write16;
-+		cmt->overflow_bit = 0x80;
-+		cmt->clear_bits = ~0x80;
- 	} else {
--		p->width = 32;
--		p->read_count = sh_cmt_read32;
--		p->write_count = sh_cmt_write32;
--		p->overflow_bit = 0x8000;
--		p->clear_bits = ~0xc000;
-+		cmt->width = 32;
-+		cmt->read_count = sh_cmt_read32;
-+		cmt->write_count = sh_cmt_write32;
-+		cmt->overflow_bit = 0x8000;
-+		cmt->clear_bits = ~0xc000;
- 	}
- 
--	if (p->width = (sizeof(ch->max_match_value) * 8))
-+	if (cmt->width = (sizeof(ch->max_match_value) * 8))
- 		ch->max_match_value = ~0;
- 	else
--		ch->max_match_value = (1 << p->width) - 1;
-+		ch->max_match_value = (1 << cmt->width) - 1;
- 
--	ch->cmt = p;
-+	ch->cmt = cmt;
- 	ch->match_value = ch->max_match_value;
- 	raw_spin_lock_init(&ch->lock);
- 
--	ret = sh_cmt_register(ch, (char *)dev_name(&p->pdev->dev),
-+	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
- 			      cfg->clockevent_rating,
- 			      cfg->clocksource_rating);
- 	if (ret) {
--		dev_err(&p->pdev->dev, "registration failed\n");
-+		dev_err(&cmt->pdev->dev, "registration failed\n");
- 		goto err4;
- 	}
- 	ch->cs_enabled = false;
- 
- 	ret = setup_irq(irq, &ch->irqaction);
- 	if (ret) {
--		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
-+		dev_err(&cmt->pdev->dev, "failed to request irq %d\n", irq);
- 		goto err4;
- 	}
- 
--	platform_set_drvdata(pdev, p);
-+	platform_set_drvdata(pdev, cmt);
- 
- 	return 0;
- err4:
--	clk_unprepare(p->clk);
-+	clk_unprepare(cmt->clk);
- err3:
--	clk_put(p->clk);
-+	clk_put(cmt->clk);
- err2:
--	iounmap(p->mapbase_str);
-+	iounmap(cmt->mapbase_str);
- err1:
--	iounmap(p->mapbase);
-+	iounmap(cmt->mapbase);
- err0:
- 	return ret;
- }
- 
- static int sh_cmt_probe(struct platform_device *pdev)
- {
--	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
-+	struct sh_cmt_device *cmt = platform_get_drvdata(pdev);
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	int ret;
- 
-@@ -833,20 +833,20 @@ static int sh_cmt_probe(struct platform_device *pdev)
- 		pm_runtime_enable(&pdev->dev);
- 	}
- 
--	if (p) {
-+	if (cmt) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
- 		goto out;
- 	}
- 
--	p = kmalloc(sizeof(*p), GFP_KERNEL);
--	if (p = NULL) {
-+	cmt = kmalloc(sizeof(*cmt), GFP_KERNEL);
-+	if (cmt = NULL) {
- 		dev_err(&pdev->dev, "failed to allocate driver data\n");
- 		return -ENOMEM;
- 	}
- 
--	ret = sh_cmt_setup(p, pdev);
-+	ret = sh_cmt_setup(cmt, pdev);
- 	if (ret) {
--		kfree(p);
-+		kfree(cmt);
- 		pm_runtime_idle(&pdev->dev);
- 		return ret;
- 	}
--- 
-1.8.3.2
-
++static const struct platform_device_info ether_info __initconst = {
++	.parent		= &platform_bus,
++	.name		= "r8a7791-ether",
++	.id		= -1,
++	.res		= ether_resources,
++	.num_res	= ARRAY_SIZE(ether_resources),
++	.data		= &ether_pdata,
++	.size_data	= sizeof(ether_pdata),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
+ /* LEDS */
+ static struct gpio_led koelsch_leds[] = {
+ 	{
+@@ -426,10 +438,7 @@ static void __init koelsch_add_standard_
+ 				  ARRAY_SIZE(koelsch_pinctrl_map));
+ 	r8a7791_pinmux_init();
+ 	r8a7791_add_standard_devices();
+-	platform_device_register_resndata(&platform_bus, "r8a7791-ether", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  &ether_pdata, sizeof(ether_pdata));
++	platform_device_register_full(&ether_info);
+ 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
+ 				      &koelsch_leds_pdata,
+ 				      sizeof(koelsch_leds_pdata));
