@@ -1,121 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Feb 2014 12:56:40 +0000
-Subject: Re: [PATCH v3 03/20] ARM: shmobile: r8a7779: Add clock index macros for DT sources
-Message-Id: <1835339.lYuBaTCzaY@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 16 Feb 2014 21:32:00 +0000
+Subject: [PATCH v3 3/4] ARM: shmobile: koelsch-reference: Refactor clock lookup hack
+Message-Id: <1392586321-12187-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
- <1393400016-23433-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Make the clock lookup hack more generic to ease the addition of more
+devices.
 
-Thank you for the patch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 42 +++++++++++++++---------
+ 1 file changed, 27 insertions(+), 15 deletions(-)
 
-On Wednesday 26 February 2014 16:33:19 Simon Horman wrote:
-> Add macros usable by device tree sources to reference r8a7779 clocks by
-> index.
-> 
-> Based on work for the r8a7791 SoC by Laurent Pinchart.
-> 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> v3
-> * As suggested by Laurent Pinchart
->   - Consolidate R8A7779_CLK_HSPI{0,1,2} into R8A7779_CLK_HSPI
->   - Correct inverted indexes of R8A7779_CLK_TMU{1,2}
->   - Consolidate R8A7779_CLK_{E,O}HCI{0,1} into R8A7779_CLK_USB{0,1}
->   - Add ethernet, MMC and HSCIF entries
->   - Replace R8A7779_SCIF6 with R8A7779_CLK_SCIF5
-> 
-> * Add R8A7779_CLK_PCIE
-> 
-> v2
-> * No change
-> ---
->  include/dt-bindings/clock/r8a7779-clock.h | 63
-> +++++++++++++++++++++++++++++++ 1 file changed, 63 insertions(+)
->  create mode 100644 include/dt-bindings/clock/r8a7779-clock.h
-> 
-> diff --git a/include/dt-bindings/clock/r8a7779-clock.h
-> b/include/dt-bindings/clock/r8a7779-clock.h new file mode 100644
-> index 0000000..8ab8007
-> --- /dev/null
-> +++ b/include/dt-bindings/clock/r8a7779-clock.h
-> @@ -0,0 +1,63 @@
-> +/*
-> + * Copyright (C) 2013  Horms Solutions Ltd.
-> + *
-> + * Contact: Simon Horman <horms@verge.net.au>
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; either version 2 of the License, or
-> + * (at your option) any later version.
-> + */
-> +
-> +#ifndef __DT_BINDINGS_CLOCK_R8A7779_H__
-> +#define __DT_BINDINGS_CLOCK_R8A7779_H__
-> +
-> +/* CPG */
-> +#define R8A7779_CLK_PLLA	0
-> +#define R8A7779_CLK_Z		1
-> +#define R8A7779_CLK_ZS		2
-> +#define R8A7779_CLK_S		3
-> +#define R8A7779_CLK_S1		4
-> +#define R8A7779_CLK_P		5
-> +#define R8A7779_CLK_OUT		6
-> +
-> +/* MSTP 0 */
-> +#define R8A7779_CLK_HSPI	7
-> +#define R8A7779_CLK_TMU2	14
-> +#define R8A7779_CLK_TMU1	15
-> +#define R8A7779_CLK_TMU0	16
-> +#define R8A7779_CLK_HSCIF1	18
-> +#define R8A7779_CLK_HSCIF0	19
-> +#define R8A7779_CLK_SCIF5	21
-> +#define R8A7779_CLK_SCIF4	22
-> +#define R8A7779_CLK_SCIF3	23
-> +#define R8A7779_CLK_SCIF2	24
-> +#define R8A7779_CLK_SCIF1	25
-> +#define R8A7779_CLK_SCIF0	26
-> +#define R8A7779_CLK_I2C3	27
-> +#define R8A7779_CLK_I2C2	28
-> +#define R8A7779_CLK_I2C1	29
-> +#define R8A7779_CLK_I2C0	30
-> +
-> +/* MSTP 1 */
-> +#define R8A7779_CLK_USB01	0
-> +#define R8A7779_CLK_USB2	1
-> +#define R8A7779_CLK_DU		3
-> +#define R8A7779_CLK_VIN2	8
-> +#define R8A7779_CLK_VIN1	9
-> +#define R8A7779_CLK_VIN0	10
-> +#define R8A7779_CLK_ETHER	14
-> +#define R8A7779_CLK_SATA	15
-> +#define R8A7779_CLK_PCIE	16
-> +#define R8A7779_CLK_VIN3	20
-> +
-> +/* MSTP 3 */
-> +#define R8A7779_CLK_SDHI3	20
-> +#define R8A7779_CLK_SDHI2	21
-> +#define R8A7779_CLK_SDHI1	22
-> +#define R8A7779_CLK_SDHI0	23
-> +#define R8A7779_CLK_MMC1	30
-> +#define R8A7779_CLK_MMC0	31
-> +
-> +
-> +#endif /* __DT_BINDINGS_CLOCK_R8A7779_H__ */
-
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index feb8d97..42c6eb4 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -32,30 +32,42 @@ static void __init koelsch_add_standard_devices(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+ 	/*
+-	 * This is a really crude hack to provide clkdev support to the SCIF
+-	 * and CMT devices until they get moved to DT.
++	 * This is a really crude hack to provide clkdev support to the CMT and
++	 * DU devices until they get moved to DT.
+ 	 */
+-	static const char * const scif_names[] = {
+-		"scifa0", "scifa1", "scifb0", "scifb1", "scifb2", "scifa2",
+-		"scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scifa3",
+-		"scifa4", "scifa5",
++	static const struct clk_name {
++		const char *clk;
++		const char *con_id;
++		const char *dev_id;
++	} clk_names[] = {
++		{ "cmt0", NULL, "sh_cmt.0" },
++		{ "scifa0", NULL, "sh-sci.0" },
++		{ "scifa1", NULL, "sh-sci.1" },
++		{ "scifb0", NULL, "sh-sci.2" },
++		{ "scifb1", NULL, "sh-sci.3" },
++		{ "scifb2", NULL, "sh-sci.4" },
++		{ "scifa2", NULL, "sh-sci.5" },
++		{ "scif0", NULL, "sh-sci.6" },
++		{ "scif1", NULL, "sh-sci.7" },
++		{ "scif2", NULL, "sh-sci.8" },
++		{ "scif3", NULL, "sh-sci.9" },
++		{ "scif4", NULL, "sh-sci.10" },
++		{ "scif5", NULL, "sh-sci.11" },
++		{ "scifa3", NULL, "sh-sci.12" },
++		{ "scifa4", NULL, "sh-sci.13" },
++		{ "scifa5", NULL, "sh-sci.14" },
+ 	};
+ 	struct clk *clk;
+ 	unsigned int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
+-		clk = clk_get(NULL, scif_names[i]);
++	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
++		clk = clk_get(NULL, clk_names[i].clk);
+ 		if (!IS_ERR(clk)) {
+-			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
++			clk_register_clkdev(clk, clk_names[i].con_id,
++					    clk_names[i].dev_id);
+ 			clk_put(clk);
+ 		}
+ 	}
+-
+-	clk = clk_get(NULL, "cmt0");
+-	if (!IS_ERR(clk)) {
+-		clk_register_clkdev(clk, NULL, "sh_cmt.0");
+-		clk_put(clk);
+-	}
+ #else
+ 	r8a7791_clock_init();
+ #endif
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.3.2
 
