@@ -1,81 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 17 Feb 2014 09:32:40 +0000
-Subject: Re: [PATCH v3 2/4] ARM: shmobile: lager-reference: Add DU device
-Message-Id: <19358133.bjEQKUL5AI@avalon>
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Sun, 16 Feb 2014 19:00:03 +0000
+Subject: [PATCH] sh: remove SH_ALPHA_BOARD
+Message-Id: <1392577203.28866.29.camel@x220>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392586321-12187-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392586321-12187-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Richard Weinberger <richard@nod.at>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Simon,
+The Kconfig symbol SH_ALPHA_BOARD was added in v2.6.38. It has never
+been used. Setting it has no effect. There are no calls for
+mach_is_sh_alpha_board(). This symbol can safely be removed.
 
-On Monday 17 February 2014 12:09:32 Simon Horman wrote:
-> On Sun, Feb 16, 2014 at 10:31:59PM +0100, Laurent Pinchart wrote:
-> > The DU device has no DT bindings yet, instantiate it as a platform
-> > device for now.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > Acked-by: Magnus Damm <damm@opensource.se>
-> 
-> Hi Laurent,
-> 
-> thanks for this.
-> 
-> It seems to me that it would be best to split this patch into two,
-> a board portion and a dt portion, so that each patche can
-> be applied to their respective branch.
-> 
-> In order to save you the bother of resending the series yet another time
-> I have taken the liberty of splitting the patch into two. The following
-> is the DTS patch. The remainder of your patch was taken (otherwise
-> unchanged) as the boards patch,
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+---
+Tested with "git grep".
 
-That's fine with me, but we should make sure to merge the DT change first, 
-otherwise DU will be broken between the two patches.
+ arch/sh/boards/Kconfig   | 5 -----
+ arch/sh/tools/mach-types | 1 -
+ 2 files changed, 6 deletions(-)
 
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> ARM: shmobile: lager: Add DU device to DTS
-> 
-> The DU device has no DT bindings yet, instantiate it as a platform
-> device for now.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> [horms+renesas@verge.net.au: broken out of larger patch that
->                              included board changes]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/boot/dts/r8a7790-lager.dts | 7 ++++++-
->  1 file changed, 6 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> b/arch/arm/boot/dts/r8a7790-lager.dts index 5466fe4..26a9010 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -111,9 +111,14 @@
->  };
-> 
->  &pfc {
-> -	pinctrl-0 = <&scif0_pins &scif1_pins>;
-> +	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
->  	pinctrl-names = "default";
-> 
-> +	du_pins: du {
-> +		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
-> +		renesas,function = "du";
-> +	};
-> +
->  	scif0_pins: serial0 {
->  		renesas,groups = "scif0_data";
->  		renesas,function = "scif0";
-
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index eb1cf84..70c4f51 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -3,9 +3,6 @@ menu "Board support"
+ config SOLUTION_ENGINE
+ 	bool
+ 
+-config SH_ALPHA_BOARD
+-	bool
+-
+ config SH_SOLUTION_ENGINE
+ 	bool "SolutionEngine"
+ 	select SOLUTION_ENGINE
+@@ -345,7 +342,6 @@ config SH_SH2007
+ 
+ config SH_APSH4A3A
+ 	bool "AP-SH4A-3A"
+-	select SH_ALPHA_BOARD
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	depends on CPU_SUBTYPE_SH7785
+ 	help
+@@ -353,7 +349,6 @@ config SH_APSH4A3A
+ 
+ config SH_APSH4AD0A
+ 	bool "AP-SH4AD-0A"
+-	select SH_ALPHA_BOARD
+ 	select SYS_SUPPORTS_PCI
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	depends on CPU_SUBTYPE_SH7786
+diff --git a/arch/sh/tools/mach-types b/arch/sh/tools/mach-types
+index 569977e..99f524c 100644
+--- a/arch/sh/tools/mach-types
++++ b/arch/sh/tools/mach-types
+@@ -9,7 +9,6 @@ SE			SH_SOLUTION_ENGINE
+ HIGHLANDER		SH_HIGHLANDER
+ RTS7751R2D		SH_RTS7751R2D
+ RSK			SH_RSK
+-ALPHA_BOARD		SH_ALPHA_BOARD
+ 
+ #
+ # List of companion chips / MFDs.
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.3
 
