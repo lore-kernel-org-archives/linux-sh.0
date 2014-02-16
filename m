@@ -1,69 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 21 Feb 2014 00:55:27 +0000
-Subject: [PATCH 4/5][RESENT] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7790
-Message-Id: <8738jdqo78.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 16 Feb 2014 21:36:59 +0000
+Subject: [PATCH v2] MAINTAINERS: Mark SuperH orphan
+Message-Id: <1392586619-27018-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-	<878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: Paul Mundt <paul.mundt@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Paul Bolle <pebolle@tiscali.nl>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-This patch updates r8a7790 DT data to have SoC specific settings.
+Paul Mundt's email address bounces regularly, and he hasn't taken any
+SuperH patches for about one year.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Suggested-by: Paul Bolle <pebolle@tiscali.nl>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+v2: Add a CREDITS entry
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 38acf26..cfc37ec 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -38,6 +38,7 @@
- struct sh_mobile_sdhi_of_data {
- 	unsigned long tmio_flags;
- 	unsigned long capabilities;
-+	unsigned long capabilities2;
- };
+ CREDITS     |    4 ++++
+ MAINTAINERS |    4 +---
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/CREDITS b/CREDITS
+index e371c5504a50..acab035edcfc 100644
+--- a/CREDITS
++++ b/CREDITS
+@@ -2564,6 +2564,10 @@ N. Wolfgang Muees
+ E: wolfgang@iksw-muees.de
+ D: Auerswald USB driver
  
- static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
-@@ -51,6 +52,12 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
- 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
-+static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.capabilities2	= MMC_CAP2_NO_MULTI_READ,
-+};
++N: Paul Mundt
++E: paul.mundt@gmail.com
++D: SuperH maintainer
 +
- static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-shmobile" },
- 	{ .compatible = "renesas,sdhi-sh7372" },
-@@ -59,7 +66,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
--	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-@@ -219,6 +226,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		const struct sh_mobile_sdhi_of_data *of_data = of_id->data;
- 		mmc_data->flags |= of_data->tmio_flags;
- 		mmc_data->capabilities |= of_data->capabilities;
-+		mmc_data->capabilities2 |= of_data->capabilities2;
- 	}
+ N: Ian A. Murdock
+ E: imurdock@gnu.ai.mit.edu
+ D: Creator of Debian distribution
+diff --git a/MAINTAINERS b/MAINTAINERS
+index b2cf5cfb4d29..2d294561ebdc 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8372,12 +8372,10 @@ S:	Maintained
+ F:	drivers/net/ethernet/dlink/sundance.c
  
- 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+ SUPERH
+-M:	Paul Mundt <lethal@linux-sh.org>
+ L:	linux-sh@vger.kernel.org
+ W:	http://www.linux-sh.org
+ Q:	http://patchwork.kernel.org/project/linux-sh/list/
+-T:	git git://github.com/pmundt/linux-sh.git sh-latest
+-S:	Supported
++S:	Orphan
+ F:	Documentation/sh/
+ F:	arch/sh/
+ F:	drivers/sh/
 -- 
 1.7.9.5
 
