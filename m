@@ -1,63 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:39 +0000
-Subject: [PATCH 11/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
-Message-Id: <1392907779-22053-12-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 16 Feb 2014 21:31:57 +0000
+Subject: [PATCH v3 0/4] Lager and Koelsh reference DU support
+Message-Id: <1392586321-12187-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Hello,
 
-Add pinctrl and SPI device for MSIOF on Koelsch.
-On this board, only MSIOF0 is in use. Its bus contains a single device
-(a Renesas R2A11302FT PMIC), for which no bindings are defined yet.
+These two patches add support for the Display Unit to the Lager and Koelsch 
+reference board files. The device should ideally be instantiated through DT,
+but given the lack of DT bindings for the foreseeable future platform devices
+are used as a temporary solution.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
----
- arch/arm/boot/dts/r8a7791-koelsch.dts |   21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+Changes since v2:
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index cc6e63914f7c..b29ca85b248f 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -150,6 +150,12 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	msiof0_pins: spi1 {
-+		renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
-+				 "msiof0_tx";
-+		renesas,function = "msiof0";
-+	};
- };
- 
- &sata0 {
-@@ -186,3 +192,18 @@
- 		};
- 	};
- };
-+
-+&msiof0 {
-+	pinctrl-0 = <&msiof0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+
-+	pmic: pmic@0 {
-+		compatible = "renesas,r2a11302ft";
-+		reg = <0>;
-+		spi-max-frequency = <6000000>;
-+		spi-cpol;
-+		spi-cpha;
-+	};
-+};
+- Split off the refactoring of the clock registration.
+
+Changes since v1:
+
+- Rebased directly on top of Simon's latest devel branch.
+
+Laurent Pinchart (4):
+  ARM: shmobile: lager-reference: Refactor clock lookup hack
+  ARM: shmobile: lager-reference: Add DU device
+  ARM: shmobile: koelsch-reference: Refactor clock lookup hack
+  ARM: shmobile: koelsch-reference: Add DU device
+
+ arch/arm/boot/dts/r8a7790-lager.dts              |   7 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts            |   7 +-
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 101 ++++++++++++++++++----
+ arch/arm/mach-shmobile/board-lager-reference.c   | 103 +++++++++++++++++++----
+ 4 files changed, 186 insertions(+), 32 deletions(-)
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
