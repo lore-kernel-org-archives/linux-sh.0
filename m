@@ -1,83 +1,26 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 16 Feb 2014 21:32:00 +0000
-Subject: [PATCH v3 3/4] ARM: shmobile: koelsch-reference: Refactor clock lookup hack
-Message-Id: <1392586321-12187-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Feb 2014 02:52:55 +0000
+Subject: Re: [PATCH v3 3/4] ARM: shmobile: koelsch-reference: Refactor clock lookup hack
+Message-Id: <CANqRtoQyMmkc8fh4KfSphy0e+Sd29ss_4uxgBkOZyyaZaJkg4A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392586321-12187-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1392586321-12187-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Make the clock lookup hack more generic to ease the addition of more
-devices.
+On Mon, Feb 17, 2014 at 6:32 AM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> Make the clock lookup hack more generic to ease the addition of more
+> devices.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-koelsch-reference.c | 42 +++++++++++++++---------
- 1 file changed, 27 insertions(+), 15 deletions(-)
+Looks better than before to me!
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index feb8d97..42c6eb4 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -32,30 +32,42 @@ static void __init koelsch_add_standard_devices(void)
- {
- #ifdef CONFIG_COMMON_CLK
- 	/*
--	 * This is a really crude hack to provide clkdev support to the SCIF
--	 * and CMT devices until they get moved to DT.
-+	 * This is a really crude hack to provide clkdev support to the CMT and
-+	 * DU devices until they get moved to DT.
- 	 */
--	static const char * const scif_names[] = {
--		"scifa0", "scifa1", "scifb0", "scifb1", "scifb2", "scifa2",
--		"scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scifa3",
--		"scifa4", "scifa5",
-+	static const struct clk_name {
-+		const char *clk;
-+		const char *con_id;
-+		const char *dev_id;
-+	} clk_names[] = {
-+		{ "cmt0", NULL, "sh_cmt.0" },
-+		{ "scifa0", NULL, "sh-sci.0" },
-+		{ "scifa1", NULL, "sh-sci.1" },
-+		{ "scifb0", NULL, "sh-sci.2" },
-+		{ "scifb1", NULL, "sh-sci.3" },
-+		{ "scifb2", NULL, "sh-sci.4" },
-+		{ "scifa2", NULL, "sh-sci.5" },
-+		{ "scif0", NULL, "sh-sci.6" },
-+		{ "scif1", NULL, "sh-sci.7" },
-+		{ "scif2", NULL, "sh-sci.8" },
-+		{ "scif3", NULL, "sh-sci.9" },
-+		{ "scif4", NULL, "sh-sci.10" },
-+		{ "scif5", NULL, "sh-sci.11" },
-+		{ "scifa3", NULL, "sh-sci.12" },
-+		{ "scifa4", NULL, "sh-sci.13" },
-+		{ "scifa5", NULL, "sh-sci.14" },
- 	};
- 	struct clk *clk;
- 	unsigned int i;
- 
--	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
--		clk = clk_get(NULL, scif_names[i]);
-+	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
-+		clk = clk_get(NULL, clk_names[i].clk);
- 		if (!IS_ERR(clk)) {
--			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
-+			clk_register_clkdev(clk, clk_names[i].con_id,
-+					    clk_names[i].dev_id);
- 			clk_put(clk);
- 		}
- 	}
--
--	clk = clk_get(NULL, "cmt0");
--	if (!IS_ERR(clk)) {
--		clk_register_clkdev(clk, NULL, "sh_cmt.0");
--		clk_put(clk);
--	}
- #else
- 	r8a7791_clock_init();
- #endif
--- 
-1.8.3.2
+Acked-by: Magnus Damm <damm@opensource.se>
 
+Thanks,
+
+/ magnus
