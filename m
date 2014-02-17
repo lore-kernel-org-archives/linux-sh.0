@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 17 Feb 2014 13:50:28 +0000
+Date: Mon, 17 Feb 2014 13:53:26 +0000
 Subject: Re: [PATCH] net: add init-regs for of_phy support
-Message-Id: <530213A4.4030400@codethink.co.uk>
+Message-Id: <53021456.4020404@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392642484-19938-1-git-send-email-ben.dooks@codethink.co.uk> <1392642484-19938-2-git-send-email-ben.dooks@codethink.co.uk> <20140217134448.GA19308@e106331-lin.cambridge.arm.com>
 In-Reply-To: <20140217134448.GA19308@e106331-lin.cambridge.arm.com>
@@ -23,13 +23,23 @@ On 17/02/14 13:44, Mark Rutland wrote:
 > Why not have a driver for the particular PHY? If it's not standard we
 > don't need to pretend it is. If it has some extensions then the standard
 > compatible string can be a fallback entry in the compatible list.
+>
+> I think allocating a compatible string and handling it in the kernel is
+> better than having arbitrary register poke values in the dt.
 
-I was trying to provide some useful and reasonably generic code
-to setup PHYs without having to add specific arguments to each of
-them.
+>> +	prop = of_find_property(of_node, "init-regs", &len);
+>> +	if (prop) {
+>> +		if (len % (sizeof(__be32) * 3)) {
+>> +			dev_err(dev, "init-regs not multiple of 3 entries\n");
+>> +			return -EINVAL;
+>> +		}
+>> +
+>> +		ptr = of_prop_next_u32(prop, ptr, &reg);
+>> +		while (ptr != NULL) {
+>> +			ptr = of_prop_next_u32(prop, ptr, &reg);
 
-I could have added something like ksz8041,led-mode1 = <1> and
-updated the micrel driver.
+oops, bad rebase fixup, this should have been deleted.
+
 
 -- 
 Ben Dooks				http://www.codethink.co.uk/
