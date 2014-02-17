@@ -1,50 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Feb 2014 08:38:37 +0000
-Subject: Re: [PATCH 5/4] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7791
-Message-Id: <20140212083834.GC28329@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Feb 2014 06:31:52 +0000
+Subject: [PATCH] ARM: shmobile: Check MD21 at SMP boot in case of APMU
+Message-Id: <20140217063152.21876.6981.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
- <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
- <8738joao5o.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <8738joao5o.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 11, 2014 at 09:35:50PM -0800, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch updates r8a7791 DT data to have SoC specific settings.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+On R-Car Gen2 SoCs such as r8a7790 and r8a7791 the hardware boot
+mode bit MD21 indicates if hardware debug mode is enabled or not.
 
+In case hardware debug mode is enabled print a warning and refrain
+from booting secondary CPU cores. Without this patch Koelsch boards
+with SW8-4 set to OFF will hang at SMP boot.
 
-> ---
-> >> Chris
-> 
-> I add this patch to my previous
-> "Re: mmc: sh_mobile_sdhi: DT update for R-Car" patch-set as [5/4]
-> Please let me know if you want re-send these patch-set again
-> 
->  drivers/mmc/host/sh_mobile_sdhi.c |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 1622b03..d54169f 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -65,6 +65,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
->  	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
->  	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
-> +	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
->  	{},
->  };
->  MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-> -- 
-> 1.7.9.5
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-devel-v3.14-rc2-20140213
+
+ arch/arm/mach-shmobile/platsmp-apmu.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-02-17 15:11:15.000000000 +0900
+@@ -17,6 +17,7 @@
+ #include <asm/cp15.h>
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
++#include <mach/rcar-gen2.h>
+ 
+ static struct {
+ 	void __iomem *iomem;
+@@ -136,6 +137,12 @@ void __init shmobile_smp_apmu_prepare_cp
+ 
+ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
++	/* Refrain boot when hardware debug mode is enabled */
++	if (rcar_gen2_read_mode_pins() & BIT(21)) {
++		pr_warn("Unable to boot CPU%d when MD21 is set\n", cpu);
++		return -ENOTSUPP;
++	}
++
+ 	/* For this particular CPU register boot vector */
+ 	shmobile_smp_hook(cpu, virt_to_phys(shmobile_invalidate_start), 0);
+ 
