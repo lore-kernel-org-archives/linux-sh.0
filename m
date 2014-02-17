@@ -1,69 +1,31 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Feb 2014 00:26:11 +0000
-Subject: Re: [PATCH 15/15] sh: intc: Enable driver compilation with COMPILE_TEST
-Message-Id: <20140218002610.GA9754@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 17 Feb 2014 21:19:16 +0000
+Subject: [PATCH 0/3] add i2c support to genmai
+Message-Id: <1392671959-22834-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1385515117-23664-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <3670569.dVXQxeaJBM@avalon> <2305561.CqXvNryyXG@avalon>
- <20140108043558.GG15891@verge.net.au>
-In-Reply-To: <20140108043558.GG15891@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 08, 2014 at 01:35:59PM +0900, Simon Horman wrote:
-> On Tue, Jan 07, 2014 at 10:54:41AM +0100, Laurent Pinchart wrote:
-> > On Wednesday 11 December 2013 13:52:31 Laurent Pinchart wrote:
-> > > Hi Magnus,
-> > > 
-> > > Could you tell me who is responsible for merging drivers/sh patches ? If
-> > > that's one of you, could you please pick this patch up for v3.14 ?
-> > 
-> > Ping ?
-> 
-> I am happy to take this if no one objects.
+Since I got renesas-devel-v3.14-rc3-20140217 to boot with r7s72100 again [1], I
+could now verify that this series in deed makes I2C2 work with the genmai
+board. The missing PFC patch can be added later once we have PFC support.
+Because I2C is the default pinmux setup, it already works without PFC. Please
+apply.
 
-Sorry for the extended delay on this one.
-I have finally queued it up.
+[1] http://thread.gmane.org/gmane.linux.kernel/1649638
 
-> > > On Wednesday 27 November 2013 02:18:37 Laurent Pinchart wrote:
-> > > > This helps increasing build testing coverage.
-> > > > 
-> > > > Cc: Magnus Damm <magnus.damm@gmail.com>
-> > > > Signed-off-by: Laurent Pinchart
-> > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > ---
-> > > > 
-> > > >  drivers/sh/intc/Kconfig | 2 +-
-> > > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > > > 
-> > > > diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-> > > > index a305731..f7d9061 100644
-> > > > --- a/drivers/sh/intc/Kconfig
-> > > > +++ b/drivers/sh/intc/Kconfig
-> > > > @@ -6,7 +6,7 @@ comment "Interrupt controller options"
-> > > > 
-> > > >  config INTC_USERIMASK
-> > > >  
-> > > >  	bool "Userspace interrupt masking support"
-> > > > 
-> > > > -	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
-> > > > +	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-> > > > 
-> > > >  	help
-> > > >  	
-> > > >  	  This enables support for hardware-assisted userspace hardirq
-> > > >  	  masking.
-> > 
-> > -- 
-> > Regards,
-> > 
-> > Laurent Pinchart
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Wolfram Sang (3):
+  arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
+  arm: shmobile: genmai: adapt dts to use native i2c driver
+  ARM: shmobile: r7s72100: update defconfig for I2C usage
+
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 ++++
+ arch/arm/boot/dts/r7s72100.dtsi                 | 72 +++++++++++++++++++++++++
+ arch/arm/configs/genmai_defconfig               |  4 +-
+ 3 files changed, 86 insertions(+), 1 deletion(-)
+
+-- 
+1.8.5.1
+
