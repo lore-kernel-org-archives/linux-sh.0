@@ -1,29 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 17 Feb 2014 07:35:21 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 17 Feb 2014 08:53:02 +0000
 Subject: Re: [PATCH] ARM: shmobile: Check MD21 at SMP boot in case of APMU
-Message-Id: <CANqRtoS7dKZcjcF3k6wq21UKmZG44txjbLfesmP+S4-tR0UNCQ@mail.gmail.com>
+Message-Id: <CAMuHMdUiRb0VmtTw-v04Ex-YyfV00+ixQoDgE3yD8kKXxVWCxQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140217063152.21876.6981.sendpatchset@w520>
- <20140217072111.GA23528@verge.net.au>
-In-Reply-To: <20140217072111.GA23528@verge.net.au>
+In-Reply-To: <20140217063152.21876.6981.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 17, 2014 at 4:21 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Feb 17, 2014 at 03:31:52PM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> On R-Car Gen2 SoCs such as r8a7790 and r8a7791 the hardware boot
->> mode bit MD21 indicates if hardware debug mode is enabled or not.
->>
->> In case hardware debug mode is enabled print a warning and refrain
->> from booting secondary CPU cores. Without this patch Koelsch boards
->> with SW8-4 set to OFF will hang at SMP boot.
+On Mon, Feb 17, 2014 at 7:31 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm@opensource.se>
 >
-> Out of interest, is this the solution to your recent SMP troubles?
+> On R-Car Gen2 SoCs such as r8a7790 and r8a7791 the hardware boot
+> mode bit MD21 indicates if hardware debug mode is enabled or not.
+>
+> In case hardware debug mode is enabled print a warning and refrain
+> from booting secondary CPU cores. Without this patch Koelsch boards
+> with SW8-4 set to OFF will hang at SMP boot.
 
-Yes, one of them. =)
+Ah, mine was set to OFF.
 
-/ magnus
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+
+with one minor nit:
+
+>  int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+>  {
+> +       /* Refrain boot when hardware debug mode is enabled */
+> +       if (rcar_gen2_read_mode_pins() & BIT(21)) {
+> +               pr_warn("Unable to boot CPU%d when MD21 is set\n", cpu);
+
+%u
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
