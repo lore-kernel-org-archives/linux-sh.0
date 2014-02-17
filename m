@@ -1,148 +1,63 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:36 +0000
-Subject: [PATCH 01/17] ARM: shmobile: dts: Remove r8a7791-koelsch-reference.dts
-Message-Id: <52e62f7f4b25d4f087395f805768e985e9d91bd0.1391665761.git.horms+renesas@verge.net.au>
+From: Bobby Bingham <koorogi@koorogi.info>
+Date: Mon, 17 Feb 2014 02:50:17 +0000
+Subject: [PATCH 0/3] Don't let system calls clobber userspace registers
+Message-Id: <cover.1392600646.git.koorogi@koorogi.info>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+When invoking syscall handlers on sh32, the saved userspace registers
+are at the top of the stack. This seems to have been intentional, as it
+is an easy way to pass r0, r1, ... to the handler as parameters 5, 6,
+...
 
-The dts file has been superseded by r8a7791-koelsch.dts and been removed
-from the ARCH_SHMOBILE_LEGACY dtb target. Remove it.
+It causes problems, however, because the compiler is allowed to generate
+code for a function which clobbers that function's own parameters. For
+example, gcc generates the following code for clone:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch-reference.dts | 115 ------------------------
- 1 file changed, 115 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7791-koelsch-reference.dts
+    <SyS_clone>:
+        mov.l   8c020714 <SyS_clone+0xc>,r1  ! 8c020540 <do_fork>
+        mov.l   r7,@r15
+        mov     r6,r7
+        jmp     @r1
+        mov     #0,r6
+        nop
+        .word 0x0540
+        .word 0x8c02
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts b/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-deleted file mode 100644
-index 588ca17..0000000
---- a/arch/arm/boot/dts/r8a7791-koelsch-reference.dts
-+++ /dev/null
-@@ -1,115 +0,0 @@
--/*
-- * Device Tree Source for the Koelsch board
-- *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7791.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--
--/ {
--	model = "Koelsch";
--	compatible = "renesas,koelsch-reference", "renesas,r8a7791";
--
--	chosen {
--		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
--	};
--
--	memory@40000000 {
--		device_type = "memory";
--		reg = <0 0x40000000 0 0x80000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--
--	gpio-keys {
--		compatible = "gpio-keys";
--
--		key-a {
--			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
--			linux,code = <30>;
--			label = "SW30";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-b {
--			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
--			linux,code = <48>;
--			label = "SW31";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-c {
--			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
--			linux,code = <46>;
--			label = "SW32";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-d {
--			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
--			linux,code = <32>;
--			label = "SW33";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-e {
--			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
--			linux,code = <18>;
--			label = "SW34";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-f {
--			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
--			linux,code = <33>;
--			label = "SW35";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--		key-g {
--			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
--			linux,code = <34>;
--			label = "SW36";
--			gpio-key,wakeup;
--			debounce-interval = <20>;
--		};
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led6 {
--			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
--		};
--		led7 {
--			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
--		};
--		led8 {
--			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
--		};
--	};
--};
--
--&pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
--	pinctrl-names = "default";
--
--	scif0_pins: serial0 {
--		renesas,groups = "scif0_data_d";
--		renesas,function = "scif0";
--	};
--
--	scif1_pins: serial1 {
--		renesas,groups = "scif1_data_d";
--		renesas,function = "scif1";
--	};
--};
+The `mov.l r7,@r15` clobbers the saved value of r0 passed from
+userspace. For most system calls, this might be a problem, because we'll
+be overwriting r0 with the return value anyway. But in the case of
+clone, copy_thread will need the original value of r0 if the
+CLONE_SETTLS flag was specified.
+
+The first patch in this series fixes this issue for system calls by
+pushing to the stack and extra copy of r0-r2 before invoking the
+handler. We discard this copy before restoring the userspace registers,
+so it is not a problem if they are clobbered.
+
+Exception handlers also receive the userspace register values in a
+similar manner, and may hit the same problem. The second patch removes
+the do_fpu_error handler, which looks susceptible to this problem and
+which, as far as I can tell, has not been used in some time. The third
+patch addresses other exception handlers.
+
+Bobby Bingham (3):
+  sh: push extra copy of r0-r2 for syscall parameters
+  sh: remove unused do_fpu_error
+  sh: don't pass saved userspace state to exception handlers
+
+ arch/sh/include/asm/syscalls_32.h | 12 +++---------
+ arch/sh/include/asm/traps_32.h    | 16 ++++------------
+ arch/sh/kernel/entry-common.S     | 15 +++++++++++----
+ arch/sh/kernel/signal_32.c        | 12 ++++--------
+ arch/sh/kernel/sys_sh32.c         |  7 ++-----
+ arch/sh/kernel/traps_32.c         | 23 +++++++----------------
+ arch/sh/math-emu/math.c           | 18 ------------------
+ 7 files changed, 31 insertions(+), 72 deletions(-)
+
 -- 
-1.8.5.2
+1.8.5.4
 
