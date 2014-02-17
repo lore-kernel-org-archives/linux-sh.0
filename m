@@ -1,44 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Feb 2014 04:25:49 +0000
-Subject: Re: [PATCH 01/03] ARM: shmobile: Remove legacy EMEV2 SoC support
-Message-Id: <CANqRtoTKLjHvjFHNtz3Qr9Mm+1ZafqxQFr7NtgTHNLh+4L+_NA@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 17 Feb 2014 21:19:19 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r7s72100: update defconfig for I2C usage
+Message-Id: <1392671959-22834-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213082558.30630.93034.sendpatchset@w520>
- <20140213082608.30630.40000.sendpatchset@w520>
- <20140217032306.GH7772@verge.net.au>
- <20140218041643.GB32417@verge.net.au>
-In-Reply-To: <20140218041643.GB32417@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-On Tue, Feb 18, 2014 at 1:16 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Feb 17, 2014 at 12:23:09PM +0900, Simon Horman wrote:
->> On Thu, Feb 13, 2014 at 05:26:08PM +0900, Magnus Damm wrote:
->> > From: Magnus Damm <damm@opensource.se>
->> >
->> > Get rid of legacy EMEV2 SoC code including the legacy clock
->> > framework implementation. The multiplatform implementation
->> > together with DT board support shall be used instead.
->> >
->> > Signed-off-by: Magnus Damm <damm@opensource.se>
->>
->> Thanks, I have queued this up.
->
-> I have dropped this patch for now and plan to deffer it.
-> This is because although this is patch 1 of the series
-> it removes emev2_clock_init() which causes the build
-> of board-kzm9d-reference.c to fail without
-> "ARM: shmobile: Remove Lager DT reference legacy clock bits".
->
-> My current thinking is that the best way to sequence this is to
-> queue up the board and defconfig changes for v3.15 but wait
-> for v3.16 to queue up the SoC changes. This avoids tedious
-> dependencies of SoC patches on board patches in the same release cycle.
+Select the correct I2C driver and activate EEPROM support to have a
+slave device for testing. Also activate i2c-dev, so i2c-tools will work.
 
-Thanks, that's of course fine with me!
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ arch/arm/configs/genmai_defconfig | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-/ magnus
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index 5ee6ac0..d238faf 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -52,6 +52,7 @@ CONFIG_IP_PNP_DHCP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_EEPROM_AT24=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CORE is not set
+ # CONFIG_NET_VENDOR_ARC is not set
+@@ -80,7 +81,8 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+-CONFIG_I2C_SH_MOBILE=y
++CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_RIIC=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
+ # CONFIG_HWMON is not set
+-- 
+1.8.5.1
+
