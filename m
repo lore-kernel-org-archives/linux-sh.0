@@ -1,44 +1,45 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Fri, 28 Feb 2014 17:28:40 +0000
-Subject: [PATCH 4/7] ARM: dts: exynos5440: fix PCIe interrupt mapping
-Message-Id: <1393608523-17509-5-git-send-email-l.stach@pengutronix.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Feb 2014 07:21:28 +0000
+Subject: [PATCH] ARM: shmobile: Remove Koelsch DT reference legacy clock bits
+Message-Id: <20140217072128.27086.81905.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-So it actually works.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+Koelsch DT reference is these days built for multiplatform
+only which means that CCF comes with the package. Remove
+unused legacy code ifdefs to clean up the code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/exynos5440.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/exynos5440.dtsi b/arch/arm/boot/dts/exynos5440.dtsi
-index 02a0a1226cef..65d425d9ec27 100644
---- a/arch/arm/boot/dts/exynos5440.dtsi
-+++ b/arch/arm/boot/dts/exynos5440.dtsi
-@@ -274,7 +274,7 @@
- 			  0x82000000 0 0x40011000 0x40011000 0 0x1ffef000>; /* non-prefetchable memory */
- 		#interrupt-cells = <1>;
- 		interrupt-map-mask = <0 0 0 0>;
--		interrupt-map = <0x0 0 &gic 53>;
-+		interrupt-map = <0 0 0 0 &gic GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
- 		num-lanes = <4>;
- 		status = "disabled";
- 	};
-@@ -295,7 +295,7 @@
- 			  0x82000000 0 0x60011000 0x60011000 0 0x1ffef000>; /* non-prefetchable memory */
- 		#interrupt-cells = <1>;
- 		interrupt-map-mask = <0 0 0 0>;
--		interrupt-map = <0x0 0 &gic 56>;
-+		interrupt-map = <0 0 0 0 &gic GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
- 		num-lanes = <4>;
- 		status = "disabled";
- 	};
--- 
-1.8.5.3
+ Written against renesas-devel-v3.14-rc3-20140217
 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-02-17 16:10:07.000000000 +0900
+@@ -84,7 +84,6 @@ static void __init koelsch_add_du_device
+ 
+ static void __init koelsch_add_standard_devices(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	/*
+ 	 * This is a really crude hack to provide clkdev support to the CMT and
+ 	 * DU devices until they get moved to DT.
+@@ -125,9 +124,7 @@ static void __init koelsch_add_standard_
+ 			clk_put(clk);
+ 		}
+ 	}
+-#else
+-	r8a7791_clock_init();
+-#endif
++
+ 	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
