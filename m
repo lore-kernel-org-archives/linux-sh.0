@@ -1,41 +1,18 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:52 +0000
-Subject: [PATCH 6/7] ARM: shmobile: Remove __init from rcar_gen2_read_mode_pins()
-Message-Id: <e7509f6eca10cff3933f8a71f4ca9d8be8447ec3.1393400446.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 17 Feb 2014 13:08:03 +0000
+Subject: RFC: add init-regs for phy nodes
+Message-Id: <1392642484-19938-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393400446.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org, devicetree@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+I have run into an issue where the KSZ8041 does not get
+initialised properly on the Renesas R8A7790 lager board.
 
-Remove __init from rcar_gen2_read_mode_pins() to allow
-it to be used after boot. For instance the R-Car Gen2
-MD21 check is needed even in the case of CPU Hotplug.
+This patch adds the ability to set arbitrary registers
+on initialisation of a phy from informaiton in the fdt.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 69ccc6c..1060448 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -28,7 +28,7 @@
- 
- #define MODEMR 0xe6160060
- 
--u32 __init rcar_gen2_read_mode_pins(void)
-+u32 rcar_gen2_read_mode_pins(void)
- {
- 	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
- 	u32 mode;
--- 
-1.8.5.2
-
+Feedback welcome.
