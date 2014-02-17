@@ -1,118 +1,23 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Feb 2014 08:26:28 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Get rid of legacy KZM9D defconfig
-Message-Id: <20140213082628.30630.3186.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 17 Feb 2014 03:23:53 +0000
+Subject: Re: [PATCH 03/03] ARM: shmobile: Get rid of legacy KZM9D defconfig
+Message-Id: <20140217032349.GI7772@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140213082558.30630.93034.sendpatchset@w520>
-In-Reply-To: <20140213082558.30630.93034.sendpatchset@w520>
+ <20140213082628.30630.3186.sendpatchset@w520>
+In-Reply-To: <20140213082628.30630.3186.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thu, Feb 13, 2014 at 05:26:28PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Get rid of the kzm9d_defconfig. The KZM9D is now supported
+> as DT only in case of EMEV2 is selected in the kernel
+> configuration.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Get rid of the kzm9d_defconfig. The KZM9D is now supported
-as DT only in case of EMEV2 is selected in the kernel
-configuration.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/configs/kzm9d_defconfig |   91 --------------------------------------
- 1 file changed, 91 deletions(-)
-
---- 0001/arch/arm/configs/kzm9d_defconfig
-+++ /dev/null	2013-06-03 21:41:10.638032047 +0900
-@@ -1,91 +0,0 @@
--# CONFIG_ARM_PATCH_PHYS_VIRT is not set
--CONFIG_EXPERIMENTAL=y
--CONFIG_SYSVIPC=y
--CONFIG_NO_HZ=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_CC_OPTIMIZE_FOR_SIZE=y
--CONFIG_SYSCTL_SYSCALL=y
--CONFIG_EMBEDDED=y
--CONFIG_PERF_EVENTS=y
--CONFIG_SLAB=y
--# CONFIG_BLK_DEV_BSG is not set
--# CONFIG_IOSCHED_DEADLINE is not set
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE_LEGACY=y
--CONFIG_ARCH_EMEV2=y
--CONFIG_MACH_KZM9D=y
--CONFIG_MEMORY_START=0x40000000
--CONFIG_MEMORY_SIZE=0x10000000
--# CONFIG_SH_TIMER_TMU is not set
--# CONFIG_SWP_EMULATE is not set
--# CONFIG_CACHE_L2X0 is not set
--CONFIG_SMP=y
--CONFIG_NR_CPUS=2
--CONFIG_HOTPLUG_CPU=y
--# CONFIG_LOCAL_TIMERS is not set
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--# CONFIG_CROSS_MEMORY_ATTACH is not set
--CONFIG_FORCE_MAX_ZONEORDER
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_AUTO_ZRELADDR=y
--CONFIG_VFP=y
--# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM_RUNTIME=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_INET=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
--# CONFIG_INET_XFRM_MODE_TUNNEL is not set
--# CONFIG_INET_XFRM_MODE_BEET is not set
--# CONFIG_INET_LRO is not set
--# CONFIG_INET_DIAG is not set
--# CONFIG_IPV6 is not set
--# CONFIG_WIRELESS is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_DEVTMPFS=y
--CONFIG_DEVTMPFS_MOUNT=y
--# CONFIG_BLK_DEV is not set
--CONFIG_NETDEVICES=y
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_CHELSIO is not set
--# CONFIG_NET_VENDOR_CIRRUS is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MARVELL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--# CONFIG_NET_VENDOR_SEEQ is not set
--CONFIG_SMSC911X=y
--# CONFIG_NET_VENDOR_STMICRO is not set
--# CONFIG_NET_VENDOR_WIZNET is not set
--# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV is not set
--# CONFIG_INPUT_KEYBOARD is not set
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
--# CONFIG_LEGACY_PTYS is not set
--# CONFIG_DEVKMEM is not set
--CONFIG_SERIAL_8250=y
--CONFIG_SERIAL_8250_CONSOLE=y
--CONFIG_SERIAL_8250_EM=y
--# CONFIG_HW_RANDOM is not set
--CONFIG_GPIOLIB=y
--CONFIG_GPIO_EM=y
--# CONFIG_HWMON is not set
--# CONFIG_HID_SUPPORT is not set
--# CONFIG_USB_SUPPORT is not set
--# CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--CONFIG_TMPFS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_ROOT_NFS=y
--# CONFIG_FTRACE is not set
+Thanks, I have queued this up.
