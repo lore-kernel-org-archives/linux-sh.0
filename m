@@ -1,120 +1,159 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:51 +0000
-Subject: [PATCH 16/17] ARM: shmobile: r8a7790: Fix serial ports DT compatible strings
-Message-Id: <59d2b5173bbe8dbc324e34263ceae4d6131058f2.1391665761.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 17 Feb 2014 20:55:31 +0000
+Subject: [PATCH V6 2/3] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+Message-Id: <1392670532-21523-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
+References: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <damm@opensource.se>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Remove the -generic suffix that has been added by mistake from the
-serial port compatible strings.
+Now when drivers/clocksource/Kconfig has been
+updated with entires for CMT, TMU and STI
+it is safe to remove these from mach-shmobile.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Also select timers per SoC via SYS_SUPPORTS_xxx.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
+[wsa: rebased to renesas-devel-v3.14-rc3-20140217]
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/Kconfig | 35 +++++++++++++++++------------------
+ 1 file changed, 17 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0914921..51c8978 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -301,7 +301,7 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4b89116..d80df50 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -25,17 +25,21 @@ comment "Renesas ARM SoCs System Type"
  
- 	scifa0: serial@e6c40000 {
--		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 64>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 144 4>;
-@@ -311,7 +311,7 @@
- 	};
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
++	select SYS_SUPPORTS_EM_STI
  
- 	scifa1: serial@e6c50000 {
--		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c50000 0 64>;
- 		interrupts = <0 145 4>;
-@@ -321,7 +321,7 @@
- 	};
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
++	select SYS_SUPPORTS_SH_MTU2
  
- 	scifa2: serial@e6c60000 {
--		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c60000 0 64>;
- 		interrupts = <0 151 4>;
-@@ -331,7 +331,7 @@
- 	};
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+ 	select RENESAS_IRQC
++	select SYS_SUPPORTS_SH_CMT
  
- 	scifb0: serial@e6c20000 {
--		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c20000 0 64>;
- 		interrupts = <0 148 4>;
-@@ -341,7 +341,7 @@
- 	};
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+ 	select RENESAS_IRQC
++	select SYS_SUPPORTS_SH_CMT
  
- 	scifb1: serial@e6c30000 {
--		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c30000 0 64>;
- 		interrupts = <0 149 4>;
-@@ -351,7 +351,7 @@
- 	};
+ comment "Renesas ARM SoCs Board Type"
  
- 	scifb2: serial@e6ce0000 {
--		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6ce0000 0 64>;
- 		interrupts = <0 150 4>;
-@@ -361,7 +361,7 @@
- 	};
+@@ -72,6 +76,8 @@ config ARCH_SH7372
+ 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_TMU
  
- 	scif0: serial@e6e60000 {
--		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		compatible = "renesas,scif-r8a7790", "renesas,scif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e60000 0 64>;
- 		interrupts = <0 152 4>;
-@@ -371,7 +371,7 @@
- 	};
+ config ARCH_SH73A0
+ 	bool "SH-Mobile AG5 (R8A73A00)"
+@@ -81,6 +87,8 @@ config ARCH_SH73A0
+ 	select I2C
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_TMU
  
- 	scif1: serial@e6e68000 {
--		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		compatible = "renesas,scif-r8a7790", "renesas,scif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e68000 0 64>;
- 		interrupts = <0 153 4>;
-@@ -381,7 +381,7 @@
- 	};
+ config ARCH_R8A73A4
+ 	bool "R-Mobile APE6 (R8A73A40)"
+@@ -91,6 +99,8 @@ config ARCH_R8A73A4
+ 	select RENESAS_IRQC
+ 	select ARCH_HAS_CPUFREQ
+ 	select ARCH_HAS_OPP
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_TMU
  
- 	hscif0: serial@e62c0000 {
--		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c0000 0 96>;
- 		interrupts = <0 154 4>;
-@@ -391,7 +391,7 @@
- 	};
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+@@ -99,6 +109,8 @@ config ARCH_R8A7740
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_TMU
  
- 	hscif1: serial@e62c8000 {
--		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
- 		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c8000 0 96>;
- 		interrupts = <0 155 4>;
+ config ARCH_R8A7778
+ 	bool "R-Car M1A (R8A77781)"
+@@ -108,6 +120,7 @@ config ARCH_R8A7778
+ 	select ARM_GIC
+ 	select USB_ARCH_HAS_EHCI
+ 	select USB_ARCH_HAS_OHCI
++	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+@@ -118,6 +131,7 @@ config ARCH_R8A7779
+ 	select USB_ARCH_HAS_EHCI
+ 	select USB_ARCH_HAS_OHCI
+ 	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_TMU
+ 
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+@@ -128,6 +142,7 @@ config ARCH_R8A7790
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
++	select SYS_SUPPORTS_SH_CMT
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+@@ -138,6 +153,7 @@ config ARCH_R8A7791
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
++	select SYS_SUPPORTS_SH_CMT
+ 
+ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+@@ -145,6 +161,7 @@ config ARCH_R7S72100
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ comment "Renesas ARM SoCs Board Type"
+ 
+@@ -325,24 +342,6 @@ config SHMOBILE_TIMER_HZ
+ 	  want to select a HZ value such as 128 that can evenly divide RCLK.
+ 	  A HZ value that does not divide evenly may cause timer drift.
+ 
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	default y
+-	help
+-	  This enables build of the TMU timer driver.
+-
+-config EM_TIMER_STI
+-	bool "STI timer driver"
+-	default y
+-	help
+-	  This enables build of the STI timer driver.
+-
+ endmenu
+ 
+ endif
 -- 
-1.8.5.2
+1.8.5.1
 
