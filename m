@@ -1,47 +1,105 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 20 Feb 2014 08:37:28 +0000
-Subject: Re: [GIT PULL 00/13] Renesas ARM Based SoC Updates for v3.15
-Message-Id: <20140220083728.GI19089@quad.lixom.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Feb 2014 07:24:19 +0000
+Subject: [PATCH v2] ARM: shmobile: Remove KZM9D board code
+Message-Id: <20140217072419.27232.82739.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391666228.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 06, 2014 at 03:21:05PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> please consider these Renesas ARM based SoC updates for v3.15.
-> 
-> This pull request is based on "Renesas CPG update for v3.15",
-> tagged as renesas-cpg-for-v3.15, which I am also sending a pull request for
-> today. The reason for the dependency is to provide driver support for
-> the "Wait for status on selected MSTP clocks" patches in this pull-request.
-> These are correctness fixes.
-> 
-> 
-> The following changes since commit a028c6da34d434e35ba8322568c756ea97ff3c18:
-> 
->   ARM: shmobile: wait for MSTP clock status to toggle, when enabling it (2014-02-04 10:22:39 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.15
-> 
-> for you to fetch changes up to 012a7069b5a10a0851584d71a1facdc40a972319:
-> 
->   ARM: shmobile: r8a7790: Add PCI USB host clock support (2014-02-04 10:25:03 +0900)
+From: Magnus Damm <damm@opensource.se>
 
-I've merged this in, not doing a separate branch for the clk patches.
+Get rid of KZM9D board code written in C. This version of the
+C board code was used in the case of multiplatform, but these
+days DT can be used instead, so because of that simply get rid
+of the C code to simplify and save space.
 
-I've merged this in under next/drivers, since the clock tables that are changed
-are hopefully finding their way into drivers/clk in the not too distant future.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Let me know if this will add complications w.r.t. merge dependencies and we can
-bring this back into next/soc, but unless you also change clock code in later
-soc branches, they can just be independent of this.
+ Written against renesas-devel-v3.14-rc3-20140217
 
+ Changes since V1:
+ - Got rid of code that modified the file emev2.h 
 
--Olof
+ arch/arm/mach-shmobile/Kconfig                 |    6 ---
+ arch/arm/mach-shmobile/Makefile                |    1 
+ arch/arm/mach-shmobile/board-kzm9d-reference.c |   47 ------------------------
+ 3 files changed, 54 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2014-02-17 16:11:12.000000000 +0900
+@@ -48,12 +48,6 @@ config MACH_KOELSCH
+ 	depends on ARCH_R8A7791
+ 	select MICREL_PHY if SH_ETH
+ 
+-config MACH_KZM9D
+-	bool "KZM9D board"
+-	depends on ARCH_EMEV2
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select SMSC_PHY if SMSC911X
+-
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-02-17 16:11:12.000000000 +0900
+@@ -58,7 +58,6 @@ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+-obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+--- 0001/arch/arm/mach-shmobile/board-kzm9d-reference.c
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,47 +0,0 @@
+-/*
+- * kzm9d board support - Reference DT implementation
+- *
+- * Copyright (C) 2013  Renesas Solutions Corp.
+- * Copyright (C) 2013  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#include <linux/init.h>
+-#include <linux/of_platform.h>
+-#include <linux/clk-provider.h>
+-#include <mach/emev2.h>
+-#include <mach/common.h>
+-#include <asm/mach/arch.h>
+-
+-static void __init kzm9d_add_standard_devices(void)
+-{
+-	of_clk_init(NULL);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+-static const char *kzm9d_boards_compat_dt[] __initdata = {
+-	"renesas,kzm9d",
+-	"renesas,kzm9d-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(KZM9D_DT, "kzm9d")
+-	.smp		= smp_ops(emev2_smp_ops),
+-	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
+-	.init_machine	= kzm9d_add_standard_devices,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= kzm9d_boards_compat_dt,
+-MACHINE_END
