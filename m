@@ -1,62 +1,239 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Mon, 24 Feb 2014 09:30:02 +0000
-Subject: [PATCH V5 2/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
-Message-Id: <1393234204-24096-3-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 17 Feb 2014 20:55:32 +0000
+Subject: [PATCH V6 3/3] sh: Remove Kconfig entries for TMU, CMT and MTU2
+Message-Id: <1392670532-21523-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
+References: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <damm@opensource.se>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Magnus Damm <damm@opensource.se>
 
-This adds internal PCI USB host clock support to R-Car M2 SoC.
+Now when drivers/clocksource/Kconfig has been
+updated with entires for CMT, TMU and MTU2
+it is safe to remove these from SH.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
-Changes in V5:
-Changes in V4:
-Changes in V3:
-* none.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
+[wsa: rebased to renesas-devel-v3.14-rc3-20140217]
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ arch/sh/Kconfig | 76 +++++++++++++++++----------------------------------------
+ 1 file changed, 23 insertions(+), 53 deletions(-)
 
-Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
-=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
-+++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:57.446571701 +0400
-@@ -177,7 +177,7 @@
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
--	MSTP704,
-+	MSTP704, MSTP703,
- 	MSTP522,
- 	MSTP314, MSTP312, MSTP311,
- 	MSTP216, MSTP207, MSTP206,
-@@ -210,6 +210,7 @@
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
- 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
-+	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
- 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
-@@ -285,6 +286,8 @@
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-+	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
- };
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 6357710..364d204 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -123,15 +123,6 @@ config SYS_SUPPORTS_NUMA
+ config SYS_SUPPORTS_PCI
+ 	bool
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+-config SYS_SUPPORTS_CMT
+-	bool
+-
+-config SYS_SUPPORTS_MTU2
+-	bool
+-
+-config SYS_SUPPORTS_TMU
+-	bool
+-
+ config STACKTRACE_SUPPORT
+ 	def_bool y
+ 
+@@ -191,14 +182,14 @@ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 
+ config CPU_SH4
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+ 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SH4A
+@@ -213,7 +204,7 @@ config CPU_SH4AL_DSP
+ config CPU_SH5
+ 	bool
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SHX2
+@@ -250,7 +241,7 @@ choice
+ config CPU_SUBTYPE_SH7619
+ 	bool "Support SH7619 processor"
+ 	select CPU_SH2
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ # SH-2A Processor Support
+ 
+@@ -258,50 +249,50 @@ config CPU_SUBTYPE_SH7201
+ 	bool "Support SH7201 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_MTU2
+  
+ config CPU_SUBTYPE_SH7203
+ 	bool "Support SH7203 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7206
+ 	bool "Support SH7206 processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ config CPU_SUBTYPE_SH7263
+ 	bool "Support SH7263 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ config CPU_SUBTYPE_SH7264
+ 	bool "Support SH7264 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7269
+ 	bool "Support SH7269 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_MXG
+ 	bool "Support MX-G processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_MTU2
+ 	help
+ 	  Select MX-G if running on an R8A03022BG part.
+ 
+@@ -354,7 +345,7 @@ config CPU_SUBTYPE_SH7720
+ 	bool "Support SH7720 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+@@ -366,7 +357,7 @@ config CPU_SUBTYPE_SH7721
+ 	bool "Support SH7721 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+ 	help
+@@ -422,7 +413,7 @@ config CPU_SUBTYPE_SH7723
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -434,7 +425,7 @@ config CPU_SUBTYPE_SH7724
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -514,7 +505,7 @@ config CPU_SUBTYPE_SH7343
+ 	bool "Support SH7343 processor"
+ 	select CPU_SH4AL_DSP
+ 	select ARCH_SHMOBILE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ config CPU_SUBTYPE_SH7722
+ 	bool "Support SH7722 processor"
+@@ -523,7 +514,7 @@ config CPU_SUBTYPE_SH7722
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+@@ -534,7 +525,7 @@ config CPU_SUBTYPE_SH7366
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ endchoice
+ 
+@@ -567,27 +558,6 @@ source "arch/sh/boards/Kconfig"
+ 
+ menu "Timer and clock configuration"
+ 
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	depends on SYS_SUPPORTS_TMU
+-	default y
+-	help
+-	  This enables the build of the TMU timer driver.
+-
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	depends on SYS_SUPPORTS_CMT
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_MTU2
+-	bool "MTU2 timer driver"
+-	depends on SYS_SUPPORTS_MTU2
+-	default y
+-	help
+-	  This enables build of the MTU2 timer driver.
+-
+ config SH_PCLK_FREQ
+ 	int "Peripheral clock frequency (in Hz)"
+ 	depends on SH_CLK_CPG_LEGACY
+-- 
+1.8.5.1
+
