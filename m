@@ -1,90 +1,41 @@
-From: Florian Fainelli <f.fainelli@gmail.com>
-Date: Mon, 17 Feb 2014 17:26:29 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 17 Feb 2014 17:42:07 +0000
 Subject: Re: [PATCH] of_mdio: fix phy interrupt passing
-Message-Id: <CAGVrzcYeuTA0Yd5YyOTuWQfnwLw9zP87MaYJOLwprZRCtvuaXw@mail.gmail.com>
+Message-Id: <530249EF.4060803@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392654580-3706-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1392654580-3706-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1392654580-3706-1-git-send-email-ben.dooks@codethink.co.uk> <CAGVrzcYeuTA0Yd5YyOTuWQfnwLw9zP87MaYJOLwprZRCtvuaXw@mail.gmail.com>
+In-Reply-To: <CAGVrzcYeuTA0Yd5YyOTuWQfnwLw9zP87MaYJOLwprZRCtvuaXw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
+To: Florian Fainelli <f.fainelli@gmail.com>
 Cc: Grant Likely <grant.likely@linaro.org>, linux-kernel@lists.codethink.co.uk, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, netdev <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Hi Ben,
+On 17/02/14 17:26, Florian Fainelli wrote:
+> Hi Ben,
+>
+> 2014-02-17 8:29 GMT-08:00 Ben Dooks <ben.dooks@codethink.co.uk>:
+>> The of_mdiobus_register_phy() is not setting phy->irq this causing
+>> some drivers to incorrectly assume that the PHY does not have an
+>> IRQ associated with it or install an interrupt handler for the
+>> PHY.
+>>
+>> Simplify the code setting irq and set the phy->irq at the same
+>> time so that the case if mdio->irq is not NULL is easier to read.
+>
+> The real bug fix, which is not properly explained here, is that
+> irq_of_parse_and_map() should return values > 0 when the interrupt is
+> valid, so this makes me wonder why we are not propagating the return
+> value from irq_of_parse_and_map() in case the call to
+> of_irq_parse_one() does return something non-zero?
 
-2014-02-17 8:29 GMT-08:00 Ben Dooks <ben.dooks@codethink.co.uk>:
-> The of_mdiobus_register_phy() is not setting phy->irq this causing
-> some drivers to incorrectly assume that the PHY does not have an
-> IRQ associated with it or install an interrupt handler for the
-> PHY.
->
-> Simplify the code setting irq and set the phy->irq at the same
-> time so that the case if mdio->irq is not NULL is easier to read.
+No, the first issue is phy->dev never gets set, which causes the
+issue. The cleanup was added as it seemed easier to put it in with
+this.
 
-The real bug fix, which is not properly explained here, is that
-irq_of_parse_and_map() should return values > 0 when the interrupt is
-valid, so this makes me wonder why we are not propagating the return
-value from irq_of_parse_and_map() in case the call to
-of_irq_parse_one() does return something non-zero?
-
-Other than that, I agree with the resolution, but it deserves a better
-commit message, and eventually doing this in two steps:
-
-- first fix the bug by changing the if (!mdio->irq[addr]) into a if
-(mdio->irq[addr] <= 0)
-- second submit a patch which cleanups the assignment
-
->
-> This fixes the issue:
->  net eth0: attached PHY 1 (IRQ -1) to driver Micrel KSZ8041RNLI
->
-> to the correct:
->  net eth0: attached PHY 1 (IRQ 416) to driver Micrel KSZ8041RNLI
->
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->  drivers/of/of_mdio.c | 12 ++++++------
->  1 file changed, 6 insertions(+), 6 deletions(-)
->
-> diff --git a/drivers/of/of_mdio.c b/drivers/of/of_mdio.c
-> index 875b7b6..7b3e7b0 100644
-> --- a/drivers/of/of_mdio.c
-> +++ b/drivers/of/of_mdio.c
-> @@ -44,7 +44,7 @@ static int of_mdiobus_register_phy(struct mii_bus *mdio, struct device_node *chi
->  {
->         struct phy_device *phy;
->         bool is_c45;
-> -       int rc, prev_irq;
-> +       int rc;
->         u32 max_speed = 0;
->
->         is_c45 = of_device_is_compatible(child,
-> @@ -55,11 +55,11 @@ static int of_mdiobus_register_phy(struct mii_bus *mdio, struct device_node *chi
->                 return 1;
->
->         if (mdio->irq) {
-> -               prev_irq = mdio->irq[addr];
-> -               mdio->irq[addr] > -                       irq_of_parse_and_map(child, 0);
-> -               if (!mdio->irq[addr])
-> -                       mdio->irq[addr] = prev_irq;
-> +               rc = irq_of_parse_and_map(child, 0);
-> +               if (rc > 0) {
-> +                       mdio->irq[addr] = rc;
-> +                       phy->irq = rc;
-> +               }
->         }
->
->         /* Associate the OF node with the device structure so it
-> --
-> 1.8.5.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+I think phy->irq is already initialised to PHY_POLL and thus there
+is no need to set phy->irq if the irq_of_parse_and_map() fails.
 
 -- 
-Florian
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
