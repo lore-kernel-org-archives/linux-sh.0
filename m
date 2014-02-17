@@ -1,10 +1,8 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:30:06 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
-Message-Id: <20140224073006.3522.95891.sendpatchset@w520>
+Date: Mon, 17 Feb 2014 07:35:08 +0000
+Subject: [PATCH] ARM: shmobile: Remove EMEV2 header file
+Message-Id: <20140217073508.11156.21720.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224072921.3522.55023.sendpatchset@w520>
-In-Reply-To: <20140224072921.3522.55023.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,105 +10,74 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Convert the Koelsch DT reference code to use the newly introduced
-function shmobile_clk_workaround().
+There is no C board code left for the EMEV2 SoC, so
+get rid of the emev2.h include file to save some lines.
+While at it make functions static.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |   71 ++++++++--------------
- 1 file changed, 28 insertions(+), 43 deletions(-)
+ Written against renesas-devel-v3.14-rc3-20140217
 
---- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-02-24 15:50:57.000000000 +0900
-@@ -19,12 +19,11 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/clk.h>
--#include <linux/clkdev.h>
- #include <linux/dma-mapping.h>
- #include <linux/kernel.h>
+ Depends on "[PATCH v2] ARM: shmobile: Remove KZM9D board code"
+
+ arch/arm/mach-shmobile/include/mach/emev2.h |    8 --------
+ arch/arm/mach-shmobile/setup-emev2.c        |    7 ++++---
+ arch/arm/mach-shmobile/smp-emev2.c          |    1 -
+ 3 files changed, 4 insertions(+), 12 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/emev2.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,8 +0,0 @@
+-#ifndef __ASM_EMEV2_H__
+-#define __ASM_EMEV2_H__
+-
+-extern void emev2_map_io(void);
+-extern void emev2_init_delay(void);
+-extern struct smp_operations emev2_smp_ops;
+-
+-#endif /* __ASM_EMEV2_H__ */
+--- 0001/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-02-17 16:30:05.000000000 +0900
+@@ -21,7 +21,6 @@
+ #include <linux/init.h>
  #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <mach/clock.h>
  #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/rcar-gen2.h>
-@@ -82,49 +81,35 @@ static void __init koelsch_add_du_device
- 	platform_device_register_full(&info);
+-#include <mach/emev2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+@@ -38,12 +37,12 @@ static struct map_desc emev2_io_desc[] _
+ #endif
+ };
+ 
+-void __init emev2_map_io(void)
++static void __init emev2_map_io(void)
+ {
+ 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
  }
  
-+/*
-+ * This is a really crude hack to provide clkdev support to platform
-+ * devices until they get moved to DT.
-+ */
-+static const struct clk_name clk_names[] = {
-+	{ "cmt0", NULL, "sh_cmt.0" },
-+	{ "scifa0", NULL, "sh-sci.0" },
-+	{ "scifa1", NULL, "sh-sci.1" },
-+	{ "scifb0", NULL, "sh-sci.2" },
-+	{ "scifb1", NULL, "sh-sci.3" },
-+	{ "scifb2", NULL, "sh-sci.4" },
-+	{ "scifa2", NULL, "sh-sci.5" },
-+	{ "scif0", NULL, "sh-sci.6" },
-+	{ "scif1", NULL, "sh-sci.7" },
-+	{ "scif2", NULL, "sh-sci.8" },
-+	{ "scif3", NULL, "sh-sci.9" },
-+	{ "scif4", NULL, "sh-sci.10" },
-+	{ "scif5", NULL, "sh-sci.11" },
-+	{ "scifa3", NULL, "sh-sci.12" },
-+	{ "scifa4", NULL, "sh-sci.13" },
-+	{ "scifa5", NULL, "sh-sci.14" },
-+	{ "du0", "du.0", "rcar-du-r8a7791" },
-+	{ "du1", "du.1", "rcar-du-r8a7791" },
-+	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
-+};
-+
- static void __init koelsch_add_standard_devices(void)
+-void __init emev2_init_delay(void)
++static void __init emev2_init_delay(void)
  {
--	/*
--	 * This is a really crude hack to provide clkdev support to the CMT and
--	 * DU devices until they get moved to DT.
--	 */
--	static const struct clk_name {
--		const char *clk;
--		const char *con_id;
--		const char *dev_id;
--	} clk_names[] = {
--		{ "cmt0", NULL, "sh_cmt.0" },
--		{ "scifa0", NULL, "sh-sci.0" },
--		{ "scifa1", NULL, "sh-sci.1" },
--		{ "scifb0", NULL, "sh-sci.2" },
--		{ "scifb1", NULL, "sh-sci.3" },
--		{ "scifb2", NULL, "sh-sci.4" },
--		{ "scifa2", NULL, "sh-sci.5" },
--		{ "scif0", NULL, "sh-sci.6" },
--		{ "scif1", NULL, "sh-sci.7" },
--		{ "scif2", NULL, "sh-sci.8" },
--		{ "scif3", NULL, "sh-sci.9" },
--		{ "scif4", NULL, "sh-sci.10" },
--		{ "scif5", NULL, "sh-sci.11" },
--		{ "scifa3", NULL, "sh-sci.12" },
--		{ "scifa4", NULL, "sh-sci.13" },
--		{ "scifa5", NULL, "sh-sci.14" },
--		{ "du0", "du.0", "rcar-du-r8a7791" },
--		{ "du1", "du.1", "rcar-du-r8a7791" },
--		{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
--	};
--	struct clk *clk;
--	unsigned int i;
--
--	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
--		clk = clk_get(NULL, clk_names[i].clk);
--		if (!IS_ERR(clk)) {
--			clk_register_clkdev(clk, clk_names[i].con_id,
--					    clk_names[i].dev_id);
--			clk_put(clk);
--		}
--	}
--
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
- 	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+ }
+@@ -59,6 +58,8 @@ static const char *emev2_boards_compat_d
+ 	NULL,
+ };
+ 
++extern struct smp_operations emev2_smp_ops;
++
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+--- 0001/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2014-02-17 16:25:23.000000000 +0900
+@@ -24,7 +24,6 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <mach/common.h>
+-#include <mach/emev2.h>
+ #include <asm/smp_plat.h>
+ #include <asm/smp_scu.h>
  
