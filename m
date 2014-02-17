@@ -1,45 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Feb 2014 16:29:18 +0000
-Subject: [PATCH 4/4] spi: rspi: Fix loopback mode for Dual/Quad SPI Transfers
-Message-Id: <1393000158-6622-4-git-send-email-geert@linux-m68k.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 17 Feb 2014 21:19:18 +0000
+Subject: [PATCH 2/3] arm: shmobile: genmai: adapt dts to use native i2c driver
+Message-Id: <1392671959-22834-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-While normal Dual and Quad SPI Transfers are unidirectional, we must do
-a bidirectional transfer if loopback mode is enabled, else rx_buf is not
-filled.
+Activate the shiny new riic driver for i2c2. Tested by accessing the
+eeprom on the genmai board.
 
-With spidev it seemed to work, as spidev uses the same buffer for
-tranmission and reception.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/spi/spi-rspi.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 4a1f978c3381..92bec7e91046 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -859,7 +859,9 @@ static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
- {
- 	struct rspi_data *rspi = spi_master_get_devdata(master);
- 
--	if (xfer->tx_buf && xfer->tx_nbits > SPI_NBITS_SINGLE) {
-+	if (spi->mode & SPI_LOOP) {
-+		return qspi_transfer_out_in(rspi, xfer);
-+	} else if (xfer->tx_buf && xfer->tx_nbits > SPI_NBITS_SINGLE) {
- 		/* Quad or Dual SPI Write */
- 		return qspi_transfer_out(rspi, xfer);
- 	} else if (xfer->rx_buf && xfer->rx_nbits > SPI_NBITS_SINGLE) {
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 0849017..e664611 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -29,3 +29,14 @@
+ 		#size-cells = <1>;
+ 	};
+ };
++
++&i2c2 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	eeprom@50 {
++		compatible = "renesas,24c128";
++		reg = <0x50>;
++		pagesize = <64>;
++	};
++};
 -- 
-1.7.9.5
+1.8.5.1
 
