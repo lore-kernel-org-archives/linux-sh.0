@@ -1,31 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 03:21:02 +0000
-Subject: Re: [PATCH 0/5] Set Ether device's DMA masks on SH-Mobile boards
-Message-Id: <20140217032102.GG7772@verge.net.au>
+From: Bobby Bingham <koorogi@koorogi.info>
+Date: Mon, 17 Feb 2014 02:50:19 +0000
+Subject: [PATCH 2/3] sh: remove unused do_fpu_error
+Message-Id: <2ab03b9be8ee59f72cd89f44b2379967e346cf85.1392600646.git.koorogi@koorogi.info>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Feb 15, 2014 at 04:24:30AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the set of 5 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-v3.14-rc2-20130213' tag. Here we add still missing DMA masks
-> for the Ether platform devices (I was always wondering how the 'sh_eth' driver
-> manages to work without them :-). This should be especially important for the
-> Lager/Koelsch boards with their CPUs supporting LPAE and the boards having
-> memory outside 4 GiB address range, so we'd have to eventually enable
-> CONFIG_HIGHMEM for them; I also have plans to add support for NETIF_F_SG to the
-> 'sh_eth' driver -- in which case the correct DMA masks would become important.
-> 
-> [1/5] ARM: shmobile: Armadillo 800 EVA: set proper DMA masks for Ether device
-> [2/5] ARM: shmobile: BOCK-W: set proper DMA masks for Ether device
-> [3/5] ARM: shmobile: Lager: set proper DMA masks for Ether device
-> [4/5] ARM: shmobile: Koelsch: set proper DMA masks for Ether device
-> [5/5] ARM: shmobile: Genmai: set proper DMA masks for Ether device
+This does not appear to have been used since commit
+74d99a5e262229ee865f6f68528d10b82471ead6 in 2007.
 
-Thanks, I have queued these up.
+Signed-off-by: Bobby Bingham <koorogi@koorogi.info>
+---
+ arch/sh/math-emu/math.c | 18 ------------------
+ 1 file changed, 18 deletions(-)
+
+diff --git a/arch/sh/math-emu/math.c b/arch/sh/math-emu/math.c
+index b876780..04aa55f 100644
+--- a/arch/sh/math-emu/math.c
++++ b/arch/sh/math-emu/math.c
+@@ -574,24 +574,6 @@ static int ieee_fpe_handler(struct pt_regs *regs)
+ 	return 0;
+ }
+ 
+-asmlinkage void do_fpu_error(unsigned long r4, unsigned long r5,
+-			     unsigned long r6, unsigned long r7,
+-			     struct pt_regs regs)
+-{
+-	struct task_struct *tsk = current;
+-	siginfo_t info;
+-
+-	if (ieee_fpe_handler (&regs))
+-		return;
+-
+-	regs.pc += 2;
+-	info.si_signo = SIGFPE;
+-	info.si_errno = 0;
+-	info.si_code = FPE_FLTINV;
+-	info.si_addr = (void __user *)regs.pc;
+-	force_sig_info(SIGFPE, &info, tsk);
+-}
+-
+ /**
+  * fpu_init - Initialize FPU registers
+  * @fpu: Pointer to software emulated FPU registers.
+-- 
+1.8.5.4
+
