@@ -1,35 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 17 Feb 2014 06:35:10 +0000
-Subject: [PATCH] ARM: shmobile: Remove __init from rcar_gen2_read_mode_pins()
-Message-Id: <20140217063510.21892.52120.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 17 Feb 2014 08:52:27 +0000
+Subject: Re: [PATCH] ARM: shmobile: Remove __init from rcar_gen2_read_mode_pins()
+Message-Id: <CAMuHMdUqTQnngm9kY5oz-n2s8=qtS5XsTXF8rvNS1PFRJvK7Kg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140217063510.21892.52120.sendpatchset@w520>
+In-Reply-To: <20140217063510.21892.52120.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Mon, Feb 17, 2014 at 7:35 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm@opensource.se>
+>
+> Remove __init from rcar_gen2_read_mode_pins() to allow
+> it to be used after boot. For instance the R-Car Gen2
+> MD21 check is needed even in the case of CPU Hotplug.
 
-Remove __init from rcar_gen2_read_mode_pins() to allow
-it to be used after boot. For instance the R-Car Gen2
-MD21 check is needed even in the case of CPU Hotplug.
+This is a prerequisite for "[PATCH] ARM: shmobile: Check MD21 at SMP
+boot in case of APMU"
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
- Written against renesas-devel-v3.14-rc2-20140213
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
- arch/arm/mach-shmobile/setup-rcar-gen2.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Gr{oetje,eeting}s,
 
---- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2014-02-17 15:02:48.000000000 +0900
-@@ -28,7 +28,7 @@
- 
- #define MODEMR 0xe6160060
- 
--u32 __init rcar_gen2_read_mode_pins(void)
-+u32 rcar_gen2_read_mode_pins(void)
- {
- 	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
- 	u32 mode;
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
