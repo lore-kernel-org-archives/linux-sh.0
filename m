@@ -1,23 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 23:48:45 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: Remove KZM9D board code
-Message-Id: <20140217234839.GA4776@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 17 Feb 2014 07:19:45 +0000
+Subject: [PATCH] ARM: shmobile: Remove Lager DT reference legacy clock bits
+Message-Id: <20140217071945.27066.10828.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140217072419.27232.82739.sendpatchset@w520>
-In-Reply-To: <20140217072419.27232.82739.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 17, 2014 at 04:24:19PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Get rid of KZM9D board code written in C. This version of the
-> C board code was used in the case of multiplatform, but these
-> days DT can be used instead, so because of that simply get rid
-> of the C code to simplify and save space.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks Magnus, I have queued this up.
+Lager DT reference is these days built for multiplatform
+only which means that CCF comes with the package. Remove
+unused legacy code ifdefs to clean up the code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-devel-v3.14-rc3-20140217
+
+ arch/arm/mach-shmobile/board-lager-reference.c |    4 ----
+ 1 file changed, 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-02-17 16:08:31.000000000 +0900
+@@ -88,7 +88,6 @@ static void __init lager_add_du_device(v
+ 
+ static void __init lager_add_standard_devices(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	/*
+ 	 * This is a really crude hack to provide clkdev support to platform
+ 	 * devices until they get moved to DT.
+@@ -126,9 +125,6 @@ static void __init lager_add_standard_de
+ 			clk_put(clk);
+ 		}
+ 	}
+-#else
+-	r8a7790_clock_init();
+-#endif
+ 
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
