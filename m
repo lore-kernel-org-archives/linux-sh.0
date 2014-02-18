@@ -1,76 +1,169 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:16 +0000
-Subject: [PATCH v3 00/20] ARM: shmobile: r8a7779, marzen: CCF and multiplatform
-Message-Id: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 Feb 2014 02:11:21 +0000
+Subject: [PATCH v3 04/08] PCI: rcar: Register each instance independently
+Message-Id: <20140218021121.14164.43332.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140218021041.14164.56411.sendpatchset@w520>
+In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
 
-The aim of this series is to add common clock framework and in turn
-multiplatform support to the r8a7779 SoC and marzen-reference.  It
-subsequently removes non-multiplatform support from marzen-reference.
+From: Magnus Damm <damm@opensource.se>
 
+Convert the code to allow per-device probe() like other device
+drivers. This also delays driver registration due to change from
+subsys_initcall() to regular module_platform_driver().
 
-This is based on work for R-Car Gen2 by Laurent Pinchart and Magnus Damm.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+Changes since V2:
+ - Remove __init tags from rcar_pci_map_irq() and rcar_pci_setup()
 
-This series is based on the renesas-devel-v3.14-rc4-20140225
-tag of my renesas tree.
+Changes since V1:
+ - Updated to fit on top of patches from Ben Dooks
+ - Use hw_private[1] for hw.private_data, thanks Geert!
+ - Use ARRAY_SIZE with hw_private for hw.nr_controllers
 
-This series is known not to work when
-booting with SMP enabled and maxcpus not set to 0.
+ drivers/pci/host/pci-rcar-gen2.c |   80 +++++++++-----------------------------
+ 1 file changed, 20 insertions(+), 60 deletions(-)
 
-
-Simon Horman (20):
-  clk: shmobile: r8a7779: Add clocks support
-  clk: shmobile: r8a7779: Add MSTP clock support
-  ARM: shmobile: r8a7779: Add clock index macros for DT sources
-  ARM: shmobile: r8a7779: Add clocks
-  ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
-  ARM: shmobile: marzen: Specify external clock frequency in DT
-  ARM: shmobile: marzen: Reference clocks
-  ARM: shmobile: r8a7779: Reference clocks
-  ARM: shmobile: r8a7779: Add helper to read mode pins
-  ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to
-    clock-r8a7779.c
-  ARM: shmobile: marzen-reference: Move clock and OF device
-    initialisation into board code
-  ARM: shmobile: r8a7779: Do not include sh_clk.h in r8a7779.h
-  ARM: shmobile: r8a7779: Initial multiplatform support
-  ARM: shmobile: marzen-reference: Initialize CPG device
-  ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and TMU
-  ARM: shmobile: marzen: Add to shmobile defconfig
-  ARM: shmobile: Remove non-multiplatform Marzen reference support
-  ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
-  ARM: shmobile: Remove Marzen reference DTS
-  ARM: shmobile: marzen-reference: Remove legacy clock support
-
- .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
- .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  26 +++
- arch/arm/boot/dts/Makefile                         |   4 +-
- arch/arm/boot/dts/r8a7779-marzen-reference.dts     | 120 -------------
- arch/arm/boot/dts/r8a7779-marzen.dts               |  98 +++++++++++
- arch/arm/boot/dts/r8a7779.dtsi                     | 141 +++++++++++++++
- arch/arm/configs/shmobile_defconfig                |   2 +
- arch/arm/mach-shmobile/Kconfig                     |  22 +--
- arch/arm/mach-shmobile/Makefile                    |   2 +-
- arch/arm/mach-shmobile/Makefile.boot               |   1 -
- arch/arm/mach-shmobile/board-marzen-reference.c    |  40 +++++
- arch/arm/mach-shmobile/clock-r8a7779.c             |  22 ++-
- arch/arm/mach-shmobile/include/mach/r8a7779.h      |   2 +-
- arch/arm/mach-shmobile/setup-r8a7779.c             |  28 +--
- drivers/clk/shmobile/Makefile                      |   1 +
- drivers/clk/shmobile/clk-r8a7779.c                 | 191 +++++++++++++++++++++
- include/dt-bindings/clock/r8a7779-clock.h          |  63 +++++++
- include/linux/clk/shmobile.h                       |   3 +
- 18 files changed, 606 insertions(+), 161 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
- delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
- create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
- create mode 100644 include/dt-bindings/clock/r8a7779-clock.h
-
--- 
-1.8.5.2
-
+--- 0004/drivers/pci/host/pci-rcar-gen2.c
++++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-18 10:57:14.000000000 +0900
+@@ -91,9 +91,6 @@
+ 
+ #define RCAR_PCI_UNIT_REV_REG		(RCAR_AHBPCI_PCICOM_OFFSET + 0x48)
+ 
+-/* Number of internal PCI controllers */
+-#define RCAR_PCI_NR_CONTROLLERS		3
+-
+ struct rcar_pci_priv {
+ 	struct device *dev;
+ 	void __iomem *reg;
+@@ -177,7 +174,7 @@ static int rcar_pci_write_config(struct
+ }
+ 
+ /* PCI interrupt mapping */
+-static int __init rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
++static int rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ {
+ 	struct pci_sys_data *sys = dev->bus->sysdata;
+ 	struct rcar_pci_priv *priv = sys->private_data;
+@@ -226,7 +223,7 @@ static inline void rcar_pci_setup_errirq
+ #endif
+ 
+ /* PCI host controller setup */
+-static int __init rcar_pci_setup(int nr, struct pci_sys_data *sys)
++static int rcar_pci_setup(int nr, struct pci_sys_data *sys)
+ {
+ 	struct rcar_pci_priv *priv = sys->private_data;
+ 	void __iomem *reg = priv->reg;
+@@ -292,6 +289,8 @@ static int __init rcar_pci_setup(int nr,
+ 	pci_add_resource(&sys->resources, &priv->io_res);
+ 	pci_add_resource(&sys->resources, &priv->mem_res);
+ 
++	/* Setup bus number based on platform device id */
++	sys->busnr = to_platform_device(priv->dev)->id;
+ 	return 1;
+ }
+ 
+@@ -300,48 +299,13 @@ static struct pci_ops rcar_pci_ops = {
+ 	.write	= rcar_pci_write_config,
+ };
+ 
+-static struct hw_pci rcar_hw_pci __initdata = {
+-	.map_irq	= rcar_pci_map_irq,
+-	.ops		= &rcar_pci_ops,
+-	.setup		= rcar_pci_setup,
+-};
+-
+-static int rcar_pci_count __initdata;
+-
+-static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
+-{
+-	void **private_data;
+-	int count;
+-
+-	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
+-		goto add_priv;
+-
+-	/* (Re)allocate private data pointer array if needed */
+-	count = rcar_pci_count + RCAR_PCI_NR_CONTROLLERS;
+-	private_data = kzalloc(count * sizeof(void *), GFP_KERNEL);
+-	if (!private_data)
+-		return -ENOMEM;
+-
+-	rcar_pci_count = count;
+-	if (rcar_hw_pci.private_data) {
+-		memcpy(private_data, rcar_hw_pci.private_data,
+-		       rcar_hw_pci.nr_controllers * sizeof(void *));
+-		kfree(rcar_hw_pci.private_data);
+-	}
+-
+-	rcar_hw_pci.private_data = private_data;
+-
+-add_priv:
+-	/* Add private data pointer to the array */
+-	rcar_hw_pci.private_data[rcar_hw_pci.nr_controllers++] = priv;
+-	return 0;
+-}
+-
+-static int __init rcar_pci_probe(struct platform_device *pdev)
++static int rcar_pci_probe(struct platform_device *pdev)
+ {
+ 	struct resource *cfg_res, *mem_res;
+ 	struct rcar_pci_priv *priv;
+ 	void __iomem *reg;
++	struct hw_pci hw;
++	void *hw_private[1];
+ 
+ 	cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	reg = devm_ioremap_resource(&pdev->dev, cfg_res);
+@@ -377,31 +341,27 @@ static int __init rcar_pci_probe(struct
+ 		return priv->irq;
+ 	}
+ 
+-	return rcar_pci_add_controller(priv);
++	hw_private[0] = priv;
++	memset(&hw, 0, sizeof(hw));
++	hw.nr_controllers = ARRAY_SIZE(hw_private);
++	hw.private_data = hw_private;
++	hw.map_irq = rcar_pci_map_irq;
++	hw.ops = &rcar_pci_ops;
++	hw.setup = rcar_pci_setup;
++	pci_common_init_dev(&pdev->dev, &hw);
++	return 0;
+ }
+ 
+ static struct platform_driver rcar_pci_driver = {
+ 	.driver = {
+ 		.name = "pci-rcar-gen2",
++		.owner = THIS_MODULE,
++		.suppress_bind_attrs = true,
+ 	},
++	.probe = rcar_pci_probe,
+ };
+ 
+-static int __init rcar_pci_init(void)
+-{
+-	int retval;
+-
+-	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
+-	if (!retval)
+-		pci_common_init(&rcar_hw_pci);
+-
+-	/* Private data pointer array is not needed any more */
+-	kfree(rcar_hw_pci.private_data);
+-	rcar_hw_pci.private_data = NULL;
+-
+-	return retval;
+-}
+-
+-subsys_initcall(rcar_pci_init);
++module_platform_driver(rcar_pci_driver);
+ 
+ MODULE_LICENSE("GPL v2");
+ MODULE_DESCRIPTION("Renesas R-Car Gen2 internal PCI");
