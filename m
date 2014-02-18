@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Feb 2014 03:03:12 +0000
+Date: Tue, 18 Feb 2014 02:10:51 +0000
 Subject: [PATCH 01/08] PCI: rcar: check platform_get_irq() return code
-Message-Id: <20140213030312.10398.47163.sendpatchset@w520>
+Message-Id: <20140218021051.14164.6194.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213030302.10398.37322.sendpatchset@w520>
-In-Reply-To: <20140213030302.10398.37322.sendpatchset@w520>
+References: <20140218021041.14164.56411.sendpatchset@w520>
+In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
