@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Feb 2014 03:03:53 +0000
+Date: Tue, 18 Feb 2014 02:11:32 +0000
 Subject: [PATCH v2 05/08] PCI: rcar: Break out window size handling
-Message-Id: <20140213030353.10398.71544.sendpatchset@w520>
+Message-Id: <20140218021132.14164.62223.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213030302.10398.37322.sendpatchset@w520>
-In-Reply-To: <20140213030302.10398.37322.sendpatchset@w520>
+References: <20140218021041.14164.56411.sendpatchset@w520>
+In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
