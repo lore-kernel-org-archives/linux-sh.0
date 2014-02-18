@@ -1,52 +1,65 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:41:54 +0000
-Subject: [PATCH 06/12] ARM: shmobile: Rework include path for r8a7778
-Message-Id: <20140224054154.1143.39830.sendpatchset@w520>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 18 Feb 2014 08:24:41 +0000
+Subject: Re: [Linux-kernel] [PATCH] [PATCH v2] sh_eth: call of_mdiobus_register() to register phys
+Message-Id: <530318C9.5040508@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On 18/02/14 08:23, Ben Dooks wrote:
+> On 17/02/14 21:09, Sergei Shtylyov wrote:
+>> Hello.
+>>
+>> On 02/17/2014 07:57 PM, Ben Dooks wrote:
+>>
+>>> If the sh_eth device is registered using OF, then the driver
+>>> should call of_mdiobus_register() to register any PHYs connected
+>>> to the system.
+>>
+>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>>
+>>> --
+>>> v2:
+>>>     - allocate mdio->irq array at init time
+>>
+>>     Did this also fix something?
+>>
+>>>     - set devdata after succesful mdio registration
+>>> ---
+>>>   drivers/net/ethernet/renesas/sh_eth.c | 13 +++++++++++++
+>>>   1 file changed, 13 insertions(+)
+>>>
+>>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
+>>> b/drivers/net/ethernet/renesas/sh_eth.c
+>>> index 06970ac..1244509 100644
+>>> --- a/drivers/net/ethernet/renesas/sh_eth.c
+>>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+>>> @@ -40,6 +40,7 @@
+>>>   #include <linux/if_vlan.h>
+>>>   #include <linux/clk.h>
+>>>   #include <linux/sh_eth.h>
+>>> +#include <linux/of_mdio.h>
+>>>
+>>>   #include "sh_eth.h"
+>>>
+>>> @@ -2638,6 +2639,18 @@ static int sh_mdio_init(struct net_device
+>>> *ndev, int id,
+>>>           goto out_free_bus;
+>>>       }
+>>>
+>>> +    if (ndev->dev.parent->of_node) {
+>>> +        ret = of_mdiobus_register(mdp->mii_bus,
+>>> +                      ndev->dev.parent->of_node);
+>>> +        if (ret != 0) {
+>>
+>>     Why not just (ret)?
 
-Convert r8a7778 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
+Because of years of people complaining that an integer is not
+a boolean. I'll change that in the next version of the patch.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
 
- arch/arm/mach-shmobile/clock-r8a7778.c |    4 ++--
- arch/arm/mach-shmobile/setup-r8a7778.c |    6 +++---
- 2 files changed, 5 insertions(+), 5 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7778.c	2014-02-24 13:38:19.000000000 +0900
-@@ -39,8 +39,8 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/clock.h>
--#include <mach/common.h>
-+#include "clock.h"
-+#include "common.h"
- 
- #define MSTPCR0		IOMEM(0xffc80030)
- #define MSTPCR1		IOMEM(0xffc80034)
---- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2014-02-24 13:37:06.000000000 +0900
-@@ -37,9 +37,9 @@
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/dma-mapping.h>
--#include <mach/irqs.h>
--#include <mach/r8a7778.h>
--#include <mach/common.h>
-+#include "irqs.h"
-+#include "r8a7778.h"
-+#include "common.h"
- #include <asm/mach/arch.h>
- #include <asm/hardware/cache-l2x0.h>
- 
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
