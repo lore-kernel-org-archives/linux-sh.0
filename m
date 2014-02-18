@@ -1,165 +1,81 @@
-From: Florian Fainelli <f.fainelli@gmail.com>
-Date: Mon, 17 Feb 2014 21:15:18 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 18 Feb 2014 08:16:46 +0000
 Subject: Re: [PATCH] net: add init-regs for of_phy support
-Message-Id: <CAGVrzcbT4qrPNuJA4AsFirEa73D9NR-jCnAYMXuNcZkgcafvAA@mail.gmail.com>
+Message-Id: <530316EE.5010104@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392642484-19938-1-git-send-email-ben.dooks@codethink.co.uk>
- <1392642484-19938-2-git-send-email-ben.dooks@codethink.co.uk>
- <CAGVrzcYbw5xLj-gwcup5i0gBdKDDGdyy5wAaEBp7m2E7f2bytg@mail.gmail.com>
- <5302801F.6000903@cogentembedded.com> <CAGVrzcbZC3t0oexc5Aj-KyGj-qC8J9eYp8+rb8V-AqKtrSjyYw@mail.gmail.com>
- <53028857.8050206@cogentembedded.com>
-In-Reply-To: <53028857.8050206@cogentembedded.com>
+References: <1392642484-19938-1-git-send-email-ben.dooks@codethink.co.uk> <1392642484-19938-2-git-send-email-ben.dooks@codethink.co.uk> <CAGVrzcYbw5xLj-gwcup5i0gBdKDDGdyy5wAaEBp7m2E7f2bytg@mail.gmail.com> <5302801F.6000903@cogentembedded.com> <CAGVrzcbZC3t0oexc5Aj-KyGj-qC8J9eYp8+rb8V-AqKtrSjyYw@mail.gmail.com>
+In-Reply-To: <CAGVrzcbZC3t0oexc5Aj-KyGj-qC8J9eYp8+rb8V-AqKtrSjyYw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, netdev <netdev@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, David Miller <davem@davemloft.net>, Mark Rutland <mark.rutland@arm.com>
+To: Florian Fainelli <f.fainelli@gmail.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev <netdev@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, David Miller <davem@davemloft.net>, Mark Rutland <mark.rutland@arm.com>
 
-2014-02-17 14:08 GMT-08:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> On 02/17/2014 11:48 PM, Florian Fainelli wrote:
->
->>>>> Add new init-regs field for of_phy nodes and make sure these
->>>>> get applied when the phy is configured.
->
->
->>>>> This allows any phy node in an fdt to initialise registers
->>>>> that may not be set as standard by the driver at initialisation
->>>>> time, such as LED controls.
->
->
->>>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->
-> [...]
->
->
->>>>> diff --git a/drivers/net/phy/phy_device.c
->>>>> b/drivers/net/phy/phy_device.c
->>>>> index 82514e7..6741cdb 100644
->>>>> --- a/drivers/net/phy/phy_device.c
->>>>> +++ b/drivers/net/phy/phy_device.c
->
->
->>> [...]
->
->
->>>>> @@ -532,6 +533,57 @@ static int phy_poll_reset(struct phy_device
->>>>> *phydev)
->>>>>           return 0;
->>>>>    }
->>>>>
->>>>> +#ifdef CONFIG_OF
->>>>> +static int of_phy_configure(struct phy_device *phydev)
->>>>> +{
->>>>> +       struct device *dev = &phydev->dev;
->>>>> +       struct device_node *of_node = dev->of_node;
->>>>> +       struct property *prop;
->>>>> +       const __be32 *ptr;
->>>>> +       u32 reg, set, clear;
->>>>> +       int len;
->>>>> +       int val;
->
->
->>>> This does not belong in the generic PHY code unless we are very clear
->>>> on what we want to do, and how to do it, which I do not think we are
->>>> yet. What exactly is needed here:
->
->
->>>> - fixing up some design mistake?
->>>> - accounting for a specific board design?
->
->
->>>     Kind of both. This was invented to defy the necessity of having
->>> platform
->>> fixup in the DT case (where there should be no board file to place it
->>> into).
->>> I have already described that platform fixup necessary on the Renesas
->>> Lager/Koelsch boards where the LED0 signat is connected to ETH_LINK
->>> signal
->>> on the SoC and the PHY reset sets the LED control bits to default 0 which
->>> means that LED0 will be LINK/ACTIVITY signal and thus blink on activity
->>> and
->>> cause ETH_LINK to bounce off/on after each packet.
->
->
->>>> In any case a PHY fixup would do the job for you.
->
->
->>>     Not in any case. In case of DT we have no place for it, so should
->>> invent
->>> something involving DT.
->
->
->> How is DT different than any machine probing mechanism here?
->
->
->    There supposed to be no board files. The purpose of DT is to get rid of
-> the board files, at least on ARM.
->
->
->> The way to involve DT is to do the following:
->
->
->> if (of_machine_is_compatible("renesas,foo-board-with-broken-micrel-phy"))
->>             phy_register_fixup(&foo_board_with_broken_micrel_phy);
->
->
->    Where are you suggesting to place such code?
-> arch/arm/mach-shmobile/setup-*.c?
+On 17/02/14 20:48, Florian Fainelli wrote:
 
-Somewhere along those lines, I am not familiar at all with the SH
-Mobile line of SoCs and how the DT/non-DT code used to look like.
-Although I would be naively thinking that hooking this into the
-init_machine() callback for the DT machine descriptor would do the
-job.
+[snip]
 
+>>> - fixing up some design mistake?
+>>> - accounting for a specific board design?
+>>
+>>
+>>     Kind of both. This was invented to defy the necessity of having platform
+>> fixup in the DT case (where there should be no board file to place it into).
+>> I have already described that platform fixup necessary on the Renesas
+>> Lager/Koelsch boards where the LED0 signat is connected to ETH_LINK signal
+>> on the SoC and the PHY reset sets the LED control bits to default 0 which
+>> means that LED0 will be LINK/ACTIVITY signal and thus blink on activity and
+>> cause ETH_LINK to bounce off/on after each packet.
+>>
+>>
+>>> In any case a PHY fixup would do the job for you.
+>>
+>>
+>>     Not in any case. In case of DT we have no place for it, so should invent
+>> something involving DT.
 >
+> How is DT different than any machine probing mechanism here? The way
+> to involve DT is to do the following:
 >
->> If your machine compatible string does not allow you to uniquely
->> identify your machine, this is a DT problem, as this should really be
->> the case. If you do not want to add this code to wherever this is
->> relevant in arch/arm/mach-shmobile/board-*.c,
->
->
->    There just should be no such file for DT case.
+> if (of_machine_is_compatible("renesas,foo-board-with-broken-micrel-phy"))
+>             phy_register_fixup(&foo_board_with_broken_micrel_phy);
 
-There is still a generic file which catches all SH Mobile machines and
-registers some peripherals, as far as I look e.g; board-marzen.c that
-one is  still doing a bunch of platform_device_register_full() calls.
-Even if the DT board file was extremely generic to the point where it
-contains nothing, adding a custom init_machine() callback which
-registers PHY fixups would not be too crazy.
+Oh yes, but now I have to do that for Linux, for $BSD, and for
+anything else I want to run on the device. I thought dt was meant
+to allow us to describe the hardware.
 
->
->
->> neither is drivers/net/phy/phy_device.c this the place to add it.
->
->
->    Hey, I wasn't arguing with that! :-)
->
->
->> Dealing with quirks applying to industry standard blocks is to update
->> the relevant driver, based on information provided by the specifically
->> affected systems. Failure to identify either of those correctly is a
->> problem that must not lead to a generic "let's override PHY registers
->> from DT" type of solution.
->
->
->> As usual, mechanism vs policy applies even more when DT is involved.
->
->
->    Ah, so you're suggesting placing the fixup code in the driver itself?
-> That's a bit strange for the platform specific code, but would do I guess...
+If this is the case, let's just call this linuxtree and let everyone
+else get on with their own thing again.
 
-PHY fixups are slightly different from say, traditional HW fixups,
-what I meant here was that the general use case for quirks is:
+See also comment below.
 
-- board code detects the faulty hardware and sets a flag that gets
-passed down the relevant driver
-- the relevant driver checks for this flag to enable such a thing
+> If your machine compatible string does not allow you to uniquely
+> identify your machine, this is a DT problem, as this should really be
+> the case. If you do not want to add this code to wherever this is
+> relevant in arch/arm/mach-shmobile/board-*.c, neither is
+> drivers/net/phy/phy_device.c this the place to add it.
 
-For the specific PHY devices, there are actually two ways to deal with this:
+So where should it be added? If we keep piling stuff into board files
+in arch/arm.... then we're just back to the pre-dt case and going to
+keep getting shouted at.
 
-- register a PHY fixup somewhere (TBD where this somewhere is)
-- set the phydev->dev_flags (just like what the TG3 driver does for instance
+> Dealing with quirks applying to industry standard blocks is to update
+> the relevant driver, based on information provided by the specifically
+> affected systems. Failure to identify either of those correctly is a
+> problem that must not lead to a generic "let's override PHY registers
+> from DT" type of solution.
+>
+> As usual, mechanism vs policy applies even more when DT is involved.
+
+There's an industry standard for the access method, but every PHY seems
+to have different extra setup registers for their own cases.
+
+I will leave this out here in case anyone else finds it useful, there
+may be a case where there are PHYs that need an amount of register
+initialisation and this code may be smaller than putting a pile of
+dt properties in.
+
+
 -- 
-Florian
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
