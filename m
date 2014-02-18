@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Feb 2014 03:04:03 +0000
+Date: Tue, 18 Feb 2014 02:11:42 +0000
 Subject: [PATCH v2 06/08] PCI: rcar: Add DMABOUNCE support
-Message-Id: <20140213030403.10398.55005.sendpatchset@w520>
+Message-Id: <20140218021142.14164.17124.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213030302.10398.37322.sendpatchset@w520>
-In-Reply-To: <20140213030302.10398.37322.sendpatchset@w520>
+References: <20140218021041.14164.56411.sendpatchset@w520>
+In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
