@@ -1,53 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:13 +0000
-Subject: [PATCH 21/21] ARM: shmobile: Remove Lager USBHS UDC ifdefs
-Message-Id: <235cda29e4d5047622ff9b82b1f0b4cb6cf95f6c.1391665225.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 Feb 2014 02:10:41 +0000
+Subject: [PATCH v2 00/08] PCI: rcar: Recent driver patches from Ben Dooks and me (V2)
+Message-Id: <20140218021041.14164.56411.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+PCI: rcar: Recent driver patches from Ben Dooks and me (V2)
 
-Remove ifdefs to make the Lager USBHS device always present.
-This makes it more like other devices, no need to be special.
+[PATCH 01/08] PCI: rcar: check platform_get_irq() return code
+[PATCH v2 02/08] PCI: rcar: add error interrupt handling
+[PATCH 03/08] PCI: rcar: fix bridge logic configuration accesses
+[PATCH v3 04/08] PCI: rcar: Register each instance independently
+[PATCH v2 05/08] PCI: rcar: Break out window size handling
+[PATCH v2 06/08] PCI: rcar: Add DMABOUNCE support
+[PATCH 07/08] PCI: rcar: Enable BOUNCE in case of HIGHMEM
+[PATCH 08/08] PCI: rcar: Make the Kconfig dependencies more generic
 
-Also, these ifdefs by themselves do not hurt much, but combined
-with USB Host device ifdefs that were proposed earlier we could
-basically end up with a kernel that drives VBUS incorrectly
-depending on the kernel configuration - lets not do that.
+These patches update the pci-rcar-gen2.c driver with patches from
+Ben Dooks and me. The first 3 are written by Ben (thanks!) and are
+included here to show what I would like to have merged and what I
+rebased my patches on. The following 4 are written by me.
 
+Patch 1-3:
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+
+Patch 4-8:
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c | 4 ----
- 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 4a95a45..fdcc868 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -368,7 +368,6 @@ static const struct platform_device_info sata1_info __initconst = {
- };
- 
- /* USBHS */
--#if IS_ENABLED(CONFIG_USB_RENESAS_USBHS_UDC)
- static const struct resource usbhs_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6590000, 0x100),
- 	DEFINE_RES_IRQ(gic_spi(107)),
-@@ -478,9 +477,6 @@ static void __init lager_register_usbhs(void)
- 					  &usbhs_priv.info,
- 					  sizeof(usbhs_priv.info));
- }
--#else	/* CONFIG_USB_RENESAS_USBHS_UDC */
--static inline void lager_register_usbhs(void) { }
--#endif	/* CONFIG_USB_RENESAS_USBHS_UDC */
- 
- /* USBHS PHY */
- static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
--- 
-1.8.5.2
+ Changes since V1 of this series:
+ - Updated [4/8] from v2 to v3 to fix init section issues, thanks Bjorn!
 
+ Written against renesas.git tag renesas-devel-v3.14-rc3-20140217
+
+ drivers/pci/host/Kconfig         |    5 
+ drivers/pci/host/pci-rcar-gen2.c |  449 ++++++++++++++++++++++++++++++++------
+ 2 files changed, 387 insertions(+), 67 deletions(-)
