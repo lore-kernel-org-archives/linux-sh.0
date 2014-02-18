@@ -1,31 +1,69 @@
-From: Chris Ball <chris@printf.net>
-Date: Sat, 22 Feb 2014 18:08:32 +0000
-Subject: Re: [PATCH 0/5][RESENT]mmc: sh_mobile_sdhi: DT update for R-Car
-Message-Id: <86ios7vx3z.fsf@void.printf.net>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Feb 2014 00:26:11 +0000
+Subject: Re: [PATCH 15/15] sh: intc: Enable driver compilation with COMPILE_TEST
+Message-Id: <20140218002610.GA9754@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-	<878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com> (Kuninori
-	Morimoto's message of "Thu, 20 Feb 2014 16:54:10 -0800 (PST)")
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1385515117-23664-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <3670569.dVXQxeaJBM@avalon> <2305561.CqXvNryyXG@avalon>
+ <20140108043558.GG15891@verge.net.au>
+In-Reply-To: <20140108043558.GG15891@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+On Wed, Jan 08, 2014 at 01:35:59PM +0900, Simon Horman wrote:
+> On Tue, Jan 07, 2014 at 10:54:41AM +0100, Laurent Pinchart wrote:
+> > On Wednesday 11 December 2013 13:52:31 Laurent Pinchart wrote:
+> > > Hi Magnus,
+> > > 
+> > > Could you tell me who is responsible for merging drivers/sh patches ? If
+> > > that's one of you, could you please pick this patch up for v3.14 ?
+> > 
+> > Ping ?
+> 
+> I am happy to take this if no one objects.
 
-On Fri, Feb 21 2014, Kuninori Morimoto wrote:
-> These are re-sent patches for R-Car, since there were no response.
-> Basically, these clarifies chip dependent settings
-> inside driver.
-> These are based on mmc/mmc-next branch
-> (7536d3f83aa42ba1a3b1c6b30c2b6d94a820cbb2)
+Sorry for the extended delay on this one.
+I have finally queued it up.
 
-Thanks, I've pushed all five patches to mmc-next for 3.15, after
-making Sergei's suggested changelog edit to 5/5 of "This patch
-adds DT support for r8a7791."
-
-- Chris.
--- 
-Chris Ball   <chris@printf.net>   <http://printf.net/>
+> > > On Wednesday 27 November 2013 02:18:37 Laurent Pinchart wrote:
+> > > > This helps increasing build testing coverage.
+> > > > 
+> > > > Cc: Magnus Damm <magnus.damm@gmail.com>
+> > > > Signed-off-by: Laurent Pinchart
+> > > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > > ---
+> > > > 
+> > > >  drivers/sh/intc/Kconfig | 2 +-
+> > > >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > > > 
+> > > > diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+> > > > index a305731..f7d9061 100644
+> > > > --- a/drivers/sh/intc/Kconfig
+> > > > +++ b/drivers/sh/intc/Kconfig
+> > > > @@ -6,7 +6,7 @@ comment "Interrupt controller options"
+> > > > 
+> > > >  config INTC_USERIMASK
+> > > >  
+> > > >  	bool "Userspace interrupt masking support"
+> > > > 
+> > > > -	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
+> > > > +	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
+> > > > 
+> > > >  	help
+> > > >  	
+> > > >  	  This enables support for hardware-assisted userspace hardirq
+> > > >  	  masking.
+> > 
+> > -- 
+> > Regards,
+> > 
+> > Laurent Pinchart
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
