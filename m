@@ -1,170 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 Feb 2014 09:54:04 +0000
-Subject: [PATCH v2 02/02] ARM: shmobile: Add SDHI devices for Koelsch DTS
-Message-Id: <20140212095404.4832.61203.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 19 Feb 2014 17:13:24 +0000
+Subject: [PATCH] clk: shmobile: Fix typoe in MSTP clock DT bindings
+Message-Id: <1392830004-5706-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org, Mike Turquette <mturquette@linaro.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-From: Magnus Damm <damm@opensource.se>
+The DT bindings document a renesas,indices property, while the code, the
+DT example and the DT sources all use renesas,clock-indices. Fix the
+documentation.
 
-Add DT support for SDHI0, SDHI1 and SDHI2 on Koelsch.
-
-The board specific handling of CD and WP pins are
-using GPIOs. SDHI0 and SDHI1 are hooked up to regular
-SD connectors while SDHI2 is using micro-SD which
-is lacking WP signal.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Changes since V1:
- - Remove unclean misc caps that now are covered by the SDHI driver.
+Mike, this is a v3.14 bug fix. You can find all three Renesas clock bugfixes
+for v3.14 in
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |  119 +++++++++++++++++++++++++++++++++
- 1 file changed, 119 insertions(+)
+	git://linuxtv.org/pinchartl/fbdev.git clocks/next/drivers
 
---- 0001/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ work/arch/arm/boot/dts/r8a7791-koelsch.dts	2014-02-12 18:36:30.000000000 +0900
-@@ -102,6 +102,78 @@
- 			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vcc_sdhi0: regulator@0 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio7 17 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi0: regulator@1 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI0 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
-+
-+	vcc_sdhi1: regulator@2 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI1 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio7 18 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi1: regulator@3 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI1 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
-+
-+	vcc_sdhi2: regulator@4 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI2 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio7 19 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi2: regulator@5 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI2 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
- };
+I'll wait a day and send a pull request just to make sure no patch gets
+forgotten.
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index a6a352c..5992dce 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -21,9 +21,9 @@ Required Properties:
+     must appear in the same order as the output clocks.
+   - #clock-cells: Must be 1
+   - clock-output-names: The name of the clocks as free-form strings
+-  - renesas,indices: Indices of the gate clocks into the group (0 to 31)
++  - renesas,clock-indices: Indices of the gate clocks into the group (0 to 31)
  
- &extal_clk {
-@@ -122,6 +194,21 @@
- 		renesas,function = "scif1";
- 	};
+-The clocks, clock-output-names and renesas,indices properties contain one
++The clocks, clock-output-names and renesas,clock-indices properties contain one
+ entry per gate clock. The MSTP groups are sparsely populated. Unimplemented
+ gate clocks must not be declared.
  
-+	sdhi0_pins: sd0 {
-+		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi1_pins: sd1 {
-+		renesas,gpios = "sdhi1_data4", "sdhi1_ctrl";
-+		renesas,function = "sdhi1";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+
- 	qspi_pins: spi {
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
-@@ -132,6 +219,38 @@
- 	status = "okay";
- };
- 
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi0>;
-+	vqmmc-supply = <&vccq_sdhi0>;
-+	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
-+	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
-+	status = "okay";
-+};
-+
-+&sdhi1 {
-+	pinctrl-0 = <&sdhi1_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi1>;
-+	vqmmc-supply = <&vccq_sdhi1>;
-+	cd-gpios = <&gpio6 14 GPIO_ACTIVE_LOW>;
-+	wp-gpios = <&gpio6 15 GPIO_ACTIVE_HIGH>;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi2>;
-+	vqmmc-supply = <&vccq_sdhi2>;
-+	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
-+	status = "okay";
-+};
-+
- &spi {
- 	pinctrl-0 = <&qspi_pins>;
- 	pinctrl-names = "default";
+-- 
+Regards,
+
+Laurent Pinchart
+
