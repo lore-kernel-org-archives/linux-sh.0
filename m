@@ -1,54 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 26 Feb 2014 10:14:14 +0000
-Subject: Re: [PATCH 02/03] pinctrl: sh-pfc: r8a7791: SD1_CLK fix
-Message-Id: <CANqRtoT=xOvZ0bwxXUghjrn3=k5544ic7ef880VetXtQYs3cqg@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 19 Feb 2014 22:20:42 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add Ether DT support
+Message-Id: <201402200220.44822.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140212042610.10516.36546.sendpatchset@w520>
-In-Reply-To: <20140212042610.10516.36546.sendpatchset@w520>
+References: <201402200218.23099.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402200218.23099.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+Define the generic R8A7790 part of the Ether device node. 
 
-On Mon, Feb 24, 2014 at 11:48 PM, Linus Walleij
-<linus.walleij@linaro.org> wrote:
-> On Mon, Feb 17, 2014 at 10:45 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
->
->> Hi Magnus,
->>
->> (CC'ing Linus Walleij)
->>
->> Thank you for the patch.
->>
->> On Wednesday 12 February 2014 13:26:10 Magnus Damm wrote:
->>> From: Magnus Damm <damm@opensource.se>
->>>
->>> Fix the SD1_CLK handling for r8a7791. Without this patch
->>> it is impossible to request all pins needed for SDHI1 on
->>> the Koelsch board.
->>>
->>> Signed-off-by: Magnus Damm <damm@opensource.se>
->>
->> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->
-> Since it seems I don't have this patch, if it is a fix on the critical path
-> please send it to me so I can apply it for fixes.
->
-> (Or if non-critical, atleast let me apply it to devel...)
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thanks for the reminder! I don't consider this patch to be
-particularly critical, but if you could include it in devel than that
-would be greatly appreciated. I just resent the patch as "[PATCH]
-pinctrl: sh-pfc: r8a7791: SD1_CLK fix" based on linux-next tag
-next-20140225. This time I remembered to include you, sorry for last
-time!
+---
+Changes in version 2:
+- removed now redundant "interrupt-parent" property;
+- refreshed the patch.
 
-If you want me to rework the patch somehow to cope with all the recent
-PFC changes then please let me know and I will step up.
+ arch/arm/boot/dts/r8a7790.dtsi |   14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-Cheers,
-
-/ magnus
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1,7 +1,8 @@
+ /*
+  * Device Tree Source for the r8a7790 SoC
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded Inc.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -379,6 +380,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	ether: ethernet@ee700000 {
++		compatible = "renesas,ether-r8a7790";
++		reg = <0 0xee700000 0 0x400>;
++		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7790_CLK_ETHER>;
++		phy-mode = "rmii";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sata0: sata@ee300000 {
+ 		compatible = "renesas,sata-r8a7790";
+ 		reg = <0 0xee300000 0 0x2000>;
