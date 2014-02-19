@@ -1,20 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Feb 2014 00:29:49 +0000
-Subject: Re: [PATCH V2 1/2] ARM: shmobile: r8a7791: add i2c master nodes to dtsi
-Message-Id: <20140218002946.GF4776@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 19 Feb 2014 22:27:04 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7791: add Ether DT support
+Message-Id: <201402200227.05314.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392633882-12142-1-git-send-email-wsa@the-dreams.de>
- <CANqRtoQvvTQ5r1X7KiGwPoft-GZK8qp-X1z31Hi8FO0bcQ3yZA@mail.gmail.com>
-In-Reply-To: <CANqRtoQvvTQ5r1X7KiGwPoft-GZK8qp-X1z31Hi8FO0bcQ3yZA@mail.gmail.com>
+References: <201402200225.00598.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201402200225.00598.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 17, 2014 at 09:06:23PM +0900, Magnus Damm wrote:
-> On Mon, Feb 17, 2014 at 7:44 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> > From: Wolfram Sang <wsa@sang-engineering.com>
-> >
-> > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Define the generic R8A7791 part of the Ether device node. 
 
-Thanks, I have queued this up.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 2:
+- removed now redundant "interrupt-parent" property;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -2,7 +2,8 @@
+  * Device Tree Source for the r8a7791 SoC
+  *
+  * Copyright (C) 2013 Renesas Electronics Corporation
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded Inc.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -407,6 +408,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	ether: ethernet@ee700000 {
++		compatible = "renesas,ether-r8a7791";
++		reg = <0 0xee700000 0 0x400>;
++		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7791_CLK_ETHER>;
++		phy-mode = "rmii";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sata0: sata@ee300000 {
+ 		compatible = "renesas,sata-r8a7791";
+ 		reg = <0 0xee300000 0 0x2000>;
