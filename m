@@ -1,37 +1,114 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 28 Feb 2014 21:09:26 +0000
-Subject: [PATCH 2/4] ARM: r7s72100: genmai: populate extal clock node
-Message-Id: <1393621768-12568-3-git-send-email-wsa@the-dreams.de>
+From: Bobby Bingham <koorogi@koorogi.info>
+Date: Wed, 19 Feb 2014 06:03:16 +0000
+Subject: [PATCH v2 3/3] sh: don't pass saved userspace state to exception handlers
+Message-Id: <8e2edd2e2709408c8e1b27a1b8a221c011125beb.1392789383.git.koorogi@koorogi.info>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1392789383.git.koorogi@koorogi.info>
+In-Reply-To: <cover.1392789383.git.koorogi@koorogi.info>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, linux-sh@vger.kernel.org
+Cc: Bobby Bingham <koorogi@koorogi.info>, linux-kernel@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+The compiler is permitted to generate code which overwrites the parameters
+to a function. If those parameters include the only saved copy we have of
+userspace's registers, we're in trouble.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Bobby Bingham <koorogi@koorogi.info>
 ---
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/sh/include/asm/traps_32.h | 16 ++++------------
+ arch/sh/kernel/traps_32.c      | 23 +++++++----------------
+ 2 files changed, 11 insertions(+), 28 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index e664611..1d045eb 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -30,6 +30,10 @@
- 	};
- };
+diff --git a/arch/sh/include/asm/traps_32.h b/arch/sh/include/asm/traps_32.h
+index cfd55ff..17e129f 100644
+--- a/arch/sh/include/asm/traps_32.h
++++ b/arch/sh/include/asm/traps_32.h
+@@ -42,18 +42,10 @@ static inline void trigger_address_error(void)
+ asmlinkage void do_address_error(struct pt_regs *regs,
+ 				 unsigned long writeaccess,
+ 				 unsigned long address);
+-asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
+-				unsigned long r6, unsigned long r7,
+-				struct pt_regs __regs);
+-asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
+-				unsigned long r6, unsigned long r7,
+-				struct pt_regs __regs);
+-asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
+-				unsigned long r6, unsigned long r7,
+-				struct pt_regs __regs);
+-asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
+-				   unsigned long r6, unsigned long r7,
+-				   struct pt_regs __regs);
++asmlinkage void do_divide_error(unsigned long r4);
++asmlinkage void do_reserved_inst(void);
++asmlinkage void do_illegal_slot_inst(void);
++asmlinkage void do_exception_error(void);
  
-+&extal_clk {
-+	clock-frequency = <13330000>;
-+};
-+
- &i2c2 {
- 	status = "okay";
- 	clock-frequency = <400000>;
+ #define BUILD_TRAP_HANDLER(name)					\
+ asmlinkage void name##_trap_handler(unsigned long r4, unsigned long r5,	\
+diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
+index 68e99f0..ff63934 100644
+--- a/arch/sh/kernel/traps_32.c
++++ b/arch/sh/kernel/traps_32.c
+@@ -594,9 +594,7 @@ int is_dsp_inst(struct pt_regs *regs)
+ #endif /* CONFIG_SH_DSP */
+ 
+ #ifdef CONFIG_CPU_SH2A
+-asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
+-				unsigned long r6, unsigned long r7,
+-				struct pt_regs __regs)
++asmlinkage void do_divide_error(unsigned long r4)
+ {
+ 	siginfo_t info;
+ 
+@@ -613,11 +611,9 @@ asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
+ }
+ #endif
+ 
+-asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
+-				unsigned long r6, unsigned long r7,
+-				struct pt_regs __regs)
++asmlinkage void do_reserved_inst(void)
+ {
+-	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
++	struct pt_regs *regs = current_pt_regs();
+ 	unsigned long error_code;
+ 	struct task_struct *tsk = current;
+ 
+@@ -701,11 +697,9 @@ static int emulate_branch(unsigned short inst, struct pt_regs *regs)
+ }
+ #endif
+ 
+-asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
+-				unsigned long r6, unsigned long r7,
+-				struct pt_regs __regs)
++asmlinkage void do_illegal_slot_inst(void)
+ {
+-	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
++	struct pt_regs *regs = current_pt_regs();
+ 	unsigned long inst;
+ 	struct task_struct *tsk = current;
+ 
+@@ -730,15 +724,12 @@ asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
+ 	die_if_no_fixup("illegal slot instruction", regs, inst);
+ }
+ 
+-asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
+-				   unsigned long r6, unsigned long r7,
+-				   struct pt_regs __regs)
++asmlinkage void do_exception_error(void)
+ {
+-	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
+ 	long ex;
+ 
+ 	ex = lookup_exception_vector();
+-	die_if_kernel("exception", regs, ex);
++	die_if_kernel("exception", current_pt_regs(), ex);
+ }
+ 
+ void per_cpu_trap_init(void)
 -- 
-1.8.5.1
+1.8.5.5
 
