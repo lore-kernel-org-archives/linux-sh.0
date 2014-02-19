@@ -1,21 +1,20 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 18 Feb 2014 17:06:07 +0000
+Date: Wed, 19 Feb 2014 19:18:51 +0000
 Subject: Re: [PATCH] of_mdio: fix phy interrupt passing
-Message-Id: <5303A10A.3060106@cogentembedded.com>
+Message-Id: <530511AC.7030907@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392654580-3706-1-git-send-email-ben.dooks@codethink.co.uk> < 20140218093024.D0E94C403C8@trevor.secretlab.ca> <53032A97.8050201@codethink .co.uk> <20140218170202.424D7C40517@trevor.secretlab.ca>
-In-Reply-To: <20140218170202.424D7C40517@trevor.secretlab.ca>
+References: <1392654580-3706-1-git-send-email-ben.dooks@codethink.co.uk> <CAGVrzcYeuTA0Yd5YyOTuWQfnwLw9zP87MaYJOLwprZRCtvuaXw@mail.gmail.com> <530249EF.4060803@codethink.co.uk> <CAGVrzcZGW05uNj75VG7w4iSGre4OzEMhHedQfaynekrbhP4NLQ@mail.gmail.com>
+In-Reply-To: <CAGVrzcZGW05uNj75VG7w4iSGre4OzEMhHedQfaynekrbhP4NLQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Grant Likely <grant.likely@linaro.org>, Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: Florian Fainelli <f.fainelli@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: Grant Likely <grant.likely@linaro.org>, linux-kernel <linux-kernel@lists.codethink.co.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, netdev <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
 Hello.
 
-On 02/18/2014 08:02 PM, Grant Likely wrote:
+On 02/17/2014 08:48 PM, Florian Fainelli wrote:
 
->>> On Mon, 17 Feb 2014 16:29:40 +0000, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
 >>>> The of_mdiobus_register_phy() is not setting phy->irq this causing
 >>>> some drivers to incorrectly assume that the PHY does not have an
 >>>> IRQ associated with it or install an interrupt handler for the
@@ -24,83 +23,40 @@ On 02/18/2014 08:02 PM, Grant Likely wrote:
 >>>> Simplify the code setting irq and set the phy->irq at the same
 >>>> time so that the case if mdio->irq is not NULL is easier to read.
 
->>>> This fixes the issue:
->>>>    net eth0: attached PHY 1 (IRQ -1) to driver Micrel KSZ8041RNLI
+>>> The real bug fix, which is not properly explained here, is that
+>>> irq_of_parse_and_map() should return values > 0 when the interrupt is
+>>> valid, so this makes me wonder why we are not propagating the return
+>>> value from irq_of_parse_and_map() in case the call to
+>>> of_irq_parse_one() does return something non-zero?
 
->>>> to the correct:
->>>>    net eth0: attached PHY 1 (IRQ 416) to driver Micrel KSZ8041RNLI
+>> No, the first issue is phy->dev never gets set, which causes the
+>> issue. The cleanup was added as it seemed easier to put it in with
+>> this.
 
->>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>>> ---
->>>>    drivers/of/of_mdio.c | 12 ++++++------
->>>>    1 file changed, 6 insertions(+), 6 deletions(-)
+> Ok, that really needs to be mentioned in the commit message, even
+> being quite familiar (and possibly dumb too) with the code, I could
+> not figure this out by reading your patch.
 
->>>> diff --git a/drivers/of/of_mdio.c b/drivers/of/of_mdio.c
->>>> index 875b7b6..7b3e7b0 100644
->>>> --- a/drivers/of/of_mdio.c
->>>> +++ b/drivers/of/of_mdio.c
->>>> @@ -44,7 +44,7 @@ static int of_mdiobus_register_phy(struct mii_bus *mdio, struct device_node *chi
->>>>    {
->>>>    	struct phy_device *phy;
->>>>    	bool is_c45;
->>>> -	int rc, prev_irq;
->>>> +	int rc;
->>>>    	u32 max_speed = 0;
->>>>
->>>>    	is_c45 = of_device_is_compatible(child,
->>>> @@ -55,11 +55,11 @@ static int of_mdiobus_register_phy(struct mii_bus *mdio, struct device_node *chi
->>>>    		return 1;
->>>>
->>>>    	if (mdio->irq) {
->>>> -		prev_irq = mdio->irq[addr];
->>>> -		mdio->irq[addr] >>>> -			irq_of_parse_and_map(child, 0);
->>>> -		if (!mdio->irq[addr])
->>>> -			mdio->irq[addr] = prev_irq;
+    Yes, the main issue was that phy->irq wasn't overridden from the value set 
+by phy_device_create().
 
->>> I cannot for the life for me remeber why the code was structured that
->>> way. Your change is better.
+>> I think phy->irq is already initialised to PHY_POLL and thus there
+>> is no need to set phy->irq if the irq_of_parse_and_map() fails.
 
->>>> +		rc = irq_of_parse_and_map(child, 0);
->>>> +		if (rc > 0) {
->>>> +			mdio->irq[addr] = rc;
->>>> +			phy->irq = rc;
->>>> +		}
->>>>    	}
+> That is correct, the reason why I introduced 7d97637 ("net: of_mdio:
+> do not overwrite PHY interrupt configuration") was that you are also
+> allowed to change the irq type before calling into
+> of_mdiobus_register(),
 
->>> The outer if is merely protecting against no irq array being allocated
->>> for the bus. Would not the following be better:
+    Not really: of_mdiobus_register() init's all of mdio->irq[] with IRQ_POLL, 
+thus wiping out all of the previous initialization, so I don't know what you 
+did achieve with the aforementioned commit.
 
->>> 	rc = irq_of_parse_and_map(child, 0);
->>> 	if (rc > 0) {
->>> 		phy->irq = rc;
->>> 		if (mdio->irq)
->>> 			mdio->irq[addr] = rc;
->>> 	}
+> so we want to preserve other irq values being
+> set here, such as PHY_IGNORE_INTERRUPT. Your patch does take care of
+> that since it only overrides the irq in case we could parse it.
 
->> Thanks, that makes sense, although we've both failed to work
->> out if mdio->irq is set, and rc <= 0 case, so:
-
->>    	rc = irq_of_parse_and_map(child, 0);
->>    	if (rc > 0) {
->>    		phy->irq = rc;
->>    		if (mdio->irq)
->>    			mdio->irq[addr] = rc;
->>    	} else {
->> 		if (mdio->irq)
->> 			phy->irq = mdio->irq[addr];
->> 	}
-
-> Is this actually a valid thing to do? I think the only time mdio->irq[]
-> is non-zero is when it is set to PHY_POLL. Is it valid to set phy->irq
-> to PHY_POLL? I didn't think it was.
-
-    It is valid, AFAIK.
-
-> g.
-
->> --
->> Ben Dooks				http://www.codethink.co.uk/
->> Senior Engineer				Codethink - Providing Genius
+    And it should have stayed that way. The latter change was unnecessary.
 
 WBR, Sergei
 
