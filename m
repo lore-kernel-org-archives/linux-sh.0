@@ -1,56 +1,67 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 16 Feb 2014 09:40:56 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7791: add i2c2 bus to koelsch dt
-Message-Id: <1392543658-5030-4-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:49:38 +0000
+Subject: [PATCH 10/11] ARM: shmobile: lager dts: Add MSIOF nodes
+Message-Id: <1392907779-22053-11-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392543658-5030-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1392543658-5030-1-git-send-email-wsa@the-dreams.de>
+References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Add pinctrl and SPI device for MSIOF on Lager.
+On this board, only MSIOF1 is in use. Its bus contains a single device
+(a Renesas R2A11302FT PMIC), for which no bindings are defined yet.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index d4b9bba..b3f75d7 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -108,10 +108,29 @@
- 	clock-frequency = <20000000>;
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 5d53def10c42..0658c881687e 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -148,6 +148,12 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	msiof1_pins: spi2 {
++		renesas,groups = "msiof1_clk", "msiof1_sync", "msiof1_rx",
++				 "msiof1_tx";
++		renesas,function = "msiof1";
++	};
  };
  
-+&i2c2 {
-+	pinctrl-0 = <&i2c2_pins>;
+ &mmcif1 {
+@@ -195,6 +201,22 @@
+ 	};
+ };
+ 
++&msiof1 {
++	pinctrl-0 = <&msiof1_pins>;
 +	pinctrl-names = "default";
 +
 +	status = "okay";
-+	clock-frequency = <400000>;
 +
-+	eeprom@50 {
-+		compatible = "renesas,24c02";
-+		reg = <0x50>;
-+		pagesize = <16>;
++	pmic: pmic@0 {
++		compatible = "renesas,r2a11302ft";
++		reg = <0>;
++		spi-max-frequency = <6000000>;
++		spi-cpol;
++		spi-cpha;
 +	};
++
 +};
 +
- &pfc {
- 	pinctrl-0 = <&scif0_pins &scif1_pins>;
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
  	pinctrl-names = "default";
- 
-+	i2c2_pins: i2c {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
-+
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data_d";
- 		renesas,function = "scif0";
 -- 
-1.8.5.1
+1.7.9.5
 
