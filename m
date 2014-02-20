@@ -1,130 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:13:08 +0000
-Subject: [PATCH 1/3] ARM: shmobile: Add r8a7791 legacy SDHI clocks
-Message-Id: <8301139d29f2f09a51077f6d625d7b1ab50163d1.1392961497.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 20 Feb 2014 11:54:45 +0000
+Subject: [PATCH V7 1/3] clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+Message-Id: <1392897287-11614-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961497.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961497.git.horms+renesas@verge.net.au>
+References: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <damm@opensource.se>, "Cc: Wolfram Sang" <wsa@the-dreams.de>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
 From: Magnus Damm <damm@opensource.se>
 
-Add legacy r8a7791 SDHI clocks. This to allow the SDHI devices
-to be used by legacy Koelsch board support.
+Add Kconfig entries for CMT, MTU2, TMU and STI to
+drivers/clocksource/Kconfig. This will allow us to
+get rid of duplicated entires in architecture code
+such as arch/sh and arch/arm/mach-shmobile.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+[wsa: rebased to timers/core]
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 51 ++++++++++++++++++++++++++++++++--
- 1 file changed, 49 insertions(+), 2 deletions(-)
+ drivers/clocksource/Kconfig | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index c8227b3..3e1b6b6 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -61,6 +61,7 @@
- 
- #define MSTPSR1		IOMEM(0xe6150038)
- #define MSTPSR2		IOMEM(0xe6150040)
-+#define MSTPSR3		IOMEM(0xe6150048)
- #define MSTPSR5		IOMEM(0xe615003c)
- #define MSTPSR7		IOMEM(0xe61501c4)
- #define MSTPSR8		IOMEM(0xe61509a0)
-@@ -69,8 +70,8 @@
- 
- #define MODEMR		0xE6160060
- #define SDCKCR		0xE6150074
--#define SD2CKCR		0xE6150078
--#define SD3CKCR		0xE615007C
-+#define SD1CKCR		0xE6150078
-+#define SD2CKCR		0xE615026c
- #define MMC0CKCR	0xE6150240
- #define MMC1CKCR	0xE6150244
- #define SSPCKCR		0xE6150248
-@@ -134,6 +135,39 @@ static struct clk *main_clks[] = {
- 	&zs_clk,
- };
- 
-+/* SDHI (DIV4) clock */
-+static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
+diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
+index cd6950f..4f754a9 100644
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -140,3 +140,47 @@ config VF_PIT_TIMER
+ 	bool
+ 	help
+ 	  Support for Period Interrupt Timer on Freescale Vybrid Family SoCs.
 +
-+static struct clk_div_mult_table div4_div_mult_table = {
-+	.divisors = divisors,
-+	.nr_divisors = ARRAY_SIZE(divisors),
-+};
++config SYS_SUPPORTS_SH_CMT
++        bool
 +
-+static struct clk_div4_table div4_table = {
-+	.div_mult_table = &div4_div_mult_table,
-+};
++config SYS_SUPPORTS_SH_MTU2
++        bool
 +
-+enum {
-+	DIV4_SDH, DIV4_SD0,
-+	DIV4_NR
-+};
++config SYS_SUPPORTS_SH_TMU
++        bool
 +
-+static struct clk div4_clks[DIV4_NR] = {
-+	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
-+	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
-+};
++config SYS_SUPPORTS_EM_STI
++        bool
 +
-+/* DIV6 clocks */
-+enum {
-+	DIV6_SD1, DIV6_SD2,
-+	DIV6_NR
-+};
++config SH_TIMER_CMT
++	bool "Renesas CMT timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_SH_CMT
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the Compare Match Timer (CMT) hardware available in 16/32/48-bit
++	  variants on a wide range of Mobile and Automotive SoCs from Renesas.
 +
-+static struct clk div6_clks[DIV6_NR] = {
-+	[DIV6_SD1]	= SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
-+	[DIV6_SD2]	= SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
-+};
++config SH_TIMER_MTU2
++	bool "Renesas MTU2 timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_SH_MTU2
++	help
++	  This enables build of a clockevent driver for the Multi-Function
++	  Timer Pulse Unit 2 (TMU2) hardware available on SoCs from Renesas.
++	  This hardware comes with 16 bit-timer registers.
 +
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
-@@ -144,6 +178,7 @@ enum {
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
- 	MSTP522,
-+	MSTP314, MSTP312, MSTP311,
- 	MSTP216, MSTP207, MSTP206,
- 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
- 	MSTP124,
-@@ -174,6 +209,9 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
-+	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
-+	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
-+	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
- 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
- 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
- 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
-@@ -224,6 +262,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
-@@ -286,6 +327,12 @@ void __init r8a7791_clock_init(void)
- 		ret = clk_register(main_clks[k]);
- 
- 	if (!ret)
-+		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++config SH_TIMER_TMU
++	bool "Renesas TMU timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_SH_TMU
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the 32-bit Timer Unit (TMU) hardware available on a wide range
++	  SoCs from Renesas.
 +
-+	if (!ret)
-+		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
-+
-+	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
- 
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++config EM_TIMER_STI
++	bool "Renesas STI timer driver" if COMPILE_TEST
++	default SYS_SUPPORTS_EM_STI
++	help
++	  This enables build of a clocksource and clockevent driver for
++	  the 48-bit System Timer (STI) hardware available on a SoCs
++	  such as EMEV2 from former NEC Electronics.
 -- 
-1.8.5.2
+1.8.5.1
 
