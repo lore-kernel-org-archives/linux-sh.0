@@ -1,42 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Feb 2014 09:50:58 +0000
-Subject: Re: mmc: sh_mobile_sdhi: DT update for R-Car
-Message-Id: <20140212095056.GB6630@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 20 Feb 2014 11:54:44 +0000
+Subject: [PATCH V7 0/3] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
+Message-Id: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
- <87d2j87m6u.wl%kuninori.morimoto.gx@gmail.com>
- <20140212094731.GA6630@verge.net.au>
-In-Reply-To: <20140212094731.GA6630@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Chris Ball <cjb@laptop.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Feb 12, 2014 at 06:47:35PM +0900, Simon Horman wrote:
-> On Thu, Jan 30, 2014 at 09:30:20PM -0800, Kuninori Morimoto wrote:
-> > Hi Chris, Simon
-> > 
-> > These are v2 of updates code for R-Car.
-> > I separated v1 patches into for mmc, and for SH-ARM.
-> > This is "mmc" part patches.
-> > 
-> > Kuninori Morimoto (4):
-> >       mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
-> >       mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7778
-> >       mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7779
-> >       mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7790
-> > 
-> >  drivers/mmc/host/sh_mobile_sdhi.c |   41 +++++++++++++++++++++++++------------
-> >  1 file changed, 28 insertions(+), 13 deletions(-)
-> > )
-> 
-> To aid other developers I have pushed these
-> in the topic/r-car-sdhi branch of my renesas tree.
-> 
-> To be clear, I am not picking these patches up,
-> that is Chris's domain.
+This is V7 of the SH and ARM mach-shmobile clocksource Kconfig consolidation
+series. It is a rebased version of V5 on top of timers/core. This series is not
+just an optimization, it also makes it possible to enable the clocksource for
+the r7s72100 platform. I successfully tested the patches on r7s72100 and
+r8a7791 platforms. The branch can be found here:
 
-Also, for the entire series:
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/rework-clock-config-for-daniel
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Changes since V6:
+
+ - rebased on top timers/core
+
+Changes since V5:
+
+ - rebased on top of renesas-devel-v3.14-rc3-20140217
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+
+
+== original cover letter
+
+By sharing Kconfig entires in drivers/clocksource/Kconfig we
+can get rid of duplicated bits that do not belong under arch/.
+
+With this series applied it is possible to build the timer
+drivers for CMT, MTU2, TMU and STI in case of SH or ARM. The timer
+drivers are automatically selected by default. It is also possible
+to select and/or deselect freely when COMPILE_TEST has been selected.
+
+Many thanks to Olof, John, Daniel and Arnd for feedback!
+
+Changes since V4:
+ - Use SYS_SUPPORTS_SH/EM to avoid name space pollution, thanks Olof!
+ - Remove old SH entries for SYS_SUPPORTS_xxx, use above SH prefix instead
+
+Changes since V3:
+ - Updated patch 1/3 with more detailed help texts
+ - Updated patch 2/3 to fit latest renesas-devel tag, see below
+ - Included acks from John Stultz for patch 2/3 and 3/3
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+
+
+Magnus Damm (3):
+  clocksource: Add Kconfig entries for CMT, MTU2, TMU and STI
+  ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
+  sh: Remove Kconfig entries for TMU, CMT and MTU2
+
+ arch/arm/mach-shmobile/Kconfig | 36 ++++++++++----------
+ arch/sh/Kconfig                | 76 +++++++++++++-----------------------------
+ drivers/clocksource/Kconfig    | 44 ++++++++++++++++++++++++
+ 3 files changed, 85 insertions(+), 71 deletions(-)
+
+-- 
+1.8.5.1
+
