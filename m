@@ -1,159 +1,130 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 17 Feb 2014 20:55:31 +0000
-Subject: [PATCH V6 2/3] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
-Message-Id: <1392670532-21523-3-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:49:33 +0000
+Subject: [PATCH 05/11] ARM: shmobile: koelsch legacy: Add MSIOF support
+Message-Id: <1392907779-22053-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
+References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <damm@opensource.se>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU and STI
-it is safe to remove these from mach-shmobile.
+Add MSIOF resources, platform data, platform device, pinctrl, and SPI
+child device.
 
-Also select timers per SoC via SYS_SUPPORTS_xxx.
+  - Platform device numbering is 1-based for compatibility with the BSP,
+    as QSPI uses zero.
+  - Only MSIOF0 is in use, and thus registered. Its bus contains a single
+    device (a Renesas R2A11302FT PMIC).
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-[wsa: rebased to renesas-devel-v3.14-rc3-20140217]
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Based on patches from Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/Kconfig | 35 +++++++++++++++++------------------
- 1 file changed, 17 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c |   59 ++++++++++++++++++++++++++++----
+ 1 file changed, 53 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4b89116..d80df50 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -25,17 +25,21 @@ comment "Renesas ARM SoCs System Type"
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 5a034ff405d0..47bf588fc5ce 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -44,6 +44,7 @@
+ #include <linux/sh_eth.h>
+ #include <linux/spi/flash.h>
+ #include <linux/spi/rspi.h>
++#include <linux/spi/sh_msiof.h>
+ #include <linux/spi/spi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -184,6 +185,35 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+ 	.num_chipselect = 1,
+ };
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-+	select SYS_SUPPORTS_EM_STI
++/* MSIOF */
++static const struct resource sh_msiof0_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e20000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(156)),
++};
++
++static const struct resource sh_msiof1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e10000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(157)),
++};
++
++static const struct resource sh_msiof2_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e00000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(158)),
++};
++
++static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
++	.rx_fifo_override	= 256,
++	.num_chipselect		= 1,
++};
++
++#define r8a7791_register_msiof(idx)					\
++	platform_device_register_resndata(&platform_bus,		\
++				"spi_r8a7791_msiof",			\
++				(idx+1), sh_msiof##idx##_resources,	\
++				ARRAY_SIZE(sh_msiof##idx##_resources),	\
++				&sh_msiof_info,				\
++				sizeof(struct sh_msiof_spi_info))
++
+ /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
+ static struct mtd_partition spi_flash_part[] = {
+ 	{
+@@ -214,12 +244,19 @@ static const struct flash_platform_data spi_flash_data = {
  
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select SYS_SUPPORTS_SH_MTU2
+ static const struct spi_board_info spi_info[] __initconst = {
+ 	{
+-		.modalias	= "m25p80",
+-		.platform_data	= &spi_flash_data,
+-		.mode		= SPI_MODE_0,
+-		.max_speed_hz	= 30000000,
+-		.bus_num	= 0,
+-		.chip_select	= 0,
++		.modalias	 = "m25p80",
++		.platform_data	 = &spi_flash_data,
++		.mode		 = SPI_MODE_0,
++		.max_speed_hz	 = 30000000,
++		.bus_num	 = 0,
++		.chip_select	 = 0,
++	}, {
++		.modalias	 = "r2a1130x",
++		.max_speed_hz	 = 6000000,
++		.chip_select	 = 0,
++		.bus_num	 = 1,
++		.mode		 = SPI_MODE_3,
++		.controller_data = (void *)-ENOENT, /* HW controlled CS */
+ 	},
+ };
  
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
+@@ -384,6 +421,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 				  "eth_rmii", "eth"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
+ 				  "intc_irq0", "intc"),
++	/* MSIOF0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_clk", "msiof0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_sync", "msiof0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_rx", "msiof0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_tx", "msiof0"),
+ 	/* QSPI */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
+ 				  "qspi_ctrl", "qspi"),
+@@ -449,6 +495,7 @@ static void __init koelsch_add_standard_devices(void)
+ 					  qspi_resources,
+ 					  ARRAY_SIZE(qspi_resources),
+ 					  &qspi_pdata, sizeof(qspi_pdata));
++	r8a7791_register_msiof(0);
+ 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
  
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -72,6 +76,8 @@ config ARCH_SH7372
- 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_SH73A0
- 	bool "SH-Mobile AG5 (R8A73A00)"
-@@ -81,6 +87,8 @@ config ARCH_SH73A0
- 	select I2C
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A73A4
- 	bool "R-Mobile APE6 (R8A73A40)"
-@@ -91,6 +99,8 @@ config ARCH_R8A73A4
- 	select RENESAS_IRQC
- 	select ARCH_HAS_CPUFREQ
- 	select ARCH_HAS_OPP
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
-@@ -99,6 +109,8 @@ config ARCH_R8A7740
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7778
- 	bool "R-Car M1A (R8A77781)"
-@@ -108,6 +120,7 @@ config ARCH_R8A7778
- 	select ARM_GIC
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
-@@ -118,6 +131,7 @@ config ARCH_R8A7779
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-@@ -128,6 +142,7 @@ config ARCH_R8A7790
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
-+	select SYS_SUPPORTS_SH_CMT
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-@@ -138,6 +153,7 @@ config ARCH_R8A7791
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
- 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
-+	select SYS_SUPPORTS_SH_CMT
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-@@ -145,6 +161,7 @@ config ARCH_R7S72100
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select SYS_SUPPORTS_SH_MTU2
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -325,24 +342,6 @@ config SHMOBILE_TIMER_HZ
- 	  want to select a HZ value such as 128 that can evenly divide RCLK.
- 	  A HZ value that does not divide evenly may cause timer drift.
- 
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	default y
--	help
--	  This enables build of the TMU timer driver.
--
--config EM_TIMER_STI
--	bool "STI timer driver"
--	default y
--	help
--	  This enables build of the STI timer driver.
--
- endmenu
- 
- endif
+ 	koelsch_add_du_device();
 -- 
-1.8.5.1
+1.7.9.5
 
