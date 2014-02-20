@@ -1,76 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:24:59 +0000
-Subject: [PATCH 2/2] [TEST] ARM: shmobile: koelsch-reference: Instantiate IPMMU-MX
-Message-Id: <1393601099-4413-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:49:35 +0000
+Subject: [PATCH 07/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi, add spi0 alias
+Message-Id: <1392907779-22053-8-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Not-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+
+Prepare for the advent of MSIOF SPI, which will be spi1 to spi3.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 30 ++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++--
+ arch/arm/boot/dts/r8a7791.dtsi        |    3 ++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index a3fd302..d2f4ed8 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -24,6 +24,7 @@
- #include <linux/dma-mapping.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/ipmmu-vmsa.h>
- #include <linux/platform_data/rcar-du.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -82,6 +83,34 @@ static void __init koelsch_add_du_device(void)
- 	platform_device_register_full(&info);
- }
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index bf6ba0c7faa0..cc6e63914f7c 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -146,7 +146,7 @@
+ 		renesas,function = "scif1";
+ 	};
  
-+/*
-+ * IPMMUs
-+ *
-+ * MX: for JPU, 2DDMAC, VSP, DCU, FDP, IMR-LSX2, DU, VCP, VPC and VIN
-+ */
-+static struct resource ipmmu_mx_resources[] = {
-+	DEFINE_RES_MEM(0xfe951800, 0x800),
-+	DEFINE_RES_IRQ(gic_spi(222)),
-+};
-+
-+static const struct ipmmu_vmsa_master ipmmu_mx_masters[] = {
-+	{ "rcar-du-r8a7791", 15, },
-+};
-+
-+static struct ipmmu_vmsa_platform_data ipmmu_mx_platform_data = {
-+	.masters = ipmmu_mx_masters,
-+	.num_masters = ARRAY_SIZE(ipmmu_mx_masters),
-+};
-+
-+static void __init koelsch_add_ipmmu_devices(void)
-+{
-+	platform_device_register_resndata(NULL, "ipmmu-vmsa", -1,
-+					  ipmmu_mx_resources,
-+					  ARRAY_SIZE(ipmmu_mx_resources),
-+					  &ipmmu_mx_platform_data,
-+					  sizeof(ipmmu_mx_platform_data));
-+}
-+
- static void __init koelsch_add_standard_devices(void)
- {
- 	/*
-@@ -128,6 +157,7 @@ static void __init koelsch_add_standard_devices(void)
- 	r8a7791_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	qspi_pins: spi {
++	qspi_pins: spi0 {
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
+@@ -156,7 +156,7 @@
+ 	status = "okay";
+ };
  
-+	koelsch_add_ipmmu_devices();
- 	koelsch_add_du_device();
- }
+-&spi {
++&qspi {
+ 	pinctrl-0 = <&qspi_pins>;
+ 	pinctrl-names = "default";
  
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 224f4a7ee52a..da5ce503d214 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -26,6 +26,7 @@
+ 		i2c3 = &i2c3;
+ 		i2c4 = &i2c4;
+ 		i2c5 = &i2c5;
++		spi0 = &qspi;
+ 	};
+ 
+ 	cpus {
+@@ -750,7 +751,7 @@
+ 		};
+ 	};
+ 
+-	spi: spi@e6b10000 {
++	qspi: spi@e6b10000 {
+ 		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.8.3.2
+1.7.9.5
 
