@@ -1,97 +1,239 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 15:24:00 +0000
-Subject: [PATCH v4 06/11] ARM: shmobile: r8a7791 clock: add QSPI clocks
-Message-Id: <1391527445-14881-7-git-send-email-geert@linux-m68k.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 20 Feb 2014 11:54:47 +0000
+Subject: [PATCH V7 3/3] sh: Remove Kconfig entries for TMU, CMT and MTU2
+Message-Id: <1392897287-11614-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
+References: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Magnus Damm <damm@opensource.se>, "Cc: Wolfram Sang" <wsa@the-dreams.de>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-The QSPI clock divider value depends on the MD1, MD2, and MD3 mode
-switches.
+Now when drivers/clocksource/Kconfig has been
+updated with entires for CMT, TMU and MTU2
+it is safe to remove these from SH.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
+[wsa: rebased to timers/core]
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
-v4:
-  - Rebased on top of renesas-devel-v3.14-rc1-20140204
-v3:
-  - No changes
-v2:
-  - No changes
+ arch/sh/Kconfig | 76 +++++++++++++++++----------------------------------------
+ 1 file changed, 23 insertions(+), 53 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7791.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index e4e4dfac85e9..c8227b334e61 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -101,6 +101,7 @@ static struct clk main_clk = {
-  */
- SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
- SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
-+SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 6357710..364d204 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -123,15 +123,6 @@ config SYS_SUPPORTS_NUMA
+ config SYS_SUPPORTS_PCI
+ 	bool
  
- /* fixed ratio clock */
- SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
-@@ -124,6 +125,7 @@ static struct clk *main_clks[] = {
- 	&pll3_clk,
- 	&hp_clk,
- 	&p_clk,
-+	&qspi_clk,
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-@@ -135,6 +137,7 @@ static struct clk *main_clks[] = {
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
-+	MSTP917,
- 	MSTP815, MSTP814,
- 	MSTP813,
- 	MSTP811, MSTP810, MSTP809,
-@@ -154,6 +157,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
- 	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
- 	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
-+	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
- 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
- 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
- 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
-@@ -195,6 +199,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("zs",		&zs_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
-+	CLKDEV_CON_ID("qspi",		&qspi_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
- 	CLKDEV_CON_ID("mp",		&mp_clk),
- 	CLKDEV_CON_ID("cp",		&cp_clk),
-@@ -220,6 +225,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
-@@ -271,6 +277,11 @@ void __init r8a7791_clock_init(void)
- 		break;
- 	}
+-config SYS_SUPPORTS_CMT
+-	bool
+-
+-config SYS_SUPPORTS_MTU2
+-	bool
+-
+-config SYS_SUPPORTS_TMU
+-	bool
+-
+ config STACKTRACE_SUPPORT
+ 	def_bool y
  
-+	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
-+	else
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
-+
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
+@@ -191,14 +182,14 @@ config CPU_SH3
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
  
+ config CPU_SH4
+ 	bool
+ 	select CPU_HAS_INTEVT
+ 	select CPU_HAS_SR_RB
+ 	select CPU_HAS_FPU if !CPU_SH4AL_DSP
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SH4A
+@@ -213,7 +204,7 @@ config CPU_SH4AL_DSP
+ config CPU_SH5
+ 	bool
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_TMU
++	select SYS_SUPPORTS_SH_TMU
+ 	select SYS_SUPPORTS_HUGETLBFS if MMU
+ 
+ config CPU_SHX2
+@@ -250,7 +241,7 @@ choice
+ config CPU_SUBTYPE_SH7619
+ 	bool "Support SH7619 processor"
+ 	select CPU_SH2
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ # SH-2A Processor Support
+ 
+@@ -258,50 +249,50 @@ config CPU_SUBTYPE_SH7201
+ 	bool "Support SH7201 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_MTU2
+  
+ config CPU_SUBTYPE_SH7203
+ 	bool "Support SH7203 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7206
+ 	bool "Support SH7206 processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ config CPU_SUBTYPE_SH7263
+ 	bool "Support SH7263 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 
+ config CPU_SUBTYPE_SH7264
+ 	bool "Support SH7264 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7269
+ 	bool "Support SH7269 processor"
+ 	select CPU_SH2A
+ 	select CPU_HAS_FPU
+-	select SYS_SUPPORTS_CMT
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_CMT
++	select SYS_SUPPORTS_SH_MTU2
+ 	select PINCTRL
+ 
+ config CPU_SUBTYPE_MXG
+ 	bool "Support MX-G processor"
+ 	select CPU_SH2A
+-	select SYS_SUPPORTS_MTU2
++	select SYS_SUPPORTS_SH_MTU2
+ 	help
+ 	  Select MX-G if running on an R8A03022BG part.
+ 
+@@ -354,7 +345,7 @@ config CPU_SUBTYPE_SH7720
+ 	bool "Support SH7720 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+@@ -366,7 +357,7 @@ config CPU_SUBTYPE_SH7721
+ 	bool "Support SH7721 processor"
+ 	select CPU_SH3
+ 	select CPU_HAS_DSP
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
+ 	help
+@@ -422,7 +413,7 @@ config CPU_SUBTYPE_SH7723
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -434,7 +425,7 @@ config CPU_SUBTYPE_SH7724
+ 	select CPU_SHX2
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 	help
+@@ -514,7 +505,7 @@ config CPU_SUBTYPE_SH7343
+ 	bool "Support SH7343 processor"
+ 	select CPU_SH4AL_DSP
+ 	select ARCH_SHMOBILE
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ config CPU_SUBTYPE_SH7722
+ 	bool "Support SH7722 processor"
+@@ -523,7 +514,7 @@ config CPU_SUBTYPE_SH7722
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select PINCTRL
+ 
+@@ -534,7 +525,7 @@ config CPU_SUBTYPE_SH7366
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+-	select SYS_SUPPORTS_CMT
++	select SYS_SUPPORTS_SH_CMT
+ 
+ endchoice
+ 
+@@ -567,27 +558,6 @@ source "arch/sh/boards/Kconfig"
+ 
+ menu "Timer and clock configuration"
+ 
+-config SH_TIMER_TMU
+-	bool "TMU timer driver"
+-	depends on SYS_SUPPORTS_TMU
+-	default y
+-	help
+-	  This enables the build of the TMU timer driver.
+-
+-config SH_TIMER_CMT
+-	bool "CMT timer driver"
+-	depends on SYS_SUPPORTS_CMT
+-	default y
+-	help
+-	  This enables build of the CMT timer driver.
+-
+-config SH_TIMER_MTU2
+-	bool "MTU2 timer driver"
+-	depends on SYS_SUPPORTS_MTU2
+-	default y
+-	help
+-	  This enables build of the MTU2 timer driver.
+-
+ config SH_PCLK_FREQ
+ 	int "Peripheral clock frequency (in Hz)"
+ 	depends on SH_CLK_CPG_LEGACY
 -- 
-1.7.9.5
+1.8.5.1
 
