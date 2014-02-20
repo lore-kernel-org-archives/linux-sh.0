@@ -1,10 +1,10 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Feb 2014 10:30:12 +0000
-Subject: [PATCH v2 04/11] ARM: shmobile: koelsch legacy: Add MSIOF support
-Message-Id: <1393324219-3317-5-git-send-email-geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:49:36 +0000
+Subject: [PATCH 08/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
+Message-Id: <1392907779-22053-9-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,109 +12,80 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add MSIOF resources, platform data, platform device, pinctrl, and SPI
-child device.
-
-  - Only MSIOF0 is in use, and thus registered. Its bus contains a single
-    device (a Renesas R2A11302FT PMIC).
-  - Platform device numbering is 1-based for compatibility with the BSP,
-    as QSPI uses zero, so MSIOF0's device name is "spi_r8a7791_msiof.1".
-
-Based on patches from Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
-v2:
-  - Removed resources for unused MSIOF channels.
+ arch/arm/boot/dts/r8a7790.dtsi |   52 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
 
- arch/arm/mach-shmobile/board-koelsch.c |   46 +++++++++++++++++++++++++++-----
- 1 file changed, 40 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 5a034ff405d0..618b728cc180 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -44,6 +44,7 @@
- #include <linux/sh_eth.h>
- #include <linux/spi/flash.h>
- #include <linux/spi/rspi.h>
-+#include <linux/spi/sh_msiof.h>
- #include <linux/spi/spi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -184,6 +185,17 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
- 	.num_chipselect = 1,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index bc652a2848e7..aab5f4cf6ce2 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -24,6 +24,10 @@
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
+ 		spi0 = &qspi;
++		spi1 = &msiof0;
++		spi2 = &msiof1;
++		spi3 = &msiof2;
++		spi4 = &msiof3;
+ 	};
+ 
+ 	cpus {
+@@ -764,4 +768,52 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	msiof0: spi@e6e20000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6e20000 0 0x0064>;
++		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
++		num-cs = <1>;
++		renesas,rx-fifo-size = <256>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof1: spi@e6e10000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6e10000 0 0x0064>;
++		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
++		num-cs = <1>;
++		renesas,rx-fifo-size = <256>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof2: spi@e6e00000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6e00000 0 0x0064>;
++		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
++		num-cs = <1>;
++		renesas,rx-fifo-size = <256>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof3: spi@e6c90000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6c90000 0 0x0064>;
++		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
++		num-cs = <1>;
++		renesas,rx-fifo-size = <256>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
  };
- 
-+/* MSIOF0 */
-+static const struct resource sh_msiof0_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6e20000, 0x0064),
-+	DEFINE_RES_IRQ(gic_spi(156)),
-+};
-+
-+static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
-+	.rx_fifo_override	= 256,
-+	.num_chipselect		= 1,
-+};
-+
- /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
- static struct mtd_partition spi_flash_part[] = {
- 	{
-@@ -214,12 +226,19 @@ static const struct flash_platform_data spi_flash_data = {
- 
- static const struct spi_board_info spi_info[] __initconst = {
- 	{
--		.modalias	= "m25p80",
--		.platform_data	= &spi_flash_data,
--		.mode		= SPI_MODE_0,
--		.max_speed_hz	= 30000000,
--		.bus_num	= 0,
--		.chip_select	= 0,
-+		.modalias	 = "m25p80",
-+		.platform_data	 = &spi_flash_data,
-+		.mode		 = SPI_MODE_0,
-+		.max_speed_hz	 = 30000000,
-+		.bus_num	 = 0,
-+		.chip_select	 = 0,
-+	}, {
-+		.modalias	 = "r2a1130x",
-+		.max_speed_hz	 = 6000000,
-+		.chip_select	 = 0,
-+		.bus_num	 = 1,
-+		.mode		 = SPI_MODE_3,
-+		.controller_data = (void *)-ENOENT, /* HW controlled CS */
- 	},
- };
- 
-@@ -384,6 +403,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 				  "eth_rmii", "eth"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
- 				  "intc_irq0", "intc"),
-+	/* MSIOF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_clk", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_sync", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_rx", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_tx", "msiof0"),
- 	/* QSPI */
- 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
- 				  "qspi_ctrl", "qspi"),
-@@ -449,6 +477,12 @@ static void __init koelsch_add_standard_devices(void)
- 					  qspi_resources,
- 					  ARRAY_SIZE(qspi_resources),
- 					  &qspi_pdata, sizeof(qspi_pdata));
-+	platform_device_register_resndata(&platform_bus, "spi_r8a7791_msiof",
-+					  1 + 0, sh_msiof0_resources,
-+					  ARRAY_SIZE(sh_msiof0_resources),
-+					  &sh_msiof_info,
-+					  sizeof(struct sh_msiof_spi_info));
-+
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- 
- 	koelsch_add_du_device();
 -- 
 1.7.9.5
 
