@@ -1,49 +1,557 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Feb 2014 10:30:08 +0000
-Subject: [PATCH v2 00/11] ARM: shmobile: MSIOF integration on r8a7790/lager and r8a7791/koelsch
-Message-Id: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 19:53:41 +0000
+Subject: [PATCH 2/2] pinctrl: sh-pfc: r8a7791: Add alternative MSIOF pin groups
+Message-Id: <1392926021-19526-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392926021-19526-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392926021-19526-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-        Hi Simon, Magnus,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-This patch series integrates support for the MSIOF module in the Renesas
-R-Car H2 (r8a7790) and M2 (r8a7791) SoCs on the Lager and Koelsch
-development boards.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  469 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 469 insertions(+)
 
-It was tested on Lager and Koelsch, both legacy and DT, using a dummy
-driver for the Renesas r2a11302ft PMIC that reads out the PMIC's version
-ID.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 2a64589b5dc4..682ce5d51244 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -2049,6 +2049,92 @@ static const unsigned int msiof0_tx_pins[] = {
+ static const unsigned int msiof0_tx_mux[] = {
+ 	MSIOF0_TXD_MARK,
+ };
++
++static const unsigned int msiof0_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(0, 16),
++};
++static const unsigned int msiof0_clk_b_mux[] = {
++	MSIOF0_SCK_B_MARK,
++};
++static const unsigned int msiof0_sync_b_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(0, 17),
++};
++static const unsigned int msiof0_sync_b_mux[] = {
++	MSIOF0_SYNC_B_MARK,
++};
++static const unsigned int msiof0_ss1_b_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(0, 18),
++};
++static const unsigned int msiof0_ss1_b_mux[] = {
++	MSIOF0_SS1_B_MARK,
++};
++static const unsigned int msiof0_ss2_b_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(0, 19),
++};
++static const unsigned int msiof0_ss2_b_mux[] = {
++	MSIOF0_SS2_B_MARK,
++};
++static const unsigned int msiof0_rx_b_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(0, 21),
++};
++static const unsigned int msiof0_rx_b_mux[] = {
++	MSIOF0_RXD_B_MARK,
++};
++static const unsigned int msiof0_tx_b_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(0, 20),
++};
++static const unsigned int msiof0_tx_b_mux[] = {
++	MSIOF0_TXD_B_MARK,
++};
++
++static const unsigned int msiof0_clk_c_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(5, 26),
++};
++static const unsigned int msiof0_clk_c_mux[] = {
++	MSIOF0_SCK_C_MARK,
++};
++static const unsigned int msiof0_sync_c_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(5, 25),
++};
++static const unsigned int msiof0_sync_c_mux[] = {
++	MSIOF0_SYNC_C_MARK,
++};
++static const unsigned int msiof0_ss1_c_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(5, 27),
++};
++static const unsigned int msiof0_ss1_c_mux[] = {
++	MSIOF0_SS1_C_MARK,
++};
++static const unsigned int msiof0_ss2_c_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(5, 28),
++};
++static const unsigned int msiof0_ss2_c_mux[] = {
++	MSIOF0_SS2_C_MARK,
++};
++static const unsigned int msiof0_rx_c_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(5, 29),
++};
++static const unsigned int msiof0_rx_c_mux[] = {
++	MSIOF0_RXD_C_MARK,
++};
++static const unsigned int msiof0_tx_c_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(5, 30),
++};
++static const unsigned int msiof0_tx_c_mux[] = {
++	MSIOF0_TXD_C_MARK,
++};
+ /* - MSIOF1 ----------------------------------------------------------------- */
+ static const unsigned int msiof1_clk_pins[] = {
+ 	/* SCK */
+@@ -2092,6 +2178,143 @@ static const unsigned int msiof1_tx_pins[] = {
+ static const unsigned int msiof1_tx_mux[] = {
+ 	MSIOF1_TXD_MARK,
+ };
++
++static const unsigned int msiof1_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(2, 29),
++};
++static const unsigned int msiof1_clk_b_mux[] = {
++	MSIOF1_SCK_B_MARK,
++};
++static const unsigned int msiof1_sync_b_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(2, 30),
++};
++static const unsigned int msiof1_sync_b_mux[] = {
++	MSIOF1_SYNC_B_MARK,
++};
++static const unsigned int msiof1_ss1_b_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(2, 31),
++};
++static const unsigned int msiof1_ss1_b_mux[] = {
++	MSIOF1_SS1_B_MARK,
++};
++static const unsigned int msiof1_ss2_b_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(7, 16),
++};
++static const unsigned int msiof1_ss2_b_mux[] = {
++	MSIOF1_SS2_B_MARK,
++};
++static const unsigned int msiof1_rx_b_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(7, 18),
++};
++static const unsigned int msiof1_rx_b_mux[] = {
++	MSIOF1_RXD_B_MARK,
++};
++static const unsigned int msiof1_tx_b_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(7, 17),
++};
++static const unsigned int msiof1_tx_b_mux[] = {
++	MSIOF1_TXD_B_MARK,
++};
++
++static const unsigned int msiof1_clk_c_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(2, 15),
++};
++static const unsigned int msiof1_clk_c_mux[] = {
++	MSIOF1_SCK_C_MARK,
++};
++static const unsigned int msiof1_sync_c_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(2, 16),
++};
++static const unsigned int msiof1_sync_c_mux[] = {
++	MSIOF1_SYNC_C_MARK,
++};
++static const unsigned int msiof1_rx_c_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(2, 18),
++};
++static const unsigned int msiof1_rx_c_mux[] = {
++	MSIOF1_RXD_C_MARK,
++};
++static const unsigned int msiof1_tx_c_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(2, 17),
++};
++static const unsigned int msiof1_tx_c_mux[] = {
++	MSIOF1_TXD_C_MARK,
++};
++
++static const unsigned int msiof1_clk_d_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(0, 28),
++};
++static const unsigned int msiof1_clk_d_mux[] = {
++	MSIOF1_SCK_D_MARK,
++};
++static const unsigned int msiof1_sync_d_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(0, 30),
++};
++static const unsigned int msiof1_sync_d_mux[] = {
++	MSIOF1_SYNC_D_MARK,
++};
++static const unsigned int msiof1_ss1_d_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(0, 29),
++};
++static const unsigned int msiof1_ss1_d_mux[] = {
++	MSIOF1_SS1_D_MARK,
++};
++static const unsigned int msiof1_rx_d_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(0, 26),
++};
++static const unsigned int msiof1_rx_d_mux[] = {
++	MSIOF1_RXD_D_MARK,
++};
++static const unsigned int msiof1_tx_d_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(0, 26),
++};
++static const unsigned int msiof1_tx_d_mux[] = {
++	MSIOF1_TXD_D_MARK,
++};
++
++static const unsigned int msiof1_clk_e_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(5, 18),
++};
++static const unsigned int msiof1_clk_e_mux[] = {
++	MSIOF1_SCK_E_MARK,
++};
++static const unsigned int msiof1_sync_e_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(5, 19),
++};
++static const unsigned int msiof1_sync_e_mux[] = {
++	MSIOF1_SYNC_E_MARK,
++};
++static const unsigned int msiof1_rx_e_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(5, 17),
++};
++static const unsigned int msiof1_rx_e_mux[] = {
++	MSIOF1_RXD_E_MARK,
++};
++static const unsigned int msiof1_tx_e_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(5, 20),
++};
++static const unsigned int msiof1_tx_e_mux[] = {
++	MSIOF1_TXD_E_MARK,
++};
+ /* - MSIOF2 ----------------------------------------------------------------- */
+ static const unsigned int msiof2_clk_pins[] = {
+ 	/* SCK */
+@@ -2135,6 +2358,150 @@ static const unsigned int msiof2_tx_pins[] = {
+ static const unsigned int msiof2_tx_mux[] = {
+ 	MSIOF2_TXD_MARK,
+ };
++
++static const unsigned int msiof2_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(3, 0),
++};
++static const unsigned int msiof2_clk_b_mux[] = {
++	MSIOF2_SCK_B_MARK,
++};
++static const unsigned int msiof2_sync_b_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(3, 1),
++};
++static const unsigned int msiof2_sync_b_mux[] = {
++	MSIOF2_SYNC_B_MARK,
++};
++static const unsigned int msiof2_ss1_b_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(3, 8),
++};
++static const unsigned int msiof2_ss1_b_mux[] = {
++	MSIOF2_SS1_B_MARK,
++};
++static const unsigned int msiof2_ss2_b_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(3, 9),
++};
++static const unsigned int msiof2_ss2_b_mux[] = {
++	MSIOF2_SS2_B_MARK,
++};
++static const unsigned int msiof2_rx_b_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(3, 17),
++};
++static const unsigned int msiof2_rx_b_mux[] = {
++	MSIOF2_RXD_B_MARK,
++};
++static const unsigned int msiof2_tx_b_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(3, 16),
++};
++static const unsigned int msiof2_tx_b_mux[] = {
++	MSIOF2_TXD_B_MARK,
++};
++
++static const unsigned int msiof2_clk_c_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(2, 2),
++};
++static const unsigned int msiof2_clk_c_mux[] = {
++	MSIOF2_SCK_C_MARK,
++};
++static const unsigned int msiof2_sync_c_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(2, 3),
++};
++static const unsigned int msiof2_sync_c_mux[] = {
++	MSIOF2_SYNC_C_MARK,
++};
++static const unsigned int msiof2_rx_c_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(2, 5),
++};
++static const unsigned int msiof2_rx_c_mux[] = {
++	MSIOF2_RXD_C_MARK,
++};
++static const unsigned int msiof2_tx_c_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(2, 4),
++};
++static const unsigned int msiof2_tx_c_mux[] = {
++	MSIOF2_TXD_C_MARK,
++};
++
++static const unsigned int msiof2_clk_d_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(2, 14),
++};
++static const unsigned int msiof2_clk_d_mux[] = {
++	MSIOF2_SCK_D_MARK,
++};
++static const unsigned int msiof2_sync_d_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(2, 15),
++};
++static const unsigned int msiof2_sync_d_mux[] = {
++	MSIOF2_SYNC_D_MARK,
++};
++static const unsigned int msiof2_ss1_d_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(2, 17),
++};
++static const unsigned int msiof2_ss1_d_mux[] = {
++	MSIOF2_SS1_D_MARK,
++};
++static const unsigned int msiof2_ss2_d_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(2, 18),
++};
++static const unsigned int msiof2_ss2_d_mux[] = {
++	MSIOF2_SS2_D_MARK,
++};
++static const unsigned int msiof2_rx_d_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(2, 18),
++};
++static const unsigned int msiof2_rx_d_mux[] = {
++	MSIOF2_RXD_D_MARK,
++};
++static const unsigned int msiof2_tx_d_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(2, 16),
++};
++static const unsigned int msiof2_tx_d_mux[] = {
++	MSIOF2_TXD_D_MARK,
++};
++
++static const unsigned int msiof2_clk_e_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(7, 15),
++};
++static const unsigned int msiof2_clk_e_mux[] = {
++	MSIOF2_SCK_E_MARK,
++};
++static const unsigned int msiof2_sync_e_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(7, 16),
++};
++static const unsigned int msiof2_sync_e_mux[] = {
++	MSIOF2_SYNC_E_MARK,
++};
++static const unsigned int msiof2_rx_e_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(7, 14),
++};
++static const unsigned int msiof2_rx_e_mux[] = {
++	MSIOF2_RXD_E_MARK,
++};
++static const unsigned int msiof2_tx_e_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(7, 13),
++};
++static const unsigned int msiof2_tx_e_mux[] = {
++	MSIOF2_TXD_E_MARK,
++};
+ /* - QSPI ------------------------------------------------------------------- */
+ static const unsigned int qspi_ctrl_pins[] = {
+ 	/* SPCLK, SSL */
+@@ -3184,18 +3551,69 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(msiof0_ss2),
+ 	SH_PFC_PIN_GROUP(msiof0_rx),
+ 	SH_PFC_PIN_GROUP(msiof0_tx),
++	SH_PFC_PIN_GROUP(msiof0_clk_b),
++	SH_PFC_PIN_GROUP(msiof0_sync_b),
++	SH_PFC_PIN_GROUP(msiof0_ss1_b),
++	SH_PFC_PIN_GROUP(msiof0_ss2_b),
++	SH_PFC_PIN_GROUP(msiof0_rx_b),
++	SH_PFC_PIN_GROUP(msiof0_tx_b),
++	SH_PFC_PIN_GROUP(msiof0_clk_c),
++	SH_PFC_PIN_GROUP(msiof0_sync_c),
++	SH_PFC_PIN_GROUP(msiof0_ss1_c),
++	SH_PFC_PIN_GROUP(msiof0_ss2_c),
++	SH_PFC_PIN_GROUP(msiof0_rx_c),
++	SH_PFC_PIN_GROUP(msiof0_tx_c),
+ 	SH_PFC_PIN_GROUP(msiof1_clk),
+ 	SH_PFC_PIN_GROUP(msiof1_sync),
+ 	SH_PFC_PIN_GROUP(msiof1_ss1),
+ 	SH_PFC_PIN_GROUP(msiof1_ss2),
+ 	SH_PFC_PIN_GROUP(msiof1_rx),
+ 	SH_PFC_PIN_GROUP(msiof1_tx),
++	SH_PFC_PIN_GROUP(msiof1_clk_b),
++	SH_PFC_PIN_GROUP(msiof1_sync_b),
++	SH_PFC_PIN_GROUP(msiof1_ss1_b),
++	SH_PFC_PIN_GROUP(msiof1_ss2_b),
++	SH_PFC_PIN_GROUP(msiof1_rx_b),
++	SH_PFC_PIN_GROUP(msiof1_tx_b),
++	SH_PFC_PIN_GROUP(msiof1_clk_c),
++	SH_PFC_PIN_GROUP(msiof1_sync_c),
++	SH_PFC_PIN_GROUP(msiof1_rx_c),
++	SH_PFC_PIN_GROUP(msiof1_tx_c),
++	SH_PFC_PIN_GROUP(msiof1_clk_d),
++	SH_PFC_PIN_GROUP(msiof1_sync_d),
++	SH_PFC_PIN_GROUP(msiof1_ss1_d),
++	SH_PFC_PIN_GROUP(msiof1_rx_d),
++	SH_PFC_PIN_GROUP(msiof1_tx_d),
++	SH_PFC_PIN_GROUP(msiof1_clk_e),
++	SH_PFC_PIN_GROUP(msiof1_sync_e),
++	SH_PFC_PIN_GROUP(msiof1_rx_e),
++	SH_PFC_PIN_GROUP(msiof1_tx_e),
+ 	SH_PFC_PIN_GROUP(msiof2_clk),
+ 	SH_PFC_PIN_GROUP(msiof2_sync),
+ 	SH_PFC_PIN_GROUP(msiof2_ss1),
+ 	SH_PFC_PIN_GROUP(msiof2_ss2),
+ 	SH_PFC_PIN_GROUP(msiof2_rx),
+ 	SH_PFC_PIN_GROUP(msiof2_tx),
++	SH_PFC_PIN_GROUP(msiof2_clk_b),
++	SH_PFC_PIN_GROUP(msiof2_sync_b),
++	SH_PFC_PIN_GROUP(msiof2_ss1_b),
++	SH_PFC_PIN_GROUP(msiof2_ss2_b),
++	SH_PFC_PIN_GROUP(msiof2_rx_b),
++	SH_PFC_PIN_GROUP(msiof2_tx_b),
++	SH_PFC_PIN_GROUP(msiof2_clk_c),
++	SH_PFC_PIN_GROUP(msiof2_sync_c),
++	SH_PFC_PIN_GROUP(msiof2_rx_c),
++	SH_PFC_PIN_GROUP(msiof2_tx_c),
++	SH_PFC_PIN_GROUP(msiof2_clk_d),
++	SH_PFC_PIN_GROUP(msiof2_sync_d),
++	SH_PFC_PIN_GROUP(msiof2_ss1_d),
++	SH_PFC_PIN_GROUP(msiof2_ss2_d),
++	SH_PFC_PIN_GROUP(msiof2_rx_d),
++	SH_PFC_PIN_GROUP(msiof2_tx_d),
++	SH_PFC_PIN_GROUP(msiof2_clk_e),
++	SH_PFC_PIN_GROUP(msiof2_sync_e),
++	SH_PFC_PIN_GROUP(msiof2_rx_e),
++	SH_PFC_PIN_GROUP(msiof2_tx_e),
+ 	SH_PFC_PIN_GROUP(qspi_ctrl),
+ 	SH_PFC_PIN_GROUP(qspi_data2),
+ 	SH_PFC_PIN_GROUP(qspi_data4),
+@@ -3409,6 +3827,18 @@ static const char * const msiof0_groups[] = {
+ 	"msiof0_ss2",
+ 	"msiof0_rx",
+ 	"msiof0_tx",
++	"msiof0_clk_b",
++	"msiof0_sync_b",
++	"msiof0_ss1_b",
++	"msiof0_ss2_b",
++	"msiof0_rx_b",
++	"msiof0_tx_b",
++	"msiof0_clk_c",
++	"msiof0_sync_c",
++	"msiof0_ss1_c",
++	"msiof0_ss2_c",
++	"msiof0_rx_c",
++	"msiof0_tx_c",
+ };
+ 
+ static const char * const msiof1_groups[] = {
+@@ -3418,6 +3848,25 @@ static const char * const msiof1_groups[] = {
+ 	"msiof1_ss2",
+ 	"msiof1_rx",
+ 	"msiof1_tx",
++	"msiof1_clk_b",
++	"msiof1_sync_b",
++	"msiof1_ss1_b",
++	"msiof1_ss2_b",
++	"msiof1_rx_b",
++	"msiof1_tx_b",
++	"msiof1_clk_c",
++	"msiof1_sync_c",
++	"msiof1_rx_c",
++	"msiof1_tx_c",
++	"msiof1_clk_d",
++	"msiof1_sync_d",
++	"msiof1_ss1_d",
++	"msiof1_rx_d",
++	"msiof1_tx_d",
++	"msiof1_clk_e",
++	"msiof1_sync_e",
++	"msiof1_rx_e",
++	"msiof1_tx_e",
+ };
+ 
+ static const char * const msiof2_groups[] = {
+@@ -3427,6 +3876,26 @@ static const char * const msiof2_groups[] = {
+ 	"msiof2_ss2",
+ 	"msiof2_rx",
+ 	"msiof2_tx",
++	"msiof2_clk_b",
++	"msiof2_sync_b",
++	"msiof2_ss1_b",
++	"msiof2_ss2_b",
++	"msiof2_rx_b",
++	"msiof2_tx_b",
++	"msiof2_clk_c",
++	"msiof2_sync_c",
++	"msiof2_rx_c",
++	"msiof2_tx_c",
++	"msiof2_clk_d",
++	"msiof2_sync_d",
++	"msiof2_ss1_d",
++	"msiof2_ss2_d",
++	"msiof2_rx_d",
++	"msiof2_tx_d",
++	"msiof2_clk_e",
++	"msiof2_sync_e",
++	"msiof2_rx_e",
++	"msiof2_tx_e",
+ };
+ 
+ static const char * const qspi_groups[] = {
+-- 
+1.7.9.5
 
-    [01/11] ARM: shmobile: r8a7790: Add MSIOF clocks
-    [02/11] ARM: shmobile: r8a7791: Add MSIOF clocks
-    [03/11] ARM: shmobile: lager legacy: Add MSIOF support
-    [04/11] ARM: shmobile: koelsch legacy: Add MSIOF support
-    [05/11] ARM: shmobile: r8a7790/lager dts: Rename label spi to qspi, add
-    	    spi0 alias
-    [06/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi,
-    	    add spi0 alias
-    [07/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-    [08/11] ARM: shmobile: r8a7791 dtsi: Add MSIOF nodes and aliases
-    [09/11] ARM: shmobile: lager dts: Add MSIOF nodes
-    [10/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
-    [11/11] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
-
-These are (reworked versions of) the remaining patches not taken from v1.
-Changelogs are available in the individual patches.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
