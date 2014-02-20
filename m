@@ -1,45 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 21 Feb 2014 12:36:27 +0000
-Subject: Re: [PATCH 5/5][RESENT] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7791
-Message-Id: <5307484B.5040500@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:57:19 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
+Message-Id: <1392908239-22645-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>	<878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com> <871tyxqo6v.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <871tyxqo6v.wl%kuninori.morimoto.gx@gmail.com>
+References: <1392908239-22645-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392908239-22645-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 21-02-2014 4:55, Kuninori Morimoto wrote:
+Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
+board code.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2:
+  - Add Tested-by
 
-> This patch updates r8a7791 DT data to have SoC specific settings.
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-    It doesn't update R8A7791 DT data, it adds the DT support for R8A7791. 
-Please fix the changelog.
-
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   drivers/mmc/host/sh_mobile_sdhi.c |    1 +
->   1 file changed, 1 insertion(+)
-
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index cfc37ec..91058da 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -67,6 +67,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
->   	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
->   	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
->   	{ .compatible = "renesas,sdhi-r8a7790", .data = &of_rcar_gen2_compatible, },
-> +	{ .compatible = "renesas,sdhi-r8a7791", .data = &of_rcar_gen2_compatible, },
->   	{},
->   };
->   MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 06cda19dac6a..f76f6ec01e19 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -109,4 +109,18 @@
+ 	pinctrl-0 = <&hspi0_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
+ };
+-- 
+1.7.9.5
 
