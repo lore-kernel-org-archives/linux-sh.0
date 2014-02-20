@@ -1,39 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:30 +0000
-Subject: [PATCH 10/13] ARM: shmobile: genmai: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <2304de6ef7479b12fa4529c12a53cac631a2c67b.1391651074.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:49:31 +0000
+Subject: [PATCH 03/11] ARM: shmobile: r8a7791: Add MSIOF clocks
+Message-Id: <1392907779-22053-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
+References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-DEVTMPFS is needed for udev
+Add clocks for MSIOF0, 1, and 2.
+DEV_ID is 1-based for compatibility with the BSP, as QSPI uses zero.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+[geert] Updated for change from SH_CLK_MSTP32() to SH_CLK_MSTP32_STS()
+[geert] Updated for new platform device name
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/configs/genmai_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-index aa0b704..c56a7ff 100644
---- a/arch/arm/configs/genmai_defconfig
-+++ b/arch/arm/configs/genmai_defconfig
-@@ -50,6 +50,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- CONFIG_NETDEVICES=y
- # CONFIG_NET_CORE is not set
- # CONFIG_NET_VENDOR_ARC is not set
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 3e1b6b699184..47d2701f5196 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -59,6 +59,7 @@
+ #define SMSTPCR10	0xE6150998
+ #define SMSTPCR11	0xE615099C
+ 
++#define MSTPSR0		IOMEM(0xe6150030)
+ #define MSTPSR1		IOMEM(0xe6150038)
+ #define MSTPSR2		IOMEM(0xe6150040)
+ #define MSTPSR3		IOMEM(0xe6150048)
+@@ -179,9 +180,10 @@ enum {
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+-	MSTP216, MSTP207, MSTP206,
++	MSTP216, MSTP208, MSTP207, MSTP206, MSTP205,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
++	MSTP000,
+ 	MSTP_NR
+ };
+ 
+@@ -213,8 +215,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
+ 	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
++	[MSTP208] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 8, MSTPSR2, 0), /* MSIOF1 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
++	[MSTP205] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 5, MSTPSR2, 0), /* MSIOF2 */
+ 	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
+@@ -222,6 +226,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA4 */
+ 	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA5 */
+ 	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
++	[MSTP000] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR0, 0, MSTPSR0, 0), /* MSIOF0 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
+@@ -267,6 +272,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
++	CLKDEV_DEV_ID("spi_r8a7791_msiof.1", &mstp_clks[MSTP000]),
++	CLKDEV_DEV_ID("spi_r8a7791_msiof.2", &mstp_clks[MSTP208]),
++	CLKDEV_DEV_ID("spi_r8a7791_msiof.3", &mstp_clks[MSTP205]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
 -- 
-1.8.5.2
+1.7.9.5
 
