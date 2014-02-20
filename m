@@ -1,66 +1,80 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Feb 2014 23:03:32 +0000
-Subject: Re: [PATCH 4/6] phy-rcar-usb-gen2: add device tree support
-Message-Id: <530FD24A.7050206@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:43:04 +0000
+Subject: [PATCH 05/10] spi: sh-msiof: Use the core cs_gpio field, and make it optional
+Message-Id: <1392907389-21798-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390057420-13226-1-git-send-email-ben.dooks@codethink.co.uk> <1390057420-13226-5-git-send-email-ben.dooks@codethink.co.uk> <52DAD3B3.1050807@cogentembedded.com> <52DCFF31.2040603@codethink.co.uk> <530F5FC2.1000608@cogentembedded.com> <530F61C4.7070706@codethink.co.uk>
-In-Reply-To: <530F61C4.7070706@codethink.co.uk>
+References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, "open list:OPEN FIRMWARE AND..." <devicetree@vger.kernel.org>
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 02/27/2014 07:03 PM, Ben Dooks wrote:
+In current implementation, CS is controlled by GPIO, which is passed
+through spi->controller_data.  However, the MSIOF HW module has a function
+to output CS by itself, which is already enabled and actual switch will be
+done by pinmux.
 
->>>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>>>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
->>>>> ---
->>>>> Cc: linux-usb@vger.kernel.org (open list:USB PHY LAYER)
->>>>> Cc: linux-sh@vger.kernel.org (open list:ARM/SHMOBILE ARM...)
->>>>> Cc: Magnus Damm <magnus.damm@gmail.com> (supporter:ARM/SHMOBILE ARM...)
->>>>> Cc: Simon Horman <horms@verge.net.au> (supporter:ARM/SHMOBILE ARM...)
->>>>> Cc: devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND...)
->>>>> ---
->>>>>   drivers/usb/phy/phy-rcar-gen2-usb.c | 35
->>>>> ++++++++++++++++++++++++++++++-----
->>>>>   1 file changed, 30 insertions(+), 5 deletions(-)
+Store the GPIO number in the core cs_gpio field, and ignore it if it is
+an invalid (negative) GPIO number.
 
->>>>> diff --git a/drivers/usb/phy/phy-rcar-gen2-usb.c
->>>>> b/drivers/usb/phy/phy-rcar-gen2-usb.c
->>>>> index db3ab34..906b74b 100644
->>>>> --- a/drivers/usb/phy/phy-rcar-gen2-usb.c
->>>>> +++ b/drivers/usb/phy/phy-rcar-gen2-usb.c
->>>> [...]
->>>>> @@ -203,16 +212,31 @@ static int rcar_gen2_usb_phy_probe(struct
->>>>> platform_device *pdev)
->>>> [...]
->>>>> +    if (of_id) {
->> [...]
->>>>> +        int len = 0;
->>>>> +
->>>>> +        if (of_get_property(dev->of_node, "renesas,usb0-hs", &len))
->>>>> +            priv->ugctrl2 = USBHS_UGCTRL2_USB0_HS;
->>>>> +        else
->>>>> +            priv->ugctrl2 = USBHS_UGCTRL2_USB0_PCI;
->>>>> +
->>>>> +        if (of_get_property(dev->of_node, "renesas,usb2-ss", &len))
->>>>> +            priv->ugctrl2 |= USBHS_UGCTRL2_USB2_SS;
+Loosely based on a patch from Takashi Yoshii <takasi-y@ops.dti.ne.jp>.
 
->>>>     Where is the bindings file you document these properties in?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+---
+ drivers/spi/spi-sh-msiof.c |   21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
 
->>> Should have been in another patch in the series.
-
->>     I didn't see it.
-
-> I thought it went out, I will need to go check.
-
-    It turned out that I'd already replied to that email that I had seen all 6 
-patches but not the binding patch, so most probably it didn't went out that 
-time. I've seen the latter patch (just not posted to linux-usb), so no problem 
-here.
-
-WBR, Sergei
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 79e14586049b..92515c1ececa 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -445,6 +445,21 @@ static int sh_msiof_spi_setup_transfer(struct spi_device *spi,
+ 	return spi_bitbang_setup_transfer(spi, t);
+ }
+ 
++static int sh_msiof_spi_setup(struct spi_device *spi)
++{
++	struct device_node	*np = spi->master->dev.of_node;
++
++	if (!np) {
++		/*
++		 * Use spi->controller_data for CS (same strategy as spi_gpio),
++		 * if any. otherwise let HW control CS
++		 */
++		spi->cs_gpio = (uintptr_t)spi->controller_data;
++	}
++
++	return spi_bitbang_setup(spi);
++}
++
+ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
+ {
+ 	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
+@@ -470,8 +485,8 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
+ 					  !!(spi->mode & SPI_CS_HIGH));
+ 	}
+ 
+-	/* use spi->controller data for CS (same strategy as spi_gpio) */
+-	gpio_set_value((uintptr_t)spi->controller_data, value);
++	if (spi->cs_gpio >= 0)
++		gpio_set_value(spi->cs_gpio, value);
+ 
+ 	if (is_on = BITBANG_CS_INACTIVE) {
+ 		if (test_and_clear_bit(0, &p->flags)) {
+@@ -758,7 +773,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	master->bus_num = pdev->id;
+ 	master->dev.of_node = pdev->dev.of_node;
+ 	master->num_chipselect = p->info->num_chipselect;
+-	master->setup = spi_bitbang_setup;
++	master->setup = sh_msiof_spi_setup;
+ 	master->cleanup = spi_bitbang_cleanup;
+ 
+ 	p->bitbang.master = master;
+-- 
+1.7.9.5
 
