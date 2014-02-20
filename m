@@ -1,63 +1,70 @@
-From: Bobby Bingham <koorogi@koorogi.info>
-Date: Mon, 17 Feb 2014 02:50:17 +0000
-Subject: [PATCH 0/3] Don't let system calls clobber userspace registers
-Message-Id: <cover.1392600646.git.koorogi@koorogi.info>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 20 Feb 2014 08:03:20 +0000
+Subject: [PATCH V2] i2c: rcar: add compatible entry for r8a7791
+Message-Id: <1392883400-4396-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Wolfram Sang <wsa@sang-engineering.com>
 
-When invoking syscall handlers on sh32, the saved userspace registers
-are at the top of the stack. This seems to have been intentional, as it
-is an easy way to pass r0, r1, ... to the handler as parameters 5, 6,
-...
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-It causes problems, however, because the compiler is allowed to generate
-code for a function which clobbers that function's own parameters. For
-example, gcc generates the following code for clone:
+While we are here, also brush up the devicetree binding documentation.
+The example was an inappropriate copy from the sh_mobile driver.
 
-    <SyS_clone>:
-        mov.l   8c020714 <SyS_clone+0xc>,r1  ! 8c020540 <do_fork>
-        mov.l   r7,@r15
-        mov     r6,r7
-        jmp     @r1
-        mov     #0,r6
-        nop
-        .word 0x0540
-        .word 0x8c02
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt | 14 ++++++++++----
+ drivers/i2c/busses/i2c-rcar.c                      |  1 +
+ 2 files changed, 11 insertions(+), 4 deletions(-)
 
-The `mov.l r7,@r15` clobbers the saved value of r0 passed from
-userspace. For most system calls, this might be a problem, because we'll
-be overwriting r0 with the return value anyway. But in the case of
-clone, copy_thread will need the original value of r0 if the
-CLONE_SETTLS flag was specified.
-
-The first patch in this series fixes this issue for system calls by
-pushing to the stack and extra copy of r0-r2 before invoking the
-handler. We discard this copy before restoring the userspace registers,
-so it is not a problem if they are clobbered.
-
-Exception handlers also receive the userspace register values in a
-similar manner, and may hit the same problem. The second patch removes
-the do_fpu_error handler, which looks susceptible to this problem and
-which, as far as I can tell, has not been used in some time. The third
-patch addresses other exception handlers.
-
-Bobby Bingham (3):
-  sh: push extra copy of r0-r2 for syscall parameters
-  sh: remove unused do_fpu_error
-  sh: don't pass saved userspace state to exception handlers
-
- arch/sh/include/asm/syscalls_32.h | 12 +++---------
- arch/sh/include/asm/traps_32.h    | 16 ++++------------
- arch/sh/kernel/entry-common.S     | 15 +++++++++++----
- arch/sh/kernel/signal_32.c        | 12 ++++--------
- arch/sh/kernel/sys_sh32.c         |  7 ++-----
- arch/sh/kernel/traps_32.c         | 23 +++++++----------------
- arch/sh/math-emu/math.c           | 18 ------------------
- 7 files changed, 31 insertions(+), 72 deletions(-)
-
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+index 897cfcd5..dd8b2dd 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+@@ -6,6 +6,7 @@ Required properties:
+ 	"renesas,i2c-r8a7778"
+ 	"renesas,i2c-r8a7779"
+ 	"renesas,i2c-r8a7790"
++	"renesas,i2c-r8a7791"
+ - reg: physical base address of the controller and length of memory mapped
+   region.
+ - interrupts: interrupt specifier.
+@@ -13,11 +14,16 @@ Required properties:
+ Optional properties:
+ - clock-frequency: desired I2C bus clock frequency in Hz. The absence of this
+   propoerty indicates the default frequency 100 kHz.
++- clocks: clock specifier.
+ 
+ Examples :
+ 
+-i2c0: i2c@e6500000 {
+-	compatible = "renesas,i2c-rcar-h2";
+-	reg = <0 0xe6500000 0 0x428>;
+-	interrupts = <0 174 0x4>;
++i2c0: i2c@e6508000 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	compatible = "renesas,i2c-r8a7791";
++	reg = <0 0xe6508000 0 0x40>;
++	interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++	clocks = <&mstp9_clks R8A7791_CLK_I2C0>;
++	clock-frequency = <400000>;
+ };
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 0282d4d..cc60bc6 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -638,6 +638,7 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
+ 	{ .compatible = "renesas,i2c-r8a7778", .data = (void *)I2C_RCAR_GEN1 },
+ 	{ .compatible = "renesas,i2c-r8a7779", .data = (void *)I2C_RCAR_GEN1 },
+ 	{ .compatible = "renesas,i2c-r8a7790", .data = (void *)I2C_RCAR_GEN2 },
++	{ .compatible = "renesas,i2c-r8a7791", .data = (void *)I2C_RCAR_GEN2 },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
 -- 
-1.8.5.4
+1.8.5.1
 
