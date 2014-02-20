@@ -1,28 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 03:09:49 +0000
-Subject: Re: [PATCH v3 1/4] ARM: shmobile: lager-reference: Refactor clock lookup hack
-Message-Id: <20140217030945.GC7772@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:43:01 +0000
+Subject: [PATCH 02/10] spi: sh-msiof: Typo in comment s/tx/rx/
+Message-Id: <1392907389-21798-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392586321-12187-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392586321-12187-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Mon, Feb 17, 2014 at 11:52:23AM +0900, Magnus Damm wrote:
-> On Mon, Feb 17, 2014 at 6:31 AM, Laurent Pinchart
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > Make the clock lookup hack more generic to ease the addition of more
-> > devices.
-> >
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> >  arch/arm/mach-shmobile/board-lager-reference.c | 37 +++++++++++++++-----------
-> >  1 file changed, 22 insertions(+), 15 deletions(-)
-> 
-> Looks better than before to me!
-> 
-> Acked-by: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thanks, I have queued this up.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-sh-msiof.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index e6f79b2f2616..cc12e755131d 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -486,7 +486,7 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
+ 	/* clear status bits */
+ 	sh_msiof_reset_str(p);
+ 
+-	/* shut down frame, tx/tx and clock signals */
++	/* shut down frame, rx/tx and clock signals */
+ 	ret = sh_msiof_modify_ctr_wait(p, CTR_TFSE, 0);
+ 	ret = ret ? ret : sh_msiof_modify_ctr_wait(p, CTR_TXE, 0);
+ 	if (rx_buf)
+-- 
+1.7.9.5
+
