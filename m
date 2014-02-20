@@ -1,59 +1,52 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Tue, 25 Feb 2014 08:36:28 +0000
-Subject: Re: [PATCH] clk: shmobile: div6: use proper description in kernel doc
-Message-Id: <20140225083628.22529.78265@quantum>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:43:02 +0000
+Subject: [PATCH 03/10] spi: sh-msiof: Change hz from unsigned long to u32
+Message-Id: <1392907389-21798-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393271848-13313-1-git-send-email-wsa@the-dreams.de>
- <1592414.PQLaxVPFpz@avalon>
-In-Reply-To: <1592414.PQLaxVPFpz@avalon>
+References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Quoting Laurent Pinchart (2014-02-24 11:59:49)
-> Hi Wolfram,
-> 
-> Thank you for the patch.
-> 
-> On Monday 24 February 2014 20:57:11 Wolfram Sang wrote:
-> > From: Wolfram Sang <wsa@sang-engineering.com>
-> > 
-> > These variable clocks have nothing to do with MSTP gating, probably a
-> > copy&paste leftover.
-> > 
-> > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> Mike, could you please pick this up for v3.15 ?
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Taken into clk-next!
+Both spi_transfer.speed_hz and spi_master.max_speed_hz are u32
 
-Thanks,
-Mike
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-sh-msiof.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-> 
-> > ---
-> >  drivers/clk/shmobile/clk-div6.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/drivers/clk/shmobile/clk-div6.c
-> > b/drivers/clk/shmobile/clk-div6.c index aac4756..f065f69 100644
-> > --- a/drivers/clk/shmobile/clk-div6.c
-> > +++ b/drivers/clk/shmobile/clk-div6.c
-> > @@ -23,7 +23,7 @@
-> >  #define CPG_DIV6_DIV_MASK    0x3f
-> > 
-> >  /**
-> > - * struct div6_clock - MSTP gating clock
-> > + * struct div6_clock - CPG 6 bit divider clock
-> >   * @hw: handle between common and hardware-specific interfaces
-> >   * @reg: IO-remapped register
-> >   * @div: divisor value (1-64)
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index cc12e755131d..af9f2db41b16 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -144,8 +144,7 @@ static struct {
+ };
+ 
+ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
+-				      unsigned long parent_rate,
+-				      unsigned long spi_hz)
++				      unsigned long parent_rate, u32 spi_hz)
+ {
+ 	unsigned long div = 1024;
+ 	size_t k;
+@@ -372,10 +371,9 @@ static int sh_msiof_spi_bits(struct spi_device *spi, struct spi_transfer *t)
+ 	return bits;
+ }
+ 
+-static unsigned long sh_msiof_spi_hz(struct spi_device *spi,
+-				     struct spi_transfer *t)
++static u32 sh_msiof_spi_hz(struct spi_device *spi, struct spi_transfer *t)
+ {
+-	unsigned long hz;
++	u32 hz;
+ 
+ 	hz = t ? t->speed_hz : 0;
+ 	if (!hz)
+-- 
+1.7.9.5
+
