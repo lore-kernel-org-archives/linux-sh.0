@@ -1,99 +1,216 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 07:55:16 +0000
-Subject: Re: [PATCH] gpio: gpio-rcar: init at postcore level
-Message-Id: <CANqRtoRnE=E=8Njd1UcfnjevxDf-7Xt1dBv0FZg+Kww7ZCTwEw@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 19:53:40 +0000
+Subject: [PATCH 1/2] pinctrl: sh-pfc: r8a7790: Add alternative MSIOF pin groups
+Message-Id: <1392926021-19526-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393173467-12240-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393173467-12240-1-git-send-email-vladimir.barinov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Vladimir,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Mon, Feb 24, 2014 at 4:42 PM, Vladimir Barinov
-<vladimir.barinov@cogentembedded.com> wrote:
-> Hi Magnus,
->
->
-> On 02/24/2014 06:57 AM, Magnus Damm wrote:
->>
->> Hi Vladimir,
->>
->> On Mon, Feb 24, 2014 at 1:37 AM,<vladimir.barinov@cogentembedded.com>
->> wrote:
->>>
->>> From: Vladimir Barinov<vladimir.barinov@cogentembedded.com>
->>>
->>> This adds ability to use gpio API at board init_machine level.
->>>
->>> F.e. it can be used in the following situation.
->>> Many reference hardware has onboard switches that selects which
->>> periferals
->>> to connect to the system. The gpio input state from switches can be used
->>> in choosing platform devices runtime in board code instead of
->>> ifdefs/defconfig
->>> changes.
->>>
->>> Signed-off-by:<vladimir.barinov@cogentembedded.com>
->>>
->>> ---
->>>   drivers/gpio/gpio-rcar.c |   12 +++++++++++-
->>>   1 file changed, 11 insertions(+), 1 deletion(-)
->>>
->>> Index: build/drivers/gpio/gpio-rcar.c
->>> =================================>>> --- build.orig/drivers/gpio/gpio-rcar.c 2014-02-22 23:21:51.456229152
->>> +0400
->>> +++ build/drivers/gpio/gpio-rcar.c      2014-02-22 23:21:52.320229133
->>> +0400
->>> @@ -485,7 +485,17 @@
->>>          }
->>>   };
->>>
->>> -module_platform_driver(gpio_rcar_device_driver);
->>> +static int __init gpio_rcar_init(void)
->>> +{
->>> +       return platform_driver_register(&gpio_rcar_device_driver);
->>> +}
->>> +postcore_initcall(gpio_rcar_init);
->>> +
->>> +static void __exit gpio_rcar_exit(void)
->>> +{
->>> +       platform_driver_unregister(&gpio_rcar_device_driver);
->>> +}
->>> +module_exit(gpio_rcar_exit);
->>>
->>>   MODULE_AUTHOR("Magnus Damm");
->>>   MODULE_DESCRIPTION("Renesas R-Car GPIO Driver");
->>
->> Hi Vladimir,
->>
->> Thanks for your help. Good to see that you are working on enabling the
->> dual role USB port on Koelsch.
->>
->> Your current board code is checking some DIP switch value during boot,
->> and that kind of early use of GPIO would require a change in the probe
->> order like this patch implements. I do however believe that we should
->> not implement checking during boot like this.
->>
->> If you for instance check the legacy Lager USBHS DIP switch code that
->> runs during driver probe() then that can run can use GPIO without the
->> need for a change like this. So your GPIO user code needs to be
->> adjusted.
->
-> Yes, this is true for USBHS that has platform callbacks like
-> hardware_init/exit.
-> But this is not acceptable for other devices like EHCI PCI/PHY and others.
-> So we wouldn't be able to do such fixup for other cases.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  129 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 129 insertions(+)
 
-Right, the USBHS driver has callbacks but PCI-based hardrware like
-EHCI and OHCI do not have such. But I believe we already have some
-kind of USB PHY abstraction level and we also have a R-Car Gen2 PHY
-driver that somehow is integrated together with the PCI-based
-hardware. Based on that my feeling is that the answer to ID-pin
-control is there somewhere, and not just once during the boot! =)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 2ca319f15d31..2d1a0a158682 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -2260,6 +2260,42 @@ static const unsigned int msiof0_tx_pins[] = {
+ static const unsigned int msiof0_tx_mux[] = {
+ 	MSIOF0_TXD_MARK,
+ };
++
++static const unsigned int msiof0_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(1, 23),
++};
++static const unsigned int msiof0_clk_b_mux[] = {
++	MSIOF0_SCK_B_MARK,
++};
++static const unsigned int msiof0_ss1_b_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(1, 12),
++};
++static const unsigned int msiof0_ss1_b_mux[] = {
++	MSIOF0_SS1_B_MARK,
++};
++static const unsigned int msiof0_ss2_b_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(1, 10),
++};
++static const unsigned int msiof0_ss2_b_mux[] = {
++	MSIOF0_SS2_B_MARK,
++};
++static const unsigned int msiof0_rx_b_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(1, 29),
++};
++static const unsigned int msiof0_rx_b_mux[] = {
++	MSIOF0_RXD_B_MARK,
++};
++static const unsigned int msiof0_tx_b_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(1, 28),
++};
++static const unsigned int msiof0_tx_b_mux[] = {
++	MSIOF0_TXD_B_MARK,
++};
+ /* - MSIOF1 ----------------------------------------------------------------- */
+ static const unsigned int msiof1_clk_pins[] = {
+ 	/* SCK */
+@@ -2303,6 +2339,42 @@ static const unsigned int msiof1_tx_pins[] = {
+ static const unsigned int msiof1_tx_mux[] = {
+ 	MSIOF1_TXD_MARK,
+ };
++
++static const unsigned int msiof1_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(1, 16),
++};
++static const unsigned int msiof1_clk_b_mux[] = {
++	MSIOF1_SCK_B_MARK,
++};
++static const unsigned int msiof1_ss1_b_pins[] = {
++	/* SS1 */
++	RCAR_GP_PIN(0, 18),
++};
++static const unsigned int msiof1_ss1_b_mux[] = {
++	MSIOF1_SS1_B_MARK,
++};
++static const unsigned int msiof1_ss2_b_pins[] = {
++	/* SS2 */
++	RCAR_GP_PIN(0, 19),
++};
++static const unsigned int msiof1_ss2_b_mux[] = {
++	MSIOF1_SS2_B_MARK,
++};
++static const unsigned int msiof1_rx_b_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(1, 17),
++};
++static const unsigned int msiof1_rx_b_mux[] = {
++	MSIOF1_RXD_B_MARK,
++};
++static const unsigned int msiof1_tx_b_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(0, 20),
++};
++static const unsigned int msiof1_tx_b_mux[] = {
++	MSIOF1_TXD_B_MARK,
++};
+ /* - MSIOF2 ----------------------------------------------------------------- */
+ static const unsigned int msiof2_clk_pins[] = {
+ 	/* SCK */
+@@ -2389,6 +2461,35 @@ static const unsigned int msiof3_tx_pins[] = {
+ static const unsigned int msiof3_tx_mux[] = {
+ 	MSIOF3_TXD_MARK,
+ };
++
++static const unsigned int msiof3_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(0, 0),
++};
++static const unsigned int msiof3_clk_b_mux[] = {
++	MSIOF3_SCK_B_MARK,
++};
++static const unsigned int msiof3_sync_b_pins[] = {
++	/* SYNC */
++	RCAR_GP_PIN(0, 1),
++};
++static const unsigned int msiof3_sync_b_mux[] = {
++	MSIOF3_SYNC_B_MARK,
++};
++static const unsigned int msiof3_rx_b_pins[] = {
++	/* RXD */
++	RCAR_GP_PIN(0, 2),
++};
++static const unsigned int msiof3_rx_b_mux[] = {
++	MSIOF3_RXD_B_MARK,
++};
++static const unsigned int msiof3_tx_b_pins[] = {
++	/* TXD */
++	RCAR_GP_PIN(0, 3),
++};
++static const unsigned int msiof3_tx_b_mux[] = {
++	MSIOF3_TXD_B_MARK,
++};
+ /* - QSPI ------------------------------------------------------------------- */
+ static const unsigned int qspi_ctrl_pins[] = {
+ 	/* SPCLK, SSL */
+@@ -3676,12 +3777,22 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(msiof0_ss2),
+ 	SH_PFC_PIN_GROUP(msiof0_rx),
+ 	SH_PFC_PIN_GROUP(msiof0_tx),
++	SH_PFC_PIN_GROUP(msiof0_clk_b),
++	SH_PFC_PIN_GROUP(msiof0_ss1_b),
++	SH_PFC_PIN_GROUP(msiof0_ss2_b),
++	SH_PFC_PIN_GROUP(msiof0_rx_b),
++	SH_PFC_PIN_GROUP(msiof0_tx_b),
+ 	SH_PFC_PIN_GROUP(msiof1_clk),
+ 	SH_PFC_PIN_GROUP(msiof1_sync),
+ 	SH_PFC_PIN_GROUP(msiof1_ss1),
+ 	SH_PFC_PIN_GROUP(msiof1_ss2),
+ 	SH_PFC_PIN_GROUP(msiof1_rx),
+ 	SH_PFC_PIN_GROUP(msiof1_tx),
++	SH_PFC_PIN_GROUP(msiof1_clk_b),
++	SH_PFC_PIN_GROUP(msiof1_ss1_b),
++	SH_PFC_PIN_GROUP(msiof1_ss2_b),
++	SH_PFC_PIN_GROUP(msiof1_rx_b),
++	SH_PFC_PIN_GROUP(msiof1_tx_b),
+ 	SH_PFC_PIN_GROUP(msiof2_clk),
+ 	SH_PFC_PIN_GROUP(msiof2_sync),
+ 	SH_PFC_PIN_GROUP(msiof2_ss1),
+@@ -3694,6 +3805,10 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(msiof3_ss2),
+ 	SH_PFC_PIN_GROUP(msiof3_rx),
+ 	SH_PFC_PIN_GROUP(msiof3_tx),
++	SH_PFC_PIN_GROUP(msiof3_clk_b),
++	SH_PFC_PIN_GROUP(msiof3_sync_b),
++	SH_PFC_PIN_GROUP(msiof3_rx_b),
++	SH_PFC_PIN_GROUP(msiof3_tx_b),
+ 	SH_PFC_PIN_GROUP(qspi_ctrl),
+ 	SH_PFC_PIN_GROUP(qspi_data2),
+ 	SH_PFC_PIN_GROUP(qspi_data4),
+@@ -3967,6 +4082,11 @@ static const char * const msiof0_groups[] = {
+ 	"msiof0_ss2",
+ 	"msiof0_rx",
+ 	"msiof0_tx",
++	"msiof0_clk_b",
++	"msiof0_ss1_b",
++	"msiof0_ss2_b",
++	"msiof0_rx_b",
++	"msiof0_tx_b",
+ };
+ 
+ static const char * const msiof1_groups[] = {
+@@ -3976,6 +4096,11 @@ static const char * const msiof1_groups[] = {
+ 	"msiof1_ss2",
+ 	"msiof1_rx",
+ 	"msiof1_tx",
++	"msiof1_clk_b",
++	"msiof1_ss1_b",
++	"msiof1_ss2_b",
++	"msiof1_rx_b",
++	"msiof1_tx_b",
+ };
+ 
+ static const char * const msiof2_groups[] = {
+@@ -3994,6 +4119,10 @@ static const char * const msiof3_groups[] = {
+ 	"msiof3_ss2",
+ 	"msiof3_rx",
+ 	"msiof3_tx",
++	"msiof3_clk_b",
++	"msiof3_sync_b",
++	"msiof3_rx_b",
++	"msiof3_tx_b",
+ };
+ 
+ static const char * const qspi_groups[] = {
+-- 
+1.7.9.5
 
-Cheers,
-
-/ magnus
