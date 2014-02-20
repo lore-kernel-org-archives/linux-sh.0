@@ -1,21 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Feb 2014 01:24:09 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: Add defconfig for shmobile mulitplatfom
-Message-Id: <20140217012409.GA18886@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:43:00 +0000
+Subject: [PATCH 01/10] spi: sh-msiof: Fix SPI bus population from DT
+Message-Id: <1392907389-21798-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392337944-4000-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdX91wEsc4taOGz5rsLUeZ7N6vhAO22zt33jn+H2pqX99w@mail.gmail.com>
-In-Reply-To: <CAMuHMdX91wEsc4taOGz5rsLUeZ7N6vhAO22zt33jn+H2pqX99w@mail.gmail.com>
+References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
 
-On Fri, Feb 14, 2014 at 10:20:53AM +0100, Geert Uytterhoeven wrote:
-> On Fri, Feb 14, 2014 at 1:32 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> >[PATCH/RFC] ARM: shmobile: Add defconfig for shmobile mulitplatfom
-> 
-> multiplatform
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thanks, I will fix that.
+DT doesn't instantiate SPI children if spi_master.dev.of_node is not set up
+properly.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
+---
+ drivers/spi/spi-sh-msiof.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 33474061b742..e6f79b2f2616 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -710,6 +710,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	master->mode_bits |= SPI_LSB_FIRST | SPI_3WIRE;
+ 	master->flags = 0;
+ 	master->bus_num = pdev->id;
++	master->dev.of_node = pdev->dev.of_node;
+ 	master->num_chipselect = p->info->num_chipselect;
+ 	master->setup = spi_bitbang_setup;
+ 	master->cleanup = spi_bitbang_cleanup;
+-- 
+1.7.9.5
+
