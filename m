@@ -1,130 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:35 +0000
-Subject: [PATCH v2 05/40] clocksource: sh_cmt: Split channel setup to separate function
-Message-Id: <1393603090-23144-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:43:05 +0000
+Subject: [PATCH 06/10] spi: sh-msiof: Improve binding documentation
+Message-Id: <1392907389-21798-7-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
 
-Move the channel setup code from sh_cmt_setup to a new
-sh_cmt_setup_channel function and call it from sh_cmt_setup.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+  - Add missing "interrupt-parent", "#address-cells", "#size-cells", and
+    "clocks" properties,
+  - Add missing default values for "renesas,tx-fifo-size" and
+    "renesas,rx-fifo-size",
+  - Add a reference to the pinctrl documentation.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- drivers/clocksource/sh_cmt.c | 79 ++++++++++++++++++++++++++------------------
- 1 file changed, 47 insertions(+), 32 deletions(-)
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |   24 ++++++++++++++------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 604199a..26f73cf 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -693,12 +693,55 @@ static int sh_cmt_register(struct sh_cmt_channel *ch, char *name,
- 	return 0;
- }
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index e6222106ca36..52cf5c78705b 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -1,12 +1,22 @@
+ Renesas MSIOF spi controller
  
-+static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
-+				struct sh_cmt_device *cmt)
-+{
-+	struct sh_timer_config *cfg = cmt->pdev->dev.platform_data;
-+	int irq;
-+	int ret;
-+
-+	memset(ch, 0, sizeof(*ch));
-+	ch->cmt = cmt;
-+
-+	irq = platform_get_irq(cmt->pdev, 0);
-+	if (irq < 0) {
-+		dev_err(&cmt->pdev->dev, "failed to get irq\n");
-+		return irq;
-+	}
-+
-+	if (cmt->width = (sizeof(ch->max_match_value) * 8))
-+		ch->max_match_value = ~0;
-+	else
-+		ch->max_match_value = (1 << cmt->width) - 1;
-+
-+	ch->match_value = ch->max_match_value;
-+	raw_spin_lock_init(&ch->lock);
-+
-+	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
-+			      cfg->clockevent_rating,
-+			      cfg->clocksource_rating);
-+	if (ret) {
-+		dev_err(&cmt->pdev->dev, "registration failed\n");
-+		return ret;
-+	}
-+	ch->cs_enabled = false;
-+
-+	ret = request_irq(irq, sh_cmt_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&cmt->pdev->dev), ch);
-+	if (ret) {
-+		dev_err(&cmt->pdev->dev, "failed to request irq %d\n", irq);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
- static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
--	struct sh_cmt_channel *ch = &cmt->channel;
- 	struct resource *res, *res2;
--	int irq, ret;
-+	int ret;
- 	ret = -ENXIO;
+ Required properties:
+-- compatible : 	"renesas,sh-msiof" for SuperH or
+-		"renesas,sh-mobile-msiof" for SH Mobile series
+-- reg : Offset and length of the register set for the device
+-- interrupts : interrupt line used by MSIOF
++- compatible           : "renesas,sh-msiof" for SuperH, or
++			 "renesas,sh-mobile-msiof" for SH Mobile series.
++- reg                  : Offset and length of the register set for the device
++- interrupt-parent     : The phandle for the interrupt controller that
++			 services interrupts for this device
++- interrupts           : Interrupt specifier
++- #address-cells       : Must be <1>
++- #size-cells          : Must be <0>
  
- 	memset(cmt, 0, sizeof(*cmt));
-@@ -718,12 +761,6 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 	/* optional resource for the shared timer start/stop register */
- 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
- 
--	irq = platform_get_irq(cmt->pdev, 0);
--	if (irq < 0) {
--		dev_err(&cmt->pdev->dev, "failed to get irq\n");
--		goto err0;
--	}
--
- 	/* map memory, let mapbase point to our channel */
- 	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
- 	if (cmt->mapbase = NULL) {
-@@ -775,31 +812,9 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 		cmt->clear_bits = ~0xc000;
- 	}
- 
--	if (cmt->width = (sizeof(ch->max_match_value) * 8))
--		ch->max_match_value = ~0;
--	else
--		ch->max_match_value = (1 << cmt->width) - 1;
--
--	ch->cmt = cmt;
--	ch->match_value = ch->max_match_value;
--	raw_spin_lock_init(&ch->lock);
--
--	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
--			      cfg->clockevent_rating,
--			      cfg->clocksource_rating);
--	if (ret) {
--		dev_err(&cmt->pdev->dev, "registration failed\n");
--		goto err4;
--	}
--	ch->cs_enabled = false;
--
--	ret = request_irq(irq, sh_cmt_interrupt,
--			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
--			  dev_name(&cmt->pdev->dev), ch);
--	if (ret) {
--		dev_err(&cmt->pdev->dev, "failed to request irq %d\n", irq);
-+	ret = sh_cmt_setup_channel(&cmt->channel, cmt);
-+	if (ret < 0)
- 		goto err4;
--	}
- 
- 	platform_set_drvdata(pdev, cmt);
- 
+ Optional properties:
+-- num-cs		: total number of chip-selects
+-- renesas,tx-fifo-size	: Overrides the default tx fifo size given in words
+-- renesas,rx-fifo-size	: Overrides the default rx fifo size given in words
++- clocks               : Must contain a reference to the functional clock.
++- num-cs               : Total number of chip-selects
++- renesas,tx-fifo-size : Overrides the default tx fifo size given in words
++			 (default is 64)
++- renesas,rx-fifo-size : Overrides the default rx fifo size given in words
++			 (default is 64)
++
++Pinctrl properties might be needed, too.  See
++Documentation/devicetree/bindings/pinctrl/renesas,*.
 -- 
-1.8.3.2
+1.7.9.5
 
