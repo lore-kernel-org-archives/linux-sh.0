@@ -1,78 +1,186 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:30 +0000
-Subject: [PATCH 3/9] ARM: shmobile: r7s72100 clock: Add RSPI clocks
-Message-Id: <d9409fb8f30437b68647613e1f0d61b332de30be.1393401266.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 20 Feb 2014 14:43:09 +0000
+Subject: [PATCH 10/10] spi: sh-msiof: Use core message handling instead of spi-bitbang
+Message-Id: <1392907389-21798-11-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393401266.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
+References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r7s72100.c | 21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
+The only remaining feature of spi-bitbang used by this driver is the
+chipselect() callback, which just does conditional GPIO.
+This is handled fine by the SPI core's spi_set_cs(), hence switch the
+driver to use the core message handling through our own transfer_one()
+method.
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index dd8ce87..ffb0fff 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -22,12 +22,14 @@
- #include <mach/common.h>
- #include <mach/r7s72100.h>
+Remove the call to spi_master_put() in sh_msiof_spi_remove(), as our SPI
+master is now registered using devm_spi_register_master()
+(spi_bitbang_start() uses the non-managed version).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/Kconfig        |    1 -
+ drivers/spi/spi-sh-msiof.c |   65 ++++++++++++--------------------------------
+ 2 files changed, 17 insertions(+), 49 deletions(-)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 339da4b15ec2..35d5c029393a 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -416,7 +416,6 @@ config SPI_SH_MSIOF
+ 	tristate "SuperH MSIOF SPI controller"
+ 	depends on HAVE_CLK
+ 	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+-	select SPI_BITBANG
+ 	help
+ 	  SPI driver for SuperH and SH Mobile MSIOF blocks.
  
--/* registers */
-+/* Frequency Control Registers */
- #define FRQCR		0xfcfe0010
- #define FRQCR2		0xfcfe0014
-+/* Standby Control Registers */
- #define STBCR3		0xfcfe0420
- #define STBCR4		0xfcfe0424
- #define STBCR9		0xfcfe0438
-+#define STBCR10		0xfcfe043c
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index bd300fcb7116..642b0b637df1 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -26,7 +26,6 @@
  
- #define PLL_RATE 30
+ #include <linux/spi/sh_msiof.h>
+ #include <linux/spi/spi.h>
+-#include <linux/spi/spi_bitbang.h>
  
-@@ -145,11 +147,19 @@ struct clk div4_clks[DIV4_NR] = {
- 					| CLK_ENABLE_ON_INIT),
+ #include <asm/unaligned.h>
+ 
+@@ -36,7 +35,6 @@ struct sh_msiof_chipdata {
  };
  
--enum {	MSTP97, MSTP96, MSTP95, MSTP94,
-+enum {
-+	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
-+	MSTP97, MSTP96, MSTP95, MSTP94,
- 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
--	MSTP33,	MSTP_NR };
-+	MSTP33,	MSTP_NR
-+};
+ struct sh_msiof_spi_priv {
+-	struct spi_bitbang bitbang; /* must be first for spi_bitbang.c */
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+ 	struct platform_device *pdev;
+@@ -452,8 +450,7 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
+ 		 */
+ 		spi->cs_gpio = (uintptr_t)spi->controller_data;
+ 	}
+-
+-	return spi_bitbang_setup(spi);
++	return 0;
+ }
  
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
-+	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
-+	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
-+	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
-+	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
- 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
- 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
- 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
-@@ -176,6 +186,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+ static int sh_msiof_prepare_message(struct spi_master *master,
+@@ -488,20 +485,6 @@ static int sh_msiof_unprepare_message(struct spi_master *master,
+ 	return 0;
+ }
  
- 	/* MSTP clocks */
-+	CLKDEV_DEV_ID("rspi-rz.0", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("rspi-rz.1", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+-static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
+-{
+-	int value;
+-
+-	/* chip select is active low unless SPI_CS_HIGH is set */
+-	if (spi->mode & SPI_CS_HIGH)
+-		value = (is_on = BITBANG_CS_ACTIVE) ? 1 : 0;
+-	else
+-		value = (is_on = BITBANG_CS_ACTIVE) ? 0 : 1;
+-
+-	if (spi->cs_gpio >= 0)
+-		gpio_set_value(spi->cs_gpio, value);
+-}
+-
+ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
+ 				  void (*tx_fifo)(struct sh_msiof_spi_priv *,
+ 						  const void *, int, int),
+@@ -571,9 +554,11 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
+ 	return ret;
+ }
+ 
+-static int sh_msiof_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
++static int sh_msiof_transfer_one(struct spi_master *master,
++				 struct spi_device *spi,
++				 struct spi_transfer *t)
+ {
+-	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
++	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
+ 	void (*tx_fifo)(struct sh_msiof_spi_priv *, const void *, int, int);
+ 	void (*rx_fifo)(struct sh_msiof_spi_priv *, void *, int, int);
+ 	int bits;
+@@ -654,13 +639,6 @@ static int sh_msiof_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
+ 		words -= n;
+ 	}
+ 
+-	return bytes_done;
+-}
+-
+-static u32 sh_msiof_spi_txrx_word(struct spi_device *spi, unsigned nsecs,
+-				  u32 word, u8 bits)
+-{
+-	BUG(); /* unused but needed by bitbang code */
+ 	return 0;
+ }
+ 
+@@ -795,7 +773,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	if (p->info->rx_fifo_override)
+ 		p->rx_fifo_size = p->info->rx_fifo_override;
+ 
+-	/* init master and bitbang code */
++	/* init master code */
+ 	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
+ 	master->mode_bits |= SPI_LSB_FIRST | SPI_3WIRE;
+ 	master->flags = p->chipdata->master_flags;
+@@ -803,24 +781,20 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	master->dev.of_node = pdev->dev.of_node;
+ 	master->num_chipselect = p->info->num_chipselect;
+ 	master->setup = sh_msiof_spi_setup;
+-	master->cleanup = spi_bitbang_cleanup;
+ 	master->prepare_message = sh_msiof_prepare_message;
+ 	master->unprepare_message = sh_msiof_unprepare_message;
+ 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 32);
++	master->transfer_one = sh_msiof_transfer_one;
+ 
+-	p->bitbang.master = master;
+-	p->bitbang.chipselect = sh_msiof_spi_chipselect;
+-	p->bitbang.setup_transfer = spi_bitbang_setup_transfer;
+-	p->bitbang.txrx_bufs = sh_msiof_spi_txrx;
+-	p->bitbang.txrx_word[SPI_MODE_0] = sh_msiof_spi_txrx_word;
+-	p->bitbang.txrx_word[SPI_MODE_1] = sh_msiof_spi_txrx_word;
+-	p->bitbang.txrx_word[SPI_MODE_2] = sh_msiof_spi_txrx_word;
+-	p->bitbang.txrx_word[SPI_MODE_3] = sh_msiof_spi_txrx_word;
++	ret = devm_spi_register_master(&pdev->dev, master);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "spi_register_master error.\n");
++		goto err2;
++	}
+ 
+-	ret = spi_bitbang_start(&p->bitbang);
+-	if (ret = 0)
+-		return 0;
++	return 0;
+ 
++ err2:
+ 	pm_runtime_disable(&pdev->dev);
+ 	clk_unprepare(p->clk);
+  err1:
+@@ -831,15 +805,10 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ static int sh_msiof_spi_remove(struct platform_device *pdev)
+ {
+ 	struct sh_msiof_spi_priv *p = platform_get_drvdata(pdev);
+-	int ret;
+ 
+-	ret = spi_bitbang_stop(&p->bitbang);
+-	if (!ret) {
+-		pm_runtime_disable(&pdev->dev);
+-		clk_unprepare(p->clk);
+-		spi_master_put(p->bitbang.master);
+-	}
+-	return ret;
++	pm_runtime_disable(&pdev->dev);
++	clk_unprepare(p->clk);
++	return 0;
+ }
+ 
+ static struct platform_device_id spi_driver_ids[] = {
 -- 
-1.8.5.2
+1.7.9.5
 
