@@ -1,18 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Feb 2014 00:21:08 +0000
-Subject: Re: [PATCH v8 2/2] ARM: shmobile: genmai: Enable r7s72100-ether
-Message-Id: <20140207002108.GA30874@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 21 Feb 2014 00:20:17 +0000
+Subject: [PATCH][RESENT] sh: sh7757lcr: fixup SDHI register size
+Message-Id: <87a9dlqptu.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391675773-5430-1-git-send-email-horms+renesas@verge.net.au>
- <1391675773-5430-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1391675773-5430-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-kernel@vger.kernel.org
 
-On Thu, Feb 06, 2014 at 05:36:13PM +0900, Simon Horman wrote:
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-> Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+sh7757lcr SDHI register size is 0x100
 
-I have queued this up.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Simon, Geert, Andrew
+
+Now, no-one is maintenance SH patch.
+Who can apply this patch ??
+
+ arch/sh/boards/board-sh7757lcr.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index 25c5a93..669df51 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -252,7 +252,7 @@ static struct sh_mobile_sdhi_info sdhi_info = {
+ static struct resource sdhi_resources[] = {
+ 	[0] = {
+ 		.start  = 0xffe50000,
+-		.end    = 0xffe501ff,
++		.end    = 0xffe500ff,
+ 		.flags  = IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-- 
+1.7.9.5
+
