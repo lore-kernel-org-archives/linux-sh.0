@@ -1,44 +1,31 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 06:25:19 +0000
-Subject: Re: [PATCH 01/12] ARM: shmobile: Add temporary include workaround
-Message-Id: <CANqRtoQRRoPXiAuLjJ1RKeCqARL5dYYEnCA=3k+YdeduorXOaw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 21 Feb 2014 00:54:10 +0000
+Subject: [PATCH 0/5][RESENT]mmc: sh_mobile_sdhi: DT update for R-Car
+Message-Id: <878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
- <20140224054107.1143.71718.sendpatchset@w520>
-In-Reply-To: <20140224054107.1143.71718.sendpatchset@w520>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-On Mon, Feb 24, 2014 at 2:41 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm@opensource.se>
->
-> Add temporary include path in the mach-shmobile Makefile to
-> aid coversion from using <mach/something.h> to "something.h"
-> in the source files.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
->
->  arch/arm/mach-shmobile/Makefile |    2 ++
->  1 file changed, 2 insertions(+)
->
-> --- 0001/arch/arm/mach-shmobile/Makefile
-> +++ work/arch/arm/mach-shmobile/Makefile        2014-02-24 13:03:32.000000000 +0900
-> @@ -4,6 +4,8 @@
->
->  ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
->
-> +ccflags-y := -I$(srctree)/arch/arm/mach-shmobile/include/mach
-> +
->  # Common objects
->  obj-y                          := timer.o console.o
->
 
-Just noticed, I managed to send an old version of this patch. The
-above should be "ccflags-y += ..." which is needed for multiplatform,
+Hi Chris
 
-Cheers,
+These are re-sent patches for R-Car, since there were no response.
+Basically, these clarifies chip dependent settings
+inside driver.
+These are based on mmc/mmc-next branch
+(7536d3f83aa42ba1a3b1c6b30c2b6d94a820cbb2)
 
-/ magnus
+Kuninori Morimoto (5):
+      mmc: SDHI: tidyup sh_mobile_sdhi_of_match position
+      mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7778
+      mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7779
+      mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7790
+      mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7791
+
+ drivers/mmc/host/sh_mobile_sdhi.c |   42 +++++++++++++++++++++++++------------
+ 1 file changed, 29 insertions(+), 13 deletions(-)
