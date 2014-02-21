@@ -1,92 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:32 +0000
-Subject: [PATCH 5/9] ARM: shmobile: r8a7791 clock: add QSPI clocks
-Message-Id: <d2eec3d5251216942e1d425300686f1a18bc615d.1393401266.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Feb 2014 16:29:16 +0000
+Subject: [PATCH 2/4] spi: rspi: Remove bogus colon in formatting
+Message-Id: <1393000158-6622-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393401266.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
+References: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393000158-6622-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-The QSPI clock divider value depends on the MD1, MD2, and MD3 mode
-switches.
-
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index e4e4dfa..c8227b3 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -101,6 +101,7 @@ static struct clk main_clk = {
-  */
- SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
- SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
-+SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+index e54924b2aff6..d57d82a74054 100644
+--- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -29,7 +29,7 @@ Required properties:
+ - #size-cells      : Must be <0>
  
- /* fixed ratio clock */
- SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
-@@ -124,6 +125,7 @@ static struct clk *main_clks[] = {
- 	&pll3_clk,
- 	&hp_clk,
- 	&p_clk,
-+	&qspi_clk,
- 	&rclk_clk,
- 	&mp_clk,
- 	&cp_clk,
-@@ -135,6 +137,7 @@ static struct clk *main_clks[] = {
- /* MSTP */
- enum {
- 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
-+	MSTP917,
- 	MSTP815, MSTP814,
- 	MSTP813,
- 	MSTP811, MSTP810, MSTP809,
-@@ -154,6 +157,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
- 	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
- 	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
-+	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
- 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
- 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
- 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
-@@ -195,6 +199,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("zs",		&zs_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
-+	CLKDEV_CON_ID("qspi",		&qspi_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
- 	CLKDEV_CON_ID("mp",		&mp_clk),
- 	CLKDEV_CON_ID("cp",		&cp_clk),
-@@ -220,6 +225,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
-@@ -271,6 +277,11 @@ void __init r8a7791_clock_init(void)
- 		break;
- 	}
+ Optional properties:
+-- clocks:           : Must contain a reference to the functional clock.
++- clocks           : Must contain a reference to the functional clock.
  
-+	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
-+	else
-+		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
-+
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
+ Pinctrl properties might be needed, too.  See
+ Documentation/devicetree/bindings/pinctrl/renesas,*.
 -- 
-1.8.5.2
+1.7.9.5
 
