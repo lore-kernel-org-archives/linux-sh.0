@@ -1,52 +1,50 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 26 Feb 2014 18:11:21 +0000
-Subject: [PATCH 3/5 v2 RFC] ARM: shmobile: Add PCIe resources to r8a7791 device
-Message-Id: <1393438283-10542-4-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:28 +0000
+Subject: [PATCH 16/16] ARM: shmobile: Remove Lager DT reference legacy clock bits
+Message-Id: <6197c08ab81cf1430cbe7346fd6ca0b5a18580bf.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Magnus Damm <damm@opensource.se>
+
+Lager DT reference is these days built for multiplatform
+only which means that CCF comes with the package. Remove
+unused legacy code ifdefs to clean up the code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c |   13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index d9393d6..7751aae 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -136,6 +136,16 @@ static struct resource irqc0_resources[] = {
- 					  &irqc##idx##_data,		\
- 					  sizeof(struct renesas_irqc_config))
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 6ba8b3b..440aac3 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -88,7 +88,6 @@ static void __init lager_add_du_device(void)
  
-+/* PCI Express */
-+static struct resource pcie_resources[] = {
-+	DEFINE_RES_MEM(0xfe000000, SZ_512K),
-+	DEFINE_RES_MEM(0xfe100000, SZ_1M),
-+	DEFINE_RES_MEM(0xfe200000, SZ_2M),
-+	DEFINE_RES_MEM(0x30000000, SZ_128M),
-+	DEFINE_RES_MEM(0x38000000, SZ_128M),
-+	DEFINE_RES_IRQ(gic_spi(116)),
-+};
-+
- void __init r8a7791_add_dt_devices(void)
+ static void __init lager_add_standard_devices(void)
  {
- 	r8a7791_register_scif(SCIFA0);
-@@ -160,6 +170,9 @@ void __init r8a7791_add_standard_devices(void)
- {
- 	r8a7791_add_dt_devices();
- 	r8a7791_register_irqc(0);
-+	platform_device_register_simple("r8a7791-pcie", -1,
-+					pcie_resources,
-+					ARRAY_SIZE(pcie_resources));
- }
+-#ifdef CONFIG_COMMON_CLK
+ 	/*
+ 	 * This is a really crude hack to provide clkdev support to platform
+ 	 * devices until they get moved to DT.
+@@ -126,9 +125,6 @@ static void __init lager_add_standard_devices(void)
+ 			clk_put(clk);
+ 		}
+ 	}
+-#else
+-	r8a7790_clock_init();
+-#endif
  
- void __init r8a7791_init_early(void)
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
 -- 
-1.7.9.5
+1.8.5.2
 
