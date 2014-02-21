@@ -1,61 +1,102 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Mon, 24 Feb 2014 09:30:04 +0000
-Subject: [PATCH V5 4/4] ARM: shmobile: koelsch: Add USB and PCI to defconfig
-Message-Id: <1393234204-24096-5-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:16 +0000
+Subject: [PATCH 04/16] ARM: shmobile: lager: Add internal USB PCI support
+Message-Id: <849f7b6c10d8016b55e13b7ad2e9f299e2da817b.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Add USB and PCI to koelsch_defconfig
+This adds internal PCI USB host devices to R-Car H2 Lager board.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
-Changes in V5:
-* removed CONFIG_USB_RENESAS_USBHS_HCD as not used yet
-
-Changes in V4:
-* Added this patch to series
-
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+[damm@opensource.se: Rebased and reworked to only include USB1 and USB2]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/koelsch_defconfig |   15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-lager.c | 50 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
 
-Index: build/arch/arm/configs/koelsch_defconfig
-=================================--- build.orig/arch/arm/configs/koelsch_defconfig	2014-02-24 12:44:39.233467600 +0400
-+++ build/arch/arm/configs/koelsch_defconfig	2014-02-24 12:44:54.393467289 +0400
-@@ -18,6 +18,8 @@
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_RCAR_GEN2=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_NR_CPUS=8
-@@ -81,7 +83,18 @@
- CONFIG_REGULATOR_FIXED_VOLTAGE=y
- CONFIG_REGULATOR_GPIO=y
- # CONFIG_HID is not set
--# CONFIG_USB_SUPPORT is not set
-+CONFIG_USB_SUPPORT=y
-+CONFIG_USB=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_OHCI_HCD_PCI=y
-+CONFIG_USB_RENESAS_USBHS=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_USB_PHY=y
-+CONFIG_USB_RCAR_GEN2_PHY=y
-+CONFIG_USB_GADGET=y
-+CONFIG_USB_RENESAS_USBHS_UDC=y
-+CONFIG_USB_ETH=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_NEW_LEDS=y
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 72886af..193dff0 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -638,6 +638,48 @@ static struct resource sdhi2_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_spi(167)),
+ };
+ 
++/* Internal PCI1 */
++static const struct resource pci1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
++	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
++	DEFINE_RES_IRQ(gic_spi(112)),
++};
++
++static const struct platform_device_info pci1_info __initconst = {
++	.parent		= &platform_bus,
++	.name		= "pci-rcar-gen2",
++	.id		= 1,
++	.res		= pci1_resources,
++	.num_res	= ARRAY_SIZE(pci1_resources),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
++static void __init lager_add_usb1_device(void)
++{
++	platform_device_register_full(&pci1_info);
++}
++
++/* Internal PCI2 */
++static const struct resource pci2_resources[] __initconst = {
++	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
++	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
++	DEFINE_RES_IRQ(gic_spi(113)),
++};
++
++static const struct platform_device_info pci2_info __initconst = {
++	.parent		= &platform_bus,
++	.name		= "pci-rcar-gen2",
++	.id		= 2,
++	.res		= pci2_resources,
++	.num_res	= ARRAY_SIZE(pci2_resources),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
++static void __init lager_add_usb2_device(void)
++{
++	platform_device_register_full(&pci2_info);
++}
++
+ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* DU (CN10: ARGB0, CN13: LVDS) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
+@@ -716,6 +758,12 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* USB0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-r8a7790",
+ 				  "usb0_ovc_vbus", "usb0"),
++	/* USB1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("pci-rcar-gen2.1", "pfc-r8a7790",
++				  "usb1", "usb1"),
++	/* USB2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("pci-rcar-gen2.2", "pfc-r8a7790",
++				  "usb2", "usb2"),
+ };
+ 
+ static void __init lager_add_standard_devices(void)
+@@ -776,6 +824,8 @@ static void __init lager_add_standard_devices(void)
+ 					  &usbhs_phy_pdata,
+ 					  sizeof(usbhs_phy_pdata));
+ 	lager_register_usbhs();
++	lager_add_usb1_device();
++	lager_add_usb2_device();
+ 
+ 	lager_add_rsnd_device();
+ 
+-- 
+1.8.5.2
+
