@@ -1,74 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Feb 2014 01:35:12 +0000
-Subject: Re: [PATCH v3 01/20] clk: shmobile: r8a7779: Add clocks support
-Message-Id: <20140228013512.GD25134@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 21 Feb 2014 08:58:20 +0000
+Subject: Maybe this is CCF bug
+Message-Id: <87zjlkq1v1.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
- <1393400016-23433-2-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdUy6uj5vJ125Edp8g5NNxcWbG5wmD-j_gp=GgzXYAUAEw@mail.gmail.com>
- <20140226085921.GD7720@verge.net.au>
- <CAMuHMdXFVoL4pyygzys4VyYBN42KDPdohVQz6JcZn9WvuEOFEA@mail.gmail.com>
-In-Reply-To: <CAMuHMdXFVoL4pyygzys4VyYBN42KDPdohVQz6JcZn9WvuEOFEA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Feb 26, 2014 at 10:06:06AM +0100, Geert Uytterhoeven wrote:
-> On Wed, Feb 26, 2014 at 9:59 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> > +/*
-> >> > + *             MD1 = 1                 MD1 = 0
-> >> > + *             (PLLA = 1500)           (PLLA = 1600)
-> >> > + *             (MHz)                   (MHz)
-> >> > + *------------------------------------------------+--------------------
-> >> > + * clkz                1000   (2/3)            800   (1/2)
-> >> > + * clkzs        250   (1/6)            200   (1/8)
-> >> > + * clki                 750   (1/2)            800   (1/2)
-> >> > + * clks                 250   (1/6)            200   (1/8)
-> >> > + * clks1        125   (1/12)           100   (1/16)
-> >> > + * clks3        187.5 (1/8)            200   (1/8)
-> >> > + * clks4         93.7 (1/16)           100   (1/16)
-> >> > + * clkp                  62.5 (1/24)            50   (1/32)
-> >> > + * clkg                  62.5 (1/24)            66.6 (1/24)
-> >> > + * clkb, CLKOUT
-> >> > + * (MD2 = 0)     62.5 (1/24)            66.6 (1/24)
-> >> > + * (MD2 = 1)     41.6 (1/36)            50   (1/32)
-> >> > + */
-> >> > +
-> >> > +#define CPG_CLK_CONFIG_INDEX(md)       (((md) & (BIT(1)|BIT(2))) >> 1)
-> >> > +
-> >> > +struct cpg_clk_config {
-> >> > +       unsigned int z_mult;
-> >> > +       unsigned int z_div;
-> >> > +       unsigned int zs_and_s_div;
-> >> > +       unsigned int s1_div;
-> >> > +       unsigned int p_div;
-> >> > +       unsigned int out_div;
-> >> > +};
-> >> > +
-> >> > +static const struct cpg_clk_config cpg_clk_configs[4] __initconst = {
-> >> > +       { 1, 2, 8, 16, 32, 24 },
-> >> > +       { 1, 2, 8, 16, 32, 24 },
-> >> > +       { 2, 3, 6, 12, 24, 36 },
-> >> > +       { 2, 3, 6, 12, 24, 32 },
-> >> > +};
-> >>
-> >> Shouldn't this be
-> >>
-> >> +static const struct cpg_clk_config cpg_clk_configs[4] __initconst = {
-> >> +       { 1, 2, 8, 16, 32, 24 },
-> >> +       { 2, 3, 6, 12, 24, 24 },
-> >> +       { 1, 2, 8, 16, 32, 32 },
-> >> +       { 2, 3, 6, 12, 24, 36 },
-> >> +};
-> >>
-> >> ?
-> >>
-> >> I think you got confused by writing the bitmask as "BIT(1)|BIT(2)" instead
-> >> of "BIT(2)|BIT(1)".
-> >
-> > Probably, thanks for noticing.
-> 
-> Note that I based my review on the table above, not on the actual datasheet.
 
-Understood. I'll double check the datasheet against my code and your comment.
+Hi Laurent, Magnus, and All
+
+Now, I'm working for sound DT support,
+and I noticed common clock setting's strange behavior.
+I guess this is bug, but 50% my misunderstanding.
+
+Now, we have clock index on ${LINUX}/include/dt-bindings/clock/r8a7790-clock.h
+For example, r8a7790's MSTP9 case, like this
+
+	/* MSTP9 */
+	#define R8A7790_CLK_GPIO5		7
+	#define R8A7790_CLK_GPIO4		8
+	#define R8A7790_CLK_GPIO3		9
+	#define R8A7790_CLK_GPIO2		10
+	#define R8A7790_CLK_GPIO1		11
+	#define R8A7790_CLK_GPIO0		12
+	#define R8A7790_CLK_RCAN1		15
+	#define R8A7790_CLK_RCAN0		16
+	#define R8A7790_CLK_QSPI_MOD		17
+	#define R8A7790_CLK_IICDVFS		26
+	#define R8A7790_CLK_I2C3		28
+	#define R8A7790_CLK_I2C2		29
+	#define R8A7790_CLK_I2C1		30
+	#define R8A7790_CLK_I2C0		31
+
+and MSTP9 is like this
+
+	mstp9_clks: mstp9_clks@e6150994 {
+		compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+		reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+		clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
+			 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
+		#clock-cells = <1>;
+		renesas,clock-indices = <
+			R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
+			R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
+			R8A7790_CLK_I2C0
+		>;
+		clock-output-names 			"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+	};
+
+And, now, spi parent is MSTP9 QSPI MOD
+
+	spi: spi@e6b10000 {
+		...
+		clocks = <&mstp9_clks R8A7790_CLK_QSPI_MOD>;
+		...
+	};
+
+This SPI would like to use MSTP9's 17th (= R8A7790_CLK_QSPI_MOD) clock as its parent.
+But, mstp9_clks has 7 clocks only.
+R8A7790_CLK_xxx means "bit shift", not "index" on DT clock.
+
+On ${LINUX}/drivers/clk/shmobile/clk-mstp.c,
+it try to get parent name by
+
+	parent_name = of_clk_get_parent_name(np, i);
+
+and it returns "mstp9_clks" in this case.
+Maybe SPI would like to get "qspi_mod" ?
+
+What do you think ?
+Is this cause of pm_runtime issue ?
+
+Best regards
+---
+Kuninori Morimoto
