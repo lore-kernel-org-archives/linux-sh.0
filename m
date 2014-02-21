@@ -1,42 +1,78 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Feb 2014 08:25:58 +0000
-Subject: [PATCH 00/03] ARM: shmobile: Clean up the EMEV2 and KZM9D code base
-Message-Id: <20140213082558.30630.93034.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:43 +0000
+Subject: [PATCH 02/13] ARM: shmobile: lager dts: Add QSPI nodes
+Message-Id: <9fe7c4f810a7e82c4a1a9765017f9cb2c2b40a65.1392961872.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392961872.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Clean up the EMEV2 and KZM9D code base
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-[PATCH 01/03] ARM: shmobile: Remove legacy EMEV2 SoC support
-[PATCH 02/03] ARM: shmobile: Remove KZM9D board code
-[PATCH 03/03] ARM: shmobile: Get rid of legacy KZM9D defconfig
+Add pinctrl and SPI devices for QSPI on Lager.
+Add Spansion s25fl512s SPI FLASH and MTD partitions.
 
-These patches clean up the EMEV2 SoC and the KZM9D board support code.
-
-With these patches applied:
- - EMEV2 is enabled for the MULTIPLATFORM case only, making use of CCF
- - KZM9D is implemented as DT code only, no C code exists
- - The legacy EMEV2 code is gone, so is the legacy clock framework code
- - The legacy defconfig is gone, making way for a shared multiplatform defconfig
-
-This means that KZM9D support comes without a Kconfig entry. Also,
-the load address for u-boot needs to be supplied by hand (0x40008000).
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7790-lager.dts | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
- Written against renesas.git tag renesas-devel-v3.14-rc1-20140207
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 1081c5e..adff2dc 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -80,6 +80,11 @@
+ 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+ 		renesas,function = "mmc1";
+ 	};
++
++	qspi_pins: spi {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
+ 
+ &mmcif1 {
+@@ -95,3 +100,34 @@
+ &sata1 {
+ 	status = "okay";
+ };
++
++&spi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user";
++			reg = <0x00040000 0x00400000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash";
++			reg = <0x00440000 0x03bc0000>;
++		};
++	};
++};
+-- 
+1.8.5.2
 
- arch/arm/boot/dts/Makefile                     |    3 
- arch/arm/configs/kzm9d_defconfig               |   91 ---------
- arch/arm/mach-shmobile/Kconfig                 |   15 -
- arch/arm/mach-shmobile/Makefile                |    2 
- arch/arm/mach-shmobile/board-kzm9d-reference.c |   47 ----
- arch/arm/mach-shmobile/clock-emev2.c           |  231 ------------------------
- arch/arm/mach-shmobile/include/mach/emev2.h    |    9 
- arch/arm/mach-shmobile/setup-emev2.c           |    7 
- arch/arm/mach-shmobile/smp-emev2.c             |    1 
- 9 files changed, 3 insertions(+), 403 deletions(-)
