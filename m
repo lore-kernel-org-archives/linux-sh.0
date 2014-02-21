@@ -1,130 +1,48 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:33 +0000
-Subject: [PATCH 05/11] ARM: shmobile: koelsch legacy: Add MSIOF support
-Message-Id: <1392907779-22053-6-git-send-email-geert@linux-m68k.org>
+Date: Fri, 21 Feb 2014 16:29:17 +0000
+Subject: [PATCH 3/4] spi: rspi: Remove empty rspi_cleanup()
+Message-Id: <1393000158-6622-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+References: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add MSIOF resources, platform data, platform device, pinctrl, and SPI
-child device.
-
-  - Platform device numbering is 1-based for compatibility with the BSP,
-    as QSPI uses zero.
-  - Only MSIOF0 is in use, and thus registered. Its bus contains a single
-    device (a Renesas R2A11302FT PMIC).
-
-Based on patches from Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+If spi_master.cleanup() is not needed, it can be left unimplemented.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-koelsch.c |   59 ++++++++++++++++++++++++++++----
- 1 file changed, 53 insertions(+), 6 deletions(-)
+ drivers/spi/spi-rspi.c |    5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 5a034ff405d0..47bf588fc5ce 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -44,6 +44,7 @@
- #include <linux/sh_eth.h>
- #include <linux/spi/flash.h>
- #include <linux/spi/rspi.h>
-+#include <linux/spi/sh_msiof.h>
- #include <linux/spi/spi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -184,6 +185,35 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
- 	.num_chipselect = 1,
- };
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 04528888a53f..4a1f978c3381 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -893,10 +893,6 @@ static int rspi_setup(struct spi_device *spi)
+ 	return 0;
+ }
  
-+/* MSIOF */
-+static const struct resource sh_msiof0_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6e20000, 0x0064),
-+	DEFINE_RES_IRQ(gic_spi(156)),
-+};
-+
-+static const struct resource sh_msiof1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6e10000, 0x0064),
-+	DEFINE_RES_IRQ(gic_spi(157)),
-+};
-+
-+static const struct resource sh_msiof2_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6e00000, 0x0064),
-+	DEFINE_RES_IRQ(gic_spi(158)),
-+};
-+
-+static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
-+	.rx_fifo_override	= 256,
-+	.num_chipselect		= 1,
-+};
-+
-+#define r8a7791_register_msiof(idx)					\
-+	platform_device_register_resndata(&platform_bus,		\
-+				"spi_r8a7791_msiof",			\
-+				(idx+1), sh_msiof##idx##_resources,	\
-+				ARRAY_SIZE(sh_msiof##idx##_resources),	\
-+				&sh_msiof_info,				\
-+				sizeof(struct sh_msiof_spi_info))
-+
- /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
- static struct mtd_partition spi_flash_part[] = {
- 	{
-@@ -214,12 +244,19 @@ static const struct flash_platform_data spi_flash_data = {
- 
- static const struct spi_board_info spi_info[] __initconst = {
- 	{
--		.modalias	= "m25p80",
--		.platform_data	= &spi_flash_data,
--		.mode		= SPI_MODE_0,
--		.max_speed_hz	= 30000000,
--		.bus_num	= 0,
--		.chip_select	= 0,
-+		.modalias	 = "m25p80",
-+		.platform_data	 = &spi_flash_data,
-+		.mode		 = SPI_MODE_0,
-+		.max_speed_hz	 = 30000000,
-+		.bus_num	 = 0,
-+		.chip_select	 = 0,
-+	}, {
-+		.modalias	 = "r2a1130x",
-+		.max_speed_hz	 = 6000000,
-+		.chip_select	 = 0,
-+		.bus_num	 = 1,
-+		.mode		 = SPI_MODE_3,
-+		.controller_data = (void *)-ENOENT, /* HW controlled CS */
- 	},
- };
- 
-@@ -384,6 +421,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 				  "eth_rmii", "eth"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
- 				  "intc_irq0", "intc"),
-+	/* MSIOF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_clk", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_sync", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_rx", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_tx", "msiof0"),
- 	/* QSPI */
- 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
- 				  "qspi_ctrl", "qspi"),
-@@ -449,6 +495,7 @@ static void __init koelsch_add_standard_devices(void)
- 					  qspi_resources,
- 					  ARRAY_SIZE(qspi_resources),
- 					  &qspi_pdata, sizeof(qspi_pdata));
-+	r8a7791_register_msiof(0);
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- 
- 	koelsch_add_du_device();
+-static void rspi_cleanup(struct spi_device *spi)
+-{
+-}
+-
+ static u16 qspi_transfer_mode(const struct spi_transfer *xfer)
+ {
+ 	if (xfer->tx_buf)
+@@ -1255,7 +1251,6 @@ static int rspi_probe(struct platform_device *pdev)
+ 	master->bus_num = pdev->id;
+ 	master->setup = rspi_setup;
+ 	master->transfer_one = ops->transfer_one;
+-	master->cleanup = rspi_cleanup;
+ 	master->prepare_message = rspi_prepare_message;
+ 	master->unprepare_message = rspi_unprepare_message;
+ 	master->mode_bits = ops->mode_bits;
 -- 
 1.7.9.5
 
