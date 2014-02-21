@@ -1,110 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 17 Feb 2014 21:19:17 +0000
-Subject: [PATCH 1/3] arm: shmobile: r7s72100: add nodes for i2c controllers to dtsi
-Message-Id: <1392671959-22834-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:13:10 +0000
+Subject: [PATCH 3/3] ARM: shmobile: Remove __init from rcar_gen2_read_mode_pins()
+Message-Id: <db47204b32dd0d72454b4f841d0f7e33c44ee2b8.1392961497.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392961497.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392961497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Remove __init from rcar_gen2_read_mode_pins() to allow
+it to be used after boot. For instance the R-Car Gen2
+MD21 check is needed even in the case of CPU Hotplug.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 72 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 72 insertions(+)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 9be67a1..ee70071 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -17,6 +17,10 @@
- 	#size-cells = <1>;
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 69ccc6c..1060448 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -28,7 +28,7 @@
  
- 	aliases {
-+		i2c0 = &i2c0;
-+		i2c1 = &i2c1;
-+		i2c2 = &i2c2;
-+		i2c3 = &i2c3;
- 		spi0 = &spi0;
- 		spi1 = &spi1;
- 		spi2 = &spi2;
-@@ -44,6 +48,74 @@
- 			<0xe8202000 0x1000>;
- 	};
+ #define MODEMR 0xe6160060
  
-+	i2c0: i2c@fcfee000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee000 0x44>;
-+		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 158 IRQ_TYPE_EDGE_RISING>,
-+			     <0 159 IRQ_TYPE_EDGE_RISING>,
-+			     <0 160 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 161 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c1: i2c@fcfee400 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee400 0x44>;
-+		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 166 IRQ_TYPE_EDGE_RISING>,
-+			     <0 167 IRQ_TYPE_EDGE_RISING>,
-+			     <0 168 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 169 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c2: i2c@fcfee800 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfee800 0x44>;
-+		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 174 IRQ_TYPE_EDGE_RISING>,
-+			     <0 175 IRQ_TYPE_EDGE_RISING>,
-+			     <0 176 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 177 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
-+	i2c3: i2c@fcfeec00 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
-+		reg = <0xfcfeec00 0x44>;
-+		interrupts = <0 181 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 182 IRQ_TYPE_EDGE_RISING>,
-+			     <0 183 IRQ_TYPE_EDGE_RISING>,
-+			     <0 184 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 185 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		clock-frequency = <100000>;
-+		status = "disabled";
-+	};
-+
- 	spi0: spi@e800c800 {
- 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
- 		reg = <0xe800c800 0x24>;
+-u32 __init rcar_gen2_read_mode_pins(void)
++u32 rcar_gen2_read_mode_pins(void)
+ {
+ 	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
+ 	u32 mode;
 -- 
-1.8.5.1
+1.8.5.2
 
