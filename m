@@ -1,61 +1,77 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Mon, 24 Feb 2014 09:30:01 +0000
-Subject: [PATCH V5 1/4] ARM: shmobile: r8a7791: Add USBHS clock support
-Message-Id: <1393234204-24096-2-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:23 +0000
+Subject: [PATCH 11/16] ARM: shmobile: Lager: set proper DMA masks for Ether device
+Message-Id: <5d5a87a5b6572426f8eae6e26ebcf9664d2d001a.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This adds USBHS clocks to the R8A7791 SoC.
+Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
+'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
+ability.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Currently, the code works without DMA masks but as we would have to enable
+CONFIG_HIGHMEM to access the full board memory in the future, when support for
+NETIF_F_SG would be added to the 'sh_eth' driver as well, the correct DMA masks
+should start to matter...
 
-Changes in V5:
-Changes in V4:
-Changes in V3:
-* none.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c |    4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/board-lager.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
 
-Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
-=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:44.486571967 +0400
-+++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
-@@ -177,6 +177,7 @@
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
-+	MSTP704,
- 	MSTP522,
- 	MSTP314, MSTP312, MSTP311,
- 	MSTP216, MSTP207, MSTP206,
-@@ -208,6 +209,7 @@
- 	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
-+	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
- 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
-@@ -281,6 +283,8 @@
- 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
- 	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
-+	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-+	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 193dff0..f0104bf 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -1,8 +1,9 @@
+ /*
+  * Lager board support
+  *
+- * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013-2014  Renesas Solutions Corp.
+  * Copyright (C) 2013  Magnus Damm
++ * Copyright (C) 2014  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -275,6 +276,17 @@ static const struct resource ether_resources[] __initconst = {
+ 	DEFINE_RES_IRQ(gic_spi(162)),
  };
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
++static const struct platform_device_info ether_info __initconst = {
++	.parent		= &platform_bus,
++	.name		= "r8a7790-ether",
++	.id		= -1,
++	.res		= ether_resources,
++	.num_res	= ARRAY_SIZE(ether_resources),
++	.data		= &ether_pdata,
++	.size_data	= sizeof(ether_pdata),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
+ /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
+ static struct mtd_partition spi_flash_part[] = {
+ 	/* Reserved for user loader program, read-only */
+@@ -791,10 +803,7 @@ static void __init lager_add_standard_devices(void)
+ 					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
+ 					  &mmcif1_pdata, sizeof(mmcif1_pdata));
+ 
+-	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  &ether_pdata, sizeof(ether_pdata));
++	platform_device_register_full(&ether_info);
+ 
+ 	lager_add_du_device();
+ 
+-- 
+1.8.5.2
+
