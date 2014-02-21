@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:54 +0000
-Subject: [PATCH 13/13] ARM: shmobile: genmai: adapt dts to use native i2c driver
-Message-Id: <367aaaea1d6c6496695ffd06b49590b8cfcb8aa5.1392961872.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:46 +0000
+Subject: [PATCH 05/13] ARM: shmobile: lager: Add DU device to DTS
+Message-Id: <3024f507e1dc2b30fc64ed6106db6aea6e69cf0b.1392961872.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1392961872.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
@@ -10,37 +10,40 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Activate the shiny new riic driver for i2c2. Tested by accessing the
-eeprom on the genmai board.
+The DU device has no DT bindings yet, instantiate it as a platform
+device for now.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: broken out of larger patch that
+                             included board changes]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index 0849017..e664611 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -29,3 +29,14 @@
- 		#size-cells = <1>;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 5466fe4..26a9010 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -111,9 +111,14 @@
  };
-+
-+&i2c2 {
-+	status = "okay";
-+	clock-frequency = <400000>;
-+
-+	eeprom@50 {
-+		compatible = "renesas,24c128";
-+		reg = <0x50>;
-+		pagesize = <64>;
+ 
+ &pfc {
+-	pinctrl-0 = <&scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
+ 
++	du_pins: du {
++		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
++		renesas,function = "du";
 +	};
-+};
++
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data";
+ 		renesas,function = "scif0";
 -- 
 1.8.5.2
 
