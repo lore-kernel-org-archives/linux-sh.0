@@ -1,86 +1,124 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:42:13 +0000
-Subject: [PATCH 08/12] ARM: shmobile: Rework include path for r8a7790
-Message-Id: <20140224054213.1143.46444.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:44 +0000
+Subject: [PATCH 03/13] ARM: shmobile: lager: add SDHI0/2 support on DTS
+Message-Id: <c6119944a421c416818a9ff11f8bd77aa4d683a5.1392961872.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
+References: <cover.1392961872.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Convert r8a7790 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7790-lager.dts | 78 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
 
- arch/arm/mach-shmobile/clock-r8a7790.c |    6 +++---
- arch/arm/mach-shmobile/pm-r8a7790.c    |    4 ++--
- arch/arm/mach-shmobile/setup-r8a7790.c |    8 ++++----
- arch/arm/mach-shmobile/smp-r8a7790.c   |    6 +++---
- 4 files changed, 12 insertions(+), 12 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index adff2dc..5466fe4 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -56,6 +56,54 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio5 24 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi0: regulator@2 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio5 29 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi2: regulator@3 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio5 25 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi2: regulator@4 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI2 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio5 30 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
+ };
+ 
+ &extal_clk {
+@@ -76,6 +124,16 @@
+ 		renesas,function = "scif1";
+ 	};
+ 
++	sdhi0_pins: sd0 {
++		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sd2 {
++		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
++
+ 	mmc1_pins: mmc1 {
+ 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+ 		renesas,function = "mmc1";
+@@ -131,3 +189,23 @@
+ 		};
+ 	};
+ };
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi2>;
++	vqmmc-supply = <&vccq_sdhi2>;
++	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
+-- 
+1.8.5.2
 
---- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2014-02-24 13:44:02.000000000 +0900
-@@ -22,9 +22,9 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/clock.h>
--#include <mach/common.h>
--#include <mach/r8a7790.h>
-+#include "clock.h"
-+#include "common.h"
-+#include "r8a7790.h"
- 
- /*
-  *   MD		EXTAL		PLL0	PLL1	PLL3
---- 0001/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-02-24 13:44:26.000000000 +0900
-@@ -12,8 +12,8 @@
- 
- #include <linux/kernel.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
--#include <mach/r8a7790.h>
-+#include "pm-rcar.h"
-+#include "r8a7790.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
---- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-02-24 13:43:31.000000000 +0900
-@@ -26,10 +26,10 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
--#include <mach/common.h>
--#include <mach/dma-register.h>
--#include <mach/irqs.h>
--#include <mach/r8a7790.h>
-+#include "common.h"
-+#include "dma-register.h"
-+#include "irqs.h"
-+#include "r8a7790.h"
- #include <asm/mach/arch.h>
- 
- /* Audio-DMAC */
---- 0001/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-02-24 13:46:10.000000000 +0900
-@@ -18,9 +18,9 @@
- #include <linux/smp.h>
- #include <linux/io.h>
- #include <asm/smp_plat.h>
--#include <mach/common.h>
--#include <mach/pm-rcar.h>
--#include <mach/r8a7790.h>
-+#include "common.h"
-+#include "pm-rcar.h"
-+#include "r8a7790.h"
- 
- #define RST		0xe6160000
- #define CA15BAR		0x0020
