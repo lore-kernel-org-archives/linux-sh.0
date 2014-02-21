@@ -1,68 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:42:23 +0000
-Subject: [PATCH 09/12] ARM: shmobile: Rework include path for r8a7791
-Message-Id: <20140224054223.1143.82115.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:22 +0000
+Subject: [PATCH 10/16] ARM: shmobile: BOCK-W: set proper DMA masks for Ether device
+Message-Id: <ca6da5319761308e38bb97af9030d16e223355d1.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Convert r8a7791 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
+Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
+'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
+ability.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-bockw.c | 21 ++++++++++++++-------
+ 1 file changed, 14 insertions(+), 7 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7791.c |    4 ++--
- arch/arm/mach-shmobile/setup-r8a7791.c |    8 ++++----
- arch/arm/mach-shmobile/smp-r8a7791.c   |    4 ++--
- 3 files changed, 8 insertions(+), 8 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-24 13:49:45.000000000 +0900
-@@ -23,8 +23,8 @@
- #include <linux/kernel.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/clock.h>
--#include <mach/common.h>
-+#include "clock.h"
-+#include "common.h"
- 
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 684a529..aaed215 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -1,9 +1,9 @@
  /*
-  *   MD		EXTAL		PLL0	PLL1	PLL3
---- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-02-24 13:49:04.000000000 +0900
-@@ -26,10 +26,10 @@
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
--#include <mach/common.h>
--#include <mach/irqs.h>
--#include <mach/r8a7791.h>
--#include <mach/rcar-gen2.h>
-+#include "common.h"
-+#include "irqs.h"
-+#include "r8a7791.h"
-+#include "rcar-gen2.h"
- #include <asm/mach/arch.h>
+  * Bock-W board support
+  *
+- * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013-2014  Renesas Solutions Corp.
+  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+- * Copyright (C) 2013  Cogent Embedded, Inc.
++ * Copyright (C) 2013-2014  Cogent Embedded, Inc.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -235,6 +235,17 @@ static struct sh_eth_plat_data ether_platform_data __initdata = {
+ 	.no_ether_link	= 1,
+ };
  
- static const struct resource pfc_resources[] __initconst = {
---- 0001/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-02-24 13:48:39.000000000 +0900
-@@ -18,8 +18,8 @@
- #include <linux/smp.h>
- #include <linux/io.h>
- #include <asm/smp_plat.h>
--#include <mach/common.h>
--#include <mach/r8a7791.h>
-+#include "common.h"
-+#include "r8a7791.h"
++static struct platform_device_info ether_info __initdata = {
++	.parent		= &platform_bus,
++	.name		= "r8a777x-ether",
++	.id		= -1,
++	.res		= ether_resources,
++	.num_res	= ARRAY_SIZE(ether_resources),
++	.data		= &ether_platform_data,
++	.size_data	= sizeof(ether_platform_data),
++	.dma_mask	= DMA_BIT_MASK(32),
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -592,11 +603,7 @@ static void __init bockw_init(void)
+ 	r8a7778_init_irq_extpin(1);
+ 	r8a7778_add_standard_devices();
  
- #define RST		0xe6160000
- #define CA15BAR		0x0020
+-	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
+-					  ether_resources,
+-					  ARRAY_SIZE(ether_resources),
+-					  &ether_platform_data,
+-					  sizeof(ether_platform_data));
++	platform_device_register_full(&ether_info);
+ 
+ 	platform_device_register_full(&vin0_info);
+ 	/* VIN1 has a pin conflict with Ether */
+-- 
+1.8.5.2
+
