@@ -1,216 +1,130 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:41 +0000
-Subject: [PATCH 06/17] ARM: shmobile: r8a7791: Add serial ports to the device tree
-Message-Id: <9640cf259c9496d56bf44df8ae86f00f7b417ecc.1391665761.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:13:08 +0000
+Subject: [PATCH 1/3] ARM: shmobile: Add r8a7791 legacy SDHI clocks
+Message-Id: <8301139d29f2f09a51077f6d625d7b1ab50163d1.1392961497.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
+References: <cover.1392961497.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392961497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Add all serial ports marked as disabled.
+Add legacy r8a7791 SDHI clocks. This to allow the SDHI devices
+to be used by legacy Koelsch board support.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 180 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 180 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 51 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 49 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 34f5d39..00ed0e0 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -186,6 +186,186 @@
- 		#gpio-range-cells = <3>;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index c8227b3..3e1b6b6 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -61,6 +61,7 @@
  
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
+ #define MSTPSR1		IOMEM(0xe6150038)
+ #define MSTPSR2		IOMEM(0xe6150040)
++#define MSTPSR3		IOMEM(0xe6150048)
+ #define MSTPSR5		IOMEM(0xe615003c)
+ #define MSTPSR7		IOMEM(0xe61501c4)
+ #define MSTPSR8		IOMEM(0xe61509a0)
+@@ -69,8 +70,8 @@
+ 
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+-#define SD2CKCR		0xE6150078
+-#define SD3CKCR		0xE615007C
++#define SD1CKCR		0xE6150078
++#define SD2CKCR		0xE615026c
+ #define MMC0CKCR	0xE6150240
+ #define MMC1CKCR	0xE6150244
+ #define SSPCKCR		0xE6150248
+@@ -134,6 +135,39 @@ static struct clk *main_clks[] = {
+ 	&zs_clk,
+ };
+ 
++/* SDHI (DIV4) clock */
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
 +
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c50000 0 64>;
-+		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
 +
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c60000 0 64>;
-+		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++};
 +
-+	scifa3: serial@e6c70000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c70000 0 64>;
-+		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7791_CLK_SCIFA3>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++enum {
++	DIV4_SDH, DIV4_SD0,
++	DIV4_NR
++};
 +
-+	scifa4: serial@e6c78000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c78000 0 64>;
-+		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7791_CLK_SCIFA4>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++static struct clk div4_clks[DIV4_NR] = {
++	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++};
 +
-+	scifa5: serial@e6c80000 {
-+		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c80000 0 64>;
-+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7791_CLK_SCIFA5>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++/* DIV6 clocks */
++enum {
++	DIV6_SD1, DIV6_SD2,
++	DIV6_NR
++};
 +
-+	scifb0: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c20000 0 64>;
-+		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++static struct clk div6_clks[DIV6_NR] = {
++	[DIV6_SD1]	= SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
++	[DIV6_SD2]	= SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
++};
 +
-+	scifb1: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c30000 0 64>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
+ /* MSTP */
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+@@ -144,6 +178,7 @@ enum {
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP522,
++	MSTP314, MSTP312, MSTP311,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
+@@ -174,6 +209,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
++	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
++	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
++	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
+@@ -224,6 +262,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+@@ -286,6 +327,12 @@ void __init r8a7791_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
+ 
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
 +
-+	scifb2: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a7791", "renesas,scifb";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ce0000 0 64>;
-+		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7791_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++	if (!ret)
++		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
 +
-+	scif0: serial@e6e60000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e60000 0 64>;
-+		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@e6e68000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e68000 0 64>;
-+		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@e6e58000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e58000 0 64>;
-+		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@e6ea8000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ea8000 0 64>;
-+		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@e6ee0000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ee0000 0 64>;
-+		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@e6ee8000 {
-+		compatible = "renesas,scif-r8a7791", "renesas,scif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ee8000 0 64>;
-+		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif0: serial@e62c0000 {
-+		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c0000 0 96>;
-+		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif1: serial@e62c8000 {
-+		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c8000 0 96>;
-+		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif2: serial@e62d0000 {
-+		compatible = "renesas,hscif-r8a7791", "renesas,hscif";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62d0000 0 96>;
-+		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
 1.8.5.2
 
