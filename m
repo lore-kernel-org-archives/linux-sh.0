@@ -1,42 +1,61 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 17 Feb 2014 21:19:18 +0000
-Subject: [PATCH 2/3] arm: shmobile: genmai: adapt dts to use native i2c driver
-Message-Id: <1392671959-22834-3-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Feb 2014 08:31:12 +0000
+Subject: [PATCH] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
+Message-Id: <1392971472-21679-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Activate the shiny new riic driver for i2c2. Tested by accessing the
-eeprom on the genmai board.
-
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+This should have been part of the series "[PATCH 00/11] ARM: shmobile:
+MSIOF integration on r8a7790/lager and r8a7791/koelsch"
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index 0849017..e664611 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -29,3 +29,14 @@
- 		#size-cells = <1>;
- 	};
- };
-+
-+&i2c2 {
-+	status = "okay";
-+	clock-frequency = <400000>;
-+
-+	eeprom@50 {
-+		compatible = "renesas,24c128";
-+		reg = <0x50>;
-+		pagesize = <64>;
-+	};
-+};
+ arch/arm/configs/koelsch_defconfig  |    1 +
+ arch/arm/configs/lager_defconfig    |    1 +
+ arch/arm/configs/shmobile_defconfig |    1 +
+ 3 files changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 93919e8c92ce..0c3709e81842 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -69,6 +69,7 @@ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_RCAR=y
+ # CONFIG_HWMON is not set
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index b17fc23ae676..dfb0c21fb767 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -90,6 +90,7 @@ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
+ CONFIG_GPIO_SH_PFC=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_RCAR=y
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 83b07258a385..2a27d4622cc9 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -78,6 +78,7 @@ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
+ CONFIG_GPIO_EM=y
+ CONFIG_GPIO_RCAR=y
+ # CONFIG_HWMON is not set
 -- 
-1.8.5.1
+1.7.9.5
 
