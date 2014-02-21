@@ -1,121 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Feb 2014 10:37:20 +0000
-Subject: [PATCH v3 2/3] ARM: shmobile: r8a7778/r8a7779 dtsi: Improve and correct HSPI nodes
-Message-Id: <1393324641-3690-1-git-send-email-geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 21 Feb 2014 00:55:12 +0000
+Subject: [PATCH 3/5][RESENT] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7779
+Message-Id: <874n3tqo7n.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
+	<878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-  - Add "renesas,hspi-r8a7778" resp. "renesas,hspi-r8a7779" compatible
-    values,
-  - Correct reference to parent interrupt controller
-    (use "interrupt-parent" instead of "interrupt-controller"),
-  - Add missing "#address-cells" and "#size-cells" properties, which are
-    needed when populating the SPI buses.
+This patch updates r8a7779 DT data to have SoC specific settings.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com> [HSPI/BockW]
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - Split in two patches: bindings and dtsi updates
-v2:
-  - Add Tested-by
-  - List full example compatible properties with soctypes instead of just
-    the soctypes, so checkpatch can validate DTSes.
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/boot/dts/r8a7778.dtsi |   18 ++++++++++++------
- arch/arm/boot/dts/r8a7779.dtsi |   18 ++++++++++++------
- 2 files changed, 24 insertions(+), 12 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 85c5b3b99f5e..3c6fab5c9702 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -204,26 +204,32 @@
- 	};
- 
- 	hspi0: spi@fffc7000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
- 		reg = <0xfffc7000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
- 
- 	hspi1: spi@fffc8000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
- 		reg = <0xfffc8000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
- 
- 	hspi2: spi@fffc6000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
- 		reg = <0xfffc6000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
- };
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index d0561d4c7c46..8b1a336ee401 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -256,26 +256,32 @@
- 	};
- 
- 	hspi0: spi@fffc7000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
- 		reg = <0xfffc7000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
- 
- 	hspi1: spi@fffc8000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
- 		reg = <0xfffc8000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
- 
- 	hspi2: spi@fffc6000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
- 		reg = <0xfffc6000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index e956bc4..38acf26 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+ 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
+-	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
++	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
+ 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
+ 	{},
  };
 -- 
 1.7.9.5
