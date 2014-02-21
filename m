@@ -1,111 +1,38 @@
-From: Bobby Bingham <koorogi@koorogi.info>
-Date: Mon, 17 Feb 2014 02:50:20 +0000
-Subject: [PATCH 3/3] sh: don't pass saved userspace state to exception handlers
-Message-Id: <e2eb7908a4d895d9b30cfc36c5266af1d4d0b57a.1392600646.git.koorogi@koorogi.info>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:01 +0000
+Subject: [PATCH] sh: intc: Enable driver compilation with COMPILE_TEST
+Message-Id: <4f3068f60503e08bc9e729528d9e54289980fa96.1392962498.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392962498.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392962498.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The compiler is permitted to generate code which overwrites the parameters
-to a function. If those parameters include the only saved copy we have of
-userspace's registers, we're in trouble.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Bobby Bingham <koorogi@koorogi.info>
+This helps increasing build testing coverage.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/include/asm/traps_32.h | 16 ++++------------
- arch/sh/kernel/traps_32.c      | 23 +++++++----------------
- 2 files changed, 11 insertions(+), 28 deletions(-)
+ drivers/sh/intc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/traps_32.h b/arch/sh/include/asm/traps_32.h
-index cfd55ff..17e129f 100644
---- a/arch/sh/include/asm/traps_32.h
-+++ b/arch/sh/include/asm/traps_32.h
-@@ -42,18 +42,10 @@ static inline void trigger_address_error(void)
- asmlinkage void do_address_error(struct pt_regs *regs,
- 				 unsigned long writeaccess,
- 				 unsigned long address);
--asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
--				   unsigned long r6, unsigned long r7,
--				   struct pt_regs __regs);
-+asmlinkage void do_divide_error(unsigned long r4);
-+asmlinkage void do_reserved_inst(void);
-+asmlinkage void do_illegal_slot_inst(void);
-+asmlinkage void do_exception_error(void);
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index a305731..f7d9061 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -6,7 +6,7 @@ comment "Interrupt controller options"
  
- #define BUILD_TRAP_HANDLER(name)					\
- asmlinkage void name##_trap_handler(unsigned long r4, unsigned long r5,	\
-diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
-index 68e99f0..ff63934 100644
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -594,9 +594,7 @@ int is_dsp_inst(struct pt_regs *regs)
- #endif /* CONFIG_SH_DSP */
- 
- #ifdef CONFIG_CPU_SH2A
--asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs)
-+asmlinkage void do_divide_error(unsigned long r4)
- {
- 	siginfo_t info;
- 
-@@ -613,11 +611,9 @@ asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
- }
- #endif
- 
--asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs)
-+asmlinkage void do_reserved_inst(void)
- {
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
-+	struct pt_regs *regs = current_pt_regs();
- 	unsigned long error_code;
- 	struct task_struct *tsk = current;
- 
-@@ -701,11 +697,9 @@ static int emulate_branch(unsigned short inst, struct pt_regs *regs)
- }
- #endif
- 
--asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs)
-+asmlinkage void do_illegal_slot_inst(void)
- {
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
-+	struct pt_regs *regs = current_pt_regs();
- 	unsigned long inst;
- 	struct task_struct *tsk = current;
- 
-@@ -730,15 +724,12 @@ asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
- 	die_if_no_fixup("illegal slot instruction", regs, inst);
- }
- 
--asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
--				   unsigned long r6, unsigned long r7,
--				   struct pt_regs __regs)
-+asmlinkage void do_exception_error(void)
- {
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
- 	long ex;
- 
- 	ex = lookup_exception_vector();
--	die_if_kernel("exception", regs, ex);
-+	die_if_kernel("exception", current_pt_regs(), ex);
- }
- 
- void per_cpu_trap_init(void)
+ config INTC_USERIMASK
+ 	bool "Userspace interrupt masking support"
+-	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A)
++	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
+ 	help
+ 	  This enables support for hardware-assisted userspace hardirq
+ 	  masking.
 -- 
-1.8.5.4
+1.8.5.2
 
