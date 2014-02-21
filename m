@@ -1,133 +1,126 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:48 +0000
-Subject: [PATCH 10/27] clocksource: sh_cmt: Replace hardcoded register values with macros
-Message-Id: <1392339605-20691-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:18 +0000
+Subject: [PATCH 06/16] ARM: shmobile: lager-reference: Add DU device
+Message-Id: <433aa851d4b32dc3b3de1e84dc20b57e157b25b9.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define symbolic macros for all used registers bits.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The DU device has no DT bindings yet, instantiate it as a platform
+device for now.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: omitted DTS portion]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 56 ++++++++++++++++++++++++++++++++++----------
- 1 file changed, 44 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 66 ++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 3946c14..5280231 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -115,6 +115,34 @@ struct sh_cmt_device {
- 	unsigned int num_channels;
- };
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 634ef15..6ba8b3b 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -20,13 +20,72 @@
  
-+#define SH_CMT16_CMCSR_CMF		(1 << 7)
-+#define SH_CMT16_CMCSR_CMIE		(1 << 6)
-+#define SH_CMT16_CMCSR_CKS8		(0 << 0)
-+#define SH_CMT16_CMCSR_CKS32		(1 << 0)
-+#define SH_CMT16_CMCSR_CKS128		(2 << 0)
-+#define SH_CMT16_CMCSR_CKS512		(3 << 0)
-+#define SH_CMT16_CMCSR_CKS_MASK		(3 << 0)
+ #include <linux/clk.h>
+ #include <linux/clkdev.h>
++#include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/rcar-du.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ 
++/* DU */
++static struct rcar_du_encoder_data lager_du_encoders[] = {
++	{
++		.type = RCAR_DU_ENCODER_VGA,
++		.output = RCAR_DU_OUTPUT_DPAD0,
++	}, {
++		.type = RCAR_DU_ENCODER_NONE,
++		.output = RCAR_DU_OUTPUT_LVDS1,
++		.connector.lvds.panel = {
++			.width_mm = 210,
++			.height_mm = 158,
++			.mode = {
++				.clock = 65000,
++				.hdisplay = 1024,
++				.hsync_start = 1048,
++				.hsync_end = 1184,
++				.htotal = 1344,
++				.vdisplay = 768,
++				.vsync_start = 771,
++				.vsync_end = 777,
++				.vtotal = 806,
++				.flags = 0,
++			},
++		},
++	},
++};
 +
-+#define SH_CMT32_CMCSR_CMF		(1 << 15)
-+#define SH_CMT32_CMCSR_OVF		(1 << 14)
-+#define SH_CMT32_CMCSR_WRFLG		(1 << 13)
-+#define SH_CMT32_CMCSR_STTF		(1 << 12)
-+#define SH_CMT32_CMCSR_STPF		(1 << 11)
-+#define SH_CMT32_CMCSR_SSIE		(1 << 10)
-+#define SH_CMT32_CMCSR_CMS		(1 << 9)
-+#define SH_CMT32_CMCSR_CMM		(1 << 8)
-+#define SH_CMT32_CMCSR_CMTOUT_IE	(1 << 7)
-+#define SH_CMT32_CMCSR_CMR_NONE		(0 << 4)
-+#define SH_CMT32_CMCSR_CMR_DMA		(1 << 4)
-+#define SH_CMT32_CMCSR_CMR_IRQ		(2 << 4)
-+#define SH_CMT32_CMCSR_CMR_MASK		(3 << 4)
-+#define SH_CMT32_CMCSR_DBGIVD		(1 << 3)
-+#define SH_CMT32_CMCSR_CKS_RCLK8	(4 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK32	(5 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK128	(6 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK1	(7 << 0)
-+#define SH_CMT32_CMCSR_CKS_MASK		(7 << 0)
++static struct rcar_du_platform_data lager_du_pdata = {
++	.encoders = lager_du_encoders,
++	.num_encoders = ARRAY_SIZE(lager_du_encoders),
++};
 +
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
++static const struct resource du_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfeb00000, 0x70000),
++	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
++	DEFINE_RES_IRQ(gic_spi(256)),
++	DEFINE_RES_IRQ(gic_spi(268)),
++	DEFINE_RES_IRQ(gic_spi(269)),
++};
++
++static void __init lager_add_du_device(void)
++{
++	struct platform_device_info info = {
++		.name = "rcar-du-r8a7790",
++		.id = -1,
++		.res = du_resources,
++		.num_res = ARRAY_SIZE(du_resources),
++		.data = &lager_du_pdata,
++		.size_data = sizeof(lager_du_pdata),
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++
++	platform_device_register_full(&info);
++}
++
+ static void __init lager_add_standard_devices(void)
  {
- 	return ioread16(base + (offs << 1));
-@@ -141,8 +169,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_16BIT] = {
- 		.model = SH_CMT_16BIT,
- 		.width = 16,
--		.overflow_bit = 0x80,
--		.clear_bits = ~0x80,
-+		.overflow_bit = SH_CMT16_CMCSR_CMF,
-+		.clear_bits = ~SH_CMT16_CMCSR_CMF,
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read16,
-@@ -151,8 +179,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_32BIT] = {
- 		.model = SH_CMT_32BIT,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read32,
-@@ -161,8 +189,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_32BIT_FAST] = {
- 		.model = SH_CMT_32BIT_FAST,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read32,
-@@ -171,8 +199,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_48BIT] = {
- 		.model = SH_CMT_48BIT,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read32,
- 		.write_control = sh_cmt_write32,
- 		.read_count = sh_cmt_read32,
-@@ -181,8 +209,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_48BIT_GEN2] = {
- 		.model = SH_CMT_48BIT_GEN2,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read32,
- 		.write_control = sh_cmt_write32,
- 		.read_count = sh_cmt_read32,
-@@ -296,10 +324,14 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
- 	/* configure channel, periodic mode and maximum timeout */
- 	if (ch->cmt->info->width = 16) {
- 		*rate = clk_get_rate(ch->cmt->clk) / 512;
--		sh_cmt_write_cmcsr(ch, 0x43);
-+		sh_cmt_write_cmcsr(ch, SH_CMT16_CMCSR_CMIE |
-+				   SH_CMT16_CMCSR_CKS512);
- 	} else {
- 		*rate = clk_get_rate(ch->cmt->clk) / 8;
--		sh_cmt_write_cmcsr(ch, 0x01a4);
-+		sh_cmt_write_cmcsr(ch, SH_CMT32_CMCSR_CMM |
-+				   SH_CMT32_CMCSR_CMTOUT_IE |
-+				   SH_CMT32_CMCSR_CMR_IRQ |
-+				   SH_CMT32_CMCSR_CKS_RCLK8);
- 	}
+ #ifdef CONFIG_COMMON_CLK
+@@ -50,6 +109,11 @@ static void __init lager_add_standard_devices(void)
+ 		{ "scif1", NULL, "sh-sci.7" },
+ 		{ "hscif0", NULL, "sh-sci.8" },
+ 		{ "hscif1", NULL, "sh-sci.9" },
++		{ "du0", "du.0", "rcar-du-r8a7790" },
++		{ "du1", "du.1", "rcar-du-r8a7790" },
++		{ "du2", "du.2", "rcar-du-r8a7790" },
++		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
++		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+ 	};
+ 	struct clk *clk;
+ 	unsigned int i;
+@@ -68,6 +132,8 @@ static void __init lager_add_standard_devices(void)
  
- 	sh_cmt_write_cmcor(ch, 0xffffffff);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++
++	lager_add_du_device();
+ }
+ 
+ static const char *lager_boards_compat_dt[] __initdata = {
 -- 
-1.8.3.2
+1.8.5.2
 
