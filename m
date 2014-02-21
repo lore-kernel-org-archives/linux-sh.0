@@ -1,46 +1,44 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 22 Feb 2014 03:10:58 +0000
-Subject: Re: [PATCH 02/10] spi: sh-msiof: Typo in comment s/tx/rx/
-Message-Id: <20140222031058.GR25940@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="4ECF1u7dKBoUGhe3"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Feb 2014 16:29:15 +0000
+Subject: [PATCH 1/4] spi: rspi: List full example compatible properties in bindings
+Message-Id: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
- <1392907389-21798-3-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-3-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
---4ECF1u7dKBoUGhe3
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+List full example compatible properties with soctypes instead of just the
+soctypes, so checkpatch can validate DTSes.
 
-On Thu, Feb 20, 2014 at 03:43:01PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-Applied, thanks.
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+index 95f9b21d239f..e54924b2aff6 100644
+--- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -7,9 +7,11 @@ Required properties:
+ 		     "renesas,rspi-<soctype>", "renesas,rspi-rz" as fallback.
+ 		     For Quad Serial Peripheral Interface on R-Car Gen2:
+ 		     "renesas,qspi-<soctype>", "renesas,qspi" as fallback.
+-		     Examples of valid soctypes are "sh7757" (SH),
+-		     "r7s72100" (RZ/A1H), "r8a7790" (R-Car H2), and
+-		     "r8a7791" (R-Car M2).
++		     Examples with soctypes are:
++		        - "renesas,rspi-sh7757" (SH)
++			- "renesas,rspi-r7s72100" (RZ/A1H)
++			- "renesas,qspi-r8a7790" (R-Car H2)
++			- "renesas,qspi-r8a7791" (R-Car M2)
+ - reg              : Address start and address range size of the device
+ - interrupts       : A list of interrupt-specifiers, one for each entry in
+ 		     interrupt-names.
+-- 
+1.7.9.5
 
---4ECF1u7dKBoUGhe3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTCBU+AAoJELSic+t+oim9idsP/3pSZ+EGqwVPVs316kFAUGwo
-ym6wDHlvqkI85WHT/aTjMX8Mo4GPRLWCW3EiFAUrtf3FKeQf4EJl92ftTzrGFPbX
-XBJiLpP1il9v1ooFjTQFbh8ma3MjyC46HUWzr+5UGNkqalLlxAWb9KFGzdOMnb9y
-fA7jAb7qAw3tcL/U+Y7faivxI7PkygbsshPt6tKyYRTxNYKVZwPtDV8QeYmcb7cj
-b+mi4zQ6X7kGliYSNkiA87tar9byNp0PuQtGWdow9gL/UKqZ0QvwLx0yiR+gO5t6
-beCef1gV09YOof9ROzgL+CYHDVMdHzxAju56RKVmZTT991wh9CZOa6AcUOec7wO8
-fjz5yWbRxA48c0oPL6toe+MpyFFNyljefChHxsKg2v4JCnztJvGEzybd8IkWBrMb
-ukQbI5Aei9k+o3YK/K9EyH20Y+Z7y8T2q9nKUkinVLLNqyGPIwyb632Ym1aktpyH
-q+mWFaTpJ9HXak+tdMMoeXYBWEy5FjFRrhE8nCVj/0b41CC9IoZztOMmmbWb2cfS
-s5vqGq5rffLQcCeKNU/50ZGhZNR95IQgIcZeQttsCHd9hV4myI13bjaEUrgOk9z2
-dOdIqw2KDcL2q2jyMyOweH/YZx7+tsrP6bmuKKdSzxZboceJbZJWj32CMVpYRXz7
-eEOstYJC8zNO3J6TUQWh
-=J5iM
------END PGP SIGNATURE-----
-
---4ECF1u7dKBoUGhe3--
