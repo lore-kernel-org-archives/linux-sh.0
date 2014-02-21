@@ -1,85 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Feb 2014 10:21:08 +0000
-Subject: [PATCH v2 1/6] spi: sh-msiof: Improve bindings
-Message-Id: <1393323673-2751-2-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:41 +0000
+Subject: [PATCH 5/5] ARM: shmobile: r7s72100: update defconfig for I2C usage
+Message-Id: <7573e89ba1fcbe492c52d5b1e72fcf5d23da21d1.1392962286.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393323673-2751-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+References: <cover.1392962286.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392962286.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Takashi Yoshii <takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Documentation:
-  - Add missing "interrupt-parent", "#address-cells", "#size-cells", and
-    "clocks" properties,
-  - Add missing default values for "num-cs", "renesas,tx-fifo-size" and
-    "renesas,rx-fifo-size",
-  - Add a reference to the pinctrl documentation.
+Select the correct I2C driver and activate EEPROM support to have a
+slave device for testing. Also activate i2c-dev, so i2c-tools will work.
 
-Implementation:
-  - As "num-cs" is marked optional, provide a sensible default.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - As num-cs is marked optional, provide a sensible default
+ arch/arm/configs/genmai_defconfig | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
- Documentation/devicetree/bindings/spi/sh-msiof.txt |   24 ++++++++++++++------
- drivers/spi/spi-sh-msiof.c                         |    2 +-
- 2 files changed, 18 insertions(+), 8 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-index e6222106ca36..eae3c8c9300e 100644
---- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
-+++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-@@ -1,12 +1,22 @@
- Renesas MSIOF spi controller
- 
- Required properties:
--- compatible : 	"renesas,sh-msiof" for SuperH or
--		"renesas,sh-mobile-msiof" for SH Mobile series
--- reg : Offset and length of the register set for the device
--- interrupts : interrupt line used by MSIOF
-+- compatible           : "renesas,sh-msiof" for SuperH, or
-+			 "renesas,sh-mobile-msiof" for SH Mobile series.
-+- reg                  : Offset and length of the register set for the device
-+- interrupt-parent     : The phandle for the interrupt controller that
-+			 services interrupts for this device
-+- interrupts           : Interrupt specifier
-+- #address-cells       : Must be <1>
-+- #size-cells          : Must be <0>
- 
- Optional properties:
--- num-cs		: total number of chip-selects
--- renesas,tx-fifo-size	: Overrides the default tx fifo size given in words
--- renesas,rx-fifo-size	: Overrides the default rx fifo size given in words
-+- clocks               : Must contain a reference to the functional clock.
-+- num-cs               : Total number of chip-selects (default is 1)
-+- renesas,tx-fifo-size : Overrides the default tx fifo size given in words
-+			 (default is 64)
-+- renesas,rx-fifo-size : Overrides the default rx fifo size given in words
-+			 (default is 64)
-+
-+Pinctrl properties might be needed, too.  See
-+Documentation/devicetree/bindings/pinctrl/renesas,*.
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 92515c1ececa..bbe963018e1a 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -663,7 +663,7 @@ static struct sh_msiof_spi_info *sh_msiof_spi_parse_dt(struct device *dev)
- {
- 	struct sh_msiof_spi_info *info;
- 	struct device_node *np = dev->of_node;
--	u32 num_cs = 0;
-+	u32 num_cs = 1;
- 
- 	info = devm_kzalloc(dev, sizeof(struct sh_msiof_spi_info), GFP_KERNEL);
- 	if (!info) {
+diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
+index 5ee6ac0..d238faf 100644
+--- a/arch/arm/configs/genmai_defconfig
++++ b/arch/arm/configs/genmai_defconfig
+@@ -52,6 +52,7 @@ CONFIG_IP_PNP_DHCP=y
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_EEPROM_AT24=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_CORE is not set
+ # CONFIG_NET_VENDOR_ARC is not set
+@@ -80,7 +81,8 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+-CONFIG_I2C_SH_MOBILE=y
++CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_RIIC=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
+ # CONFIG_HWMON is not set
 -- 
-1.7.9.5
+1.8.5.2
 
