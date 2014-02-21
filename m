@@ -1,53 +1,111 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:21:07 +0000
-Subject: [PATCH 10/13] ARM: shmobile: r8a7791: Add ZS clock
-Message-Id: <5a6f994abbfde8e17671541db04399dfc4aebe62.1391666228.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:51 +0000
+Subject: [PATCH 10/13] ARM: shmobile: r8a7791: add i2c master nodes to dtsi
+Message-Id: <5bd3de7ba7b28c885d534260800693fe57e55ec8.1392961872.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391666228.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
+References: <cover.1392961872.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-This adds fixed ratio zs_clk to R8A7791 clocks.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 69 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 1074ba4..52d7d13 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -113,6 +113,7 @@ SH_FIXED_RATIO_CLK_SET(rclk_clk,		pll1_clk,	1, (48 * 1024));
- SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
- SH_FIXED_RATIO_CLK_SET(zg_clk,			pll1_clk,	1, 3);
- SH_FIXED_RATIO_CLK_SET(zx_clk,			pll1_clk,	1, 3);
-+SH_FIXED_RATIO_CLK_SET(zs_clk,			pll1_clk,	1, 6);
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 41194fe..1ab4f3d 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -19,6 +19,15 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
  
- static struct clk *main_clks[] = {
- 	&extal_clk,
-@@ -128,6 +129,7 @@ static struct clk *main_clks[] = {
- 	&cp_clk,
- 	&zg_clk,
- 	&zx_clk,
-+	&zs_clk,
- };
++	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -170,6 +179,66 @@
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
  
- /* MSTP */
-@@ -187,6 +189,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pll1_div2",	&pll1_div2_clk),
- 	CLKDEV_CON_ID("pll3",		&pll3_clk),
- 	CLKDEV_CON_ID("zg",		&zg_clk),
-+	CLKDEV_CON_ID("zs",		&zs_clk),
- 	CLKDEV_CON_ID("hp",		&hp_clk),
- 	CLKDEV_CON_ID("p",		&p_clk),
- 	CLKDEV_CON_ID("rclk",		&rclk_clk),
++	i2c0: i2c@e6508000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7791";
++		reg = <0 0xe6508000 0 0x40>;
++		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_I2C0>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@e6518000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7791";
++		reg = <0 0xe6518000 0 0x40>;
++		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_I2C1>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@e6530000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7791";
++		reg = <0 0xe6530000 0 0x40>;
++		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_I2C2>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@e6540000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7791";
++		reg = <0 0xe6540000 0 0x40>;
++		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_I2C3>;
++		status = "disabled";
++	};
++
++	i2c4: i2c@e6520000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7791";
++		reg = <0 0xe6520000 0 0x40>;
++		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_I2C4>;
++		status = "disabled";
++	};
++
++	i2c5: i2c@e6528000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,i2c-r8a7791";
++		reg = <0 0xe6528000 0 0x40>;
++		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_I2C5>;
++		status = "disabled";
++	};
++
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7791";
+ 		reg = <0 0xe6060000 0 0x250>;
 -- 
 1.8.5.2
 
