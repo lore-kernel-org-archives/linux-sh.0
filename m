@@ -1,56 +1,221 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:19:10 +0000
-Subject: [PATCH 18/21] ARM: shmobile: lager: fix error return code check from clk_get()
-Message-Id: <7a543d8124e7e23190d36e7c57d3b9c394c4e4c1.1391665225.git.horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:13 +0000
+Subject: [PATCH 01/16] ARM: shmobile: Add SDHI devices for legacy Koelsch
+Message-Id: <d12e699f44b8277b7b72b546c69948a2f20514f8.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Magnus Damm <damm@opensource.se>
 
-The lager_add_standard_devices() function calls clk_get() but then fails
-to check that it returns an error pointer instead of NULL on failure.
+Add SDHI0, SDHI1 and SDHI2 as platform devices to the
+legacy Koelsch board code. Also include regulators that
+are needed to control VCCQ and VDD.
 
-This was added by 4a606af2 ("ARM: shmobile: lager-reference: Instantiate
-clkdevs for SCIF and CMT") patch in Simon Horman's renesas-boards2-for-v3.14
-tag.
-
-The issue is not serious as it does not cause a crash and seems to not be
-actually causing any issues now the other clock bugs have been fixed.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-[horms+renesas@verge.net.au: tweaked changelog]
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 155 +++++++++++++++++++++++++++++++++
+ 1 file changed, 155 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index a6e271d..dc8d76b 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -44,14 +44,14 @@ static void __init lager_add_standard_devices(void)
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index d42637d..893d47c 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -26,6 +26,9 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/leds.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/phy.h>
+@@ -33,6 +36,10 @@
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/gpio-regulator.h>
++#include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+ #include <linux/spi/flash.h>
+ #include <linux/spi/rspi.h>
+@@ -251,6 +258,103 @@ static void __init koelsch_add_i2c(unsigned idx)
+ 					i2c_resources + res_idx, 2);
+ }
  
- 	for (i = 0; i < ARRAY_SIZE(scif_names); ++i) {
- 		clk = clk_get(NULL, scif_names[i]);
--		if (clk) {
-+		if (!IS_ERR(clk)) {
- 			clk_register_clkdev(clk, NULL, "sh-sci.%u", i);
- 			clk_put(clk);
- 		}
- 	}
++#define SDHI_REGULATOR(idx, vdd_pin, vccq_pin)				\
++static struct regulator_consumer_supply vcc_sdhi##idx##_consumer =	\
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi." #idx);		\
++									\
++static struct regulator_init_data vcc_sdhi##idx##_init_data = {		\
++	.constraints = {						\
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,		\
++	},								\
++	.consumer_supplies	= &vcc_sdhi##idx##_consumer,		\
++	.num_consumer_supplies	= 1,					\
++};									\
++									\
++static const struct fixed_voltage_config vcc_sdhi##idx##_info __initconst = {\
++	.supply_name	= "SDHI" #idx "Vcc",				\
++	.microvolts	= 3300000,					\
++	.gpio		= vdd_pin,					\
++	.enable_high	= 1,						\
++	.init_data	= &vcc_sdhi##idx##_init_data,			\
++};									\
++									\
++static struct regulator_consumer_supply vccq_sdhi##idx##_consumer =	\
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi." #idx);		\
++									\
++static struct regulator_init_data vccq_sdhi##idx##_init_data = {	\
++	.constraints = {						\
++		.input_uV	= 3300000,				\
++		.min_uV		= 1800000,				\
++		.max_uV		= 3300000,				\
++		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |		\
++				  REGULATOR_CHANGE_STATUS,		\
++	},								\
++	.consumer_supplies	= &vccq_sdhi##idx##_consumer,		\
++	.num_consumer_supplies	= 1,					\
++};									\
++									\
++static struct gpio vccq_sdhi##idx##_gpio =				\
++	{ vccq_pin, GPIOF_OUT_INIT_HIGH, "vccq-sdhi" #idx };		\
++									\
++static struct gpio_regulator_state vccq_sdhi##idx##_states[] = {	\
++	{ .value = 1800000, .gpios = 0 },				\
++	{ .value = 3300000, .gpios = 1 },				\
++};									\
++									\
++static const struct gpio_regulator_config vccq_sdhi##idx##_info __initconst = {\
++	.supply_name	= "vqmmc",					\
++	.gpios		= &vccq_sdhi##idx##_gpio,			\
++	.nr_gpios	= 1,						\
++	.states		= vccq_sdhi##idx##_states,			\
++	.nr_states	= ARRAY_SIZE(vccq_sdhi##idx##_states),		\
++	.type		= REGULATOR_VOLTAGE,				\
++	.init_data	= &vccq_sdhi##idx##_init_data,			\
++};
++
++SDHI_REGULATOR(0, RCAR_GP_PIN(7, 17), RCAR_GP_PIN(2, 12));
++SDHI_REGULATOR(1, RCAR_GP_PIN(7, 18), RCAR_GP_PIN(2, 13));
++SDHI_REGULATOR(2, RCAR_GP_PIN(7, 19), RCAR_GP_PIN(2, 26));
++
++/* SDHI0 */
++static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++};
++
++static struct resource sdhi0_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee100000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(165)),
++};
++
++/* SDHI1 */
++static struct sh_mobile_sdhi_info sdhi1_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++};
++
++static struct resource sdhi1_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee140000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(167)),
++};
++
++/* SDHI2 */
++static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
++	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++			  TMIO_MMC_WRPROTECT_DISABLE,
++};
++
++static struct resource sdhi2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xee160000, 0x100),
++	DEFINE_RES_IRQ(gic_spi(168)),
++};
++
+ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* DU */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7791", "pfc-r8a7791",
+@@ -288,6 +392,31 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 	/* I2C4 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar_gen2.4", "pfc-r8a7791",
+ 				  "i2c4_c", "i2c4"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7791",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7791",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7791",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7791",
++				  "sdhi0_wp", "sdhi0"),
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7791",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7791",
++				  "sdhi1_ctrl", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7791",
++				  "sdhi1_cd", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7791",
++				  "sdhi1_wp", "sdhi1"),
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7791",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7791",
++				  "sdhi2_ctrl", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-r8a7791",
++				  "sdhi2_cd", "sdhi2"),
+ };
  
- 	clk = clk_get(NULL, "cmt0");
--	if (clk) {
-+	if (!IS_ERR(clk)) {
- 		clk_register_clkdev(clk, NULL, "sh_cmt.0");
- 		clk_put(clk);
- 	}
+ static void __init koelsch_add_standard_devices(void)
+@@ -321,6 +450,32 @@ static void __init koelsch_add_standard_devices(void)
+ 	koelsch_add_i2c(2);
+ 	koelsch_add_i2c(4);
+ 	koelsch_add_i2c(5);
++
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 0,
++				      &vcc_sdhi0_info, sizeof(struct fixed_voltage_config));
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 1,
++				      &vcc_sdhi1_info, sizeof(struct fixed_voltage_config));
++	platform_device_register_data(&platform_bus, "reg-fixed-voltage", 2,
++				      &vcc_sdhi2_info, sizeof(struct fixed_voltage_config));
++	platform_device_register_data(&platform_bus, "gpio-regulator", 0,
++				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
++	platform_device_register_data(&platform_bus, "gpio-regulator", 1,
++				      &vccq_sdhi1_info, sizeof(struct gpio_regulator_config));
++	platform_device_register_data(&platform_bus, "gpio-regulator", 2,
++				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 0,
++					  sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
++					  &sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 1,
++					  sdhi1_resources, ARRAY_SIZE(sdhi1_resources),
++					  &sdhi1_info, sizeof(struct sh_mobile_sdhi_info));
++
++	platform_device_register_resndata(&platform_bus, "sh_mobile_sdhi", 2,
++					  sdhi2_resources, ARRAY_SIZE(sdhi2_resources),
++					  &sdhi2_info, sizeof(struct sh_mobile_sdhi_info));
++
+ }
+ 
+ /*
 -- 
 1.8.5.2
 
