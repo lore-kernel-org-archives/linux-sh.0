@@ -1,79 +1,104 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:40:58 +0000
-Subject: [PATCH 00/12] ARM: shmobile: Rework include path for SoC files
-Message-Id: <20140224054058.1143.14096.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:25 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Boards Updates for v3.15
+Message-Id: <cover.1392960310.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Rework include path for SoC files
+Hi Olof, Hi Kevin, Hi Arnd,
 
-[PATCH 01/12] ARM: shmobile: Add temporary include workaround
-[PATCH 02/12] ARM: shmobile: Rework include path for sh7372
-[PATCH 03/12] ARM: shmobile: Rework include path for sh73a0
-[PATCH 04/12] ARM: shmobile: Rework include path for EMEV2
-[PATCH 05/12] ARM: shmobile: Rework include path for r8a7740
-[PATCH 06/12] ARM: shmobile: Rework include path for r8a7778
-[PATCH 07/12] ARM: shmobile: Rework include path for r8a7779
-[PATCH 08/12] ARM: shmobile: Rework include path for r8a7790
-[PATCH 09/12] ARM: shmobile: Rework include path for r8a7791
-[PATCH 10/12] ARM: shmobile: Rework include path for r8a73a4
-[PATCH 11/12] ARM: shmobile: Rework include path for r7s72100
-[PATCH 12/12] ARM: shmobile: Rework include path for common bits
+Please consider this third round of Renesas ARM based SoC
+boards updates for v3.15.
 
-Start converting the mach-shmobile subarchitecture from <mach/something.h>
-to "something.h". This series covers shared code base and SoC code,
-however actual header files are not moved yet. Upcoming series that
-depend on this one will have to convert board code as well. When SoCs
-code and board code have been converted then actual header files can
-be moved and temporary include path workarounds can be removed.
+This pull request is based on the previous round of
+such requests, tagged as renesas-boards2-for-v3.15,
+which I have already sent a pull-request for.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
 
- Written against renesas.git tag renesas-devel-v3.14-rc3-20140224
+The following changes since commit 03fec7dee502d43114f384a1588ce84a3c9bf38d:
 
- arch/arm/mach-shmobile/Makefile          |    2 ++
- arch/arm/mach-shmobile/clock-emev2.c     |    2 +-
- arch/arm/mach-shmobile/clock-r7s72100.c  |    4 ++--
- arch/arm/mach-shmobile/clock-r8a73a4.c   |    4 ++--
- arch/arm/mach-shmobile/clock-r8a7740.c   |    6 +++---
- arch/arm/mach-shmobile/clock-r8a7778.c   |    4 ++--
- arch/arm/mach-shmobile/clock-r8a7779.c   |    4 ++--
- arch/arm/mach-shmobile/clock-r8a7790.c   |    6 +++---
- arch/arm/mach-shmobile/clock-r8a7791.c   |    4 ++--
- arch/arm/mach-shmobile/clock-sh7372.c    |    4 ++--
- arch/arm/mach-shmobile/clock-sh73a0.c    |    4 ++--
- arch/arm/mach-shmobile/clock.c           |    4 ++--
- arch/arm/mach-shmobile/console.c         |    2 +-
- arch/arm/mach-shmobile/intc-sh7372.c     |    4 ++--
- arch/arm/mach-shmobile/intc-sh73a0.c     |    6 +++---
- arch/arm/mach-shmobile/platsmp-apmu.c    |    2 +-
- arch/arm/mach-shmobile/platsmp-scu.c     |    2 +-
- arch/arm/mach-shmobile/platsmp.c         |    2 +-
- arch/arm/mach-shmobile/pm-r8a7740.c      |    4 ++--
- arch/arm/mach-shmobile/pm-r8a7779.c      |    6 +++---
- arch/arm/mach-shmobile/pm-r8a7790.c      |    4 ++--
- arch/arm/mach-shmobile/pm-rcar.c         |    2 +-
- arch/arm/mach-shmobile/pm-rmobile.c      |    2 +-
- arch/arm/mach-shmobile/pm-sh7372.c       |    6 +++---
- arch/arm/mach-shmobile/pm-sh73a0.c       |    2 +-
- arch/arm/mach-shmobile/setup-emev2.c     |    4 ++--
- arch/arm/mach-shmobile/setup-r7s72100.c  |    6 +++---
- arch/arm/mach-shmobile/setup-r8a73a4.c   |    8 ++++----
- arch/arm/mach-shmobile/setup-r8a7740.c   |   10 +++++-----
- arch/arm/mach-shmobile/setup-r8a7778.c   |    6 +++---
- arch/arm/mach-shmobile/setup-r8a7779.c   |    6 +++---
- arch/arm/mach-shmobile/setup-r8a7790.c   |    8 ++++----
- arch/arm/mach-shmobile/setup-r8a7791.c   |    8 ++++----
- arch/arm/mach-shmobile/setup-rcar-gen2.c |    4 ++--
- arch/arm/mach-shmobile/setup-sh7372.c    |    8 ++++----
- arch/arm/mach-shmobile/setup-sh73a0.c    |    8 ++++----
- arch/arm/mach-shmobile/smp-emev2.c       |    4 ++--
- arch/arm/mach-shmobile/smp-r8a7779.c     |    6 +++---
- arch/arm/mach-shmobile/smp-r8a7790.c     |    6 +++---
- arch/arm/mach-shmobile/smp-r8a7791.c     |    4 ++--
- arch/arm/mach-shmobile/smp-sh73a0.c      |    4 ++--
- 41 files changed, 97 insertions(+), 95 deletions(-)
+  ARM: shmobile: genmai: Enable r7s72100-ether (2014-02-07 09:20:03 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.15
+
+for you to fetch changes up to 6197c08ab81cf1430cbe7346fd6ca0b5a18580bf:
+
+  ARM: shmobile: Remove Lager DT reference legacy clock bits (2014-02-18 09:15:49 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC Boards Updates for v3.15
+
+* r7s72100 SoC (RZ/A1H) based Genmai board
+  - Set proper DMA masks for Ether device
+
+* r8a7791 (R-Car M2) based Koelsch board
+  - Remove Koelsch DT reference legacy clock bits
+  - Set proper DMA masks for Ether device
+  - Add DU device to koelsch-reference
+  - Refactor clock lookup hack in koelsch-reference
+  - Add SDHI devices
+
+* r8a7790 (R-Car H2) based Lager board
+  - Remove Lager DT reference legacy clock bits
+  - Set proper DMA masks for Ether device
+  - Add internal USB PCI support
+  - Add QSPI pinmux
+  - Sdd SDHI0/2 support
+
+* emev2 (Emma Mobile EV2) based kzm9d board
+  - Remove KZM9D board code
+
+* r8a7778 (R-Car M1) based bock-w board
+  - Set proper DMA masks for Ether device
+
+* r8a7740 (R-Mobile A1) based Armadillo 800 EVA board
+  - Set proper DMA masks for Ether device
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: lager legacy: Add QSPI pinmux
+
+Kuninori Morimoto (1):
+      ARM: shmobile: lager: add SDHI0/2 support
+
+Laurent Pinchart (4):
+      ARM: shmobile: lager-reference: Refactor clock lookup hack
+      ARM: shmobile: lager-reference: Add DU device
+      ARM: shmobile: koelsch-reference: Refactor clock lookup hack
+      ARM: shmobile: koelsch-reference: Add DU device
+
+Magnus Damm (4):
+      ARM: shmobile: Add SDHI devices for legacy Koelsch
+      ARM: shmobile: Remove KZM9D board code
+      ARM: shmobile: Remove Koelsch DT reference legacy clock bits
+      ARM: shmobile: Remove Lager DT reference legacy clock bits
+
+Sergei Shtylyov (5):
+      ARM: shmobile: Armadillo 800 EVA: set proper DMA masks for Ether device
+      ARM: shmobile: BOCK-W: set proper DMA masks for Ether device
+      ARM: shmobile: Lager: set proper DMA masks for Ether device
+      ARM: shmobile: Koelsch: set proper DMA masks for Ether device
+      ARM: shmobile: Genmai: set proper DMA masks for Ether device
+
+Valentine Barshak (1):
+      ARM: shmobile: lager: Add internal USB PCI support
+
+ arch/arm/mach-shmobile/Kconfig                   |   6 -
+ arch/arm/mach-shmobile/Makefile                  |   1 -
+ arch/arm/mach-shmobile/board-armadillo800eva.c   |   2 +
+ arch/arm/mach-shmobile/board-bockw.c             |  21 ++-
+ arch/arm/mach-shmobile/board-genmai.c            |  19 ++-
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 104 +++++++++++---
+ arch/arm/mach-shmobile/board-koelsch.c           | 174 ++++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-kzm9d-reference.c   |  47 ------
+ arch/arm/mach-shmobile/board-lager-reference.c   | 107 +++++++++++---
+ arch/arm/mach-shmobile/board-lager.c             | 138 +++++++++++++++++-
+ 10 files changed, 506 insertions(+), 113 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-kzm9d-reference.c
