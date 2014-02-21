@@ -1,69 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:44 +0000
-Subject: [PATCH v2 14/40] clocksource: sh_cmt: Set cpumask to cpu_possible_mask
-Message-Id: <1393603090-23144-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:11:58 +0000
+Subject: [GIT PULL] Renesas intc Updates for v3.15
+Message-Id: <cover.1392962498.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The CMT is a global timer not restricted to a single CPU. It has a lower
-rating than the TMU or ARM architected timer, but is still useful on
-systems where the other timers are stopped during CPU sleep.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-When multiple timers are available the timers core selects which timer
-to use based on timer ratings.
+Please consider this Renesas ARM based SoC intc updates for v3.15.
 
-On SMP systems where timer broadcasting is required, one dummy timer is
-instantiated per CPU with a rating of 100. On those systems the CMT
-timer has a rating of 80, which makes the dummy timer selected by
-default on all CPUs. The CMT is then available, and will be used as a
-broadcast timer.
+Previously merging code for this driver was handled Paul Mundt
+as part of his maintenance of SUPERH. However, SUPERH is in
+the process of being orphaned. And as this driver is also listed
+as being maintained by Magnus and myself as part of ARM/SHMOBILE ARM
+I have picked up this patch.
 
-On UP systems no dummy timer is instantiated. The CMT timer has a rating
-of 125 on those systems and is used directly a clock event device for
-CPU0 without broadcasting.
+If you would prefer not to handle this that is quite fine by me but in that
+case I would appreciate advice on where I should send pull-requests.
 
-The CMT rating shouldn't depend on whether we boot a UP or SMP system.
-We can't raise the CMT rating to 125 on SMP systems. This would select
-CMT as the clock event device for CPU0 as its rating is higher than the
-dummy timer rating, and would leave the system without a broadcast
-timer. We could instead lower the rating to 80 on all systems, but that
-wouldn't reflect reality as ratings between 1 and 99 are documented as
-"unfit for real use".
 
-We should raise the rating above 99 and still have the CMT selected as a
-broadcast timer. This can be done by changing the cpumask from
-cpumask_of(0) to cpu_possible_mask. In that case the timer selection
-logic will prefer the previously probed and already selected dummy timer
-for all CPUs based on the fact that already selected per-cpu timers are
-preferred over new global timers, regardless of their respective
-ratings. This also better reflects reality, as the CMT is not tied to
-the boot CPU.
+The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
 
-Ideally the timer selection logic should realize that the CMT needs to
-be used as a broadcast timer on SMP systems as no other broadcast timer
-is available, regardless of the cpumask and rating.
+  Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clocksource/sh_cmt.c | 2 +-
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-for-v3.15
+
+for you to fetch changes up to 4f3068f60503e08bc9e729528d9e54289980fa96:
+
+  sh: intc: Enable driver compilation with COMPILE_TEST (2014-02-18 09:22:21 +0900)
+
+----------------------------------------------------------------
+Renesas intc Updates for v3.15
+
+* Enable driver compilation with COMPILE_TEST
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      sh: intc: Enable driver compilation with COMPILE_TEST
+
+ drivers/sh/intc/Kconfig | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index ce00baa..926abe2 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -776,7 +776,7 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
- 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
- 	ced->rating = rating;
--	ced->cpumask = cpumask_of(0);
-+	ced->cpumask = cpu_possible_mask;
- 	ced->set_next_event = sh_cmt_clock_event_next;
- 	ced->set_mode = sh_cmt_clock_event_mode;
- 	ced->suspend = sh_cmt_clock_event_suspend;
--- 
-1.8.3.2
-
