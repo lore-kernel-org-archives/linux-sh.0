@@ -1,18 +1,114 @@
-From: Ian Molton <ian.molton@codethink.co.uk>
-Date: Thu, 13 Feb 2014 11:11:08 +0000
-Subject: Re: [Linux-kernel] [PATCH 5/5] shdmac: wire r8a7790
-Message-Id: <52FCA84C.5000603@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 21 Feb 2014 06:12:53 +0000
+Subject: [PATCH 12/13] ARM: shmobile: r7s72100: add nodes for i2c controllers to dtsi
+Message-Id: <c81a4d3dfd33e097d3eef89e4eb830effb8b8d31.1392961872.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1392961872.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 12/02/14 22:23, Sergei Shtylyov wrote:
->     In this case, it might have been worth marking them as RFC (request
-> for comments) in the subject. RFC patches are not applied.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Yes, I think this would be why Ben marked the entire series as RFC in 
-his cover note...
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 72 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
--Ian
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 9be67a1..ee70071 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -17,6 +17,10 @@
+ 	#size-cells = <1>;
+ 
+ 	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
+ 		spi0 = &spi0;
+ 		spi1 = &spi1;
+ 		spi2 = &spi2;
+@@ -44,6 +48,74 @@
+ 			<0xe8202000 0x1000>;
+ 	};
+ 
++	i2c0: i2c@fcfee000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfee000 0x44>;
++		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 158 IRQ_TYPE_EDGE_RISING>,
++			     <0 159 IRQ_TYPE_EDGE_RISING>,
++			     <0 160 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 161 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@fcfee400 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfee400 0x44>;
++		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 166 IRQ_TYPE_EDGE_RISING>,
++			     <0 167 IRQ_TYPE_EDGE_RISING>,
++			     <0 168 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 169 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@fcfee800 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfee800 0x44>;
++		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 174 IRQ_TYPE_EDGE_RISING>,
++			     <0 175 IRQ_TYPE_EDGE_RISING>,
++			     <0 176 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 177 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@fcfeec00 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,riic-r7s72100", "renesas,riic-rz";
++		reg = <0xfcfeec00 0x44>;
++		interrupts = <0 181 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 182 IRQ_TYPE_EDGE_RISING>,
++			     <0 183 IRQ_TYPE_EDGE_RISING>,
++			     <0 184 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 185 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		clock-frequency = <100000>;
++		status = "disabled";
++	};
++
+ 	spi0: spi@e800c800 {
+ 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
+ 		reg = <0xe800c800 0x24>;
+-- 
+1.8.5.2
+
