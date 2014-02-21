@@ -1,39 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:29 +0000
-Subject: [PATCH 09/13] ARM: shmobile: kzm9d: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <c5aa40f8485b9b6aaeae14e5bddd5e569829ac2f.1391651074.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Feb 2014 16:29:18 +0000
+Subject: [PATCH 4/4] spi: rspi: Fix loopback mode for Dual/Quad SPI Transfers
+Message-Id: <1393000158-6622-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
+References: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-DEVTMPFS is needed for udev
+While normal Dual and Quad SPI Transfers are unidirectional, we must do
+a bidirectional transfer if loopback mode is enabled, else rx_buf is not
+filled.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+With spidev it seemed to work, as spidev uses the same buffer for
+tranmission and reception.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/configs/kzm9d_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/spi/spi-rspi.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index e42ce37..1cc330b 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -50,6 +50,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_BLK_DEV is not set
- CONFIG_NETDEVICES=y
- # CONFIG_NET_VENDOR_BROADCOM is not set
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 4a1f978c3381..92bec7e91046 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -859,7 +859,9 @@ static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
+ {
+ 	struct rspi_data *rspi = spi_master_get_devdata(master);
+ 
+-	if (xfer->tx_buf && xfer->tx_nbits > SPI_NBITS_SINGLE) {
++	if (spi->mode & SPI_LOOP) {
++		return qspi_transfer_out_in(rspi, xfer);
++	} else if (xfer->tx_buf && xfer->tx_nbits > SPI_NBITS_SINGLE) {
+ 		/* Quad or Dual SPI Write */
+ 		return qspi_transfer_out(rspi, xfer);
+ 	} else if (xfer->rx_buf && xfer->rx_nbits > SPI_NBITS_SINGLE) {
 -- 
-1.8.5.2
+1.7.9.5
 
