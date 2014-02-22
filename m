@@ -1,80 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:04 +0000
-Subject: [PATCH 05/10] spi: sh-msiof: Use the core cs_gpio field, and make it optional
-Message-Id: <1392907389-21798-6-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 22 Feb 2014 03:12:11 +0000
+Subject: Re: [PATCH 05/10] spi: sh-msiof: Use the core cs_gpio field, and make it optional
+Message-Id: <20140222031211.GU25940@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="oGy11dVowAZA6eXT"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1392907389-21798-6-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-6-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-In current implementation, CS is controlled by GPIO, which is passed
-through spi->controller_data.  However, the MSIOF HW module has a function
-to output CS by itself, which is already enabled and actual switch will be
-done by pinmux.
+--oGy11dVowAZA6eXT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Store the GPIO number in the core cs_gpio field, and ignore it if it is
-an invalid (negative) GPIO number.
+On Thu, Feb 20, 2014 at 03:43:04PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> In current implementation, CS is controlled by GPIO, which is passed
+> through spi->controller_data.  However, the MSIOF HW module has a function
+> to output CS by itself, which is already enabled and actual switch will be
+> done by pinmux.
 
-Loosely based on a patch from Takashi Yoshii <takasi-y@ops.dti.ne.jp>.
+Applied, thanks.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
----
- drivers/spi/spi-sh-msiof.c |   21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
+--oGy11dVowAZA6eXT
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 79e14586049b..92515c1ececa 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -445,6 +445,21 @@ static int sh_msiof_spi_setup_transfer(struct spi_device *spi,
- 	return spi_bitbang_setup_transfer(spi, t);
- }
- 
-+static int sh_msiof_spi_setup(struct spi_device *spi)
-+{
-+	struct device_node	*np = spi->master->dev.of_node;
-+
-+	if (!np) {
-+		/*
-+		 * Use spi->controller_data for CS (same strategy as spi_gpio),
-+		 * if any. otherwise let HW control CS
-+		 */
-+		spi->cs_gpio = (uintptr_t)spi->controller_data;
-+	}
-+
-+	return spi_bitbang_setup(spi);
-+}
-+
- static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
- {
- 	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
-@@ -470,8 +485,8 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
- 					  !!(spi->mode & SPI_CS_HIGH));
- 	}
- 
--	/* use spi->controller data for CS (same strategy as spi_gpio) */
--	gpio_set_value((uintptr_t)spi->controller_data, value);
-+	if (spi->cs_gpio >= 0)
-+		gpio_set_value(spi->cs_gpio, value);
- 
- 	if (is_on = BITBANG_CS_INACTIVE) {
- 		if (test_and_clear_bit(0, &p->flags)) {
-@@ -758,7 +773,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	master->bus_num = pdev->id;
- 	master->dev.of_node = pdev->dev.of_node;
- 	master->num_chipselect = p->info->num_chipselect;
--	master->setup = spi_bitbang_setup;
-+	master->setup = sh_msiof_spi_setup;
- 	master->cleanup = spi_bitbang_cleanup;
- 
- 	p->bitbang.master = master;
--- 
-1.7.9.5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
+iQIcBAEBAgAGBQJTCBWIAAoJELSic+t+oim9Qm0P/j08p4jDi/VfBIhSdOGzcV2u
+Vyz6QkEqy267uMsLkWIDLbJ9JyAE5Bk9OczVLmdXEJoDPtaHNXgxQJRwCjRJ5g+/
+m6f28lbU3wRCNH0C8mg5sJyWxQ1dP29f41HfrLmZPeaZ+I+IBli89a3KVey5R0nZ
+vksTGydZntYgAGETzif1ajCDf3EizYuV6LfuIxwsD8t/fVXV79jMbrdX5fO7+P+f
+wl0tHQEaJcd7lzFNAmohJ0WCqjChuHuRexrngr3hBiS5H3L0ZZl7p1+V9mfowcDk
+u8KzGshK/RyA2eVxhPy3C4onsyMogp0Cfs1/yqCdPsy2TAdBnt0f1wQULbDjSLLq
+BWN9SRXigO+bmRn5bxvWA7xgACZLSqBwjqmu9P2uM0/RLpAhGRjobRqe0E1tBly9
+EenfATCA1oKGKy5kV0goWZucQ+qPOk129hMup0JWquzswpbL+UmBFGNhXUMWxvEG
+XBIGWXEiVKC0juilrm7p+gnWCYkBOgChS6GP2HFJFiWmIt2jHvlykw68S7aMhFfS
+Hmgv8FHwtacBDj+/sHE+lJM8S9PDeM3ZQz+AY/GyfJhqcG3d4ePgWT9bz89ZiVN+
+1gTkfhufFC+EH121ZdMiNAG06BJUorF73QwdfWxgBdxo11fEPrKMZiiVhbIPjpAl
+bvFaamQXVAcGCz8wRXU0
+=05VQ
+-----END PGP SIGNATURE-----
+
+--oGy11dVowAZA6eXT--
