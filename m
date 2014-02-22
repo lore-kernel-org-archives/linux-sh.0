@@ -1,45 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:03:54 +0000
-Subject: [PATCH 07/11] Revert "ARM: shmobile: marzen: Conditionally select SMSC_PHY"
-Message-Id: <c73c7ff8d5b1f4ee0bb9cd7c57c37782954b2246.1392276547.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 22 Feb 2014 00:29:13 +0000
+Subject: [PATCH] phy-rcar-gen2-usb: always use 'dev' variable in probe() method
+Message-Id: <201402220429.15888.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This reverts commit 317af6612ee29dfcb5ae04df9c58e9f79fc8d4ff.
+The probe() method has the 'dev' local variable declared and used but strangely
+not in all cases where it should be...
 
-This seems to prevent the board from booting now that the tree has been
-rebased on v3.14-rc1.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 2 --
- 1 file changed, 2 deletions(-)
+This patch is against the 'next' branch of Felipe Balbi's 'usb.git' repo.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index bcbd74c..c431114 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -250,7 +250,6 @@ config MACH_MARZEN
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select SMSC_PHY if SMSC911X
- 	select USE_OF
+ drivers/usb/phy/phy-rcar-gen2-usb.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+Index: usb/drivers/usb/phy/phy-rcar-gen2-usb.c
+=================================--- usb.orig/drivers/usb/phy/phy-rcar-gen2-usb.c
++++ usb/drivers/usb/phy/phy-rcar-gen2-usb.c
+@@ -177,15 +177,15 @@ static int rcar_gen2_usb_phy_probe(struc
+ 	struct clk *clk;
+ 	int retval;
  
- config MACH_MARZEN_REFERENCE
-@@ -258,7 +257,6 @@ config MACH_MARZEN_REFERENCE
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select SMSC_PHY if SMSC911X
- 	select USE_OF
- 	---help---
- 	   Use reference implementation of Marzen board support
--- 
-1.8.5.2
-
+-	pdata = dev_get_platdata(&pdev->dev);
++	pdata = dev_get_platdata(dev);
+ 	if (!pdata) {
+ 		dev_err(dev, "No platform data\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	clk = devm_clk_get(&pdev->dev, "usbhs");
++	clk = devm_clk_get(dev, "usbhs");
+ 	if (IS_ERR(clk)) {
+-		dev_err(&pdev->dev, "Can't get the clock\n");
++		dev_err(dev, "Can't get the clock\n");
+ 		return PTR_ERR(clk);
+ 	}
+ 
