@@ -1,52 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:02 +0000
-Subject: [PATCH 03/10] spi: sh-msiof: Change hz from unsigned long to u32
-Message-Id: <1392907389-21798-4-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 22 Feb 2014 03:11:32 +0000
+Subject: Re: [PATCH 03/10] spi: sh-msiof: Change hz from unsigned long to u32
+Message-Id: <20140222031132.GS25940@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="A3RWl4qWgABmkY4K"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1392907389-21798-4-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-4-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Both spi_transfer.speed_hz and spi_master.max_speed_hz are u32
+--A3RWl4qWgABmkY4K
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-sh-msiof.c |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+On Thu, Feb 20, 2014 at 03:43:02PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> Both spi_transfer.speed_hz and spi_master.max_speed_hz are u32
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index cc12e755131d..af9f2db41b16 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -144,8 +144,7 @@ static struct {
- };
- 
- static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
--				      unsigned long parent_rate,
--				      unsigned long spi_hz)
-+				      unsigned long parent_rate, u32 spi_hz)
- {
- 	unsigned long div = 1024;
- 	size_t k;
-@@ -372,10 +371,9 @@ static int sh_msiof_spi_bits(struct spi_device *spi, struct spi_transfer *t)
- 	return bits;
- }
- 
--static unsigned long sh_msiof_spi_hz(struct spi_device *spi,
--				     struct spi_transfer *t)
-+static u32 sh_msiof_spi_hz(struct spi_device *spi, struct spi_transfer *t)
- {
--	unsigned long hz;
-+	u32 hz;
- 
- 	hz = t ? t->speed_hz : 0;
- 	if (!hz)
--- 
-1.7.9.5
+Applied, thanks.
 
+--A3RWl4qWgABmkY4K
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTCBVhAAoJELSic+t+oim9rmYP/RcAebjQPwIRnqh1nJRkOTtY
+2L0h5vp4qfYUUtijsA3fNv01OCaIJPL7wT4gsbNfELOjPqK8ccYqv2KVpb3gvIRv
+a5ofKBKxQguOHcId78qb93ng3LDwH1PT8qPrvXFRSvAjjaLKsF1ht76ALeetaU8a
+3GlJPJLksrSCd4ieaK+tVB1+4sH4Jfek/xtzWT7z3J44iyjuxDIzJr51+ldekHUP
+tOFQ2UAD3VjxvgHKpQiAaY2unj5mIEPBTu0RrmnLQk6XYVFyEeLEJ59f51mWMWzG
+yD5ISTcLhO9DNI7B814sR1EIg0YE3KsSX9c7BUdnKR4PEDx0sjQXLMF/r56q5XO5
+6WJ2VQxpaE+8nGLH0/q3+wzhoWYD1g8J2OEKfAc3eOCiLMjlcL9jQNLMVBoDhXMc
+Z9P0gOPvgmdEntbVJ0nT1DRI0lwMDtuwv2VmkojfZcl5mLOtbfWYDQlRcFEsWqzl
+5cI6aQ73pxIT052x16jyqlZ+DflWb5fDyKEEVioqdvbtoZs6afCWxBBw5rkUWVto
+fxu1WfX7TeXXqR920iG0J9/jiuEwR55q7wE7AEDuFVKNhDjkRclKGmR7it2WosJa
+CUNjD/vUQFKY+sTi5mvmKuZEKH8FK+ExB48sfnVEgiGSL1gwoKD3d8gbLtKA0dKD
+wDavLE9qZ1zSj04fjNk8
+=BT/V
+-----END PGP SIGNATURE-----
+
+--A3RWl4qWgABmkY4K--
