@@ -1,36 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:01 +0000
-Subject: [PATCH 02/10] spi: sh-msiof: Typo in comment s/tx/rx/
-Message-Id: <1392907389-21798-3-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 22 Feb 2014 03:10:58 +0000
+Subject: Re: [PATCH 02/10] spi: sh-msiof: Typo in comment s/tx/rx/
+Message-Id: <20140222031058.GR25940@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="4ECF1u7dKBoUGhe3"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1392907389-21798-3-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-3-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-sh-msiof.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--4ECF1u7dKBoUGhe3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index e6f79b2f2616..cc12e755131d 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -486,7 +486,7 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	/* clear status bits */
- 	sh_msiof_reset_str(p);
- 
--	/* shut down frame, tx/tx and clock signals */
-+	/* shut down frame, rx/tx and clock signals */
- 	ret = sh_msiof_modify_ctr_wait(p, CTR_TFSE, 0);
- 	ret = ret ? ret : sh_msiof_modify_ctr_wait(p, CTR_TXE, 0);
- 	if (rx_buf)
--- 
-1.7.9.5
+On Thu, Feb 20, 2014 at 03:43:01PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
+Applied, thanks.
+
+--4ECF1u7dKBoUGhe3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTCBU+AAoJELSic+t+oim9idsP/3pSZ+EGqwVPVs316kFAUGwo
+ym6wDHlvqkI85WHT/aTjMX8Mo4GPRLWCW3EiFAUrtf3FKeQf4EJl92ftTzrGFPbX
+XBJiLpP1il9v1ooFjTQFbh8ma3MjyC46HUWzr+5UGNkqalLlxAWb9KFGzdOMnb9y
+fA7jAb7qAw3tcL/U+Y7faivxI7PkygbsshPt6tKyYRTxNYKVZwPtDV8QeYmcb7cj
+b+mi4zQ6X7kGliYSNkiA87tar9byNp0PuQtGWdow9gL/UKqZ0QvwLx0yiR+gO5t6
+beCef1gV09YOof9ROzgL+CYHDVMdHzxAju56RKVmZTT991wh9CZOa6AcUOec7wO8
+fjz5yWbRxA48c0oPL6toe+MpyFFNyljefChHxsKg2v4JCnztJvGEzybd8IkWBrMb
+ukQbI5Aei9k+o3YK/K9EyH20Y+Z7y8T2q9nKUkinVLLNqyGPIwyb632Ym1aktpyH
+q+mWFaTpJ9HXak+tdMMoeXYBWEy5FjFRrhE8nCVj/0b41CC9IoZztOMmmbWb2cfS
+s5vqGq5rffLQcCeKNU/50ZGhZNR95IQgIcZeQttsCHd9hV4myI13bjaEUrgOk9z2
+dOdIqw2KDcL2q2jyMyOweH/YZx7+tsrP6bmuKKdSzxZboceJbZJWj32CMVpYRXz7
+eEOstYJC8zNO3J6TUQWh
+=J5iM
+-----END PGP SIGNATURE-----
+
+--4ECF1u7dKBoUGhe3--
