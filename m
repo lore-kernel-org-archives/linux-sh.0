@@ -1,111 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:07 +0000
-Subject: [PATCH 08/10] spi: sh-msiof: Move clock management to (un)prepare_message()
-Message-Id: <1392907389-21798-9-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Sat, 22 Feb 2014 03:27:00 +0000
+Subject: Re: [PATCH 08/10] spi: sh-msiof: Move clock management to (un)prepare_message()
+Message-Id: <20140222032700.GX25940@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="AAkN98o3X3ouhQaz"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <1392907389-21798-9-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392907389-21798-9-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Move clock management and pin configuration from the bitbang chipselect()
-method to the SPI core prepare_message() and unprepare_message() methods.
+--AAkN98o3X3ouhQaz
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/spi/spi-sh-msiof.c |   56 +++++++++++++++++++++++++++-----------------
- 1 file changed, 34 insertions(+), 22 deletions(-)
+On Thu, Feb 20, 2014 at 03:43:07PM +0100, Geert Uytterhoeven wrote:
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 31624fb4997d..7add4be37987 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -472,9 +472,40 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
- 	return spi_bitbang_setup(spi);
- }
- 
-+static int sh_msiof_prepare_message(struct spi_master *master,
-+				    struct spi_message *msg)
-+{
-+	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
-+	const struct spi_device *spi = msg->spi;
-+
-+	if (!test_and_set_bit(0, &p->flags)) {
-+		pm_runtime_get_sync(&p->pdev->dev);
-+		clk_enable(p->clk);
-+	}
-+
-+	/* Configure pins before asserting CS */
-+	sh_msiof_spi_set_pin_regs(p, !!(spi->mode & SPI_CPOL),
-+				  !!(spi->mode & SPI_CPHA),
-+				  !!(spi->mode & SPI_3WIRE),
-+				  !!(spi->mode & SPI_LSB_FIRST),
-+				  !!(spi->mode & SPI_CS_HIGH));
-+	return 0;
-+}
-+
-+static int sh_msiof_unprepare_message(struct spi_master *master,
-+				      struct spi_message *msg)
-+{
-+	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
-+
-+	if (test_and_clear_bit(0, &p->flags)) {
-+		clk_disable(p->clk);
-+		pm_runtime_put(&p->pdev->dev);
-+	}
-+	return 0;
-+}
-+
- static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
- {
--	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
- 	int value;
- 
- 	/* chip select is active low unless SPI_CS_HIGH is set */
-@@ -483,29 +514,8 @@ static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
- 	else
- 		value = (is_on = BITBANG_CS_ACTIVE) ? 0 : 1;
- 
--	if (is_on = BITBANG_CS_ACTIVE) {
--		if (!test_and_set_bit(0, &p->flags)) {
--			pm_runtime_get_sync(&p->pdev->dev);
--			clk_enable(p->clk);
--		}
--
--		/* Configure pins before asserting CS */
--		sh_msiof_spi_set_pin_regs(p, !!(spi->mode & SPI_CPOL),
--					  !!(spi->mode & SPI_CPHA),
--					  !!(spi->mode & SPI_3WIRE),
--					  !!(spi->mode & SPI_LSB_FIRST),
--					  !!(spi->mode & SPI_CS_HIGH));
--	}
--
- 	if (spi->cs_gpio >= 0)
- 		gpio_set_value(spi->cs_gpio, value);
--
--	if (is_on = BITBANG_CS_INACTIVE) {
--		if (test_and_clear_bit(0, &p->flags)) {
--			clk_disable(p->clk);
--			pm_runtime_put(&p->pdev->dev);
--		}
--	}
- }
- 
- static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
-@@ -810,6 +820,8 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	master->num_chipselect = p->info->num_chipselect;
- 	master->setup = sh_msiof_spi_setup;
- 	master->cleanup = spi_bitbang_cleanup;
-+	master->prepare_message = sh_msiof_prepare_message;
-+	master->unprepare_message = sh_msiof_unprepare_message;
- 
- 	p->bitbang.master = master;
- 	p->bitbang.chipselect = sh_msiof_spi_chipselect;
--- 
-1.7.9.5
+> +	if (!test_and_set_bit(0, &p->flags)) {
+> +		pm_runtime_get_sync(&p->pdev->dev);
+> +		clk_enable(p->clk);
+> +	}
 
+That test_and_set_bit() is a bit odd - what's going on there, perhaps a
+comment is in order?  I'd also like to see return value checks, though
+the original didn't have them so it's not a blocker, and ideally that
+should be clk_prepare_enable().  I guess the clock stuff could even be
+moved inside the runtime PM callbacks?  Again not a blocker if the
+existing code doesn't have things but it'd be nice to do.
+
+There's also auto_runtime_pm in the SPI core which will do the runtime
+PM for you if you can do it unconditionally.
+
+--AAkN98o3X3ouhQaz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTCBkBAAoJELSic+t+oim9OacP/RvGDmota4Vu+MzGTGBuFGch
+eR/aEYNJwXXQNCCDsKAwKXlWG7BdWv3esfDot+l3SlSH43AL+VLyRFxPHLVonCWk
+G4IUjn3YO80A9hbcobkGVDnhKaFrLRaVuK5HmsT2LeexznfWnb0LfBjro/5FmTP2
+54Rv6ZQjUKfkTEqyVZN4Hswx31TVFyo631hmNvurKEVdfi6BXcI/MfCrXf+2IXF9
++Qyb9EF2wkV2V4vhwd+lQf6x/RoA3QhosVZ+xtohQwDIPzO/IvBJfZy5SIDRJvsw
+yP2OCS+6RF0dAaus1Xxk1z5i0eHdZDM49ecbjK1yzWXkh6TWFngY+yn/EJwWdCM5
+oQK103KLtLLwsZ/C1zgOSW9uzJ5Ql40dK6SvTiF4d635T+peLPrKxj6PGbrjL+cf
+Q4V/+vXRv/ld5csTkfBxD6dGDFO36LgUSCT6vxvoDWNgpF5YEfrTn8aSTV1lxR6w
+gWSLXZVfZiJCDF78EtbB7EhYfIreVXLGCCo6BRsxJba6g47kf5PlQfQKrwycRImY
+3cdSqJm6uyKgoi5U6ZgwozgIkl49DD3NUXiYE2Vo5qEy813FL3UKpnkNi8g2OS7A
+eSPLIzkElxpf2g1ogGG1uOxB0PQmCBQIT1YN7Zvoa8prcILgpEXsR/8jDXS4kDAN
+hx8MvHS1w4lku1Op4IUP
+=Gdac
+-----END PGP SIGNATURE-----
+
+--AAkN98o3X3ouhQaz--
