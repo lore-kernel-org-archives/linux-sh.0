@@ -1,69 +1,224 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Feb 2014 10:21:12 +0000
-Subject: [PATCH v2 5/6] spi: sh-msiof: Convert to let spi core validate xfer->bits_per_word
-Message-Id: <1393323673-2751-6-git-send-email-geert@linux-m68k.org>
+Date: Sat, 22 Feb 2014 14:03:39 +0000
+Subject: [PATCH] sh: Prefix sh-specific "CCR" and "CCR2" by "SH_"
+Message-Id: <1393077819-18872-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393323673-2751-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Takashi Yoshii <takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+commit bcf24e1daa94f4c52ef7a3f657e43cc6bc50d46b ("mmc: omap_hsmmc: use the
+generic config for omap2plus devices"), enabled the build for other
+platforms for compile testing.
 
-Set bits_per_word_mask so the spi core will reject transfers that attempt
-to use an unsupported bits_per_word value.
+sh-allmodconfig now fails with:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+    include/linux/omap-dma.h:171:8: error: expected identifier before numeric constant
+    make[4]: *** [drivers/mmc/host/omap_hsmmc.o] Error 1
+
+This happens because SuperH #defines "CCR", which is one of the enum values
+in include/linux/omap-dma.h. There's a similar issue with "CCR2" on sh2a.
+
+As "CCR" and "CCR2" are too generic names for global #defines, prefix them
+with "SH_" to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
-v2:
-  - No changes
+ arch/sh/include/cpu-sh2/cpu/cache.h  |    2 +-
+ arch/sh/include/cpu-sh2a/cpu/cache.h |    4 ++--
+ arch/sh/include/cpu-sh3/cpu/cache.h  |    2 +-
+ arch/sh/include/cpu-sh4/cpu/cache.h  |    2 +-
+ arch/sh/kernel/cpu/init.c            |    4 ++--
+ arch/sh/mm/cache-debugfs.c           |    2 +-
+ arch/sh/mm/cache-sh2.c               |    4 ++--
+ arch/sh/mm/cache-sh2a.c              |    6 ++++--
+ arch/sh/mm/cache-sh4.c               |    4 ++--
+ arch/sh/mm/cache-shx3.c              |    4 ++--
+ arch/sh/mm/cache.c                   |    4 ++--
+ 11 files changed, 20 insertions(+), 18 deletions(-)
 
- drivers/spi/spi-sh-msiof.c |   19 ++-----------------
- 1 file changed, 2 insertions(+), 17 deletions(-)
-
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index 18e3a8d628e9..27536933d734 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -438,22 +438,6 @@ static u32 sh_msiof_spi_hz(struct spi_device *spi, struct spi_transfer *t)
- 	return hz;
+diff --git a/arch/sh/include/cpu-sh2/cpu/cache.h b/arch/sh/include/cpu-sh2/cpu/cache.h
+index 673515bc4135..aa1b2b9088a7 100644
+--- a/arch/sh/include/cpu-sh2/cpu/cache.h
++++ b/arch/sh/include/cpu-sh2/cpu/cache.h
+@@ -18,7 +18,7 @@
+ #define SH_CACHE_ASSOC		8
+ 
+ #if defined(CONFIG_CPU_SUBTYPE_SH7619)
+-#define CCR		0xffffffec
++#define SH_CCR		0xffffffec
+ 
+ #define CCR_CACHE_CE	0x01	/* Cache enable */
+ #define CCR_CACHE_WT	0x02    /* CCR[bit1=1,bit2=1] */
+diff --git a/arch/sh/include/cpu-sh2a/cpu/cache.h b/arch/sh/include/cpu-sh2a/cpu/cache.h
+index defb0baa5a06..b27ce92cb600 100644
+--- a/arch/sh/include/cpu-sh2a/cpu/cache.h
++++ b/arch/sh/include/cpu-sh2a/cpu/cache.h
+@@ -17,8 +17,8 @@
+ #define SH_CACHE_COMBINED	4
+ #define SH_CACHE_ASSOC		8
+ 
+-#define CCR		0xfffc1000 /* CCR1 */
+-#define CCR2		0xfffc1004
++#define SH_CCR		0xfffc1000 /* CCR1 */
++#define SH_CCR2		0xfffc1004
+ 
+ /*
+  * Most of the SH-2A CCR1 definitions resemble the SH-4 ones. All others not
+diff --git a/arch/sh/include/cpu-sh3/cpu/cache.h b/arch/sh/include/cpu-sh3/cpu/cache.h
+index bee2d81c56bf..29700fd88c75 100644
+--- a/arch/sh/include/cpu-sh3/cpu/cache.h
++++ b/arch/sh/include/cpu-sh3/cpu/cache.h
+@@ -17,7 +17,7 @@
+ #define SH_CACHE_COMBINED	4
+ #define SH_CACHE_ASSOC		8
+ 
+-#define CCR		0xffffffec	/* Address of Cache Control Register */
++#define SH_CCR		0xffffffec	/* Address of Cache Control Register */
+ 
+ #define CCR_CACHE_CE	0x01	/* Cache Enable */
+ #define CCR_CACHE_WT	0x02	/* Write-Through (for P0,U0,P3) (else writeback) */
+diff --git a/arch/sh/include/cpu-sh4/cpu/cache.h b/arch/sh/include/cpu-sh4/cpu/cache.h
+index 7bfb9e8b069c..92c4cd119b66 100644
+--- a/arch/sh/include/cpu-sh4/cpu/cache.h
++++ b/arch/sh/include/cpu-sh4/cpu/cache.h
+@@ -17,7 +17,7 @@
+ #define SH_CACHE_COMBINED	4
+ #define SH_CACHE_ASSOC		8
+ 
+-#define CCR		0xff00001c	/* Address of Cache Control Register */
++#define SH_CCR		0xff00001c	/* Address of Cache Control Register */
+ #define CCR_CACHE_OCE	0x0001	/* Operand Cache Enable */
+ #define CCR_CACHE_WT	0x0002	/* Write-Through (for P0,U0,P3) (else writeback)*/
+ #define CCR_CACHE_CB	0x0004	/* Copy-Back (for P1) (else writethrough) */
+diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
+index ecf83cd158dc..0d7360d549c1 100644
+--- a/arch/sh/kernel/cpu/init.c
++++ b/arch/sh/kernel/cpu/init.c
+@@ -112,7 +112,7 @@ static void cache_init(void)
+ 	unsigned long ccr, flags;
+ 
+ 	jump_to_uncached();
+-	ccr = __raw_readl(CCR);
++	ccr = __raw_readl(SH_CCR);
+ 
+ 	/*
+ 	 * At this point we don't know whether the cache is enabled or not - a
+@@ -189,7 +189,7 @@ static void cache_init(void)
+ 
+ 	l2_cache_init();
+ 
+-	__raw_writel(flags, CCR);
++	__raw_writel(flags, SH_CCR);
+ 	back_to_cached();
  }
+ #else
+diff --git a/arch/sh/mm/cache-debugfs.c b/arch/sh/mm/cache-debugfs.c
+index 115725198038..777e50f33c00 100644
+--- a/arch/sh/mm/cache-debugfs.c
++++ b/arch/sh/mm/cache-debugfs.c
+@@ -36,7 +36,7 @@ static int cache_seq_show(struct seq_file *file, void *iter)
+ 	 */
+ 	jump_to_uncached();
  
--static int sh_msiof_spi_setup_transfer(struct spi_device *spi,
--				       struct spi_transfer *t)
--{
--	int bits;
--
--	/* noting to check hz values against since parent clock is disabled */
--
--	bits = sh_msiof_spi_bits(spi, t);
--	if (bits < 8)
--		return -EINVAL;
--	if (bits > 32)
--		return -EINVAL;
--
--	return spi_bitbang_setup_transfer(spi, t);
--}
--
- static int sh_msiof_spi_setup(struct spi_device *spi)
+-	ccr = __raw_readl(CCR);
++	ccr = __raw_readl(SH_CCR);
+ 	if ((ccr & CCR_CACHE_ENABLE) = 0) {
+ 		back_to_cached();
+ 
+diff --git a/arch/sh/mm/cache-sh2.c b/arch/sh/mm/cache-sh2.c
+index defcf719f2e8..a74259f2f981 100644
+--- a/arch/sh/mm/cache-sh2.c
++++ b/arch/sh/mm/cache-sh2.c
+@@ -63,9 +63,9 @@ static void sh2__flush_invalidate_region(void *start, int size)
+ 	local_irq_save(flags);
+ 	jump_to_uncached();
+ 
+-	ccr = __raw_readl(CCR);
++	ccr = __raw_readl(SH_CCR);
+ 	ccr |= CCR_CACHE_INVALIDATE;
+-	__raw_writel(ccr, CCR);
++	__raw_writel(ccr, SH_CCR);
+ 
+ 	back_to_cached();
+ 	local_irq_restore(flags);
+diff --git a/arch/sh/mm/cache-sh2a.c b/arch/sh/mm/cache-sh2a.c
+index 949e2d3138a0..ee87d081259b 100644
+--- a/arch/sh/mm/cache-sh2a.c
++++ b/arch/sh/mm/cache-sh2a.c
+@@ -134,7 +134,8 @@ static void sh2a__flush_invalidate_region(void *start, int size)
+ 
+ 	/* If there are too many pages then just blow the cache */
+ 	if (((end - begin) >> PAGE_SHIFT) >= MAX_OCACHE_PAGES) {
+-		__raw_writel(__raw_readl(CCR) | CCR_OCACHE_INVALIDATE, CCR);
++		__raw_writel(__raw_readl(SH_CCR) | CCR_OCACHE_INVALIDATE,
++			     SH_CCR);
+ 	} else {
+ 		for (v = begin; v < end; v += L1_CACHE_BYTES)
+ 			sh2a_invalidate_line(CACHE_OC_ADDRESS_ARRAY, v);
+@@ -167,7 +168,8 @@ static void sh2a_flush_icache_range(void *args)
+ 	/* I-Cache invalidate */
+ 	/* If there are too many pages then just blow the cache */
+ 	if (((end - start) >> PAGE_SHIFT) >= MAX_ICACHE_PAGES) {
+-		__raw_writel(__raw_readl(CCR) | CCR_ICACHE_INVALIDATE, CCR);
++		__raw_writel(__raw_readl(SH_CCR) | CCR_ICACHE_INVALIDATE,
++			     SH_CCR);
+ 	} else {
+ 		for (v = start; v < end; v += L1_CACHE_BYTES)
+ 			sh2a_invalidate_line(CACHE_IC_ADDRESS_ARRAY, v);
+diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
+index 0e529285b28d..51d8f7f31d1d 100644
+--- a/arch/sh/mm/cache-sh4.c
++++ b/arch/sh/mm/cache-sh4.c
+@@ -133,9 +133,9 @@ static void flush_icache_all(void)
+ 	jump_to_uncached();
+ 
+ 	/* Flush I-cache */
+-	ccr = __raw_readl(CCR);
++	ccr = __raw_readl(SH_CCR);
+ 	ccr |= CCR_CACHE_ICI;
+-	__raw_writel(ccr, CCR);
++	__raw_writel(ccr, SH_CCR);
+ 
+ 	/*
+ 	 * back_to_cached() will take care of the barrier for us, don't add
+diff --git a/arch/sh/mm/cache-shx3.c b/arch/sh/mm/cache-shx3.c
+index c0adbee97b5f..24c58b7dc022 100644
+--- a/arch/sh/mm/cache-shx3.c
++++ b/arch/sh/mm/cache-shx3.c
+@@ -19,7 +19,7 @@ void __init shx3_cache_init(void)
  {
- 	struct device_node	*np = spi->master->dev.of_node;
-@@ -825,10 +809,11 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	master->cleanup = spi_bitbang_cleanup;
- 	master->prepare_message = sh_msiof_prepare_message;
- 	master->unprepare_message = sh_msiof_unprepare_message;
-+	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 32);
+ 	unsigned int ccr;
  
- 	p->bitbang.master = master;
- 	p->bitbang.chipselect = sh_msiof_spi_chipselect;
--	p->bitbang.setup_transfer = sh_msiof_spi_setup_transfer;
-+	p->bitbang.setup_transfer = spi_bitbang_setup_transfer;
- 	p->bitbang.txrx_bufs = sh_msiof_spi_txrx;
- 	p->bitbang.txrx_word[SPI_MODE_0] = sh_msiof_spi_txrx_word;
- 	p->bitbang.txrx_word[SPI_MODE_1] = sh_msiof_spi_txrx_word;
+-	ccr = __raw_readl(CCR);
++	ccr = __raw_readl(SH_CCR);
+ 
+ 	/*
+ 	 * If we've got cache aliases, resolve them in hardware.
+@@ -40,5 +40,5 @@ void __init shx3_cache_init(void)
+ 	ccr |= CCR_CACHE_IBE;
+ #endif
+ 
+-	writel_uncached(ccr, CCR);
++	writel_uncached(ccr, SH_CCR);
+ }
+diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
+index 616966a96cba..097c2cdd117f 100644
+--- a/arch/sh/mm/cache.c
++++ b/arch/sh/mm/cache.c
+@@ -285,8 +285,8 @@ void __init cpu_cache_init(void)
+ {
+ 	unsigned int cache_disabled = 0;
+ 
+-#ifdef CCR
+-	cache_disabled = !(__raw_readl(CCR) & CCR_CACHE_ENABLE);
++#ifdef SH_CCR
++	cache_disabled = !(__raw_readl(SH_CCR) & CCR_CACHE_ENABLE);
+ #endif
+ 
+ 	compute_alias(&boot_cpu_data.icache);
 -- 
 1.7.9.5
 
