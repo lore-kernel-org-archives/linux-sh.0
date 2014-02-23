@@ -1,44 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Feb 2014 16:29:15 +0000
-Subject: [PATCH 1/4] spi: rspi: List full example compatible properties in bindings
-Message-Id: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Sun, 23 Feb 2014 03:27:18 +0000
+Subject: Re: [PATCH 1/4] spi: rspi: List full example compatible properties in bindings
+Message-Id: <20140223032718.GY25940@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="HKe5j6ME4JFNTkrH"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393000158-6622-1-git-send-email-geert@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-List full example compatible properties with soctypes instead of just the
-soctypes, so checkpatch can validate DTSes.
+--HKe5j6ME4JFNTkrH
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
----
- Documentation/devicetree/bindings/spi/spi-rspi.txt |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+On Fri, Feb 21, 2014 at 05:29:15PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>=20
+> List full example compatible properties with soctypes instead of just the
+> soctypes, so checkpatch can validate DTSes.
 
-diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-index 95f9b21d239f..e54924b2aff6 100644
---- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
-+++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-@@ -7,9 +7,11 @@ Required properties:
- 		     "renesas,rspi-<soctype>", "renesas,rspi-rz" as fallback.
- 		     For Quad Serial Peripheral Interface on R-Car Gen2:
- 		     "renesas,qspi-<soctype>", "renesas,qspi" as fallback.
--		     Examples of valid soctypes are "sh7757" (SH),
--		     "r7s72100" (RZ/A1H), "r8a7790" (R-Car H2), and
--		     "r8a7791" (R-Car M2).
-+		     Examples with soctypes are:
-+		        - "renesas,rspi-sh7757" (SH)
-+			- "renesas,rspi-r7s72100" (RZ/A1H)
-+			- "renesas,qspi-r8a7790" (R-Car H2)
-+			- "renesas,qspi-r8a7791" (R-Car M2)
- - reg              : Address start and address range size of the device
- - interrupts       : A list of interrupt-specifiers, one for each entry in
- 		     interrupt-names.
--- 
-1.7.9.5
+Applied all, thanks.
 
+--HKe5j6ME4JFNTkrH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTCWqSAAoJELSic+t+oim9C10P/26AmqJ133+5XNAdf8pWxaM6
+52kLgNdeTUFFSag5gFDk5yqx7ENMjUXOh5Nb6wBMNJwv+tv7XZk9T0K7k3CZBEAE
+hrMQeTeBp02cwO8c2AlD/99OpLiJdNCmtlTHCFdu3f7S6mahn+TDX5SdFPO4CSY8
+S5mjoOYL2A7FZVBPeTvlamyhEh7/gj4g5dOvP0tjLMh+7ndMIZbUd+x9ReRQT503
+jk82lldIS1d0bY1pwA5glSWNrEujUwp5gHwz7TrCiAGJZUdbuYfXzeiu8Xgz8Q7m
+2vcYdqEBBdf3o3kf74AphpOk3f1tndI89LhboaoxSuynh6SPwD11EAcooxPQLkFS
+HAm8V1m2PXAxw/V3Tj7XJPZNWtVjqhwsvZgju+1HFe3ohMwtPQdKDk6ZO3om2CBu
+JFebF2/UwUlMNrtE3i9t7DKfWz+ciR1VAKWRoR8svqVTrretR/4nUGYwtXfPn86/
+KT7ylEmNKLbfEVNC2VTeUhHt7n6+Chr1eYP8mBlO7zAKOnGfAgoonKsPRcuvLGq9
+zyU80u+N2D1it9BeDoRvDxY4T+ALwwyb+vl4kVtoVIQ1Ss0wIKAiX0M6rvyPwLuX
+m1z8iyNHJr2f3hGXBvGumjofY2XjC3EsaIESGBUMxyIx9N7bgwAnpw85XKgHfy31
+Q77pqdOOS+DLWgHjlFfJ
+=uqsm
+-----END PGP SIGNATURE-----
+
+--HKe5j6ME4JFNTkrH--
