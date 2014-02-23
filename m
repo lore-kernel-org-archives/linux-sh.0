@@ -1,52 +1,61 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 04 Feb 2014 14:55:14 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: Koelsch: pass Ether PHY IRQ
-Message-Id: <201402041855.32618.sergei.shtylyov@cogentembedded.com>
+From: <vladimir.barinov@cogentembedded.com>
+Date: Sun, 23 Feb 2014 18:00:57 +0000
+Subject: [PATCH V4 2/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
+Message-Id: <1393178459-14637-3-git-send-email-vladimir.barinov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402041851.47198.sergei.shtylyov@cogentembedded.com>
+References: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
+In-Reply-To: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
 
-Pass Ether's PHY IRQ (which is IRQC's IRQ0) to the 'sh_eth' driver. Set the IRQ
-trigger type to be low-level as per the Micrel PHY driver's setup.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This adds internal PCI USB host clock support to R-Car M2 SoC.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+
+Changes in V4:
+Changes in V3:
+* none.
+
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag.
 
 ---
-Changes in version 2:
-- refreshed the patch.
+ arch/arm/mach-shmobile/clock-r8a7791.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/board-koelsch.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
-+++ renesas/arch/arm/mach-shmobile/board-koelsch.c
-@@ -23,6 +23,7 @@
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
-+#include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/leds.h>
- #include <linux/phy.h>
-@@ -92,6 +93,7 @@ static void __init koelsch_add_du_device
- /* Ether */
- static const struct sh_eth_plat_data ether_pdata __initconst = {
- 	.phy			= 0x1,
-+	.phy_irq		= irq_pin(0),
- 	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
- 	.phy_interface		= PHY_INTERFACE_MODE_RMII,
- 	.ether_link_active_low	= 1,
-@@ -232,6 +234,8 @@ static void __init koelsch_init(void)
- {
- 	koelsch_add_standard_devices();
+Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
+=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
++++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:57.446571701 +0400
+@@ -177,7 +177,7 @@
+ 	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+-	MSTP704,
++	MSTP704, MSTP703,
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+ 	MSTP216, MSTP207, MSTP206,
+@@ -210,6 +210,7 @@
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
+ 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
++	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
+ 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
+@@ -285,6 +286,8 @@
+ 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
+ };
  
-+	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
-+
- 	if (IS_ENABLED(CONFIG_PHYLIB))
- 		phy_register_fixup_for_id("r8a7791-ether-ff:01",
- 					  koelsch_ksz8041_fixup);
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
