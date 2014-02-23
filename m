@@ -1,82 +1,78 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 23 Feb 2014 12:35:20 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 23 Feb 2014 19:29:35 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7791: fix clock index for i2c5
-Message-Id: <20140223123520.GA3936@katana>
+Message-Id: <2530376.vWT3YDl0Br@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="vtzGhvizbBRQ85DL"
+Content-Type: multipart/mixed; boundary="nextPart7258077.sgnhBYOdPK"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392844015-18024-1-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1392844015-18024-1-git-send-email-wsa@the-dreams.de>
 To: linux-sh@vger.kernel.org
 
 
---vtzGhvizbBRQ85DL
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart7258077.sgnhBYOdPK
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-On Wed, Feb 19, 2014 at 11:39:19PM +0100, Laurent Pinchart wrote:
-> Hi Wolfram,
->=20
-> Thanks for the patch.
->=20
-> On Wednesday 19 February 2014 22:06:55 Wolfram Sang wrote:
-> > From: Wolfram Sang <wsa@sang-engineering.com>
+On Sunday 23 February 2014 13:35:20 Wolfram Sang wrote:
+> On Wed, Feb 19, 2014 at 11:39:19PM +0100, Laurent Pinchart wrote:
+> > On Wednesday 19 February 2014 22:06:55 Wolfram Sang wrote:
+> > > From: Wolfram Sang <wsa@sang-engineering.com>
+> > >=20
+> > > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 > >=20
-> > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 >=20
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> Ping. This is needed for another series I will send soon.
 
-Ping. This is needed for another series I will send soon.
+Simon, I was expecting you to pick this patch up, were you expecting me=
+ to=20
+gather all clock-related board and dt patches and send you pull request=
+s ?
 
->=20
-> > ---
-> >  arch/arm/boot/dts/r8a7791.dtsi | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> >=20
-> > diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791=
-=2Edtsi
-> > index 1ab4f3d..3b2cdc8 100644
-> > --- a/arch/arm/boot/dts/r8a7791.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> > @@ -731,7 +731,7 @@
-> >  			#clock-cells =3D <1>;
-> >  			renesas,clock-indices =3D <
-> >  				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD
-> > -				R8A7791_CLK_I2C4 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
-> > +				R8A7791_CLK_I2C5 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
-> >  				R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
-> >=20
-> >  			>;
-> >=20
-> >  			clock-output-names =3D
->=20
-> --=20
-> Regards,
->=20
-> Laurent Pinchart
->=20
+> > > ---
+> > >=20
+> > >  arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+> > >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > >=20
+> > > diff --git a/arch/arm/boot/dts/r8a7791.dtsi
+> > > b/arch/arm/boot/dts/r8a7791.dtsi index 1ab4f3d..3b2cdc8 100644
+> > > --- a/arch/arm/boot/dts/r8a7791.dtsi
+> > > +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> > > @@ -731,7 +731,7 @@
+> > >=20
+> > >  =09=09=09#clock-cells =3D <1>;
+> > >  =09=09=09renesas,clock-indices =3D <
+> > >  =09=09=09=09R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI=
+_MOD
+> > > -=09=09=09=09R8A7791_CLK_I2C4 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
+> > > +=09=09=09=09R8A7791_CLK_I2C5 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
+> > >  =09=09=09=09R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+> > >  =09=09=09>;
+> > >  =09=09=09
+> > >  =09=09=09clock-output-names =3D
 
---vtzGhvizbBRQ85DL
+=2D-=20
+Regards,
+
+Laurent Pinchart
+
+--nextPart7258077.sgnhBYOdPK
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTCesIAAoJEBQN5MwUoCm2/9gP/jDDOO1ND7/pW0dNUcfWGce0
-RpT60MOW5yR+zmNKl5MU4Qfr494i3kp4qnvpFFU3iRfB8L9juZAlkvXUyZ55k7nO
-GRaw/bdi7mLLgwuCDSgx4CINTT3fdAkKqRxs5VNzoMkKlMICZikrSI6DY6TB8Dj9
-ZTiUc179jD9n5PfXvG0ZFVh9LFC6KRKh6Kw6Jd9nIQSdnb3KI+zMbwzlwlJzC0Kr
-WcII6YMDW5e+ve5yZZnkMhsiw9hl3UUSI5HEOIa2Vt0c7Zm1opofDbia0I+NSp6Z
-Ane/1Bjfi/yRmbhVMVdWPcwivZQxJwIaGAfgrqJenjK7ZJ/NuaRCPZJZGNF55PFE
-2NEu1bPcfv1cnfUlEcZRsnoJVhR3BrVUFE3qX4glYZGK3uaiLnE0cddzXWS1MXUu
-9UOTSGQoSVYaUxKib2kQEPzhd40kSo9QJPB543vMJOdR/Bnz17Igcq+7xTBnljuP
-6PkwZlX3g1KSeNlJuD9ldguu1dGyQKmbZ7vDBuKTRtoSAEVXe8CtGYJY1IQhEWFE
-fnK4doNghS5emTF80/FJrhDGsdg5GkIaEX+02y1l06C1tdyAkMnon91UBWFS0Fb/
-KSaloj/8aHm2SGgFdcAS6BKLgxUgE2WRr6IafWnaxGEZPL385hI7kGWBrI8fGGv2
-ZpgWpbgLWBiAfw2E58ac
-=hxPb
+iQEcBAABAgAGBQJTCkwfAAoJEIkPb2GL7hl1LGwH/1e0zT3G6QzGZ66UDK82yjm+
+i/e7zTIQxEI5W/sBVyLkszT/VRW+cGgM86h3FLzioVVmwS9+k/kOObEWkPCIODfO
+ifuRKfQoVX85y7Wb+RNbjhVifXVs2D/ny44u3YOKQkVsttqYmcq3fEGq3HrJDO/o
+mKK/DPWqFDIOAmDWfQQHDcDQsBFjK/QG99UgiIgjxXzXj95ZQILv+ssEMf7hex+M
+VL7djBzDODQwhA0tpiYbYUIi5WEaIEDO1kDfP6BdXTkQJ8myxru/SPBzB6lWvfzw
+N3RtvtyQtmzuIX1WAJkG+jp0rrRPoWQJNUhm0mcIPtkFYapSin6oCR4RbFkDQTc=
+=eh7e
 -----END PGP SIGNATURE-----
 
---vtzGhvizbBRQ85DL--
+--nextPart7258077.sgnhBYOdPK--
+
