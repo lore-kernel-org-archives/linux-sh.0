@@ -1,58 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Feb 2014 03:42:53 +0000
-Subject: Re: [PATCH V3 0/3] ARM: shmobile: lager: Add USB support
-Message-Id: <CANqRtoScch-Ji3oJjTJELnG5_fKeiQcrzmO2ZtMSW=S40aGyxg@mail.gmail.com>
+From: <vladimir.barinov@cogentembedded.com>
+Date: Sun, 23 Feb 2014 16:37:47 +0000
+Subject: [PATCH] gpio: gpio-rcar: init at postcore level
+Message-Id: <1393173467-12240-1-git-send-email-vladimir.barinov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1390602529-11867-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Feb 5, 2014 at 6:31 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> On 28/01/14 21:37, Valentine wrote:
->>
->> On 01/27/2014 04:17 PM, Ben Dooks wrote:
->>>
->>> On 27/01/14 10:02, Valentine wrote:
->>>>
->>>> On 01/27/2014 01:59 PM, Ben Dooks wrote:
->>>>>
->>>>> On 24/01/14
->>>
->>>
->>> [snip]
->>>
->>>>> Hi, when doing this have you come across a problem where the OHCI
->>>>> controller on USB0 fails to start with an initialisation error? I
->>>>> think it is something to do with the bridge setup but have yet to
->>>>> have enough time to look into this issue.
->>>>>
->>>>
->>>> All PCI ports have worked fine for me.
->>>> Please, check that the SW5/SW6 pins are set correctly on your board.
->>>
->>>
->>> SW5 is at position 1
->>> SW6 is at position 1
->>>
->>
->> If the issue doesn't happen on other busses this is most likely
->> port misconfiguration issue. Looks like the USB phy channel 0 is not
->> configured properly.
->> Please, make sure that you have all the patches
->> noted in the cover-letter applied and that you're using the latest
->> devel tag from the renesas git.
->
->
-> I tracked it down to the phy driver being called after the ohci/ehci
-> drivers being initialised. It now seems to be working with all three
-> channels.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Thanks for sharing. I too managed to get USB1 and USB2 on lager going
-as expected.
+This adds ability to use gpio API at board init_machine level.
 
-Cheers,
+F.e. it can be used in the following situation.
+Many reference hardware has onboard switches that selects which periferals
+to connect to the system. The gpio input state from switches can be used
+in choosing platform devices runtime in board code instead of ifdefs/defconfig
+changes.
 
-/ magnus
+Signed-off-by: <vladimir.barinov@cogentembedded.com>
+
+---
+ drivers/gpio/gpio-rcar.c |   12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+Index: build/drivers/gpio/gpio-rcar.c
+=================================--- build.orig/drivers/gpio/gpio-rcar.c	2014-02-22 23:21:51.456229152 +0400
++++ build/drivers/gpio/gpio-rcar.c	2014-02-22 23:21:52.320229133 +0400
+@@ -485,7 +485,17 @@
+ 	}
+ };
+ 
+-module_platform_driver(gpio_rcar_device_driver);
++static int __init gpio_rcar_init(void)
++{
++	return platform_driver_register(&gpio_rcar_device_driver);
++}
++postcore_initcall(gpio_rcar_init);
++
++static void __exit gpio_rcar_exit(void)
++{
++	platform_driver_unregister(&gpio_rcar_device_driver);
++}
++module_exit(gpio_rcar_exit);
+ 
+ MODULE_AUTHOR("Magnus Damm");
+ MODULE_DESCRIPTION("Renesas R-Car GPIO Driver");
