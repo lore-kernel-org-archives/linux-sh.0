@@ -1,45 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 28 Feb 2014 13:21:32 +0000
-Subject: [PATCH 1/2] serial_core: Unregister console in uart_remove_one_port()
-Message-Id: <1393593694-30262-1-git-send-email-geert@linux-m68k.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 23 Feb 2014 12:40:24 +0000
+Subject: [PATCH 4/4] ARM: shmobile: koelsch: make i2c2-pfc node unique
+Message-Id: <1393159224-14377-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-If the serial port being removed is used as a console, it must also be
-unregistered from the console subsystem using unregister_console().
+This node should have a unique name so it can be distinguished when
+other i2c busses are added later.
 
-uart_ops.release_port() will release resources (e.g. iounmap() the serial
-port registers), causing a crash on subsequent kernel output if the console
-is still registered.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/tty/serial/serial_core.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
-index ece2049bd270..8ece7f14d89d 100644
---- a/drivers/tty/serial/serial_core.c
-+++ b/drivers/tty/serial/serial_core.c
-@@ -2677,6 +2677,12 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *uport)
- 		tty_vhangup(port->tty);
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index bf6ba0c..e6ca0e0 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -126,7 +126,7 @@
+ 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
  
- 	/*
-+	 * If the port is used as a console, unregister it
-+	 */
-+	if (uart_console(uport))
-+		unregister_console(uport->cons);
-+
-+	/*
- 	 * Free the port IO and memory resources, if any.
- 	 */
- 	if (uport->type != PORT_UNKNOWN)
+-	i2c2_pins: i2c {
++	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
+ 	};
 -- 
-1.7.9.5
+1.8.5.1
 
