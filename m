@@ -1,84 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:42:03 +0000
-Subject: [PATCH 07/12] ARM: shmobile: Rework include path for r8a7779
-Message-Id: <20140224054203.1143.41482.sendpatchset@w520>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 23 Feb 2014 21:40:10 +0000
+Subject: [patch 05/26] sh: Use irq_set_affinity instead of homebrewn code
+Message-Id: <20140223212736.774961401@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
+References: <20140223212703.511977310@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <peterz@infradead.org>, Paul Mundt <lethal@linux-sh.org>, sh <linux-sh@vger.kernel.org>
 
-From: Magnus Damm <damm@opensource.se>
+There is no point in having an incomplete copy of irq_set_affinity()
+for the hotplug irq migration code.
 
-Convert r8a7779 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
+Use the core function instead.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: sh <linux-sh@vger.kernel.org>
 ---
+ arch/sh/kernel/irq.c |   16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
 
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++--
- arch/arm/mach-shmobile/pm-r8a7779.c    |    6 +++---
- arch/arm/mach-shmobile/setup-r8a7779.c |    6 +++---
- arch/arm/mach-shmobile/smp-r8a7779.c   |    6 +++---
- 4 files changed, 11 insertions(+), 11 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2014-02-24 13:40:01.000000000 +0900
-@@ -23,8 +23,8 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/clock.h>
--#include <mach/common.h>
-+#include "clock.h"
-+#include "common.h"
+Index: tip/arch/sh/kernel/irq.c
+=================================--- tip.orig/arch/sh/kernel/irq.c
++++ tip/arch/sh/kernel/irq.c
+@@ -217,19 +217,6 @@ void __init init_IRQ(void)
+ }
  
+ #ifdef CONFIG_HOTPLUG_CPU
+-static void route_irq(struct irq_data *data, unsigned int irq, unsigned int cpu)
+-{
+-	struct irq_desc *desc = irq_to_desc(irq);
+-	struct irq_chip *chip = irq_data_get_irq_chip(data);
+-
+-	printk(KERN_INFO "IRQ%u: moving from cpu%u to cpu%u\n",
+-	       irq, data->node, cpu);
+-
+-	raw_spin_lock_irq(&desc->lock);
+-	chip->irq_set_affinity(data, cpumask_of(cpu), false);
+-	raw_spin_unlock_irq(&desc->lock);
+-}
+-
  /*
-  *		MD1 = 1			MD1 = 0
---- 0001/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2014-02-24 13:40:40.000000000 +0900
-@@ -19,9 +19,9 @@
- #include <linux/interrupt.h>
- #include <linux/console.h>
- #include <asm/io.h>
--#include <mach/common.h>
--#include <mach/pm-rcar.h>
--#include <mach/r8a7779.h>
-+#include "common.h"
-+#include "pm-rcar.h"
-+#include "r8a7779.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2014-02-24 13:40:19.000000000 +0900
-@@ -40,9 +40,9 @@
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
--#include <mach/irqs.h>
--#include <mach/r8a7779.h>
--#include <mach/common.h>
-+#include "irqs.h"
-+#include "r8a7779.h"
-+#include "common.h"
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/time.h>
---- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2014-02-24 13:41:01.000000000 +0900
-@@ -23,9 +23,9 @@
- #include <linux/spinlock.h>
- #include <linux/io.h>
- #include <linux/delay.h>
--#include <mach/common.h>
--#include <mach/pm-rcar.h>
--#include <mach/r8a7779.h>
-+#include "common.h"
-+#include "pm-rcar.h"
-+#include "r8a7779.h"
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
+  * The CPU has been marked offline.  Migrate IRQs off this CPU.  If
+  * the affinity settings do not allow other CPUs, force them onto any
+@@ -253,8 +240,7 @@ void migrate_irqs(void)
+ 				newcpu = cpumask_any_and(data->affinity,
+ 							 cpu_online_mask);
+ 			}
+-
+-			route_irq(data, irq, newcpu);
++			irq_set_affinity(irq, cpumask_of(newcpu));
+ 		}
+ 	}
+ }
+
+
