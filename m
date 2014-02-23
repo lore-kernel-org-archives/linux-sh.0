@@ -1,29 +1,41 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Fri, 28 Feb 2014 00:03:19 +0000
-Subject: Re: [PATCH] clk: shmobile: rcar-gen2: Use kick bit to allow Z clock frequency change
-Message-Id: <530FD247.6030201@codeaurora.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 23 Feb 2014 12:43:57 +0000
+Subject: [RFC] ARM: shmobile: koelsch: activate i2c6 bus
+Message-Id: <1393159437-14456-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <530C9D2A.8030409@baylibre.com>
-In-Reply-To: <530C9D2A.8030409@baylibre.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 02/27/14 14:46, Laurent Pinchart wrote:
-> I'm not familiar with the hardware, but the patch below looks good to me. 
-> While you're at it, what would you think about replacing the 
-> __clk_is_enabled() call with a direct call to clk_is_enabled_regmap() ? Any 
-> user of __clk_is_enabled() outside the CCF core is suspect from a locking 
-> point of view, and exporting that function seems like a dangerous idea. On the 
-> other hand, if you had done so already I wouldn't have found the race 
-> condition.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Hm.. I guess that's ok. I like not having to care about what op is
-assigned to the .is_enabled op though and we can't easily access the
-.ops structure because it's hidden by the clk framework.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
 
+I used this patch to test my IIC(B) enablement patches. With i2ctools,  I could
+scan this bus and read registers from the connected pmic. Actually, I don't think
+we should expose this bus unless really needed, but maybe you think different?
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index e6ca0e0..4557f8e 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -122,6 +122,11 @@
+ 	};
+ };
+ 
++&i2c6 {
++	status = "okay";
++	clock-frequency = <100000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-hosted by The Linux Foundation
+1.8.5.1
 
