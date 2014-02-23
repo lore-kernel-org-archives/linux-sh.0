@@ -1,40 +1,59 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Wed, 26 Feb 2014 23:41:55 +0000
-Subject: [PATCH 4/7] sh/PCI: Use default pcibios_enable_device()
-Message-Id: <20140226234155.18970.93520.stgit@bhelgaas-glaptop.roam.corp.google.com>
+From: <vladimir.barinov@cogentembedded.com>
+Date: Sun, 23 Feb 2014 18:00:59 +0000
+Subject: [PATCH V4 4/4] ARM: shmobile: koelsch: Add USB and PCI to defconfig
+Message-Id: <1393178459-14637-5-git-send-email-vladimir.barinov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140226233541.18970.83328.stgit@bhelgaas-glaptop.roam.corp.google.com>
-In-Reply-To: <20140226233541.18970.83328.stgit@bhelgaas-glaptop.roam.corp.google.com>
+References: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
+In-Reply-To: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
 
-We don't need anything arch-specific in pcibios_enable_device(), so drop
-the arch implementation and use the default generic one.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
-CC: Paul Mundt <lethal@linux-sh.org>
-CC: linux-sh@vger.kernel.org
+Add USB and PCI to koelsch_defconfig
+
+Signed-off-by: <vladimir.barinov@cogentembedded.com>
+
+Changes in V4:
+* Added this patch to series
+
 ---
- arch/sh/drivers/pci/pci.c |    5 -----
- 1 file changed, 5 deletions(-)
+ arch/arm/configs/koelsch_defconfig |   16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-index 60ed3e1c4b75..1bc09ee7948f 100644
---- a/arch/sh/drivers/pci/pci.c
-+++ b/arch/sh/drivers/pci/pci.c
-@@ -186,11 +186,6 @@ resource_size_t pcibios_align_resource(void *data, const struct resource *res,
- 	return start;
- }
- 
--int pcibios_enable_device(struct pci_dev *dev, int mask)
--{
--	return pci_enable_resources(dev, mask);
--}
--
- static void __init
- pcibios_bus_report_status_early(struct pci_channel *hose,
- 				int top_bus, int current_bus,
-
+Index: build/arch/arm/configs/koelsch_defconfig
+=================================--- build.orig/arch/arm/configs/koelsch_defconfig	2014-02-23 21:47:44.542571966 +0400
++++ build/arch/arm/configs/koelsch_defconfig	2014-02-23 21:48:03.718571572 +0400
+@@ -18,6 +18,8 @@
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_754322=y
++CONFIG_PCI=y
++CONFIG_PCI_RCAR_GEN2=y
+ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+ CONFIG_NR_CPUS=8
+@@ -81,7 +83,19 @@
+ CONFIG_REGULATOR_FIXED_VOLTAGE=y
+ CONFIG_REGULATOR_GPIO=y
+ # CONFIG_HID is not set
+-# CONFIG_USB_SUPPORT is not set
++CONFIG_USB_SUPPORT=y
++CONFIG_USB=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PCI=y
++CONFIG_USB_RENESAS_USBHS_HCD=y
++CONFIG_USB_RENESAS_USBHS=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB_PHY=y
++CONFIG_USB_RCAR_GEN2_PHY=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_RENESAS_USBHS_UDC=y
++CONFIG_USB_ETH=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_NEW_LEDS=y
