@@ -1,49 +1,60 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 20 Feb 2014 11:41:18 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 22:48:26 +0000
 Subject: Re: [PATCH V6 0/3] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits
-Message-Id: <20140220114118.GA5670@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="EVF5PPMfhYS0aIcm"
+Message-Id: <CANqRtoT6+6no5fT-6o7jD9k0hF+mMvU4z0ZmUCLksOsJTS0X8Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392670532-21523-1-git-send-email-wsa@the-dreams.de>
- <5305C13D.7040907@linaro.org>
+	<5305C13D.7040907@linaro.org>
 In-Reply-To: <5305C13D.7040907@linaro.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Daniel Lezcano <daniel.lezcano@linaro.org>
-Cc: linux-kernel@vger.kernel.org, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-kernel <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@linaro.org>, Arnd Bergmann <arnd@arndb.de>, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, John Stultz <john.stultz@linaro.org>, Olof Johansson <olof@lixom.net>
 
+On Thu, Feb 20, 2014 at 5:47 PM, Daniel Lezcano
+<daniel.lezcano@linaro.org> wrote:
+> On 02/17/2014 09:55 PM, Wolfram Sang wrote:
+>>
+>> This is V6 of the SH and ARM mach-shmobile clocksource Kconfig
+>> consolidation
+>> series. It is a rebased version of V5 (which did not get any comments) on
+>> top
+>> of the latest renesas/devel tag. This series is not just an optimization,
+>> it
+>> also makes it possible to enable the clocksource for the r7s72100
+>> platform.
+>> Without it, the current kernel is hardly usable for these devices at the
+>> moment
+>> (broken userland). So, it would be nice to have the series in 3.15. For
+>> more
+>> details, I quote the cover-letter from Magnus for V5 at the end. I
+>> successfully
+>> tested the patches on r7s72100 and r8a7791 platforms. The branch can be
+>> found
+>> here:
+>>
+>> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git
+>> renesas/rework-clock-configs
+>
+>
+> Hi Wolfram,
+>
+> actually I was waiting for Magnus to send me the patchset respinned against
+> timers/core [1].
 
---EVF5PPMfhYS0aIcm
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hi Daniel,
 
+Thanks for your help and my apologies for this confusion. I moved
+house during December and a couple of things got dropped including
+this one.
 
-> actually I was waiting for Magnus to send me the patchset respinned
-> against timers/core [1].
+> So if you mind, please refresh the series against timers/core as this series
+> does not apply for my tree.
 
-Ehrm, how did I manage to miss that reply? :) Thanks for the pointer,
-will send V7 in a minute.
+I noticed that Wolfram picked it up, thanks to both of you - I
+appreciate your help!
 
+Cheers,
 
---EVF5PPMfhYS0aIcm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTBendAAoJEBQN5MwUoCm2YmwP/35jH/lJtKQivgxBsF2urpVS
-5FKtfxjl6kyrV/9Ja9TO3LAs5SgrB02MERx0a/y+H0Dsct0oFsga28GgpXL2+VFe
-FHYQoNcD9zo1irN6cNexXyadSUpReUyQRD+nM7AJWt8vYURnOVJUqwJyLyesdtMJ
-K7YoZWCM8DHdYS88t4tUnDzoaewjPbrHWkz1qpBdS4UEUEVOKw1ZP9IHQC8Gslh/
-TfRzs5GQbdvnU8YO264mkSMkH9lpNkrdGFAlL7E7EhxLUQlCt6QBmvxTedXeurWg
-pjFe/7tjodwTbm4oJ7Rd3sqjN9K17GJSJN6VQN+gS2EjVvs/UcOiFCEHVy8r00EX
-7nb2XtW8xSA/gcoerPuhXtilHUGVSWQEoAmkbY2GB8VXNkNwkGToXwEY4eWIlT+M
-pOrhG7aiBK09xU7Pt2gsuaAjUJkhj7WgsypZbO0HML525Gk/2MKqs3Kr9CVjZV/e
-kgSw6VdK0bp7JeFvsnZetEHdsJf6/BpUY10pFodrRh4KtQfFp84C/0UoyhsKWryQ
-iWHSUy46JV6VmcNh8H33A1LFpRDk5B6TNEIGaeWRvqQDVYwjJqQocarUMLydfGOX
-AXQimlz5iJ0W12kOg0JKYm/7lN5lfawBE5s/OLFZDK/ZFs4oT3Iyv7E77RWPjmQL
-zGzV/Qeab4Kp+Imlq2+K
-=uFSk
------END PGP SIGNATURE-----
-
---EVF5PPMfhYS0aIcm--
+/ magnus
