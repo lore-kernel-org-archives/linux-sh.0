@@ -1,40 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:27 +0000
-Subject: [PATCH 07/13] ARM: shmobile: lager: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <6ea8b5ff7ca2d200875ddd774faa8ca40d990d86.1391651074.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 24 Feb 2014 12:42:37 +0000
+Subject: [GIT PULL FOR v3.14] Renesas CCF fixes
+Message-Id: <2712488.FLBcnFKsoQ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Mike,
 
-DEVTMPFS is needed for udev
+The following changes since commit cfbf8d4857c26a8a307fb7cd258074c9dcd8c691:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-[horms+renesas@verge.net.au: resolved trivial conflict]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/lager_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+  Linux 3.14-rc4 (2014-02-23 17:40:03 -0800)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index ee93b8a..3e7e0ae 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -49,6 +49,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_ATA=y
- CONFIG_SATA_RCAR=y
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git clocks/fixes/drivers
+
+for you to fetch changes up to 60480994c70981d0336aadb3f46b052977d3d19f:
+
+  clk: shmobile: Fix typo in MSTP clock DT bindings (2014-02-24 13:09:34 
++0100)
+
+----------------------------------------------------------------
+Laurent Pinchart (3):
+      clk: shmobile: rcar-gen2: Fix clock parent for all non-PLL clocks
+      clk: shmobile: rcar-gen2: Fix qspi divisor
+      clk: shmobile: Fix typo in MSTP clock DT bindings
+
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt |  4 ++--
+ drivers/clk/shmobile/clk-rcar-gen2.c                                | 12 +++-
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
 -- 
-1.8.5.2
+Regards,
+
+Laurent Pinchart
 
