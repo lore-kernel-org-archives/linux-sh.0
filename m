@@ -1,46 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2014 10:47:31 +0000
-Subject: [PATCH 5/7] ARM: shmobile: lager defconfig: Enable RSPI and MTD_M25P80
-Message-Id: <1392029254-15400-6-git-send-email-geert@linux-m68k.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:42:32 +0000
+Subject: [PATCH 10/12] ARM: shmobile: Rework include path for r8a73a4
+Message-Id: <20140224054232.1143.56037.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-This enables support for the Spansion s25fl512s SPI FLASH on QSPI.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/configs/lager_defconfig |    4 ++++
- 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 235772f7c81d..b17fc23ae676 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -51,6 +51,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_WIRELESS is not set
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
-+CONFIG_MTD=y
-+CONFIG_MTD_M25P80=y
- CONFIG_BLK_DEV_SD=y
- CONFIG_ATA=y
- CONFIG_SATA_RCAR=y
-@@ -86,6 +88,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_I2C=y
- CONFIG_I2C_GPIO=y
- CONFIG_I2C_RCAR=y
-+CONFIG_SPI=y
-+CONFIG_SPI_RSPI=y
- CONFIG_GPIO_SH_PFC=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
--- 
-1.7.9.5
+ arch/arm/mach-shmobile/clock-r8a73a4.c |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a73a4.c |    8 ++++----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2014-02-24 13:53:46.000000000 +0900
+@@ -22,8 +22,8 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+-#include <mach/common.h>
++#include "clock.h"
++#include "common.h"
+ 
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x270
+--- 0001/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2014-02-24 13:52:49.000000000 +0900
+@@ -24,10 +24,10 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+-#include <mach/common.h>
+-#include <mach/dma-register.h>
+-#include <mach/irqs.h>
+-#include <mach/r8a73a4.h>
++#include "common.h"
++#include "dma-register.h"
++#include "irqs.h"
++#include "r8a73a4.h"
+ #include <asm/mach/arch.h>
+ 
+ static const struct resource pfc_resources[] = {
