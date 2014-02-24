@@ -1,23 +1,36 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 25 Feb 2014 09:47:35 +0000
-Subject: Re: [PATCH] pinctrl: pfc: r8a7791: add mux data for IIC(B) cores
-Message-Id: <CACRpkdaukQPi+5-C+6YJ2BUvUXca-Mrc25C_n1iuoLWsWtkWDg@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 24 Feb 2014 19:57:11 +0000
+Subject: [PATCH] clk: shmobile: div6: use proper description in kernel doc
+Message-Id: <1393271848-13313-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393159095-14269-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1393159095-14269-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Feb 23, 2014 at 1:38 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-> From: Wolfram Sang <wsa@sang-engineering.com>
->
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+These variable clocks have nothing to do with MSTP gating, probably a
+copy&paste leftover.
 
-Applied with Laurent's ACK.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ drivers/clk/shmobile/clk-div6.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Yours,
-Linus Walleij
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index aac4756..f065f69 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -23,7 +23,7 @@
+ #define CPG_DIV6_DIV_MASK	0x3f
+ 
+ /**
+- * struct div6_clock - MSTP gating clock
++ * struct div6_clock - CPG 6 bit divider clock
+  * @hw: handle between common and hardware-specific interfaces
+  * @reg: IO-remapped register
+  * @div: divisor value (1-64)
+-- 
+1.8.5.1
+
