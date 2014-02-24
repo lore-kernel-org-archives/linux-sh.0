@@ -1,10 +1,10 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:47 +0000
-Subject: [PATCH 1/7] ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
-Message-Id: <4a51856b42672cfcb7d6fbab22dcf2caba2be5ab.1393400446.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 07:51:54 +0000
+Subject: [PATCH 01/02] ARM: shmobile: Lager DT USB PCI pinctrl setup via DTS
+Message-Id: <20140224075154.20255.72319.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393400446.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
+References: <20140224075144.20255.59443.sendpatchset@w520>
+In-Reply-To: <20140224075144.20255.59443.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,45 +12,40 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Some on-chip devices on r8a7790 and r8a7791 can do
-bus mastering and access more than 32-bits of address
-space. Select ARCH_DMA_ADDR_T_64BIT when LPAE is set
-in case of multiplatform and legacy SoC support.
+Add USB1 and USB2 pin configuration for Lager DT reference to
+the default pinctrl setup.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig | 3 +++
- 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 3386406..0272cd7 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -13,6 +13,7 @@ config ARCH_SHMOBILE_MULTI
- 	select ARM_GIC
- 	select MIGHT_HAVE_CACHE_L2X0
- 	select MIGHT_HAVE_PCI
-+	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 	select NO_IOPORT
- 	select PINCTRL
- 	select ARCH_REQUIRE_GPIOLIB
-@@ -123,6 +124,7 @@ config ARCH_R8A7790
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-@@ -132,6 +134,7 @@ config ARCH_R8A7791
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
--- 
-1.8.5.2
+ arch/arm/boot/dts/r8a7790-lager.dts |   12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
+--- 0001/arch/arm/boot/dts/r8a7790-lager.dts
++++ work/arch/arm/boot/dts/r8a7790-lager.dts	2014-02-18 11:35:09.000000000 +0900
+@@ -111,7 +111,7 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins &usb1_pins &usb2_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	du_pins: du {
+@@ -148,6 +148,16 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
+ };
+ 
+ &mmcif1 {
