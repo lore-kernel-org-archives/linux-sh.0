@@ -1,102 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 23 Feb 2014 22:28:35 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 24 Feb 2014 10:34:19 +0000
 Subject: Re: [PATCH 3/4] ARM: shmobile: r8a7791: add IIC(B) cores to dtsi
-Message-Id: <1811144.7JYTPar7GZ@avalon>
+Message-Id: <20140224103419.GB4445@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="mojUlQ0s9EVzWg2t"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393159224-14377-3-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1393159224-14377-3-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-Thank you for the patch.
+--mojUlQ0s9EVzWg2t
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Sunday 23 February 2014 13:40:23 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++++++++++++++++++++
->  1 file changed, 36 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index eb2cec8..d3aed50 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -26,6 +26,9 @@
->  		i2c3 = &i2c3;
->  		i2c4 = &i2c4;
->  		i2c5 = &i2c5;
-> +		i2c6 = &i2c6;
-> +		i2c7 = &i2c7;
-> +		i2c8 = &i2c8;
->  	};
-> 
->  	cpus {
-> @@ -179,6 +182,7 @@
->  			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
->  	};
-> 
-> +	/* The memory map in the User's Manual maps the cores to bus numbers */
->  	i2c0: i2c@e6508000 {
->  		#address-cells = <1>;
->  		#size-cells = <0>;
-> @@ -230,6 +234,7 @@
->  	};
-> 
->  	i2c5: i2c@e6528000 {
-> +		/* doesn't need pinmux */
->  		#address-cells = <1>;
->  		#size-cells = <0>;
->  		compatible = "renesas,i2c-r8a7791";
-> @@ -239,6 +244,37 @@
->  		status = "disabled";
->  	};
-> 
-> +	i2c6: i2c@e60b0000 {
-> +		/* doesn't need pinmux */
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,i2cB-r8a7791", "renesas,rmobile-iic";
 
-Wouldn't "renesas,iic-r8a7791" be more appropriate ? It would be closer to 
-"renesas,rmobile-iic".
+> > +	i2c6: i2c@e60b0000 {
+> > +		/* doesn't need pinmux */
+> > +		#address-cells =3D <1>;
+> > +		#size-cells =3D <0>;
+> > +		compatible =3D "renesas,i2cB-r8a7791", "renesas,rmobile-iic";
+>=20
+> Wouldn't "renesas,iic-r8a7791" be more appropriate ? It would be closer t=
+o=20
+> "renesas,rmobile-iic".
 
-> +		reg = <0 0xe60b0000 0 0x425>;
-> +		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
-> +		status = "disabled";
-> +	};
-> +
-> +	i2c7: i2c@e6500000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,i2cB-r8a7791", "renesas,rmobile-iic";
-> +		reg = <0 0xe6500000 0 0x425>;
-> +		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
-> +		status = "disabled";
-> +	};
-> +
-> +	i2c8: i2c@e6510000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,i2cB-r8a7791", "renesas,rmobile-iic";
-> +		reg = <0 0xe6510000 0 0x425>;
-> +		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
-> +		status = "disabled";
-> +	};
-> +
->  	pfc: pfc@e6060000 {
->  		compatible = "renesas,pfc-r8a7791";
->  		reg = <0 0xe6060000 0 0x250>;
+Yes, that is better probably. Still a bit confusing, yet better.
 
--- 
-Regards,
 
-Laurent Pinchart
+--mojUlQ0s9EVzWg2t
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTCyArAAoJEBQN5MwUoCm2K4oP/0zPzz/Wfh9qILFdW0oNEBS3
+gNEt1QQ41yE49+BH2mUAUfZ95AE4gigAuazgTllD0uaqfaj+Z4rgKNYKkibIR6u2
+C7ohWFgHr14X/bD+Y1ChQIKJW03f/tpvmLmQAyRMMX57mXWkd61k5kJjBhwYHi35
+s2FXrPY+7fwF8RuJ4XTBQd+WTNgOR8QY0SrHQ8XBbtHNkeFVaUwQbZOvqciIctOG
+fho2eXhZQuyyX2tr59jz7h93k6v0IFN1UKFCKRa4ljeT7qDsBQ9+fP+mch5LoN8L
+6t7e95386C5/rh6vdjJ0iWSr0rz5ReD4peZAEjnNq8aq8MdO7R2al1DGRrhguxuG
+ewU0RnC/7MaLCfxE7rYc69IZNLw1B70QOrxhI59I9js8VYkkdNMpoVKN+8HjsiCL
+7MnRLldWz2Kgz6hFvd06HVzmHCGN7chW2awtg++OZmDUz835gzFl6UKyh8ZbHbip
+FrgLBlzBUzC/FT1p05z58SvKjlG5mtt8FyygVpH3WhUTpp8L0BVMely+9qOaAoyc
+HNeXsk9TRXeshjWpkFRFC7jabzb0R6vY/E6penPfnLGZ5oCr9xJNsOV+rS7vh1H/
+1ChAnWq6yLiAvPg3DciFvU8JxSEhXjv5gy4jOPyAp+1uf12LD1cGFJk4BVu+u4m2
+YgP0NFiFz25XXrlr9D60
+=t75g
+-----END PGP SIGNATURE-----
+
+--mojUlQ0s9EVzWg2t--
