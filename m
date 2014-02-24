@@ -1,69 +1,59 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 24 Feb 2014 09:48:26 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 24 Feb 2014 13:07:11 +0000
 Subject: Re: [PATCH 08/10] spi: sh-msiof: Move clock management to (un)prepare_message()
-Message-Id: <CAMuHMdWF5BnPPFoWPqASQjc+9GCYZQEVcWRZaLNFzdz0rAt0_A@mail.gmail.com>
+Message-Id: <20140224130711.GH25940@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="w5TELPsKZB/ns6eJ"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-	<1392907389-21798-9-git-send-email-geert@linux-m68k.org>
-	<20140222032700.GX25940@sirena.org.uk>
-In-Reply-To: <20140222032700.GX25940@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+ <1392907389-21798-9-git-send-email-geert@linux-m68k.org>
+ <20140222032700.GX25940@sirena.org.uk>
+ <CAMuHMdWF5BnPPFoWPqASQjc+9GCYZQEVcWRZaLNFzdz0rAt0_A@mail.gmail.com>
+In-Reply-To: <CAMuHMdWF5BnPPFoWPqASQjc+9GCYZQEVcWRZaLNFzdz0rAt0_A@mail.gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Takashi Yoshii <takasi-y@ops.dti.ne.jp>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Mark, Magnus,
 
-On Sat, Feb 22, 2014 at 4:27 AM, Mark Brown <broonie@kernel.org> wrote:
-> On Thu, Feb 20, 2014 at 03:43:07PM +0100, Geert Uytterhoeven wrote:
->
->> +     if (!test_and_set_bit(0, &p->flags)) {
->> +             pm_runtime_get_sync(&p->pdev->dev);
->> +             clk_enable(p->clk);
->> +     }
->
-> That test_and_set_bit() is a bit odd - what's going on there, perhaps a
-> comment is in order?  I'd also like to see return value checks, though
+--w5TELPsKZB/ns6eJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-My first guess was to support multiple CS, but you can't have multiple
-active SPI slaves at the same time.
+On Mon, Feb 24, 2014 at 10:48:26AM +0100, Geert Uytterhoeven wrote:
 
-Perhaps it's because the bitbang core may call the .chipselect() callback
-multiple times with is_on = BITBANG_CS_ACTIVE, and obviously the
-clock should be enabled/disabled only once?
-The current code doesn't seem to do that, but perhaps it was different when
-the sh-msiof driver was written?
+> Perhaps it's because the bitbang core may call the .chipselect() callback
+> multiple times with is_on == BITBANG_CS_ACTIVE, and obviously the
+> clock should be enabled/disabled only once?
+> The current code doesn't seem to do that, but perhaps it was different when
+> the sh-msiof driver was written?
 
-Ah, there's also the initial .chipselect(..., BITBANG_CS_INACTIVE) call
-in spi_bitbang_setup(), which should not disable the clock.
-But it should still call sh_msiof_spi_set_pin_regs() and set the optional
-GPIO CS. Which is no longer done after my series. I'll fix that.
+Possibly, or perhaps someone was being overly cautious.
 
-Magnus, do you remember the rationale for the test_and_set_bit()?
+> As you mention yourself, all of this code existed before. It just got moved,
+> to make the conversion to the SPI core message handling easier.
+> If you don't mind, I'd like to defer these, and tackle runtime PM later.
 
-Anyway, it seems safe to remove it, as .(un)prepare_message() is
-guaranteed to be called in matching pairs.
+Sure.
 
-> the original didn't have them so it's not a blocker, and ideally that
-> should be clk_prepare_enable().  I guess the clock stuff could even be
-> moved inside the runtime PM callbacks?  Again not a blocker if the
-> existing code doesn't have things but it'd be nice to do.
->
-> There's also auto_runtime_pm in the SPI core which will do the runtime
-> PM for you if you can do it unconditionally.
+--w5TELPsKZB/ns6eJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-As you mention yourself, all of this code existed before. It just got moved,
-to make the conversion to the SPI core message handling easier.
-If you don't mind, I'd like to defer these, and tackle runtime PM later.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-Gr{oetje,eeting}s,
+iQIcBAEBAgAGBQJTC0P8AAoJELSic+t+oim9aF4P/RNiBEhU0/pNGA0kaHy10avr
+L4Bmsn4+975Tuwci+TWwfUq/9Aw9GGaQIBRT+bJDcrl3Kc5gPY6G8h498J9raSyq
+RqPAh1M6/qhm/1bRNVKsTf7ldZuKzlsjeqLmDk8Nsl2eEs8g98LjTgzGE7upxyzG
+KU80l7gmtoh/S1MQvEKePo3U0iuJ57Wb1V9vJ6dm8NZRedeSqCpA3VaBWhuVk+2B
+oEkCdsXGEmhlUZ5fM2xpwGFymIVwgTaZAWghB0tyYRZ4TXk/Q6yuIF+EyR3pGUT9
+W5ZCoaRTcG518R4cJncqlwsMB6Hw+j6Iv7/U1hutAnnVJfzqoOftNyrp/1iIfYTh
+Cf5cvokH6pL8B2ITCUfjUQv5ewKYJ351CHil5QRweoGla0AkOSNZ4t5+bS4XZZ9e
+UR+nQkfAURgbXa9hOfp7oWMO/445e2h31Datd2x4O3PKYvOezAov9SsOVJDTQ3Pj
+zGy5cXGlFUgrXJfS2GLzi4AcgevQKBYZHvWBKuOX2ahubunwGF0uIvXnlrV4a7ei
+dS/LdNeGWwmHh1JDPBYDtS0LSUhn9fhbQ5Sx4mM+eTQwoI4kP/U8SDQo7FUMfQZ0
+PwaIgqGCDvqkdJqtKj4dlHCr6RPqvLNqIn0fkllgfRgQIhEFusugGzLCjFZRRHcZ
+xt/A8bbiH/F8l36wu/2d
+=m2RV
+-----END PGP SIGNATURE-----
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--w5TELPsKZB/ns6eJ--
