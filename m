@@ -1,43 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:21:09 +0000
-Subject: [PATCH 12/13] ARM: shmobile: r7s72100: really add i2c clocks
-Message-Id: <3440cb28627d7fbaf25c0d60cb9c6cf6d66d61ad.1391666228.git.horms+renesas@verge.net.au>
+From: <vladimir.barinov@cogentembedded.com>
+Date: Mon, 24 Feb 2014 09:30:02 +0000
+Subject: [PATCH V5 2/4] ARM: shmobile: r8a7791: Add PCI USB host clock support
+Message-Id: <1393234204-24096-3-git-send-email-vladimir.barinov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391666228.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391666228.git.horms+renesas@verge.net.au>
+References: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
+In-Reply-To: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-Due to a merge conflict, addition of the clocks was lost. Tested with
-RIIC2 on a genmai board. Others untested but hopefully trivial enough to
-be added.
+This adds internal PCI USB host clock support to R-Car M2 SoC.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-[horms+renesas@verge.net.au: Capitalised "ARM" in subject]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+
+Changes in V5:
+Changes in V4:
+Changes in V3:
+* none.
+
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag.
+
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index e6ab0cd..dd8ce87 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -176,6 +176,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
+=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
++++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:57.446571701 +0400
+@@ -177,7 +177,7 @@
+ 	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+-	MSTP704,
++	MSTP704, MSTP703,
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+ 	MSTP216, MSTP207, MSTP206,
+@@ -210,6 +210,7 @@
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
+ 	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
++	[MSTP703] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 3, MSTPSR7, 0), /* EHCI */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
+ 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
+@@ -285,6 +286,8 @@
+ 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
++	CLKDEV_DEV_ID("pci-rcar-gen2.1", &mstp_clks[MSTP703]),
+ };
  
- 	/* MSTP clocks */
-+	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
-+	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
-+	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
-+	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
--- 
-1.8.5.2
-
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
