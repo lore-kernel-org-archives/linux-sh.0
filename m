@@ -1,49 +1,113 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Feb 2014 12:21:10 +0000
-Subject: Re: [PATCH 04/11] ARM: shmobile: lager.dts: add pci 0/1/2
-Message-Id: <CANqRtoSH+ASWEo_q9wAUcLsR6TU4=H1uqMDGnrfUnDbz1nK6RA@mail.gmail.com>
+Date: Mon, 24 Feb 2014 07:29:30 +0000
+Subject: [PATCH 01/03] ARM: shmobile: Introduce shmobile_clk_workaround()
+Message-Id: <20140224072930.3522.54629.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391595554-20640-5-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1391595554-20640-5-git-send-email-ben.dooks@codethink.co.uk>
+References: <20140224072921.3522.55023.sendpatchset@w520>
+In-Reply-To: <20140224072921.3522.55023.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 5, 2014 at 9:13 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> On 05/02/14 12:09, Magnus Damm wrote:
->>
->> On Wed, Feb 5, 2014 at 7:19 PM, Ben Dooks <ben.dooks@codethink.co.uk>
->> wrote:
->>>
->>> Enable pci1 and pci2 nodes for USB controllers attached to the AHB<>PCI
->>> bridge devices. Node pci0 is enabled for the moment as a device, but
->>> could be switched to usb-gadget mode later.
->>>
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
->>
->>
->> I'd like this to follow board-lager.c, which means using usb0 as
->> gadget-only due to missing cable detection on the micro-USB connector.
->> So feel free to keep pci0, pci1, pci2 in r8a7790.dtsi but for
->> r8a7790-lager.dtsi please omit pci0 to keep in-sync with the legacy
->> board-lager.c code.
->
->
-> Thanks, I'd missed that there was no A/B detection on the
-> socket.
->
-> Can I add the pci0 to the r8a7790.dtsi as we need it for our
-> project? I will update the lager dts file to set channel 0
-> to be used as the device.
+From: Magnus Damm <damm@opensource.se>
 
-I think your r8a7790.dtsi modification looks fine as-is in "[PATCH
-03/11] ARM: shmbobile: r8a7790.dtsi: add pci0/1/2 nodes".
+Introduce a new clock workaround function used by DT reference
+code on the mach-shmobile subarchitecture. The new function
+shmobile_clk_workaround() is used to configure clkdev to
+allow DT and platform devices to coexist. It is possible for
+the DT reference board code to also request enabling of the clock
+in case the driver does not implement clock control.
 
-Regarding Lager DTS, please leave pci0 disabled and whenever usbhs is
-DT-aware then we should hook that up to USB0.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Cheers,
+ arch/arm/mach-shmobile/Makefile             |    2 -
+ arch/arm/mach-shmobile/clock.c              |   29 +++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/clock.h |   16 ++++++++++++++
+ 3 files changed, 46 insertions(+), 1 deletion(-)
 
-/ magnus
+--- 0016/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-02-24 15:45:31.000000000 +0900
+@@ -23,8 +23,8 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ 
+ # Clock objects
+-ifndef CONFIG_COMMON_CLK
+ obj-y				+= clock.o
++ifndef CONFIG_COMMON_CLK
+ obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
+--- 0013/arch/arm/mach-shmobile/clock.c
++++ work/arch/arm/mach-shmobile/clock.c	2014-02-24 15:56:51.000000000 +0900
+@@ -21,6 +21,32 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++
++#ifdef CONFIG_COMMON_CLK
++#include <linux/clk.h>
++#include <linux/clkdev.h>
++#include "clock.h"
++
++void __init shmobile_clk_workaround(const struct clk_name *clks,
++				    int nr_clks, bool enable)
++{
++	const struct clk_name *clkn;
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < nr_clks; ++i) {
++		clkn = clks + i;
++		clk = clk_get(NULL, clkn->clk);
++		if (!IS_ERR(clk)) {
++			clk_register_clkdev(clk, clkn->con_id, clkn->dev_id);
++			if (enable)
++				clk_prepare_enable(clk);
++			clk_put(clk);
++		}
++	}
++}
++
++#else /* CONFIG_COMMON_CLK */
+ #include <linux/sh_clk.h>
+ #include <linux/export.h>
+ #include "clock.h"
+@@ -58,3 +84,6 @@ void __clk_put(struct clk *clk)
+ {
+ }
+ EXPORT_SYMBOL(__clk_put);
++
++#endif /* CONFIG_COMMON_CLK */
++
+--- 0001/arch/arm/mach-shmobile/include/mach/clock.h
++++ work/arch/arm/mach-shmobile/include/mach/clock.h	2014-02-24 15:45:31.000000000 +0900
+@@ -1,6 +1,21 @@
+ #ifndef CLOCK_H
+ #define CLOCK_H
+ 
++#ifdef CONFIG_COMMON_CLK
++/* temporary clock configuration helper for platform devices */
++
++struct clk_name {
++	const char *clk;
++	const char *con_id;
++	const char *dev_id;
++};
++
++void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
++			     bool enable);
++
++#else /* CONFIG_COMMON_CLK */
++/* legacy clock implementation */
++
+ unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
+ extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
+ 
+@@ -36,4 +51,5 @@ do {			\
+ 	(p)->div = d;	\
+ } while (0)
+ 
++#endif /* CONFIG_COMMON_CLK */
+ #endif
