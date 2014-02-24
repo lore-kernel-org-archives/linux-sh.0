@@ -1,78 +1,62 @@
-From: Patrick Titiano <ptitiano@baylibre.com>
-Date: Fri, 28 Feb 2014 13:10:04 +0000
-Subject: [PATCH 2/2] thermal: rcar-thermal: update thermal zone only when temperature changes
-Message-Id: <1393593004-16285-3-git-send-email-ptitiano@baylibre.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:41:34 +0000
+Subject: [PATCH 04/12] ARM: shmobile: Rework include path for EMEV2
+Message-Id: <20140224054134.1143.15635.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
-In-Reply-To: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com
-Cc: bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Patrick Titiano <ptitiano@baylibre.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Avoid updating the thermal zone in case an IRQ was triggered but the
-temperature didn't effectively change.
-Note this is not a driver issue.
-Below is a captured debug trace illustrating the purpose of this patch:
-out of 8 thermal zone updates, only 2 are actually necessary.
+From: Magnus Damm <damm@opensource.se>
 
-[   41.120000] rcar_thermal_work(): cctemp%000
-[   41.120000] rcar_thermal_work(): nctemp0000
-[   41.120000] rcar_thermal_work(): temp is now 30000C, update thermal zone
-[   58.990000] rcar_thermal_work(): cctemp0000
-[   58.990000] rcar_thermal_work(): nctemp0000
-[   58.990000] rcar_thermal_work(): same temp, do not update thermal zone
-[   59.290000] rcar_thermal_work(): cctemp0000
-[   59.290000] rcar_thermal_work(): nctemp0000
-[   59.290000] rcar_thermal_work(): same temp, do not update thermal zone
-[   59.590000] rcar_thermal_work(): cctemp0000
-[   59.590000] rcar_thermal_work(): nctemp0000
-[   59.590000] rcar_thermal_work(): same temp, do not update thermal zone
-[   59.890000] rcar_thermal_work(): cctemp0000
-[   59.890000] rcar_thermal_work(): nctemp0000
-[   59.890000] rcar_thermal_work(): same temp, do not update thermal zone
-[   60.190000] rcar_thermal_work(): cctemp0000
-[   60.190000] rcar_thermal_work(): nctemp0000
-[   60.190000] rcar_thermal_work(): same temp, do not update thermal zone
-[   60.490000] rcar_thermal_work(): cctemp0000
-[   60.490000] rcar_thermal_work(): nctemp0000
-[   60.490000] rcar_thermal_work(): same temp, do not update thermal zone
-[   60.790000] rcar_thermal_work(): cctemp0000
-[   60.790000] rcar_thermal_work(): nctemp5000
-[   60.790000] rcar_thermal_work(): temp is now 35000C, update thermal zone
+Convert EMEV2 SoC code use of include files from 
+the style <mach/something.h> to "something.h".
 
-I suspect this may be due to sensor sampling accuracy / fluctuation,
-but no formal proof.
-
-Signed-off-by: Patrick Titiano <ptitiano@baylibre.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/thermal/rcar_thermal.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 6ea8c5c..187693c 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -302,12 +302,17 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
- static void rcar_thermal_work(struct work_struct *work)
- {
- 	struct rcar_thermal_priv *priv;
-+	unsigned long cctemp, nctemp;
- 
- 	priv = container_of(work, struct rcar_thermal_priv, work.work);
- 
-+	rcar_thermal_get_temp(priv->zone, &cctemp);
- 	rcar_thermal_update_temp(priv);
- 	rcar_thermal_irq_enable(priv);
--	thermal_zone_device_update(priv->zone);
-+
-+	rcar_thermal_get_temp(priv->zone, &nctemp);
-+	if (nctemp != cctemp)
-+		thermal_zone_device_update(priv->zone);
- }
- 
- static u32 rcar_thermal_had_changed(struct rcar_thermal_priv *priv, u32 status)
--- 
-1.8.3.2
+ arch/arm/mach-shmobile/clock-emev2.c |    2 +-
+ arch/arm/mach-shmobile/setup-emev2.c |    4 ++--
+ arch/arm/mach-shmobile/smp-emev2.c   |    4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/clock-emev2.c
++++ work/arch/arm/mach-shmobile/clock-emev2.c	2014-02-24 13:28:21.000000000 +0900
+@@ -21,7 +21,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/common.h>
++#include "common.h"
+ 
+ #define EMEV2_SMU_BASE 0xe0110000
+ 
+--- 0001/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-02-24 13:28:37.000000000 +0900
+@@ -20,8 +20,8 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+-#include <mach/common.h>
+-#include <mach/emev2.h>
++#include "common.h"
++#include "emev2.h"
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+--- 0001/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2014-02-24 13:28:58.000000000 +0900
+@@ -23,8 +23,8 @@
+ #include <linux/spinlock.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+-#include <mach/common.h>
+-#include <mach/emev2.h>
++#include "common.h"
++#include "emev2.h"
+ #include <asm/smp_plat.h>
+ #include <asm/smp_scu.h>
+ 
