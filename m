@@ -1,64 +1,86 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:05 +0000
-Subject: [PATCH 06/10] spi: sh-msiof: Improve binding documentation
-Message-Id: <1392907389-21798-7-git-send-email-geert@linux-m68k.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:42:13 +0000
+Subject: [PATCH 08/12] ARM: shmobile: Rework include path for r8a7790
+Message-Id: <20140224054213.1143.46444.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-  - Add missing "interrupt-parent", "#address-cells", "#size-cells", and
-    "clocks" properties,
-  - Add missing default values for "renesas,tx-fifo-size" and
-    "renesas,rx-fifo-size",
-  - Add a reference to the pinctrl documentation.
+Convert r8a7790 SoC code use of include files from 
+the style <mach/something.h> to "something.h".
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- Documentation/devicetree/bindings/spi/sh-msiof.txt |   24 ++++++++++++++------
- 1 file changed, 17 insertions(+), 7 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-index e6222106ca36..52cf5c78705b 100644
---- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
-+++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-@@ -1,12 +1,22 @@
- Renesas MSIOF spi controller
- 
- Required properties:
--- compatible : 	"renesas,sh-msiof" for SuperH or
--		"renesas,sh-mobile-msiof" for SH Mobile series
--- reg : Offset and length of the register set for the device
--- interrupts : interrupt line used by MSIOF
-+- compatible           : "renesas,sh-msiof" for SuperH, or
-+			 "renesas,sh-mobile-msiof" for SH Mobile series.
-+- reg                  : Offset and length of the register set for the device
-+- interrupt-parent     : The phandle for the interrupt controller that
-+			 services interrupts for this device
-+- interrupts           : Interrupt specifier
-+- #address-cells       : Must be <1>
-+- #size-cells          : Must be <0>
- 
- Optional properties:
--- num-cs		: total number of chip-selects
--- renesas,tx-fifo-size	: Overrides the default tx fifo size given in words
--- renesas,rx-fifo-size	: Overrides the default rx fifo size given in words
-+- clocks               : Must contain a reference to the functional clock.
-+- num-cs               : Total number of chip-selects
-+- renesas,tx-fifo-size : Overrides the default tx fifo size given in words
-+			 (default is 64)
-+- renesas,rx-fifo-size : Overrides the default rx fifo size given in words
-+			 (default is 64)
-+
-+Pinctrl properties might be needed, too.  See
-+Documentation/devicetree/bindings/pinctrl/renesas,*.
--- 
-1.7.9.5
+ arch/arm/mach-shmobile/clock-r8a7790.c |    6 +++---
+ arch/arm/mach-shmobile/pm-r8a7790.c    |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a7790.c |    8 ++++----
+ arch/arm/mach-shmobile/smp-r8a7790.c   |    6 +++---
+ 4 files changed, 12 insertions(+), 12 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2014-02-24 13:44:02.000000000 +0900
+@@ -22,9 +22,9 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+-#include <mach/common.h>
+-#include <mach/r8a7790.h>
++#include "clock.h"
++#include "common.h"
++#include "r8a7790.h"
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+--- 0001/arch/arm/mach-shmobile/pm-r8a7790.c
++++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-02-24 13:44:26.000000000 +0900
+@@ -12,8 +12,8 @@
+ 
+ #include <linux/kernel.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
+-#include <mach/r8a7790.h>
++#include "pm-rcar.h"
++#include "r8a7790.h"
+ 
+ /* SYSC */
+ #define SYSCIER 0x0c
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-02-24 13:43:31.000000000 +0900
+@@ -26,10 +26,10 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+-#include <mach/common.h>
+-#include <mach/dma-register.h>
+-#include <mach/irqs.h>
+-#include <mach/r8a7790.h>
++#include "common.h"
++#include "dma-register.h"
++#include "irqs.h"
++#include "r8a7790.h"
+ #include <asm/mach/arch.h>
+ 
+ /* Audio-DMAC */
+--- 0001/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-02-24 13:46:10.000000000 +0900
+@@ -18,9 +18,9 @@
+ #include <linux/smp.h>
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+-#include <mach/common.h>
+-#include <mach/pm-rcar.h>
+-#include <mach/r8a7790.h>
++#include "common.h"
++#include "pm-rcar.h"
++#include "r8a7790.h"
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
