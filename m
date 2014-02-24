@@ -1,45 +1,116 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 13 Feb 2014 05:57:07 +0000
-Subject: Re: [PATCH 0/2 v4]: ARM: shmobile: lager: add SDHI0/2 support for legacy/DT
-Message-Id: <871tz7d07j.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 07:30:06 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
+Message-Id: <20140224073006.3522.95891.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877g8zd0wo.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <877g8zd0wo.wl%kuninori.morimoto.gx@gmail.com>
+References: <20140224072921.3522.55023.sendpatchset@w520>
+In-Reply-To: <20140224072921.3522.55023.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi
+Convert the Koelsch DT reference code to use the newly introduced
+function shmobile_clk_workaround().
 
-> These are v4 patch of SDHI0/2 support for lager.
-> These are based on...
-> 
->   renesas-devel-v3.14-rc1-20140207
-> + sh-arm/topic/r-car-sdhi
-> + git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git :: /topic/gpio
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Today's above topic/gpio branch is broken somehow.
-Today, I sent bugifx patch for this issue.
-Please check it
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   71 ++++++++--------------
+ 1 file changed, 28 insertions(+), 43 deletions(-)
 
-Subject: [PATCH] regulator: gpio: reborn necessary prop
-Date: Thu, 13 Feb 2014 12:39:08 +0900
-
-
-> 
-> v3 had SoC specific option on dts file,
-> but it is included in driver side.
-> v4 removed these from dts
-> 
-> > These are v2 patch of SDHI0/2 support for Lager.
-> > #1 is same one, #2 patch was updated
-> > 
-> > Kuninori Morimoto (2):
-> >       ARM: shmobile: lager: add SDHI0/2 support
-> >       ARM: shmobile: lager: add SDHI0/2 support on DTS
-> > 
-> >  arch/arm/boot/dts/r8a7790-lager.dts  |   84 ++++++++++++++++++++++++++++++++++
-> >  arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++
-> >  2 files changed, 148 insertions(+)
+--- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-02-24 15:50:57.000000000 +0900
+@@ -19,12 +19,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk.h>
+-#include <linux/clkdev.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+@@ -82,49 +81,35 @@ static void __init koelsch_add_du_device
+ 	platform_device_register_full(&info);
+ }
+ 
++/*
++ * This is a really crude hack to provide clkdev support to platform
++ * devices until they get moved to DT.
++ */
++static const struct clk_name clk_names[] = {
++	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifb0", NULL, "sh-sci.2" },
++	{ "scifb1", NULL, "sh-sci.3" },
++	{ "scifb2", NULL, "sh-sci.4" },
++	{ "scifa2", NULL, "sh-sci.5" },
++	{ "scif0", NULL, "sh-sci.6" },
++	{ "scif1", NULL, "sh-sci.7" },
++	{ "scif2", NULL, "sh-sci.8" },
++	{ "scif3", NULL, "sh-sci.9" },
++	{ "scif4", NULL, "sh-sci.10" },
++	{ "scif5", NULL, "sh-sci.11" },
++	{ "scifa3", NULL, "sh-sci.12" },
++	{ "scifa4", NULL, "sh-sci.13" },
++	{ "scifa5", NULL, "sh-sci.14" },
++	{ "du0", "du.0", "rcar-du-r8a7791" },
++	{ "du1", "du.1", "rcar-du-r8a7791" },
++	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
++};
++
+ static void __init koelsch_add_standard_devices(void)
+ {
+-	/*
+-	 * This is a really crude hack to provide clkdev support to the CMT and
+-	 * DU devices until they get moved to DT.
+-	 */
+-	static const struct clk_name {
+-		const char *clk;
+-		const char *con_id;
+-		const char *dev_id;
+-	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
+-		{ "scifa0", NULL, "sh-sci.0" },
+-		{ "scifa1", NULL, "sh-sci.1" },
+-		{ "scifb0", NULL, "sh-sci.2" },
+-		{ "scifb1", NULL, "sh-sci.3" },
+-		{ "scifb2", NULL, "sh-sci.4" },
+-		{ "scifa2", NULL, "sh-sci.5" },
+-		{ "scif0", NULL, "sh-sci.6" },
+-		{ "scif1", NULL, "sh-sci.7" },
+-		{ "scif2", NULL, "sh-sci.8" },
+-		{ "scif3", NULL, "sh-sci.9" },
+-		{ "scif4", NULL, "sh-sci.10" },
+-		{ "scif5", NULL, "sh-sci.11" },
+-		{ "scifa3", NULL, "sh-sci.12" },
+-		{ "scifa4", NULL, "sh-sci.13" },
+-		{ "scifa5", NULL, "sh-sci.14" },
+-		{ "du0", "du.0", "rcar-du-r8a7791" },
+-		{ "du1", "du.1", "rcar-du-r8a7791" },
+-		{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+-	};
+-	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
+-		clk = clk_get(NULL, clk_names[i].clk);
+-		if (!IS_ERR(clk)) {
+-			clk_register_clkdev(clk, clk_names[i].con_id,
+-					    clk_names[i].dev_id);
+-			clk_put(clk);
+-		}
+-	}
+-
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
