@@ -1,66 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:45 +0000
-Subject: [PATCH v2 15/40] clocksource: sh_cmt: Hardcode CMT clock event rating to 125
-Message-Id: <1393603090-23144-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:42:23 +0000
+Subject: [PATCH 09/12] ARM: shmobile: Rework include path for r8a7791
+Message-Id: <20140224054223.1143.82115.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All boards use or should use a clock event rating of 125 for the CMT,
-hardcode it in the driver.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Convert r8a7791 SoC code use of include files from 
+the style <mach/something.h> to "something.h".
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/clocksource/sh_cmt.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 926abe2..75b1f83 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -768,14 +768,14 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
- }
- 
- static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
--				       const char *name, unsigned long rating)
-+				       const char *name)
- {
- 	struct clock_event_device *ced = &ch->ced;
- 
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
- 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
--	ced->rating = rating;
-+	ced->rating = 125;
- 	ced->cpumask = cpu_possible_mask;
- 	ced->set_next_event = sh_cmt_clock_event_next;
- 	ced->set_mode = sh_cmt_clock_event_mode;
-@@ -788,11 +788,10 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
- }
- 
- static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
--			   unsigned long clockevent_rating,
--			   unsigned long clocksource_rating)
-+			   bool clockevent, unsigned long clocksource_rating)
- {
--	if (clockevent_rating)
--		sh_cmt_register_clockevent(ch, name, clockevent_rating);
-+	if (clockevent)
-+		sh_cmt_register_clockevent(ch, name);
- 
- 	if (clocksource_rating)
- 		sh_cmt_register_clocksource(ch, name, clocksource_rating);
-@@ -827,7 +826,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 	raw_spin_lock_init(&ch->lock);
- 
- 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
--			      cfg->clockevent_rating,
-+			      cfg->clockevent_rating != 0,
- 			      cfg->clocksource_rating);
- 	if (ret) {
- 		dev_err(&cmt->pdev->dev, "ch%u: registration failed\n",
--- 
-1.8.3.2
+ arch/arm/mach-shmobile/clock-r8a7791.c |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a7791.c |    8 ++++----
+ arch/arm/mach-shmobile/smp-r8a7791.c   |    4 ++--
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/clock-r8a7791.c
++++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-24 13:49:45.000000000 +0900
+@@ -23,8 +23,8 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+-#include <mach/common.h>
++#include "clock.h"
++#include "common.h"
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+--- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-02-24 13:49:04.000000000 +0900
+@@ -26,10 +26,10 @@
+ #include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+-#include <mach/common.h>
+-#include <mach/irqs.h>
+-#include <mach/r8a7791.h>
+-#include <mach/rcar-gen2.h>
++#include "common.h"
++#include "irqs.h"
++#include "r8a7791.h"
++#include "rcar-gen2.h"
+ #include <asm/mach/arch.h>
+ 
+ static const struct resource pfc_resources[] __initconst = {
+--- 0001/arch/arm/mach-shmobile/smp-r8a7791.c
++++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-02-24 13:48:39.000000000 +0900
+@@ -18,8 +18,8 @@
+ #include <linux/smp.h>
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+-#include <mach/common.h>
+-#include <mach/r8a7791.h>
++#include "common.h"
++#include "r8a7791.h"
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
