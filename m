@@ -1,60 +1,61 @@
-From: Patrick Titiano <ptitiano@baylibre.com>
-Date: Fri, 28 Feb 2014 15:02:37 +0000
-Subject: [RFC 0/1] thermal: rcar-thermal: add cpu cooling
-Message-Id: <1393599758-17315-1-git-send-email-ptitiano@baylibre.com>
+From: <vladimir.barinov@cogentembedded.com>
+Date: Mon, 24 Feb 2014 09:30:01 +0000
+Subject: [PATCH V5 1/4] ARM: shmobile: r8a7791: Add USBHS clock support
+Message-Id: <1393234204-24096-2-git-send-email-vladimir.barinov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
+In-Reply-To: <1393234204-24096-1-git-send-email-vladimir.barinov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com
-Cc: bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Patrick Titiano <ptitiano@baylibre.com>
+To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
 
-Hi,
-This not-yet-ready-to-merge patch proposes to enable CPU thermal management on
-Renesas platform. Currently these platforms only register a thermal zone,
-but do not implement or register any cooling device.
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
 
-With this patch:
- - CPU0 cpufreq driver is registered as a cooling device,
- - a new passive trip point is defined to trigger CPU scaling when temperature
-   crosses it,
- - CPU0 cooling device and thermal zone 0 are being bound together,
- - set_trip_temp callback is implemented to facilitate experimentation and 
-   platform tuning. 
+This adds USBHS clocks to the R8A7791 SoC.
 
-Developed on a RCar-H2 platform, it is intended to support multi-platform.
-It leverages CPUFreq support from the series Benoit Cousson recently shared
-(http://www.spinics.net/lists/linux-sh/msg29236.html).
-The passive trip point temperature is arbitrarily set to 70C, as no HW data was
-available at the time this patch was developed.
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Being multi-platform, this patch is expected to run smoothly in any situation:
- 1/ Platform has no thermal sensor,
- 2/ Platform has a thermal sensor and is DVFS capable,
- 3/ Platform has a thermal sensor but is not DVFS capable.
+Changes in V5:
+Changes in V4:
+Changes in V3:
+* none.
 
-This patch has no side-effect in case 1/ (thermal driver wouldn't be loaded).
-Case 2/ is the regular case, no issue.
-case 3/ is the problematic one.
-Using cpufreq driver as a cooling device adds a dependency between those 2
-drivers. This is taken care by deferring rcar-thermal probing until
-cpufreq driver is up, but this becomes an issue when a platform does
-not have DVFS support. cpufreq driver will never be probed, blocking
-rcar-thermal probing.
+Changes in V2:
+* capitalized ARM in the subject;
+* rebased on top the latest devel tag.
 
-We are still investigation what would be the best way to go, however we would
-appreciate a lot any advice from the community.
-Thanks!
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-Regards,
-Patrick.
-
-Patrick Titiano (1):
-  thermal: rcar-thermal: add cpu cooling
-
- drivers/thermal/rcar_thermal.c | 103 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 96 insertions(+), 7 deletions(-)
-
--- 
-1.8.3.2
-
+Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
+=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:44.486571967 +0400
++++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
+@@ -177,6 +177,7 @@
+ 	MSTP811, MSTP810, MSTP809,
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP704,
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+ 	MSTP216, MSTP207, MSTP206,
+@@ -208,6 +209,7 @@
+ 	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
++	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
+ 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
+ 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
+@@ -281,6 +283,8 @@
+ 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
+ 	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
+ 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
++	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ };
+ 
+ #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
