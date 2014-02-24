@@ -1,65 +1,110 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 13 Feb 2014 04:24:43 +0000
-Subject: Re: [PATCH 0/2]: ARM: shmobile: lager: add SDHI0/2 support for legacy/DT
-Message-Id: <87ha83d4hj.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 07:29:56 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Use shmobile_clk_workaround() on Lager
+Message-Id: <20140224072956.3522.60446.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txcbba08.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87txcbba08.wl%kuninori.morimoto.gx@gmail.com>
+References: <20140224072921.3522.55023.sendpatchset@w520>
+In-Reply-To: <20140224072921.3522.55023.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
-Hi Simon
+Convert the Lager DT reference code to use the newly introduced
+function shmobile_clk_workaround().
 
-I will re-send this patch set.
-New one is based on simon/topic/r-car-sdhi branch
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> These are new style of SDHI0/2 support for Lager.
-> Please ignore my previous
-> 
->        Subject: Re: mmc: sh_mobile_sdhi: DT update for R-Car
->        Date: Fri, 31 Jan 2014 14:36:06 +0900
-> 
-> I created these new style SDHI patches because
-> SDHI maintainer's response is very slow,
-> and Simon is working for LTSI backporting.
-> My previous SDHI patch for DT had dependency with SDHI side patch,
-> and this means SDHI DT support on lager will be slow.
-> This is not good for LTSI backporting.
-> So, #2 is now doesn't have relationship with SDHI driver patch.
-> These can be applied immediately.
-> #2 has DT option settigns now, but these will be cleanuped
-> if SDHI driver patch was applied.
-> 
-> These patches are based on renesas-devel-v3.14-rc1-20140207.
-> and #2 needs regulater maintainer's branch
-> 
->     git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git :: topic/gpio
-> 
-> **Note**
-> 
-> - DT version kenel seems has pm_runtime issue.
->   So, if you disconnect SD card, it is never probed again.
->   Ben Dooks had sent solution patch for this issue on below,
->   but it seems quick hack at this point ?
-> 
->       Subject: [PATCH] ARM: shmobile: compile drivers/sh for CONFIG_ARCH_SHMOBILE_MULTI
->       Date:	Sat, 11 Jan 2014 13:06:29 +0000
-> 
-> - DT version kenel seems has clock issue on SDHI.
->   it prints strange frequency for SDHI0 when boot today.
->   but, HW settings / datasheet seems OK now. maybe it is CCF issue ?
-> 
-> Kuninori Morimoto (2):
->       ARM: shmobile: lager: add SDHI0/2 support
->       ARM: shmobile: lager: add SDHI0/2 support on DTS
-> 
->  arch/arm/boot/dts/r8a7790-lager.dts  |   84 ++++++++++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/board-lager.c |   65 ++++++++++++++++++++++++++
->  2 files changed, 149 insertions(+)
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
+ arch/arm/mach-shmobile/board-lager-reference.c |   65 +++++++++---------------
+ 1 file changed, 25 insertions(+), 40 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-02-24 16:17:32.000000000 +0900
+@@ -18,12 +18,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk.h>
+-#include <linux/clkdev.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+@@ -86,46 +85,32 @@ static void __init lager_add_du_device(v
+ 	platform_device_register_full(&info);
+ }
+ 
++/*
++ * This is a really crude hack to provide clkdev support to platform
++ * devices until they get moved to DT.
++ */
++static const struct clk_name clk_names[] = {
++	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifb0", NULL, "sh-sci.2" },
++	{ "scifb1", NULL, "sh-sci.3" },
++	{ "scifb2", NULL, "sh-sci.4" },
++	{ "scifa2", NULL, "sh-sci.5" },
++	{ "scif0", NULL, "sh-sci.6" },
++	{ "scif1", NULL, "sh-sci.7" },
++	{ "hscif0", NULL, "sh-sci.8" },
++	{ "hscif1", NULL, "sh-sci.9" },
++	{ "du0", "du.0", "rcar-du-r8a7790" },
++	{ "du1", "du.1", "rcar-du-r8a7790" },
++	{ "du2", "du.2", "rcar-du-r8a7790" },
++	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
++	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
++};
++
+ static void __init lager_add_standard_devices(void)
+ {
+-	/*
+-	 * This is a really crude hack to provide clkdev support to platform
+-	 * devices until they get moved to DT.
+-	 */
+-	static const struct clk_name {
+-		const char *clk;
+-		const char *con_id;
+-		const char *dev_id;
+-	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
+-		{ "scifa0", NULL, "sh-sci.0" },
+-		{ "scifa1", NULL, "sh-sci.1" },
+-		{ "scifb0", NULL, "sh-sci.2" },
+-		{ "scifb1", NULL, "sh-sci.3" },
+-		{ "scifb2", NULL, "sh-sci.4" },
+-		{ "scifa2", NULL, "sh-sci.5" },
+-		{ "scif0", NULL, "sh-sci.6" },
+-		{ "scif1", NULL, "sh-sci.7" },
+-		{ "hscif0", NULL, "sh-sci.8" },
+-		{ "hscif1", NULL, "sh-sci.9" },
+-		{ "du0", "du.0", "rcar-du-r8a7790" },
+-		{ "du1", "du.1", "rcar-du-r8a7790" },
+-		{ "du2", "du.2", "rcar-du-r8a7790" },
+-		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
+-		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+-	};
+-	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
+-		clk = clk_get(NULL, clk_names[i].clk);
+-		if (!IS_ERR(clk)) {
+-			clk_register_clkdev(clk, clk_names[i].con_id,
+-					    clk_names[i].dev_id);
+-			clk_put(clk);
+-		}
+-	}
+-
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
