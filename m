@@ -1,40 +1,72 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 21 Feb 2014 00:55:12 +0000
-Subject: [PATCH 3/5][RESENT] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7779
-Message-Id: <874n3tqo7n.wl%kuninori.morimoto.gx@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:41:44 +0000
+Subject: [PATCH 05/12] ARM: shmobile: Rework include path for r8a7740
+Message-Id: <20140224054144.1143.6577.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>
-	<878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-This patch updates r8a7779 DT data to have SoC specific settings.
+Convert r8a7740 SoC code use of include files from 
+the style <mach/something.h> to "something.h".
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index e956bc4..38acf26 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -58,7 +58,7 @@ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
- 	{ .compatible = "renesas,sdhi-r8a73a4", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7740", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{ .compatible = "renesas,sdhi-r8a7778", .data = &of_rcar_gen1_compatible, },
--	{ .compatible = "renesas,sdhi-r8a7779", .data = &sh_mobile_sdhi_of_cfg[0], },
-+	{ .compatible = "renesas,sdhi-r8a7779", .data = &of_rcar_gen1_compatible, },
- 	{ .compatible = "renesas,sdhi-r8a7790", .data = &sh_mobile_sdhi_of_cfg[0], },
- 	{},
- };
--- 
-1.7.9.5
+ arch/arm/mach-shmobile/clock-r8a7740.c |    6 +++---
+ arch/arm/mach-shmobile/pm-r8a7740.c    |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a7740.c |   10 +++++-----
+ 3 files changed, 10 insertions(+), 10 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/clock-r8a7740.c
++++ work/arch/arm/mach-shmobile/clock-r8a7740.c	2014-02-24 13:31:41.000000000 +0900
+@@ -22,9 +22,9 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+-#include <mach/common.h>
+-#include <mach/r8a7740.h>
++#include "clock.h"
++#include "common.h"
++#include "r8a7740.h"
+ 
+ /*
+  *        |  MDx  |  XTAL1/EXTAL1   |  System   | EXTALR |
+--- 0001/arch/arm/mach-shmobile/pm-r8a7740.c
++++ work/arch/arm/mach-shmobile/pm-r8a7740.c	2014-02-24 13:32:24.000000000 +0900
+@@ -10,8 +10,8 @@
+  */
+ #include <linux/console.h>
+ #include <linux/suspend.h>
+-#include <mach/pm-rmobile.h>
+-#include <mach/common.h>
++#include "pm-rmobile.h"
++#include "common.h"
+ 
+ #ifdef CONFIG_PM
+ static int r8a7740_pd_a4s_suspend(void)
+--- 0001/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-02-24 13:31:18.000000000 +0900
+@@ -31,11 +31,11 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+-#include <mach/dma-register.h>
+-#include <mach/r8a7740.h>
+-#include <mach/pm-rmobile.h>
+-#include <mach/common.h>
+-#include <mach/irqs.h>
++#include "dma-register.h"
++#include "r8a7740.h"
++#include "pm-rmobile.h"
++#include "common.h"
++#include "irqs.h"
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
