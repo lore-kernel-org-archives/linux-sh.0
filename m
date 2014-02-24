@@ -1,46 +1,53 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 20 Feb 2014 08:31:52 +0000
-Subject: Re: [GIT PULL] Renesas CPG update for v3.15
-Message-Id: <CAOesGMj5oNAXKB3GwMLc1RhfNpZP0-J7b4m9RqFAPGUa+jTHqA@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 24 Feb 2014 15:49:05 +0000
+Subject: [PATCH] media: soc_camera: rcar_vin: Add support for 10-bit YUV cameras
+Message-Id: <1393256945-12781-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651474.git.horms+renesas@verge.net.au>
- <20140220081833.GD19089@quad.lixom.net>
-In-Reply-To: <20140220081833.GD19089@quad.lixom.net>
+References: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387830486-10650-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Hans Verkuil <hans.verkuil@cisco.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Thu, Feb 20, 2014 at 12:18 AM, Olof Johansson <olof@lixom.net> wrote:
-> On Thu, Feb 06, 2014 at 03:14:00PM +0900, Simon Horman wrote:
->> Hi Olof, Hi Kevin, Hi Arnd,
->>
->> please consider this Renesas CPG update for v3.15.
->>
->>
->> The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
->>
->>   Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
->>
->> are available in the git repository at:
->>
->>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cpg-for-v3.15
->>
->> for you to fetch changes up to a028c6da34d434e35ba8322568c756ea97ff3c18:
->>
->>   ARM: shmobile: wait for MSTP clock status to toggle, when enabling it (2014-02-04 10:22:39 +0900)
->>
->> ----------------------------------------------------------------
->> Renesas CPG update for v3.15
->>
->> * Wait for MSTP clock status to toggle when enabling it
->
-> Hi Simon,
->
-> Is there a reason this is coming to arm-soc instead of to the clk tree
-> maintainer?
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ drivers/media/platform/soc_camera/rcar_vin.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Nevermind, I came across the dependent branch now.
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 3b1c05a..9929375 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -68,6 +68,8 @@
+ #define VNMC_YCAL		(1 << 19)
+ #define VNMC_INF_YUV8_BT656	(0 << 16)
+ #define VNMC_INF_YUV8_BT601	(1 << 16)
++#define VNMC_INF_YUV10_BT656	(2 << 16)
++#define VNMC_INF_YUV10_BT601	(3 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+@@ -275,6 +277,10 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
+ 		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
++	case V4L2_MBUS_FMT_YUYV10_2X10:
++		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
++		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
+ 	default:
+ 		break;
+ 	}
+@@ -1003,6 +1009,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+ 	switch (code) {
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
++	case V4L2_MBUS_FMT_YUYV10_2X10:
+ 		if (cam->extra_fmt)
+ 			break;
+ 
+-- 
+1.7.9.5
 
-
--Olof
