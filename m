@@ -1,148 +1,96 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:18:59 +0000
-Subject: [PATCH 07/21] ARM: shmobile: lager: Add VIN1 SoC camera support
-Message-Id: <094a804aa6943de0e9939e1c48341e87be93b3d2.1391665225.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:41:25 +0000
+Subject: [PATCH 03/12] ARM: shmobile: Rework include path for sh73a0
+Message-Id: <20140224054125.1143.91926.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+From: Magnus Damm <damm@opensource.se>
 
-This adds VIN1 SoC camera along with ADV7180 subdevice support to Lager.
-VIN0 camera is not registered because it has ADV7612 I2C subdevice
-which is not supported yet.
+Convert sh73a0 SoC code use of include files from 
+the style <mach/something.h> to "something.h".
 
-Changes in V2:
-* made lager_add_vin_device function static.
-
-Changes in V3:
-* capitalized ARM in the subject.
-
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-lager.c | 76 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f20c10a..c5643e1 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -27,6 +27,7 @@
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_data/camera-rcar.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
- #include <linux/platform_device.h>
-@@ -39,6 +40,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7790.h>
-+#include <media/soc_camera.h>
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 ++--
+ arch/arm/mach-shmobile/intc-sh73a0.c  |    6 +++---
+ arch/arm/mach-shmobile/pm-sh73a0.c    |    2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c |    8 ++++----
+ arch/arm/mach-shmobile/smp-sh73a0.c   |    4 ++--
+ 5 files changed, 12 insertions(+), 12 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2014-02-24 13:20:15.000000000 +0900
+@@ -22,8 +22,8 @@
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+ #include <asm/processor.h>
+-#include <mach/clock.h>
+-#include <mach/common.h>
++#include "clock.h"
++#include "common.h"
+ 
+ #define FRQCRA		IOMEM(0xe6150000)
+ #define FRQCRB		IOMEM(0xe6150004)
+--- 0001/arch/arm/mach-shmobile/intc-sh73a0.c
++++ work/arch/arm/mach-shmobile/intc-sh73a0.c	2014-02-24 13:21:27.000000000 +0900
+@@ -25,9 +25,9 @@
+ #include <linux/sh_intc.h>
+ #include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+-#include <mach/intc.h>
+-#include <mach/irqs.h>
+-#include <mach/sh73a0.h>
++#include "intc.h"
++#include "irqs.h"
++#include "sh73a0.h"
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
- #include <linux/mtd/partitions.h>
-@@ -291,6 +293,62 @@ static const struct resource qspi_resources[] __initconst = {
- 	DEFINE_RES_IRQ(gic_spi(184)),
- };
  
-+/* VIN */
-+static const struct resource vin_resources[] __initconst = {
-+	/* VIN0 */
-+	DEFINE_RES_MEM(0xe6ef0000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(188)),
-+	/* VIN1 */
-+	DEFINE_RES_MEM(0xe6ef1000, 0x1000),
-+	DEFINE_RES_IRQ(gic_spi(189)),
-+};
-+
-+static void __init lager_add_vin_device(unsigned idx,
-+					struct rcar_vin_platform_data *pdata)
-+{
-+	struct platform_device_info vin_info = {
-+		.parent		= &platform_bus,
-+		.name		= "r8a7790-vin",
-+		.id		= idx,
-+		.res		= &vin_resources[idx * 2],
-+		.num_res	= 2,
-+		.dma_mask	= DMA_BIT_MASK(32),
-+		.data		= pdata,
-+		.size_data	= sizeof(*pdata),
-+	};
-+
-+	BUG_ON(idx > 1);
-+
-+	platform_device_register_full(&vin_info);
-+}
-+
-+#define LAGER_CAMERA(idx, name, addr, pdata, flag)			\
-+static struct i2c_board_info i2c_cam##idx##_device = {			\
-+	I2C_BOARD_INFO(name, addr),					\
-+};									\
-+									\
-+static struct rcar_vin_platform_data vin##idx##_pdata = {		\
-+	.flags = flag,							\
-+};									\
-+									\
-+static struct soc_camera_link cam##idx##_link = {			\
-+	.bus_id = idx,							\
-+	.board_info = &i2c_cam##idx##_device,				\
-+	.i2c_adapter_id = 2,						\
-+	.module_name = name,						\
-+	.priv = pdata,							\
-+}
-+
-+/* Camera 0 is not currently supported due to adv7612 support missing */
-+LAGER_CAMERA(1, "adv7180", 0x20, NULL, RCAR_VIN_BT656);
-+
-+static void __init lager_add_camera1_device(void)
-+{
-+	platform_device_register_data(&platform_bus, "soc-camera-pdrv", 1,
-+				      &cam1_link, sizeof(cam1_link));
-+	lager_add_vin_device(1, &vin1_pdata);
-+}
-+
- static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* DU (CN10: ARGB0, CN13: LVDS) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7790", "pfc-r8a7790",
-@@ -319,6 +377,22 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 				  "eth_rmii", "eth"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-ether", "pfc-r8a7790",
- 				  "intc_irq0", "intc"),
-+	/* VIN0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
-+				  "vin0_data24", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
-+				  "vin0_sync", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
-+				  "vin0_field", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
-+				  "vin0_clkenb", "vin0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.0", "pfc-r8a7790",
-+				  "vin0_clk", "vin0"),
-+	/* VIN1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.1", "pfc-r8a7790",
-+				  "vin1_data8", "vin1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("r8a7790-vin.1", "pfc-r8a7790",
-+				  "vin1_clk", "vin1"),
- };
+--- 0001/arch/arm/mach-shmobile/pm-sh73a0.c
++++ work/arch/arm/mach-shmobile/pm-sh73a0.c	2014-02-24 13:23:21.000000000 +0900
+@@ -9,7 +9,7 @@
+  */
  
- static void __init lager_add_standard_devices(void)
-@@ -368,6 +442,8 @@ static void __init lager_add_standard_devices(void)
- 				      &vccq_sdhi0_info, sizeof(struct gpio_regulator_config));
- 	platform_device_register_data(&platform_bus, "gpio-regulator", gpio_regulator_idx++,
- 				      &vccq_sdhi2_info, sizeof(struct gpio_regulator_config));
-+
-+	lager_add_camera1_device();
- }
+ #include <linux/suspend.h>
+-#include <mach/common.h>
++#include "common.h"
  
- /*
--- 
-1.8.5.2
-
+ #ifdef CONFIG_SUSPEND
+ static int sh73a0_enter_suspend(suspend_state_t suspend_state)
+--- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-02-24 13:20:41.000000000 +0900
+@@ -33,10 +33,10 @@
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+-#include <mach/dma-register.h>
+-#include <mach/irqs.h>
+-#include <mach/sh73a0.h>
+-#include <mach/common.h>
++#include "dma-register.h"
++#include "irqs.h"
++#include "sh73a0.h"
++#include "common.h"
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+--- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2014-02-24 13:21:54.000000000 +0900
+@@ -22,8 +22,8 @@
+ #include <linux/smp.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+-#include <mach/common.h>
+-#include <mach/sh73a0.h>
++#include "common.h"
++#include "sh73a0.h"
+ #include <asm/smp_plat.h>
+ #include <asm/smp_twd.h>
+ 
