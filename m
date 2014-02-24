@@ -1,97 +1,96 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 02:09:50 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 24 Feb 2014 08:25:08 +0000
 Subject: Re: [PATCH 04/11] ARM: shmobile: lager legacy: Add MSIOF support
-Message-Id: <CANqRtoRLcac3x55N+VHK+n6RvcgT0v9==9mt1rhVda-zwCYTCg@mail.gmail.com>
+Message-Id: <CAMuHMdWDtDqmarg-p+LFv4ZtzF7Rv=KzLQA3rnSa_dS2PkVmfA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
  <1392907779-22053-5-git-send-email-geert@linux-m68k.org>
  <CANqRtoQQ9cn55Ct7pva2Bo7461WbZG0=Y5f9zLwfKhyU2=QFZw@mail.gmail.com>
  <CAMuHMdWMJFpV_uvi4mNZYc9R8qVWqQf3QGRhdPyc+hj=6XMoJw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWMJFpV_uvi4mNZYc9R8qVWqQf3QGRhdPyc+hj=6XMoJw@mail.gmail.com>
+ <CANqRtoRLcac3x55N+VHK+n6RvcgT0v9==9mt1rhVda-zwCYTCg@mail.gmail.com>
+In-Reply-To: <CANqRtoRLcac3x55N+VHK+n6RvcgT0v9==9mt1rhVda-zwCYTCg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Magnus,
 
-On Fri, Feb 21, 2014 at 1:18 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Magnus,
+On Mon, Feb 24, 2014 at 3:09 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> On Fri, Feb 21, 2014 at 1:18 AM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+>> On Thu, Feb 20, 2014 at 4:48 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>>> Since only MSIOF1 is used on Lager (correct me if i'm wrong), isn't it
+>>> best to omit the unused resources from above? In case of DT I think it
+>>> makes sense to define all channels in the SoC.dtsi and let the
+>>> SoC-board.dts just enable the channels that are used. But in this case
+>>> with legacy code  I think we should keep thing simple and small and
+>>> just enable the bits that are used on the particular board.
+>>>
+>>> The same obviously applies to the Koelsch legacy code as well. =)
+>>
+>> Note that while all resources are present, only MSIOF1 is registered on
+>> Lager (MSIOF0 on Koelsch). This is similar to i2c on Koelsch, which also
+>> has all resources, but only registers active devices.
 >
-> On Thu, Feb 20, 2014 at 4:48 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> +/* MSIOF */
->>> +static const struct resource sh_msiof0_resources[] __initconst = {
->>> +       DEFINE_RES_MEM(0xe6e20000, 0x0064),
->>> +       DEFINE_RES_IRQ(gic_spi(156)),
->>> +};
->>> +
->>> +static const struct resource sh_msiof1_resources[] __initconst = {
->>> +       DEFINE_RES_MEM(0xe6e10000, 0x0064),
->>> +       DEFINE_RES_IRQ(gic_spi(157)),
->>> +};
->>> +
->>> +static const struct resource sh_msiof2_resources[] __initconst = {
->>> +       DEFINE_RES_MEM(0xe6e00000, 0x0064),
->>> +       DEFINE_RES_IRQ(gic_spi(158)),
->>> +};
->>> +
->>> +static const struct resource sh_msiof3_resources[] __initconst = {
->>> +       DEFINE_RES_MEM(0xe6c90000, 0x0064),
->>> +       DEFINE_RES_IRQ(gic_spi(159)),
->>> +};
->>> +
->>> +static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
->>> +       .rx_fifo_override       = 256,
->>> +       .num_chipselect         = 1,
->>> +};
->>> +
->>> +#define r8a7790_register_msiof(idx)                                    \
->>> +       platform_device_register_resndata(&platform_bus,                \
->>> +                               "spi_r8a7790_msiof",                    \
->>> +                               (idx+1), sh_msiof##idx##_resources,     \
->>> +                               ARRAY_SIZE(sh_msiof##idx##_resources),  \
->>> +                               &sh_msiof_info,                         \
->>> +                               sizeof(struct sh_msiof_spi_info))
->>
->> That for your efforts - it's good to see the MSIOF being integrated as
->> well! I have one comment on this legacy board integration code.
->>
->> Since only MSIOF1 is used on Lager (correct me if i'm wrong), isn't it
->> best to omit the unused resources from above? In case of DT I think it
->> makes sense to define all channels in the SoC.dtsi and let the
->> SoC-board.dts just enable the channels that are used. But in this case
->> with legacy code  I think we should keep thing simple and small and
->> just enable the bits that are used on the particular board.
->>
->> The same obviously applies to the Koelsch legacy code as well. =)
+> Ok, I understand. Thanks for brining this to my attention.
 >
-> Note that while all resources are present, only MSIOF1 is registered on
-> Lager (MSIOF0 on Koelsch). This is similar to i2c on Koelsch, which also
-> has all resources, but only registers active devices.
+> I'd like to avoid having unused resources so I'll cook up a patch to
+> rework that myself.
+>
+>> It's your preference, though, so I can adapt if you want.
+>
+> Thanks.
+>
+> Please rework this patch to only register a single MSIOF channel. I
+> think it makes sense to only enable hardware that is being used.
 
-Ok, I understand. Thanks for brining this to my attention.
+Ehrm, I already register a single MSIOF channel only.
+Perhaps you mean't "remove the unused resources"?
 
-I'd like to avoid having unused resources so I'll cook up a patch to
-rework that myself.
+> Another question: How about "bus_num" and the platform device id
+> mapping? I'd like them to be the same if possible, but you are having
+> this "(idx+1)" bit in your code which I assume is to add offset for
+> the QSPI bus.
 
-> It's your preference, though, so I can adapt if you want.
+"bus_num" is the SPI-specific numbering of SPI masters, which is filled
+in by spi-sh-msiof.c based on platform_device.id (i.e. the numeric suffix
+of e.g. "spi_r8a7790_msiof.1").
+It's used for matching SPI slaves in spi_board_info with SPI masters.
+As QSPI ("qspi.0") has SPI bus_num 0, the MSIOF SPI masters use
+bus_num 1 to 4, hence the "idx+1", and the platform device names
+"spi_r8a7790_msiof.1" to "spi_r8a7790_msiof.4".
 
-Thanks.
+(Can't spi-sh-msiof.c use "bus_num = pdev->id + 1", so we can have
+ MSIOF0 as "spi_r8a7790_msiof.0"? No, as that would impact numbering
+ on all SoCs with MSIOF.)
 
-Please rework this patch to only register a single MSIOF channel. I
-think it makes sense to only enable hardware that is being used.
+With DT, all of this doesn't matter, and life is easier, as the SPI slaves
+are child nodes of the SPI masters and thus don't need numerical bus
+references. So MSIOF0 can be called "msiof0" there.
+We still have the offsets in the "spi%u" aliases, though.
 
-Another question: How about "bus_num" and the platform device id
-mapping? I'd like them to be the same if possible, but you are having
-this "(idx+1)" bit in your code which I assume is to add offset for
-the QSPI bus.
+> Regarding the PFC configuration, can you please double check that the
+> PIN_MAP_MUX_GROUP_DEFAULT() is in sync with the platform device id? Is
+> it the "bus_num" or the platform device id that is being used in case
+> of SPI?
 
-Regarding the PFC configuration, can you please double check that the
-PIN_MAP_MUX_GROUP_DEFAULT() is in sync with the platform device id? Is
-it the "bus_num" or the platform device id that is being used in case
-of SPI?
+"bus_num" is SPI-specific. Pinctrl uses the actual device's name:
 
-Thanks!
+/**
+ * struct pinctrl_map - boards/machines shall provide this map for devices
+ * @dev_name: the name of the device using this specific mapping, the name
+ *      must be the same as in your struct device*. If this name is set to the
+ *      same name as the pin controllers own dev_name(), the map entry will be
+ *      hogged by the driver itself upon registration
 
-/ magnus
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
