@@ -1,51 +1,42 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 22 Feb 2014 03:10:37 +0000
-Subject: Re: [PATCH 01/10] spi: sh-msiof: Fix SPI bus population from DT
-Message-Id: <20140222031037.GQ25940@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="63aIh6YiuHX+oBFP"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:52:12 +0000
+Subject: [PATCH] ARM: shmobile: Move SYSC base variable to inside ifdefs
+Message-Id: <20140224055212.1822.52295.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
- <1392907389-21798-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-2-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm@opensource.se>
 
---63aIh6YiuHX+oBFP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Move the rcar_sysc_base variable to inside #ifdefs to avoid
+triggering build warnings in case PM or SMP is not selected.
 
-On Thu, Feb 20, 2014 at 03:43:00PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
-> DT doesn't instantiate SPI children if spi_master.dev.of_node is not set =
-up
-> properly.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Applied, thanks.
+ Depends on "[PATCH 00/12] ARM: shmobile: Rework include path for SoC files"
 
---63aIh6YiuHX+oBFP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ arch/arm/mach-shmobile/pm-rcar.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTCBUqAAoJELSic+t+oim9q5wP/RpPlJQZGw/BwnnuhaNtBYrw
-bDaf7lyQJ80OV8XY/EtjqKpHSLejkZhMnoxhhgBOFX5or59qEYP4WBXRwM4xt4FX
-XouzMuGNJZrMevciWWaZyk36qHr/2DGFyCrYkhEUl9mHcDdyYzJIKptP4+SfCoDl
-2YzHiHHFL+SxoBnNCEF3kFov9yszXrqc3kRAVaqD+vw9qODWPpdm51iLL04FN3+d
-1GRJxwsKV81+CGriwhS6HyPbwwfJMmabQ7lqyEFmmVJId3q+4EYI5vxOdaE62/vE
-beuictknV3HQsDgZcQCvYLlxABlJvVhjYeIksrXD9aFMiXNqJDPMxvZJE0/gsq+k
-D+I9+kyDB+bkqP1fwWPwCyhFntZz7oORgFQusqKJGIwDFF+aV8xNS5nmcyDRNfYT
-UKWXGZGkSWcY92EZHNaYAwa9mUxsaozEN2dhvtpnyo86LQAjvPx4SWOiqleeTkEt
-xEQUgmqUGBYVGm4V0rpasG+LcHmeTNG3P9BbYgqX1rfVWVra1/rk1d0zg6/5MChU
-WMZQOF94UKrevbFcAXpQZ6A6dfTElJwq6d8VVXUbfqX//ezJTolmlbygwV2qeZCq
-uqDf7THBbGq4i151EdiYPtTADI+uWfknTNHkqM741YU8D33Q2mlCN2tYQVcGyxCb
-VUTW87g5CRRwyxqZ3XQF
-=bqtL
------END PGP SIGNATURE-----
-
---63aIh6YiuHX+oBFP--
+--- 0013/arch/arm/mach-shmobile/pm-rcar.c
++++ work/arch/arm/mach-shmobile/pm-rcar.c	2014-02-24 14:09:44.000000000 +0900
+@@ -15,8 +15,6 @@
+ #include <asm/io.h>
+ #include "pm-rcar.h"
+ 
+-static void __iomem *rcar_sysc_base;
+-
+ /* SYSC */
+ #define SYSCSR 0x00
+ #define SYSCISR 0x04
+@@ -35,6 +33,7 @@ static void __iomem *rcar_sysc_base;
+ 
+ #if defined(CONFIG_PM) || defined(CONFIG_SMP)
+ 
++static void __iomem *rcar_sysc_base;
+ static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+ 
+ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
