@@ -1,71 +1,50 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 15 Feb 2014 00:36:22 +0000
-Subject: [PATCH 4/5] ARM: shmobile: Koelsch: set proper DMA masks for Ether device
-Message-Id: <201402150436.20195.sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 24 Feb 2014 05:49:07 +0000
+Subject: [PATCH] ARM: shmobile: Make use of r8a7790_add_standard_devices()
+Message-Id: <20140224054907.1803.88038.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
-'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
-ability.
+From: Magnus Damm <damm@opensource.se>
 
-Currently, the code works without DMA masks but as we would have to enable
-CONFIG_HIGHMEM to access the full board memory in the future, when support for
-NETIF_F_SG would be added to the 'sh_eth' driver as well, the correct DMA masks
-should start to matter...
+Move non-PFC and non-GPIO devices off from r8a7790_pinmux_init()
+and into r8a7790_add_standard_devices() which is the normal place
+to keep regular devices in the legacy case.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-koelsch.c |   19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
 
-Index: renesas/arch/arm/mach-shmobile/board-koelsch.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-koelsch.c
-+++ renesas/arch/arm/mach-shmobile/board-koelsch.c
-@@ -2,8 +2,9 @@
-  * Koelsch board support
-  *
-  * Copyright (C) 2013  Renesas Electronics Corporation
-- * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014  Renesas Solutions Corp.
-  * Copyright (C) 2013  Magnus Damm
-+ * Copyright (C) 2014  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -116,6 +117,17 @@ static const struct resource ether_resou
- 	DEFINE_RES_IRQ(gic_spi(162)),
- };
+ arch/arm/mach-shmobile/setup-r8a7790.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- 0009/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-02-24 14:15:51.000000000 +0900
+@@ -185,12 +185,6 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_gpio(3);
+ 	r8a7790_register_gpio(4);
+ 	r8a7790_register_gpio(5);
+-	r8a7790_register_i2c(0);
+-	r8a7790_register_i2c(1);
+-	r8a7790_register_i2c(2);
+-	r8a7790_register_i2c(3);
+-	r8a7790_register_audio_dmac(0);
+-	r8a7790_register_audio_dmac(1);
+ }
  
-+static const struct platform_device_info ether_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "r8a7791-ether",
-+	.id		= -1,
-+	.res		= ether_resources,
-+	.num_res	= ARRAY_SIZE(ether_resources),
-+	.data		= &ether_pdata,
-+	.size_data	= sizeof(ether_pdata),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
- /* LEDS */
- static struct gpio_led koelsch_leds[] = {
- 	{
-@@ -426,10 +438,7 @@ static void __init koelsch_add_standard_
- 				  ARRAY_SIZE(koelsch_pinctrl_map));
- 	r8a7791_pinmux_init();
- 	r8a7791_add_standard_devices();
--	platform_device_register_resndata(&platform_bus, "r8a7791-ether", -1,
--					  ether_resources,
--					  ARRAY_SIZE(ether_resources),
--					  &ether_pdata, sizeof(ether_pdata));
-+	platform_device_register_full(&ether_info);
- 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
- 				      &koelsch_leds_pdata,
- 				      sizeof(koelsch_leds_pdata));
+ #define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
+@@ -308,6 +302,12 @@ void __init r8a7790_add_standard_devices
+ 	r8a7790_add_dt_devices();
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
++	r8a7790_register_i2c(0);
++	r8a7790_register_i2c(1);
++	r8a7790_register_i2c(2);
++	r8a7790_register_i2c(3);
++	r8a7790_register_audio_dmac(0);
++	r8a7790_register_audio_dmac(1);
+ }
+ 
+ void __init r8a7790_init_early(void)
