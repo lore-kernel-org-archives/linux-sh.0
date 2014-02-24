@@ -1,52 +1,26 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:57:19 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
-Message-Id: <1392908239-22645-2-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 24 Feb 2014 00:28:49 +0000
+Subject: Re: [PATCH v2 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
+Message-Id: <20140224002849.GB3898@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392908239-22645-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392908239-22645-1-git-send-email-geert@linux-m68k.org>
+ <1392908239-22645-2-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1392908239-22645-2-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Thu, Feb 20, 2014 at 03:57:19PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> 
+> Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
+> board code.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v2:
+>   - Add Tested-by
 
-Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
-board code.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v2:
-  - Add Tested-by
-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts |   14 ++++++++++++++
- 1 file changed, 14 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 06cda19dac6a..f76f6ec01e19 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -109,4 +109,18 @@
- 	pinctrl-0 = <&hspi0_pins>;
- 	pinctrl-names = "default";
- 	status = "okay";
-+
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl008k";
-+		reg = <0>;
-+		spi-max-frequency = <104000000>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "data(spi)";
-+			reg = <0x00000000 0x00100000>;
-+		};
-+	};
- };
--- 
-1.7.9.5
-
+Thanks, I have queued this up.
