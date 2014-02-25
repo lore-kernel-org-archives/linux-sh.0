@@ -1,43 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:25 +0000
-Subject: [PATCH 05/13] ARM: shmobile: marzen: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <edcde600a0bf778d98d945bd27f51c941e35bb8c.1391651074.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:30:14 +0000
+Subject: [PATCH v2 06/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi, add spi0 alias
+Message-Id: <1393324219-3317-7-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
+References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-This reverts commit 41307133da4b6f242ecbb45950b9d043c0b21b96
-("ARM: shmobile: marzen: Do not enable CONFIG_DEVTMPFS defconfig").
+Prepare for the advent of MSIOF SPI, which will be spi1 to spi3.
 
-DEVTMPFS is needed for udev.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-[horms+renesas@verge.net.au: Added subject of reverted patch to changelog]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/configs/marzen_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+v2:
+  - No changes
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index f21bd40..92994f7 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -43,6 +43,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++--
+ arch/arm/boot/dts/r8a7791.dtsi        |    3 ++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 603af8caae5b..03508cc73e8b 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -157,7 +157,7 @@
+ 		renesas,function = "intc";
+ 	};
+ 
+-	qspi_pins: spi {
++	qspi_pins: spi0 {
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
+@@ -182,7 +182,7 @@
+ 	status = "okay";
+ };
+ 
+-&spi {
++&qspi {
+ 	pinctrl-0 = <&qspi_pins>;
+ 	pinctrl-names = "default";
+ 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index cde7bc486f22..3bc4546fa9c5 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -27,6 +27,7 @@
+ 		i2c3 = &i2c3;
+ 		i2c4 = &i2c4;
+ 		i2c5 = &i2c5;
++		spi0 = &qspi;
+ 	};
+ 
+ 	cpus {
+@@ -762,7 +763,7 @@
+ 		};
+ 	};
+ 
+-	spi: spi@e6b10000 {
++	qspi: spi@e6b10000 {
+ 		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.8.5.2
+1.7.9.5
 
