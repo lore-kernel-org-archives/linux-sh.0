@@ -1,278 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:49 +0000
-Subject: [PATCH 08/13] ARM: shmobile: r8a7790: remove superfluous interrupt-parents
-Message-Id: <951dc909b22afd52f57e1f74e86415941a057d31.1392961872.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:30:10 +0000
+Subject: [PATCH v2 02/11] ARM: shmobile: r8a7791: Add MSIOF clocks
+Message-Id: <1393324219-3317-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961872.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
+References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
 
-These values are inherited, so don't need to be specified again.
+Add clocks for MSIOF0, 1, and 2.
+DEV_ID is 1-based for compatibility with the BSP, as QSPI uses zero.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+[geert] Updated for change from SH_CLK_MSTP32() to SH_CLK_MSTP32_STS()
+[geert] Updated for new platform device name
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 31 -------------------------------
- 1 file changed, 31 deletions(-)
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 858fc58..d7bde1e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -94,7 +94,6 @@
- 	gpio0: gpio@e6050000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xe6050000 0 0x50>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
-@@ -106,7 +105,6 @@
- 	gpio1: gpio@e6051000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xe6051000 0 0x50>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
-@@ -118,7 +116,6 @@
- 	gpio2: gpio@e6052000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xe6052000 0 0x50>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
-@@ -130,7 +127,6 @@
- 	gpio3: gpio@e6053000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xe6053000 0 0x50>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
-@@ -142,7 +138,6 @@
- 	gpio4: gpio@e6054000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xe6054000 0 0x50>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
-@@ -154,7 +149,6 @@
- 	gpio5: gpio@e6055000 {
- 		compatible = "renesas,gpio-r8a7790", "renesas,gpio-rcar";
- 		reg = <0 0xe6055000 0 0x50>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
-@@ -166,7 +160,6 @@
- 	thermal@e61f0000 {
- 		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
- 	};
-@@ -184,7 +177,6 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		reg = <0 0xe61c0000 0 0x200>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 0 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
-@@ -196,7 +188,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,i2c-r8a7790";
- 		reg = <0 0xe6508000 0 0x40>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
- 		status = "disabled";
-@@ -207,7 +198,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,i2c-r8a7790";
- 		reg = <0 0xe6518000 0 0x40>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
- 		status = "disabled";
-@@ -218,7 +208,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,i2c-r8a7790";
- 		reg = <0 0xe6530000 0 0x40>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
- 		status = "disabled";
-@@ -229,7 +218,6 @@
- 		#size-cells = <0>;
- 		compatible = "renesas,i2c-r8a7790";
- 		reg = <0 0xe6540000 0 0x40>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
- 		status = "disabled";
-@@ -238,7 +226,6 @@
- 	mmcif0: mmcif@ee200000 {
- 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
- 		reg-io-width = <4>;
-@@ -248,7 +235,6 @@
- 	mmcif1: mmc@ee220000 {
- 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
- 		reg = <0 0xee220000 0 0x80>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
- 		reg-io-width = <4>;
-@@ -263,7 +249,6 @@
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee100000 0 0x200>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		cap-sd-highspeed;
-@@ -273,7 +258,6 @@
- 	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee120000 0 0x200>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		cap-sd-highspeed;
-@@ -283,7 +267,6 @@
- 	sdhi2: sd@ee140000 {
- 		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee140000 0 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
- 		cap-sd-highspeed;
-@@ -293,7 +276,6 @@
- 	sdhi3: sd@ee160000 {
- 		compatible = "renesas,sdhi-r8a7790";
- 		reg = <0 0xee160000 0 0x100>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
- 		cap-sd-highspeed;
-@@ -303,7 +285,6 @@
- 	scifa0: serial@e6c40000 {
- 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
- 		reg = <0 0xe6c40000 0 64>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-@@ -312,7 +293,6 @@
+ arch/arm/mach-shmobile/clock-r8a7791.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 605fc778e3e2..8e4c12a752b7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -59,6 +59,7 @@
+ #define SMSTPCR10	0xE6150998
+ #define SMSTPCR11	0xE615099C
  
- 	scifa1: serial@e6c50000 {
- 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c50000 0 64>;
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
-@@ -322,7 +302,6 @@
++#define MSTPSR0		IOMEM(0xe6150030)
+ #define MSTPSR1		IOMEM(0xe6150038)
+ #define MSTPSR2		IOMEM(0xe6150040)
+ #define MSTPSR3		IOMEM(0xe6150048)
+@@ -179,9 +180,10 @@ enum {
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+-	MSTP216, MSTP207, MSTP206,
++	MSTP216, MSTP208, MSTP207, MSTP206, MSTP205,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
++	MSTP000,
+ 	MSTP_NR
+ };
  
- 	scifa2: serial@e6c60000 {
- 		compatible = "renesas,scifa-r8a7790", "renesas,scifa";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c60000 0 64>;
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
-@@ -332,7 +311,6 @@
+@@ -213,8 +215,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
+ 	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
++	[MSTP208] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 8, MSTPSR2, 0), /* MSIOF1 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
++	[MSTP205] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 5, MSTPSR2, 0), /* MSIOF2 */
+ 	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
+@@ -222,6 +226,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA4 */
+ 	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA5 */
+ 	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
++	[MSTP000] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR0, 0, MSTPSR0, 0), /* MSIOF0 */
+ };
  
- 	scifb0: serial@e6c20000 {
- 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c20000 0 64>;
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
-@@ -342,7 +320,6 @@
- 
- 	scifb1: serial@e6c30000 {
- 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6c30000 0 64>;
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
-@@ -352,7 +329,6 @@
- 
- 	scifb2: serial@e6ce0000 {
- 		compatible = "renesas,scifb-r8a7790", "renesas,scifb";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6ce0000 0 64>;
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
-@@ -362,7 +338,6 @@
- 
- 	scif0: serial@e6e60000 {
- 		compatible = "renesas,scif-r8a7790", "renesas,scif";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e60000 0 64>;
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
-@@ -372,7 +347,6 @@
- 
- 	scif1: serial@e6e68000 {
- 		compatible = "renesas,scif-r8a7790", "renesas,scif";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe6e68000 0 64>;
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
-@@ -382,7 +356,6 @@
- 
- 	hscif0: serial@e62c0000 {
- 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c0000 0 96>;
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
-@@ -392,7 +365,6 @@
- 
- 	hscif1: serial@e62c8000 {
- 		compatible = "renesas,hscif-r8a7790", "renesas,hscif";
--		interrupt-parent = <&gic>;
- 		reg = <0 0xe62c8000 0 96>;
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
-@@ -403,7 +375,6 @@
- 	sata0: sata@ee300000 {
- 		compatible = "renesas,sata-r8a7790";
- 		reg = <0 0xee300000 0 0x2000>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7790_CLK_SATA0>;
- 		status = "disabled";
-@@ -412,7 +383,6 @@
- 	sata1: sata@ee500000 {
- 		compatible = "renesas,sata-r8a7790";
- 		reg = <0 0xee500000 0 0x2000>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7790_CLK_SATA1>;
- 		status = "disabled";
-@@ -756,7 +726,6 @@
- 	spi: spi@e6b10000 {
- 		compatible = "renesas,qspi-r8a7790", "renesas,qspi";
- 		reg = <0 0xe6b10000 0 0x2c>;
--		interrupt-parent = <&gic>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_QSPI_MOD>;
- 		num-cs = <1>;
+ static struct clk_lookup lookups[] = {
+@@ -267,6 +272,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
++	CLKDEV_DEV_ID("spi_r8a7791_msiof.1", &mstp_clks[MSTP000]),
++	CLKDEV_DEV_ID("spi_r8a7791_msiof.2", &mstp_clks[MSTP208]),
++	CLKDEV_DEV_ID("spi_r8a7791_msiof.3", &mstp_clks[MSTP205]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
 -- 
-1.8.5.2
+1.7.9.5
 
