@@ -1,39 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:24 +0000
-Subject: [PATCH 04/13] ARM: shmobile: lager: Enable SATA in defconfig
-Message-Id: <0e02971e4047e61edc913c997ba9124df33d5112.1391651074.git.horms+renesas@verge.net.au>
+From: AKASHI Takahiro <takahiro.akashi@linaro.org>
+Date: Tue, 25 Feb 2014 09:16:23 +0000
+Subject: [PATCH v2 0/1] audit: Add CONFIG_HAVE_ARCH_AUDITSYSCALL
+Message-Id: <1393319784-2758-1-git-send-email-takahiro.akashi@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
+References: <1391407232-4623-1-git-send-email-takahiro.akashi@linaro.org>
+In-Reply-To: <1391407232-4623-1-git-send-email-takahiro.akashi@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Currently AUDITSYSCALL has a long list of architecture depencency:
+       depends on AUDIT && (X86 || PARISC || PPC || S390 || IA64 || UML ||
+                SPARC64 || SUPERH || (ARM && AEABI && !OABI_COMPAT) || ALPHA)
+The purpose of this patch is to replace it with HAVE_ARCH_AUDITSYSCALL
+for simplicity.
 
-This enables R-Car SATA and SCSI disk in lager_defconfig.
+Changes v1 -> v2:
+* rebased to 3.14-rcX, and so added a change on ALPHA
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/lager_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+AKASHI Takahiro (1):
+  audit: Add CONFIG_HAVE_ARCH_AUDITSYSCALL
 
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 89b6e71..ee93b8a 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -49,6 +49,9 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_BLK_DEV_SD=y
-+CONFIG_ATA=y
-+CONFIG_SATA_RCAR=y
- CONFIG_NETDEVICES=y
- # CONFIG_NET_CORE is not set
- # CONFIG_NET_VENDOR_ARC is not set
+ arch/alpha/Kconfig     |    1 +
+ arch/arm/Kconfig       |    1 +
+ arch/ia64/Kconfig      |    1 +
+ arch/parisc/Kconfig    |    1 +
+ arch/powerpc/Kconfig   |    1 +
+ arch/s390/Kconfig      |    1 +
+ arch/sh/Kconfig        |    1 +
+ arch/sparc/Kconfig     |    1 +
+ arch/um/Kconfig.common |    1 +
+ arch/x86/Kconfig       |    1 +
+ init/Kconfig           |    5 ++++-
+ 11 files changed, 14 insertions(+), 1 deletion(-)
+
 -- 
-1.8.5.2
+1.7.9.5
 
