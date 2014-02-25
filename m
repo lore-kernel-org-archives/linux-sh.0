@@ -1,89 +1,189 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 14 Feb 2014 18:56:58 +0000
-Subject: Re: [PATCH 26/27] ARM: shmobile: lager-reference: Enable CMT0 in device tree
-Message-Id: <52FE750B.6070509@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:21:10 +0000
+Subject: [PATCH v2 3/6] spi: sh-msiof: Add support for R-Car H2 and M2
+Message-Id: <1393323673-2751-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <2354725.yUCM3gQqXi@avalon> <52FE29DB.2010304@cogentembedded.com>
- <1395114.O6aqLXJV0J@avalon>
-In-Reply-To: <1395114.O6aqLXJV0J@avalon>
+References: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, devicetree@vger.kernel.org
 
-On 02/14/2014 07:26 PM, Laurent Pinchart wrote:
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
->>>>>>> Enable the CMT0 device and configure channel 0 as a clock event
->>>>>>> provider.
+Add support for the MSIOF variant in the R-Car H2 (r8a7790) and M2
+(r8a7791) SoCs.
 
->>>>>>> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Binding documentation:
+  - Add future-proof "renesas,msiof-<soctype>" compatible values,
+  - The default for "renesas,rx-fifo-size" is 256 on R-Car H2 and M2,
+  - "renesas,tx-fifo-size" and "renesas,rx-fifo-size" are deprecated for
+    soctype-specific bindings,
+  - Add example bindings.
 
->>>>>>> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h
->>>>>>> b/arch/arm/mach-shmobile/include/mach/r8a7790.h index 0b95bab..62b31f3
->>>>>>> 100644 --- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
->>>>>>> +++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
->>>>>>> @@ -29,7 +29,6 @@ enum {
->>>>>>>
->>>>>>>    };
->>>>>>>
->>>>>>>    void r8a7790_add_standard_devices(void);
->>>>>>>
->>>>>>> -void r8a7790_add_dt_devices(void);
->>>>>>>
->>>>>>>    void r8a7790_clock_init(void);
->>>>>>>    void r8a7790_pinmux_init(void);
->>>>>>>    void r8a7790_pm_init(void);
->>>>>>>
->>>>>>> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c
->>>>>>> b/arch/arm/mach-shmobile/setup-r8a7790.c index 3e5813f..462c81f 100644
->>>>>>> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
->>>>>>> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
->>>>>>> @@ -294,11 +294,6 @@ static struct resource cmt0_resources[] = {
->>>>>>>      					  &cmt##idx##_platform_data,	\
->>>>>>>      					  sizeof(struct sh_timer_config))
->>>>>>>
->>>>>>> -void __init r8a7790_add_dt_devices(void)
->>>>>>> -{
->>>>>>> -	r8a7790_register_cmt(0);
->>>>>>> -}
->>>>>>> -
->>>>>>>   void __init r8a7790_add_standard_devices(void)
->>>>>>>   {
->>>>>>>      	r8a7790_register_scif(0);
->>>>>>> @@ -311,7 +306,7 @@ void __init r8a7790_add_standard_devices(void)
->>>>>>> 	r8a7790_register_scif(7);
->>>>>>>   	r8a7790_register_scif(8);
->>>>>>>   	r8a7790_register_scif(9);
->>>>>>> -	r8a7790_add_dt_devices();
->>>>>>> +	r8a7790_register_cmt(0);
->>>>>>> 	r8a7790_register_irqc(0);
->>>>>>> 	r8a7790_register_thermal();
->>>>>>> }
+Implementation:
+  - MSIOF on R-Car H2 and M2 requires the transmission of dummy data if
+    data is being received only (cfr. "Set SICTR.TSCKE to 1" and "Write
+    dummy transmission data to SITFDR" in paragraph "Transmit and Receive
+    Procedures" of the Hardware User's Manual).
+  - As RX depends on TX, MSIOF on R-Car H2 and M2 also lacks the RSCR
+    register (Receive Clock Select Register), and some bits in the RMDR1
+    (Receive Mode Register 1) and TMDR2 (Transmit Mode Register 2)
+    registers.
+  - Use the recently introduced SPI_MASTER_MUST_TX flag to enable support
+    for dummy transmission in the SPI core, and to differentiate from other
+    MSIOF implementations in code paths that need this.
+  - New DT compatible values ("renesas,msiof-r8a7790" and
+    "renesas,msiof-r8a7791") are added, as well as new platform device
+    names ("spi_r8a7790_msiof" and "spi_r8a7791_msiof").
+  - The default RX FIFO size is 256 words on R-Car H2 and M2.
 
->>>>>> IMHO, these 2 files should be split into a separate patch.
+This is loosely based on a set of patches from Takashi Yoshii
+<takasi-y@ops.dti.ne.jp>.
 
->>>>> That could easily be done, but why ?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Cc: devicetree@vger.kernel.org
+---
+v2:
+  - Rebased on top of new "spi: sh-msiof: Move default FIFO sizes to device
+    ID data",
+  - The default RX FIFO size is 256 words on R-Car H2 and M2,
+  - Deprecated overriding the FIFO size,
+  - Synced DT example with node from real DTS.
 
->>>> It does not seem necessary to combine these changes in one patch.
->>>> Remember, Simon has separate branches for boards and SoCs. So finally
->>>> it's up to him to decide on this...
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |   23 ++++++++++++++++++--
+ drivers/spi/spi-sh-msiof.c                         |   23 +++++++++++++++++---
+ 2 files changed, 41 insertions(+), 5 deletions(-)
 
->>> Right, but in this case I need to remove the CMT platform device
->>> registration from r8a7790_add_dt_devices()
-
->> You're not removing anything in these 2 files, you're just replacing
->> "indirect" call to r8a7790_register_cmt(0) with direct.
-
-> OK, I see what you mean now. Given that the patch removes the
-> r8a7790_add_dt_devices() call from arch/arm/mach-shmobile/board-lager-
-> reference.c, I could indeed split those two changes into a separate patch as
-> there's no-one calling the function anymore. That would introduce a dependency
-> between the branches, which might not be better. I'll let Simon comment on
-> what he would prefer and will act accordingly.
-
-    Yes, the branch inter-dependencies are bad too. I didn't think about it, 
-sorry.
-
-WBR, Sergei
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index eae3c8c9300e..1f0cb33763a1 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -1,8 +1,13 @@
+ Renesas MSIOF spi controller
+ 
+ Required properties:
+-- compatible           : "renesas,sh-msiof" for SuperH, or
++- compatible           : "renesas,msiof-<soctype>" for SoCs,
++			 "renesas,sh-msiof" for SuperH, or
+ 			 "renesas,sh-mobile-msiof" for SH Mobile series.
++			 Examples with soctypes are:
++			 "renesas,msiof-sh7724" (SH)
++			 "renesas,msiof-r8a7790" (R-Car H2)
++			 "renesas,msiof-r8a7791" (R-Car M2)
+ - reg                  : Offset and length of the register set for the device
+ - interrupt-parent     : The phandle for the interrupt controller that
+ 			 services interrupts for this device
+@@ -13,10 +18,24 @@ Required properties:
+ Optional properties:
+ - clocks               : Must contain a reference to the functional clock.
+ - num-cs               : Total number of chip-selects (default is 1)
++
++Optional properties, deprecated for soctype-specific bindings:
+ - renesas,tx-fifo-size : Overrides the default tx fifo size given in words
+ 			 (default is 64)
+ - renesas,rx-fifo-size : Overrides the default rx fifo size given in words
+-			 (default is 64)
++			 (default is 64, or 256 on R-Car H2 and M2)
+ 
+ Pinctrl properties might be needed, too.  See
+ Documentation/devicetree/bindings/pinctrl/renesas,*.
++
++Example:
++
++	msiof0: spi@e6e20000 {
++		compatible = "renesas,msiof-r8a7791";
++		reg = <0 0xe6e20000 0 0x0064>;
++		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index bf389184924d..3baef2bacaed 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -34,6 +34,7 @@
+ struct sh_msiof_chipdata {
+ 	u16 tx_fifo_size;
+ 	u16 rx_fifo_size;
++	u16 master_flags;
+ };
+ 
+ struct sh_msiof_spi_priv {
+@@ -214,7 +215,8 @@ static void sh_msiof_spi_set_clk_regs(struct sh_msiof_spi_priv *p,
+ 	k = min_t(int, k, ARRAY_SIZE(sh_msiof_spi_clk_table) - 1);
+ 
+ 	sh_msiof_write(p, TSCR, sh_msiof_spi_clk_table[k].scr);
+-	sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
++	if (!(p->chipdata->master_flags & SPI_MASTER_MUST_TX))
++		sh_msiof_write(p, RSCR, sh_msiof_spi_clk_table[k].scr);
+ }
+ 
+ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
+@@ -237,6 +239,10 @@ static void sh_msiof_spi_set_pin_regs(struct sh_msiof_spi_priv *p,
+ 	tmp |= !cs_high << MDR1_SYNCAC_SHIFT;
+ 	tmp |= lsb_first << MDR1_BITLSB_SHIFT;
+ 	sh_msiof_write(p, TMDR1, tmp | MDR1_TRMD | TMDR1_PCON);
++	if (p->chipdata->master_flags & SPI_MASTER_MUST_TX) {
++		/* These bits are reserved if RX needs TX */
++		tmp &= ~0x0000ffff;
++	}
+ 	sh_msiof_write(p, RMDR1, tmp);
+ 
+ 	tmp = 0;
+@@ -257,7 +263,7 @@ static void sh_msiof_spi_set_mode_regs(struct sh_msiof_spi_priv *p,
+ {
+ 	u32 dr2 = MDR2_BITLEN1(bits) | MDR2_WDLEN1(words);
+ 
+-	if (tx_buf)
++	if (tx_buf || (p->chipdata->master_flags & SPI_MASTER_MUST_TX))
+ 		sh_msiof_write(p, TMDR2, dr2);
+ 	else
+ 		sh_msiof_write(p, TMDR2, dr2 | MDR2_GRPMASK1);
+@@ -666,11 +672,20 @@ static u32 sh_msiof_spi_txrx_word(struct spi_device *spi, unsigned nsecs,
+ static const struct sh_msiof_chipdata sh_data = {
+ 	.tx_fifo_size = 64,
+ 	.rx_fifo_size = 64,
++	.master_flags = 0,
++};
++
++static const struct sh_msiof_chipdata r8a779x_data = {
++	.tx_fifo_size = 64,
++	.rx_fifo_size = 256,
++	.master_flags = SPI_MASTER_MUST_TX,
+ };
+ 
+ static const struct of_device_id sh_msiof_match[] = {
+ 	{ .compatible = "renesas,sh-msiof",        .data = &sh_data },
+ 	{ .compatible = "renesas,sh-mobile-msiof", .data = &sh_data },
++	{ .compatible = "renesas,msiof-r8a7790",   .data = &r8a779x_data },
++	{ .compatible = "renesas,msiof-r8a7791",   .data = &r8a779x_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, sh_msiof_match);
+@@ -789,7 +804,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	/* init master and bitbang code */
+ 	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
+ 	master->mode_bits |= SPI_LSB_FIRST | SPI_3WIRE;
+-	master->flags = 0;
++	master->flags = p->chipdata->master_flags;
+ 	master->bus_num = pdev->id;
+ 	master->dev.of_node = pdev->dev.of_node;
+ 	master->num_chipselect = p->info->num_chipselect;
+@@ -832,6 +847,8 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
+ 
+ static struct platform_device_id spi_driver_ids[] = {
+ 	{ "spi_sh_msiof",	(kernel_ulong_t)&sh_data },
++	{ "spi_r8a7790_msiof",	(kernel_ulong_t)&r8a779x_data },
++	{ "spi_r8a7791_msiof",	(kernel_ulong_t)&r8a779x_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(platform, spi_driver_ids);
+-- 
+1.7.9.5
 
