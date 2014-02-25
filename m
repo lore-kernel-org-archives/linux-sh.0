@@ -1,181 +1,126 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 17 Feb 2014 09:58:06 +0000
-Subject: Re: [PATCH 11/27] clocksource: sh_cmt: Add support for multiple channels per device
-Message-Id: <3050110.8B4nKkQ5Sd@avalon>
+From: Benoit Cousson <bcousson@baylibre.com>
+Date: Tue, 25 Feb 2014 13:39:54 +0000
+Subject: [PATCH] clk: shmobile: rcar-gen2: Use kick bit to allow Z clock frequency change
+Message-Id: <530C9D2A.8030409@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <2041255.QOGrHiKJmD@avalon>
- <CANqRtoQ=QJ0YVjp+8y+H9OTk=iRf6Jdeg_J9PMyYa-9WbgfXyA@mail.gmail.com>
-In-Reply-To: <CANqRtoQ=QJ0YVjp+8y+H9OTk=iRf6Jdeg_J9PMyYa-9WbgfXyA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+The Z clock frequency change is effective only after setting the kick
+bit located in the FRQCRB register.
+Without that, the CA15 CPUs clock rate will never change.
 
-On Monday 17 February 2014 11:07:06 Magnus Damm wrote:
-> On Mon, Feb 17, 2014 at 10:48 AM, Laurent Pinchart wrote:
-> > On Monday 17 February 2014 10:41:31 Magnus Damm wrote:
-> >> On Mon, Feb 17, 2014 at 3:18 AM, Laurent Pinchart wrote:
-> >> > On Saturday 15 February 2014 13:46:54 Thomas Gleixner wrote:
-> >> >> On Fri, 14 Feb 2014, Laurent Pinchart wrote:
-> >> >> > CMT hardware devices can support multiple channels, with global
-> >> >> > registers and per-channel registers. The sh_cmt driver currently
-> >> >> > models the hardware with one Linux device per channel. This model
-> >> >> > makes it difficult to handle global registers in a clean way.
-> >> >> > 
-> >> >> > Add support for a new model that uses one Linux device per timer
-> >> >> > with multiple channels per device. This requires changes to platform
-> >> >> > data, add new channel configuration fields.
-> >> >> > 
-> >> >> > Support for the legacy model is kept and will be removed after all
-> >> >> > platforms switch to the new model.
-> >> >> > 
-> >> >> > Signed-off-by: Laurent Pinchart
-> >> >> > <laurent.pinchart+renesas@ideasonboard.com>
-> >> >> > ---
-> >> >> > 
-> >> >> >  drivers/clocksource/sh_cmt.c | 299 ++++++++++++++++++++++++--------
-> >> >> >  include/linux/sh_timer.h     |   9 ++
-> >> >> >  2 files changed, 239 insertions(+), 69 deletions(-)
-> >> >> > 
-> >> >> > diff --git a/drivers/clocksource/sh_cmt.c
-> >> >> > b/drivers/clocksource/sh_cmt.c
-> >> >> > index 5280231..8390f0f 100644
-> >> >> > --- a/drivers/clocksource/sh_cmt.c
-> >> >> > +++ b/drivers/clocksource/sh_cmt.c
-> > 
-> > [snip]
-> > 
-> >> >> > @@ -85,11 +94,15 @@ struct sh_cmt_info {
-> >> >> > 
-> >> >> >  struct sh_cmt_channel {
-> >> >> >     struct sh_cmt_device *cmt;
-> >> >> > 
-> >> >> > -   unsigned int index;
-> >> >> > -   void __iomem *base;
-> >> >> > +   unsigned int index;     /* Index in the documentation */
-> >> >> > +   unsigned int hwidx;     /* Real hardware index */
-> >> >> > +
-> >> >> > +   void __iomem *iostart;
-> >> >> > +   void __iomem *ioctrl;
-> >> >> > 
-> >> >> >     struct irqaction irqaction;
-> >> >> 
-> >> >> While you are at it, can you please get rid of that irqaction and use
-> >> >> request_irq() ?
-> >> > 
-> >> > The driver claims it can't use request_irq() because the function is
-> >> > not available for early platform devices. If the situation has changed
-> >> > I'd gladly get rid of irqaction.
-> >> 
-> >> With the risk of stating the obvious, this depends on how early the
-> >> early platform device stuff is being run. The actual location may not
-> >> be the same on SH and ARM for instance.
-> >> 
-> >> On ARM we are doing all we can to initialize these devices as late as
-> >> ever possible in the MULTIPLAFORM (DT reference) case. Once we manage
-> >> to remove the legacy ARM case then there is one less user of early
-> >> platform timers.
-> >> 
-> >> One perhaps reasonable way forward could be to use request_irq() in
-> >> case of DT and leave the legacy platform data case to rely on
-> >> irqaction.
-> > 
-> > The whole point of switching from setup_irq() to request_irq() is to
-> > simplify the code. Adding request_irq() as an option would go in the
-> > opposite direction.
-> 
-> The point of switching to setup_irq() was not very clear to me. I
-> think it is fine to switch to using it over time, and I'm open to any
-> alternative ways forward. Usually moving in incremental steps means
-> more crap in the short term, but if someone could come up with a way
-> that involves little crap then I'm all for that! =)
+Fix that by checking if the kick bit is cleared and enable it to make
+the clock rate change effective. The bit is cleared automatically upon
+completion.
 
-I've had a quick look at request_irq(). The function is defined as a static 
-inline in include/linux/interrupt.h:
+Note: The kick bit is used as well to change 3 other emulation clocks:
+Debug Trace port clock (ZTR), Debug Trace bus clock (ZT), and Debug
+clock (ZTRD2). It is not clear from the spec [1] if there
+is any relation between the CPU clock rate and these emulation clocks.
+Moreover, these clocks are probably supposed to be controled by an
+external debugger / tracer like Lauterbach PowerTrace.
+For all these reasons, the current implementation does not expose these
+clock nodes and thus does not have to consider the multiple accesses
+to the kick bit.
 
-static inline int __must_check
-request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags,
-            const char *name, void *dev)
-{
-        return request_threaded_irq(irq, handler, NULL, flags, name, dev);
-}
+Signed-off-by: Benoit Cousson <bcousson+renesas@baylibre.com>
+Cc: Mike Turquette <mturquette@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-request_threaded_irq() is implemented in kernel/irq/manage.c. I've removed the 
-code paths that would never be taken when called by the sh_cmt driver, due to
+[1] R-Car-H2-v0.6-en.pdf - page 186
+---
 
-- handler not being NULL
-- thread_fn being NULL
-- CONFIG_DEBUG_SHIRQ_FIXME not being set
-- IRQF_SHARED not being set
+Salut Laurent,
 
-int request_threaded_irq(unsigned int irq, irq_handler_t handler,
-                         irq_handler_t thread_fn, unsigned long irqflags,
-                         const char *devname, void *dev_id)
-{
-        struct irqaction *action;
-        struct irq_desc *desc;
-        int retval;
+If you have any information about these emulation clocks, please let me
+know.
 
-        desc = irq_to_desc(irq);
-        if (!desc)
-                return -EINVAL;
+Moreover, the CCF clock driver is shared with the r8a7791, so a test on 
+that platform will be good.
 
-        if (!irq_settings_can_request(desc) ||
-            WARN_ON(irq_settings_is_per_cpu_devid(desc)))
-                return -EINVAL;
-
-        action = kzalloc(sizeof(struct irqaction), GFP_KERNEL);
-        if (!action)
-                return -ENOMEM;
-
-        action->handler = handler;
-        action->thread_fn = thread_fn;
-        action->flags = irqflags;
-        action->name = devname;
-        action->dev_id = dev_id;
-
-        chip_bus_lock(desc);
-        retval = __setup_irq(irq, desc, action);
-        chip_bus_sync_unlock(desc);
-
-        if (retval)
-                kfree(action);
-
-        return retval;
-}
-
-setup_irq() is implemented in the same file as
-
-int setup_irq(unsigned int irq, struct irqaction *act)
-{
-        int retval;
-        struct irq_desc *desc = irq_to_desc(irq);
-
-        if (WARN_ON(irq_settings_is_per_cpu_devid(desc)))
-                return -EINVAL;
-        chip_bus_lock(desc);
-        retval = __setup_irq(irq, desc, act);
-        chip_bus_sync_unlock(desc);
-
-        return retval;
-}
-
-The only two differences between request_irq() and setup_irq() would thus be
-
-- the extra !irq_settings_can_request(desc) check
-- the extra kzalloc() call
-
-The former should only be true for chained IRQ handlers, which isn't the case 
-here. The latter is just a kmalloc + kmap_atomic + memset as far as I can 
-tell.
-
-It thus seems safe to replace setup_irq() with request_irq().
-
--- 
 Regards,
+Benoit
 
-Laurent Pinchart
+
+  drivers/clk/shmobile/clk-rcar-gen2.c | 26 ++++++++++++++++++++++++--
+  1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c 
+b/drivers/clk/shmobile/clk-rcar-gen2.c
+index a59ec21..9f12746 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -26,6 +26,8 @@ struct rcar_gen2_cpg {
+  	void __iomem *reg;
+  };
+
++#define CPG_FRQCRB			0x00000004
++#define CPG_FRQCRB_KICK			BIT(31)
+  #define CPG_SDCKCR			0x00000074
+  #define CPG_PLL0CR			0x000000d8
+  #define CPG_FRQCRC			0x000000e0
+@@ -45,6 +47,7 @@ struct rcar_gen2_cpg {
+  struct cpg_z_clk {
+  	struct clk_hw hw;
+  	void __iomem *reg;
++	void __iomem *kick_reg;
+  };
+
+  #define to_z_clk(_hw)	container_of(_hw, struct cpg_z_clk, hw)
+@@ -83,17 +86,35 @@ static int cpg_z_clk_set_rate(struct clk_hw *hw, 
+unsigned long rate,
+  {
+  	struct cpg_z_clk *zclk = to_z_clk(hw);
+  	unsigned int mult;
+-	u32 val;
++	u32 val, kick;
++	int i;
+
+  	mult = div_u64((u64)rate * 32, parent_rate);
+  	mult = clamp(mult, 1U, 32U);
+
++	if (clk_readl(zclk->kick_reg) & CPG_FRQCRB_KICK)
++		return -EBUSY;
++
+  	val = clk_readl(zclk->reg);
+  	val &= ~CPG_FRQCRC_ZFC_MASK;
+  	val |= (32 - mult) << CPG_FRQCRC_ZFC_SHIFT;
+  	clk_writel(val, zclk->reg);
+
+-	return 0;
++	/*
++	 * Set KICK bit in FRQCRB to update hardware setting and
++	 * wait for completion.
++	 */
++	kick = clk_readl(zclk->kick_reg);
++	kick |= CPG_FRQCRB_KICK;
++	clk_writel(kick, zclk->kick_reg);
++
++	for (i = 1000; i; i--)
++		if (clk_readl(zclk->kick_reg) & CPG_FRQCRB_KICK)
++			cpu_relax();
++		else
++			return 0;
++
++	return -ETIMEDOUT;
+  }
+
+  static const struct clk_ops cpg_z_clk_ops = {
+@@ -120,6 +141,7 @@ static struct clk * __init cpg_z_clk_register(struct 
+rcar_gen2_cpg *cpg)
+  	init.num_parents = 1;
+
+  	zclk->reg = cpg->reg + CPG_FRQCRC;
++	zclk->kick_reg = cpg->reg + CPG_FRQCRB;
+  	zclk->hw.init = &init;
+
+  	clk = clk_register(NULL, &zclk->hw);
+-- 
+1.8.3.2
+
+
+
 
