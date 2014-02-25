@@ -1,131 +1,154 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:03:56 +0000
-Subject: [PATCH 09/11] ARM: shmobile: koelsch legacy: Add QSPI support
-Message-Id: <bcca4e8e5b6383cea9a2b310d5a964d8db18b9c7.1392276547.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:21:09 +0000
+Subject: [PATCH v2 2/6] spi: sh-msiof: Move default FIFO sizes to device ID data
+Message-Id: <1393323673-2751-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
+References: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393323673-2751-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Takashi Yoshii <takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Enable support for the Spansion s25fl512s SPI FLASH on the Koelsch board:
-  - Add QSPI platform device, resources, platform data, and pinmux,
-  - Add FLASH data and MTD partitions.
+As different variants of MSIOF have different FIFO sizes, move the default
+FIFO sizes to a new struct sh_msiof_chipdata, pointed to from the device
+ID data.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 64 ++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+v2:
+  - New
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 2741dba..d42637d 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -26,12 +26,17 @@
- #include <linux/irq.h>
+ drivers/spi/spi-sh-msiof.c |   50 ++++++++++++++++++++++++++++++--------------
+ 1 file changed, 34 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index bbe963018e1a..bf389184924d 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -20,6 +20,7 @@
  #include <linux/kernel.h>
- #include <linux/leds.h>
-+#include <linux/mtd/mtd.h>
-+#include <linux/mtd/partitions.h>
- #include <linux/phy.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/rcar-du.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
++#include <linux/of_device.h>
  #include <linux/platform_device.h>
- #include <linux/sh_eth.h>
-+#include <linux/spi/flash.h>
-+#include <linux/spi/rspi.h>
-+#include <linux/spi/spi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
-@@ -150,6 +155,55 @@ static const struct gpio_keys_platform_data koelsch_keys_pdata __initconst = {
- 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+ #include <linux/pm_runtime.h>
+ 
+@@ -29,11 +30,18 @@
+ 
+ #include <asm/unaligned.h>
+ 
++
++struct sh_msiof_chipdata {
++	u16 tx_fifo_size;
++	u16 rx_fifo_size;
++};
++
+ struct sh_msiof_spi_priv {
+ 	struct spi_bitbang bitbang; /* must be first for spi_bitbang.c */
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+ 	struct platform_device *pdev;
++	const struct sh_msiof_chipdata *chipdata;
+ 	struct sh_msiof_spi_info *info;
+ 	struct completion done;
+ 	unsigned long flags;
+@@ -112,10 +120,6 @@ struct sh_msiof_spi_priv {
+ #define STR_REOF	0x00000080 /* Frame Reception End */
+ 
+ 
+-#define DEFAULT_TX_FIFO_SIZE	64
+-#define DEFAULT_RX_FIFO_SIZE	64
+-
+-
+ static u32 sh_msiof_read(struct sh_msiof_spi_priv *p, int reg_offs)
+ {
+ 	switch (reg_offs) {
+@@ -659,6 +663,18 @@ static u32 sh_msiof_spi_txrx_word(struct spi_device *spi, unsigned nsecs,
+ }
+ 
+ #ifdef CONFIG_OF
++static const struct sh_msiof_chipdata sh_data = {
++	.tx_fifo_size = 64,
++	.rx_fifo_size = 64,
++};
++
++static const struct of_device_id sh_msiof_match[] = {
++	{ .compatible = "renesas,sh-msiof",        .data = &sh_data },
++	{ .compatible = "renesas,sh-mobile-msiof", .data = &sh_data },
++	{},
++};
++MODULE_DEVICE_TABLE(of, sh_msiof_match);
++
+ static struct sh_msiof_spi_info *sh_msiof_spi_parse_dt(struct device *dev)
+ {
+ 	struct sh_msiof_spi_info *info;
+@@ -693,6 +709,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ {
+ 	struct resource	*r;
+ 	struct spi_master *master;
++	const struct of_device_id *of_id;
+ 	struct sh_msiof_spi_priv *p;
+ 	int i;
+ 	int ret;
+@@ -706,10 +723,15 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	p = spi_master_get_devdata(master);
+ 
+ 	platform_set_drvdata(pdev, p);
+-	if (pdev->dev.of_node)
++
++	of_id = of_match_device(sh_msiof_match, &pdev->dev);
++	if (of_id) {
++		p->chipdata = of_id->data;
+ 		p->info = sh_msiof_spi_parse_dt(&pdev->dev);
+-	else
++	} else {
++		p->chipdata = (const void *)pdev->id_entry->driver_data;
+ 		p->info = dev_get_platdata(&pdev->dev);
++	}
+ 
+ 	if (!p->info) {
+ 		dev_err(&pdev->dev, "failed to obtain device info\n");
+@@ -756,11 +778,9 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	p->pdev = pdev;
+ 	pm_runtime_enable(&pdev->dev);
+ 
+-	/* The standard version of MSIOF use 64 word FIFOs */
+-	p->tx_fifo_size = DEFAULT_TX_FIFO_SIZE;
+-	p->rx_fifo_size = DEFAULT_RX_FIFO_SIZE;
+-
+ 	/* Platform data may override FIFO sizes */
++	p->tx_fifo_size = p->chipdata->tx_fifo_size;
++	p->rx_fifo_size = p->chipdata->rx_fifo_size;
+ 	if (p->info->tx_fifo_override)
+ 		p->tx_fifo_size = p->info->tx_fifo_override;
+ 	if (p->info->rx_fifo_override)
+@@ -810,18 +830,16 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_OF
+-static const struct of_device_id sh_msiof_match[] = {
+-	{ .compatible = "renesas,sh-msiof", },
+-	{ .compatible = "renesas,sh-mobile-msiof", },
++static struct platform_device_id spi_driver_ids[] = {
++	{ "spi_sh_msiof",	(kernel_ulong_t)&sh_data },
+ 	{},
  };
+-MODULE_DEVICE_TABLE(of, sh_msiof_match);
+-#endif
++MODULE_DEVICE_TABLE(platform, spi_driver_ids);
  
-+/* QSPI */
-+static const struct resource qspi_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6b10000, 0x1000),
-+	DEFINE_RES_IRQ_NAMED(gic_spi(184), "mux"),
-+};
-+
-+static const struct rspi_plat_data qspi_pdata __initconst = {
-+	.num_chipselect = 1,
-+};
-+
-+/* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
-+static struct mtd_partition spi_flash_part[] = {
-+	{
-+		.name		= "loader",
-+		.offset		= 0x00000000,
-+		.size		= 512 * 1024,
-+		.mask_flags	= MTD_WRITEABLE,
-+	},
-+	{
-+		.name		= "bootenv",
-+		.offset		= MTDPART_OFS_APPEND,
-+		.size		= 512 * 1024,
-+		.mask_flags	= MTD_WRITEABLE,
-+	},
-+	{
-+		.name		= "data",
-+		.offset		= MTDPART_OFS_APPEND,
-+		.size		= MTDPART_SIZ_FULL,
-+	},
-+};
-+
-+static const struct flash_platform_data spi_flash_data = {
-+	.name		= "m25p80",
-+	.parts		= spi_flash_part,
-+	.nr_parts	= ARRAY_SIZE(spi_flash_part),
-+	.type		= "s25fl512s",
-+};
-+
-+static const struct spi_board_info spi_info[] __initconst = {
-+	{
-+		.modalias	= "m25p80",
-+		.platform_data	= &spi_flash_data,
-+		.mode		= SPI_MODE_0,
-+		.max_speed_hz	= 30000000,
-+		.bus_num	= 0,
-+		.chip_select	= 0,
-+	},
-+};
-+
- /* SATA0 */
- static const struct resource sata0_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xee300000, 0x2000),
-@@ -214,6 +268,11 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 				  "eth_rmii", "eth"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
- 				  "intc_irq0", "intc"),
-+	/* QSPI */
-+	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
-+				  "qspi_ctrl", "qspi"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
-+				  "qspi_data4", "qspi"),
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7791",
- 				  "scif0_data_d", "scif0"),
-@@ -248,6 +307,11 @@ static void __init koelsch_add_standard_devices(void)
- 	platform_device_register_data(&platform_bus, "gpio-keys", -1,
- 				      &koelsch_keys_pdata,
- 				      sizeof(koelsch_keys_pdata));
-+	platform_device_register_resndata(&platform_bus, "qspi", 0,
-+					  qspi_resources,
-+					  ARRAY_SIZE(qspi_resources),
-+					  &qspi_pdata, sizeof(qspi_pdata));
-+	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- 
- 	koelsch_add_du_device();
- 
+ static struct platform_driver sh_msiof_spi_drv = {
+ 	.probe		= sh_msiof_spi_probe,
+ 	.remove		= sh_msiof_spi_remove,
++	.id_table	= spi_driver_ids,
+ 	.driver		= {
+ 		.name		= "spi_sh_msiof",
+ 		.owner		= THIS_MODULE,
 -- 
-1.8.5.2
+1.7.9.5
 
