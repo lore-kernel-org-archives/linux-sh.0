@@ -1,49 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:46 +0000
-Subject: [PATCH 05/13] ARM: shmobile: lager: Add DU device to DTS
-Message-Id: <3024f507e1dc2b30fc64ed6106db6aea6e69cf0b.1392961872.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:21:12 +0000
+Subject: [PATCH v2 5/6] spi: sh-msiof: Convert to let spi core validate xfer->bits_per_word
+Message-Id: <1393323673-2751-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961872.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392961872.git.horms+renesas@verge.net.au>
+References: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393323673-2751-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Takashi Yoshii <takasi-y-nDL5PR/MsHhHfZP73Gtkiw@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-The DU device has no DT bindings yet, instantiate it as a platform
-device for now.
+Set bits_per_word_mask so the spi core will reject transfers that attempt
+to use an unsupported bits_per_word value.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: broken out of larger patch that
-                             included board changes]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+v2:
+  - No changes
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 5466fe4..26a9010 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -111,9 +111,14 @@
- };
+ drivers/spi/spi-sh-msiof.c |   19 ++-----------------
+ 1 file changed, 2 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+index 18e3a8d628e9..27536933d734 100644
+--- a/drivers/spi/spi-sh-msiof.c
++++ b/drivers/spi/spi-sh-msiof.c
+@@ -438,22 +438,6 @@ static u32 sh_msiof_spi_hz(struct spi_device *spi, struct spi_transfer *t)
+ 	return hz;
+ }
  
- &pfc {
--	pinctrl-0 = <&scif0_pins &scif1_pins>;
-+	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
+-static int sh_msiof_spi_setup_transfer(struct spi_device *spi,
+-				       struct spi_transfer *t)
+-{
+-	int bits;
+-
+-	/* noting to check hz values against since parent clock is disabled */
+-
+-	bits = sh_msiof_spi_bits(spi, t);
+-	if (bits < 8)
+-		return -EINVAL;
+-	if (bits > 32)
+-		return -EINVAL;
+-
+-	return spi_bitbang_setup_transfer(spi, t);
+-}
+-
+ static int sh_msiof_spi_setup(struct spi_device *spi)
+ {
+ 	struct device_node	*np = spi->master->dev.of_node;
+@@ -825,10 +809,11 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+ 	master->cleanup = spi_bitbang_cleanup;
+ 	master->prepare_message = sh_msiof_prepare_message;
+ 	master->unprepare_message = sh_msiof_unprepare_message;
++	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 32);
  
-+	du_pins: du {
-+		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
-+		renesas,function = "du";
-+	};
-+
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data";
- 		renesas,function = "scif0";
+ 	p->bitbang.master = master;
+ 	p->bitbang.chipselect = sh_msiof_spi_chipselect;
+-	p->bitbang.setup_transfer = sh_msiof_spi_setup_transfer;
++	p->bitbang.setup_transfer = spi_bitbang_setup_transfer;
+ 	p->bitbang.txrx_bufs = sh_msiof_spi_txrx;
+ 	p->bitbang.txrx_word[SPI_MODE_0] = sh_msiof_spi_txrx_word;
+ 	p->bitbang.txrx_word[SPI_MODE_1] = sh_msiof_spi_txrx_word;
 -- 
-1.8.5.2
+1.7.9.5
 
