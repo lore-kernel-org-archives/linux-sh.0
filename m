@@ -1,59 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:03:51 +0000
-Subject: [PATCH 04/11] ARM: shmobile: bockw: use wp-gpios instead of WP pin
-Message-Id: <f729dd554e9a04a55950693ea8eca0d3aaa28d22.1392276547.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:37:21 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: bockw reference dts: Add SPI FLASH
+Message-Id: <1393324641-3690-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276547.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276547.git.horms+renesas@verge.net.au>
+References: <1393324641-3690-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393324641-3690-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Latest Renesas Chip has some SDHI channels and the WP pin
-availability depends on its channel or HW implementation.
-Thus, this patch decides new policy whch indicates
-WP is disabled as default.
-But, we can use wp-gpios property to enable it as
-other method.
+Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
+board code.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+v3:
+  - No changes
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index bb62c7a..06cda19 100644
+index 06cda19dac6a..f76f6ec01e19 100644
 --- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
 +++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -17,6 +17,7 @@
- /dts-v1/;
- #include "r8a7778.dtsi"
- #include <dt-bindings/interrupt-controller/irq.h>
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "bockw";
-@@ -84,7 +85,7 @@
- 
- 	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
--				  "sdhi0_cd", "sdhi0_wp";
-+				  "sdhi0_cd";
- 		renesas,function = "sdhi0";
- 	};
- 
-@@ -101,6 +102,7 @@
- 	vmmc-supply = <&fixedregulator3v3>;
- 	bus-width = <4>;
+@@ -109,4 +109,18 @@
+ 	pinctrl-0 = <&hspi0_pins>;
+ 	pinctrl-names = "default";
  	status = "okay";
-+	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
  };
- 
- &hspi0 {
 -- 
-1.8.5.2
+1.7.9.5
 
