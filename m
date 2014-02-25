@@ -1,35 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 24 Feb 2014 23:47:19 +0000
-Subject: Re: [PATCH 2/4] ARM: shmobile: r8a7791: add IIC(B) clocks to dtsi
-Message-Id: <20140224234718.GB8327@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Feb 2014 09:10:27 +0000
+Subject: [PATCH v2] media: soc_camera: rcar_vin: Add support for 10-bit YUV cameras
+Message-Id: <1393319427-14515-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389082976-22254-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1389082976-22254-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <2516843.7QqJLHtUZT@avalon>
+In-Reply-To: <2516843.7QqJLHtUZT@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Hans Verkuil <hans.verkuil@cisco.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Mon, Feb 24, 2014 at 12:36:40PM +0100, Laurent Pinchart wrote:
-> Hi Wolfram,
-> 
-> On Monday 24 February 2014 11:38:32 Wolfram Sang wrote:
-> > > >  			renesas,clock-indices = <
-> > > >  			
-> > > >  				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
-> > > >  				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
-> > > > 
-> > > > +				R8A7791_CLK_IIC0 R8A7791_CLK_IIC1
-> > > 
-> > > That's an arbitrary rule but we've followed it so far, could you please
-> > > keep the entries sorted by value as well, here and in patch 3/4 ?
-> > 
-> > OK, can do. Will create a less easy to parse diff, though. Another
-> > question: What about loosening the 80-char rule and have four values per
-> > line? This suits a 32 bit register much better IMO.
-> 
-> I'd be fine with that. There has never been a strict 80-char rule for .dts 
-> files anyway.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+  - Fix silly mistake with missing break.
 
-I am fine with that too.
+ drivers/media/platform/soc_camera/rcar_vin.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 3b1c05a..702dc47 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -68,6 +68,8 @@
+ #define VNMC_YCAL		(1 << 19)
+ #define VNMC_INF_YUV8_BT656	(0 << 16)
+ #define VNMC_INF_YUV8_BT601	(1 << 16)
++#define VNMC_INF_YUV10_BT656	(2 << 16)
++#define VNMC_INF_YUV10_BT601	(3 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+@@ -275,6 +277,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
+ 		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
++		break;
++	case V4L2_MBUS_FMT_YUYV10_2X10:
++		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
++		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -1003,6 +1011,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+ 	switch (code) {
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
++	case V4L2_MBUS_FMT_YUYV10_2X10:
+ 		if (cam->extra_fmt)
+ 			break;
+ 
+-- 
+1.7.9.5
 
