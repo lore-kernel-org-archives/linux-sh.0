@@ -1,175 +1,85 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 23:49:28 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 25 Feb 2014 00:17:48 +0000
 Subject: Re: DMABOUNCE in pci-rcar
-Message-Id: <CANqRtoTLUfK7bjhmUbTdBi7r7OzrmwdAg_wnRbGHN7EUjGtouQ@mail.gmail.com>
+Message-Id: <20140225001748.GS21483@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201402241200.21944.arnd@arndb.de>
-In-Reply-To: <201402241200.21944.arnd@arndb.de>
+ <CANqRtoTLUfK7bjhmUbTdBi7r7OzrmwdAg_wnRbGHN7EUjGtouQ@mail.gmail.com>
+In-Reply-To: <CANqRtoTLUfK7bjhmUbTdBi7r7OzrmwdAg_wnRbGHN7EUjGtouQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 24, 2014 at 8:00 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> Hi Magnus,
->
-> I noticed during randconfig testing that you enabled DMABOUNCE for the
-> pci-rcar-gen2 driver as posted in this patch https://lkml.org/lkml/2014/2/5/30
+On Tue, Feb 25, 2014 at 08:49:28AM +0900, Magnus Damm wrote:
+> On Mon, Feb 24, 2014 at 8:00 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> >From my point of view we need some kind of bounce buffer unless we
+> have IOMMU support. I understand that an IOMMU would be much better
+> than a software-based implementation. If it is possible to use an
+> IOMMU with these devices remain to be seen.
+>=20
+> I didn't know about the SWIOTLB code, neither did I know that
+> DMABOUNCE was supposed to be avoided. Now I do!
 
-Hi Arnd,
+The reason DMABOUNCE should be avoided is because it is a known source
+of OOMs, and that has never been investigated and fixed.  You can read
+about some of the kinds of problems this code creates here:
 
-The patch that you are referring to has been updated a few times, but
-I believe your comments are still valid for the series
-[PATCH v2 00/08] PCI: rcar: Recent driver patches from Ben Dooks and me (V2)
+http://webcache.googleusercontent.com/search?q=CAche:jwl4g8hqWa8J:comments.=
+gmane.org/gmane.linux.ports.arm.kernel/15850+&cd=3D2&hl=3Den&ct=3Dclnk&gl=
+=3Duk&client=3Dfirefox-a
 
-> I didn't see the original post unfortunately, but I fear we have to
-> revert it and come up with a better solution, as your approach seems
-> wrong on a number of levels:
->
-> * We really don't want any new users of DMABOUNCE on ARM but instead leave
->   it to the PXA/IXP/SA1100 based platforms using it today.
->
-> * If your SoCs have an IOMMU, you should really use it, as that would
->   give you much better performance than bounce buffers anyway
->
-> * If the hardware is so screwed up that you have to use bounce buffers,
->   use the SWIOTLB code that is reasonably modern.
+That was never got to the bottom of.  I could harp on about not having
+the hardware, the people with the hardware not being capable of debugging
+it, or not willing to litter their kernels with printks when they've
+found a reproducable way to trigger it, etc - but none of that really
+matters.
 
-From my point of view we need some kind of bounce buffer unless we
-have IOMMU support. I understand that an IOMMU would be much better
-than a software-based implementation. If it is possible to use an
-IOMMU with these devices remain to be seen.
+What matters is the end result is nothing was ever done to investigate
+the causes, so it remains "unsafe" to use.
 
-I didn't know about the SWIOTLB code, neither did I know that
-DMABOUNCE was supposed to be avoided. Now I do!
+> I do realize that my following patches madly mix potential bus code
+> and actual device support, however..
+>=20
+> [PATCH v2 06/08] PCI: rcar: Add DMABOUNCE support
+> [PATCH 07/08] PCI: rcar: Enable BOUNCE in case of HIGHMEM
+>=20
+> .. without my patches the driver does not handle CONFIG_BOUNCE and
+> CONFIG_VMSPLIT_2G.
 
-I do realize that my following patches madly mix potential bus code
-and actual device support, however..
+Can we please kill the idea that CONFIG_VMSPLIT_* has something to do
+with DMA?  It doesn't.  VMSPLIT sets where the boundary between userspace
+and kernel space is placed in virtual memory.  It doesn't really change
+which memory is DMA-able.
 
-[PATCH v2 06/08] PCI: rcar: Add DMABOUNCE support
-[PATCH 07/08] PCI: rcar: Enable BOUNCE in case of HIGHMEM
+There is the BLK_BOUNCE_HIGH option, but that's more to do with drivers
+saying "I don't handle highmem pages because I'm old and no one's updated
+me".
 
-.. without my patches the driver does not handle CONFIG_BOUNCE and
-CONFIG_VMSPLIT_2G.
+The same is true of highmem vs bouncing for DMA.  Highmem is purely a
+virtual memory concept and has /nothing/ to do with whether the memory
+can be DMA'd to.
 
-> * The window base and size in the driver should not be hardcoded, as
->   this is likely not a device specific property but rather an artifact of
->   how it's connected. Use the standard "dma-ranges" property.
+Let's take an extreme example.  Let's say I set a 3G VM split, so kernel
+memory starts at 0xc0000000.  I then set the vmalloc space to be 1024M -
+but the kernel strinks that down to the maximum that can be accomodated,
+which leaves something like 16MB of lowmem.  Let's say I have 512MB of
+RAM in the machine.
 
-I'm afraid that I may not understand your concern fully here. From my
-view the existing driver (without my patch) is having hard coded
-board-specific memory base and a hard coded size in it, and with my
-patches I try to rework that. Do you have any existing example code to
-recommend me?
+Now let's consider I do the same thing, but with a 2G VM split.  Has the
+memory pages which can be DMA'd to changed at all?  Yes, the CPU's view
+of pages has changed, but the DMA engine's view hasn't changed /one/ /bit/.
 
-Regarding what the device can do and/or how it is connected - here is
-some hardware information:
+Now consider when vmalloc space isn't expanded to maximum and all that
+RAM is mapped into the kernel direct mapped region.  Again, any
+difference as far as the DMA engine goes?  No there isn't.
 
-1) 3 on-chip PCI bridges per SoC with USB EHCI/OHCI controllers on
-each of them (PCI bridge code is also shared between multiple SoCs and
-of course multiple boards).
+So, the idea that highmem or vmsplit has any kind of impact on whether
+memory can be DMA'd to by the hardware is absolutely absurd.
 
-2) The systems have 40-bit physical address space and the CPU can
-address this when LPAE is enabled.
+VMsplit and highmem are a CPU visible concept, and has very little to do
+with whether the memory is DMA-able.
 
-3) System RAM is available in two banks - one bank in the lowest
-32-bits (top 8 bits set to 0) and another bank in higher space.
-
-4) The PCI bridge has a 32-bit base address for the windows with
-alignment requirement (needs to be evenly aligned based on size)
-
-5) Each PCI bridge instance has two windows, but supported size
-differs. One window supports up to 2 GiB, another 256MiB.
-
-Without IOMMU available I came to the conclusion that I need both
-BOUNCE and DMABOUNCE to support the above hardware.
-
-> * You should not need your own dma_map_ops in the driver. What you
->   do there isn't really specific to your host but should live in some
->   place where it can be shared with other drivers.
-
-I think this boils down to the less-than-32-bit bus master capability
-and also the poor match to a DMA zone. Consider 24-bit ISA DMA address
-space vs 31-bit DMA space on a 32-bit system. I may be wrong, but a
-DMA zone in my mind is something suitable for the classic ISA DMA, not
-so much for modern complex systems with multiple devices that come
-with different bus master capabilities.
-
-That said, of course it makes sense to share code whenever possible.
-Can you explain a bit more what kind of code you would like to have
-broken out?
-
-> * The implementation of the dma_map_ops is wrong: at the very least,
->   you cannot use the dma_mask of the pci host when translating
->   calls from the device, since each pci device can have a different
->   dma mask that is set by the driver if it needs larger or smaller
->   than 32-bit DMA space.
-
-The current version of the driver (with or without my patch) seems to
-leave all dma mask handling left out. I understand that this is poor
-programming practise and I would like to see that fixed. As you
-noticed, I did not try to fix this issue in my patch.
-
-It may be worth noticing that the PCI devices hanging off the PCI
-bridge instances are all on-chip fixed to OHCI and EHCI and the
-drivers for these USB host controllers do not seem to try to set the
-dma mask as it is today. So we are talking about a fixed set of PCI
-devices here and not external PCI bus with general purpose PCI
-drivers. I'm not sure if that makes things much better though..
-
-So yes, I'd like the PCI bridge driver to be fixed with proper dma
-mask handling. The question is just what that mask is supposed to
-represent on a system where we a) may have IOMMU (and if so we can
-address 40 bits), and if not we b) are limited to 31 bits but we also
-have a non-zero base address. I'm not sure how to represent that
-information with a single dma mask. Any suggestions?
-
-> * The block bounce code can't be enabled if CONFIG_BLOCK is disabled,
->   this is how I noticed your changes.
-
-Do you mean that the following patch is causing some kind of build error?
-[PATCH 07/08] PCI: rcar: Enable BOUNCE in case of HIGHMEM
-
-If possible, can you please let me know which patches that you want me
-to rework?
-
-> * The block layer assumes that it will bounce any highmem pages,
->   but that isn't necessarily what you want here: if you have 2GB
->   of lowmem space (CONFIG_VMSPLIT_2G) or more, you will also have
->   lowmem pages that need bouncing.
-
-Good to hear that you also came to the conclusion that the two cases
-need to be handled separately. =)
-
-The lowmem bounce case (CONFIG_VMSPLIT_2G) is implemented in:
-[PATCH v2 06/08] PCI: rcar: Add DMABOUNCE support
-
-The block layer bounce is also enabled in:
-[PATCH 07/08] PCI: rcar: Enable BOUNCE in case of HIGHMEM
-
-> * (completely unrelated, I noticed you set up a bogus I/O space
->   window. Don't do that, you will get get a panic if a device happens
->   to use it. Not providing an resource should work fine though)
-
-Right. To be honest, I'm not sure why the original author implemented
-this. Similar to the dma mask bits this is something that I would like
-to fix, but it has been out of scope for my patches so far.
-
-> On the bright side, your other changes in the same series all look
-> good. Thanks especially for sorting out the probe() function, I was
-> already wondering if we could change that the way you did.
-
-Thanks. Ideally I'd like to support bind and unbind on the bridge too
-(CARDBUS can hotplug PCI, so should we!), but I suppose that sorting
-out the bounce bits is more important.
-
-Also, the SWIOTLB code, are you aware of any existing ARM users? I
-also wonder if the code can work with multiple devices - the bits in
-lib/swiotlb.c looks like single instance with global system wide
-support only - perhaps it needs rework to support 3 PCI bridges?
-
-Thanks for your help, I appreciate your feedback.
-
-Cheers,
-
-/ magnus
+--=20
+FTTC broadband for 0.8mile line: now at 9.7Mbps down 460kbps up... slowly
+improving, and getting towards what was expected from it.
