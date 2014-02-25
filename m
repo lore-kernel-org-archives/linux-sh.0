@@ -1,10 +1,10 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2014 10:47:28 +0000
-Subject: [PATCH 2/7] ARM: shmobile: lager legacy: Add QSPI pinmux
-Message-Id: <1392029254-15400-3-git-send-email-geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:30:18 +0000
+Subject: [PATCH v2 10/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
+Message-Id: <1393324219-3317-11-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,27 +12,55 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- arch/arm/mach-shmobile/board-lager.c |    5 +++++
- 1 file changed, 5 insertions(+)
+Add pinctrl and SPI device for MSIOF on Koelsch.
+On this board, only MSIOF0 is in use. Its bus contains a single device
+(a Renesas R2A11302FT PMIC), for which no bindings are defined yet.
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 317574864e7b..9e52efa2a457 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -606,6 +606,11 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* I2C2 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar.2", "pfc-r8a7790",
- 				  "i2c2", "i2c2"),
-+	/* QSPI */
-+	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7790",
-+				  "qspi_ctrl", "qspi"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7790",
-+				  "qspi_data4", "qspi"),
- 	/* SCIF0 (CN19: DEBUG SERIAL0) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.6", "pfc-r8a7790",
- 				  "scif0_data", "scif0"),
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: devicetree@vger.kernel.org
+---
+v2:
+  - No changes
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 03508cc73e8b..f3eb83c4265d 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -161,6 +161,12 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	msiof0_pins: spi1 {
++		renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
++				 "msiof0_tx";
++		renesas,function = "msiof0";
++	};
+ };
+ 
+ &ether {
+@@ -212,3 +218,18 @@
+ 		};
+ 	};
+ };
++
++&msiof0 {
++	pinctrl-0 = <&msiof0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	pmic: pmic@0 {
++		compatible = "renesas,r2a11302ft";
++		reg = <0>;
++		spi-max-frequency = <6000000>;
++		spi-cpol;
++		spi-cpha;
++	};
++};
 -- 
 1.7.9.5
 
