@@ -1,167 +1,122 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 20 Feb 2014 11:54:46 +0000
-Subject: [PATCH V7 2/3] ARM: shmobile: Remove CMT, TMU and STI Kconfig entries
-Message-Id: <1392897287-11614-3-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:37:20 +0000
+Subject: [PATCH v3 2/3] ARM: shmobile: r8a7778/r8a7779 dtsi: Improve and correct HSPI nodes
+Message-Id: <1393324641-3690-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1392897287-11614-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Magnus Damm <damm@opensource.se>, "Cc: Wolfram Sang" <wsa@the-dreams.de>, khilman@linaro.org, arnd@arndb.de, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms@verge.net.au, john.stultz@linaro.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Now when drivers/clocksource/Kconfig has been
-updated with entires for CMT, TMU, MTU2, and STI
-it is safe to remove these from mach-shmobile.
+  - Add "renesas,hspi-r8a7778" resp. "renesas,hspi-r8a7779" compatible
+    values,
+  - Correct reference to parent interrupt controller
+    (use "interrupt-parent" instead of "interrupt-controller"),
+  - Add missing "#address-cells" and "#size-cells" properties, which are
+    needed when populating the SPI buses.
 
-Also select timers per SoC via SYS_SUPPORTS_xxx.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-[wsa: rebased to timers/core]
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com> [HSPI/BockW]
 ---
- arch/arm/mach-shmobile/Kconfig | 36 ++++++++++++++++++------------------
- 1 file changed, 18 insertions(+), 18 deletions(-)
+v3:
+  - Split in two patches: bindings and dtsi updates
+v2:
+  - Add Tested-by
+  - List full example compatible properties with soctypes instead of just
+    the soctypes, so checkpatch can validate DTSes.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 3386406..c1a9538 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -24,17 +24,21 @@ comment "Renesas ARM SoCs System Type"
+ arch/arm/boot/dts/r8a7778.dtsi |   18 ++++++++++++------
+ arch/arm/boot/dts/r8a7779.dtsi |   18 ++++++++++++------
+ 2 files changed, 24 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 85c5b3b99f5e..3c6fab5c9702 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -204,26 +204,32 @@
+ 	};
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-+	select SYS_SUPPORTS_EM_STI
+ 	hspi0: spi@fffc7000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc7000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
  
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select SYS_SUPPORTS_SH_MTU2
+ 	hspi1: spi@fffc8000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc8000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
  
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
+ 	hspi2: spi@fffc6000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc6000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index d0561d4c7c46..8b1a336ee401 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -256,26 +256,32 @@
+ 	};
  
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
+ 	hspi0: spi@fffc7000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
+ 		reg = <0xfffc7000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
  
- comment "Renesas ARM SoCs Board Type"
+ 	hspi1: spi@fffc8000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
+ 		reg = <0xfffc8000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
  
-@@ -68,6 +72,8 @@ config ARCH_SH7372
- 	select ARM_CPU_SUSPEND if PM || CPU_IDLE
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_SH73A0
- 	bool "SH-Mobile AG5 (R8A73A00)"
-@@ -77,6 +83,8 @@ config ARCH_SH73A0
- 	select I2C
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A73A4
- 	bool "R-Mobile APE6 (R8A73A40)"
-@@ -87,6 +95,8 @@ config ARCH_R8A73A4
- 	select RENESAS_IRQC
- 	select ARCH_HAS_CPUFREQ
- 	select ARCH_HAS_OPP
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
-@@ -95,6 +105,8 @@ config ARCH_R8A7740
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_CMT
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7778
- 	bool "R-Car M1A (R8A77781)"
-@@ -104,6 +116,7 @@ config ARCH_R8A7778
- 	select ARM_GIC
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
-@@ -114,6 +127,7 @@ config ARCH_R8A7779
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
- 	select RENESAS_INTC_IRQPIN
-+	select SYS_SUPPORTS_SH_TMU
- 
- config ARCH_R8A7790
- 	bool "R-Car H2 (R8A77900)"
-@@ -123,6 +137,7 @@ config ARCH_R8A7790
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
- 
- config ARCH_R8A7791
- 	bool "R-Car M2 (R8A77910)"
-@@ -132,6 +147,7 @@ config ARCH_R8A7791
- 	select MIGHT_HAVE_PCI
- 	select SH_CLK_CPG
- 	select RENESAS_IRQC
-+	select SYS_SUPPORTS_SH_CMT
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-@@ -141,6 +157,7 @@ config ARCH_EMEV2
- 	select MIGHT_HAVE_PCI
- 	select USE_OF
- 	select AUTO_ZRELADDR
-+	select SYS_SUPPORTS_EM_STI
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-@@ -148,6 +165,7 @@ config ARCH_R7S72100
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select SYS_SUPPORTS_SH_MTU2
- 
- comment "Renesas ARM SoCs Board Type"
- 
-@@ -321,24 +339,6 @@ config SHMOBILE_TIMER_HZ
- 	  want to select a HZ value such as 128 that can evenly divide RCLK.
- 	  A HZ value that does not divide evenly may cause timer drift.
- 
--config SH_TIMER_CMT
--	bool "CMT timer driver"
--	default y
--	help
--	  This enables build of the CMT timer driver.
--
--config SH_TIMER_TMU
--	bool "TMU timer driver"
--	default y
--	help
--	  This enables build of the TMU timer driver.
--
--config EM_TIMER_STI
--	bool "STI timer driver"
--	default y
--	help
--	  This enables build of the STI timer driver.
--
- endmenu
- 
- endif
+ 	hspi2: spi@fffc6000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
+ 		reg = <0xfffc6000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ };
 -- 
-1.8.5.1
+1.7.9.5
 
