@@ -1,36 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:18:56 +0000
-Subject: [PATCH 04/21] ARM: shmobile: bockw: add USB Func DMAEngine support
-Message-Id: <f3ffa47c8d563d8ea3e378fa59aca5dde9624a01.1391665225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:34:52 +0000
+Subject: [PATCH v3 1/3] spi: hs-spi: Improve bindings
+Message-Id: <1393324492-3527-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@linaro.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+  - Add future-proof "renesas,hspi-<soctype>" compatible values,
+  - Add missing "interrupt-parent", "#address-cells", and "#size-cells"
+    properties,
+  - Add reference to pinctrl documentation,
+  - Add example bindings.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 2 ++
- 1 file changed, 2 insertions(+)
+v3:
+  - Split in two patches: bindings and dtsi updates
+v2:
+  - Add Tested-by
+  - List full example compatible properties with soctypes instead of just
+    the soctypes, so checkpatch can validate DTSes.
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 24b4161..684a529 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -168,6 +168,8 @@ static struct renesas_usbhs_platform_info usbhs_info __initdata = {
- 	},
- 	.driver_param = {
- 		.buswait_bwait	= 4,
-+		.d0_tx_id	= HPBDMA_SLAVE_USBFUNC_TX,
-+		.d1_rx_id	= HPBDMA_SLAVE_USBFUNC_RX,
- 	},
- };
+ Documentation/devicetree/bindings/spi/sh-hspi.txt |   28 ++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/spi/sh-hspi.txt b/Documentation/devicetree/bindings/spi/sh-hspi.txt
+index 30b57b1c8a13..319bad4af875 100644
+--- a/Documentation/devicetree/bindings/spi/sh-hspi.txt
++++ b/Documentation/devicetree/bindings/spi/sh-hspi.txt
+@@ -1,7 +1,29 @@
+ Renesas HSPI.
+ 
+ Required properties:
+-- compatible : 	"renesas,hspi"
+-- reg : Offset and length of the register set for the device
+-- interrupts : interrupt line used by HSPI
++- compatible       : "renesas,hspi-<soctype>", "renesas,hspi" as fallback.
++		     Examples with soctypes are:
++		       - "renesas,hspi-r8a7778" (R-Car M1)
++		       - "renesas,hspi-r8a7779" (R-Car H1)
++- reg              : Offset and length of the register set for the device
++- interrupt-parent : The phandle for the interrupt controller that
++		     services interrupts for this device
++- interrupts       : Interrupt specifier
++- #address-cells   : Must be <1>
++- #size-cells      : Must be <0>
++
++Pinctrl properties might be needed, too.  See
++Documentation/devicetree/bindings/pinctrl/renesas,*.
++
++Example:
++
++	hspi0: spi@fffc7000 {
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
++		reg = <0xfffc7000 0x18>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
  
 -- 
-1.8.5.2
+1.7.9.5
 
