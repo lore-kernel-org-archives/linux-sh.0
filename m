@@ -1,74 +1,120 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:22 +0000
-Subject: [PATCH 10/16] ARM: shmobile: BOCK-W: set proper DMA masks for Ether device
-Message-Id: <ca6da5319761308e38bb97af9030d16e223355d1.1392960310.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Feb 2014 10:30:12 +0000
+Subject: [PATCH v2 04/11] ARM: shmobile: koelsch legacy: Add MSIOF support
+Message-Id: <1393324219-3317-5-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392960310.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
+References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
-'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
-ability.
+Add MSIOF resources, platform data, platform device, pinctrl, and SPI
+child device.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+  - Only MSIOF0 is in use, and thus registered. Its bus contains a single
+    device (a Renesas R2A11302FT PMIC).
+  - Platform device numbering is 1-based for compatibility with the BSP,
+    as QSPI uses zero, so MSIOF0's device name is "spi_r8a7791_msiof.1".
+
+Based on patches from Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-bockw.c | 21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
+v2:
+  - Removed resources for unused MSIOF channels.
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 684a529..aaed215 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -1,9 +1,9 @@
- /*
-  * Bock-W board support
-  *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014  Renesas Solutions Corp.
-  * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- * Copyright (C) 2013  Cogent Embedded, Inc.
-+ * Copyright (C) 2013-2014  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -235,6 +235,17 @@ static struct sh_eth_plat_data ether_platform_data __initdata = {
- 	.no_ether_link	= 1,
+ arch/arm/mach-shmobile/board-koelsch.c |   46 +++++++++++++++++++++++++++-----
+ 1 file changed, 40 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 5a034ff405d0..618b728cc180 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -44,6 +44,7 @@
+ #include <linux/sh_eth.h>
+ #include <linux/spi/flash.h>
+ #include <linux/spi/rspi.h>
++#include <linux/spi/sh_msiof.h>
+ #include <linux/spi/spi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -184,6 +185,17 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+ 	.num_chipselect = 1,
  };
  
-+static struct platform_device_info ether_info __initdata = {
-+	.parent		= &platform_bus,
-+	.name		= "r8a777x-ether",
-+	.id		= -1,
-+	.res		= ether_resources,
-+	.num_res	= ARRAY_SIZE(ether_resources),
-+	.data		= &ether_platform_data,
-+	.size_data	= sizeof(ether_platform_data),
-+	.dma_mask	= DMA_BIT_MASK(32),
++/* MSIOF0 */
++static const struct resource sh_msiof0_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e20000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(156)),
 +};
 +
- /* I2C */
- static struct i2c_board_info i2c0_devices[] = {
++static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
++	.rx_fifo_override	= 256,
++	.num_chipselect		= 1,
++};
++
+ /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
+ static struct mtd_partition spi_flash_part[] = {
  	{
-@@ -592,11 +603,7 @@ static void __init bockw_init(void)
- 	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
+@@ -214,12 +226,19 @@ static const struct flash_platform_data spi_flash_data = {
  
--	platform_device_register_resndata(&platform_bus, "r8a777x-ether", -1,
--					  ether_resources,
--					  ARRAY_SIZE(ether_resources),
--					  &ether_platform_data,
--					  sizeof(ether_platform_data));
-+	platform_device_register_full(&ether_info);
+ static const struct spi_board_info spi_info[] __initconst = {
+ 	{
+-		.modalias	= "m25p80",
+-		.platform_data	= &spi_flash_data,
+-		.mode		= SPI_MODE_0,
+-		.max_speed_hz	= 30000000,
+-		.bus_num	= 0,
+-		.chip_select	= 0,
++		.modalias	 = "m25p80",
++		.platform_data	 = &spi_flash_data,
++		.mode		 = SPI_MODE_0,
++		.max_speed_hz	 = 30000000,
++		.bus_num	 = 0,
++		.chip_select	 = 0,
++	}, {
++		.modalias	 = "r2a1130x",
++		.max_speed_hz	 = 6000000,
++		.chip_select	 = 0,
++		.bus_num	 = 1,
++		.mode		 = SPI_MODE_3,
++		.controller_data = (void *)-ENOENT, /* HW controlled CS */
+ 	},
+ };
  
- 	platform_device_register_full(&vin0_info);
- 	/* VIN1 has a pin conflict with Ether */
+@@ -384,6 +403,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
+ 				  "eth_rmii", "eth"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
+ 				  "intc_irq0", "intc"),
++	/* MSIOF0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_clk", "msiof0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_sync", "msiof0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_rx", "msiof0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
++				  "msiof0_tx", "msiof0"),
+ 	/* QSPI */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
+ 				  "qspi_ctrl", "qspi"),
+@@ -449,6 +477,12 @@ static void __init koelsch_add_standard_devices(void)
+ 					  qspi_resources,
+ 					  ARRAY_SIZE(qspi_resources),
+ 					  &qspi_pdata, sizeof(qspi_pdata));
++	platform_device_register_resndata(&platform_bus, "spi_r8a7791_msiof",
++					  1 + 0, sh_msiof0_resources,
++					  ARRAY_SIZE(sh_msiof0_resources),
++					  &sh_msiof_info,
++					  sizeof(struct sh_msiof_spi_info));
++
+ 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+ 
+ 	koelsch_add_du_device();
 -- 
-1.8.5.2
+1.7.9.5
 
