@@ -1,62 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 05 Feb 2014 12:22:32 +0000
-Subject: Re: [PATCH 02/11] pci-rcar-gen2: add initial device tree documentation
-Message-Id: <CANqRtoTuPmj5sttWGfw5Y0RSipDQ6BPy6O-iQMjUFef=8z96UQ@mail.gmail.com>
+From: Benoit Cousson <bcousson@baylibre.com>
+Date: Wed, 26 Feb 2014 23:09:46 +0000
+Subject: [RFC 0/4] ARM: shmobile: Add CPUFreq support for r8a7790-lager platform
+Message-Id: <1393456190-7870-1-git-send-email-bcousson@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391595554-20640-3-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1391595554-20640-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Feb 5, 2014 at 9:17 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> On 05/02/14 12:04, Magnus Damm wrote:
->>
->> On Wed, Feb 5, 2014 at 7:19 PM, Ben Dooks <ben.dooks@codethink.co.uk>
->> wrote:
->>>
->>> Add initial documentation for the pci-rcar-gen2 driver device tree
->>> bindings.
->>> This is not yet complete and needs work on the sub-nodes for the PCI bus.
->>>
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> ---
->>> Cc: linux-sh@vger.kernel.org
->>> Cc: devicetree@vger.kernel.org
->>> Cc: horms+renesas@verge.net.au
->>> ---
->>>   .../devicetree/bindings/pci/renessas,pci-r8a7790.txt         | 12
->>> ++++++++++++
->>>   1 file changed, 12 insertions(+)
->>>   create mode 100644
->>> Documentation/devicetree/bindings/pci/renessas,pci-r8a7790.txt
->>
->>
->> Hi Ben,
->>
->> Thanks for this. Regarding DT bindings, I agree about using the SoC as
->> suffix in the compatible string since this is in line with what we do
->> for other device drivers. I much prefer that over "gen2" or something
->> else that may or may not apply to newer SoCs.
->
->
-> Great, let's get this lot reviewed and hopefully we can get this sorted
-> before the 3.15-rc1.
+Hi Magnus,
 
-Sure.
+This not-yet-ready-to-merge series is adding CPUFreq support to Lager board.
 
->> As you probably know, the pci-rcar-gen2.c driver is intended to be
->> used both on r8a7790 and r8a7791. Regarding this binding document, is
->> it possible to make it one file for the driver instead of r8a7790
->> specific? That would match what we do for DT binding documentation for
->> other device drivers.
->
->
-> Thanks, should I change this to be renesas,pci-rcar-gen2.txt then?
+Due to the missing data for the OPP voltage values, a safe 1.0v value is
+used for all OPPs.
 
-Sounds good to me!
+At least this series can be used by Laurent to test the z-clock CCF node
+and the KICK bit fix I've just sent.
 
-Thanks,
+Bottom-line, no real DVFS so far, but just DFS :-)
 
-/ magnus
+Please note that this series is safe even in the case of Cortex A7 boot
+since the cpufreq-cpu0 driver is using the physical CPU@0 device node.
+In the case of CA7 boot, the first cpu will be the CPU@100, and thus
+the driver will fail at probe time due to the lack of CPU@0.
+
+Regards,
+Benoit 
+
+
+Benoit Cousson (4):
+  ARM: dts: r8a7790-lager: Add VDD MPU regulator for DVFS
+  ARM: dts: r8a7790-lager: Add DVFS parameters into cpu0 node for
+    r8a7790
+  ARM: shmobile: lager-reference: Add cpufreq-cpu0 device for CPUFreq
+    support
+  ARM: shmobile: Make r8a77900 CPUFreq capable
+
+ arch/arm/boot/dts/r8a7790-lager.dts            | 25 +++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi                 | 11 +++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |  2 ++
+ arch/arm/mach-shmobile/board-lager-reference.c |  3 +++
+ 4 files changed, 41 insertions(+)
+
+-- 
+1.8.3.2
+
