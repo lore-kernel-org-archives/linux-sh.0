@@ -1,30 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Feb 2014 00:16:09 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove Lager DT reference legacy clock bits
-Message-Id: <20140218001608.GD4776@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:22 +0000
+Subject: [PATCH v3 06/20] ARM: shmobile: marzen: Specify external clock frequency in DT
+Message-Id: <1393400016-23433-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140217071945.27066.10828.sendpatchset@w520>
- <2604597.BoRkzP9NO2@avalon>
-In-Reply-To: <2604597.BoRkzP9NO2@avalon>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 17, 2014 at 12:07:05PM +0100, Laurent Pinchart wrote:
-> Hi Magnus,
-> 
-> Thank you for the patch.
-> 
-> On Monday 17 February 2014 16:19:45 Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > Lager DT reference is these days built for multiplatform
-> > only which means that CCF comes with the package. Remove
-> > unused legacy code ifdefs to clean up the code.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The external crystal frequency is 31.25 on the Marzen board.
+Specify it in the device tree.
 
-Thanks, I have queued this up.
+Based on work for the Lager board by Laurent Pinchart.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+v3
+* Update r8a7779-marzen.dts instead of r8a7779-marzen-reference.dts
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index eda6240..2c727cd 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -68,6 +68,10 @@
+ 	status = "okay";
+ };
+ 
++&extal_clk {
++	clock-frequency = <31250000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scif2_pins &scif4_pins>;
+ 	pinctrl-names = "default";
+-- 
+1.8.5.2
+
