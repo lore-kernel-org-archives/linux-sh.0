@@ -1,71 +1,78 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 15 Feb 2014 00:30:20 +0000
-Subject: [PATCH 3/5] ARM: shmobile: Lager: set proper DMA masks for Ether device
-Message-Id: <201402150430.20874.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:30 +0000
+Subject: [PATCH 3/9] ARM: shmobile: r7s72100 clock: Add RSPI clocks
+Message-Id: <d9409fb8f30437b68647613e1f0d61b332de30be.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
-'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
-ability.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Currently, the code works without DMA masks but as we would have to enable
-CONFIG_HIGHMEM to access the full board memory in the future, when support for
-NETIF_F_SG would be added to the 'sh_eth' driver as well, the correct DMA masks
-should start to matter...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager.c |   19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
 
-Index: renesas/arch/arm/mach-shmobile/board-lager.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-lager.c
-+++ renesas/arch/arm/mach-shmobile/board-lager.c
-@@ -1,8 +1,9 @@
- /*
-  * Lager board support
-  *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014  Renesas Solutions Corp.
-  * Copyright (C) 2013  Magnus Damm
-+ * Copyright (C) 2014  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -275,6 +276,17 @@ static const struct resource ether_resou
- 	DEFINE_RES_IRQ(gic_spi(162)),
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index dd8ce87..ffb0fff 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -22,12 +22,14 @@
+ #include <mach/common.h>
+ #include <mach/r7s72100.h>
+ 
+-/* registers */
++/* Frequency Control Registers */
+ #define FRQCR		0xfcfe0010
+ #define FRQCR2		0xfcfe0014
++/* Standby Control Registers */
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
+ #define STBCR9		0xfcfe0438
++#define STBCR10		0xfcfe043c
+ 
+ #define PLL_RATE 30
+ 
+@@ -145,11 +147,19 @@ struct clk div4_clks[DIV4_NR] = {
+ 					| CLK_ENABLE_ON_INIT),
  };
  
-+static const struct platform_device_info ether_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "r8a7790-ether",
-+	.id		= -1,
-+	.res		= ether_resources,
-+	.num_res	= ARRAY_SIZE(ether_resources),
-+	.data		= &ether_pdata,
-+	.size_data	= sizeof(ether_pdata),
-+	.dma_mask	= DMA_BIT_MASK(32),
+-enum {	MSTP97, MSTP96, MSTP95, MSTP94,
++enum {
++	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
++	MSTP97, MSTP96, MSTP95, MSTP94,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+-	MSTP33,	MSTP_NR };
++	MSTP33,	MSTP_NR
 +};
-+
- /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
- static struct mtd_partition spi_flash_part[] = {
- 	/* Reserved for user loader program, read-only */
-@@ -743,10 +755,7 @@ static void __init lager_add_standard_de
- 					  mmcif1_resources, ARRAY_SIZE(mmcif1_resources),
- 					  &mmcif1_pdata, sizeof(mmcif1_pdata));
  
--	platform_device_register_resndata(&platform_bus, "r8a7790-ether", -1,
--					  ether_resources,
--					  ARRAY_SIZE(ether_resources),
--					  &ether_pdata, sizeof(ether_pdata));
-+	platform_device_register_full(&ether_info);
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP107] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 7, 0), /* RSPI0 */
++	[MSTP106] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 6, 0), /* RSPI1 */
++	[MSTP105] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 5, 0), /* RSPI2 */
++	[MSTP104] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 4, 0), /* RSPI3 */
++	[MSTP103] = SH_CLK_MSTP8(&peripheral1_clk, STBCR10, 3, 0), /* RSPI4 */
+ 	[MSTP97] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 7, 0), /* RIIC0 */
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+@@ -176,6 +186,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
  
- 	lager_add_du_device();
- 
+ 	/* MSTP clocks */
++	CLKDEV_DEV_ID("rspi-rz.0", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("rspi-rz.1", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+-- 
+1.8.5.2
+
