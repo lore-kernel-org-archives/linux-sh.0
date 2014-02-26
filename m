@@ -1,72 +1,313 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Thu, 20 Feb 2014 00:00:43 +0000
-Subject: Re: [PATCH v2 01/19] serial: sh-sci: Enable the driver on all ARM platforms
-Message-Id: <20140220000043.GE6988@pengutronix.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:17 +0000
+Subject: [PATCH v3 01/20] clk: shmobile: r8a7779: Add clocks support
+Message-Id: <1393400016-23433-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1383086274-11049-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1383086274-11049-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20140219205446.GD6988@pengutronix.de> <1609898.QTd44x6TTB@avalon>
-In-Reply-To: <1609898.QTd44x6TTB@avalon>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 19, 2014 at 11:24:38PM +0100, Laurent Pinchart wrote:
-> Hi Uwe,
->=20
-> On Wednesday 19 February 2014 21:54:46 Uwe Kleine-K=F6nig wrote:
-> > On Tue, Oct 29, 2013 at 11:37:36PM +0100, Laurent Pinchart wrote:
-> > > Renesas ARM platforms are transitioning from single-platform to
-> > > multi-platform kernels using the new ARCH_SHMOBILE_MULTI. Make the
-> > > driver available on all ARM platforms to enable it on both ARCH_SHMOB=
-ILE
-> > > and ARCH_SHMOBILE_MULTI, and increase build testing coverage with
-> > > COMPILE_TEST.
-> > >=20
-> > > Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> > > Cc: linux-serial@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > >=20
-> > >  drivers/tty/serial/Kconfig | 2 +-
-> > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > >=20
-> > > diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-> > > index febd45c..9a5a8ef 100644
-> > > --- a/drivers/tty/serial/Kconfig
-> > > +++ b/drivers/tty/serial/Kconfig
-> > > @@ -709,7 +709,7 @@ config SERIAL_IP22_ZILOG_CONSOLE
-> > >=20
-> > >  config SERIAL_SH_SCI
-> > > =20
-> > >  	tristate "SuperH SCI(F) serial port support"
-> > >=20
-> > > -	depends on HAVE_CLK && (SUPERH || ARCH_SHMOBILE)
-> > > +	depends on HAVE_CLK && (SUPERH || ARM || COMPILE_TEST)
-> > >=20
-> > >  	select SERIAL_CORE
-> >=20
-> > This patch is in mainline as d4f9e7b3d12e92ede642f6f4fc7d959f06da8ccc
-> > since v3.13-rc1. I wonder if
-> >=20
-> > 	depends on HAVE_CLK && (SUPERH || ARCH_SHMOBILE || COMPILE_TEST)
-> >=20
-> > isn't the better option. (Since bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187
-> > ARCH_SHMOBILE is enabled for both multi-platform and legacy shmobile
-> > configs.) Or do you plan to deprecate ARCH_SHMOBILE?
->=20
-> We don't plan to deprecate ARCH_SHMOBILE. I've posted a patch to fix this=
-,=20
-> please see http://www.spinics.net/lists/linux-sh/msg28296.html ("[PATCH 1=
-/2]=20
-> serial: sh-sci: Restrict non-COMPILE_TEST compilation").
-Ah, this is equivalent. So you can consider my suggestion as an Ack.
+The R8A7779 SoC has several clocks that are too custom to be supported in a
+generic driver. Those clocks can be divided in two categories:
 
-Best regards
-Uwe
+- Fixed rate clocks with multiplier and divisor set according to boot
+  mode configuration
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+- Custom divider clocks with SoC-specific divider values
+
+This driver supports both.
+
+Based on work for R-Car Gen2 SoCs by Laurent Pinchart.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+v3
+* As suggested by Laurent Pinchart
+  - Added external clock input
+  - Use PLLA ratio set bu MD11 and MD12
+  - Add _div suffixes of fields of struct cpt_clk_config
+  - Register PLLA as a fixed factor clock
+  - Use sizeof() instead of sizeof
+  - Use num_clks instead of CPG_NUM_CLOCKS in r8a7779_cpg_clocks_init()
+
+  - I kept this as r8a7779 binding rather than moving to a R-Car Gen1
+    binding which could be shared with other SoCs as I do not believe that
+    the SoCs is are sufficiently similar.
+---
+ .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  26 +++
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7779.c                 | 191 +++++++++++++++++++++
+ include/linux/clk/shmobile.h                       |   3 +
+ 4 files changed, 221 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+new file mode 100644
+index 0000000..1461323
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+@@ -0,0 +1,26 @@
++* Renesas R8A7779 Clock Pulse Generator (CPG)
++
++The CPG generates core clocks for the R8A7779. It includes one PLL and
++and several fixed ratio dividers
++
++Required Properties:
++
++  - compatible: Must be "renesas,r8a7779-cpg-clocks"
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: Reference to the parent clock
++  - #clock-cells: Must be 1
++  - clock-output-names: The names of the clocks. Supported clocks are "plla",
++    "z", "zs", "s", "s1", "p", "out".
++
++
++Example
++-------
++
++	cpg_clocks: cpg_clocks@ffc80000 {
++		compatible = "renesas,r8a7779-cpg-clocks";
++		reg = <0 0xffc80000 0 0x80>;
++		clocks = <&extal_clk>;
++		#clock-cells = <1>;
++		clock-output-names = "plla", "z", "zs", "s", "s1", "p", "out";
++	};
+diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+index 9ecef14..2121ba0 100644
+--- a/drivers/clk/shmobile/Makefile
++++ b/drivers/clk/shmobile/Makefile
+@@ -1,4 +1,5 @@
+ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
++obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
+new file mode 100644
+index 0000000..2ca2d67
+--- /dev/null
++++ b/drivers/clk/shmobile/clk-r8a7779.c
+@@ -0,0 +1,191 @@
++/*
++ * r8a7779 Core CPG Clocks
++ *
++ * Copyright (C) 2013, 2014 Horms Solutions Ltd.
++ *
++ * Contact: Simon Horman <horms@verge.net.au>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/spinlock.h>
++
++#include <dt-bindings/clock/r8a7779-clock.h>
++
++#define CPG_NUM_CLOCKS			(R8A7779_CLK_OUT + 1)
++
++struct r8a7779_cpg {
++	struct clk_onecell_data data;
++	spinlock_t lock;
++	void __iomem *reg;
++};
++
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *		MD1 = 1			MD1 = 0
++ *		(PLLA = 1500)		(PLLA = 1600)
++ *		(MHz)			(MHz)
++ *------------------------------------------------+--------------------
++ * clkz		1000   (2/3)		800   (1/2)
++ * clkzs	 250   (1/6)		200   (1/8)
++ * clki		 750   (1/2)		800   (1/2)
++ * clks		 250   (1/6)		200   (1/8)
++ * clks1	 125   (1/12)		100   (1/16)
++ * clks3	 187.5 (1/8)		200   (1/8)
++ * clks4	  93.7 (1/16)		100   (1/16)
++ * clkp		  62.5 (1/24)		 50   (1/32)
++ * clkg		  62.5 (1/24)		 66.6 (1/24)
++ * clkb, CLKOUT
++ * (MD2 = 0)	  62.5 (1/24)		 66.6 (1/24)
++ * (MD2 = 1)	  41.6 (1/36)		 50   (1/32)
++ */
++
++#define CPG_CLK_CONFIG_INDEX(md)	(((md) & (BIT(1)|BIT(2))) >> 1)
++
++struct cpg_clk_config {
++	unsigned int z_mult;
++	unsigned int z_div;
++	unsigned int zs_and_s_div;
++	unsigned int s1_div;
++	unsigned int p_div;
++	unsigned int out_div;
++};
++
++static const struct cpg_clk_config cpg_clk_configs[4] __initconst = {
++	{ 1, 2, 8, 16, 32, 24 },
++	{ 1, 2, 8, 16, 32, 24 },
++	{ 2, 3, 6, 12, 24, 36 },
++	{ 2, 3, 6, 12, 24, 32 },
++};
++
++/*
++ *   MD		PLLA Ratio
++ * 12 11
++ *------------------------
++ * 0  0		x42
++ * 0  1		x48
++ * 1  0		x56
++ * 1  1		x64
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 12) | \
++					 (((md) & BIT(13)) >> 12) | \
++					 (((md) & BIT(19)) >> 19))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++};
++
++#define CPG_PLLA_MULT_INDEX(md)	(((md) & (BIT(12)|BIT(11))) >> 11)
++
++static const unsigned int cpg_plla_mult[4] __initconst = { 42, 48, 56, 64 };
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++static u32 cpg_mode __initdata;
++
++static struct clk * __init
++r8a7779_cpg_register_clock(struct device_node *np, struct r8a7779_cpg *cpg,
++			   const struct cpg_clk_config *config,
++			   unsigned int plla_mult, const char *name)
++{
++	const char *parent_name = "plla";
++	unsigned int mult = 1;
++	unsigned int div = 1;
++
++	if (!strcmp(name, "plla")) {
++		parent_name = of_clk_get_parent_name(np, 0);
++		mult = plla_mult;
++	} else if (!strcmp(name, "z")) {
++		div = config->z_div;
++		mult = config->z_mult;
++	} else if (!strcmp(name, "zs") || !strcmp(name, "s")) {
++		div = config->zs_and_s_div;
++	} else if (!strcmp(name, "s1")) {
++		div = config->s1_div;
++	} else if (!strcmp(name, "p")) {
++		div = config->p_div;
++	} else if (!strcmp(name, "out")) {
++		div = config->out_div;
++	}
++
++	return clk_register_fixed_factor(NULL, name, parent_name, 0, mult, div);
++}
++
++static void __init r8a7779_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_clk_config *config;
++	struct r8a7779_cpg *cpg;
++	struct clk **clks;
++	unsigned int i, plla_mult;
++	int num_clks;
++
++	num_clks = of_property_count_strings(np, "clock-output-names");
++	if (num_clks < 0) {
++		pr_err("%s: failed to count clocks\n", __func__);
++		return;
++	}
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	clks = kzalloc(CPG_NUM_CLOCKS * sizeof(*clks), GFP_KERNEL);
++	if (cpg = NULL || clks = NULL) {
++		/* We're leaking memory on purpose, there's no point in cleaning
++		 * up as the system won't boot anyway.
++		 */
++		pr_err("%s: failed to allocate cpg\n", __func__);
++		return;
++	}
++
++	spin_lock_init(&cpg->lock);
++
++	cpg->data.clks = clks;
++	cpg->data.clk_num = num_clks;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	config = &cpg_clk_configs[CPG_CLK_CONFIG_INDEX(cpg_mode)];
++	plla_mult = cpg_plla_mult[CPG_PLLA_MULT_INDEX(cpg_mode)];
++
++	for (i = 0; i < num_clks; ++i) {
++		const char *name;
++		struct clk *clk;
++
++		of_property_read_string_index(np, "clock-output-names", i,
++					      &name);
++
++		clk = r8a7779_cpg_register_clock(np, cpg, config,
++						 plla_mult, name);
++		if (IS_ERR(clk))
++			pr_err("%s: failed to register %s %s clock (%ld)\n",
++			       __func__, np->name, name, PTR_ERR(clk));
++		else
++			cpg->data.clks[i] = clk;
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(r8a7779_cpg_clks, "renesas,r8a7779-cpg-clocks",
++	       r8a7779_cpg_clocks_init);
++
++void __init r8a7779_clocks_init(u32 mode)
++{
++	cpg_mode = mode;
++
++	of_clk_init(NULL);
++}
+diff --git a/include/linux/clk/shmobile.h b/include/linux/clk/shmobile.h
+index f9bf080..7667f49 100644
+--- a/include/linux/clk/shmobile.h
++++ b/include/linux/clk/shmobile.h
+@@ -1,7 +1,9 @@
+ /*
+  * Copyright 2013 Ideas On Board SPRL
++ * Copyright 2013 Horms Solutions Ltd.
+  *
+  * Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
++ * Contact: Simon Horman <horms@verge.net.au>
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -14,6 +16,7 @@
+ 
+ #include <linux/types.h>
+ 
++void r8a7779_clocks_init(u32 mode);
+ void rcar_gen2_clocks_init(u32 mode);
+ 
+ #endif
+-- 
+1.8.5.2
+
