@@ -1,52 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:42:42 +0000
-Subject: [PATCH 11/12] ARM: shmobile: Rework include path for r7s72100
-Message-Id: <20140224054242.1143.3118.sendpatchset@w520>
+From: Benoit Cousson <bcousson@baylibre.com>
+Date: Wed, 26 Feb 2014 23:09:50 +0000
+Subject: [RFC 4/4] ARM: shmobile: Make r8a77900 CPUFreq capable
+Message-Id: <1393456190-7870-5-git-send-email-bcousson@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Mark r8a77900 platform as CPUFreq capable
+on multiplatform build only.
 
-Convert r7s72100 SoC code use of include files from 
-the style <mach/something.h> to "something.h".
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
 ---
+ arch/arm/mach-shmobile/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- arch/arm/mach-shmobile/clock-r7s72100.c |    4 ++--
- arch/arm/mach-shmobile/setup-r7s72100.c |    6 +++---
- 2 files changed, 5 insertions(+), 5 deletions(-)
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d27bff3..91faf79 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -32,6 +32,8 @@ config ARCH_R7S72100
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+ 	select RENESAS_IRQC
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+-- 
+1.8.3.2
 
---- 0001/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ work/arch/arm/mach-shmobile/clock-r7s72100.c	2014-02-24 13:57:37.000000000 +0900
-@@ -19,8 +19,8 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/common.h>
--#include <mach/r7s72100.h>
-+#include "common.h"
-+#include "r7s72100.h"
- 
- /* Frequency Control Registers */
- #define FRQCR		0xfcfe0010
---- 0001/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ work/arch/arm/mach-shmobile/setup-r7s72100.c	2014-02-24 13:56:17.000000000 +0900
-@@ -23,9 +23,9 @@
- #include <linux/of_platform.h>
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
--#include <mach/common.h>
--#include <mach/irqs.h>
--#include <mach/r7s72100.h>
-+#include "common.h"
-+#include "irqs.h"
-+#include "r7s72100.h"
- #include <asm/mach/arch.h>
- 
- #define R7S72100_SCIF(index, baseaddr, irq)				\
