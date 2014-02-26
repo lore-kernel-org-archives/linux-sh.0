@@ -1,91 +1,106 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:37 +0000
-Subject: [PATCH 02/17] ARM: shmobile: Add GPIO keys to Koelsch DTS
-Message-Id: <aff5274fdc5b53a44d906c39a834efa6ba9c30ef.1391665761.git.horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:49 +0000
+Subject: [PATCH 3/7] ARM: shmobile: r8a7790 SYSC setup code
+Message-Id: <a48f165509c18d47f1505888a21918e8a06d590f.1393400446.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
+References: <cover.1393400446.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
-The Koelsh reference device tree is going away, copy the missing GPIO
-keys device node to the Koeslch device tree file.
+Add r8a7790 SYSC power management support.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 54 +++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ arch/arm/mach-shmobile/Makefile               |  1 +
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |  1 +
+ arch/arm/mach-shmobile/pm-r8a7790.c           | 45 +++++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7790.c
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index fd556c3..c6f5de3 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -31,6 +31,60 @@
- 		#size-cells = <1>;
- 	};
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 7bc450c..d38a636 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
  
-+	gpio-keys {
-+		compatible = "gpio-keys";
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 5fbfa28..3389f07 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -7,6 +7,7 @@ void r8a7790_add_standard_devices(void);
+ void r8a7790_add_dt_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
++void r8a7790_pm_init(void);
+ void r8a7790_init_early(void);
+ extern struct smp_operations r8a7790_smp_ops;
+ 
+diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
+new file mode 100644
+index 0000000..fc82839
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-r8a7790.c
+@@ -0,0 +1,45 @@
++/*
++ * r8a7790 Power management support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
 +
-+		key-a {
-+			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
-+			linux,code = <30>;
-+			label = "SW30";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-b {
-+			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
-+			linux,code = <48>;
-+			label = "SW31";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-c {
-+			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
-+			linux,code = <46>;
-+			label = "SW32";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-d {
-+			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
-+			linux,code = <32>;
-+			label = "SW33";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-e {
-+			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
-+			linux,code = <18>;
-+			label = "SW34";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-f {
-+			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
-+			linux,code = <33>;
-+			label = "SW35";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+		key-g {
-+			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
-+			linux,code = <34>;
-+			label = "SW36";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+		};
-+	};
++#include <linux/kernel.h>
++#include <asm/io.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7790.h>
 +
- 	leds {
- 		compatible = "gpio-leds";
- 		led6 {
++/* SYSC */
++#define SYSCIER 0x0c
++#define SYSCIMR 0x10
++
++#if defined(CONFIG_SMP)
++
++static void __init r8a7790_sysc_init(void)
++{
++	void __iomem *base = rcar_sysc_init(0xe6180000);
++
++	/* enable all interrupt sources, but do not use interrupt handler */
++	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0, base + SYSCIMR);
++}
++
++#else /* CONFIG_SMP */
++
++static inline void r8a7790_sysc_init(void) {}
++
++#endif /* CONFIG_SMP */
++
++void __init r8a7790_pm_init(void)
++{
++	static int once;
++
++	if (!once++)
++		r8a7790_sysc_init();
++}
 -- 
 1.8.5.2
 
