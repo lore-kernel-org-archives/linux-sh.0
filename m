@@ -1,162 +1,121 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 11 Feb 2014 20:49:49 +0000
-Subject: [PATCH 1/2] ARM: shmobile: lager-reference: Add DU device
-Message-Id: <1392151790-11262-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:29 +0000
+Subject: [PATCH v3 13/20] ARM: shmobile: r8a7779: Initial multiplatform support
+Message-Id: <1393400016-23433-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The DU device has no DT bindings yet, instantiate it as a platform
-device for now.
+Add Marzen and r8a7779 to CONFIG_SHMOBILE_MULTI. At this
+point CCF is not yet supported so you cannot run this code
+yet. For CCF support to happen several different components
+are needed, and this is one simple portion that moves us
+forward. Other patches need to build on top of this one.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Marzen board support exists in 3 flavours:
+1) SHMOBILE_MULTI, MACH_MARZEN - board-marzen-reference.c (CCF + DT)
+2) SHMOBILE, MACH_MARZEN_REFERENCE - board-marzen-reference.c (DT)
+3) SHMOBILE, MACH_MARZEN - board-marzen.c (legacy C code)
+
+When CCF is done then 2) will be removed. When 1) includes same features
+as 3) then 3) will be removed.
+
+Based on work for the Koelsch and r8a7791 by Magnus Damm.
+
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7790-lager.dts            |  8 +++
- arch/arm/mach-shmobile/board-lager-reference.c | 89 ++++++++++++++++++++++++--
- 2 files changed, 91 insertions(+), 6 deletions(-)
+v3
+* Select RENESAS_INTC_IRQPIN
+---
+ arch/arm/boot/dts/Makefile                      | 3 ++-
+ arch/arm/mach-shmobile/Kconfig                  | 9 +++++++++
+ arch/arm/mach-shmobile/Makefile                 | 1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c | 5 +++++
+ 4 files changed, 17 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index af7e081..d48a7e2 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -69,6 +69,14 @@
- };
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 0320303..cac7179 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -263,7 +263,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
+ 	r8a7791-koelsch.dtb \
+-	r8a7790-lager.dtb
++	r8a7790-lager.dtb \
++	r8a7779-marzen-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index d27bff3..8ba4172 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -23,6 +23,10 @@ if ARCH_SHMOBILE_MULTI
  
- &pfc {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
-+
-+	du_pins: du {
-+		renesas,groups = "du_rgb666", "du_sync_1", "du_clk_out_0";
-+		renesas,function = "du";
-+	};
-+
- 	scif0_pins: serial0 {
- 		renesas,groups = "scif0_data";
- 		renesas,function = "scif0";
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 35fc0f2..fbfe582 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -20,26 +20,101 @@
+ comment "Renesas ARM SoCs System Type"
  
- #include <linux/clk.h>
- #include <linux/clkdev.h>
-+#include <linux/dma-mapping.h>
- #include <linux/init.h>
++config ARCH_R8A7779
++	bool "R-Car H1 (R8A77790)"
++	select RENESAS_INTC_IRQPIN
++
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 
+@@ -53,6 +57,11 @@ config MACH_LAGER
+ 	depends on ARCH_R8A7790
+ 	select MICREL_PHY if SH_ETH
+ 
++config MACH_MARZEN
++	bool "MARZEN board"
++	depends on ARCH_R8A7779
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 4caffc9..b02dac5 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -60,6 +60,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
++obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index c22e5c2..d3e8319 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk-provider.h>
  #include <linux/of_platform.h>
-+#include <linux/platform_data/rcar-du.h>
+ #include <mach/r8a7779.h>
  #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/rcar-gen2.h>
- #include <mach/r8a7790.h>
- #include <asm/mach/arch.h>
+@@ -28,7 +29,11 @@
  
-+/* DU */
-+static struct rcar_du_encoder_data lager_du_encoders[] = {
-+	{
-+		.type = RCAR_DU_ENCODER_VGA,
-+		.output = RCAR_DU_OUTPUT_DPAD0,
-+	}, {
-+		.type = RCAR_DU_ENCODER_NONE,
-+		.output = RCAR_DU_OUTPUT_LVDS1,
-+		.connector.lvds.panel = {
-+			.width_mm = 210,
-+			.height_mm = 158,
-+			.mode = {
-+				.clock = 65000,
-+				.hdisplay = 1024,
-+				.hsync_start = 1048,
-+				.hsync_end = 1184,
-+				.htotal = 1344,
-+				.vdisplay = 768,
-+				.vsync_start = 771,
-+				.vsync_end = 777,
-+				.vtotal = 806,
-+				.flags = 0,
-+			},
-+		},
-+	},
-+};
-+
-+static struct rcar_du_platform_data lager_du_pdata = {
-+	.encoders = lager_du_encoders,
-+	.num_encoders = ARRAY_SIZE(lager_du_encoders),
-+};
-+
-+static const struct resource du_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xfeb00000, 0x70000),
-+	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
-+	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
-+	DEFINE_RES_IRQ(gic_spi(256)),
-+	DEFINE_RES_IRQ(gic_spi(268)),
-+	DEFINE_RES_IRQ(gic_spi(269)),
-+};
-+
-+static void __init lager_add_du_device(void)
-+{
-+	struct platform_device_info info = {
-+		.name = "rcar-du-r8a7790",
-+		.id = -1,
-+		.res = du_resources,
-+		.num_res = ARRAY_SIZE(du_resources),
-+		.data = &lager_du_pdata,
-+		.size_data = sizeof(lager_du_pdata),
-+		.dma_mask = DMA_BIT_MASK(32),
-+	};
-+
-+	platform_device_register_full(&info);
-+}
-+
- static void __init lager_add_standard_devices(void)
+ static void __init marzen_init(void)
  {
- #ifdef CONFIG_COMMON_CLK
- 	/*
--	 * This is a really crude hack to provide clkdev support to the CMT
--	 * device until it gets moved to DT.
-+	 * This is a really crude hack to provide clkdev support to the CMT and
-+	 * DU devices until they get moved to DT.
- 	 */
-+	static const struct clk_name {
-+		const char *clk;
-+		const char *con_id;
-+		const char *dev_id;
-+	} clk_names[] = {
-+		{ "cmt0", NULL, "sh_cmt.0" },
-+		{ "du0", "du.0", "rcar-du-r8a7790" },
-+		{ "du1", "du.1", "rcar-du-r8a7790" },
-+		{ "du2", "du.2", "rcar-du-r8a7790" },
-+		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
-+		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
-+	};
- 	struct clk *clk;
-+	unsigned int i;
- 
--	clk = clk_get(NULL, "cmt0");
--	if (!IS_ERR(clk)) {
--		clk_register_clkdev(clk, NULL, "sh_cmt.0");
--		clk_put(clk);
-+	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
-+		clk = clk_get(NULL, clk_names[i].clk);
-+		if (!IS_ERR(clk)) {
-+			clk_register_clkdev(clk, clk_names[i].con_id,
-+					    clk_names[i].dev_id);
-+			clk_put(clk);
-+		}
- 	}
- #else
- 	r8a7790_clock_init();
-@@ -47,6 +122,8 @@ static void __init lager_add_standard_devices(void)
- 
- 	r8a7790_add_dt_devices();
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
+ 	r8a7779_clock_init();
++#endif
+ 	r8a7779_add_standard_devices_dt();
  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+
-+	lager_add_du_device();
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
 -- 
-1.8.3.2
+1.8.5.2
 
