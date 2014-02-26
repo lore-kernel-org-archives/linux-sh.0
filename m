@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Feb 2014 13:15:14 +0000
+Date: Wed, 26 Feb 2014 14:45:03 +0000
 Subject: Re: [PATCH v3 04/20] ARM: shmobile: r8a7779: Add clocks
-Message-Id: <20493371.uo7oml5YRN@avalon>
+Message-Id: <7964326.0VzqzhpvEl@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
  <1393400016-23433-5-git-send-email-horms+renesas@verge.net.au>
@@ -13,7 +13,7 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Simon,
 
-Thank you for the patch.
+One more comment.
 
 On Wednesday 26 February 2014 16:33:20 Simon Horman wrote:
 > Declare all core and MSTP clocks currently used by r8a7779-based boards.
@@ -79,6 +79,11 @@ On Wednesday 26 February 2014 16:33:20 Simon Horman wrote:
 > +		cpg_clocks: cpg_clocks@0xe6150000 {
 > +			compatible = "renesas,r8a7779-cpg-clocks";
 > +			reg = <0 0xe6150000 0 0x1000>;
+
+Copied from H2 ? :-) This should probably be
+
+	reg = <0 0xffc80000 0 0x30>;
+
 > +			clocks = <&extal_clk>;
 > +			#clock-cells = <1>;
 > +			clock-output-names = "plla", "z", "zs", "s",
@@ -124,21 +129,15 @@ On Wednesday 26 February 2014 16:33:20 Simon Horman wrote:
 > +			compatible = "renesas,r8a7779-mstp-clocks", "renesas,cpg-mstp-
 clocks";
 > +			reg = <0 0xffc80030 0 4>;
-> +			clocks = <&cpg_clocks R8A7779_CLK_P>,
-> <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> <&cpg_clocks R8A7779_CLK_P>,
+> +			clocks = <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks 
+R8A7779_CLK_P>,
+> <&cpg_clocks R8A7779_CLK_P>, +				 <&cpg_clocks R8A7779_CLK_P>,
+> <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>, +				
+> <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks
+> R8A7779_CLK_P>, +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks
+> R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>, +				 <&cpg_clocks
+> R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
 > +				 <&cpg_clocks R8A7779_CLK_P>;
-
-Aren't the HSPI and HSCIF parent clocks clks ? Aren't the SCIF parent clocks 
-clks1 ?
-
 > +			#clock-cells = <1>;
 > +			renesas,clock-indices = <
 > +				R8A7779_CLK_HSPI R8A7779_CLK_TMU0 R8A7779_CLK_TMU0
@@ -149,9 +148,6 @@ clks1 ?
 > +			>;
 > +			clock-output-names > +				"hspi", "tmu00", "tmu01",
 > +				"tmu02", "scif5", "scif4",
-
-The clock names should be tmu0, tmu1 and tmu2, not tmu00, tmu01 and tmu02.
-
 > +				"scif3", "scif2", "scif1",
 > +				"scif0", "i2c3", "i2c2",
 > +				"i2c1", "i2c0";
@@ -167,9 +163,6 @@ R8A7779_CLK_P>,
 > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
 > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
 > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>;
-
-Please verify the clock parents here as well.
-
 > +			#clock-cells = <1>;
 > +			renesas,clock-indices = <
 > +				R8A7779_CLK_USB01 R8A7779_CLK_USB01
@@ -194,9 +187,6 @@ clocks";
 R8A7779_CLK_P>,
 > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
 > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>;
-
-Aren't the MMC and SDHI parent clocks clks4 ?
-
 > +			#clock-cells = <1>;
 > +			renesas,clock-indices = <
 > +				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
