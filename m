@@ -1,74 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:51 +0000
-Subject: [GIT PULL v2 0/7] Second Round of Renesas ARM Based SoC Updates for v3.15
-Message-Id: <cover.1393400446.git.horms+renesas@verge.net.au>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Wed, 26 Feb 2014 23:41:55 +0000
+Subject: [PATCH 4/7] sh/PCI: Use default pcibios_enable_device()
+Message-Id: <20140226234155.18970.93520.stgit@bhelgaas-glaptop.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140226233541.18970.83328.stgit@bhelgaas-glaptop.roam.corp.google.com>
+In-Reply-To: <20140226233541.18970.83328.stgit@bhelgaas-glaptop.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+We don't need anything arch-specific in pcibios_enable_device(), so drop
+the arch implementation and use the default generic one.
 
-please consider this second round of Renesas ARM based SoC updates for v3.15.
-As requested I have broken out clock changes into a separate branch which
-I will send a pull-request for separately.
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+CC: Paul Mundt <lethal@linux-sh.org>
+CC: linux-sh@vger.kernel.org
+---
+ arch/sh/drivers/pci/pci.c |    5 -----
+ 1 file changed, 5 deletions(-)
 
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index 60ed3e1c4b75..1bc09ee7948f 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -186,11 +186,6 @@ resource_size_t pcibios_align_resource(void *data, const struct resource *res,
+ 	return start;
+ }
+ 
+-int pcibios_enable_device(struct pci_dev *dev, int mask)
+-{
+-	return pci_enable_resources(dev, mask);
+-}
+-
+ static void __init
+ pcibios_bus_report_status_early(struct pci_channel *hose,
+ 				int top_bus, int current_bus,
 
-The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
-
-  Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.15
-
-for you to fetch changes up to c4ca5d80e03559fd95c526ece5ce39fc732a2511:
-
-  ARM: shmobile: Move SYSC base variable to inside ifdefs (2014-02-26 14:53:35 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Updates for v3.15
-
-* R-Car Gen2 SoCs: r8a7791 (R-Car M2) and r8a7790 (R-Car H2)
-  - Remove __init from rcar_gen2_read_mode_pins()
-
-* r8a7791 (R-Car M2)
-  - Use 64-bit dma_addr_t
-
-* r8a7790 (R-Car H2)
-  - Add CA15-SCU, CA7-SCU
-  - Add SYSC setup code
-  - Use 64-bit dma_addr_t
-
-----------------------------------------------------------------
-Gaku Inami (1):
-      ARM: shmobile: r8a7790 CA7-SCU enablement
-
-Hisashi Nakamura (1):
-      ARM: shmobile: r8a7790 SYSC setup code
-
-Keita Kobayashi (1):
-      ARM: shmobile: r8a7790 CA15-SCU enablement
-
-Magnus Damm (4):
-      ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
-      ARM: shmobile: Break out R-Car SYSC PM code
-      ARM: shmobile: Remove __init from rcar_gen2_read_mode_pins()
-      ARM: shmobile: Move SYSC base variable to inside ifdefs
-
- arch/arm/mach-shmobile/Kconfig                |   3 +
- arch/arm/mach-shmobile/Makefile               |   3 +-
- arch/arm/mach-shmobile/include/mach/pm-rcar.h |  15 +++
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  13 +--
- arch/arm/mach-shmobile/include/mach/r8a7790.h |   1 +
- arch/arm/mach-shmobile/pm-r8a7779.c           | 131 ++----------------------
- arch/arm/mach-shmobile/pm-r8a7790.c           |  45 ++++++++
- arch/arm/mach-shmobile/pm-rcar.c              | 141 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-rcar-gen2.c      |   2 +-
- arch/arm/mach-shmobile/smp-r8a7779.c          |  17 ++--
- arch/arm/mach-shmobile/smp-r8a7790.c          |  17 ++++
- 11 files changed, 244 insertions(+), 144 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/pm-rcar.h
- create mode 100644 arch/arm/mach-shmobile/pm-r8a7790.c
- create mode 100644 arch/arm/mach-shmobile/pm-rcar.c
