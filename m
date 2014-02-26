@@ -1,42 +1,20 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:47:39 +0000
-Subject: [PATCH 1/2] serial: sh-sci: Restrict non-COMPILE_TEST compilation
-Message-Id: <1391669260-23970-2-git-send-email-horms+renesas@verge.net.au>
+From: Karen Williams <KWilliams@gloversvilleschools.org>
+Date: Wed, 26 Feb 2014 06:32:14 +0000
+Subject: Outlook gebruiker waarschuwing.
+Message-Id: <34AEC189DE25054ABC8B6B969C68365215080226@GESDMBX01.gesda.gesd.gsd>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1391669260-23970-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "acount-security-noreply@account.microsoft.com" <acount-security-noreply@account.microsoft.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Geachte Webmail Gebruiker,
+Uw twee inkomende mails hangende toestand geplaatst als gevolg van de recente upgrade in onze database.
 
-Hardware supported by the driver is only found on SUPERH or
-ARCH_SHMOBILE platforms. Restrict non-COMPILE_TEST compilation to them.
+in volgorde te ontvangen uw berichten KLIK HIER<http://goorsoicuesaeorusdoisda.webs.com/>
 
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: linux-serial@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/tty/serial/Kconfig | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Login met uw juiste Webmail informatie en wachten op antwoordt van onze data service.
+Onze excuses voor het ongemak en waarderen uw begrip.
 
-diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-index a3815ea..923d3de 100644
---- a/drivers/tty/serial/Kconfig
-+++ b/drivers/tty/serial/Kconfig
-@@ -708,7 +708,8 @@ config SERIAL_IP22_ZILOG_CONSOLE
- 
- config SERIAL_SH_SCI
- 	tristate "SuperH SCI(F) serial port support"
--	depends on HAVE_CLK && (SUPERH || ARM || COMPILE_TEST)
-+	depends on HAVE_CLK
-+	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
- 	select SERIAL_CORE
- 
- config SERIAL_SH_SCI_NR_UARTS
--- 
-1.8.5.2
-
+Exchange administrator
+The Microsoft Account Team 2014.
