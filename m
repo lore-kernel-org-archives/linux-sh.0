@@ -1,61 +1,49 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 17 Feb 2014 10:25:12 +0000
-Subject: Re: [PATCH 2/5] ARM: shmobile: r8a7791: add i2c master nodes to dtsi
-Message-Id: <20140217102512.GA4666@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Qxx1br4bt0+wmkIi"
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 26 Feb 2014 16:08:10 +0000
+Subject: [PATCH 2/5] ARM: shmobile: r8a7791: Add PCIe clock
+Message-Id: <1393430893-2466-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392543658-5030-3-git-send-email-wsa@the-dreams.de>
- <20140217075410.GA2633@katana>
- <CANqRtoSDxQfSw5PJB6-UcL-UuMySBkoCqfC+1H=o-EBA18ouLQ@mail.gmail.com>
- <CAMuHMdW8MLknykkfu9XS5CDpuJcRNyPz+GV5bhUNGndxFacnQw@mail.gmail.com>
- <20140217091900.GD2633@katana>
- <CAMuHMdV5KNBcFh5E0bKaLNboZUbuXmMkzdYozqWLvro7Kwjhjw@mail.gmail.com>
- <20140217093126.GE2633@katana>
- <CANqRtoRgMaAzzvD9OK+=_J2Or5HZHzg4RUb899-bXjM7LKHSyw@mail.gmail.com>
- <20140217100807.GA4424@katana>
- <CANqRtoRumYg15MnZJyow67h=SGSt079GAuY+e5S9KwK-Z0wc9A@mail.gmail.com>
-In-Reply-To: <CANqRtoRumYg15MnZJyow67h=SGSt079GAuY+e5S9KwK-Z0wc9A@mail.gmail.com>
-To: linux-arm-kernel@lists.infradead.org
+References: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Phil Edworthy <phil.edworthy@renesas.com>
 
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
---Qxx1br4bt0+wmkIi
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index c574292..cba9b3c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -123,6 +123,7 @@ enum {
+ 	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP319,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
+@@ -137,6 +138,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP718] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 18, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
++	[MSTP319] = SH_CLK_MSTP32(&mp_clk, SMSTPCR3, 19, 0), /* PCIEC */
+ 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+@@ -166,6 +168,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
+ 
+ 	/* MSTP */
++	CLKDEV_DEV_ID("r8a7791-pcie", &mstp_clks[MSTP319]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]), /* SCIFB0 */
+-- 
+1.7.9.5
 
-
-> >> realize that there is no shortcut for adding the compatible string to
-> >> the driver. It has to be done sooner or later anyway.
-> >
-> > OK, can be seen this way. As said before, I'll resend.
->=20
-> Thanks! I'd be happy to discuss this more over a beverage in the not
-> so distant future! =3D)
-
-Yay! :)
-
-
---Qxx1br4bt0+wmkIi
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTAeOIAAoJEBQN5MwUoCm2vToQALBxAKWLjoyXtX7etKYEA/xA
-yJfVEB5uLZyhfyZRom3EUk0dQKxrfqu+b/lUKTr0b/edSPdIhCW9C1D1jGOqFMSi
-F2gSXMYafSBFlLfOTEFuCbEO2dRStV88BR2vooHLdVjW7vdC5vQHGV9MqXoqT1Q0
-i1YNw3pvwNG+5gxZteRDOZYK3n4eiPgdYG/GRZYKqoYLrYjUoKpWUyfQT4ly3gpq
-5lIYPTzcPH3jlAS/m+msxPUP/vJKtVivIBngZfFjBq5nCSqVmJRJba4wcNiXURX2
-+hRxeROQVoa2Ga1b8EI9bIrzjFJ7M9opX1Bw3jfp2RtlfC1HWGbUwmMA6fK4ghY0
-yzw1D45XRnEMW1YY8zlHC+iUvrTtTJHGiayyzstLLaotJJmqx8ZNmdZ9lzLEfCA3
-NIC9tBuRXoo4FAnQdF2tVnGkDJ9HUuDLJtfqMlTKkb1Jm7J0XVBaXU+3YXXxRblm
-6Ip41X7Z5lfKwSubTdm1q34MSkNBhREV/QYTaxR7RwAo6wzfDAga6lOPL/ZqzNZd
-RCD7fNOml98hQgmbwoo/Tqmfocr8z8Td+zYJjsA0nJxwODiO5CA7hldDoTMIF7Ja
-zx4GIXWfLVju8r5Qtdw3YTpe33E/6DEjM/b7AogKIP6VryxRDOX/c+/j/vQlFN25
-y11o7L2p8hwATg53vuLZ
-=9TlK
------END PGP SIGNATURE-----
-
---Qxx1br4bt0+wmkIi--
