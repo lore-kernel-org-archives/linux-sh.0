@@ -1,34 +1,43 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 26 Feb 2014 16:08:12 +0000
-Subject: [PATCH 4/5] ARM: shmobile: Add PCIe to r8a7791 device Kconfig
-Message-Id: <1393430893-2466-5-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:34 +0000
+Subject: [PATCH 7/9] ARM: shmobile: r8a7790: Correct SYS DMAC clock defines
+Message-Id: <b998da0541e64da5bd857c09347c0fa954c03432.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1393430893-2466-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+This brings the implementation into line with the documentation.
+
+This problem was introduced when SYS DMAC clock defines were added by
+ac991dce6498b5fc ("ARM: shmobile: r8a7790: Add clock index macros for DT
+sources") in v3.13-rc2. I do not believe this results in any problems as
+these defines do not appear to be used anywhere yet.
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/Kconfig |    2 ++
- 1 file changed, 2 insertions(+)
+ include/dt-bindings/clock/r8a7790-clock.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index a4a4b75..c623633 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -100,6 +100,8 @@ config ARCH_R8A7791
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select MIGHT_HAVE_PCI
-+	select PCI_QUIRKS if PCI
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 859e9be..6548a5f 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -46,8 +46,8 @@
+ #define R8A7790_CLK_MSIOF1		8
+ #define R8A7790_CLK_MSIOF3		15
+ #define R8A7790_CLK_SCIFB2		16
+-#define R8A7790_CLK_SYS_DMAC0		18
+-#define R8A7790_CLK_SYS_DMAC1		19
++#define R8A7790_CLK_SYS_DMAC1		18
++#define R8A7790_CLK_SYS_DMAC0		19
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
+ /* MSTP3 */
+ #define R8A7790_CLK_TPU0		4
 -- 
-1.7.9.5
+1.8.5.2
 
