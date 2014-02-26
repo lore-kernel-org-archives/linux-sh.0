@@ -1,58 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Feb 2014 00:18:58 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove __init from rcar_gen2_read_mode_pins()
-Message-Id: <20140218001854.GE4776@verge.net.au>
+From: Benoit Cousson <bcousson@baylibre.com>
+Date: Wed, 26 Feb 2014 23:09:47 +0000
+Subject: [RFC 1/4] ARM: dts: r8a7790-lager: Add VDD MPU regulator for DVFS
+Message-Id: <1393456190-7870-2-git-send-email-bcousson@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140217063510.21892.52120.sendpatchset@w520>
- <1453243.5L1W6bkVz8@avalon>
- <CANqRtoR7C_v+PQt3J1tjSxvFcX87NZqZZ16tBULBYBz=_F-rFg@mail.gmail.com>
-In-Reply-To: <CANqRtoR7C_v+PQt3J1tjSxvFcX87NZqZZ16tBULBYBz=_F-rFg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 17, 2014 at 08:16:47PM +0900, Magnus Damm wrote:
-> Hi Laurent,
-> 
-> On Mon, Feb 17, 2014 at 7:59 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > Hi Magnus,
-> >
-> > Thank you for the patch.
-> >
-> > On Monday 17 February 2014 15:35:10 Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> Remove __init from rcar_gen2_read_mode_pins() to allow
-> >> it to be used after boot. For instance the R-Car Gen2
-> >> MD21 check is needed even in the case of CPU Hotplug.
-> >>
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >>
-> >>  Written against renesas-devel-v3.14-rc2-20140213
-> >>
-> >>  arch/arm/mach-shmobile/setup-rcar-gen2.c |    2 +-
-> >>  1 file changed, 1 insertion(+), 1 deletion(-)
-> >>
-> >> --- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> >> +++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c     2014-02-17
-> >> 15:02:48.000000000 +0900 @@ -28,7 +28,7 @@
-> >>
-> >>  #define MODEMR 0xe6160060
-> >>
-> >> -u32 __init rcar_gen2_read_mode_pins(void)
-> >> +u32 rcar_gen2_read_mode_pins(void)
-> >>  {
-> >>       void __iomem *modemr = ioremap_nocache(MODEMR, 4);
-> >>       u32 mode;
-> >
-> > Should we read the value once at boot time and cache it ?
-> 
-> Seems a bit of a micro-optimization to me, but sure, it can't hurt.
-> 
-> Care to cook up an incremental patch implementing that? =)
+The CA15 cluster is capable of voltage scaling. Add the regulator
+in the i2c3 node, to allow the generic CPUFreq driver to use it.
 
-I have decided to take this patch as-is.
-Feel free to make incremental changes on top of it.
+Enable the i2c3 pin mux and the device node as well since the
+da9210 is connected to that bus.
+
+Note: Vmin is set to 0.8v to allow experimentation only.
+There is no guaranty that the CPUs will still work at this
+voltage.
+
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 6e99eb2..5f77e3a 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -159,6 +159,11 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3";
++		renesas,function = "i2c3";
++	};
+ };
+ 
+ &ether {
+@@ -240,3 +245,19 @@
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&i2c3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c3_pins>;
++	status = "okay";
++
++	vdd_dvfs: regulator@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <800000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
+-- 
+1.8.3.2
+
