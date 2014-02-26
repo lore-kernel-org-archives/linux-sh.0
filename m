@@ -1,43 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:18 +0000
-Subject: [PATCH v3 02/20] clk: shmobile: r8a7779: Add MSTP clock support
-Message-Id: <1393400016-23433-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 26 Feb 2014 12:53:55 +0000
+Subject: Re: [PATCH v3 02/20] clk: shmobile: r8a7779: Add MSTP clock support
+Message-Id: <7743110.khXlAvnSls@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+ <1393400016-23433-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add MSTP clock support for the r8a7779 SoC
+Hi Simon,
 
-The only change required appears to be to note a new
-compatibility string in the bindings.
+Thank you for the patch.
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On Wednesday 26 February 2014 16:33:18 Simon Horman wrote:
+> Add MSTP clock support for the r8a7779 SoC
+> 
+> The only change required appears to be to note a new
+> compatibility string in the bindings.
+> 
+> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
----
-v3
-* As suggested by Laurent Pinchart
-  - Add entry in numerical order
----
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index a6a352c..f3226ac 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
- Required Properties:
- 
-   - compatible: Must be one of the following
-+    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+> 
+> ---
+> v3
+> * As suggested by Laurent Pinchart
+>   - Add entry in numerical order
+> ---
+>  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git
+> a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt index
+> a6a352c..f3226ac 100644
+> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> @@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+>  Required Properties:
+> 
+>    - compatible: Must be one of the following
+> +    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+> - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks -
+> "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks -
+> "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+
 -- 
-1.8.5.2
+Regards,
+
+Laurent Pinchart
 
