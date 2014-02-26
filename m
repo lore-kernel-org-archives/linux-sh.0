@@ -1,46 +1,72 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:49:28 +0000
-Subject: [PATCH 00/11] ARM: shmobile: MSIOF integration on r8a7790/lager and r8a7791/koelsch
-Message-Id: <1392907779-22053-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:33 +0000
+Subject: [GIT PULL 0/9] Renesas ARM Based SoC Clock Updates for v3.15
+Message-Id: <cover.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+Hi Olof, Hi Arnd, Hi Kevin,
 
-This patch series integrates support for the MSIOF module in the Renesas
-R-Car H2 (r8a7790) and M2 (r8a7791) SoCs on the Lager and Koelsch
-development boards. 
+please consider these Renesas ARM based SoC clock updates for v3.15.
 
-It was tested on Lager and Koelsch, both legacy and DT, using a dummy
-driver for the Renesas r2a11302ft PMIC that reads out the PMIC's version
-ID.
+As requested these have been split out from SoC updates.
 
-  [01/11] ARM: shmobile: r8a7791 dtsi: Fix typo in msiof2 clock output name
-  [02/11] ARM: shmobile: r8a7790: Add MSIOF clocks
-  [03/11] ARM: shmobile: r8a7791: Add MSIOF clocks
-  [04/11] ARM: shmobile: lager legacy: Add MSIOF support
-  [05/11] ARM: shmobile: koelsch legacy: Add MSIOF support
-  [06/11] ARM: shmobile: r8a7790/lager dts: Rename label spi to qspi, add
-	  spi0 alias
-  [07/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi, add
-	  spi0 alias
-  [08/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-  [09/11] ARM: shmobile: r8a7791 dtsi: Add MSIOF nodes and aliases
-  [10/11] ARM: shmobile: lager dts: Add MSIOF nodes
-  [11/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
+This pull request is based on "Renesas ARM based SoC updates for v3.15",
+tagged as tags/renesas-soc-for-v3.15, which you have previously pulled.
 
-Thanks!
 
-Gr{oetje,eeting}s,
+The following changes since commit 012a7069b5a10a0851584d71a1facdc40a972319:
 
-						Geert
+  ARM: shmobile: r8a7790: Add PCI USB host clock support (2014-02-04 10:25:03 +0900)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+are available in the git repository at:
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.15
+
+for you to fetch changes up to df55f6685a04a259cf59cd3fde02212b294461cc:
+
+  ARM: shmobile: Remove legacy r8a7790 DT clocks (2014-02-24 08:54:44 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Clock Updates for v3.15
+
+* r7s72100 SoC (RZ/A1H)
+  - Add clock for SH Ethernet
+  - Add RSPI clocks
+
+* r8a7791 (R-Car M2)
+  - Add QSPI and SDHI clocks
+
+* r8a7790 (R-Car H2)
+  - Add audio clock
+  - Remove legacy DT clocks
+  - Correct SYS DMAC clock defines
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      ARM: shmobile: r7s72100 clock: Add RSPI clocks
+      ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+      ARM: shmobile: r8a7791 clock: add QSPI clocks
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7778: add audio clock in new style
+      ARM: shmobile: r8a7790: add audio clock
+
+Magnus Damm (2):
+      ARM: shmobile: Add r8a7791 legacy SDHI clocks
+      ARM: shmobile: Remove legacy r8a7790 DT clocks
+
+Simon Horman (2):
+      ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+      ARM: shmobile: r8a7790: Correct SYS DMAC clock defines
+
+ arch/arm/boot/dts/r8a7790.dtsi            | 23 ++++++++++++
+ arch/arm/mach-shmobile/clock-r7s72100.c   | 30 +++++++++++++--
+ arch/arm/mach-shmobile/clock-r8a7778.c    |  4 ++
+ arch/arm/mach-shmobile/clock-r8a7790.c    | 31 ++++++++++------
+ arch/arm/mach-shmobile/clock-r8a7791.c    | 62 ++++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7790-clock.h |  4 +-
+ 6 files changed, 136 insertions(+), 18 deletions(-)
