@@ -1,86 +1,79 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Feb 2014 10:30:15 +0000
-Subject: [PATCH v2 07/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-Message-Id: <1393324219-3317-8-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:26 +0000
+Subject: [PATCH v3 10/20] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
+Message-Id: <1393400016-23433-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+r8a7779_earlytimer_init() calls r8a7779_clock_init() and
+r8a7779_clock_init() is defined in clock-r8a7779.c.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
+as will be the case when marzen-reference moves to use
+the common clock framework, then setup-r8a7779.c is compiled
+but clock-r8a7779.c is not.
+
+As r8a7779_earlytimer_init() is not used by marzen-reference
+simply move it to clock-r8a7779.c.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Drop "num-cs" and "renesas,rx-fifo-size", as they match the defaults.
+ arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
+ 2 files changed, 11 insertions(+), 10 deletions(-)
 
- arch/arm/boot/dts/r8a7790.dtsi |   44 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 9383b8436111..da69afc9e5cb 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -25,6 +25,10 @@
- 		i2c2 = &i2c2;
- 		i2c3 = &i2c3;
- 		spi0 = &qspi;
-+		spi1 = &msiof0;
-+		spi2 = &msiof1;
-+		spi3 = &msiof2;
-+		spi4 = &msiof3;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index b1a5065..e4fc7df 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -23,6 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <linux/sh_timer.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7779.h>
+@@ -263,3 +264,13 @@ void __init r8a7779_clock_init(void)
+ 	else
+ 		panic("failed to setup r8a7779 clocks\n");
+ }
++
++/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
++void __init __weak r8a7779_register_twd(void) { }
++
++void __init r8a7779_earlytimer_init(void)
++{
++	r8a7779_clock_init();
++	r8a7779_register_twd();
++	shmobile_earlytimer_init();
++}
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index f6aeb7f..f28b8c7 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -714,16 +714,6 @@ void __init r8a7779_add_standard_devices(void)
+ 	r8a7779_register_hpb_dmae();
+ }
  
- 	cpus {
-@@ -776,4 +780,44 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	msiof0: spi@e6e20000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e20000 0 0x0064>;
-+		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof1: spi@e6e10000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e10000 0 0x0064>;
-+		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof2: spi@e6e00000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e00000 0 0x0064>;
-+		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof3: spi@e6c90000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6c90000 0 0x0064>;
-+		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
+-/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+-void __init __weak r8a7779_register_twd(void) { }
+-
+-void __init r8a7779_earlytimer_init(void)
+-{
+-	r8a7779_clock_init();
+-	r8a7779_register_twd();
+-	shmobile_earlytimer_init();
+-}
+-
+ void __init r8a7779_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7779_devices_dt,
 -- 
-1.7.9.5
+1.8.5.2
 
