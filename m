@@ -1,48 +1,49 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 05 Feb 2014 10:19:14 +0000
-Subject: [PATCH 11/11] PCI: rcar: fix bridge logic configuration accesses
-Message-Id: <1391595554-20640-12-git-send-email-ben.dooks@codethink.co.uk>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 26 Feb 2014 18:11:20 +0000
+Subject: [PATCH 2/5 v2 RFC] ARM: shmobile: r8a7791: Add PCIe clock
+Message-Id: <1393438283-10542-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1393438283-10542-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
 
-The bridge logic at slot 0 only supports reads up to 0x40 and the
-rest of the PCI configuration space for this slot is marked as
-reserved in the manual.
-
-Trying a read from offset 0x100 is producing an error from the
-bridge. With error interrupts enabled, the following is printed:
-
-pci-rcar-gen2 ee0d0000.pci: error irq: status 00000014
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
-Cc: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Bjorn Helgaas <bhelgaas@google.com>
-Cc: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
----
- drivers/pci/host/pci-rcar-gen2.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7791.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-index ddaa3e8..4b35ac5 100644
---- a/drivers/pci/host/pci-rcar-gen2.c
-+++ b/drivers/pci/host/pci-rcar-gen2.c
-@@ -119,6 +119,10 @@ static void __iomem *rcar_pci_cfg_base(struct pci_bus *bus, unsigned int devfn,
- 	if (slot > 2)
- 		return NULL;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index c574292..cba9b3c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -123,6 +123,7 @@ enum {
+ 	MSTP813,
+ 	MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
++	MSTP319,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
+@@ -137,6 +138,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP718] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 18, 0), /* SCIF3 */
+ 	[MSTP715] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 15, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32(&p_clk, SMSTPCR7, 14, 0), /* SCIF5 */
++	[MSTP319] = SH_CLK_MSTP32(&mp_clk, SMSTPCR3, 19, 0), /* PCIEC */
+ 	[MSTP216] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32(&mp_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
+@@ -166,6 +168,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk", &hp_clk),
  
-+	/* bridge logic only has registers to 0x40 */
-+	if (slot = 0x0 && where >= 0x40)
-+		return NULL;
-+
- 	val = slot ? RCAR_AHBPCI_WIN1_DEVICE | RCAR_AHBPCI_WIN_CTR_CFG :
- 		     RCAR_AHBPCI_WIN1_HOST | RCAR_AHBPCI_WIN_CTR_CFG;
- 
+ 	/* MSTP */
++	CLKDEV_DEV_ID("r8a7791-pcie", &mstp_clks[MSTP319]),
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]), /* SCIFB0 */
 -- 
-1.8.5.3
+1.7.9.5
 
