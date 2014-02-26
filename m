@@ -1,96 +1,72 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 26 Feb 2014 16:48:39 +0000
-Subject: [PATCH] sh_net: runtime pm wrap mdio read and write
-Message-Id: <1393433319-22685-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 26 Feb 2014 18:21:41 +0000
+Subject: Re: [PATCH] sh_net: runtime pm wrap mdio read and write
+Message-Id: <530E3EBC.5060408@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393433319-22685-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1393433319-22685-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, nobuhiro.iwamatsu.yj@renesas.com, magnus.damn@opensource.se, horms@verge.net.au, Ben Dooks <ben.dooks@codethink.co.uk>
+To: Ben Dooks <ben.dooks@codethink.co.uk>, netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, magnus.damn@opensource.se, horms@verge.net.au
 
-On the R8A7790, if the device has been suspended by pm_runtime
-and the MII code tries to access the bus then there is a possiblity
-that it will fail to read any data from the MII bus.
+On 02/26/2014 07:48 PM, Ben Dooks wrote:
 
-Change the MDIO read and write calls to be wrappered by calls to
-pm_runtime_{get,put}_sync so that the device will be enabled during
-these calls. It is put here to avoid having to enable and disable
-the clock for every bit that is sent by the MII bit-banging code.
+> On the R8A7790, if the device has been suspended by pm_runtime
+> and the MII code tries to access the bus then there is a possiblity
 
-This has been exposed by the change to using OF and a fix to enable
-the pm_runtime clock management which seems to have been broken for
-some time for the device-tree booted Renesas kernels.
+    s/possiblity/possibility/.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- drivers/net/ethernet/renesas/sh_eth.c | 39 +++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+> that it will fail to read any data from the MII bus.
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index b92034c..8d1b84e 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -983,6 +983,8 @@ static unsigned long sh_eth_get_edtrr_trns(struct sh_eth_private *mdp)
- 
- struct bb_info {
- 	void (*set_gate)(void *addr);
-+        int (*mdio_read)(struct mii_bus *bus, int phy_id, int regnum);
-+        int (*mdio_write)(struct mii_bus *bus, int phy_id, int regnum, u16 val);
- 	struct mdiobb_ctrl ctrl;
- 	void *addr;
- 	u32 mmd_msk;/* MMD */
-@@ -1071,6 +1073,38 @@ static struct mdiobb_ops bb_ops = {
- 	.get_mdio_data = sh_get_mdio,
- };
- 
-+/* Wrapper to ensure bitbang ops have device runtime-pm enabled */
-+
-+static inline struct bb_info *mii_to_bitbang(struct mii_bus *bus)
-+{
-+	struct mdiobb_ctrl *ctrl = bus->priv;
-+	return container_of(ctrl, struct bb_info, ctrl);
-+}
-+
-+static int sh_mdio_read(struct mii_bus *bus, int phy_id, int regnum)
-+{
-+	struct bb_info *bitbang = mii_to_bitbang(bus);
-+	int ret;
-+
-+	pm_runtime_get_sync(bus->dev.parent->parent);
-+	ret = bitbang->mdio_read(bus, phy_id, regnum);
-+	pm_runtime_put_sync(bus->dev.parent->parent);
-+
-+	return ret;
-+}
-+
-+static int sh_mdio_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
-+{
-+	struct bb_info *bitbang = mii_to_bitbang(bus);
-+	int ret;
-+
-+	pm_runtime_get_sync(bus->dev.parent->parent);
-+	ret = bitbang->mdio_write(bus, phy_id, regnum, val);
-+	pm_runtime_put_sync(bus->dev.parent->parent);
-+
-+	return ret;
-+}
-+
- /* free skb and descriptor buffer */
- static void sh_eth_ring_free(struct net_device *ndev)
- {
-@@ -2639,6 +2673,11 @@ static int sh_mdio_init(struct net_device *ndev, int id,
- 		goto out;
- 	}
- 
-+	bitbang->mdio_read = mdp->mii_bus->read;
-+	bitbang->mdio_write = mdp->mii_bus->write;
-+	mdp->mii_bus->read = sh_mdio_read;
-+	mdp->mii_bus->write = sh_mdio_write;
-+
- 	/* Hook up MII support for ethtool */
- 	mdp->mii_bus->name = "sh_mii";
- 	mdp->mii_bus->parent = &ndev->dev;
--- 
-1.8.5.3
+> Change the MDIO read and write calls to be wrappered by calls to
+
+    s/wrappered/wrapped/.
+
+> pm_runtime_{get,put}_sync so that the device will be enabled during
+> these calls. It is put here to avoid having to enable and disable
+> the clock for every bit that is sent by the MII bit-banging code.
+
+> This has been exposed by the change to using OF and a fix to enable
+> the pm_runtime clock management which seems to have been broken for
+> some time for the device-tree booted Renesas kernels.
+
+    What fix to enable run-time PM are you talking about?
+
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+>   drivers/net/ethernet/renesas/sh_eth.c | 39 +++++++++++++++++++++++++++++++++++
+>   1 file changed, 39 insertions(+)
+
+> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+> index b92034c..8d1b84e 100644
+> --- a/drivers/net/ethernet/renesas/sh_eth.c
+> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -983,6 +983,8 @@ static unsigned long sh_eth_get_edtrr_trns(struct sh_eth_private *mdp)
+>
+>   struct bb_info {
+>   	void (*set_gate)(void *addr);
+> +        int (*mdio_read)(struct mii_bus *bus, int phy_id, int regnum);
+> +        int (*mdio_write)(struct mii_bus *bus, int phy_id, int regnum, u16 val);
+
+    Please indent with tabs.
+
+> @@ -1071,6 +1073,38 @@ static struct mdiobb_ops bb_ops = {
+>   	.get_mdio_data = sh_get_mdio,
+>   };
+>
+> +/* Wrapper to ensure bitbang ops have device runtime-pm enabled */
+> +
+> +static inline struct bb_info *mii_to_bitbang(struct mii_bus *bus)
+> +{
+> +	struct mdiobb_ctrl *ctrl = bus->priv;
+
+    Empty line between declaration and the other code needed.
+
+> +	return container_of(ctrl, struct bb_info, ctrl);
+> +}
+[...]
+
+WBR, Sergei
 
