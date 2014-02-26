@@ -1,60 +1,63 @@
-From: <vladimir.barinov@cogentembedded.com>
-Date: Sun, 23 Feb 2014 18:00:56 +0000
-Subject: [PATCH V4 1/4] ARM: shmobile: r8a7791: Add USBHS clock support
-Message-Id: <1393178459-14637-2-git-send-email-vladimir.barinov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:50 +0000
+Subject: [PATCH 4/7] ARM: shmobile: r8a7790 CA7-SCU enablement
+Message-Id: <0445ded61aac0c1a6f43b4be1a2ca2ca47b77eb8.1393400446.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
-In-Reply-To: <1393178459-14637-1-git-send-email-vladimir.barinov@cogentembedded.com>
+References: <cover.1393400446.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-gpio@vger.kernel.org, magnus.damm@gmail.com, horms@verge.net.au, gnurou@gmail.com, linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, valentine.barshak@cogentembedded.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-This adds USBHS clocks to the R8A7791 SoC.
+Power on CA7 SCU in case of booting from a CA15 core.
 
-Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-
-Changes in V4:
-Changes in V3:
-* none.
-
-Changes in V2:
-* capitalized ARM in the subject;
-* rebased on top the latest devel tag.
-
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+[damm@opensource.se: Converted to use broken out SYSC code]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c |    4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7790.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Index: build/arch/arm/mach-shmobile/clock-r8a7791.c
-=================================--- build.orig/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:44.486571967 +0400
-+++ build/arch/arm/mach-shmobile/clock-r8a7791.c	2014-02-23 21:47:52.582571801 +0400
-@@ -177,6 +177,7 @@
- 	MSTP811, MSTP810, MSTP809,
- 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
- 	MSTP719, MSTP718, MSTP715, MSTP714,
-+	MSTP704,
- 	MSTP522,
- 	MSTP314, MSTP312, MSTP311,
- 	MSTP216, MSTP207, MSTP206,
-@@ -208,6 +209,7 @@
- 	[MSTP718] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 18, MSTPSR7, 0), /* SCIF3 */
- 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
- 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
-+	[MSTP704] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR7, 4, MSTPSR7, 0), /* HSUSB */
- 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
- 	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
- 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
-@@ -281,6 +283,8 @@
- 	CLKDEV_DEV_ID("r8a7791-vin.2", &mstp_clks[MSTP809]),
- 	CLKDEV_DEV_ID("sata-r8a7791.0", &mstp_clks[MSTP815]),
- 	CLKDEV_DEV_ID("sata-r8a7791.1", &mstp_clks[MSTP814]),
-+	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
-+	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
- };
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 015e275..beb47ae 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -19,6 +19,8 @@
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7790.h>
  
- #define R8A7791_CLOCK_ROOT(e, m, p0, p1, p30, p31)		\
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
+@@ -27,6 +29,11 @@
+ #define CA7RESCNT	0x0044
+ #define MERAM		0xe8080000
+ 
++static struct rcar_sysc_ch r8a7790_ca7_scu = {
++	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
++	.isr_bit = 21, /* CA7-SCU */
++};
++
+ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	void __iomem *p;
+@@ -54,6 +61,10 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+ 	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
+ 		       p + CA7RESCNT);
+ 	iounmap(p);
++
++	/* turn on power to SCU */
++	r8a7790_pm_init();
++	rcar_sysc_power_up(&r8a7790_ca7_scu);
+ }
+ 
+ struct smp_operations r8a7790_smp_ops __initdata = {
+-- 
+1.8.5.2
+
