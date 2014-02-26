@@ -1,10 +1,10 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2014 10:47:32 +0000
-Subject: [PATCH 6/7] ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <1392029254-15400-7-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:32 +0000
+Subject: [PATCH 5/9] ARM: shmobile: r8a7791 clock: add QSPI clocks
+Message-Id: <d2eec3d5251216942e1d425300686f1a18bc615d.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,36 +12,81 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
+The QSPI clock divider value depends on the MD1, MD2, and MD3 mode
+switches.
+
 Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This depends on spi-rspi updates
+ arch/arm/mach-shmobile/clock-r8a7791.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
- arch/arm/mach-shmobile/board-lager.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 9e52efa2a457..d7155375a322 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -298,12 +298,12 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index e4e4dfa..c8227b3 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -101,6 +101,7 @@ static struct clk main_clk = {
+  */
+ SH_FIXED_RATIO_CLK_SET(pll1_clk,		main_clk,	1, 1);
+ SH_FIXED_RATIO_CLK_SET(pll3_clk,		main_clk,	1, 1);
++SH_FIXED_RATIO_CLK_SET(qspi_clk,		pll1_clk,	1, 1);
  
- static const struct spi_board_info spi_info[] __initconst = {
- 	{
--		.modalias               = "m25p80",
--		.platform_data          = &spi_flash_data,
--		.mode                   = SPI_MODE_0,
--		.max_speed_hz           = 30000000,
--		.bus_num                = 0,
--		.chip_select            = 0,
-+		.modalias	= "m25p80",
-+		.platform_data	= &spi_flash_data,
-+		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
-+		.max_speed_hz	= 30000000,
-+		.bus_num	= 0,
-+		.chip_select	= 0,
- 	},
- };
+ /* fixed ratio clock */
+ SH_FIXED_RATIO_CLK_SET(extal_div2_clk,		extal_clk,	1, 2);
+@@ -124,6 +125,7 @@ static struct clk *main_clks[] = {
+ 	&pll3_clk,
+ 	&hp_clk,
+ 	&p_clk,
++	&qspi_clk,
+ 	&rclk_clk,
+ 	&mp_clk,
+ 	&cp_clk,
+@@ -135,6 +137,7 @@ static struct clk *main_clks[] = {
+ /* MSTP */
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
++	MSTP917,
+ 	MSTP815, MSTP814,
+ 	MSTP813,
+ 	MSTP811, MSTP810, MSTP809,
+@@ -154,6 +157,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+ 	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
+ 	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
++	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+ 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
+ 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+ 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
+@@ -195,6 +199,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("zs",		&zs_clk),
+ 	CLKDEV_CON_ID("hp",		&hp_clk),
+ 	CLKDEV_CON_ID("p",		&p_clk),
++	CLKDEV_CON_ID("qspi",		&qspi_clk),
+ 	CLKDEV_CON_ID("rclk",		&rclk_clk),
+ 	CLKDEV_CON_ID("mp",		&mp_clk),
+ 	CLKDEV_CON_ID("cp",		&cp_clk),
+@@ -220,6 +225,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+@@ -271,6 +277,11 @@ void __init r8a7791_clock_init(void)
+ 		break;
+ 	}
+ 
++	if ((mode & (MD(3) | MD(2) | MD(1))) = MD(2))
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 16);
++	else
++		SH_CLK_SET_RATIO(&qspi_clk_ratio, 1, 20);
++
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+ 		ret = clk_register(main_clks[k]);
  
 -- 
-1.7.9.5
+1.8.5.2
 
