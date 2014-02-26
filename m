@@ -1,77 +1,57 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 21 Feb 2014 06:12:24 +0000
-Subject: [PATCH 12/16] ARM: shmobile: Koelsch: set proper DMA masks for Ether device
-Message-Id: <379bfd7134bccccf58962b39e504bd639a5e75b2.1392960310.git.horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:33 +0000
+Subject: [PATCH 6/9] ARM: shmobile: r7s72100: Add clock for r7s72100-ether
+Message-Id: <0e7ed0c1613aea101205b4e0413f75ef8141bf3d.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392960310.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
-'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
-ability.
-
-Currently, the code works without DMA masks but as we would have to enable
-CONFIG_HIGHMEM to access the full board memory in the future, when support for
-NETIF_F_SG would be added to the 'sh_eth' driver as well, the correct DMA masks
-should start to matter...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 893d47c..5a034ff 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -2,8 +2,9 @@
-  * Koelsch board support
-  *
-  * Copyright (C) 2013  Renesas Electronics Corporation
-- * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014  Renesas Solutions Corp.
-  * Copyright (C) 2013  Magnus Damm
-+ * Copyright (C) 2014  Cogent Embedded, Inc.
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -116,6 +117,17 @@ static const struct resource ether_resources[] __initconst = {
- 	DEFINE_RES_IRQ(gic_spi(162)),
- };
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 71c99fe..f17a5db 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -28,6 +28,7 @@
+ /* Standby Control Registers */
+ #define STBCR3		0xfcfe0420
+ #define STBCR4		0xfcfe0424
++#define STBCR7		0xfcfe0430
+ #define STBCR9		0xfcfe0438
+ #define STBCR10		0xfcfe043c
  
-+static const struct platform_device_info ether_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "r8a7791-ether",
-+	.id		= -1,
-+	.res		= ether_resources,
-+	.num_res	= ARRAY_SIZE(ether_resources),
-+	.data		= &ether_pdata,
-+	.size_data	= sizeof(ether_pdata),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
- /* LEDS */
- static struct gpio_led koelsch_leds[] = {
- 	{
-@@ -426,10 +438,7 @@ static void __init koelsch_add_standard_devices(void)
- 				  ARRAY_SIZE(koelsch_pinctrl_map));
- 	r8a7791_pinmux_init();
- 	r8a7791_add_standard_devices();
--	platform_device_register_resndata(&platform_bus, "r8a7791-ether", -1,
--					  ether_resources,
--					  ARRAY_SIZE(ether_resources),
--					  &ether_pdata, sizeof(ether_pdata));
-+	platform_device_register_full(&ether_info);
- 	platform_device_register_data(&platform_bus, "leds-gpio", -1,
- 				      &koelsch_leds_pdata,
- 				      sizeof(koelsch_leds_pdata));
+@@ -150,6 +151,7 @@ struct clk div4_clks[DIV4_NR] = {
+ enum {
+ 	MSTP107, MSTP106, MSTP105, MSTP104, MSTP103,
+ 	MSTP97, MSTP96, MSTP95, MSTP94,
++	MSTP74,
+ 	MSTP47, MSTP46, MSTP45, MSTP44, MSTP43, MSTP42, MSTP41, MSTP40,
+ 	MSTP33,	MSTP_NR
+ };
+@@ -164,6 +166,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP96] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 6, 0), /* RIIC1 */
+ 	[MSTP95] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 5, 0), /* RIIC2 */
+ 	[MSTP94] = SH_CLK_MSTP8(&peripheral0_clk, STBCR9, 4, 0), /* RIIC3 */
++	[MSTP74] = SH_CLK_MSTP8(&peripheral1_clk, STBCR7, 4, 0), /* Ether */
+ 	[MSTP47] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 7, 0), /* SCIF0 */
+ 	[MSTP46] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 6, 0), /* SCIF1 */
+ 	[MSTP45] = SH_CLK_MSTP8(&peripheral1_clk, STBCR4, 5, 0), /* SCIF2 */
+@@ -200,6 +203,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+ 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
++	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
 -- 
 1.8.5.2
 
