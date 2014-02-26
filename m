@@ -1,42 +1,70 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 17 Feb 2014 08:04:07 +0000
-Subject: Re: [PATCH 3/6] i2c: rcar: do not print error if device nacks transfer
-Message-Id: <5301C277.7020808@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:30 +0000
+Subject: [PATCH v3 14/20] ARM: shmobile: marzen-reference: Initialize CPG device
+Message-Id: <1393400016-23433-15-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390752337-22386-1-git-send-email-ben.dooks@codethink.co.uk> <1390752337-22386-4-git-send-email-ben.dooks@codethink.co.uk> <20140216094655.GA2644@katana>
-In-Reply-To: <20140216094655.GA2644@katana>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-kernel@lists.codethink.co.uk, Simon Horman <horms+renesas@verge.net.au>, linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 16/02/14 09:46, Wolfram Sang wrote:
-> On Sun, Jan 26, 2014 at 04:05:34PM +0000, Ben Dooks wrote:
->> The i2c-rcar driver currently prints an error message if the master_xfer
->> callback fails. However if the bus is being probed then lots of NAKs
->> will be generated, causing the output of a number of errors printed.
->>
->> To solve this, disable the print if the error is not -EREMOTEIO.
->>
->> An example of running i2cdetect:
->
-> So, after this patch i2cdetect runs fine for you? I assume you are
-> working with the lager/r8a7790 board? With koelsch/r8a7791, it stalls
-> the bus :(
+On multiplatform kernels clocks are handled by the CCF CPG driver. It
+must be explicitly initialized by a call to r8a7779_clocks_init() with
+the value of the boot mode pins.
 
-It runs fine most of the time, however I've seen some issues with the
-bus locking up. However it seems to be random and affects either of
-bus 2 or bus 3 randomly. Once the bus does lock up then there is no
-possibility of further transfers.
+Based on similar work for the Koelsch board by Laurent Pinchart.
 
-I am trying to put together a breakout board to get at the signals
-involved as they are all pretty much only available on high-density
-connectors.
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-I hope to have a look at this before the end of the week and see if
-there is a fix for this.
-
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index d3e8319..e261431 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,7 +19,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/clocksource.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -27,11 +28,17 @@
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ 
+-static void __init marzen_init(void)
++static void __init marzen_init_timer(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+-	of_clk_init(NULL);
+-#else
++	r8a7779_clocks_init(r8a7779_read_mode_pins());
++#endif
++	clocksource_of_init();
++}
++
++static void __init marzen_init(void)
++{
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7779_clock_init();
+ #endif
+ 	r8a7779_add_standard_devices_dt();
+@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_init_delay,
++	.init_time	= marzen_init_timer,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.5.2
+
