@@ -1,45 +1,43 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 07 Feb 2014 09:55:53 +0000
-Subject: Re: [PATCH 1/3] clk: rcar-h2: fix sd0/sd1 divisor table
-Message-Id: <52F4ADA9.7020600@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:18 +0000
+Subject: [PATCH v3 02/20] clk: shmobile: r8a7779: Add MSTP clock support
+Message-Id: <1393400016-23433-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391537858-28593-1-git-send-email-william.towle@codethink.co.uk>
- <52F226A0.5070301@codethink.co.uk> <52F23166.1030609@codethink.co.uk>
- <2298259.CqC51XrMZM@avalon> <87txcdul4b.wl%kuninori.morimoto.gx@gmail.com>
- <87y51nbey3.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87y51nbey3.wl%kuninori.morimoto.gx@gmail.com>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 07/02/14 06:43, Kuninori Morimoto wrote:
-> Hi William, Ben, Laurent
->
->>>>>>>    static const struct clk_div_table cpg_sd01_div_table[] = {
->>>>>>> +    {  0,  2 }, {  1,  3 }, {  2,  4 }, {  3,  6 },
->>>>>>> +    {  4,  8 },
->>>>>>>
->>>>>>>        {  5, 12 }, {  6, 16 }, {  7, 18 }, {  8, 24 },
->>>>>>>        { 10, 36 }, { 11, 48 }, { 12, 10 }, {  0,  0 },
->
-> According to HW team, datasheet is correct.
-> Some HW has above un-documented implementation indeed,
-> but these are not supported.
-> But, 0x0100 (x1/8) on SD0FC/SD1FC is now supported and documented in
-> latest datasheet.
+Add MSTP clock support for the r8a7779 SoC
 
-Thanks, we do not have a copy of that so cannot comment.
+The only change required appears to be to note a new
+compatibility string in the bindings.
 
->>>> sdhi0 showed 156MHz output, and it seemed to work. So there is a
->>>> distinct possibility that the sdh clock also supports setting 12
->>>> for a /10
->
-> According to HW there,
-> SDHFC will be stopped if you set 0xC.
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-We'll look at re-working this patch and getting it re-sent.
+---
+v3
+* As suggested by Laurent Pinchart
+  - Add entry in numerical order
+---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index a6a352c..f3226ac 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.5.2
+
