@@ -1,37 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Feb 2014 08:04:36 +0000
-Subject: [PATCH 4/4] ARM: shmobile: genmai defconfig: Enable RSPI
-Message-Id: <8f33d31ee270f2a6bcc661815a520f76565674c3.1392276997.git.horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:47 +0000
+Subject: [PATCH 1/7] ARM: shmobile: Use 64-bit dma_addr_t on r8a7790/r8a7791
+Message-Id: <4a51856b42672cfcb7d6fbab22dcf2caba2be5ab.1393400446.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392276997.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1392276997.git.horms+renesas@verge.net.au>
+References: <cover.1393400446.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
+Some on-chip devices on r8a7790 and r8a7791 can do
+bus mastering and access more than 32-bits of address
+space. Select ARCH_DMA_ADDR_T_64BIT when LPAE is set
+in case of multiplatform and legacy SoC support.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/genmai_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/Kconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-index c56a7ff..5ee6ac0 100644
---- a/arch/arm/configs/genmai_defconfig
-+++ b/arch/arm/configs/genmai_defconfig
-@@ -81,6 +81,8 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_I2C_SH_MOBILE=y
-+CONFIG_SPI=y
-+CONFIG_SPI_RSPI=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 3386406..0272cd7 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -13,6 +13,7 @@ config ARCH_SHMOBILE_MULTI
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select MIGHT_HAVE_PCI
++	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 	select NO_IOPORT
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
+@@ -123,6 +124,7 @@ config ARCH_R8A7790
+ 	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
++	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
+@@ -132,6 +134,7 @@ config ARCH_R8A7791
+ 	select MIGHT_HAVE_PCI
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
++	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
 -- 
 1.8.5.2
 
