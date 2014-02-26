@@ -1,87 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:52 +0000
-Subject: [PATCH v2 22/40] clocksource: sh_tmu: Use request_irq() instead of setup_irq()
-Message-Id: <1393603090-23144-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:31 +0000
+Subject: [PATCH 4/9] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
+Message-Id: <3fc3e908d25ad04de1a01b3f659ecabefcca74c5.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver claims it needs to register an interrupt handler too early
-for request_irq(). This might have been true in the past, but the only
-meaningful difference between request_irq() and setup_irq() today is an
-additional kzalloc() call in request_irq(). As the driver calls
-kmalloc() itself we know that the slab allocator is available, we can
-thus switch to request_irq().
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
+clock framework yet.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_tmu.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index ecd7b60..8613cc9 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -38,7 +38,7 @@
- struct sh_tmu_priv {
- 	void __iomem *mapbase;
- 	struct clk *clk;
--	struct irqaction irqaction;
-+	int irq;
- 	struct platform_device *pdev;
- 	unsigned long rate;
- 	unsigned long periodic;
-@@ -401,10 +401,11 @@ static void sh_tmu_register_clockevent(struct sh_tmu_priv *p,
- 
- 	clockevents_config_and_register(ced, 1, 0x300, 0xffffffff);
- 
--	ret = setup_irq(p->irqaction.irq, &p->irqaction);
-+	ret = request_irq(p->irq, sh_tmu_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&p->pdev->dev), p);
- 	if (ret) {
--		dev_err(&p->pdev->dev, "failed to request irq %d\n",
--			p->irqaction.irq);
-+		dev_err(&p->pdev->dev, "failed to request irq %d\n", p->irq);
- 		return;
- 	}
- }
-@@ -425,7 +426,7 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	struct resource *res;
--	int irq, ret;
-+	int ret;
- 	ret = -ENXIO;
- 
- 	memset(p, 0, sizeof(*p));
-@@ -444,8 +445,8 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
- 		goto err0;
- 	}
- 
--	irq = platform_get_irq(p->pdev, 0);
--	if (irq < 0) {
-+	p->irq = platform_get_irq(p->pdev, 0);
-+	if (p->irq < 0) {
- 		dev_err(&p->pdev->dev, "failed to get irq\n");
- 		goto err0;
- 	}
-@@ -457,13 +458,6 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
- 		goto err0;
- 	}
- 
--	/* setup data for setup_irq() (too early for request_irq()) */
--	p->irqaction.name = dev_name(&p->pdev->dev);
--	p->irqaction.handler = sh_tmu_interrupt;
--	p->irqaction.dev_id = p;
--	p->irqaction.irq = irq;
--	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
--
- 	/* get hold of clock */
- 	p->clk = clk_get(&p->pdev->dev, "tmu_fck");
- 	if (IS_ERR(p->clk)) {
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index ffb0fff..71c99fe 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -191,6 +191,11 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
++	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
++	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
++	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
++	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
++	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+ 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
 -- 
-1.8.3.2
+1.8.5.2
 
