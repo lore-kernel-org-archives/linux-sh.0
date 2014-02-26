@@ -1,48 +1,118 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 17 Feb 2014 11:14:31 +0000
-Subject: Re: [PATCH] ARM: shmobile: Check MD21 at SMP boot in case of APMU
-Message-Id: <CANqRtoR1o+9NAwheRVffnY0LpdUKcK_hW9aAdZ_6+orav5vsXQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:29 +0000
+Subject: [PATCH 2/9] ARM: shmobile: r8a7790: add audio clock
+Message-Id: <c7c2ec3a1881b93c211d0754b39f08b5a75459d8.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140217063152.21876.6981.sendpatchset@w520>
- <CAMuHMdUiRb0VmtTw-v04Ex-YyfV00+ixQoDgE3yD8kKXxVWCxQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdUiRb0VmtTw-v04Ex-YyfV00+ixQoDgE3yD8kKXxVWCxQ@mail.gmail.com>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 17, 2014 at 5:53 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Mon, Feb 17, 2014 at 7:31 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> On R-Car Gen2 SoCs such as r8a7790 and r8a7791 the hardware boot
->> mode bit MD21 indicates if hardware debug mode is enabled or not.
->>
->> In case hardware debug mode is enabled print a warning and refrain
->> from booting secondary CPU cores. Without this patch Koelsch boards
->> with SW8-4 set to OFF will hang at SMP boot.
->
-> Ah, mine was set to OFF.
->
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks!
+Current audio clock doesn't have dependency to device/driver,
+but, it is not good design for DT support.
+To avoid branch merge conflict issue,
+it uses this load map, and this patch is 1) part.
+ 1) add old/new style clock in platform
+ 2) add new style clock method in driver
+ 3) remove old tyle clock from platform
 
-> with one minor nit:
->
->>  int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
->>  {
->> +       /* Refrain boot when hardware debug mode is enabled */
->> +       if (rcar_gen2_read_mode_pins() & BIT(21)) {
->> +               pr_warn("Unable to boot CPU%d when MD21 is set\n", cpu);
->
-> %u
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi         | 23 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7790.c | 20 ++++++++++++++++++++
+ 2 files changed, 43 insertions(+)
 
-Good catch, will send a V2.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 71b1251..67a6d96 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -313,6 +313,29 @@
+ 			clock-output-names = "extal";
+ 		};
+ 
++		/*
++		 * The external audio clocks are configured as 0 Hz fixed frequency clocks by
++		 * default. Boards that provide audio clocks should override them.
++		 */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7790-cpg-clocks",
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 507073e..08a2803 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -91,6 +91,15 @@ static struct clk main_clk = {
+ 	.ops	= &followparent_clk_ops,
+ };
+ 
++static struct clk audio_clk_a = {
++};
++
++static struct clk audio_clk_b = {
++};
++
++static struct clk audio_clk_c = {
++};
++
+ /*
+  * clock ratio of these clock will be updated
+  * on r8a7790_clock_init()
+@@ -124,6 +133,9 @@ SH_FIXED_RATIO_CLK_SET(ddr_clk,			pll3_clk,	1, 8);
+ SH_FIXED_RATIO_CLK_SET(mp_clk,			pll1_div2_clk,	1, 15);
+ 
+ static struct clk *main_clks[] = {
++	&audio_clk_a,
++	&audio_clk_b,
++	&audio_clk_c,
+ 	&extal_clk,
+ 	&extal_div2_clk,
+ 	&main_clk,
+@@ -267,6 +279,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ static struct clk_lookup lookups[] = {
+ 
+ 	/* main clocks */
++	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
++	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
++	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
++	CLKDEV_CON_ID("audio_clk_internal",	&m2_clk),
+ 	CLKDEV_CON_ID("extal",		&extal_clk),
+ 	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
+ 	CLKDEV_CON_ID("main",		&main_clk),
+@@ -357,6 +373,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("du.0", "rcar-du-r8a7790", &mstp_clks[MSTP724]),
+ 	CLKDEV_ICK_ID("du.1", "rcar-du-r8a7790", &mstp_clks[MSTP723]),
+ 	CLKDEV_ICK_ID("du.2", "rcar-du-r8a7790", &mstp_clks[MSTP722]),
++	CLKDEV_ICK_ID("clk_a", "rcar_sound", &audio_clk_a),
++	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
++	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
++	CLKDEV_ICK_ID("clk_i", "rcar_sound", &m2_clk),
+ 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP1015]),
+ 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP1014]),
+ 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP1013]),
+-- 
+1.8.5.2
 
-Cheers,
-
-/ magnus
