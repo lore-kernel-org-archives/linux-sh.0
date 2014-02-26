@@ -1,114 +1,130 @@
-From: Bobby Bingham <koorogi@koorogi.info>
-Date: Wed, 19 Feb 2014 06:03:16 +0000
-Subject: [PATCH v2 3/3] sh: don't pass saved userspace state to exception handlers
-Message-Id: <8e2edd2e2709408c8e1b27a1b8a221c011125beb.1392789383.git.koorogi@koorogi.info>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:57:35 +0000
+Subject: [PATCH 8/9] ARM: shmobile: Add r8a7791 legacy SDHI clocks
+Message-Id: <4bfb358b1d6cdeff8c6a13677f01ed78e9696b98.1393401266.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392789383.git.koorogi@koorogi.info>
-In-Reply-To: <cover.1392789383.git.koorogi@koorogi.info>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, linux-sh@vger.kernel.org
-Cc: Bobby Bingham <koorogi@koorogi.info>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The compiler is permitted to generate code which overwrites the parameters
-to a function. If those parameters include the only saved copy we have of
-userspace's registers, we're in trouble.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Bobby Bingham <koorogi@koorogi.info>
+Add legacy r8a7791 SDHI clocks. This to allow the SDHI devices
+to be used by legacy Koelsch board support.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/include/asm/traps_32.h | 16 ++++------------
- arch/sh/kernel/traps_32.c      | 23 +++++++----------------
- 2 files changed, 11 insertions(+), 28 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 51 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 49 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/include/asm/traps_32.h b/arch/sh/include/asm/traps_32.h
-index cfd55ff..17e129f 100644
---- a/arch/sh/include/asm/traps_32.h
-+++ b/arch/sh/include/asm/traps_32.h
-@@ -42,18 +42,10 @@ static inline void trigger_address_error(void)
- asmlinkage void do_address_error(struct pt_regs *regs,
- 				 unsigned long writeaccess,
- 				 unsigned long address);
--asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
--				   unsigned long r6, unsigned long r7,
--				   struct pt_regs __regs);
-+asmlinkage void do_divide_error(unsigned long r4);
-+asmlinkage void do_reserved_inst(void);
-+asmlinkage void do_illegal_slot_inst(void);
-+asmlinkage void do_exception_error(void);
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index c8227b3..3e1b6b6 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -61,6 +61,7 @@
  
- #define BUILD_TRAP_HANDLER(name)					\
- asmlinkage void name##_trap_handler(unsigned long r4, unsigned long r5,	\
-diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
-index 68e99f0..ff63934 100644
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -594,9 +594,7 @@ int is_dsp_inst(struct pt_regs *regs)
- #endif /* CONFIG_SH_DSP */
+ #define MSTPSR1		IOMEM(0xe6150038)
+ #define MSTPSR2		IOMEM(0xe6150040)
++#define MSTPSR3		IOMEM(0xe6150048)
+ #define MSTPSR5		IOMEM(0xe615003c)
+ #define MSTPSR7		IOMEM(0xe61501c4)
+ #define MSTPSR8		IOMEM(0xe61509a0)
+@@ -69,8 +70,8 @@
  
- #ifdef CONFIG_CPU_SH2A
--asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs)
-+asmlinkage void do_divide_error(unsigned long r4)
- {
- 	siginfo_t info;
+ #define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+-#define SD2CKCR		0xE6150078
+-#define SD3CKCR		0xE615007C
++#define SD1CKCR		0xE6150078
++#define SD2CKCR		0xE615026c
+ #define MMC0CKCR	0xE6150240
+ #define MMC1CKCR	0xE6150244
+ #define SSPCKCR		0xE6150248
+@@ -134,6 +135,39 @@ static struct clk *main_clks[] = {
+ 	&zs_clk,
+ };
  
-@@ -613,11 +611,9 @@ asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
- }
- #endif
++/* SDHI (DIV4) clock */
++static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18, 24, 0, 36, 48, 10 };
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++};
++
++enum {
++	DIV4_SDH, DIV4_SD0,
++	DIV4_NR
++};
++
++static struct clk div4_clks[DIV4_NR] = {
++	[DIV4_SDH] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 8, 0x0dff, CLK_ENABLE_ON_INIT),
++	[DIV4_SD0] = SH_CLK_DIV4(&pll1_clk, SDCKCR, 4, 0x1de0, CLK_ENABLE_ON_INIT),
++};
++
++/* DIV6 clocks */
++enum {
++	DIV6_SD1, DIV6_SD2,
++	DIV6_NR
++};
++
++static struct clk div6_clks[DIV6_NR] = {
++	[DIV6_SD1]	= SH_CLK_DIV6(&pll1_div2_clk, SD1CKCR, 0),
++	[DIV6_SD2]	= SH_CLK_DIV6(&pll1_div2_clk, SD2CKCR, 0),
++};
++
+ /* MSTP */
+ enum {
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+@@ -144,6 +178,7 @@ enum {
+ 	MSTP726, MSTP724, MSTP723, MSTP721, MSTP720,
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP522,
++	MSTP314, MSTP312, MSTP311,
+ 	MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
+ 	MSTP124,
+@@ -174,6 +209,9 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP715] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 15, MSTPSR7, 0), /* SCIF4 */
+ 	[MSTP714] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR7, 14, MSTPSR7, 0), /* SCIF5 */
+ 	[MSTP522] = SH_CLK_MSTP32_STS(&extal_clk, SMSTPCR5, 22, MSTPSR5, 0), /* Thermal */
++	[MSTP314] = SH_CLK_MSTP32_STS(&div4_clks[DIV4_SD0], SMSTPCR3, 14, MSTPSR3, 0), /* SDHI0 */
++	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
++	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
+@@ -224,6 +262,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+@@ -286,6 +327,12 @@ void __init r8a7791_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
  
--asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs)
-+asmlinkage void do_reserved_inst(void)
- {
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
-+	struct pt_regs *regs = current_pt_regs();
- 	unsigned long error_code;
- 	struct task_struct *tsk = current;
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
++		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
  
-@@ -701,11 +697,9 @@ static int emulate_branch(unsigned short inst, struct pt_regs *regs)
- }
- #endif
- 
--asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs)
-+asmlinkage void do_illegal_slot_inst(void)
- {
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
-+	struct pt_regs *regs = current_pt_regs();
- 	unsigned long inst;
- 	struct task_struct *tsk = current;
- 
-@@ -730,15 +724,12 @@ asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
- 	die_if_no_fixup("illegal slot instruction", regs, inst);
- }
- 
--asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
--				   unsigned long r6, unsigned long r7,
--				   struct pt_regs __regs)
-+asmlinkage void do_exception_error(void)
- {
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);
- 	long ex;
- 
- 	ex = lookup_exception_vector();
--	die_if_kernel("exception", regs, ex);
-+	die_if_kernel("exception", current_pt_regs(), ex);
- }
- 
- void per_cpu_trap_init(void)
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
-1.8.5.5
+1.8.5.2
 
