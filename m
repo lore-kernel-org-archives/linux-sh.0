@@ -1,37 +1,36 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Feb 2014 17:35:49 +0000
-Subject: Re: Build regressions/improvements in v3.14-rc2
-Message-Id: <CAMuHMdWVx3CCgUo0eWNwmghBvwhmmJYjyC0a1XVebO+kfg3DMQ@mail.gmail.com>
+Date: Wed, 26 Feb 2014 09:54:17 +0000
+Subject: Re: Build regressions/improvements in v3.14-rc4
+Message-Id: <CAMuHMdVXF2LgyCnf8eGoVQ5LpWe4r06tA+fvjmakvrBqX9hzwg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392140035-31263-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392140035-31263-1-git-send-email-geert@linux-m68k.org>
+References: <1393408336-1367-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393408336-1367-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, sparclinux <sparclinux@vger.kernel.org>
+Cc: "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Feb 11, 2014 at 6:33 PM, Geert Uytterhoeven
+On Wed, Feb 26, 2014 at 10:52 AM, Geert Uytterhoeven
 <geert@linux-m68k.org> wrote:
-> JFYI, when comparing v3.14-rc2[1]  to v3.14-rc1[3], the summaries are:
->   - build errors: +3/-2
+> JFYI, when comparing v3.14-rc4[1]  to v3.14-rc3[3], the summaries are:
+>   - build errors: +3/-15
 
-  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
-implicit declaration of function 'dma_alloc_writecombine'
-[-Werror=implicit-function-declaration]:  => 91:2
-  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
-implicit declaration of function 'dma_free_writecombine'
-[-Werror=implicit-function-declaration]:  => 176:3
+  + /scratch/kisskb/src/arch/sh/mm/cache-sh4.c: error:
+'cached_to_uncached' undeclared (first use in this function):  =>
+99:17
+  + /scratch/kisskb/src/arch/sh/mm/cache-sh4.c: error: implicit
+declaration of function 'cpu_context'
+[-Werror=implicit-function-declaration]:  => 192:2
 
-sh4/sh-randconfig
+sh-randconfig
 
-  + error: jump_label.c: undefined reference to
-`arch_jump_label_transform':  => .text+0x85dbc)
+  + error: No rule to make target include/config/auto.conf:  => N/A
 
-sparc64/sparc-allmodconfig
+powerpc-randconfig
 
-> [1] http://kisskb.ellerman.id.au/kisskb/head/7167/ (119 out of 119 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/7145/ (119 out of 119 configs)
+> [1] http://kisskb.ellerman.id.au/kisskb/head/7212/ (all 119 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/7190/ (all 119 configs)
 
 Gr{oetje,eeting}s,
 
