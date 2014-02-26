@@ -1,91 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:33:31 +0000
-Subject: [PATCH v3 15/20] ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and TMU
-Message-Id: <1393400016-23433-16-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 26 Feb 2014 08:29:52 +0000
+Subject: Re: [PATCH v3 15/20] ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and TMU
+Message-Id: <CAMuHMdU1OJ8mMfe0-EJJizVXX0V=3YkELcTjfce8bk6qn9jhzA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+ <1393400016-23433-16-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-16-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that the common clock framework is supported, the clock lookup
-entries in clock-r8a7779.c are not registered anymore. Devices must
-instead reference their clocks in the device tree. However, SCIF and CMT
-devices are still instantiated through platform code, and thus need a
-clock lookup entry.
+On Wed, Feb 26, 2014 at 8:33 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Now that the common clock framework is supported, the clock lookup
+> entries in clock-r8a7779.c are not registered anymore. Devices must
+> instead reference their clocks in the device tree. However, SCIF and CMT
+> devices are still instantiated through platform code, and thus need a
+> clock lookup entry.
+>
+> Retrieve the SCIF and CMT clock entries by name and register clkdevs for
+> the corresponding devices. This will be removed when the SCIF and CMT
+> devices will be instantiated from the device tree.
+>
+> Based on work for the Koelsch board by Laurent Pinchart.
 
-Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-the corresponding devices. This will be removed when the SCIF and CMT
-devices will be instantiated from the device tree.
+Would be nice to do this on top of Magnu's shmobile_clk_workaround().
 
-Based on work for the Koelsch board by Laurent Pinchart.
+Gr{oetje,eeting}s,
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+                        Geert
 
----
-v3
-* Initialise TMU clocks instead of CMT clocks
-  - It is TMU that Marzen uses as a clocksource
-* Refactor clock initialisation hack as per more recent mainline
-  code for Koelsch
-* Use IS_ERR to check the return value of clk_get()
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 31 ++++++++++++++++++++++++-
- 1 file changed, 30 insertions(+), 1 deletion(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index e261431..a5974d2 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,7 +19,9 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk.h>
- #include <linux/clk/shmobile.h>
-+#include <linux/clkdev.h>
- #include <linux/clocksource.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
-@@ -38,7 +40,34 @@ static void __init marzen_init_timer(void)
- 
- static void __init marzen_init(void)
- {
--#ifndef CONFIG_COMMON_CLK
-+#ifdef CONFIG_COMMON_CLK
-+	static const struct clk_name {
-+		const char *clk;
-+		const char *con_id;
-+		const char *dev_id;
-+	} clk_names[] = {
-+		{ "scif0", NULL, "sh-sci.0" },
-+		{ "scif1", NULL, "sh-sci.1" },
-+		{ "scif2", NULL, "sh-sci.2" },
-+		{ "scif3", NULL, "sh-sci.3" },
-+		{ "scif4", NULL, "sh-sci.4" },
-+		{ "scif5", NULL, "sh-sci.5" },
-+		{ "tmu00", NULL, "sh_tmu.0" },
-+		{ "tmu01", NULL, "sh_tmu.1" },
-+		{ "tmu02", NULL, "sh_tmu.2" },
-+	};
-+	struct clk *clk;
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
-+		clk = clk_get(NULL, clk_names[i].clk);
-+		if (!IS_ERR(clk)) {
-+			clk_register_clkdev(clk, clk_names[i].con_id,
-+					    clk_names[i].dev_id);
-+			clk_put(clk);
-+		}
-+	}
-+#else
- 	r8a7779_clock_init();
- #endif
- 	r8a7779_add_standard_devices_dt();
--- 
-1.8.5.2
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
