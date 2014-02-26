@@ -1,59 +1,42 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 28 Feb 2014 19:55:53 +0000
-Subject: Re: [PATCH 01/03] ARM: shmobile: Introduce shmobile_clk_workaround()
-Message-Id: <20140228195553.GA2517@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Q68bSM7Ycu6FN28Q"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:23 +0000
+Subject: [PATCH v3 07/20] ARM: shmobile: marzen: Reference clocks
+Message-Id: <1393400016-23433-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224072921.3522.55023.sendpatchset@w520>
- <20140224072930.3522.54629.sendpatchset@w520>
-In-Reply-To: <20140224072930.3522.54629.sendpatchset@w520>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Reference clocks using a "clocks" property in all nodes corresponding to
+devices that require a clock: that is, the lan0 node.
 
---Q68bSM7Ycu6FN28Q
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoCs.
 
-On Mon, Feb 24, 2014 at 04:29:30PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
->=20
-> Introduce a new clock workaround function used by DT reference
-> code on the mach-shmobile subarchitecture. The new function
-> shmobile_clk_workaround() is used to configure clkdev to
-> allow DT and platform devices to coexist. It is possible for
-> the DT reference board code to also request enabling of the clock
-> in case the driver does not implement clock control.
->=20
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+v3
+* New
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-I use it for r7s72100, too, meanwhile.
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 2c727cd..30f57e9 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -41,6 +41,7 @@
+ 		reg = <0x18000000 0x100>;
+ 		pinctrl-0 = <&lan0_pins>;
+ 		pinctrl-names = "default";
++		clocks = <&mstp1_clks R8A7779_CLK_ETHER>;
+ 
+ 		phy-mode = "mii";
+ 		interrupt-parent = <&irqpin0>;
+-- 
+1.8.5.2
 
-
---Q68bSM7Ycu6FN28Q
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTEOnIAAoJEBQN5MwUoCm2N5gP/1iPtARxOUg0+DA01Z+kA1NK
-mVibjfj/RMqcZ28nU4la27EvM//EJrb0ZYVHg/WbQitfFjwJlFBL8iYoDT5lJqCr
-oc6l88kJ6JsShL05XtlwHvcpR/4KNv4ZRjdpOuR1v/aDNVDUQtiz4+fOSHnPCLMg
-/UDyX0Xqq5GC5DJSyP44hgBekNTzNFSy/6UbxMt0dRfpYKEC38r/PGX8OyBpk7ti
-CDWrSP6s7JZjw/WUE9LmYBJKburOEljEjZsmfXzqCII+8sTtSbi8OKRLGiPAELF7
-xgoyeurnPR4w4diNdt+dMLdrzvxY3tJY+ot/3SADL+JvbZJPn14jDx8+Yg/CVRay
-MDi/dLqMekHb3BZVBFp86eMQOtDj17P1wM2czDqzvvPPlx6CevjPLCAwctUNyYGs
-86KKoxCckGV6yq+iQBDY76r6+2fsNpjH9qZeefgoXYCV8aj02pENu45VCiPrMpTT
-hmYOB4qVmr48nGnWSq2s1dpEb3yXjlAq3wamyscjgXaDDeG1LcFTfiWigbjM63I0
-Aii05E6xNlZ9VBunl6p8K05uUAvtzqfw1zyDSX1Escz7o/5/3Dc2eHK+I6rlCPOJ
-rKJtjNQxwmdCm7x/Dsagd+qDK0ji4O1B4SeBIZnylPiWeTPo6JI3JtfRuXHYg8go
-1bjQB8ogm7OIrbYE61qh
-=qzim
------END PGP SIGNATURE-----
-
---Q68bSM7Ycu6FN28Q--
