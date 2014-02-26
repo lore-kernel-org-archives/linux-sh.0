@@ -1,46 +1,142 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 22 Feb 2014 03:11:59 +0000
-Subject: Re: [PATCH 04/10] spi: sh-msiof: Add more register documentation
-Message-Id: <20140222031159.GT25940@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ZXzThk3vFZecBD04"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 26 Feb 2014 07:33:21 +0000
+Subject: [PATCH v3 05/20] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+Message-Id: <1393400016-23433-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
- <1392907389-21798-5-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-5-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Copy the device nodes from Marzen reference into the Marzen device tree
+file. This will allow us to use a single DTS file regardless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+will be used.
 
---ZXzThk3vFZecBD04
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Based on a similar change for the Lager board by Laurent Pinchart.
 
-On Thu, Feb 20, 2014 at 03:43:03PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Applied, thanks.
+---
+v3
+* Updated for recent changes to Marzen reference DTS
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 93 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
---ZXzThk3vFZecBD04
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index a7af2c2..eda6240 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -11,6 +11,8 @@
+ 
+ /dts-v1/;
+ #include "r8a7779.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "marzen";
+@@ -24,4 +26,95 @@
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x40000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	lan0@18000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18000000 0x100>;
++		pinctrl-0 = <&lan0_pins>;
++		pinctrl-names = "default";
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&irqpin0 {
++	status = "okay";
++};
++
++&pfc {
++	pinctrl-0 = <&scif2_pins &scif4_pins>;
++	pinctrl-names = "default";
++
++	lan0_pins: lan0 {
++		intc {
++			renesas,groups = "intc_irq1_b";
++			renesas,function = "intc";
++		};
++		lbsc {
++			renesas,groups = "lbsc_ex_cs0";
++			renesas,function = "lbsc";
++		};
++	};
++
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data_c";
++		renesas,function = "scif2";
++	};
++
++	scif4_pins: serial4 {
++		renesas,groups = "scif4_data";
++		renesas,function = "scif4";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
+ };
+-- 
+1.8.5.2
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTCBV8AAoJELSic+t+oim9A0kP/RA3eyKR+YGWBEEBIkE5SO64
-Yyb2VQGJCOI2lIHLSzRpsVDbjordf8/Ii8ENgAthQJgJHX34uExBshSK+HJAuFbX
-H/6eZurS7kTnG+fU0HHnNs5bHVbQq7zAXb1LL76I5KajQ5kRh1wLWFNARhB/f2OX
-HCxNSSUeMXwzD9cSbr/aCz4Fb2pbvdRMxT/uvSxQjj4P1AC4qLd11bHcwBiTrl5T
-7N/o62lpcV5Em09f621NmptpYt3xkIkM7lG7LHvTrQtMekPQqv7ayIvmRgx4+13r
-fm+PKPK20gXpRBPNma3CNAHVb1+yk+wieI8jRVODJlgLOalP7lUQLkNLFD11Nbuy
-FLmAIvsz6/4sU3NDPsyChThQdWiTw3+p96Z0z/AKGaviQiDHq1AOYdBFA6/8fxh4
-P8E1dksoIi8psN07nbFC5GZTfSCDSofd82aHSPrRkMwaHeWAMPEv+QG1paxQcmy3
-1BWh7ZXtscqWYxFqFDe2IF6j13MwjYhktdA4wHjjU3MDjwOn9Q+GOhAnTDalHId5
-GWoKhfBMvlykn0fimL4u+dSSCtwcNm9WqhYhMvkI9patXz3fHhMShr8FSb6Dn1n1
-O+0V5G7IeaQkmxcF8SQuXB3GPBe0RKEHk7Bc9X8sG4wTy+Y6H+f6ukiLTxgYAwbe
-5+ulvSq9PAc4EP55CW9R
-=xj//
------END PGP SIGNATURE-----
-
---ZXzThk3vFZecBD04--
