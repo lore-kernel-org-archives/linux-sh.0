@@ -1,86 +1,103 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Thu, 27 Feb 2014 15:56:58 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 27 Feb 2014 16:06:04 +0000
 Subject: Re: [PATCH] phy-rcar-gen2-usb: add device tree support
-Message-Id: <20140227155657.GD8647@e106331-lin.cambridge.arm.com>
+Message-Id: <530F626C.5020900@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201402270312.51588.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402270312.51588.sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <201402270312.51588.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: "balbi-l0cyMroinI0@public.gmane.org" <balbi-l0cyMroinI0@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <Pawel.Moll-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org" <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org" <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "valentine.barshak-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org" <valentine.barshak-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, "rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org" <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>, "linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: balbi@ti.com, linux-usb@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, grant.likely@linaro.org, devicetree@vger.kernel.org, gregkh@linuxfoundation.org, linux-sh@vger.kernel.org, valentine.barshak@cogentembedded.com, rob@landley.net, linux-doc@vger.kernel.org
 
-On Thu, Feb 27, 2014 at 12:12:50AM +0000, Sergei Shtylyov wrote:
+On 27/02/14 00:12, Sergei Shtylyov wrote:
 > Add support of the device tree probing for the Renesas R-Car generation 2 SoCs
 > documenting the device tree binding as necessary.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> This patch is against the 'next' branch of Felipe Balbi's 'usb.git' repo.
-> 
->  Documentation/devicetree/bindings/usb/rcar-gen2-phy.txt |   29 +++++++
->  drivers/usb/phy/phy-rcar-gen2-usb.c                     |   64 ++++++++++++++--
->  2 files changed, 85 insertions(+), 8 deletions(-)
-> 
-> Index: usb/Documentation/devicetree/bindings/usb/rcar-gen2-phy.txt
-> =================================> --- /dev/null
-> +++ usb/Documentation/devicetree/bindings/usb/rcar-gen2-phy.txt
-> @@ -0,0 +1,29 @@
-> +* Renesas R-Car generation 2 USB PHY
-> +
-> +This file provides information on what the device node for the R-Car generation
-> +2 USB PHY contains.
-> +
-> +Required properties:
-> +- compatible: "renesas,usb-phy-r8a7790" if the device is a part of R8A7790 SoC.
-> +	      "renesas,usb-phy-r8a7791" if the device is a part of R8A7791 SoC.
 
-Is the r8a7791's USB PHY known to be different to that of the r8a7790?
+You've popped in some fixes for the driver probe in here as well.
 
-If this is just to possibly handle the two differently in future, why
-not have "renesas,usb-phy-r8a7790" as a fallback in the compatible list?
-That was you only need it in the driver for now.
-
-> +- reg: offset and length of the register block.
-> +- clocks: clock phandle and specifier pair.
-> +- clock-names: string, clock input name, must be "usbhs".
-> +
-> +Optional properties:
-> +- renesas,channel0-pci: boolean, specify when USB channel 0 should be connected
-> +			to PCI EHCI/OHCI; otherwise, it will be connected to the
-> +			USBHS controller.
-> +- renesas,channel2-pci: boolean, specify when USB channel 2 should be connected
-> +			to PCI EHCI/OHCI; otherwise, it will be connected to the
-> +			USBSS controller (xHCI).
-
-When would you want this to connect to PCI, and when would you not? Why
-is this not a run-time decision?
+Could you do the fixes as a patch and send those before the devicetree
+code is done?
 
 > +
-> +Example (Lager board):
-> +
-> +	usb-phy@e6590100 {
-> +		compatible = "renesas,usb-phy-r8a7790";
-> +		reg = <0 0xe6590100 0 0x100>;
-> +		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-> +		clock-names = "usbhs";
-> +		renesas,channel2-pci;
-> +	};
-
-We're not using the generic phy bindings? How is the linkage to the host
-controller expressed?
-
-[...]
-
+>   static int rcar_gen2_usb_phy_probe(struct platform_device *pdev)
+>   {
+>   	struct device *dev = &pdev->dev;
+> +	struct device_node *np = dev->of_node;
+>   	struct rcar_gen2_phy_platform_data *pdata;
+>   	struct rcar_gen2_usb_phy_priv *priv;
+>   	struct resource *res;
+> @@ -177,13 +210,19 @@ static int rcar_gen2_usb_phy_probe(struc
+>   	struct clk *clk;
+>   	int retval;
+>
+> -	pdata = dev_get_platdata(dev);
+> +	if (np)
+> +		pdata = rcar_gen2_usb_phy_parse_dt(dev);
+> +	else
+> +		pdata = dev_get_platdata(dev);
+>   	if (!pdata) {
+>   		dev_err(dev, "No platform data\n");
+>   		return -EINVAL;
+>   	}
+>
 > -	clk = devm_clk_get(dev, "usbhs");
 > +	if (np)
 > +		clk = of_clk_get_by_name(np, "usbhs");
 > +	else
 > +		clk = clk_get(dev, "usbhs");
 
-Doesn't clk_get (and hence devm_clk_get) call of_clk_get_by_name?
+Can be removed, just add a clock-name of usbhs in the device node.
 
-Cheers,
-Mark.
+>   	if (IS_ERR(clk)) {
+>   		dev_err(dev, "Can't get the clock\n");
+>   		return PTR_ERR(clk);
+> @@ -191,13 +230,16 @@ static int rcar_gen2_usb_phy_probe(struc
+>
+>   	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+>   	base = devm_ioremap_resource(dev, res);
+> -	if (IS_ERR(base))
+> -		return PTR_ERR(base);
+> +	if (IS_ERR(base)) {
+> +		retval = PTR_ERR(base);
+> +		goto error;
+> +	}
+>
+>   	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+>   	if (!priv) {
+>   		dev_err(dev, "Memory allocation failed\n");
+> -		return -ENOMEM;
+> +		retval = -ENOMEM;
+> +		goto error;
+>   	}
+
+Probably should be separate patch to fix probe issues.
+
+
+>
+>   	spin_lock_init(&priv->lock);
+> @@ -216,12 +258,16 @@ static int rcar_gen2_usb_phy_probe(struc
+>   	retval = usb_add_phy_dev(&priv->phy);
+>   	if (retval < 0) {
+>   		dev_err(dev, "Failed to add USB phy\n");
+> -		return retval;
+> +		goto error;
+>   	}
+>
+>   	platform_set_drvdata(pdev, priv);
+>
+>   	return retval;
+> +
+> +error:
+> +	clk_put(clk);
+> +	return retval;
+>   }
+
+Again, should have been rolled into fix patch.
+
+
+
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
