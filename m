@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 26 Feb 2014 22:36:48 +0000
+Date: Thu, 27 Feb 2014 08:39:54 +0000
 Subject: Re: [PATCH v2 3/6] spi: sh-msiof: Add support for R-Car H2 and M2
-Message-Id: <CAMuHMdUavuHNnwHY4Xd1CGdB71wV=rGn5uzeA3MTEoAn9-g0VA@mail.gmail.com>
+Message-Id: <CAMuHMdU_ej9cE=qmRL2WqvEW+fNA_5bj7OC2=7B7ZR33FaFUTA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393323673-2751-1-git-send-email-geert@linux-m68k.org>
 	<1393323673-2751-4-git-send-email-geert@linux-m68k.org>
@@ -12,8 +12,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: Mark Brown <broonie@kernel.org>, Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
-
-Hi Laurent,
 
 On Wed, Feb 26, 2014 at 11:16 PM, Laurent Pinchart
 <laurent.pinchart@ideasonboard.com> wrote:
@@ -40,11 +38,26 @@ On Wed, Feb 26, 2014 at 11:16 PM, Laurent Pinchart
 > have developed DT support for SuperH on the side and shipped products that
 > would be broken by this change :-)
 
-Right. Originally I had 'or "renesas,sh-msiof" as fallback', but the fallbacks
-have been dropped, so it indeed won't work with just "renesas,msiof-sh7724".
-I'll fix that.
+Upon reading your comment again: do you suggest to also remove the plain
+"renesas,sh-msiof"? That one was present before, since DT support was added
+to the driver in
 
-Thanks for your review!
+commit cf9c86efecf9510e62388fd174cf607671c59fa3
+Author: Bastian Hecht <hechtb@gmail.com>
+Date:   Wed Dec 12 12:54:48 2012 +0100
+
+    spi/sh-msiof: Add device tree parsing to driver
+
+    This adds the capability to retrieve setup data from the device tree
+    node. The usage of platform data is still available.
+
+    Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+    Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
+
+So I prefer not to remove any pre-existing compatible values.
+Do you agree?
+
+Thanks!
 
 Gr{oetje,eeting}s,
 
