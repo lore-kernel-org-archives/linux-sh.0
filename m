@@ -1,186 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Feb 2014 14:43:09 +0000
-Subject: [PATCH 10/10] spi: sh-msiof: Use core message handling instead of spi-bitbang
-Message-Id: <1392907389-21798-11-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:46 +0000
+Subject: [PATCH v2 16/40] clocksource: sh_cmt: Hardcode CMT clock source rating to 125
+Message-Id: <1393603090-23144-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392907389-21798-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Takashi Yoshii <takasi-y@ops.dti.ne.jp>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+All boards use or should use a clock source rating of 125 for the CMT,
+hardcode it in the driver.
 
-The only remaining feature of spi-bitbang used by this driver is the
-chipselect() callback, which just does conditional GPIO.
-This is handled fine by the SPI core's spi_set_cs(), hence switch the
-driver to use the core message handling through our own transfer_one()
-method.
-
-Remove the call to spi_master_put() in sh_msiof_spi_remove(), as our SPI
-master is now registered using devm_spi_register_master()
-(spi_bitbang_start() uses the non-managed version).
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/spi/Kconfig        |    1 -
- drivers/spi/spi-sh-msiof.c |   65 ++++++++++++--------------------------------
- 2 files changed, 17 insertions(+), 49 deletions(-)
+ drivers/clocksource/sh_cmt.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 339da4b15ec2..35d5c029393a 100644
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
-@@ -416,7 +416,6 @@ config SPI_SH_MSIOF
- 	tristate "SuperH MSIOF SPI controller"
- 	depends on HAVE_CLK
- 	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
--	select SPI_BITBANG
- 	help
- 	  SPI driver for SuperH and SH Mobile MSIOF blocks.
- 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index bd300fcb7116..642b0b637df1 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -26,7 +26,6 @@
- 
- #include <linux/spi/sh_msiof.h>
- #include <linux/spi/spi.h>
--#include <linux/spi/spi_bitbang.h>
- 
- #include <asm/unaligned.h>
- 
-@@ -36,7 +35,6 @@ struct sh_msiof_chipdata {
- };
- 
- struct sh_msiof_spi_priv {
--	struct spi_bitbang bitbang; /* must be first for spi_bitbang.c */
- 	void __iomem *mapbase;
- 	struct clk *clk;
- 	struct platform_device *pdev;
-@@ -452,8 +450,7 @@ static int sh_msiof_spi_setup(struct spi_device *spi)
- 		 */
- 		spi->cs_gpio = (uintptr_t)spi->controller_data;
- 	}
--
--	return spi_bitbang_setup(spi);
-+	return 0;
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 75b1f83..c753efc 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -656,12 +656,12 @@ static void sh_cmt_clocksource_resume(struct clocksource *cs)
  }
  
- static int sh_msiof_prepare_message(struct spi_master *master,
-@@ -488,20 +485,6 @@ static int sh_msiof_unprepare_message(struct spi_master *master,
+ static int sh_cmt_register_clocksource(struct sh_cmt_channel *ch,
+-				       const char *name, unsigned long rating)
++				       const char *name)
+ {
+ 	struct clocksource *cs = &ch->cs;
+ 
+ 	cs->name = name;
+-	cs->rating = rating;
++	cs->rating = 125;
+ 	cs->read = sh_cmt_clocksource_read;
+ 	cs->enable = sh_cmt_clocksource_enable;
+ 	cs->disable = sh_cmt_clocksource_disable;
+@@ -788,13 +788,13 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ }
+ 
+ static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
+-			   bool clockevent, unsigned long clocksource_rating)
++			   bool clockevent, bool clocksource)
+ {
+ 	if (clockevent)
+ 		sh_cmt_register_clockevent(ch, name);
+ 
+-	if (clocksource_rating)
+-		sh_cmt_register_clocksource(ch, name, clocksource_rating);
++	if (clocksource)
++		sh_cmt_register_clocksource(ch, name);
+ 
  	return 0;
  }
+@@ -827,7 +827,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
  
--static void sh_msiof_spi_chipselect(struct spi_device *spi, int is_on)
--{
--	int value;
--
--	/* chip select is active low unless SPI_CS_HIGH is set */
--	if (spi->mode & SPI_CS_HIGH)
--		value = (is_on = BITBANG_CS_ACTIVE) ? 1 : 0;
--	else
--		value = (is_on = BITBANG_CS_ACTIVE) ? 0 : 1;
--
--	if (spi->cs_gpio >= 0)
--		gpio_set_value(spi->cs_gpio, value);
--}
--
- static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 				  void (*tx_fifo)(struct sh_msiof_spi_priv *,
- 						  const void *, int, int),
-@@ -571,9 +554,11 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
- 	return ret;
- }
- 
--static int sh_msiof_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
-+static int sh_msiof_transfer_one(struct spi_master *master,
-+				 struct spi_device *spi,
-+				 struct spi_transfer *t)
- {
--	struct sh_msiof_spi_priv *p = spi_master_get_devdata(spi->master);
-+	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
- 	void (*tx_fifo)(struct sh_msiof_spi_priv *, const void *, int, int);
- 	void (*rx_fifo)(struct sh_msiof_spi_priv *, void *, int, int);
- 	int bits;
-@@ -654,13 +639,6 @@ static int sh_msiof_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
- 		words -= n;
- 	}
- 
--	return bytes_done;
--}
--
--static u32 sh_msiof_spi_txrx_word(struct spi_device *spi, unsigned nsecs,
--				  u32 word, u8 bits)
--{
--	BUG(); /* unused but needed by bitbang code */
- 	return 0;
- }
- 
-@@ -795,7 +773,7 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	if (p->info->rx_fifo_override)
- 		p->rx_fifo_size = p->info->rx_fifo_override;
- 
--	/* init master and bitbang code */
-+	/* init master code */
- 	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
- 	master->mode_bits |= SPI_LSB_FIRST | SPI_3WIRE;
- 	master->flags = p->chipdata->master_flags;
-@@ -803,24 +781,20 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- 	master->dev.of_node = pdev->dev.of_node;
- 	master->num_chipselect = p->info->num_chipselect;
- 	master->setup = sh_msiof_spi_setup;
--	master->cleanup = spi_bitbang_cleanup;
- 	master->prepare_message = sh_msiof_prepare_message;
- 	master->unprepare_message = sh_msiof_unprepare_message;
- 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 32);
-+	master->transfer_one = sh_msiof_transfer_one;
- 
--	p->bitbang.master = master;
--	p->bitbang.chipselect = sh_msiof_spi_chipselect;
--	p->bitbang.setup_transfer = spi_bitbang_setup_transfer;
--	p->bitbang.txrx_bufs = sh_msiof_spi_txrx;
--	p->bitbang.txrx_word[SPI_MODE_0] = sh_msiof_spi_txrx_word;
--	p->bitbang.txrx_word[SPI_MODE_1] = sh_msiof_spi_txrx_word;
--	p->bitbang.txrx_word[SPI_MODE_2] = sh_msiof_spi_txrx_word;
--	p->bitbang.txrx_word[SPI_MODE_3] = sh_msiof_spi_txrx_word;
-+	ret = devm_spi_register_master(&pdev->dev, master);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "spi_register_master error.\n");
-+		goto err2;
-+	}
- 
--	ret = spi_bitbang_start(&p->bitbang);
--	if (ret = 0)
--		return 0;
-+	return 0;
- 
-+ err2:
- 	pm_runtime_disable(&pdev->dev);
- 	clk_unprepare(p->clk);
-  err1:
-@@ -831,15 +805,10 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
- static int sh_msiof_spi_remove(struct platform_device *pdev)
- {
- 	struct sh_msiof_spi_priv *p = platform_get_drvdata(pdev);
--	int ret;
- 
--	ret = spi_bitbang_stop(&p->bitbang);
--	if (!ret) {
--		pm_runtime_disable(&pdev->dev);
--		clk_unprepare(p->clk);
--		spi_master_put(p->bitbang.master);
--	}
--	return ret;
-+	pm_runtime_disable(&pdev->dev);
-+	clk_unprepare(p->clk);
-+	return 0;
- }
- 
- static struct platform_device_id spi_driver_ids[] = {
+ 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
+ 			      cfg->clockevent_rating != 0,
+-			      cfg->clocksource_rating);
++			      cfg->clocksource_rating != 0);
+ 	if (ret) {
+ 		dev_err(&cmt->pdev->dev, "ch%u: registration failed\n",
+ 			ch->index);
 -- 
-1.7.9.5
+1.8.3.2
 
