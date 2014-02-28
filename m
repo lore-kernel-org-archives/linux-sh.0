@@ -1,122 +1,103 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 24 Feb 2014 05:42:51 +0000
-Subject: [PATCH 12/12] ARM: shmobile: Rework include path for common bits
-Message-Id: <20140224054251.1143.39128.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:58:06 +0000
+Subject: [PATCH v2 36/40] ARM: shmobile: r8a7740: Switch to new style CMT device
+Message-Id: <1393603090-23144-37-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
-In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Convert remaining shared mach-shmobile code use of include
-files from the style <mach/something.h> to "something.h".
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/clock-r8a7740.c |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c | 36 ++++++++++++----------------------
+ 2 files changed, 13 insertions(+), 25 deletions(-)
 
- arch/arm/mach-shmobile/clock.c           |    4 ++--
- arch/arm/mach-shmobile/console.c         |    2 +-
- arch/arm/mach-shmobile/platsmp-apmu.c    |    2 +-
- arch/arm/mach-shmobile/platsmp-scu.c     |    2 +-
- arch/arm/mach-shmobile/platsmp.c         |    2 +-
- arch/arm/mach-shmobile/pm-rcar.c         |    2 +-
- arch/arm/mach-shmobile/pm-rmobile.c      |    2 +-
- arch/arm/mach-shmobile/setup-rcar-gen2.c |    4 ++--
- 8 files changed, 10 insertions(+), 10 deletions(-)
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index dd989f9..cdb303c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -583,7 +583,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
+ 
+-	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+@@ -604,6 +603,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
+ 
+ 	/* ICK */
++	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+ 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
+ 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 8f3c681..495e9bd 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -237,35 +237,23 @@ R8A7740_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(107));
+ R8A7740_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(108));
+ 
+ /* CMT */
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++static struct sh_timer_config cmt1_platform_data = {
++	.channels_mask = 0x3f,
+ };
+ 
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(58),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6138000, 0x170),
++	DEFINE_RES_IRQ(gic_spi(58)),
+ };
+ 
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
++static struct platform_device cmt1_device = {
++	.name		= "sh-cmt-48",
++	.id		= 1,
+ 	.dev = {
+-		.platform_data	= &cmt10_platform_data,
++		.platform_data	= &cmt1_platform_data,
+ 	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
++	.resource	= cmt1_resources,
++	.num_resources	= ARRAY_SIZE(cmt1_resources),
+ };
+ 
+ /* TMU */
+@@ -400,7 +388,7 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
+-- 
+1.8.3.2
 
---- 0001/arch/arm/mach-shmobile/clock.c
-+++ work/arch/arm/mach-shmobile/clock.c	2014-02-24 13:59:37.000000000 +0900
-@@ -23,8 +23,8 @@
- #include <linux/init.h>
- #include <linux/sh_clk.h>
- #include <linux/export.h>
--#include <mach/clock.h>
--#include <mach/common.h>
-+#include "clock.h"
-+#include "common.h"
- 
- unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk)
- {
---- 0001/arch/arm/mach-shmobile/console.c
-+++ work/arch/arm/mach-shmobile/console.c	2014-02-24 13:59:57.000000000 +0900
-@@ -19,7 +19,7 @@
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/platform_device.h>
--#include <mach/common.h>
-+#include "common.h"
- #include <asm/mach/map.h>
- 
- void __init shmobile_setup_console(void)
---- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-02-24 14:00:18.000000000 +0900
-@@ -16,7 +16,7 @@
- #include <asm/cacheflush.h>
- #include <asm/cp15.h>
- #include <asm/smp_plat.h>
--#include <mach/common.h>
-+#include "common.h"
- 
- static struct {
- 	void __iomem *iomem;
---- 0001/arch/arm/mach-shmobile/platsmp-scu.c
-+++ work/arch/arm/mach-shmobile/platsmp-scu.c	2014-02-24 14:00:26.000000000 +0900
-@@ -15,7 +15,7 @@
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
--#include <mach/common.h>
-+#include "common.h"
- 
- static int shmobile_smp_scu_notifier_call(struct notifier_block *nfb,
- 					  unsigned long action, void *hcpu)
---- 0001/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2014-02-24 14:00:07.000000000 +0900
-@@ -13,7 +13,7 @@
- #include <linux/init.h>
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
--#include <mach/common.h>
-+#include "common.h"
- 
- extern unsigned long shmobile_smp_fn[];
- extern unsigned long shmobile_smp_arg[];
---- 0001/arch/arm/mach-shmobile/pm-rcar.c
-+++ work/arch/arm/mach-shmobile/pm-rcar.c	2014-02-24 14:00:42.000000000 +0900
-@@ -13,7 +13,7 @@
- #include <linux/mm.h>
- #include <linux/spinlock.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
-+#include "pm-rcar.h"
- 
- static void __iomem *rcar_sysc_base;
- 
---- 0001/arch/arm/mach-shmobile/pm-rmobile.c
-+++ work/arch/arm/mach-shmobile/pm-rmobile.c	2014-02-24 14:00:53.000000000 +0900
-@@ -17,7 +17,7 @@
- #include <linux/pm.h>
- #include <linux/pm_clock.h>
- #include <asm/io.h>
--#include <mach/pm-rmobile.h>
-+#include "pm-rmobile.h"
- 
- /* SYSC */
- #define SPDCR		IOMEM(0xe6180008)
---- 0001/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ work/arch/arm/mach-shmobile/setup-rcar-gen2.c	2014-02-24 14:01:09.000000000 +0900
-@@ -22,8 +22,8 @@
- #include <linux/clocksource.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
--#include <mach/common.h>
--#include <mach/rcar-gen2.h>
-+#include "common.h"
-+#include "rcar-gen2.h"
- #include <asm/mach/arch.h>
- 
- #define MODEMR 0xe6160060
