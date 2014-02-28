@@ -1,51 +1,76 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 26 Feb 2014 07:57:51 +0000
-Subject: [PATCH 5/7] ARM: shmobile: r8a7790 CA15-SCU enablement
-Message-Id: <c2c97ec513b503b9e0d28ffd98d54c9e9bf3ea3e.1393400446.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:24:59 +0000
+Subject: [PATCH 2/2] [TEST] ARM: shmobile: koelsch-reference: Instantiate IPMMU-MX
+Message-Id: <1393601099-4413-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393400446.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
+References: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-
-Power on CA15 SCU in case of booting from a CA7 core.
-
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-[damm@opensource.se: Converted to use broken out SYSC code]
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Not-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/smp-r8a7790.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 30 ++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index beb47ae..5910527 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -29,6 +29,11 @@
- #define CA7RESCNT	0x0044
- #define MERAM		0xe8080000
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a3fd302..d2f4ed8 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_data/ipmmu-vmsa.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -82,6 +83,34 @@ static void __init koelsch_add_du_device(void)
+ 	platform_device_register_full(&info);
+ }
  
-+static struct rcar_sysc_ch r8a7790_ca15_scu = {
-+	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
-+	.isr_bit = 12, /* CA15-SCU */
++/*
++ * IPMMUs
++ *
++ * MX: for JPU, 2DDMAC, VSP, DCU, FDP, IMR-LSX2, DU, VCP, VPC and VIN
++ */
++static struct resource ipmmu_mx_resources[] = {
++	DEFINE_RES_MEM(0xfe951800, 0x800),
++	DEFINE_RES_IRQ(gic_spi(222)),
 +};
 +
- static struct rcar_sysc_ch r8a7790_ca7_scu = {
- 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
- 	.isr_bit = 21, /* CA7-SCU */
-@@ -64,6 +69,7 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
++static const struct ipmmu_vmsa_master ipmmu_mx_masters[] = {
++	{ "rcar-du-r8a7791", 15, },
++};
++
++static struct ipmmu_vmsa_platform_data ipmmu_mx_platform_data = {
++	.masters = ipmmu_mx_masters,
++	.num_masters = ARRAY_SIZE(ipmmu_mx_masters),
++};
++
++static void __init koelsch_add_ipmmu_devices(void)
++{
++	platform_device_register_resndata(NULL, "ipmmu-vmsa", -1,
++					  ipmmu_mx_resources,
++					  ARRAY_SIZE(ipmmu_mx_resources),
++					  &ipmmu_mx_platform_data,
++					  sizeof(ipmmu_mx_platform_data));
++}
++
+ static void __init koelsch_add_standard_devices(void)
+ {
+ 	/*
+@@ -128,6 +157,7 @@ static void __init koelsch_add_standard_devices(void)
+ 	r8a7791_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
- 	/* turn on power to SCU */
- 	r8a7790_pm_init();
-+	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
++	koelsch_add_ipmmu_devices();
+ 	koelsch_add_du_device();
  }
  
 -- 
-1.8.5.2
+1.8.3.2
 
