@@ -1,34 +1,58 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 15 Feb 2014 00:26:51 +0000
-Subject: [PATCH 1/5] ARM: shmobile: Armadillo 800 EVA: set proper DMA masks for Ether device
-Message-Id: <201402150426.52493.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:40 +0000
+Subject: [PATCH v2 10/40] clocksource: sh_cmt: Replace kmalloc + memset with kzalloc
+Message-Id: <1393603090-23144-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402150424.30954.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Ether MAC is a DMA-capable device and so should have 'dev.dma_mask' and
-'dev.coherent_dma_mask' fields set properly, to reflect 32-bit DMA addressing
-ability.
+One kzalloc a day keeps the bugs away.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
- 1 file changed, 2 insertions(+)
+ drivers/clocksource/sh_cmt.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-Index: renesas/arch/arm/mach-shmobile/board-armadillo800eva.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ renesas/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -383,6 +383,8 @@ static struct platform_device sh_eth_dev
- 	.id = -1,
- 	.dev = {
- 		.platform_data = &sh_eth_platdata,
-+		.dma_mask = &sh_eth_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
- 	},
- 	.resource = sh_eth_resources,
- 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 6b65621..0779bf1 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -672,8 +672,6 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ {
+ 	struct clock_event_device *ced = &ch->ced;
+ 
+-	memset(ced, 0, sizeof(*ced));
+-
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
+@@ -709,7 +707,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
+ 	int irq;
+ 	int ret;
+ 
+-	memset(ch, 0, sizeof(*ch));
+ 	ch->cmt = cmt;
+ 	ch->base = cmt->mapbase_ch;
+ 	ch->index = index;
+@@ -758,7 +755,6 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	int ret;
+ 	ret = -ENXIO;
+ 
+-	memset(cmt, 0, sizeof(*cmt));
+ 	cmt->pdev = pdev;
+ 
+ 	if (!cfg) {
+@@ -861,7 +857,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 		goto out;
+ 	}
+ 
+-	cmt = kmalloc(sizeof(*cmt), GFP_KERNEL);
++	cmt = kzalloc(sizeof(*cmt), GFP_KERNEL);
+ 	if (cmt = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
+-- 
+1.8.3.2
+
