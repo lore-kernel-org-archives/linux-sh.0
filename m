@@ -1,87 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:31 +0000
-Subject: [PATCH v2 01/40] clocksource: sh_mtu2: Use request_irq() instead of setup_irq()
-Message-Id: <1393603090-23144-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Fri, 28 Feb 2014 17:28:42 +0000
+Subject: [PATCH 6/7] PCI: designware: use new OF interrupt mapping when possible
+Message-Id: <1393608523-17509-7-git-send-email-l.stach@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver claims it needs to register an interrupt handler too early
-for request_irq(). This might have been true in the past, but the only
-meaningful difference between request_irq() and setup_irq() today is an
-additional kzalloc() call in request_irq(). As the driver calls
-kmalloc() itself we know that the slab allocator is available, we can
-thus switch to request_irq().
+This is the recommended method of doing the IRQ
+mapping. For old devicetrees we fall back to the
+previous practice.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
 ---
- drivers/clocksource/sh_mtu2.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ drivers/pci/host/pcie-designware.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index e30d76e..77992e0 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -37,7 +37,7 @@
- struct sh_mtu2_priv {
- 	void __iomem *mapbase;
- 	struct clk *clk;
--	struct irqaction irqaction;
-+	int irq;
- 	struct platform_device *pdev;
- 	unsigned long rate;
- 	unsigned long periodic;
-@@ -244,10 +244,11 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_priv *p,
- 	dev_info(&p->pdev->dev, "used for clock events\n");
- 	clockevents_register_device(ced);
- 
--	ret = setup_irq(p->irqaction.irq, &p->irqaction);
-+	ret = request_irq(p->irq, sh_mtu2_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&p->pdev->dev), p);
- 	if (ret) {
--		dev_err(&p->pdev->dev, "failed to request irq %d\n",
--			p->irqaction.irq);
-+		dev_err(&p->pdev->dev, "failed to request irq %d\n", p->irq);
- 		return;
- 	}
- }
-@@ -265,7 +266,7 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
+diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
+index 17ce88f79d2b..3e0c2af11528 100644
+--- a/drivers/pci/host/pcie-designware.c
++++ b/drivers/pci/host/pcie-designware.c
+@@ -17,6 +17,7 @@
+ #include <linux/module.h>
+ #include <linux/msi.h>
+ #include <linux/of_address.h>
++#include <linux/of_pci.h>
+ #include <linux/pci.h>
+ #include <linux/pci_regs.h>
+ #include <linux/types.h>
+@@ -738,8 +739,13 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
+ static int dw_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	struct resource *res;
--	int irq, ret;
-+	int ret;
- 	ret = -ENXIO;
+ 	struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
++	int irq;
  
- 	memset(p, 0, sizeof(*p));
-@@ -284,8 +285,8 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
- 		goto err0;
- 	}
+-	return pp->irq;
++	irq = of_irq_parse_and_map_pci(dev, slot, pin);
++	if (!irq)
++		irq = pp->irq;
++
++	return irq;
+ }
  
--	irq = platform_get_irq(p->pdev, 0);
--	if (irq < 0) {
-+	p->irq = platform_get_irq(p->pdev, 0);
-+	if (p->irq < 0) {
- 		dev_err(&p->pdev->dev, "failed to get irq\n");
- 		goto err0;
- 	}
-@@ -297,13 +298,6 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
- 		goto err0;
- 	}
- 
--	/* setup data for setup_irq() (too early for request_irq()) */
--	p->irqaction.name = dev_name(&p->pdev->dev);
--	p->irqaction.handler = sh_mtu2_interrupt;
--	p->irqaction.dev_id = p;
--	p->irqaction.irq = irq;
--	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
--
- 	/* get hold of clock */
- 	p->clk = clk_get(&p->pdev->dev, "mtu2_fck");
- 	if (IS_ERR(p->clk)) {
+ static void dw_pcie_add_bus(struct pci_bus *bus)
 -- 
-1.8.3.2
+1.8.5.3
 
