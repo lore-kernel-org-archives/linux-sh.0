@@ -1,46 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 15:23:58 +0000
-Subject: [PATCH v3 04/11] ARM: shmobile: r7s72100 clock: Add RSPI clocks for DT
-Message-Id: <1391527445-14881-5-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:36 +0000
+Subject: [PATCH v2 06/40] clocksource: sh_cmt: Constify name argument to sh_cmt_register()
+Message-Id: <1393603090-23144-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The name argument is assigned to const structure fields only, constify
+it.
 
-Add DT-style ("%08x.spi") clocks, as Genmai doesn't use the common
-clock framework yet.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3:
-  - Rebased on top of renesas-devel-v3.14-rc1-20140204
-v2:
-  - No changes
+ drivers/clocksource/sh_cmt.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- arch/arm/mach-shmobile/clock-r7s72100.c |    5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index ffb0fff41375..71c99feeff01 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -191,6 +191,11 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
-+	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
-+	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
-+	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
-+	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
-+	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
- 	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 26f73cf..febd6bf 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -549,7 +549,7 @@ static void sh_cmt_clocksource_resume(struct clocksource *cs)
+ }
+ 
+ static int sh_cmt_register_clocksource(struct sh_cmt_channel *ch,
+-				       char *name, unsigned long rating)
++				       const char *name, unsigned long rating)
+ {
+ 	struct clocksource *cs = &ch->cs;
+ 
+@@ -660,7 +660,7 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
+ }
+ 
+ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+-				       char *name, unsigned long rating)
++				       const char *name, unsigned long rating)
+ {
+ 	struct clock_event_device *ced = &ch->ced;
+ 
+@@ -680,7 +680,7 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ 	clockevents_register_device(ced);
+ }
+ 
+-static int sh_cmt_register(struct sh_cmt_channel *ch, char *name,
++static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
+ 			   unsigned long clockevent_rating,
+ 			   unsigned long clocksource_rating)
+ {
+@@ -717,7 +717,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
+ 	ch->match_value = ch->max_match_value;
+ 	raw_spin_lock_init(&ch->lock);
+ 
+-	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
++	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
+ 			      cfg->clockevent_rating,
+ 			      cfg->clocksource_rating);
+ 	if (ret) {
 -- 
-1.7.9.5
+1.8.3.2
 
