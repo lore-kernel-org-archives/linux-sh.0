@@ -1,74 +1,995 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 06 Feb 2014 20:58:05 +0000
-Subject: [PATCH 2/2] ARM: shmobile: lager: add Ether DT support
-Message-Id: <201402070058.31405.sergei.shtylyov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:58:02 +0000
+Subject: [PATCH v2 32/40] sh: Switch to new style CMT device
+Message-Id: <1393603090-23144-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201402070054.39989.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201402070054.39989.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the Lager board dependent part of the Ether device node. 
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |   31 ++++++++++++++++++++++++++++++-
- 1 file changed, 30 insertions(+), 1 deletion(-)
+ arch/sh/kernel/cpu/clock-cpg.c         |   3 +-
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |  66 +++------------
+ arch/sh/kernel/cpu/sh2a/clock-sh7264.c |   2 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7269.c |   2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |  66 +++------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |  66 +++------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c |  69 +++------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c |  66 +++------------
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  | 150 +++------------------------------
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c |   2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7366.c |   2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c |   2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c |   2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   2 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c |  18 +---
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c |  18 +---
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |  18 +---
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c |  18 +---
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |  18 +---
+ 19 files changed, 106 insertions(+), 484 deletions(-)
 
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -1,7 +1,8 @@
- /*
-  * Device Tree Source for the Lager board
-  *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded, Inc.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -76,12 +77,40 @@
- 		renesas,function = "scif1";
- 	};
+diff --git a/arch/sh/kernel/cpu/clock-cpg.c b/arch/sh/kernel/cpu/clock-cpg.c
+index f59b1f3..8de314b 100644
+--- a/arch/sh/kernel/cpu/clock-cpg.c
++++ b/arch/sh/kernel/cpu/clock-cpg.c
+@@ -58,7 +58,8 @@ int __init __deprecated cpg_clk_init(void)
  
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq0";
-+		renesas,function = "intc";
-+	};
-+
- 	mmc1_pins: mmc1 {
- 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
- 		renesas,function = "mmc1";
- 	};
+ 	clk_add_alias("tmu_fck", NULL, "peripheral_clk", NULL);
+ 	clk_add_alias("mtu2_fck", NULL, "peripheral_clk", NULL);
+-	clk_add_alias("cmt_fck", NULL, "peripheral_clk", NULL);
++	clk_add_alias("fck", "sh-cmt-16.0", "peripheral_clk", NULL);
++	clk_add_alias("fck", "sh-cmt-32.0", "peripheral_clk", NULL);
+ 	clk_add_alias("sci_ick", NULL, "peripheral_clk", NULL);
+ 
+ 	return ret;
+diff --git a/arch/sh/kernel/cpu/sh2/setup-sh7619.c b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+index 3860b0b..a0c96a8 100644
+--- a/arch/sh/kernel/cpu/sh2/setup-sh7619.c
++++ b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+@@ -152,62 +152,24 @@ static struct platform_device eth_device = {
+ 	.resource = eth_resources,
  };
  
-+&ether {
-+	pinctrl-0 = <&ether_pins>;
-+	pinctrl-names = "default";
-+
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "ok";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+
-+		pinctrl-0 = <&phy1_pins>;
-+		pinctrl-names = "default";
-+	};
-+};
-+
- &mmcif1 {
- 	pinctrl-0 = <&mmc1_pins>;
- 	pinctrl-names = "default";
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channel_offset = 0x02,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
++static struct sh_timer_config cmt_platform_data = {
++	.channels_mask = 3,
+ };
+ 
+-static struct resource cmt0_resources[] = {
+-	[0] = {
+-		.start	= 0xf84a0072,
+-		.end	= 0xf84a0077,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 86,
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt_resources[] = {
++	DEFINE_RES_MEM(0xf84a0078, 0x10),
++	DEFINE_RES_IRQ(86),
++	DEFINE_RES_IRQ(87),
+ };
+ 
+-static struct platform_device cmt0_device = {
+-	.name		= "sh_cmt",
++static struct platform_device cmt_device = {
++	.name		= "sh-cmt-16",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &cmt0_platform_data,
+-	},
+-	.resource	= cmt0_resources,
+-	.num_resources	= ARRAY_SIZE(cmt0_resources),
+-};
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.channel_offset = 0x08,
+-	.timer_bit = 1,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	[0] = {
+-		.start	= 0xf84a0078,
+-		.end	= 0xf84a007d,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 87,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh_cmt",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
++		.platform_data	= &cmt_platform_data,
+ 	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
++	.resource	= cmt_resources,
++	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+ static struct platform_device *sh7619_devices[] __initdata = {
+@@ -215,8 +177,7 @@ static struct platform_device *sh7619_devices[] __initdata = {
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&eth_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ };
+ 
+ static int __init sh7619_devices_setup(void)
+@@ -235,8 +196,7 @@ static struct platform_device *sh7619_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ };
+ 
+ #define STBCR3 0xf80a0000
+diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
+index fdf585c..c7f3c66 100644
+--- a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
+@@ -117,7 +117,7 @@ static struct clk_lookup lookups[] = {
+ 	/* MSTP clocks */
+ 	CLKDEV_CON_ID("sci_ick", &mstp_clks[MSTP77]),
+ 	CLKDEV_CON_ID("vdc3", &mstp_clks[MSTP74]),
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP72]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-16.0", &mstp_clks[MSTP72]),
+ 	CLKDEV_CON_ID("usb0", &mstp_clks[MSTP60]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP35]),
+ 	CLKDEV_CON_ID("sdhi0", &mstp_clks[MSTP34]),
+diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7269.c b/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
+index 6b78762..4f47464 100644
+--- a/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
+@@ -158,7 +158,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP72]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-16.0", &mstp_clks[MSTP72]),
+ 	CLKDEV_CON_ID("usb0", &mstp_clks[MSTP60]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP35]),
+ 	CLKDEV_CON_ID("adc0", &mstp_clks[MSTP32]),
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+index d55a0f3..374f8c0 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+@@ -265,62 +265,24 @@ static struct platform_device scif3_device = {
+ 	},
+ };
+ 
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channel_offset = 0x02,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
++static struct sh_timer_config cmt_platform_data = {
++	.channels_mask = 3,
+ };
+ 
+-static struct resource cmt0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffec002,
+-		.end	= 0xfffec007,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 142,
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt_resources[] = {
++	DEFINE_RES_MEM(0xfffec000, 0x10),
++	DEFINE_RES_IRQ(142),
++	DEFINE_RES_IRQ(143),
+ };
+ 
+-static struct platform_device cmt0_device = {
+-	.name		= "sh_cmt",
++static struct platform_device cmt_device = {
++	.name		= "sh-cmt-16",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &cmt0_platform_data,
+-	},
+-	.resource	= cmt0_resources,
+-	.num_resources	= ARRAY_SIZE(cmt0_resources),
+-};
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.channel_offset = 0x08,
+-	.timer_bit = 1,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffec008,
+-		.end	= 0xfffec00d,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 143,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh_cmt",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
++		.platform_data	= &cmt_platform_data,
+ 	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
++	.resource	= cmt_resources,
++	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+ static struct sh_timer_config mtu2_0_platform_data = {
+@@ -404,8 +366,7 @@ static struct platform_device *sh7203_devices[] __initdata = {
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&scif3_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ 	&rtc_device,
+@@ -428,8 +389,7 @@ static struct platform_device *sh7203_early_devices[] __initdata = {
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&scif3_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ };
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+index 241e745..d00e6fd 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+@@ -217,62 +217,24 @@ static struct platform_device scif3_device = {
+ 	},
+ };
+ 
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channel_offset = 0x02,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
++static struct sh_timer_config cmt_platform_data = {
++	.channels_mask = 3,
+ };
+ 
+-static struct resource cmt0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffec002,
+-		.end	= 0xfffec007,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 140,
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt_resources[] = {
++	DEFINE_RES_MEM(0xfffec000, 0x10),
++	DEFINE_RES_IRQ(140),
++	DEFINE_RES_IRQ(144),
+ };
+ 
+-static struct platform_device cmt0_device = {
+-	.name		= "sh_cmt",
++static struct platform_device cmt_device = {
++	.name		= "sh-cmt-16",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &cmt0_platform_data,
+-	},
+-	.resource	= cmt0_resources,
+-	.num_resources	= ARRAY_SIZE(cmt0_resources),
+-};
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.channel_offset = 0x08,
+-	.timer_bit = 1,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffec008,
+-		.end	= 0xfffec00d,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 144,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh_cmt",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
++		.platform_data	= &cmt_platform_data,
+ 	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
++	.resource	= cmt_resources,
++	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+ static struct sh_timer_config mtu2_0_platform_data = {
+@@ -364,8 +326,7 @@ static struct platform_device *sh7206_devices[] __initdata = {
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&scif3_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ 	&mtu2_2_device,
+@@ -388,8 +349,7 @@ static struct platform_device *sh7206_early_devices[] __initdata = {
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&scif3_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ 	&mtu2_2_device,
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+index ad5b0f4..e95250e 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+@@ -433,65 +433,24 @@ static struct platform_device scif7_device = {
+ 	},
+ };
+ 
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channel_offset = 0x02,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
++static struct sh_timer_config cmt_platform_data = {
++	.channels_mask = 3,
+ };
+ 
+-static struct resource cmt0_resources[] = {
+-	[0] = {
+-		.name	= "CMT0",
+-		.start	= 0xfffec002,
+-		.end	= 0xfffec007,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 175,
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt_resources[] = {
++	DEFINE_RES_MEM(0xfffec000, 0x10),
++	DEFINE_RES_IRQ(175),
++	DEFINE_RES_IRQ(176),
+ };
+ 
+-static struct platform_device cmt0_device = {
+-	.name		= "sh_cmt",
++static struct platform_device cmt_device = {
++	.name		= "sh-cmt-16",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &cmt0_platform_data,
+-	},
+-	.resource	= cmt0_resources,
+-	.num_resources	= ARRAY_SIZE(cmt0_resources),
+-};
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.name = "CMT1",
+-	.channel_offset = 0x08,
+-	.timer_bit = 1,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	[0] = {
+-		.name	= "CMT1",
+-		.start	= 0xfffec008,
+-		.end	= 0xfffec00d,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 176,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh_cmt",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
++		.platform_data	= &cmt_platform_data,
+ 	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
++	.resource	= cmt_resources,
++	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+ static struct sh_timer_config mtu2_0_platform_data = {
+@@ -620,8 +579,7 @@ static struct platform_device *sh7264_devices[] __initdata = {
+ 	&scif5_device,
+ 	&scif6_device,
+ 	&scif7_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ 	&rtc_device,
+@@ -649,8 +607,7 @@ static struct platform_device *sh7264_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&scif6_device,
+ 	&scif7_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ };
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+index 3995119..0191e1a 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+@@ -455,62 +455,24 @@ static struct platform_device scif7_device = {
+ 	},
+ };
+ 
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channel_offset = 0x02,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
++static struct sh_timer_config cmt_platform_data = {
++	.channels_mask = 3,
+ };
+ 
+-static struct resource cmt0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffec002,
+-		.end	= 0xfffec007,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 188,
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt_resources[] = {
++	DEFINE_RES_MEM(0xfffec000, 0x10),
++	DEFINE_RES_IRQ(188),
++	DEFINE_RES_IRQ(189),
+ };
+ 
+-static struct platform_device cmt0_device = {
+-	.name		= "sh_cmt",
++static struct platform_device cmt_device = {
++	.name		= "sh-cmt-16",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &cmt0_platform_data,
+-	},
+-	.resource	= cmt0_resources,
+-	.num_resources	= ARRAY_SIZE(cmt0_resources),
+-};
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.channel_offset = 0x08,
+-	.timer_bit = 1,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 0, /* disabled due to code generation issues */
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffec008,
+-		.end	= 0xfffec00d,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 189,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh_cmt",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
++		.platform_data	= &cmt_platform_data,
+ 	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
++	.resource	= cmt_resources,
++	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+ static struct sh_timer_config mtu2_0_platform_data = {
+@@ -629,8 +591,7 @@ static struct platform_device *sh7269_devices[] __initdata = {
+ 	&scif5_device,
+ 	&scif6_device,
+ 	&scif7_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ 	&rtc_device,
+@@ -658,8 +619,7 @@ static struct platform_device *sh7269_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&scif6_device,
+ 	&scif7_device,
+-	&cmt0_device,
+-	&cmt1_device,
++	&cmt_device,
+ 	&mtu2_0_device,
+ 	&mtu2_1_device,
+ };
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+index 1d5729d..a53d219 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+@@ -152,141 +152,23 @@ static struct platform_device usbf_device = {
+ 	.resource	= usbf_resources,
+ };
+ 
+-static struct sh_timer_config cmt0_platform_data = {
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++static struct sh_timer_config cmt_platform_data = {
++	.channels_mask = 0x1f,
+ };
+ 
+-static struct resource cmt0_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0010,
+-		.end	= 0x044a001b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt_resources[] = {
++	DEFINE_RES_MEM(0x044a0000, 0x60),
++	DEFINE_RES_IRQ(evt2irq(0xf00)),
+ };
+ 
+-static struct platform_device cmt0_device = {
+-	.name		= "sh_cmt",
++static struct platform_device cmt_device = {
++	.name		= "sh-cmt-32",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &cmt0_platform_data,
+-	},
+-	.resource	= cmt0_resources,
+-	.num_resources	= ARRAY_SIZE(cmt0_resources),
+-};
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.channel_offset = 0x20,
+-	.timer_bit = 1,
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0020,
+-		.end	= 0x044a002b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh_cmt",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
+-	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
+-};
+-
+-static struct sh_timer_config cmt2_platform_data = {
+-	.channel_offset = 0x30,
+-	.timer_bit = 2,
+-};
+-
+-static struct resource cmt2_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0030,
+-		.end	= 0x044a003b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt2_device = {
+-	.name		= "sh_cmt",
+-	.id		= 2,
+-	.dev = {
+-		.platform_data	= &cmt2_platform_data,
+-	},
+-	.resource	= cmt2_resources,
+-	.num_resources	= ARRAY_SIZE(cmt2_resources),
+-};
+-
+-static struct sh_timer_config cmt3_platform_data = {
+-	.channel_offset = 0x40,
+-	.timer_bit = 3,
+-};
+-
+-static struct resource cmt3_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0040,
+-		.end	= 0x044a004b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt3_device = {
+-	.name		= "sh_cmt",
+-	.id		= 3,
+-	.dev = {
+-		.platform_data	= &cmt3_platform_data,
+-	},
+-	.resource	= cmt3_resources,
+-	.num_resources	= ARRAY_SIZE(cmt3_resources),
+-};
+-
+-static struct sh_timer_config cmt4_platform_data = {
+-	.channel_offset = 0x50,
+-	.timer_bit = 4,
+-};
+-
+-static struct resource cmt4_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0050,
+-		.end	= 0x044a005b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt4_device = {
+-	.name		= "sh_cmt",
+-	.id		= 4,
+-	.dev = {
+-		.platform_data	= &cmt4_platform_data,
++		.platform_data	= &cmt_platform_data,
+ 	},
+-	.resource	= cmt4_resources,
+-	.num_resources	= ARRAY_SIZE(cmt4_resources),
++	.resource	= cmt_resources,
++	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+ static struct sh_timer_config tmu0_platform_data = {
+@@ -375,11 +257,7 @@ static struct platform_device tmu2_device = {
+ static struct platform_device *sh7720_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+-	&cmt0_device,
+-	&cmt1_device,
+-	&cmt2_device,
+-	&cmt3_device,
+-	&cmt4_device,
++	&cmt_device,
+ 	&tmu0_device,
+ 	&tmu1_device,
+ 	&tmu2_device,
+@@ -398,11 +276,7 @@ arch_initcall(sh7720_devices_setup);
+ static struct platform_device *sh7720_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+-	&cmt0_device,
+-	&cmt1_device,
+-	&cmt2_device,
+-	&cmt3_device,
+-	&cmt4_device,
++	&cmt_device,
+ 	&tmu0_device,
+ 	&tmu1_device,
+ 	&tmu2_device,
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7343.c b/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
+index 53638e2..9edc06c 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7343.c
+@@ -227,7 +227,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("hudi0", &mstp_clks[MSTP019]),
+ 	CLKDEV_CON_ID("ubc0", &mstp_clks[MSTP017]),
+ 	CLKDEV_CON_ID("tmu_fck", &mstp_clks[MSTP015]),
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP014]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-32.0", &mstp_clks[MSTP014]),
+ 	CLKDEV_CON_ID("rwdt0", &mstp_clks[MSTP013]),
+ 	CLKDEV_CON_ID("mfi0", &mstp_clks[MSTP011]),
+ 	CLKDEV_CON_ID("flctl0", &mstp_clks[MSTP010]),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7366.c b/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
+index 22e485d..955b9ad 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7366.c
+@@ -225,7 +225,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("hudi0", &mstp_clks[MSTP019]),
+ 	CLKDEV_CON_ID("ubc0", &mstp_clks[MSTP017]),
+ 	CLKDEV_CON_ID("tmu_fck", &mstp_clks[MSTP015]),
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP014]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-32.0", &mstp_clks[MSTP014]),
+ 	CLKDEV_CON_ID("rwdt0", &mstp_clks[MSTP013]),
+ 	CLKDEV_CON_ID("mfi0", &mstp_clks[MSTP011]),
+ 	CLKDEV_CON_ID("flctl0", &mstp_clks[MSTP010]),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7722.c b/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
+index c4cb740..4097493 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7722.c
+@@ -207,7 +207,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.1", &mstp_clks[HWBLK_TMU]),
+ 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.2", &mstp_clks[HWBLK_TMU]),
+ 
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[HWBLK_CMT]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-32.0", &mstp_clks[HWBLK_CMT]),
+ 	CLKDEV_DEV_ID("sh-wdt.0", &mstp_clks[HWBLK_RWDT]),
+ 	CLKDEV_CON_ID("flctl0", &mstp_clks[HWBLK_FLCTL]),
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
+index 37c41c7..da64734 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7723.c
+@@ -236,7 +236,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("sh0", &mstp_clks[HWBLK_SHYWAY]),
+ 	CLKDEV_CON_ID("hudi0", &mstp_clks[HWBLK_HUDI]),
+ 	CLKDEV_CON_ID("ubc0", &mstp_clks[HWBLK_UBC]),
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[HWBLK_CMT]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-32.0", &mstp_clks[HWBLK_CMT]),
+ 	CLKDEV_DEV_ID("sh-wdt.0", &mstp_clks[HWBLK_RWDT]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[HWBLK_DMAC1]),
+ 	CLKDEV_CON_ID("flctl0", &mstp_clks[HWBLK_FLCTL]),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index 0128af3..f917f19 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -309,7 +309,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.2", &mstp_clks[HWBLK_TMU0]),
+ 	CLKDEV_ICK_ID("tmu_fck", "sh_tmu.3", &mstp_clks[HWBLK_TMU1]),
+ 
+-	CLKDEV_CON_ID("cmt_fck", &mstp_clks[HWBLK_CMT]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-16.0", &mstp_clks[HWBLK_CMT]),
+ 	CLKDEV_DEV_ID("sh-wdt.0", &mstp_clks[HWBLK_RWDT]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[HWBLK_DMAC1]),
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7343.c b/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
+index 245d192..ad96492 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7343.c
+@@ -228,26 +228,16 @@ static struct platform_device jpu_device = {
+ };
+ 
+ static struct sh_timer_config cmt_platform_data = {
+-	.channel_offset = 0x60,
+-	.timer_bit = 5,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 200,
++	.channels_mask = 0x20,
+ };
+ 
+ static struct resource cmt_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0060,
+-		.end	= 0x044a006b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++	DEFINE_RES_MEM(0x044a0000, 0x70),
++	DEFINE_RES_IRQ(evt2irq(0xf00)),
+ };
+ 
+ static struct platform_device cmt_device = {
+-	.name		= "sh_cmt",
++	.name		= "sh-cmt-32",
+ 	.id		= 0,
+ 	.dev = {
+ 		.platform_data	= &cmt_platform_data,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+index 6f56cbd..4e4985d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7366.c
+@@ -176,26 +176,16 @@ static struct platform_device veu1_device = {
+ };
+ 
+ static struct sh_timer_config cmt_platform_data = {
+-	.channel_offset = 0x60,
+-	.timer_bit = 5,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 200,
++	.channels_mask = 0x20,
+ };
+ 
+ static struct resource cmt_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0060,
+-		.end	= 0x044a006b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++	DEFINE_RES_MEM(0x044a0000, 0x70),
++	DEFINE_RES_IRQ(evt2irq(0xf00)),
+ };
+ 
+ static struct platform_device cmt_device = {
+-	.name		= "sh_cmt",
++	.name		= "sh-cmt-32",
+ 	.id		= 0,
+ 	.dev = {
+ 		.platform_data	= &cmt_platform_data,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 5a94efc..4e3218f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -413,26 +413,16 @@ static struct platform_device jpu_device = {
+ };
+ 
+ static struct sh_timer_config cmt_platform_data = {
+-	.channel_offset = 0x60,
+-	.timer_bit = 5,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++	.channels_mask = 0x20,
+ };
+ 
+ static struct resource cmt_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0060,
+-		.end	= 0x044a006b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++	DEFINE_RES_MEM(0x044a0000, 0x70),
++	DEFINE_RES_IRQ(evt2irq(0xf00)),
+ };
+ 
+ static struct platform_device cmt_device = {
+-	.name		= "sh_cmt",
++	.name		= "sh-cmt-32",
+ 	.id		= 0,
+ 	.dev = {
+ 		.platform_data	= &cmt_platform_data,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+index 3c5eb09..5dfdb85 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7723.c
+@@ -245,26 +245,16 @@ static struct platform_device veu1_device = {
+ };
+ 
+ static struct sh_timer_config cmt_platform_data = {
+-	.channel_offset = 0x60,
+-	.timer_bit = 5,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++	.channels_mask = 0x20,
+ };
+ 
+ static struct resource cmt_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0060,
+-		.end	= 0x044a006b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++	DEFINE_RES_MEM(0x044a0000, 0x70),
++	DEFINE_RES_IRQ(evt2irq(0xf00)),
+ };
+ 
+ static struct platform_device cmt_device = {
+-	.name		= "sh_cmt",
++	.name		= "sh-cmt-32",
+ 	.id		= 0,
+ 	.dev = {
+ 		.platform_data	= &cmt_platform_data,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 60ebbc6..b435f07 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -648,26 +648,16 @@ static struct platform_device beu1_device = {
+ };
+ 
+ static struct sh_timer_config cmt_platform_data = {
+-	.channel_offset = 0x60,
+-	.timer_bit = 5,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 200,
++	.channels_mask = 0x20,
+ };
+ 
+ static struct resource cmt_resources[] = {
+-	[0] = {
+-		.start	= 0x044a0060,
+-		.end	= 0x044a006b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= evt2irq(0xf00),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++	DEFINE_RES_MEM(0x044a0000, 0x70),
++	DEFINE_RES_IRQ(evt2irq(0xf00)),
+ };
+ 
+ static struct platform_device cmt_device = {
+-	.name		= "sh_cmt",
++	.name		= "sh-cmt-32",
+ 	.id		= 0,
+ 	.dev = {
+ 		.platform_data	= &cmt_platform_data,
+-- 
+1.8.3.2
+
