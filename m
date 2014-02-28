@@ -1,53 +1,160 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:32 +0000
-Subject: [PATCH v2 02/40] clocksource: sh_cmt: Use request_irq() instead of setup_irq()
-Message-Id: <1393603090-23144-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 28 Feb 2014 21:09:25 +0000
+Subject: [PATCH 1/4] ARM: r7s72100: add clock nodes to dtsi
+Message-Id: <1393621768-12568-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver claims it needs to register an interrupt handler too early
-for request_irq(). This might have been true in the past, but the only
-meaningful difference between request_irq() and setup_irq() today is an
-additional kzalloc() call in request_irq(). As the driver calls
-kmalloc() itself we know that the slab allocator is available, we can
-thus switch to request_irq().
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Only essential clocks are added for now. Other clocks will be added when
+needed.
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/clocksource/sh_cmt.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+ arch/arm/boot/dts/r7s72100.dtsi            | 78 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r7s72100-clock.h | 25 ++++++++++
+ 2 files changed, 102 insertions(+), 1 deletion(-)
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 0b1836a..a3103b8 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -728,12 +728,6 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 		goto err1;
- 	}
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ee70071..f6d4b5d 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -1,13 +1,15 @@
+ /*
+  * Device Tree Source for the r7s72100 SoC
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-14 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+  * kind, whether express or implied.
+  */
  
--	/* request irq using setup_irq() (too early for request_irq()) */
--	p->irqaction.name = dev_name(&p->pdev->dev);
--	p->irqaction.handler = sh_cmt_interrupt;
--	p->irqaction.dev_id = p;
--	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
--
- 	/* get hold of clock */
- 	p->clk = clk_get(&p->pdev->dev, "cmt_fck");
- 	if (IS_ERR(p->clk)) {
-@@ -786,7 +780,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 	}
- 	p->cs_enabled = false;
++#include <dt-bindings/clock/r7s72100-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
  
--	ret = setup_irq(irq, &p->irqaction);
-+	ret = request_irq(irq, sh_cmt_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&p->pdev->dev), p);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
- 		goto err4;
+ / {
+@@ -28,6 +30,80 @@
+ 		spi4 = &spi4;
+ 	};
+ 
++	clocks {
++		ranges;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		/* External root clock */
++		extal_clk: extal_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			/* This value must be overriden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@fcfe0000 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-cpg-clocks",
++				     "renesas,rz-cpg-clocks";
++			reg = <0xfcfe0000 0x18>;
++			clocks = <&extal_clk>;
++			clock-output-names = "pll", "i", "g";
++		};
++
++		/* Fixed factor clocks */
++		b_clk: b_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks 0>;
++			clock-mult = <1>;
++			clock-div = <3>;
++			clock-output-names = "b";
++		};
++		p1_clk: p1_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks 0>;
++			clock-mult = <1>;
++			clock-div = <6>;
++			clock-output-names = "p1";
++		};
++		p0_clk: p0_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks 0>;
++			clock-mult = <1>;
++			clock-div = <12>;
++			clock-output-names = "p0";
++		};
++
++		/* MSTP clocks */
++		mstp3_clks: mstp3_clks@fcfe0420 {
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0420 4>;
++			clocks = <&p0_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <R7S72100_CLK_MTU2>;
++			clock-output-names = "mtu2";
++		};
++
++		mstp4_clks: mstp4_clks@fcfe0424 {
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0424 4>;
++			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
++				 <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R7S72100_CLK_SCIF0 R7S72100_CLK_SCIF1 R7S72100_CLK_SCIF2 R7S72100_CLK_SCIF3
++				R7S72100_CLK_SCIF4 R7S72100_CLK_SCIF5 R7S72100_CLK_SCIF6 R7S72100_CLK_SCIF7
++			>;
++			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+new file mode 100644
+index 0000000..eced0a8
+--- /dev/null
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -0,0 +1,25 @@
++/*
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R7S72100_H__
++#define __DT_BINDINGS_CLOCK_R7S72100_H__
++
++/* MSTP3 */
++#define R7S72100_CLK_MTU2	3
++
++/* MSTP4 */
++#define R7S72100_CLK_SCIF0	7
++#define R7S72100_CLK_SCIF1	6
++#define R7S72100_CLK_SCIF2	5
++#define R7S72100_CLK_SCIF3	4
++#define R7S72100_CLK_SCIF4	3
++#define R7S72100_CLK_SCIF5	2
++#define R7S72100_CLK_SCIF6	1
++#define R7S72100_CLK_SCIF7	0
++
++#endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
 -- 
-1.8.3.2
+1.8.5.1
 
