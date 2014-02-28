@@ -1,37 +1,59 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Feb 2014 10:47:33 +0000
-Subject: [PATCH 7/7] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <1392029254-15400-8-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:41 +0000
+Subject: [PATCH v2 11/40] clocksource: sh_cmt: Allocate channels dynamically
+Message-Id: <1393603090-23144-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1392029254-15400-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+This prepares the driver for multi-channel support.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-This depends on spi-rspi updates
+ drivers/clocksource/sh_cmt.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
- arch/arm/boot/dts/r8a7790-lager.dts |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index adff2dc4012d..0b47ade38340 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -113,6 +113,8 @@
- 		compatible = "spansion,s25fl512s";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
-+		spi-tx-bus-width = <4>;
-+		spi-rx-bus-width = <4>;
- 		m25p,fast-read;
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 0779bf1..f94db32 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -62,7 +62,8 @@ struct sh_cmt_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
  
- 		partition@0 {
+-	struct sh_cmt_channel channel;
++	struct sh_cmt_channel *channels;
++	unsigned int num_channels;
+ 
+ 	unsigned long width; /* 16 or 32 bit version of hardware block */
+ 	unsigned long overflow_bit;
+@@ -822,7 +823,15 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 		cmt->clear_bits = ~0xc000;
+ 	}
+ 
+-	ret = sh_cmt_setup_channel(&cmt->channel, cfg->timer_bit, cmt);
++	cmt->channels = kzalloc(sizeof(*cmt->channels), GFP_KERNEL);
++	if (cmt->channels = NULL) {
++		ret = -ENOMEM;
++		goto err4;
++	}
++
++	cmt->num_channels = 1;
++
++	ret = sh_cmt_setup_channel(&cmt->channels[0], cfg->timer_bit, cmt);
+ 	if (ret < 0)
+ 		goto err4;
+ 
+@@ -830,6 +839,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 
+ 	return 0;
+ err4:
++	kfree(cmt->channels);
+ 	clk_unprepare(cmt->clk);
+ err3:
+ 	clk_put(cmt->clk);
 -- 
-1.7.9.5
+1.8.3.2
 
