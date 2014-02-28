@@ -1,24 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 12 Feb 2014 06:23:40 +0000
-Subject: Re: [PATCH 0/2 v2]: ARM: shmobile: lager: add SDHI0/2 support for legacy/DT
-Message-Id: <87y51g97di.wl%kuninori.morimoto.gx@gmail.com>
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Fri, 28 Feb 2014 17:28:41 +0000
+Subject: [PATCH 5/7] ARM: dts: imx6: add PCIe interrupt mapping properties
+Message-Id: <1393608523-17509-6-git-send-email-l.stach@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+As defined by the common PCI bindings.
 
-Hi Simon
-Cc Magnus
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+---
+ arch/arm/boot/dts/imx6qdl.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-These are v2 patch of SDHI0/2 support for Lager.
-#1 is same one, #2 patch was updated
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index fb28b2ecb1db..db3339e7d3a2 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -10,6 +10,8 @@
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ 
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
+ #include "skeleton.dtsi"
+ 
+ / {
+@@ -126,7 +128,16 @@
+ 				  0x81000000 0 0          0x01f80000 0 0x00010000 /* downstream I/O */
+ 				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
+ 			num-lanes = <1>;
++
+ 			interrupts = <0 123 0x04>;
++
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &intc GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++			                <0 0 0 2 &intc GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
++			                <0 0 0 3 &intc GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
++			                <0 0 0 4 &intc GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
++
+ 			clocks = <&clks 189>, <&clks 187>, <&clks 206>, <&clks 144>;
+ 			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
+ 			status = "disabled";
+-- 
+1.8.5.3
 
-Kuninori Morimoto (2):
-      ARM: shmobile: lager: add SDHI0/2 support
-      ARM: shmobile: lager: add SDHI0/2 support on DTS
-
- arch/arm/boot/dts/r8a7790-lager.dts  |   84 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-lager.c |   64 ++++++++++++++++++++++++++
- 2 files changed, 148 insertions(+)
