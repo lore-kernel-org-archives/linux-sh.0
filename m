@@ -1,99 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Feb 2014 02:11:32 +0000
-Subject: [PATCH v2 05/08] PCI: rcar: Break out window size handling
-Message-Id: <20140218021132.14164.62223.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 28 Feb 2014 13:21:32 +0000
+Subject: [PATCH 1/2] serial_core: Unregister console in uart_remove_one_port()
+Message-Id: <1393593694-30262-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140218021041.14164.56411.sendpatchset@w520>
-In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Break out the hard coded window size code to allow
-dynamic setup. The window size is still left at 1GiB
-but with this patch changing window size is easy for
-testing.
+If the serial port being removed is used as a console, it must also be
+unregistered from the console subsystem using unregister_console().
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+uart_ops.release_port() will release resources (e.g. iounmap() the serial
+port registers), causing a crash on subsequent kernel output if the console
+is still registered.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
+ drivers/tty/serial/serial_core.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Changes since V1:
- - Updated to fit on top of patches from Ben Dooks
-
- drivers/pci/host/pci-rcar-gen2.c |   31 ++++++++++++++++++++++++++++---
- 1 file changed, 28 insertions(+), 3 deletions(-)
-
---- 0007/drivers/pci/host/pci-rcar-gen2.c
-+++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-13 10:16:48.000000000 +0900
-@@ -18,6 +18,7 @@
- #include <linux/pci.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
-+#include <linux/sizes.h>
- #include <linux/slab.h>
+diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
+index ece2049bd270..8ece7f14d89d 100644
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -2677,6 +2677,12 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *uport)
+ 		tty_vhangup(port->tty);
  
- /* AHB-PCI Bridge PCI communication registers */
-@@ -98,6 +99,7 @@ struct rcar_pci_priv {
- 	struct resource mem_res;
- 	struct resource *cfg_res;
- 	int irq;
-+	unsigned long window_size;
- };
- 
- /* PCI configuration space operations */
-@@ -241,10 +243,31 @@ static int __init rcar_pci_setup(int nr,
- 	iowrite32(val, reg + RCAR_USBCTR_REG);
- 	udelay(4);
- 
--	/* De-assert reset and set PCIAHB window1 size to 1GB */
-+	/* De-assert reset and reset PCIAHB window1 size */
- 	val &= ~(RCAR_USBCTR_PCIAHB_WIN1_MASK | RCAR_USBCTR_PCICLK_MASK |
- 		 RCAR_USBCTR_USBH_RST | RCAR_USBCTR_PLL_RST);
--	iowrite32(val | RCAR_USBCTR_PCIAHB_WIN1_1G, reg + RCAR_USBCTR_REG);
+ 	/*
++	 * If the port is used as a console, unregister it
++	 */
++	if (uart_console(uport))
++		unregister_console(uport->cons);
 +
-+	/* Setup PCIAHB window1 size */
-+	switch (priv->window_size) {
-+	case SZ_2G:
-+		val |= RCAR_USBCTR_PCIAHB_WIN1_2G;
-+		break;
-+	case SZ_1G:
-+		val |= RCAR_USBCTR_PCIAHB_WIN1_1G;
-+		break;
-+	case SZ_512M:
-+		val |= RCAR_USBCTR_PCIAHB_WIN1_512M;
-+		break;
-+	default:
-+		pr_warn("unknown window size %ld - defaulting to 256M\n",
-+			priv->window_size);
-+		priv->window_size = SZ_256M;
-+		/* fall-through */
-+	case SZ_256M:
-+		val |= RCAR_USBCTR_PCIAHB_WIN1_256M;
-+		break;
-+	}
-+	iowrite32(val, reg + RCAR_USBCTR_REG);
- 
- 	/* Configure AHB master and slave modes */
- 	iowrite32(RCAR_AHB_BUS_MODE, reg + RCAR_AHB_BUS_CTR_REG);
-@@ -255,7 +278,7 @@ static int __init rcar_pci_setup(int nr,
- 	       RCAR_PCI_ARBITER_PCIBP_MODE;
- 	iowrite32(val, reg + RCAR_PCI_ARBITER_CTR_REG);
- 
--	/* PCI-AHB mapping: 0x40000000-0x80000000 */
-+	/* PCI-AHB mapping: 0x40000000 base */
- 	iowrite32(0x40000000 | RCAR_PCIAHB_PREFETCH16,
- 		  reg + RCAR_PCIAHB_WIN1_CTR_REG);
- 
-@@ -341,6 +364,8 @@ static int rcar_pci_probe(struct platfor
- 		return priv->irq;
- 	}
- 
-+	priv->window_size = SZ_1G;
-+
- 	hw_private[0] = priv;
- 	memset(&hw, 0, sizeof(hw));
- 	hw.nr_controllers = ARRAY_SIZE(hw_private);
++	/*
+ 	 * Free the port IO and memory resources, if any.
+ 	 */
+ 	if (uport->type != PORT_UNKNOWN)
+-- 
+1.7.9.5
+
