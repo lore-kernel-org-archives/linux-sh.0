@@ -1,137 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:42 +0000
-Subject: [PATCH 07/17] ARM: shmobile: r8a7790: Add serial ports to the device tree
-Message-Id: <597af20fa8f810a26c84179a8ac58cb3fce6c102.1391665761.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:38 +0000
+Subject: [PATCH v2 08/40] clocksource: sh_cmt: Add memory base to sh_cmt_channel structure
+Message-Id: <1393603090-23144-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The platform code serial port instantiation mechanism is kept for the
-non-DT platforms only.
+The channel memory base is channel-specific, add it to the channel
+structure in preparation for support of multiple channels per device.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 100 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 100 insertions(+)
+ drivers/clocksource/sh_cmt.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 96fc731..15e2a97 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -300,6 +300,106 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index eb93b88..4fcb05d 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -40,6 +40,8 @@ struct sh_cmt_device;
+ struct sh_cmt_channel {
+ 	struct sh_cmt_device *cmt;
  
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 144 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
++	void __iomem *base;
 +
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c50000 0 64>;
-+		interrupts = <0 145 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7790", "renesas,scifa-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c60000 0 64>;
-+		interrupts = <0 151 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb0: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c20000 0 64>;
-+		interrupts = <0 148 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb1: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6c30000 0 64>;
-+		interrupts = <0 149 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scifb2: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a7790", "renesas,scifb-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6ce0000 0 64>;
-+		interrupts = <0 150 4>;
-+		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif0: serial@e6e60000 {
-+		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e60000 0 64>;
-+		interrupts = <0 152 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@e6e68000 {
-+		compatible = "renesas,scif-r8a7790", "renesas,scif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe6e68000 0 64>;
-+		interrupts = <0 153 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif0: serial@e62c0000 {
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c0000 0 96>;
-+		interrupts = <0 154 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	hscif1: serial@e62c8000 {
-+		compatible = "renesas,hscif-r8a7790", "renesas,hscif-generic";
-+		interrupt-parent = <&gic>;
-+		reg = <0 0xe62c8000 0 96>;
-+		interrupts = <0 155 4>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 	unsigned long flags;
+ 	unsigned long match_value;
+ 	unsigned long next_match_value;
+@@ -130,12 +132,12 @@ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
++	return ch->cmt->read_control(ch->base, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
++	return ch->cmt->read_count(ch->base, CMCNT);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+@@ -147,19 +149,19 @@ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
++	ch->cmt->write_control(ch->base, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
++	ch->cmt->write_count(ch->base, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
++	ch->cmt->write_count(ch->base, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+@@ -702,6 +704,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
+ 
+ 	memset(ch, 0, sizeof(*ch));
+ 	ch->cmt = cmt;
++	ch->base = cmt->mapbase_ch;
+ 
+ 	irq = platform_get_irq(cmt->pdev, 0);
+ 	if (irq < 0) {
 -- 
-1.8.5.2
+1.8.3.2
 
