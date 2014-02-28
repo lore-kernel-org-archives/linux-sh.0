@@ -1,61 +1,78 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:56 +0000
-Subject: [PATCH v2 26/40] clocksource: sh_tmu: Constify name argument to sh_tmu_register()
-Message-Id: <1393603090-23144-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Patrick Titiano <ptitiano@baylibre.com>
+Date: Fri, 28 Feb 2014 13:10:04 +0000
+Subject: [PATCH 2/2] thermal: rcar-thermal: update thermal zone only when temperature changes
+Message-Id: <1393593004-16285-3-git-send-email-ptitiano@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
+In-Reply-To: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com
+Cc: bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Patrick Titiano <ptitiano@baylibre.com>
 
-The name argument is assigned to const structure fields only, constify
-it.
+Avoid updating the thermal zone in case an IRQ was triggered but the
+temperature didn't effectively change.
+Note this is not a driver issue.
+Below is a captured debug trace illustrating the purpose of this patch:
+out of 8 thermal zone updates, only 2 are actually necessary.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[   41.120000] rcar_thermal_work(): cctemp%000
+[   41.120000] rcar_thermal_work(): nctemp0000
+[   41.120000] rcar_thermal_work(): temp is now 30000C, update thermal zone
+[   58.990000] rcar_thermal_work(): cctemp0000
+[   58.990000] rcar_thermal_work(): nctemp0000
+[   58.990000] rcar_thermal_work(): same temp, do not update thermal zone
+[   59.290000] rcar_thermal_work(): cctemp0000
+[   59.290000] rcar_thermal_work(): nctemp0000
+[   59.290000] rcar_thermal_work(): same temp, do not update thermal zone
+[   59.590000] rcar_thermal_work(): cctemp0000
+[   59.590000] rcar_thermal_work(): nctemp0000
+[   59.590000] rcar_thermal_work(): same temp, do not update thermal zone
+[   59.890000] rcar_thermal_work(): cctemp0000
+[   59.890000] rcar_thermal_work(): nctemp0000
+[   59.890000] rcar_thermal_work(): same temp, do not update thermal zone
+[   60.190000] rcar_thermal_work(): cctemp0000
+[   60.190000] rcar_thermal_work(): nctemp0000
+[   60.190000] rcar_thermal_work(): same temp, do not update thermal zone
+[   60.490000] rcar_thermal_work(): cctemp0000
+[   60.490000] rcar_thermal_work(): nctemp0000
+[   60.490000] rcar_thermal_work(): same temp, do not update thermal zone
+[   60.790000] rcar_thermal_work(): cctemp0000
+[   60.790000] rcar_thermal_work(): nctemp5000
+[   60.790000] rcar_thermal_work(): temp is now 35000C, update thermal zone
+
+I suspect this may be due to sensor sampling accuracy / fluctuation,
+but no formal proof.
+
+Signed-off-by: Patrick Titiano <ptitiano@baylibre.com>
 ---
- drivers/clocksource/sh_tmu.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/thermal/rcar_thermal.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 4779c97..2c64e3f 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -292,7 +292,7 @@ static void sh_tmu_clocksource_resume(struct clocksource *cs)
- }
- 
- static int sh_tmu_register_clocksource(struct sh_tmu_channel *ch,
--				       char *name, unsigned long rating)
-+				       const char *name, unsigned long rating)
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 6ea8c5c..187693c 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -302,12 +302,17 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
+ static void rcar_thermal_work(struct work_struct *work)
  {
- 	struct clocksource *cs = &ch->cs;
+ 	struct rcar_thermal_priv *priv;
++	unsigned long cctemp, nctemp;
  
-@@ -393,7 +393,7 @@ static void sh_tmu_clock_event_resume(struct clock_event_device *ced)
+ 	priv = container_of(work, struct rcar_thermal_priv, work.work);
+ 
++	rcar_thermal_get_temp(priv->zone, &cctemp);
+ 	rcar_thermal_update_temp(priv);
+ 	rcar_thermal_irq_enable(priv);
+-	thermal_zone_device_update(priv->zone);
++
++	rcar_thermal_get_temp(priv->zone, &nctemp);
++	if (nctemp != cctemp)
++		thermal_zone_device_update(priv->zone);
  }
  
- static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
--				       char *name, unsigned long rating)
-+				       const char *name, unsigned long rating)
- {
- 	struct clock_event_device *ced = &ch->ced;
- 	int ret;
-@@ -424,7 +424,7 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
- 	}
- }
- 
--static int sh_tmu_register(struct sh_tmu_channel *ch, char *name,
-+static int sh_tmu_register(struct sh_tmu_channel *ch, const char *name,
- 		    unsigned long clockevent_rating,
- 		    unsigned long clocksource_rating)
- {
-@@ -453,7 +453,7 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch,
- 	ch->cs_enabled = false;
- 	ch->enable_count = 0;
- 
--	return sh_tmu_register(ch, (char *)dev_name(&tmu->pdev->dev),
-+	return sh_tmu_register(ch, dev_name(&tmu->pdev->dev),
- 			       cfg->clockevent_rating,
- 			       cfg->clocksource_rating);
- }
+ static u32 rcar_thermal_had_changed(struct rcar_thermal_priv *priv, u32 status)
 -- 
 1.8.3.2
 
