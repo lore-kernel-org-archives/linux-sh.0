@@ -1,86 +1,53 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:56 +0000
-Subject: [PATCH 18/27] ARM: shmobile: r8a73a4: Switch to new style CMT device
-Message-Id: <1392339605-20691-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:32 +0000
+Subject: [PATCH v2 02/40] clocksource: sh_cmt: Use request_irq() instead of setup_irq()
+Message-Id: <1393603090-23144-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+The driver claims it needs to register an interrupt handler too early
+for request_irq(). This might have been true in the past, but the only
+meaningful difference between request_irq() and setup_irq() today is an
+additional kzalloc() call in request_irq(). As the driver calls
+kmalloc() itself we know that the slab allocator is available, we can
+thus switch to request_irq().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c |  2 +-
- arch/arm/mach-shmobile/setup-r8a73a4.c | 25 +++++++++++++++----------
- 2 files changed, 16 insertions(+), 11 deletions(-)
+ drivers/clocksource/sh_cmt.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 7348d58..cd75821 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -597,7 +597,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
- 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
--	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
-+	CLKDEV_DEV_ID("sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index cd36f80..5794229 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -169,20 +169,25 @@ static const struct resource thermal0_resources[] = {
- 					thermal0_resources,		\
- 					ARRAY_SIZE(thermal0_resources))
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 0b1836a..a3103b8 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -728,12 +728,6 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err1;
+ 	}
  
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_channel_config cmt1_channels[] = {
-+	{
-+		.index = 0,
-+		.clockevent_rating = 80,
-+	},
-+};
-+
-+static struct sh_timer_config cmt1_platform_data = {
-+	.channels = cmt1_channels,
-+	.num_channels = ARRAY_SIZE(cmt1_channels),
- };
+-	/* request irq using setup_irq() (too early for request_irq()) */
+-	p->irqaction.name = dev_name(&p->pdev->dev);
+-	p->irqaction.handler = sh_cmt_interrupt;
+-	p->irqaction.dev_id = p;
+-	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
+-
+ 	/* get hold of clock */
+ 	p->clk = clk_get(&p->pdev->dev, "cmt_fck");
+ 	if (IS_ERR(p->clk)) {
+@@ -786,7 +780,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 	}
+ 	p->cs_enabled = false;
  
--static struct resource cmt10_resources[] = {
--	DEFINE_RES_MEM(0xe6130010, 0x0c),
--	DEFINE_RES_MEM(0xe6130000, 0x04),
--	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
-+static struct resource cmt1_resources[] = {
-+	DEFINE_RES_MEM(0xe6130000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(120)),
- };
- 
- #define r8a7790_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -196,7 +201,7 @@ void __init r8a73a4_add_dt_devices(void)
- 	r8a73a4_register_scif(3);
- 	r8a73a4_register_scif(4);
- 	r8a73a4_register_scif(5);
--	r8a7790_register_cmt(10);
-+	r8a7790_register_cmt(1);
- }
- 
- /* DMA */
+-	ret = setup_irq(irq, &p->irqaction);
++	ret = request_irq(irq, sh_cmt_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&p->pdev->dev), p);
+ 	if (ret) {
+ 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
+ 		goto err4;
 -- 
 1.8.3.2
 
