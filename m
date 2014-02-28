@@ -1,39 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:26 +0000
-Subject: [PATCH 06/13] ARM: shmobile: mackerel: enable CONFIG_DEVTMPFS in defconfig
-Message-Id: <97b3fbccfae2d1fee679073f1690e2428868754c.1391651074.git.horms+renesas@verge.net.au>
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Fri, 28 Feb 2014 17:28:39 +0000
+Subject: [PATCH 3/7] PCI: rcar: use new OF interrupt mapping when possible
+Message-Id: <1393608523-17509-4-git-send-email-l.stach@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391651074.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391651074.git.horms+renesas@verge.net.au>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This is the recommended method of doing the IRQ
+mapping. Still fall back to the old method in order
+to not break the just submitted board files.
 
-DEVTMPFS is needed for udev
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
 ---
- arch/arm/configs/mackerel_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/pci/host/pci-rcar-gen2.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index a61e165..57ececb 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -42,6 +42,8 @@ CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_FIRMWARE_IN_KERNEL is not set
- CONFIG_MTD=y
- CONFIG_MTD_CONCAT=y
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index ceec147baec3..3aa0c6311a42 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -15,6 +15,7 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of_pci.h>
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+@@ -160,8 +161,13 @@ static int __init rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ {
+ 	struct pci_sys_data *sys = dev->bus->sysdata;
+ 	struct rcar_pci_priv *priv = sys->private_data;
++	int irq;
++
++	irq = of_irq_parse_and_map_pci(dev, slot, pin);
++	if (!irq)
++		irq = priv->irq;
+ 
+-	return priv->irq;
++	return irq;
+ }
+ 
+ /* PCI host controller setup */
 -- 
-1.8.5.2
+1.8.5.3
 
