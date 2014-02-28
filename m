@@ -1,45 +1,87 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 17 Feb 2014 21:19:19 +0000
-Subject: [PATCH 3/3] ARM: shmobile: r7s72100: update defconfig for I2C usage
-Message-Id: <1392671959-22834-4-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:52 +0000
+Subject: [PATCH v2 22/40] clocksource: sh_tmu: Use request_irq() instead of setup_irq()
+Message-Id: <1393603090-23144-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+The driver claims it needs to register an interrupt handler too early
+for request_irq(). This might have been true in the past, but the only
+meaningful difference between request_irq() and setup_irq() today is an
+additional kzalloc() call in request_irq(). As the driver calls
+kmalloc() itself we know that the slab allocator is available, we can
+thus switch to request_irq().
 
-Select the correct I2C driver and activate EEPROM support to have a
-slave device for testing. Also activate i2c-dev, so i2c-tools will work.
-
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/genmai_defconfig | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ drivers/clocksource/sh_tmu.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/configs/genmai_defconfig b/arch/arm/configs/genmai_defconfig
-index 5ee6ac0..d238faf 100644
---- a/arch/arm/configs/genmai_defconfig
-+++ b/arch/arm/configs/genmai_defconfig
-@@ -52,6 +52,7 @@ CONFIG_IP_PNP_DHCP=y
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
-+CONFIG_EEPROM_AT24=y
- CONFIG_NETDEVICES=y
- # CONFIG_NET_CORE is not set
- # CONFIG_NET_VENDOR_ARC is not set
-@@ -80,7 +81,8 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
--CONFIG_I2C_SH_MOBILE=y
-+CONFIG_I2C_CHARDEV=y
-+CONFIG_I2C_RIIC=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
- # CONFIG_HWMON is not set
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index ecd7b60..8613cc9 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -38,7 +38,7 @@
+ struct sh_tmu_priv {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+-	struct irqaction irqaction;
++	int irq;
+ 	struct platform_device *pdev;
+ 	unsigned long rate;
+ 	unsigned long periodic;
+@@ -401,10 +401,11 @@ static void sh_tmu_register_clockevent(struct sh_tmu_priv *p,
+ 
+ 	clockevents_config_and_register(ced, 1, 0x300, 0xffffffff);
+ 
+-	ret = setup_irq(p->irqaction.irq, &p->irqaction);
++	ret = request_irq(p->irq, sh_tmu_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&p->pdev->dev), p);
+ 	if (ret) {
+-		dev_err(&p->pdev->dev, "failed to request irq %d\n",
+-			p->irqaction.irq);
++		dev_err(&p->pdev->dev, "failed to request irq %d\n", p->irq);
+ 		return;
+ 	}
+ }
+@@ -425,7 +426,7 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+-	int irq, ret;
++	int ret;
+ 	ret = -ENXIO;
+ 
+ 	memset(p, 0, sizeof(*p));
+@@ -444,8 +445,8 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	irq = platform_get_irq(p->pdev, 0);
+-	if (irq < 0) {
++	p->irq = platform_get_irq(p->pdev, 0);
++	if (p->irq < 0) {
+ 		dev_err(&p->pdev->dev, "failed to get irq\n");
+ 		goto err0;
+ 	}
+@@ -457,13 +458,6 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	/* setup data for setup_irq() (too early for request_irq()) */
+-	p->irqaction.name = dev_name(&p->pdev->dev);
+-	p->irqaction.handler = sh_tmu_interrupt;
+-	p->irqaction.dev_id = p;
+-	p->irqaction.irq = irq;
+-	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
+-
+ 	/* get hold of clock */
+ 	p->clk = clk_get(&p->pdev->dev, "tmu_fck");
+ 	if (IS_ERR(p->clk)) {
 -- 
-1.8.5.1
+1.8.3.2
 
