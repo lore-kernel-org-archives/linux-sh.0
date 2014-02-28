@@ -1,46 +1,131 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Feb 2014 06:20:46 +0000
-Subject: [PATCH 11/17] ARM: shmobile: r8a7791: Add SATA clocks to device tree
-Message-Id: <65f05c38749f393f775c360b9b247fa4d63b72de.1391665761.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:43 +0000
+Subject: [PATCH v2 13/40] clocksource: sh_cmt: Replace hardcoded register values with macros
+Message-Id: <1393603090-23144-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1391665761.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1391665761.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define symbolic macros for all used registers bits.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ drivers/clocksource/sh_cmt.c | 56 ++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 44 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 93c6f4d..94e3cc1 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -655,13 +655,15 @@
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
--			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>;
-+			clocks = <&zg_clk>, <&zg_clk>, <&zg_clk>, <&p_clk>, <&zs_clk>,
-+				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_VIN2 R8A7791_CLK_VIN1 R8A7791_CLK_VIN0
--				R8A7791_CLK_ETHER
-+				R8A7791_CLK_ETHER R8A7791_CLK_SATA1 R8A7791_CLK_SATA0
- 			>;
--			clock-output-names = "vin2", "vin1", "vin0", "ether";
-+			clock-output-names +				"vin2", "vin1", "vin0", "ether", "sata1", "sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 879b8c2..ce00baa 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -114,6 +114,34 @@ struct sh_cmt_device {
+ 	unsigned int num_channels;
+ };
+ 
++#define SH_CMT16_CMCSR_CMF		(1 << 7)
++#define SH_CMT16_CMCSR_CMIE		(1 << 6)
++#define SH_CMT16_CMCSR_CKS8		(0 << 0)
++#define SH_CMT16_CMCSR_CKS32		(1 << 0)
++#define SH_CMT16_CMCSR_CKS128		(2 << 0)
++#define SH_CMT16_CMCSR_CKS512		(3 << 0)
++#define SH_CMT16_CMCSR_CKS_MASK		(3 << 0)
++
++#define SH_CMT32_CMCSR_CMF		(1 << 15)
++#define SH_CMT32_CMCSR_OVF		(1 << 14)
++#define SH_CMT32_CMCSR_WRFLG		(1 << 13)
++#define SH_CMT32_CMCSR_STTF		(1 << 12)
++#define SH_CMT32_CMCSR_STPF		(1 << 11)
++#define SH_CMT32_CMCSR_SSIE		(1 << 10)
++#define SH_CMT32_CMCSR_CMS		(1 << 9)
++#define SH_CMT32_CMCSR_CMM		(1 << 8)
++#define SH_CMT32_CMCSR_CMTOUT_IE	(1 << 7)
++#define SH_CMT32_CMCSR_CMR_NONE		(0 << 4)
++#define SH_CMT32_CMCSR_CMR_DMA		(1 << 4)
++#define SH_CMT32_CMCSR_CMR_IRQ		(2 << 4)
++#define SH_CMT32_CMCSR_CMR_MASK		(3 << 4)
++#define SH_CMT32_CMCSR_DBGIVD		(1 << 3)
++#define SH_CMT32_CMCSR_CKS_RCLK8	(4 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK32	(5 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK128	(6 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK1	(7 << 0)
++#define SH_CMT32_CMCSR_CKS_MASK		(7 << 0)
++
+ static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+ {
+ 	return ioread16(base + (offs << 1));
+@@ -140,8 +168,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_16BIT] = {
+ 		.model = SH_CMT_16BIT,
+ 		.width = 16,
+-		.overflow_bit = 0x80,
+-		.clear_bits = ~0x80,
++		.overflow_bit = SH_CMT16_CMCSR_CMF,
++		.clear_bits = ~SH_CMT16_CMCSR_CMF,
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read16,
+@@ -150,8 +178,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_32BIT] = {
+ 		.model = SH_CMT_32BIT,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read32,
+@@ -160,8 +188,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_32BIT_FAST] = {
+ 		.model = SH_CMT_32BIT_FAST,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read32,
+@@ -170,8 +198,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_48BIT] = {
+ 		.model = SH_CMT_48BIT,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read32,
+ 		.write_control = sh_cmt_write32,
+ 		.read_count = sh_cmt_read32,
+@@ -180,8 +208,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_48BIT_GEN2] = {
+ 		.model = SH_CMT_48BIT_GEN2,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read32,
+ 		.write_control = sh_cmt_write32,
+ 		.read_count = sh_cmt_read32,
+@@ -295,10 +323,14 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
+ 	/* configure channel, periodic mode and maximum timeout */
+ 	if (ch->cmt->info->width = 16) {
+ 		*rate = clk_get_rate(ch->cmt->clk) / 512;
+-		sh_cmt_write_cmcsr(ch, 0x43);
++		sh_cmt_write_cmcsr(ch, SH_CMT16_CMCSR_CMIE |
++				   SH_CMT16_CMCSR_CKS512);
+ 	} else {
+ 		*rate = clk_get_rate(ch->cmt->clk) / 8;
+-		sh_cmt_write_cmcsr(ch, 0x01a4);
++		sh_cmt_write_cmcsr(ch, SH_CMT32_CMCSR_CMM |
++				   SH_CMT32_CMCSR_CMTOUT_IE |
++				   SH_CMT32_CMCSR_CMR_IRQ |
++				   SH_CMT32_CMCSR_CKS_RCLK8);
+ 	}
+ 
+ 	sh_cmt_write_cmcor(ch, 0xffffffff);
 -- 
-1.8.5.2
+1.8.3.2
 
