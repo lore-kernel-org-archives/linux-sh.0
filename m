@@ -1,101 +1,178 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 14 Feb 2014 00:59:58 +0000
-Subject: [PATCH 20/27] ARM: shmobile: r8a7790: Switch to new style CMT device
-Message-Id: <1392339605-20691-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:54 +0000
+Subject: [PATCH v2 24/40] clocksource: sh_tmu: Rename struct sh_tmu_priv to sh_tmu_device
+Message-Id: <1393603090-23144-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1392339605-20691-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+Channel data is private as well, rename priv to device to make the
+distrinction between the core device and the channels clearer.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c |  2 +-
- arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
- arch/arm/mach-shmobile/setup-r8a7790.c         | 26 ++++++++++++++++----------
- 3 files changed, 18 insertions(+), 12 deletions(-)
+ drivers/clocksource/sh_tmu.c | 68 ++++++++++++++++++++++----------------------
+ 1 file changed, 34 insertions(+), 34 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 35fc0f2..4dd43b1 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -38,7 +38,7 @@ static void __init lager_add_standard_devices(void)
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 26457e1..7013790 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -35,10 +35,10 @@
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
  
- 	clk = clk_get(NULL, "cmt0");
- 	if (!IS_ERR(clk)) {
--		clk_register_clkdev(clk, NULL, "sh_cmt.0");
-+		clk_register_clkdev(clk, NULL, "sh-cmt-48-gen2.0");
- 		clk_put(clk);
- 	}
- #else
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 4b276ef..780466e 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -357,7 +357,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("ee220000.mmc", &mstp_clks[MSTP305]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
--	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_DEV_ID("sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index b237268..3e5813f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -269,20 +269,26 @@ static const struct resource thermal_resources[] __initconst = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
+-struct sh_tmu_priv;
++struct sh_tmu_device;
  
--static const struct sh_timer_config cmt00_platform_data __initconst = {
--	.name = "CMT00",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_channel_config cmt0_channels[] = {
-+	{
-+		.index = 0,
-+		.clockevent_rating = 80,
-+	},
+ struct sh_tmu_channel {
+-	struct sh_tmu_priv *tmu;
++	struct sh_tmu_device *tmu;
+ 
+ 	int irq;
+ 
+@@ -50,7 +50,7 @@ struct sh_tmu_channel {
+ 	unsigned int enable_count;
  };
  
--static const struct resource cmt00_resources[] __initconst = {
--	DEFINE_RES_MEM(0xffca0510, 0x0c),
--	DEFINE_RES_MEM(0xffca0500, 0x04),
--	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+static struct sh_timer_config cmt0_platform_data = {
-+	.channels = cmt0_channels,
-+	.num_channels = ARRAY_SIZE(cmt0_channels),
-+	.channels_mask = 0x1f,
-+};
-+
-+static struct resource cmt0_resources[] = {
-+	DEFINE_RES_MEM(0xffca0000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(142)),
- };
+-struct sh_tmu_priv {
++struct sh_tmu_device {
+ 	struct platform_device *pdev;
  
- #define r8a7790_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -290,7 +296,7 @@ static const struct resource cmt00_resources[] __initconst = {
- 
- void __init r8a7790_add_dt_devices(void)
- {
--	r8a7790_register_cmt(00);
-+	r8a7790_register_cmt(0);
+ 	void __iomem *mapbase;
+@@ -436,59 +436,59 @@ static int sh_tmu_register(struct sh_tmu_channel *ch, char *name,
+ 	return 0;
  }
  
- void __init r8a7790_add_standard_devices(void)
+-static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
++static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	int ret;
+ 	ret = -ENXIO;
+ 
+-	memset(p, 0, sizeof(*p));
+-	p->pdev = pdev;
++	memset(tmu, 0, sizeof(*tmu));
++	tmu->pdev = pdev;
+ 
+ 	if (!cfg) {
+-		dev_err(&p->pdev->dev, "missing platform data\n");
++		dev_err(&tmu->pdev->dev, "missing platform data\n");
+ 		goto err0;
+ 	}
+ 
+-	platform_set_drvdata(pdev, p);
++	platform_set_drvdata(pdev, tmu);
+ 
+-	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
++	res = platform_get_resource(tmu->pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+-		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
++		dev_err(&tmu->pdev->dev, "failed to get I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+-	p->channel.irq = platform_get_irq(p->pdev, 0);
+-	if (p->channel.irq < 0) {
+-		dev_err(&p->pdev->dev, "failed to get irq\n");
++	tmu->channel.irq = platform_get_irq(tmu->pdev, 0);
++	if (tmu->channel.irq < 0) {
++		dev_err(&tmu->pdev->dev, "failed to get irq\n");
+ 		goto err0;
+ 	}
+ 
+ 	/* map memory, let mapbase point to our channel */
+-	p->mapbase = ioremap_nocache(res->start, resource_size(res));
+-	if (p->mapbase = NULL) {
+-		dev_err(&p->pdev->dev, "failed to remap I/O memory\n");
++	tmu->mapbase = ioremap_nocache(res->start, resource_size(res));
++	if (tmu->mapbase = NULL) {
++		dev_err(&tmu->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+ 	/* get hold of clock */
+-	p->clk = clk_get(&p->pdev->dev, "tmu_fck");
+-	if (IS_ERR(p->clk)) {
+-		dev_err(&p->pdev->dev, "cannot get clock\n");
+-		ret = PTR_ERR(p->clk);
++	tmu->clk = clk_get(&tmu->pdev->dev, "tmu_fck");
++	if (IS_ERR(tmu->clk)) {
++		dev_err(&tmu->pdev->dev, "cannot get clock\n");
++		ret = PTR_ERR(tmu->clk);
+ 		goto err1;
+ 	}
+ 
+-	ret = clk_prepare(p->clk);
++	ret = clk_prepare(tmu->clk);
+ 	if (ret < 0)
+ 		goto err2;
+ 
+-	p->channel.cs_enabled = false;
+-	p->channel.enable_count = 0;
+-	p->channel.tmu = p;
++	tmu->channel.cs_enabled = false;
++	tmu->channel.enable_count = 0;
++	tmu->channel.tmu = tmu;
+ 
+-	ret = sh_tmu_register(&p->channel, (char *)dev_name(&p->pdev->dev),
++	ret = sh_tmu_register(&tmu->channel, (char *)dev_name(&tmu->pdev->dev),
+ 			      cfg->clockevent_rating,
+ 			      cfg->clocksource_rating);
+ 	if (ret < 0)
+@@ -497,18 +497,18 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 	return 0;
+ 
+  err3:
+-	clk_unprepare(p->clk);
++	clk_unprepare(tmu->clk);
+  err2:
+-	clk_put(p->clk);
++	clk_put(tmu->clk);
+  err1:
+-	iounmap(p->mapbase);
++	iounmap(tmu->mapbase);
+  err0:
+ 	return ret;
+ }
+ 
+ static int sh_tmu_probe(struct platform_device *pdev)
+ {
+-	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
++	struct sh_tmu_device *tmu = platform_get_drvdata(pdev);
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	int ret;
+ 
+@@ -517,20 +517,20 @@ static int sh_tmu_probe(struct platform_device *pdev)
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+ 
+-	if (p) {
++	if (tmu) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		goto out;
+ 	}
+ 
+-	p = kmalloc(sizeof(*p), GFP_KERNEL);
+-	if (p = NULL) {
++	tmu = kmalloc(sizeof(*tmu), GFP_KERNEL);
++	if (tmu = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = sh_tmu_setup(p, pdev);
++	ret = sh_tmu_setup(tmu, pdev);
+ 	if (ret) {
+-		kfree(p);
++		kfree(tmu);
+ 		pm_runtime_idle(&pdev->dev);
+ 		return ret;
+ 	}
 -- 
 1.8.3.2
 
