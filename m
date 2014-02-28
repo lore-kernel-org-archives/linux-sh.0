@@ -1,79 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:58:01 +0000
-Subject: [PATCH v2 31/40] clocksource: sh_tmu: Replace hardcoded register values with macros
-Message-Id: <1393603090-23144-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Patrick Titiano <ptitiano@baylibre.com>
+Date: Fri, 28 Feb 2014 13:10:03 +0000
+Subject: [PATCH 1/2] thermal: rcar-thermal: fix same mask applied twice
+Message-Id: <1393593004-16285-2-git-send-email-ptitiano@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
+In-Reply-To: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com
+Cc: bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Patrick Titiano <ptitiano@baylibre.com>
 
-Define symbolic macros for all used registers bits.
+Mask is already applied preceding the if statement.
+Remove the second mask.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Patrick Titiano <ptitiano@baylibre.com>
 ---
- drivers/clocksource/sh_tmu.c | 19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+ drivers/thermal/rcar_thermal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index baa3383..5cd9c21 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -69,6 +69,15 @@ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
- #define TCNT 1 /* channel register */
- #define TCR 2 /* channel register */
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index e2bb589..6ea8c5c 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -316,7 +316,7 @@ static u32 rcar_thermal_had_changed(struct rcar_thermal_priv *priv, u32 status)
  
-+#define TCR_UNF			(1 << 8)
-+#define TCR_UNIE		(1 << 5)
-+#define TCR_TPSC_CLK4		(0 << 0)
-+#define TCR_TPSC_CLK16		(1 << 0)
-+#define TCR_TPSC_CLK64		(2 << 0)
-+#define TCR_TPSC_CLK256		(3 << 0)
-+#define TCR_TPSC_CLK1024	(4 << 0)
-+#define TCR_TPSC_MASK		(7 << 0)
-+
- static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
- {
- 	unsigned long offs;
-@@ -140,7 +149,7 @@ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
+ 	status = (status >> rcar_id_to_shift(priv)) & 0x3;
  
- 	/* configure channel to parent clock / 4, irq off */
- 	ch->rate = clk_get_rate(ch->tmu->clk) / 4;
--	sh_tmu_write(ch, TCR, 0x0000);
-+	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
- 
- 	/* enable channel */
- 	sh_tmu_start_stop_ch(ch, 1);
-@@ -165,7 +174,7 @@ static void __sh_tmu_disable(struct sh_tmu_channel *ch)
- 	sh_tmu_start_stop_ch(ch, 0);
- 
- 	/* disable interrupts in TMU block */
--	sh_tmu_write(ch, TCR, 0x0000);
-+	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
- 
- 	/* stop clock */
- 	clk_disable(ch->tmu->clk);
-@@ -195,7 +204,7 @@ static void sh_tmu_set_next(struct sh_tmu_channel *ch, unsigned long delta,
- 	sh_tmu_read(ch, TCR);
- 
- 	/* enable interrupt */
--	sh_tmu_write(ch, TCR, 0x0020);
-+	sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
- 
- 	/* reload delta value in case of periodic timer */
- 	if (periodic)
-@@ -215,9 +224,9 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
- 
- 	/* disable or acknowledge interrupt */
- 	if (ch->ced.mode = CLOCK_EVT_MODE_ONESHOT)
--		sh_tmu_write(ch, TCR, 0x0000);
-+		sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
- 	else
--		sh_tmu_write(ch, TCR, 0x0020);
-+		sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
- 
- 	/* notify clockevent layer */
- 	ch->ced.event_handler(&ch->ced);
+-	if (status & 0x3) {
++	if (status) {
+ 		dev_dbg(dev, "thermal%d %s%s\n",
+ 			priv->id,
+ 			(status & 0x2) ? "Rising " : "",
 -- 
 1.8.3.2
 
