@@ -1,169 +1,123 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Feb 2014 02:11:21 +0000
-Subject: [PATCH v3 04/08] PCI: rcar: Register each instance independently
-Message-Id: <20140218021121.14164.43332.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:57:37 +0000
+Subject: [PATCH v2 07/40] clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
+Message-Id: <1393603090-23144-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140218021041.14164.56411.sendpatchset@w520>
-In-Reply-To: <20140218021041.14164.56411.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The mapbase variable points to the mapped base address of the channel,
+rename it to mapbase_sh. mapbase_str points to the mapped base address
+of the CMT device, rename it to mapbase.
 
-Convert the code to allow per-device probe() like other device
-drivers. This also delays driver registration due to change from
-subsys_initcall() to regular module_platform_driver().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/clocksource/sh_cmt.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-Changes since V2:
- - Remove __init tags from rcar_pci_map_irq() and rcar_pci_setup()
-
-Changes since V1:
- - Updated to fit on top of patches from Ben Dooks
- - Use hw_private[1] for hw.private_data, thanks Geert!
- - Use ARRAY_SIZE with hw_private for hw.nr_controllers
-
- drivers/pci/host/pci-rcar-gen2.c |   80 +++++++++-----------------------------
- 1 file changed, 20 insertions(+), 60 deletions(-)
-
---- 0004/drivers/pci/host/pci-rcar-gen2.c
-+++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-18 10:57:14.000000000 +0900
-@@ -91,9 +91,6 @@
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index febd6bf..eb93b88 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -55,8 +55,8 @@ struct sh_cmt_channel {
+ struct sh_cmt_device {
+ 	struct platform_device *pdev;
  
- #define RCAR_PCI_UNIT_REV_REG		(RCAR_AHBPCI_PCICOM_OFFSET + 0x48)
++	void __iomem *mapbase_ch;
+ 	void __iomem *mapbase;
+-	void __iomem *mapbase_str;
+ 	struct clk *clk;
  
--/* Number of internal PCI controllers */
--#define RCAR_PCI_NR_CONTROLLERS		3
--
- struct rcar_pci_priv {
- 	struct device *dev;
- 	void __iomem *reg;
-@@ -177,7 +174,7 @@ static int rcar_pci_write_config(struct
+ 	struct sh_cmt_channel channel;
+@@ -125,41 +125,41 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
+ 
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase_str, 0);
++	return ch->cmt->read_control(ch->cmt->mapbase, 0);
  }
  
- /* PCI interrupt mapping */
--static int __init rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
-+static int rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
  {
- 	struct pci_sys_data *sys = dev->bus->sysdata;
- 	struct rcar_pci_priv *priv = sys->private_data;
-@@ -226,7 +223,7 @@ static inline void rcar_pci_setup_errirq
- #endif
- 
- /* PCI host controller setup */
--static int __init rcar_pci_setup(int nr, struct pci_sys_data *sys)
-+static int rcar_pci_setup(int nr, struct pci_sys_data *sys)
- {
- 	struct rcar_pci_priv *priv = sys->private_data;
- 	void __iomem *reg = priv->reg;
-@@ -292,6 +289,8 @@ static int __init rcar_pci_setup(int nr,
- 	pci_add_resource(&sys->resources, &priv->io_res);
- 	pci_add_resource(&sys->resources, &priv->mem_res);
- 
-+	/* Setup bus number based on platform device id */
-+	sys->busnr = to_platform_device(priv->dev)->id;
- 	return 1;
+-	return ch->cmt->read_control(ch->cmt->mapbase, CMCSR);
++	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
  }
  
-@@ -300,48 +299,13 @@ static struct pci_ops rcar_pci_ops = {
- 	.write	= rcar_pci_write_config,
- };
- 
--static struct hw_pci rcar_hw_pci __initdata = {
--	.map_irq	= rcar_pci_map_irq,
--	.ops		= &rcar_pci_ops,
--	.setup		= rcar_pci_setup,
--};
--
--static int rcar_pci_count __initdata;
--
--static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
--{
--	void **private_data;
--	int count;
--
--	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
--		goto add_priv;
--
--	/* (Re)allocate private data pointer array if needed */
--	count = rcar_pci_count + RCAR_PCI_NR_CONTROLLERS;
--	private_data = kzalloc(count * sizeof(void *), GFP_KERNEL);
--	if (!private_data)
--		return -ENOMEM;
--
--	rcar_pci_count = count;
--	if (rcar_hw_pci.private_data) {
--		memcpy(private_data, rcar_hw_pci.private_data,
--		       rcar_hw_pci.nr_controllers * sizeof(void *));
--		kfree(rcar_hw_pci.private_data);
--	}
--
--	rcar_hw_pci.private_data = private_data;
--
--add_priv:
--	/* Add private data pointer to the array */
--	rcar_hw_pci.private_data[rcar_hw_pci.nr_controllers++] = priv;
--	return 0;
--}
--
--static int __init rcar_pci_probe(struct platform_device *pdev)
-+static int rcar_pci_probe(struct platform_device *pdev)
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
  {
- 	struct resource *cfg_res, *mem_res;
- 	struct rcar_pci_priv *priv;
- 	void __iomem *reg;
-+	struct hw_pci hw;
-+	void *hw_private[1];
+-	return ch->cmt->read_count(ch->cmt->mapbase, CMCNT);
++	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
+ }
  
- 	cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	reg = devm_ioremap_resource(&pdev->dev, cfg_res);
-@@ -377,31 +341,27 @@ static int __init rcar_pci_probe(struct
- 		return priv->irq;
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase_str, 0, value);
++	ch->cmt->write_control(ch->cmt->mapbase, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase, CMCSR, value);
++	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase, CMCNT, value);
++	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase, CMCOR, value);
++	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+@@ -761,18 +761,18 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	/* optional resource for the shared timer start/stop register */
+ 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
+ 
+-	/* map memory, let mapbase point to our channel */
+-	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
+-	if (cmt->mapbase = NULL) {
++	/* map memory, let mapbase_ch point to our channel */
++	cmt->mapbase_ch = ioremap_nocache(res->start, resource_size(res));
++	if (cmt->mapbase_ch = NULL) {
+ 		dev_err(&cmt->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
  	}
  
--	return rcar_pci_add_controller(priv);
-+	hw_private[0] = priv;
-+	memset(&hw, 0, sizeof(hw));
-+	hw.nr_controllers = ARRAY_SIZE(hw_private);
-+	hw.private_data = hw_private;
-+	hw.map_irq = rcar_pci_map_irq;
-+	hw.ops = &rcar_pci_ops;
-+	hw.setup = rcar_pci_setup;
-+	pci_common_init_dev(&pdev->dev, &hw);
-+	return 0;
+ 	/* map second resource for CMSTR */
+-	cmt->mapbase_str = ioremap_nocache(res2 ? res2->start :
+-					   res->start - cfg->channel_offset,
+-					   res2 ? resource_size(res2) : 2);
+-	if (cmt->mapbase_str = NULL) {
++	cmt->mapbase = ioremap_nocache(res2 ? res2->start :
++				       res->start - cfg->channel_offset,
++				       res2 ? resource_size(res2) : 2);
++	if (cmt->mapbase = NULL) {
+ 		dev_err(&cmt->pdev->dev, "failed to remap I/O second memory\n");
+ 		goto err1;
+ 	}
+@@ -824,9 +824,9 @@ err4:
+ err3:
+ 	clk_put(cmt->clk);
+ err2:
+-	iounmap(cmt->mapbase_str);
+-err1:
+ 	iounmap(cmt->mapbase);
++err1:
++	iounmap(cmt->mapbase_ch);
+ err0:
+ 	return ret;
  }
- 
- static struct platform_driver rcar_pci_driver = {
- 	.driver = {
- 		.name = "pci-rcar-gen2",
-+		.owner = THIS_MODULE,
-+		.suppress_bind_attrs = true,
- 	},
-+	.probe = rcar_pci_probe,
- };
- 
--static int __init rcar_pci_init(void)
--{
--	int retval;
--
--	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
--	if (!retval)
--		pci_common_init(&rcar_hw_pci);
--
--	/* Private data pointer array is not needed any more */
--	kfree(rcar_hw_pci.private_data);
--	rcar_hw_pci.private_data = NULL;
--
--	return retval;
--}
--
--subsys_initcall(rcar_pci_init);
-+module_platform_driver(rcar_pci_driver);
- 
- MODULE_LICENSE("GPL v2");
- MODULE_DESCRIPTION("Renesas R-Car Gen2 internal PCI");
+-- 
+1.8.3.2
+
