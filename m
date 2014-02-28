@@ -1,82 +1,79 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Feb 2014 15:57:55 +0000
-Subject: [PATCH v2 25/40] clocksource: sh_tmu: Split channel setup to separate function
-Message-Id: <1393603090-23144-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:58:01 +0000
+Subject: [PATCH v2 31/40] clocksource: sh_tmu: Replace hardcoded register values with macros
+Message-Id: <1393603090-23144-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Move the channel setup code from sh_tmu_setup to a new
-sh_tmu_setup_channel function and call it from sh_tmu_setup.
+Define symbolic macros for all used registers bits.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_tmu.c | 36 +++++++++++++++++++++++-------------
- 1 file changed, 23 insertions(+), 13 deletions(-)
+ drivers/clocksource/sh_tmu.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 7013790..4779c97 100644
+index baa3383..5cd9c21 100644
 --- a/drivers/clocksource/sh_tmu.c
 +++ b/drivers/clocksource/sh_tmu.c
-@@ -436,6 +436,28 @@ static int sh_tmu_register(struct sh_tmu_channel *ch, char *name,
- 	return 0;
- }
+@@ -69,6 +69,15 @@ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+ #define TCNT 1 /* channel register */
+ #define TCR 2 /* channel register */
  
-+static int sh_tmu_channel_setup(struct sh_tmu_channel *ch,
-+				struct sh_tmu_device *tmu)
-+{
-+	struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
++#define TCR_UNF			(1 << 8)
++#define TCR_UNIE		(1 << 5)
++#define TCR_TPSC_CLK4		(0 << 0)
++#define TCR_TPSC_CLK16		(1 << 0)
++#define TCR_TPSC_CLK64		(2 << 0)
++#define TCR_TPSC_CLK256		(3 << 0)
++#define TCR_TPSC_CLK1024	(4 << 0)
++#define TCR_TPSC_MASK		(7 << 0)
 +
-+	memset(ch, 0, sizeof(*ch));
-+	ch->tmu = tmu;
-+
-+	ch->irq = platform_get_irq(tmu->pdev, 0);
-+	if (ch->irq < 0) {
-+		dev_err(&tmu->pdev->dev, "failed to get irq\n");
-+		return ch->irq;
-+	}
-+
-+	ch->cs_enabled = false;
-+	ch->enable_count = 0;
-+
-+	return sh_tmu_register(ch, (char *)dev_name(&tmu->pdev->dev),
-+			       cfg->clockevent_rating,
-+			       cfg->clocksource_rating);
-+}
-+
- static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
  {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
-@@ -459,12 +481,6 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 		goto err0;
- 	}
+ 	unsigned long offs;
+@@ -140,7 +149,7 @@ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
  
--	tmu->channel.irq = platform_get_irq(tmu->pdev, 0);
--	if (tmu->channel.irq < 0) {
--		dev_err(&tmu->pdev->dev, "failed to get irq\n");
--		goto err0;
--	}
--
- 	/* map memory, let mapbase point to our channel */
- 	tmu->mapbase = ioremap_nocache(res->start, resource_size(res));
- 	if (tmu->mapbase = NULL) {
-@@ -484,13 +500,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	if (ret < 0)
- 		goto err2;
+ 	/* configure channel to parent clock / 4, irq off */
+ 	ch->rate = clk_get_rate(ch->tmu->clk) / 4;
+-	sh_tmu_write(ch, TCR, 0x0000);
++	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
  
--	tmu->channel.cs_enabled = false;
--	tmu->channel.enable_count = 0;
--	tmu->channel.tmu = tmu;
--
--	ret = sh_tmu_register(&tmu->channel, (char *)dev_name(&tmu->pdev->dev),
--			      cfg->clockevent_rating,
--			      cfg->clocksource_rating);
-+	ret = sh_tmu_channel_setup(&tmu->channel, tmu);
- 	if (ret < 0)
- 		goto err3;
+ 	/* enable channel */
+ 	sh_tmu_start_stop_ch(ch, 1);
+@@ -165,7 +174,7 @@ static void __sh_tmu_disable(struct sh_tmu_channel *ch)
+ 	sh_tmu_start_stop_ch(ch, 0);
  
+ 	/* disable interrupts in TMU block */
+-	sh_tmu_write(ch, TCR, 0x0000);
++	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
+ 
+ 	/* stop clock */
+ 	clk_disable(ch->tmu->clk);
+@@ -195,7 +204,7 @@ static void sh_tmu_set_next(struct sh_tmu_channel *ch, unsigned long delta,
+ 	sh_tmu_read(ch, TCR);
+ 
+ 	/* enable interrupt */
+-	sh_tmu_write(ch, TCR, 0x0020);
++	sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
+ 
+ 	/* reload delta value in case of periodic timer */
+ 	if (periodic)
+@@ -215,9 +224,9 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
+ 
+ 	/* disable or acknowledge interrupt */
+ 	if (ch->ced.mode = CLOCK_EVT_MODE_ONESHOT)
+-		sh_tmu_write(ch, TCR, 0x0000);
++		sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
+ 	else
+-		sh_tmu_write(ch, TCR, 0x0020);
++		sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
+ 
+ 	/* notify clockevent layer */
+ 	ch->ced.event_handler(&ch->ced);
 -- 
 1.8.3.2
 
