@@ -1,148 +1,90 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 13 Feb 2014 03:03:42 +0000
-Subject: [PATCH v2 04/08] PCI: rcar: Register each instance independently
-Message-Id: <20140213030342.10398.10051.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Feb 2014 15:58:08 +0000
+Subject: [PATCH v2 38/40] ARM: shmobile: r8a7791: Switch to new style CMT device
+Message-Id: <1393603090-23144-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140213030302.10398.37322.sendpatchset@w520>
-In-Reply-To: <20140213030302.10398.37322.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: horms@verge.net.au, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, valentine.barshak@cogentembedded.com, ben.dooks@codethink.co.uk, geert@linux-m68k.org, bhelgaas@google.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Convert the code to allow per-device probe() like other device
-drivers. This also delays driver registration due to change from
-subsys_initcall() to regular module_platform_driver().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
+ arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
+ 3 files changed, 9 insertions(+), 12 deletions(-)
 
-Changes since V1:
- - Updated to fit on top of patches from Ben Dooks
- - Use hw_private[1] for hw.private_data, thanks Geert!
- - Use ARRAY_SIZE with hw_private for hw.nr_controllers
-
- drivers/pci/host/pci-rcar-gen2.c |   76 +++++++++-----------------------------
- 1 file changed, 18 insertions(+), 58 deletions(-)
-
---- 0006/drivers/pci/host/pci-rcar-gen2.c
-+++ work/drivers/pci/host/pci-rcar-gen2.c	2014-02-13 10:10:25.000000000 +0900
-@@ -91,9 +91,6 @@
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a3fd302..3b2a498 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -93,7 +93,7 @@ static void __init koelsch_add_standard_devices(void)
+ 		const char *con_id;
+ 		const char *dev_id;
+ 	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
++		{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 		{ "scifa0", NULL, "sh-sci.0" },
+ 		{ "scifa1", NULL, "sh-sci.1" },
+ 		{ "scifb0", NULL, "sh-sci.2" },
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 605fc77..24f7583 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -265,7 +265,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index e28404e..561653d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -128,20 +128,17 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+ 					  &scif##index##_platform_data,	       \
+ 					  sizeof(scif##index##_platform_data))
  
- #define RCAR_PCI_UNIT_REV_REG		(RCAR_AHBPCI_PCICOM_OFFSET + 0x48)
- 
--/* Number of internal PCI controllers */
--#define RCAR_PCI_NR_CONTROLLERS		3
--
- struct rcar_pci_priv {
- 	struct device *dev;
- 	void __iomem *reg;
-@@ -292,6 +289,8 @@ static int __init rcar_pci_setup(int nr,
- 	pci_add_resource(&sys->resources, &priv->io_res);
- 	pci_add_resource(&sys->resources, &priv->mem_res);
- 
-+	/* Setup bus number based on platform device id */
-+	sys->busnr = to_platform_device(priv->dev)->id;
- 	return 1;
- }
- 
-@@ -300,48 +299,13 @@ static struct pci_ops rcar_pci_ops = {
- 	.write	= rcar_pci_write_config,
+-static const struct sh_timer_config cmt00_platform_data __initconst = {
+-	.name = "CMT00",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_config cmt0_platform_data = {
++	.channels_mask = 0x60,
  };
  
--static struct hw_pci rcar_hw_pci __initdata = {
--	.map_irq	= rcar_pci_map_irq,
--	.ops		= &rcar_pci_ops,
--	.setup		= rcar_pci_setup,
--};
--
--static int rcar_pci_count __initdata;
--
--static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
--{
--	void **private_data;
--	int count;
--
--	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
--		goto add_priv;
--
--	/* (Re)allocate private data pointer array if needed */
--	count = rcar_pci_count + RCAR_PCI_NR_CONTROLLERS;
--	private_data = kzalloc(count * sizeof(void *), GFP_KERNEL);
--	if (!private_data)
--		return -ENOMEM;
--
--	rcar_pci_count = count;
--	if (rcar_hw_pci.private_data) {
--		memcpy(private_data, rcar_hw_pci.private_data,
--		       rcar_hw_pci.nr_controllers * sizeof(void *));
--		kfree(rcar_hw_pci.private_data);
--	}
--
--	rcar_hw_pci.private_data = private_data;
--
--add_priv:
--	/* Add private data pointer to the array */
--	rcar_hw_pci.private_data[rcar_hw_pci.nr_controllers++] = priv;
--	return 0;
--}
--
--static int __init rcar_pci_probe(struct platform_device *pdev)
-+static int rcar_pci_probe(struct platform_device *pdev)
- {
- 	struct resource *cfg_res, *mem_res;
- 	struct rcar_pci_priv *priv;
- 	void __iomem *reg;
-+	struct hw_pci hw;
-+	void *hw_private[1];
- 
- 	cfg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	reg = devm_ioremap_resource(&pdev->dev, cfg_res);
-@@ -377,31 +341,27 @@ static int __init rcar_pci_probe(struct
- 		return priv->irq;
- 	}
- 
--	return rcar_pci_add_controller(priv);
-+	hw_private[0] = priv;
-+	memset(&hw, 0, sizeof(hw));
-+	hw.nr_controllers = ARRAY_SIZE(hw_private);
-+	hw.private_data = hw_private;
-+	hw.map_irq = rcar_pci_map_irq;
-+	hw.ops = &rcar_pci_ops;
-+	hw.setup = rcar_pci_setup;
-+	pci_common_init_dev(&pdev->dev, &hw);
-+	return 0;
- }
- 
- static struct platform_driver rcar_pci_driver = {
- 	.driver = {
- 		.name = "pci-rcar-gen2",
-+		.owner = THIS_MODULE,
-+		.suppress_bind_attrs = true,
- 	},
-+	.probe = rcar_pci_probe,
+-static const struct resource cmt00_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xffca0510, 0x0c),
+-	DEFINE_RES_MEM(0xffca0500, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++static struct resource cmt0_resources[] = {
++	DEFINE_RES_MEM(0xffca0000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(142)),
  };
  
--static int __init rcar_pci_init(void)
--{
--	int retval;
--
--	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
--	if (!retval)
--		pci_common_init(&rcar_hw_pci);
--
--	/* Private data pointer array is not needed any more */
--	kfree(rcar_hw_pci.private_data);
--	rcar_hw_pci.private_data = NULL;
--
--	return retval;
--}
--
--subsys_initcall(rcar_pci_init);
-+module_platform_driver(rcar_pci_driver);
+ #define r8a7791_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -200,7 +197,7 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_register_cmt(00);
++	r8a7791_register_cmt(0);
+ }
  
- MODULE_LICENSE("GPL v2");
- MODULE_DESCRIPTION("Renesas R-Car Gen2 internal PCI");
+ void __init r8a7791_add_standard_devices(void)
+-- 
+1.8.3.2
+
