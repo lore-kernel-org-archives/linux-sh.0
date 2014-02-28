@@ -1,143 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 04 Feb 2014 15:23:59 +0000
-Subject: [PATCH v5 05/11] ARM: shmobile: r7s72100 dtsi: Add RSPI nodes
-Message-Id: <1391527445-14881-6-git-send-email-geert@linux-m68k.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 28 Feb 2014 09:32:55 +0000
+Subject: [PATCH] ARM: r7s72100: fix bus clock calculation
+Message-Id: <1393579975-19619-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1391527445-14881-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: devicetree@vger.kernel.org
+The picture in the datasheet is a little misleading, yet the divider of
+the bus_clk is 1/3 and not 2/3.
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
-v5:
-  - Rebased on top of renesas-devel-v3.14-rc1-20140204
-v4:
-  - Switch to named IRQs
-v3:
-  - No changes
-v2:
-  - No changes
+ arch/arm/mach-shmobile/clock-r7s72100.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/boot/dts/r7s72100-genmai-reference.dts |    2 +-
- arch/arm/boot/dts/r7s72100.dtsi                 |   75 +++++++++++++++++++++++
- 2 files changed, 76 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index da19c70ed82b..0849017e9d2f 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -9,7 +9,7 @@
-  */
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index f17a5db..bee0073 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -70,7 +70,7 @@ static struct clk pll_clk = {
  
- /dts-v1/;
--/include/ "r7s72100.dtsi"
-+#include "r7s72100.dtsi"
+ static unsigned long bus_recalc(struct clk *clk)
+ {
+-	return clk->parent->rate * 2 / 3;
++	return clk->parent->rate / 3;
+ }
  
- / {
- 	model = "Genmai";
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 46b82aa7dc4e..9be67a16fc6f 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -8,12 +8,22 @@
-  * kind, whether express or implied.
-  */
- 
-+#include <dt-bindings/interrupt-controller/irq.h>
-+
- / {
- 	compatible = "renesas,r7s72100";
- 	interrupt-parent = <&gic>;
- 	#address-cells = <1>;
- 	#size-cells = <1>;
- 
-+	aliases {
-+		spi0 = &spi0;
-+		spi1 = &spi1;
-+		spi2 = &spi2;
-+		spi3 = &spi3;
-+		spi4 = &spi4;
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -33,4 +43,69 @@
- 		reg = <0xe8201000 0x1000>,
- 			<0xe8202000 0x1000>;
- 	};
-+
-+	spi0: spi@e800c800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800c800 0x24>;
-+		interrupts = <0 238 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error", "rx", "tx";
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi1: spi@e800d000 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800d000 0x24>;
-+		interrupts = <0 241 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error", "rx", "tx";
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi2: spi@e800d800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800d800 0x24>;
-+		interrupts = <0 244 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error", "rx", "tx";
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi3: spi@e800e000 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800e000 0x24>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error", "rx", "tx";
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	spi4: spi@e800e800 {
-+		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
-+		reg = <0xe800e800 0x24>;
-+		interrupts = <0 250 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "error", "rx", "tx";
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
+ static struct sh_clk_ops bus_clk_ops = {
 -- 
-1.7.9.5
+1.8.5.1
 
