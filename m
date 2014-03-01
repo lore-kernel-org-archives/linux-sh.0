@@ -1,69 +1,72 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 11 Mar 2014 14:18:24 +0000
-Subject: Re: [PATCH 3/3] spi: rspi: Add runtime PM support, using spi core auto_runtime_pm
-Message-Id: <20140311141824.GT28112@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Rhuyk5QDIcoo2YDB"
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Sat, 01 Mar 2014 00:53:33 +0000
+Subject: Re: [PATCH 0/7] PCI irq mapping fixes and cleanups
+Message-Id: <CAJ+vNU2VN5haOU2GN5o7UUg9vgYh06pAhvDaoGw6EzTBEbD0mg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
- <1394531952-3905-3-git-send-email-geert@linux-m68k.org>
- <20140311104713.GN28112@sirena.org.uk>
- <CAMuHMdWoPWebnyUu2uGebbnzu68Lh4qsgzpu-otnwMmvaeY1hQ@mail.gmail.com>
- <20140311132652.GS28112@sirena.org.uk>
- <CAMuHMdVf_4TPf6YKuHLztrgFKWHTeoVi5agesO6tFU5h_56DOA@mail.gmail.com>
-In-Reply-To: <CAMuHMdVf_4TPf6YKuHLztrgFKWHTeoVi5agesO6tFU5h_56DOA@mail.gmail.com>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+On Fri, Feb 28, 2014 at 9:28 AM, Lucas Stach <l.stach@pengutronix.de> wrote:
+> This series cleans up the PCI irq mapping for all
+> the ARM PCI host drivers, so they handle it in the
+> way defined in the common PCI bindings.
+>
+> Testing appreciated.
+>
+> Lucas Stach (7):
+>   ARM: dts: tegra: add PCIe interrupt mapping properties
+>   PCI: tegra: use new OF interrupt mapping when possible
+>   PCI: rcar: use new OF interrupt mapping when possible
+>   ARM: dts: exynos5440: fix PCIe interrupt mapping
+>   ARM: dts: imx6: add PCIe interrupt mapping properties
+>   PCI: designware: use new OF interrupt mapping when possible
+>   PCI: designware: split samsung and fsl bindings
+>
+>  .../devicetree/bindings/pci/designware-pcie.txt    | 69 +--------------------
+>  .../devicetree/bindings/pci/fsl,imx6q-pcie.txt     | 48 +++++++++++++++
+>  .../bindings/pci/nvidia,tegra20-pcie.txt           |  8 +++
+>  .../bindings/pci/samsung,exynos5440-pcie.txt       | 70 ++++++++++++++++++++++
+>  arch/arm/boot/dts/exynos5440.dtsi                  |  4 +-
+>  arch/arm/boot/dts/imx6qdl.dtsi                     | 11 ++++
+>  arch/arm/boot/dts/tegra20.dtsi                     |  4 ++
+>  arch/arm/boot/dts/tegra30.dtsi                     |  4 ++
+>  drivers/pci/host/pci-rcar-gen2.c                   |  8 ++-
+>  drivers/pci/host/pci-tegra.c                       |  7 ++-
+>  drivers/pci/host/pcie-designware.c                 |  8 ++-
+>  11 files changed, 168 insertions(+), 73 deletions(-)
+>  create mode 100644 Documentation/devicetree/bindings/pci/fsl,imx6q-pcie.txt
+>  create mode 100644 Documentation/devicetree/bindings/pci/samsung,exynos5440-pcie.txt
+>
+> --
+> 1.8.5.3
+>
 
---Rhuyk5QDIcoo2YDB
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Lucas,
 
-On Tue, Mar 11, 2014 at 02:35:15PM +0100, Geert Uytterhoeven wrote:
-> On Tue, Mar 11, 2014 at 2:26 PM, Mark Brown <broonie@kernel.org> wrote:
-> > On Tue, Mar 11, 2014 at 02:10:31PM +0100, Geert Uytterhoeven wrote:
+In testing this on IMX6 I'm finding that 'of_irq_parse_and_map_pci()'
+always returns -EINVAL because it can't find a dt node for the host
+bridge: http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/of/of_pci_irq.c#n60.
 
-> >> Can you please elaborate what should be fixed?
+So it seems there is still something missing in the imx6 devicetree
+regarding a 'host bridge'?  Is this solution expecting the
+range/interrupt data from the PCI host controller to be encapsulated
+in a host-bridge node such as
+http://lxr.missinglinkelectronics.com/linux/Documentation/devicetree/bindings/pci/ralink,rt3883-pci.txt#L124?
+ If so, thats not how the imx6 host controller node is currently
+defined.
 
-> >> If I disable CONFIG_PM_RUNTIME, the kernel prints:
+In my particular test case I have a baseboard with a socket on it and
+a PLX PEX860x PCIe switch on an add-in card.  So I don't think it
+makes sense to me to describe the add-in card in the baseboard DT -
+that wouldn't be very plug-n-play.   By the way, I'm not referring to
+the add-in card with the TI-XIO2001 PCIe-to-PCI bridge with the
+mismapped IRQ's - I'm aware that I would need to deal with that
+somehow in devicetree (still trying to understand how).
 
-> >>     Runtime PM disabled, clock forced on.
+Thanks,
 
-> >> and the clock is enabled all the time (verified by looking at the clock
-> >> registers)?
-
-> > That's very SH specific and doesn't apply in the general case (I would
-> > not be surprised if future SH updates broke it...).
-
-> Note that this is from drivers/base/power/clock_ops.c
-
-> So what should I do instead?
-
-Oh, is this manipulating the clock managed by the power domains?  If
-that's the case don't worry about it, it's fine.  I'd thought it was
-another clock.
-
---Rhuyk5QDIcoo2YDB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTHxssAAoJELSic+t+oim9CmwQAICD+Zs+I7xCa4Rxiywz7BOo
-tYaF299QomFfNAaCtJZIE1GhsApJVaSQ/6CIvpvO/myJHXOu3hIvfXC8mROjkQcw
-xQeLpN2qJhwp5fcqBYV0oHHEhaLCO5UpAmq2QbIx6iQZM3rTiJaSeJbrxoYEOAct
-QdWQX2aKoSbOT+EGRz3vqRJSNROQ1RV7DwvprPTmxgwxB3UhVqRezHDz0ZmTU42q
-glZpAQrzkddjTcagl8oipx+eq/KSgHLdroGyehbloHyb7MGU4Fb5wWIG+T+ZccWJ
-KDAfSyMWTuiA8T8X+9ule5NUbEoVmF39rdiqoDiRZsfbSioQy/KDqT80vNvEJRGp
-1EjBtMFOMe0/jnZ7Gr7Iqqq2XcSsjj+TgYJ2wfmP+5sTXR01/xH6dCIkFJv37R3g
-zQbKuHAY1snzGySMxKDEYEdcrouQk+P6oz1m5jSFXz275b/J0pN9EMRmgwi4hVUV
-ZrL3zgv4Wopm5XeXulTrMPoZfsTjT4KyqnlCZ+NI02qrhbRTZeAaEGgL1XEKxufR
-2KpRAZiG8pWDSMDsiLdOf4OhZ0wI550DD8Lq0PwcqWsoIzJUVvsedyn7KTtleZSR
-vVFxaiwd9s4eBkrpEtQ+mTnF1+mDwQyLM5dOuAaIJuDUQESAfraNLXgr/Md9pPu+
-7uoa0Tu+CToEcvmPXGC+
-=kgao
------END PGP SIGNATURE-----
-
---Rhuyk5QDIcoo2YDB--
+Tim
