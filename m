@@ -1,32 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 19 Mar 2014 01:17:33 +0000
-Subject: Re: [RFC] spi: Using Trigger number to transmit/receive data
-Message-Id: <8738ifng0l.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 02 Mar 2014 20:59:11 +0000
+Subject: Re: [PATCH 1/2] iommu: Add driver for Renesas VMSA-compatible IPMMU
+Message-Id: <9614296.npf9XYVJ8Q@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394699364-5669-1-git-send-email-cm-hiep@jinso.co.jp>
-	<1394699364-5669-2-git-send-email-cm-hiep@jinso.co.jp>
-	<CAMuHMdUpm_4f7LynObRA+NDn4vqeUc0a2XZW-E=4LKL_Ro3XZw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUpm_4f7LynObRA+NDn4vqeUc0a2XZW-E=4LKL_Ro3XZw@mail.gmail.com>
+References: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1393601099-4413-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdUcrANSqUmS6QJkcms_bU=aYLBXjBUL5ep=k0eQxYzw6g@mail.gmail.com>
+In-Reply-To: <CAMuHMdUcrANSqUmS6QJkcms_bU=aYLBXjBUL5ep=k0eQxYzw6g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Cao Minh Hiep <cm-hiep@jinso.co.jp>, Mark Brown <broonie@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, Linux-sh list <linux-sh@vger.kernel.org>, Ben Dooks <ben.dooks@codethink.co.uk>
 
+Hi Geert,
 
-Hi Geert, Hiep
+Thank you for the review.
 
-> > +static void qspi_update(const struct rspi_data *rspi, u8 mask, u8 val, u8 reg)
-> > +{
-> > +       u8 data;
-> > +
-> > +       data = rspi_read8(rspi, reg);
-> > +       data &= ~mask;
-> > +       data |= (val & mask);
+On Friday 28 February 2014 18:48:22 Geert Uytterhoeven wrote:
+> On Fri, Feb 28, 2014 at 4:24 PM, Laurent Pinchart wrote:
+> > +/*
+> > + * VMSA that states in section B3.6.3 "Control of Secure or Non-secure
+> > memory
+>
+> VMSA states
 > 
-> I think this "& mask" is superfluous.
+> > + * access, Long-descriptor format" that the NStable bit being set in a
+> > table + * descriptor will result in the NStable and NS bits of all child
+> > entries being + * ignored and considered as being set. The IPMMU seems
+> > not to comply with this, + * as it generates a secure access page fault
+> > if any of the NStable and NS bits + * isn't set when running in
+> > non-secure mode.
+> > + */
+> > 
+> > +       /*
+> > +        * TTBCR
+> > +        * We use long descriptor, with inner-shareable WBWA tables and
+> > allocate
+>
+> descriptors
+> 
+> > +        * the whole 32-bit VA space to TTBR0.
+> > +        */
+> > 
+> > +       /*
+> > +        * Clear the error status flags. Unlike traditionnal interrupt
+> > flag
+> 
+> traditional
+> 
+> Sorry, only comments on the comments ;-)
 
-This "& mask" protects data from un-anticipative overwrite IMO.
-Other driver is using same style.
-ex) snd_soc_update_bits()
+I'll of course assume this means that the driver is perfect ;-)
+
+I'll fix all this in v2.
+
+-- 
+Regards,
+
+Laurent Pinchart
 
