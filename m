@@ -1,80 +1,78 @@
-From: Patrick Titiano <ptitiano@baylibre.com>
-Date: Wed, 05 Mar 2014 14:45:38 +0000
-Subject: Re: [PATCH 0/2] thermal: rcar-thermal: minor fixes
-Message-Id: <53173892.90001@baylibre.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 02 Mar 2014 20:30:35 +0000
+Subject: Re: [PATCH v2 34/40] ARM: shmobile: sh73a0: Switch to new style CMT device
+Message-Id: <22125610.k3yNq8JlUF@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>	 <87fvn0xioy.wl%kuninori.morimoto.gx@gmail.com> <1393858290.2193.28.camel@rzhang1-mobl4>
-In-Reply-To: <1393858290.2193.28.camel@rzhang1-mobl4>
+References: <1393603090-23144-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1393603090-23144-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com, bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+Hi Sergei,
 
+Thank you for the patch.
 
-On 03/03/2014 15:51, Zhang Rui wrote:
-> On Sun, 2014-03-02 at 15:52 -0800, Kuninori Morimoto wrote:
->> Hi
->>
->>> Here are 2 minor updates to the rcar-thermal driver.
->>>
->>> First patch removes an unecessary mask applied in a if statement.
->>> Because the same mask was already applied in the preceding statement,
->>> the second one can be removed.
->>>
->>> Second patch avoids updating the thermal zone in case an IRQ was triggered but
->>> the temperature didn't effectively change.
->>> Note this is not a driver issue.
->>> Below is a captured debug trace illustrating the purpose of this patch:
->>> out of 8 thermal zone updates, only 2 are actually necessary.
->>>
->>> [   41.120000] rcar_thermal_work(): cctemp%000
->>> [   41.120000] rcar_thermal_work(): new_ctemp0000
->>> [   41.120000] rcar_thermal_work(): temp is now 30000C, update thermal zone
->>> [   58.990000] rcar_thermal_work(): cctemp0000
->>> [   58.990000] rcar_thermal_work(): nctemp0000
->>> [   58.990000] rcar_thermal_work(): same temp, do not update thermal zone
->>> [   59.290000] rcar_thermal_work(): cctemp0000
->>> [   59.290000] rcar_thermal_work(): nctemp0000
->>> [   59.290000] rcar_thermal_work(): same temp, do not update thermal zone
->>> [   59.590000] rcar_thermal_work(): cctemp0000
->>> [   59.590000] rcar_thermal_work(): nctemp0000
->>> [   59.590000] rcar_thermal_work(): same temp, do not update thermal zone
->>> [   59.890000] rcar_thermal_work(): cctemp0000
->>> [   59.890000] rcar_thermal_work(): nctemp0000
->>> [   59.890000] rcar_thermal_work(): same temp, do not update thermal zone
->>> [   60.190000] rcar_thermal_work(): cctemp0000
->>> [   60.190000] rcar_thermal_work(): nctemp0000
->>> [   60.190000] rcar_thermal_work(): same temp, do not update thermal zone
->>> [   60.490000] rcar_thermal_work(): cctemp0000
->>> [   60.490000] rcar_thermal_work(): nctemp0000
->>> [   60.490000] rcar_thermal_work(): same temp, do not update thermal zone
->>> [   60.790000] rcar_thermal_work(): cctemp0000
->>> [   60.790000] rcar_thermal_work(): nctemp5000
->>> [   60.790000] rcar_thermal_work(): temp is now 35000C, update thermal zone
->>>
->>> I suspect this may be due to sensor sampling accuracy / fluctuation,
->>> but no formal proof.
->>>
->>> Patrick Titiano (2):
->>>   thermal: rcar-thermal: fix same mask applied twice
->>>   thermal: rcar-thermal: update thermal zone only when temperature
->>>     changes
->>>
->>>  drivers/thermal/rcar_thermal.c | 9 +++++++--
->>>  1 file changed, 7 insertions(+), 2 deletions(-)
->>
->> For all patches
->>
->> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->>
-> applied.
+On Friday 28 February 2014 23:24:32 Sergei Shtylyov wrote:
+> On 02/28/2014 06:58 PM, Laurent Pinchart wrote:
+> > The CMT (Compare Match Timer) driver implements a new style of platform
+> > data that handles the timer as a single device with multiple channel.
+> > Switch from the old-style platform data to the new-style platform data.
+> > 
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
 > 
-> thanks,
-> rui
->>
+> [...]
+> 
+> > diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c
+> > b/arch/arm/mach-shmobile/setup-sh73a0.c index f74ab53..61b15d9 100644
+> > --- a/arch/arm/mach-shmobile/setup-sh73a0.c
+> > +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+> > @@ -104,35 +104,23 @@ SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000,
+> > gic_spi(156));
+> > 
+> >   SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
+> >   SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+> > 
+> > -static struct sh_timer_config cmt10_platform_data = {
+> > -	.name = "CMT10",
+> > -	.channel_offset = 0x10,
+> > -	.timer_bit = 0,
+> > -	.clockevent_rating = 80,
+> > -	.clocksource_rating = 125,
+> > +static struct sh_timer_config cmt1_platform_data = {
+> > +	.channels_mask = 0x3f,
+> > 
+> >   };
+> > 
+> > -static struct resource cmt10_resources[] = {
+> > -	[0] = {
+> > -		.name	= "CMT10",
+> > -		.start	= 0xe6138010,
+> > -		.end	= 0xe613801b,
+> > -		.flags	= IORESOURCE_MEM,
+> > -	},
+> > -	[1] = {
+> > -		.start	= gic_spi(65),
+> > -		.flags	= IORESOURCE_IRQ,
+> > -	},
+> > +static struct resource cmt1_resources[] = {
+> > +	DEFINE_RES_MEM(0xe6138010, 0x200),
+> 
+> Not 0xe6138000 by chance? Otherwise address and size look a bit strange...
 
-Thanks Morimoto-san and Rui!
-Patrick.
+Indeed, thank you for catching this. I've double-checked the other platform 
+and found a similar problem with sh7619. I'll fix them both in v3.
+
+> > +	DEFINE_RES_IRQ(gic_spi(65)),
+> > 
+> >   };
+> 
+> WBR, Sergei
+
+-- 
+Regards,
+
+Laurent Pinchart
 
