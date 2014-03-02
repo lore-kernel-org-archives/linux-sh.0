@@ -1,37 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 26 Mar 2014 17:15:39 +0000
-Subject: Re: [PATCH V2 1/5] ARM: shmobile: r8a7791: add IIC0/1 clock macros
-Message-Id: <20140326171539.GA6886@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 02 Mar 2014 22:28:09 +0000
+Subject: Re: [PATCH 1/3] clk: add clock-indices support
+Message-Id: <5313B079.1070806@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
- <9236675.ot3B0M2rgc@avalon>
- <CANqRtoSYTSZV-wxXBeGWYnPLPGZNL3WEtXgHh1U8CQxAEhx5zQ@mail.gmail.com>
- <20140326062933.GA2664@katana>
-In-Reply-To: <20140326062933.GA2664@katana>
+References: <1392314571-30107-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1392314571-30107-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 26, 2014 at 07:29:33AM +0100, Wolfram Sang wrote:
-> 
-> > To clarify, I can't seem to find any cover letter for this series, so
-> > instead I will with this email reply to [1/1]. Here is also a list of
-> > the patches that I believe are part of this series, please correct me
-> > if I'm wrong:
-> 
-> You are absolutely right.
-> 
-> > They all look good to me!
-> > 
-> > Acked-by: Magnus Damm <damm@opensource.se>
-> 
-> Thanks!
-> 
-> > Simon, can you please pick up these changes? I believe there are no
-> > special dependencies.
-> 
-> The dependencies (pfc entries and new compatible for the driver) are
-> already in linux-next.
+On 23/02/14 21:00, Mike Turquette wrote:
+> Quoting Ben Dooks (2014-02-13 10:02:49)
+>> Add a property called clock-indices to allow clock-output-names
+>> to be used where the index used to lookup a clock is not a 1:1
+>> mapping to the array position in the clock-output-names
+>>
+>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>
+> Ben & Laurent,
+>
+> The clock-indices stuff looks sane to me. I've taken Ben's patch #1 into
+> clk-next. It seems patch #3 might be dropped and patch #2 didn't apply
+> cleanly for me.
+>
+> Can Laurent's patches and Ben's #2 be rebased and sent together as a PR?
+> I'll leave it up to you guys to figure out the backwards compatibility
+> issue with Ben's patch #3.
 
-Thanks, I have queued these up.
+Thanks, I've only just found this in my mailbox.
+Is there still any actions I need to take?
+
+
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
