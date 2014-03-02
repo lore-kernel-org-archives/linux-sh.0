@@ -1,175 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 14 Mar 2014 08:08:59 +0000
-Subject: Re: [PATCH v4 18/19] ARM: shmobile: Remove Marzen reference DTS
-Message-Id: <20140314080856.GC31900@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 02 Mar 2014 20:22:03 +0000
+Subject: Re: [PATCH v2 28/40] clocksource: sh_tmu: Add index to struct sh_tmu_channel
+Message-Id: <1616978.WRnLkMEibb@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
- <1394701202-25823-19-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoQc=+w3VjW4+=Yd+oRm=g_A_RCDbc3TF1RrR3u3HiMrjw@mail.gmail.com>
-In-Reply-To: <CANqRtoQc=+w3VjW4+=Yd+oRm=g_A_RCDbc3TF1RrR3u3HiMrjw@mail.gmail.com>
+References: <1393603090-23144-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1393603090-23144-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Mar 14, 2014 at 01:21:39PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> I think you want to update the commit message to use r8a7779 instead of
-> r8a7790.
+Hi Geert,
 
-Thanks, I will fix that.
+Thank you for the review.
 
+On Friday 28 February 2014 18:58:00 Geert Uytterhoeven wrote:
+> On Fri, Feb 28, 2014 at 4:57 PM, Laurent Pinchart wrote:
+> > +       /*
+> > +        * The SH3 variant (SH770x, SH7705, SH7710 and SH7720) maps
+> > channel
+> > +        * registers blocks at base + 2 + 12 * index, while all other
+> > variants
+> > +        * map them at base + 4 + 12 * index. We can compute the index
+> > with a
+> > +        * single equation, the 2 bytes difference is hidden by the / 12.
+> > +        */
+> > +       ch->index = (cfg->channel_offset - 2) / 12;
 > 
-> Thanks,
-> 
-> / magnus
->  On Mar 13, 2014 6:00 PM, "Simon Horman" <horms+renesas@verge.net.au> wrote:
-> 
-> > Now that the DTS file r8a7790-marzen.dts can be used with
-> > board-marzen.c and board-marzen-reference.c, proceed with removing
-> > r8a7790-marzen-reference.dts.
-> >
-> > Based on work for the Koelsch board by Laurent Pinchart.
-> >
-> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/boot/dts/r8a7779-marzen-reference.dts | 120
-> > -------------------------
-> >  1 file changed, 120 deletions(-)
-> >  delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> > b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> > deleted file mode 100644
-> > index 76f5eef..0000000
-> > --- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-> > +++ /dev/null
-> > @@ -1,120 +0,0 @@
-> > -/*
-> > - * Reference Device Tree Source for the Marzen board
-> > - *
-> > - * Copyright (C) 2013 Renesas Solutions Corp.
-> > - * Copyright (C) 2013 Simon Horman
-> > - *
-> > - * This file is licensed under the terms of the GNU General Public License
-> > - * version 2.  This program is licensed "as is" without any warranty of
-> > any
-> > - * kind, whether express or implied.
-> > - */
-> > -
-> > -/dts-v1/;
-> > -#include "r8a7779.dtsi"
-> > -#include <dt-bindings/gpio/gpio.h>
-> > -#include <dt-bindings/interrupt-controller/irq.h>
-> > -
-> > -/ {
-> > -       model = "marzen";
-> > -       compatible = "renesas,marzen-reference", "renesas,r8a7779";
-> > -
-> > -       chosen {
-> > -               bootargs = "console=ttySC2,115200
-> > earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
-> > -       };
-> > -
-> > -       memory {
-> > -               device_type = "memory";
-> > -               reg = <0x60000000 0x40000000>;
-> > -       };
-> > -
-> > -       fixedregulator3v3: fixedregulator@0 {
-> > -               compatible = "regulator-fixed";
-> > -               regulator-name = "fixed-3.3V";
-> > -               regulator-min-microvolt = <3300000>;
-> > -               regulator-max-microvolt = <3300000>;
-> > -               regulator-boot-on;
-> > -               regulator-always-on;
-> > -       };
-> > -
-> > -       lan0@18000000 {
-> > -               compatible = "smsc,lan9220", "smsc,lan9115";
-> > -               reg = <0x18000000 0x100>;
-> > -               pinctrl-0 = <&lan0_pins>;
-> > -               pinctrl-names = "default";
-> > -
-> > -               phy-mode = "mii";
-> > -               interrupt-parent = <&irqpin0>;
-> > -               interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
-> > -               reg-io-width = <4>;
-> > -               vddvario-supply = <&fixedregulator3v3>;
-> > -               vdd33a-supply = <&fixedregulator3v3>;
-> > -       };
-> > -
-> > -       leds {
-> > -               compatible = "gpio-leds";
-> > -               led2 {
-> > -                       gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-> > -               };
-> > -               led3 {
-> > -                       gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-> > -               };
-> > -               led4 {
-> > -                       gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-> > -               };
-> > -       };
-> > -};
-> > -
-> > -&irqpin0 {
-> > -       status = "okay";
-> > -};
-> > -
-> > -&pfc {
-> > -       pinctrl-0 = <&scif2_pins &scif4_pins>;
-> > -       pinctrl-names = "default";
-> > -
-> > -       lan0_pins: lan0 {
-> > -               intc {
-> > -                       renesas,groups = "intc_irq1_b";
-> > -                       renesas,function = "intc";
-> > -               };
-> > -               lbsc {
-> > -                       renesas,groups = "lbsc_ex_cs0";
-> > -                       renesas,function = "lbsc";
-> > -               };
-> > -       };
-> > -
-> > -       scif2_pins: serial2 {
-> > -               renesas,groups = "scif2_data_c";
-> > -               renesas,function = "scif2";
-> > -       };
-> > -
-> > -       scif4_pins: serial4 {
-> > -               renesas,groups = "scif4_data";
-> > -               renesas,function = "scif4";
-> > -       };
-> > -
-> > -       sdhi0_pins: sd0 {
-> > -               renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-> > -               renesas,function = "sdhi0";
-> > -       };
-> > -
-> > -       hspi0_pins: hspi0 {
-> > -               renesas,groups = "hspi0";
-> > -               renesas,function = "hspi0";
-> > -       };
-> > -};
-> > -
-> > -&sdhi0 {
-> > -       pinctrl-0 = <&sdhi0_pins>;
-> > -       pinctrl-names = "default";
-> > -
-> > -       vmmc-supply = <&fixedregulator3v3>;
-> > -       bus-width = <4>;
-> > -       status = "okay";
-> > -};
-> > -
-> > -&hspi0 {
-> > -       pinctrl-0 = <&hspi0_pins>;
-> > -       pinctrl-names = "default";
-> > -       status = "okay";
-> > -};
-> > --
-> > 1.8.5.2
-> >
-> >
+> The "- 2" is not needed, as 2 / 12 = 0 in integer arithmetic.
+
+I'll fix that in v3.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
