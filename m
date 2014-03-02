@@ -1,60 +1,73 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 13 Mar 2014 09:50:02 +0000
-Subject: [PATCH 3/9] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-Message-Id: <1394704208-7490-4-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 02 Mar 2014 22:21:40 +0000
+Subject: Re: [PATCH 4/4] ARM: shmobile: r7s72100: use workaround for non DT-clocks
+Message-Id: <1712106.fu6iC2mT2W@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
+ <1393621768-12568-5-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1393621768-12568-5-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds the device tree clock nodes for PCIe
+Hi Wolfram,
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi            |    7 ++++---
- include/dt-bindings/clock/r8a7790-clock.h |    1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+Thank you for the patch.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..df9ec61 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -704,16 +704,17 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
- 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
--				 <&mmc0_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&rclk_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
--				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
-+				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
- 			>;
- 			clock-output-names  				"tpu0", "mmcif1", "sdhi3", "sdhi2",
--				"sdhi1", "sdhi0", "mmcif0", "cmt1";
-+				"sdhi1", "sdhi0", "mmcif0", "cmt1",
-+				"pcie";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5f..840dbc8 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -57,6 +57,7 @@
- #define R8A7790_CLK_SDHI1		13
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_PCIE		19
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
- #define R8A7790_CLK_USBDMAC0		30
+On Friday 28 February 2014 22:09:28 Wolfram Sang wrote:
+> From: Wolfram Sang <wsa@sang-engineering.com>
+> 
+> SCIF2 and MTU2 are not yet prepared for DT usage, so use the common
+> workaround via clkdev for now.
+
+What about adding a DT node for the serial port instead ? :-)
+
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> ---
+>  arch/arm/mach-shmobile/board-genmai-reference.c | 15 +++++++++++++--
+>  1 file changed, 13 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c
+> b/arch/arm/mach-shmobile/board-genmai-reference.c index 7630c10..91dcdd0
+> 100644
+> --- a/arch/arm/mach-shmobile/board-genmai-reference.c
+> +++ b/arch/arm/mach-shmobile/board-genmai-reference.c
+> @@ -18,18 +18,29 @@
+>   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 
+> USA */
+> 
+> -#include <linux/clk-provider.h>
+>  #include <linux/kernel.h>
+>  #include <linux/of_platform.h>
+> +#include <mach/clock.h>
+>  #include <mach/common.h>
+>  #include <mach/r7s72100.h>
+>  #include <asm/mach-types.h>
+>  #include <asm/mach/arch.h>
+> 
+> +#ifdef CONFIG_COMMON_CLK
+> +/*
+> + * This is a really crude hack to provide clkdev support to platform
+> + * devices until they get moved to DT.
+> + */
+> +static const struct clk_name clk_names[] = {
+> +	{ "mtu2", NULL, "sh_mtu2.0" },
+> +	{ "scif2", NULL, "sh-sci.2" },
+> +};
+> +#endif
+> +
+>  static void __init genmai_add_standard_devices(void)
+>  {
+>  #ifdef CONFIG_COMMON_CLK
+> -	of_clk_init(NULL);
+> +	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), true);
+>  #else
+>  	r7s72100_clock_init();
+>  #endif
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
