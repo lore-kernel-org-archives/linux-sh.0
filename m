@@ -1,41 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Mar 2014 08:36:56 +0000
-Subject: [PATCH] ARM: shmobile: APMU: Fix warnings due to improper printk formats
-Message-Id: <56ff873122c4baab43df241c7701d043b8ec8a8e.1394440471.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Sun, 02 Mar 2014 23:52:04 +0000
+Subject: Re: [PATCH 0/2] thermal: rcar-thermal: minor fixes
+Message-Id: <87fvn0xioy.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1394440471.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1394440471.git.horms+renesas@verge.net.au>
+References: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
+In-Reply-To: <1393593004-16285-1-git-send-email-ptitiano@baylibre.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Patrick Titiano <ptitiano@baylibre.com>
+Cc: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com, bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Use the %pr printk specifier to print resource variables. This fixes
-warnings on platforms where resource_size_t has a different size than
-int.
+Hi
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/platsmp-apmu.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+> Here are 2 minor updates to the rcar-thermal driver.
+> 
+> First patch removes an unecessary mask applied in a if statement.
+> Because the same mask was already applied in the preceding statement,
+> the second one can be removed.
+> 
+> Second patch avoids updating the thermal zone in case an IRQ was triggered but
+> the temperature didn't effectively change.
+> Note this is not a driver issue.
+> Below is a captured debug trace illustrating the purpose of this patch:
+> out of 8 thermal zone updates, only 2 are actually necessary.
+> 
+> [   41.120000] rcar_thermal_work(): cctemp%000
+> [   41.120000] rcar_thermal_work(): new_ctemp0000
+> [   41.120000] rcar_thermal_work(): temp is now 30000C, update thermal zone
+> [   58.990000] rcar_thermal_work(): cctemp0000
+> [   58.990000] rcar_thermal_work(): nctemp0000
+> [   58.990000] rcar_thermal_work(): same temp, do not update thermal zone
+> [   59.290000] rcar_thermal_work(): cctemp0000
+> [   59.290000] rcar_thermal_work(): nctemp0000
+> [   59.290000] rcar_thermal_work(): same temp, do not update thermal zone
+> [   59.590000] rcar_thermal_work(): cctemp0000
+> [   59.590000] rcar_thermal_work(): nctemp0000
+> [   59.590000] rcar_thermal_work(): same temp, do not update thermal zone
+> [   59.890000] rcar_thermal_work(): cctemp0000
+> [   59.890000] rcar_thermal_work(): nctemp0000
+> [   59.890000] rcar_thermal_work(): same temp, do not update thermal zone
+> [   60.190000] rcar_thermal_work(): cctemp0000
+> [   60.190000] rcar_thermal_work(): nctemp0000
+> [   60.190000] rcar_thermal_work(): same temp, do not update thermal zone
+> [   60.490000] rcar_thermal_work(): cctemp0000
+> [   60.490000] rcar_thermal_work(): nctemp0000
+> [   60.490000] rcar_thermal_work(): same temp, do not update thermal zone
+> [   60.790000] rcar_thermal_work(): cctemp0000
+> [   60.790000] rcar_thermal_work(): nctemp5000
+> [   60.790000] rcar_thermal_work(): temp is now 35000C, update thermal zone
+> 
+> I suspect this may be due to sensor sampling accuracy / fluctuation,
+> but no formal proof.
+> 
+> Patrick Titiano (2):
+>   thermal: rcar-thermal: fix same mask applied twice
+>   thermal: rcar-thermal: update thermal zone only when temperature
+>     changes
+> 
+>  drivers/thermal/rcar_thermal.c | 9 +++++++--
+>  1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index 1da5a72..8cb641c 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -75,8 +75,7 @@ static void apmu_init_cpu(struct resource *res, int cpu, int bit)
- 	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
- 	apmu_cpus[cpu].bit = bit;
- 
--	pr_debug("apmu ioremap %d %d 0x%08x 0x%08x\n", cpu, bit,
--		 res->start, resource_size(res));
-+	pr_debug("apmu ioremap %d %d %pr\n", cpu, bit, res);
- }
- 
- static struct {
--- 
-1.8.5.2
+For all patches
+
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
 
