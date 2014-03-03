@@ -1,207 +1,139 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 02 Mar 2014 22:15:40 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 03 Mar 2014 09:19:04 +0000
 Subject: Re: [PATCH 3/4] clk: shmobile: add CPG driver for rz-platforms
-Message-Id: <1569751.q5lJmQcb3K@avalon>
+Message-Id: <20140303091903.GA6531@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="uAKRQypu60I7Lcqm"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
  <1393621768-12568-4-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1393621768-12568-4-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <1569751.q5lJmQcb3K@avalon>
+In-Reply-To: <1569751.q5lJmQcb3K@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
 
-Thank you for the patch.
+--uAKRQypu60I7Lcqm
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Friday 28 February 2014 22:09:27 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> ---
-> 
-> Mike: if you are fine with this driver, it would be good if you could apply
-> it. Then, we can deal with the orthogonal dependencies in mach-shmobile
-> seperately and know that the driver is already in place when the rest gets
-> resolved. Thanks!
-> 
->  drivers/clk/shmobile/Makefile |   1 +
->  drivers/clk/shmobile/clk-rz.c | 112 +++++++++++++++++++++++++++++++++++++++
 
-There's one large missing piece here: the DT bindings documentation.
+> >  drivers/clk/shmobile/Makefile |   1 +
+> >  drivers/clk/shmobile/clk-rz.c | 112 ++++++++++++++++++++++++++++++++++=
++++++
+>=20
+> There's one large missing piece here: the DT bindings documentation.
 
->  2 files changed, 113 insertions(+)
->  create mode 100644 drivers/clk/shmobile/clk-rz.c
-> 
-> diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-> index 9ecef14..5404cb9 100644
-> --- a/drivers/clk/shmobile/Makefile
-> +++ b/drivers/clk/shmobile/Makefile
-> @@ -1,4 +1,5 @@
->  obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
-> +obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
->  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
-> diff --git a/drivers/clk/shmobile/clk-rz.c b/drivers/clk/shmobile/clk-rz.c
-> new file mode 100644
-> index 0000000..ec1c795
-> --- /dev/null
-> +++ b/drivers/clk/shmobile/clk-rz.c
-> @@ -0,0 +1,112 @@
-> +/*
-> + * rz Core CPG Clocks
-> + *
-> + * Copyright (C) 2013 Ideas On Board SPRL
-> + * Copyright (C) 2014 Wolfram Sang, Sang Engineering
-> <wsa@sang-engineering.com> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; version 2 of the License.
-> + */
-> +
-> +#include <linux/clk-provider.h>
-> +#include <linux/init.h>
-> +#include <linux/kernel.h>
-> +#include <linux/of.h>
-> +#include <linux/of_address.h>
-> +#include <linux/slab.h>
-> +
-> +struct rz_cpg {
-> +	struct clk_onecell_data data;
-> +	void __iomem *reg;
-> +};
-> +
-> +#define CPG_FRQCR	0x10
-> +#define CPG_FRQCR2	0x14
-> +
-> +/*
-> ---------------------------------------------------------------------------
-> -- + * Initialization
-> + */
-> +
-> +static struct clk * __init
-> +rz_cpg_register_clock(struct device_node *np, struct rz_cpg *cpg, const
-> char *name)
-> +{
-> +	u32 val;
-> +	unsigned mult, frqcr_tab[4] = { 3, 2, 0, 1 };
+Yes, noticed that, too. Added already.
 
-I would declare the table as static const outside of this function.
+> > +	u32 val;
+> > +	unsigned mult, frqcr_tab[4] =3D { 3, 2, 0, 1 };
+>=20
+> I would declare the table as static const outside of this function.
 
-> +
-> +	if (strcmp(name, "pll") = 0) {
-> +		/* FIXME: cpg_mode should be read from GPIO. But no GPIO support yet 
-*/
-> +		unsigned cpg_mode = 0; /* hardcoded to EXTAL for now */
+Yup.
 
-It won't make a difference yet, but shouldn't this be moved to 
-rz_cpg_clocks_init() ?
+> > +	if (strcmp(name, "pll") =3D=3D 0) {
+> > +		/* FIXME: cpg_mode should be read from GPIO. But no GPIO support yet=
+=20
+> */
+> > +		unsigned cpg_mode =3D 0; /* hardcoded to EXTAL for now */
+>=20
+> It won't make a difference yet, but shouldn't this be moved to=20
+> rz_cpg_clocks_init() ?
 
-> +		const char *parent_name = of_clk_get_parent_name(np, 0);
+This is going to be a gpio_get_value() later and I'd prefer it in the
+place where the value is needed.
 
-You should select the parent depending on the mode (again it won't make any 
-difference yet, but the code will be ready, and DT bindings should document 
-two parents).
+>=20
+> > +		const char *parent_name =3D of_clk_get_parent_name(np, 0);
+>=20
+> You should select the parent depending on the mode (again it won't make a=
+ny=20
+> difference yet, but the code will be ready, and DT bindings should docume=
+nt=20
+> two parents).
 
-> +
-> +		mult = cpg_mode ? (32 / 4) : 30;
-> +		return clk_register_fixed_factor(NULL, name, parent_name, 0, mult, 
-1);
-> +	}
-> +
-> +	/* FIXME:"i" and "g" are variable clocks with non-integer dividers (e.g.
-> 2/3)
-> +	 * and the constraint that always g <= i. To get the rz platform started,
-> +	 * let them run at fixed current speed and implement the details later.
-> +	 */
-> +	if (strcmp(name, "i") = 0)
-> +		val = (clk_readl(cpg->reg + CPG_FRQCR) >> 8) & 3;
-> +	else if (strcmp(name, "g") = 0)
-> +		val = clk_readl(cpg->reg + CPG_FRQCR2) & 3;
+Two parents? Yet, CPG only needs one as input. Either XTAL or USB_X1
+which is board dependent. What I should do IMO is to put the parent
+property for CPG from the dtsi to the board dts. Because this is
+describing hardware. And from that parent, I can simply get its name
+like above.
 
-The registers are 16 bits wide, are 32 bits accessed valid ? I suppose they 
-work as you use them.
+> > +	int num_clks;
+> > +
+> > +	num_clks =3D of_property_count_strings(np, "clock-output-names");
+> > +	if (WARN(num_clks < 0, "can't count CPG clocks\n"))
+>=20
+> Do such failures really deserve a WARN ? Isn't a pr_err() enough ?
 
-> +	else
-> +		return ERR_PTR(-EINVAL);
-> +
-> +	mult = frqcr_tab[val];
-> +	return clk_register_fixed_factor(NULL, name, "pll", 0, mult, 3);
-> +}
-> +
-> +static void __init rz_cpg_clocks_init(struct device_node *np)
-> +{
-> +	struct rz_cpg *cpg;
-> +	struct clk **clks;
-> +	unsigned i;
+Since the system won't probably boot, I'd think so. Also, it makes the
+code more concise, no?
 
-unsigned int maybe ? I'm not sure what the preferred kernel coding style is.
+> What if num_clks =3D=3D 0 ?
 
-> +	int num_clks;
-> +
-> +	num_clks = of_property_count_strings(np, "clock-output-names");
-> +	if (WARN(num_clks < 0, "can't count CPG clocks\n"))
+Good question.
 
-Do such failures really deserve a WARN ? Isn't a pr_err() enough ?
+>=20
+> > +		goto out;
+> > +
+> > +	cpg =3D kzalloc(sizeof(*cpg), GFP_KERNEL);
+> > +	if (WARN(!cpg, "out of memory!\n"))
+> > +		goto out;
+> > +
+> > +	clks =3D kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
+> > +	if (WARN(!clks, "out of memory!\n"))
+> > +		goto free_cpg;
+>=20
+> Does kzalloc alloc warn internally when it fails to allocate memory ?
 
-What if num_clks = 0 ?
+Ehrm, why don't you simply look this up instead of asking me? :)
 
-> +		goto out;
-> +
-> +	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-> +	if (WARN(!cpg, "out of memory!\n"))
-> +		goto out;
-> +
-> +	clks = kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
-> +	if (WARN(!clks, "out of memory!\n"))
-> +		goto free_cpg;
+> you could remove the error message. You could also perform the two alloca=
+tions=20
+> and check the result once only.
 
-Does kzalloc alloc warn internally when it fails to allocate memory ? If so 
-you could remove the error message. You could also perform the two allocations 
-and check the result once only.
+What is the gain? Code savings?
 
-> +	cpg->data.clks = clks;
-> +	cpg->data.clk_num = num_clks;
-> +
-> +	cpg->reg = of_iomap(np, 0);
-> +	if (WARN(!cpg->reg, "can't remap CPG registers!\n"))
-> +		goto free_clks;
-> +
-> +	for (i = 0; i < num_clks; ++i) {
-> +		const char *name;
-> +		struct clk *clk;
-> +
-> +		of_property_read_string_index(np, "clock-output-names", i, &name);
-> +
-> +		clk = rz_cpg_register_clock(np, cpg, name);
-> +		if (IS_ERR(clk))
-> +			pr_err("%s: failed to register %s %s clock (%ld)\n",
-> +			       __func__, np->name, name, PTR_ERR(clk));
-> +		else
-> +			cpg->data.clks[i] = clk;
-> +	}
-> +
-> +	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-> +	return;
-> +
-> +free_clks:
-> +	kfree(clks);
-> +free_cpg:
-> +	kfree(cpg);
+> > +free_clks:
+> > +	kfree(clks);
+> > +free_cpg:
+> > +	kfree(cpg);
+>=20
+> I would remove that as done in the other CPG drivers, given that a small=
+=20
+> memory leak when the system will anyway fail to boot isn't really an issu=
+e.
 
-I would remove that as done in the other CPG drivers, given that a small 
-memory leak when the system will anyway fail to boot isn't really an issue.
+Again, now that I already coded it, what is the gain to remove it? The
+drawback is that other people might get encouraged to find reasons to
+allow them sloppy practices.
 
-> +out:
-> +	return;
-> +}
-> +CLK_OF_DECLARE(rz_cpg_clks, "renesas,rz-cpg-clocks",
-> +	       rz_cpg_clocks_init);
+Thanks,
 
--- 
-Regards,
+   Wolfram
 
-Laurent Pinchart
 
+--uAKRQypu60I7Lcqm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTFEkHAAoJEBQN5MwUoCm2//wQAJe2cgVSV2YexrURFs3x7zaA
+k+ZZjwZpMl/REA+zZO3TOpnipYQmUxV7PI4TRZYzAEgkquq8ElZh6IQweL9TV8lR
+AjmjQRymUEuMK15VvqJiGFSAnCDzl+GfYBDDkt5FdbHnwWU+QyBabwY3DFqNzLeR
+6iWen8gnHjxChL+WHbrBL0GfrplIPilpzsgoE4YVvhPXM5+nBWZDiqeqDvJn/4U1
+6iHyTOToQWKy7gxe4u0Q6Tft0Fyerr+1Kq4JLHkXZCCSDj57YfMA1Phm6uV8T5HG
+eAGbBIzCEuPIgP/cvashky6xywJFG7DcjAOKKI5E+P0Qk9akBlABH4isA/8d1HMR
+892sKBNEOrqHA4qpAz228I6i4BUV8MYQ/gXCTNdTj6pp+qbjKegtYMjZD+qsfMfZ
+e5pu3FNUb2qYykg3U9dG0YM+VRdptQQwbuUvxFB1UBeP5xa88jg7Vr3SPWYOYMCW
+QWqztQ83CKWfCI1yZNKtZWHcKo9ja5MzNoggicoB9AwkekWWUgu32rnUXwrjfP1C
+LQ2ZA4S6fmSC+lBy+VgRxpvw86sey8She2rFtO7UmMKcSM+KkMp76W66mRD/+5ZW
+dQDRhusIZ/a5SedVcGM7jGmKKJQAdKYt6l/5N+CRVE03mizfxLS4B7YpMeQ4onva
+iRR6GcEGqBRdE7XhTrxt
+=WUAJ
+-----END PGP SIGNATURE-----
+
+--uAKRQypu60I7Lcqm--
