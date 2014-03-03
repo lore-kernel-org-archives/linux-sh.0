@@ -1,78 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 02 Mar 2014 20:30:35 +0000
-Subject: Re: [PATCH v2 34/40] ARM: shmobile: sh73a0: Switch to new style CMT device
-Message-Id: <22125610.k3yNq8JlUF@avalon>
+From: Jingoo Han <jg1.han@samsung.com>
+Date: Mon, 03 Mar 2014 07:40:47 +0000
+Subject: Re: [PATCH 4/7] ARM: dts: exynos5440: fix PCIe interrupt mapping
+Message-Id: <000401cf36b3$e4aa0fb0$adfe2f10$%han@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393603090-23144-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1393603090-23144-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+ <1393608523-17509-5-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-5-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
-
-Thank you for the patch.
-
-On Friday 28 February 2014 23:24:32 Sergei Shtylyov wrote:
-> On 02/28/2014 06:58 PM, Laurent Pinchart wrote:
-> > The CMT (Compare Match Timer) driver implements a new style of platform
-> > data that handles the timer as a single device with multiple channel.
-> > Switch from the old-style platform data to the new-style platform data.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
+On Saturday, March 01, 2014 2:29 AM, Lucas Stach wrote:
 > 
-> [...]
+> So it actually works.
 > 
-> > diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c
-> > b/arch/arm/mach-shmobile/setup-sh73a0.c index f74ab53..61b15d9 100644
-> > --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> > +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> > @@ -104,35 +104,23 @@ SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000,
-> > gic_spi(156));
-> > 
-> >   SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
-> >   SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
-> > 
-> > -static struct sh_timer_config cmt10_platform_data = {
-> > -	.name = "CMT10",
-> > -	.channel_offset = 0x10,
-> > -	.timer_bit = 0,
-> > -	.clockevent_rating = 80,
-> > -	.clocksource_rating = 125,
-> > +static struct sh_timer_config cmt1_platform_data = {
-> > +	.channels_mask = 0x3f,
-> > 
-> >   };
-> > 
-> > -static struct resource cmt10_resources[] = {
-> > -	[0] = {
-> > -		.name	= "CMT10",
-> > -		.start	= 0xe6138010,
-> > -		.end	= 0xe613801b,
-> > -		.flags	= IORESOURCE_MEM,
-> > -	},
-> > -	[1] = {
-> > -		.start	= gic_spi(65),
-> > -		.flags	= IORESOURCE_IRQ,
-> > -	},
-> > +static struct resource cmt1_resources[] = {
-> > +	DEFINE_RES_MEM(0xe6138010, 0x200),
+> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> ---
+>  arch/arm/boot/dts/exynos5440.dtsi | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
 > 
-> Not 0xe6138000 by chance? Otherwise address and size look a bit strange...
+> diff --git a/arch/arm/boot/dts/exynos5440.dtsi b/arch/arm/boot/dts/exynos5440.dtsi
+> index 02a0a1226cef..65d425d9ec27 100644
+> --- a/arch/arm/boot/dts/exynos5440.dtsi
+> +++ b/arch/arm/boot/dts/exynos5440.dtsi
+> @@ -274,7 +274,7 @@
+>  			  0x82000000 0 0x40011000 0x40011000 0 0x1ffef000>; /* non-prefetchable memory */
+>  		#interrupt-cells = <1>;
+>  		interrupt-map-mask = <0 0 0 0>;
+> -		interrupt-map = <0x0 0 &gic 53>;
+> +		interrupt-map = <0 0 0 0 &gic GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
 
-Indeed, thank you for catching this. I've double-checked the other platform 
-and found a similar problem with sh7619. I'll fix them both in v3.
+It makes build errors as below:
 
-> > +	DEFINE_RES_IRQ(gic_spi(65)),
-> > 
-> >   };
-> 
-> WBR, Sergei
+DTC     arch/arm/boot/dts/exynos5440-ssdk5440.dtb
+Error: arch/arm/boot/dts/exynos5440.dtsi:289.33-34 syntax error
+FATAL ERROR: Unable to parse input tree
+make[1]: *** [arch/arm/boot/dts/exynos5440-ssdk5440.dtb] Error 1
+make: *** [exynos5440-ssdk5440.dtb] Error 2
 
--- 
-Regards,
+Would you fix it?
 
-Laurent Pinchart
+Best regards,
+Jingoo Han
+
+>  		num-lanes = <4>;
+>  		status = "disabled";
+>  	};
+> @@ -295,7 +295,7 @@
+>  			  0x82000000 0 0x60011000 0x60011000 0 0x1ffef000>; /* non-prefetchable memory */
+>  		#interrupt-cells = <1>;
+>  		interrupt-map-mask = <0 0 0 0>;
+> -		interrupt-map = <0x0 0 &gic 56>;
+> +		interrupt-map = <0 0 0 0 &gic GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
+>  		num-lanes = <4>;
+>  		status = "disabled";
+>  	};
+> --
+> 1.8.5.3
 
