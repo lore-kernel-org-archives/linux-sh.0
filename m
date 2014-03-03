@@ -1,38 +1,64 @@
-From: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
-Date: Sat, 01 Mar 2014 18:30:59 +0000
+From: Jingoo Han <jg1.han@samsung.com>
+Date: Mon, 03 Mar 2014 08:11:37 +0000
 Subject: Re: [PATCH 0/7] PCI irq mapping fixes and cleanups
-Message-Id: <20140301183059.GA6315@obsidianresearch.com>
+Message-Id: <000601cf36b8$330b3a90$9921afb0$%han@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
  <CAJ+vNU2VN5haOU2GN5o7UUg9vgYh06pAhvDaoGw6EzTBEbD0mg@mail.gmail.com>
-In-Reply-To: <CAJ+vNU2VN5haOU2GN5o7UUg9vgYh06pAhvDaoGw6EzTBEbD0mg@mail.gmail.com>
+ <20140301183059.GA6315@obsidianresearch.com>
+In-Reply-To: <20140301183059.GA6315@obsidianresearch.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 28, 2014 at 04:53:33PM -0800, Tim Harvey wrote:
+On Sunday, March 02, 2014 3:31 AM, Jason Gunthorpe wrote:
+> On Fri, Feb 28, 2014 at 04:53:33PM -0800, Tim Harvey wrote:
+> 
+> > In testing this on IMX6 I'm finding that 'of_irq_parse_and_map_pci()'
+> > always returns -EINVAL because it can't find a dt node for the host
+> > bridge:
+> http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/of/of_pci_irq.c#n60.
+> 
+> There may be some kind of issue in the pcie-designware.c:
+> 
+> static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
+> {
+>         struct pci_bus *bus;
+>         struct pcie_port *pp = sys_to_pcie(sys);
+> 
+>         if (pp) {
+>                 pp->root_bus_nr = sys->busnr;
+>                 bus = pci_scan_root_bus(NULL, sys->busnr, &dw_pcie_ops,
+>                                      ^^^^^^^^^^^
+>                                      Shouldn't be null for DT cases.
+> 
+> Perhaps since the driver doesn't pass in a parent pointer, no parent
+> device is associated with the struct pci_bus that gets created, so
+> pci_bus_to_OF_node will always fail and the DT PCI mechanisms become
+> broken.
 
-> In testing this on IMX6 I'm finding that 'of_irq_parse_and_map_pci()'
-> always returns -EINVAL because it can't find a dt node for the host
-> bridge: http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/drivers/of/of_pci_irq.c#n60.
+Jason,
+Thank you for your advice. :-)
 
-There may be some kind of issue in the pcie-designware.c:
+Tim,
+I tested the following as Jason guided.
+You can test i.MX PCIe with this.
 
-static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
-{
-        struct pci_bus *bus;
-        struct pcie_port *pp = sys_to_pcie(sys);
+./drivers/pci/host/pcie-designware.c
+@@ -726,7 +727,7 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
 
         if (pp) {
                 pp->root_bus_nr = sys->busnr;
-                bus = pci_scan_root_bus(NULL, sys->busnr, &dw_pcie_ops,
-                                     ^^^^^^^^^^^
-                                     Shouldn't be null for DT cases.
+-               bus = pci_scan_root_bus(NULL, sys->busnr, &dw_pcie_ops,
++               bus = pci_scan_root_bus(pp->dev, sys->busnr, &dw_pcie_ops,
+                                        sys, &sys->resources);
+        } else {
+                bus = NULL;
 
-Perhaps since the driver doesn't pass in a parent pointer, no parent
-device is associated with the struct pci_bus that gets created, so
-pci_bus_to_OF_node will always fail and the DT PCI mechanisms become
-broken.
+However, I think that we may need to replace 'pci_common_init()'
+with 'pci_common_init_dev()'.
 
-Jason
+Best regards,
+Jingoo Han
+
