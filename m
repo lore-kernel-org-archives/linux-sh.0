@@ -1,92 +1,75 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:00:45 +0000
-Subject: [PATCH V3 09/12] ARM: shmobile: r7s72100: add i2c clocks to dtsi
-Message-Id: <1394208048-32495-10-git-send-email-wsa@the-dreams.de>
+From: tip-bot for Thomas Gleixner <tipbot@zytor.com>
+Date: Tue, 04 Mar 2014 16:43:21 +0000
+Subject: [tip:irq/core] sh: Use irq_set_affinity instead of homebrewn code
+Message-Id: <tip-6decf1a33c386d4addc2ed9d269c3868f08c70bb@git.kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+References: <20140223212736.774961401@linutronix.de>
+In-Reply-To: <20140223212736.774961401@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-tip-commits@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, hpa@zytor.com, mingo@kernel.org, peterz@infradead.org, lethal@linux-sh.org, tglx@linutronix.de
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Commit-ID:  6decf1a33c386d4addc2ed9d269c3868f08c70bb
+Gitweb:     http://git.kernel.org/tip/6decf1a33c386d4addc2ed9d269c3868f08c70bb
+Author:     Thomas Gleixner <tglx@linutronix.de>
+AuthorDate: Sun, 23 Feb 2014 21:40:10 +0000
+Committer:  Thomas Gleixner <tglx@linutronix.de>
+CommitDate: Tue, 4 Mar 2014 17:37:55 +0100
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+sh: Use irq_set_affinity instead of homebrewn code
+
+There is no point in having an incomplete copy of irq_set_affinity()
+for the hotplug irq migration code.
+
+Use the core function instead.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: sh <linux-sh@vger.kernel.org>
+Link: http://lkml.kernel.org/r/20140223212736.774961401@linutronix.de
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 15 +++++++++++++++
- include/dt-bindings/clock/r7s72100-clock.h |  6 ++++++
- 2 files changed, 21 insertions(+)
+ arch/sh/kernel/irq.c | 18 +-----------------
+ 1 file changed, 1 insertion(+), 17 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index d49afe30c1d7..9f7a06dc5e30 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -118,6 +118,17 @@
- 			>;
- 			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
- 		};
-+
-+		mstp9_clks: mstp9_clks@fcfe0438 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0438 4>;
-+			clocks = <&p0_clk>, <&p0_clk>, <&p0_clk>, <&p0_clk>;
-+			renesas,clock-indices = <
-+				R7S72100_CLK_I2C0 R7S72100_CLK_I2C1 R7S72100_CLK_I2C2 R7S72100_CLK_I2C3
-+			>;
-+			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
-+		};
- 	};
+diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
+index 0833736..65a1ecd 100644
+--- a/arch/sh/kernel/irq.c
++++ b/arch/sh/kernel/irq.c
+@@ -217,19 +217,6 @@ void __init init_IRQ(void)
+ }
  
- 	cpus {
-@@ -153,6 +164,7 @@
- 			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -170,6 +182,7 @@
- 			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -187,6 +200,7 @@
- 			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -204,6 +218,7 @@
- 			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-index d0e2d91025c2..b412bb2c93b1 100644
---- a/include/dt-bindings/clock/r7s72100-clock.h
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -24,4 +24,10 @@
- #define R7S72100_CLK_SCIF6	1
- #define R7S72100_CLK_SCIF7	0
+ #ifdef CONFIG_HOTPLUG_CPU
+-static void route_irq(struct irq_data *data, unsigned int irq, unsigned int cpu)
+-{
+-	struct irq_desc *desc = irq_to_desc(irq);
+-	struct irq_chip *chip = irq_data_get_irq_chip(data);
+-
+-	printk(KERN_INFO "IRQ%u: moving from cpu%u to cpu%u\n",
+-	       irq, data->node, cpu);
+-
+-	raw_spin_lock_irq(&desc->lock);
+-	chip->irq_set_affinity(data, cpumask_of(cpu), false);
+-	raw_spin_unlock_irq(&desc->lock);
+-}
+-
+ /*
+  * The CPU has been marked offline.  Migrate IRQs off this CPU.  If
+  * the affinity settings do not allow other CPUs, force them onto any
+@@ -250,11 +237,8 @@ void migrate_irqs(void)
+ 						    irq, cpu);
  
-+/* MSTP9 */
-+#define R7S72100_CLK_I2C0	7
-+#define R7S72100_CLK_I2C1	6
-+#define R7S72100_CLK_I2C2	5
-+#define R7S72100_CLK_I2C3	4
-+
- #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
--- 
-1.9.0
-
+ 				cpumask_setall(data->affinity);
+-				newcpu = cpumask_any_and(data->affinity,
+-							 cpu_online_mask);
+ 			}
+-
+-			route_irq(data, irq, newcpu);
++			irq_set_affinity(irq, data->affinity);
+ 		}
+ 	}
+ }
