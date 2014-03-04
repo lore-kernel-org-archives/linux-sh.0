@@ -1,231 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Mar 2014 23:36:17 +0000
-Subject: [PATCH 1/5] iommu/ipmmu-vmsa: Refactor micro-TLB lookup
-Message-Id: <1396049781-12941-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Tue, 04 Mar 2014 15:05:06 +0000
+Subject: Re: [PATCH 6/7] PCI: designware: use new OF interrupt mapping when possible
+Message-Id: <CAJ+vNU1EBFWiX7GLeV7LsaWY9_d_r_RBCu9tz3e-s0nAcAjOfA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+ <1393608523-17509-7-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-7-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Cache the micro-TLB number in archdata allocated in the .add_device
-handler instead of looking it up when the deviced is attached and
-detached. This simplifies the .attach_dev and .detach_dev operations and
-prepares for DT support.
+On Fri, Feb 28, 2014 at 9:28 AM, Lucas Stach <l.stach@pengutronix.de> wrote:
+> This is the recommended method of doing the IRQ
+> mapping. For old devicetrees we fall back to the
+> previous practice.
+>
+> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> ---
+>  drivers/pci/host/pcie-designware.c | 8 +++++++-
+>  1 file changed, 7 insertions(+), 1 deletion(-)
+>
+> diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
+> index 17ce88f79d2b..3e0c2af11528 100644
+> --- a/drivers/pci/host/pcie-designware.c
+> +++ b/drivers/pci/host/pcie-designware.c
+> @@ -17,6 +17,7 @@
+>  #include <linux/module.h>
+>  #include <linux/msi.h>
+>  #include <linux/of_address.h>
+> +#include <linux/of_pci.h>
+>  #include <linux/pci.h>
+>  #include <linux/pci_regs.h>
+>  #include <linux/types.h>
+> @@ -738,8 +739,13 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
+>  static int dw_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+>  {
+>         struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
+> +       int irq;
+>
+> -       return pp->irq;
+> +       irq = of_irq_parse_and_map_pci(dev, slot, pin);
+> +       if (!irq)
+> +               irq = pp->irq;
+> +
+> +       return irq;
+>  }
+>
+>  static void dw_pcie_add_bus(struct pci_bus *bus)
+> --
+> 1.8.5.3
+>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/ipmmu-vmsa.c | 92 ++++++++++++++++++++++++++--------------------
- 1 file changed, 52 insertions(+), 40 deletions(-)
+Lucas,
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 7abadc6..ef03191 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -44,6 +44,11 @@ struct ipmmu_vmsa_domain {
- 	pgd_t *pgd;
- };
- 
-+struct ipmmu_vmsa_archdata {
-+	struct ipmmu_vmsa_device *mmu;
-+	unsigned int utlb;
-+};
-+
- static DEFINE_SPINLOCK(ipmmu_devices_lock);
- static LIST_HEAD(ipmmu_devices);
- 
-@@ -265,14 +270,19 @@ static void ipmmu_tlb_invalidate(struct ipmmu_vmsa_domain *domain)
-  * Enable MMU translation for the microTLB.
-  */
- static void ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
--			      const struct ipmmu_vmsa_master *master)
-+			      unsigned int utlb)
- {
- 	struct ipmmu_vmsa_device *mmu = domain->mmu;
- 
-+	/*
-+	 * TODO: Reference-count the microTLB as several bus masters can be
-+	 * connected to the same microTLB.
-+	 */
-+
- 	/* TODO: What should we set the ASID to ? */
--	ipmmu_write(mmu, IMUASID(master->utlb), 0);
-+	ipmmu_write(mmu, IMUASID(utlb), 0);
- 	/* TODO: Do we need to flush the microTLB ? */
--	ipmmu_write(mmu, IMUCTR(master->utlb),
-+	ipmmu_write(mmu, IMUCTR(utlb),
- 		    IMUCTR_TTSEL_MMU(domain->context_id) | IMUCTR_FLUSH |
- 		    IMUCTR_MMUEN);
- }
-@@ -281,11 +291,11 @@ static void ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
-  * Disable MMU translation for the microTLB.
-  */
- static void ipmmu_utlb_disable(struct ipmmu_vmsa_domain *domain,
--			       const struct ipmmu_vmsa_master *master)
-+			       unsigned int utlb)
- {
- 	struct ipmmu_vmsa_device *mmu = domain->mmu;
- 
--	ipmmu_write(mmu, IMUCTR(master->utlb), 0);
-+	ipmmu_write(mmu, IMUCTR(utlb), 0);
- }
- 
- static void ipmmu_flush_pgtable(struct ipmmu_vmsa_device *mmu, void *addr,
-@@ -674,21 +684,6 @@ static int ipmmu_handle_mapping(struct ipmmu_vmsa_domain *domain,
-  * IOMMU Operations
-  */
- 
--static const struct ipmmu_vmsa_master *
--ipmmu_find_master(struct ipmmu_vmsa_device *ipmmu, struct device *dev)
--{
--	const struct ipmmu_vmsa_master *master = ipmmu->pdata->masters;
--	const char *devname = dev_name(dev);
--	unsigned int i;
--
--	for (i = 0; i < ipmmu->pdata->num_masters; ++i, ++master) {
--		if (strcmp(master->name, devname) = 0)
--			return master;
--	}
--
--	return NULL;
--}
--
- static int ipmmu_domain_init(struct iommu_domain *io_domain)
- {
- 	struct ipmmu_vmsa_domain *domain;
-@@ -727,9 +722,9 @@ static void ipmmu_domain_destroy(struct iommu_domain *io_domain)
- static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 			       struct device *dev)
- {
--	struct ipmmu_vmsa_device *mmu = dev->archdata.iommu;
-+	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
-+	struct ipmmu_vmsa_device *mmu = archdata->mmu;
- 	struct ipmmu_vmsa_domain *domain = io_domain->priv;
--	const struct ipmmu_vmsa_master *master;
- 	unsigned long flags;
- 	int ret = 0;
- 
-@@ -759,11 +754,7 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 	if (ret < 0)
- 		return ret;
- 
--	master = ipmmu_find_master(mmu, dev);
--	if (!master)
--		return -EINVAL;
--
--	ipmmu_utlb_enable(domain, master);
-+	ipmmu_utlb_enable(domain, archdata->utlb);
- 
- 	return 0;
- }
-@@ -771,14 +762,10 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- static void ipmmu_detach_device(struct iommu_domain *io_domain,
- 				struct device *dev)
- {
-+	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
- 	struct ipmmu_vmsa_domain *domain = io_domain->priv;
--	const struct ipmmu_vmsa_master *master;
- 
--	master = ipmmu_find_master(domain->mmu, dev);
--	if (!master)
--		return;
--
--	ipmmu_utlb_disable(domain, master);
-+	ipmmu_utlb_disable(domain, archdata->utlb);
- 
- 	/*
- 	 * TODO: Optimize by disabling the context when no device is attached.
-@@ -839,11 +826,26 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
- 	return __pfn_to_phys(pte_pfn(pte)) | (iova & ~PAGE_MASK);
- }
- 
-+static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
-+{
-+	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
-+	const char *devname = dev_name(dev);
-+	unsigned int i;
-+
-+	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
-+		if (strcmp(master->name, devname) = 0)
-+			return master->utlb;
-+	}
-+
-+	return -1;
-+}
-+
- static int ipmmu_add_device(struct device *dev)
- {
--	const struct ipmmu_vmsa_master *master = NULL;
-+	struct ipmmu_vmsa_archdata *archdata;
- 	struct ipmmu_vmsa_device *mmu;
- 	struct iommu_group *group;
-+	int utlb = -1;
- 	int ret;
- 
- 	if (dev->archdata.iommu) {
-@@ -856,10 +858,10 @@ static int ipmmu_add_device(struct device *dev)
- 	spin_lock(&ipmmu_devices_lock);
- 
- 	list_for_each_entry(mmu, &ipmmu_devices, list) {
--		master = ipmmu_find_master(mmu, dev);
--		if (master) {
-+		utlb = ipmmu_find_utlb(mmu, dev);
-+		if (utlb >= 0) {
- 			/*
--			 * TODO Take a reference to the master to protect
-+			 * TODO Take a reference to the MMU to protect
- 			 * against device removal.
- 			 */
- 			break;
-@@ -868,10 +870,10 @@ static int ipmmu_add_device(struct device *dev)
- 
- 	spin_unlock(&ipmmu_devices_lock);
- 
--	if (!master)
-+	if (utlb < 0)
- 		return -ENODEV;
- 
--	if (!master->utlb >= mmu->num_utlbs)
-+	if (utlb >= mmu->num_utlbs)
- 		return -EINVAL;
- 
- 	/* Create a device group and add the device to it. */
-@@ -889,7 +891,15 @@ static int ipmmu_add_device(struct device *dev)
- 		return ret;
- 	}
- 
--	dev->archdata.iommu = mmu;
-+	archdata = kzalloc(sizeof(*archdata), GFP_KERNEL);
-+	if (!archdata) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
-+
-+	archdata->mmu = mmu;
-+	archdata->utlb = utlb;
-+	dev->archdata.iommu = archdata;
- 
- 	/*
- 	 * Create the ARM mapping, used by the ARM DMA mapping core to allocate
-@@ -923,6 +933,7 @@ static int ipmmu_add_device(struct device *dev)
- 	return 0;
- 
- error:
-+	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- 	iommu_group_remove_device(dev);
- 	return ret;
-@@ -932,6 +943,7 @@ static void ipmmu_remove_device(struct device *dev)
- {
- 	arm_iommu_detach_device(dev);
- 	iommu_group_remove_device(dev);
-+	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- }
- 
--- 
-1.8.3.2
+Please add the following which are required (at least the second one
+is required) for of_irq_parse_and_map_pci() to work properly for P2P
+bridges.  With the changes below as well as my of/irq fix
+(https://patchwork.kernel.org/patch/3762591/) I can now use devices
+behind a properly connected P2P bridge.
 
++++ b/drivers/pci/host/pcie-designware.c
+@@ -493,7 +493,7 @@ int __init dw_pcie_host_init(struct pcie_port *pp)
+        dw_pci.nr_controllers = 1;
+        dw_pci.private_data = (void **)&pp;
+
+-       pci_common_init(&dw_pci);
++       pci_common_init_dev(pp->dev, &dw_pci);
+        pci_assign_unassigned_resources();
+ #ifdef CONFIG_PCI_DOMAINS
+        dw_pci.domain++;
+@@ -726,7 +726,7 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_s
+
+        if (pp) {
+                pp->root_bus_nr = sys->busnr;
+-               bus = pci_scan_root_bus(NULL, sys->busnr, &dw_pcie_ops,
++               bus = pci_scan_root_bus(pp->dev, sys->busnr, &dw_pcie_ops,
+                                        sys, &sys->resources);
+        } else {
+                bus = NULL;
+
+Thanks,
+
+Tim
