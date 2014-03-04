@@ -1,21 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Mar 2014 23:57:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in DTS
-Message-Id: <20140306235706.GA24411@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 04 Mar 2014 23:10:16 +0000
+Subject: Re: [PATCH] irq-gic: remove file name from heading comment
+Message-Id: <53166B67.2060804@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140306031536.10779.98781.sendpatchset@w520>
-In-Reply-To: <20140306031536.10779.98781.sendpatchset@w520>
+References: <201312140224.53928.sergei.shtylyov@cogentembedded.com>
+ <52D5CCFB.1090205@cogentembedded.com>
+In-Reply-To: <52D5CCFB.1090205@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 06, 2014 at 12:15:36PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> The correct maximum CPU frequency for r8a7791 is 1500 MHz
-> so update the r8a7791 SoC DTS to reflect this.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Hello.
 
-Thanks, I have queued this up.
+On 01/15/2014 02:49 AM, Sergei Shtylyov wrote:
+
+>> File names in the heading comments  fell out of favor long ago, and this one
+>> weren't even changed when the driver was moved from arch/arm/common/, so remove
+>> it at last...
+
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> ---
+>> The patch is against the 'irq/core' branch of the 'tip.git' repo.
+
+>     Thomas, is there a chance that you merge this patch for 3.14? Is it even
+> the right branch for cleanups (I'm seeing fixes there)?
+
+    Thomas, will you ever reply to me? Who's maintaining the GIC driver, you?
+Or the patches shoud just go in via arm-soc.git?
+
+WBR, Sergei
+
