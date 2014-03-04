@@ -1,85 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 04 Mar 2014 11:02:31 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 04 Mar 2014 11:07:06 +0000
 Subject: Re: [PATCH 3/4] clk: shmobile: add CPG driver for rz-platforms
-Message-Id: <2207635.bd10VfTU6U@avalon>
+Message-Id: <20140304110706.GA12727@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1602428.iOa8tDQv8V"
+Content-Type: multipart/mixed; boundary="mP3DRpeJDSE+ciuQ"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
  <1722697.3h0GnbWuD3@avalon> <20140303162731.GA3732@katana>
-In-Reply-To: <20140303162731.GA3732@katana>
+ <2207635.bd10VfTU6U@avalon>
+In-Reply-To: <2207635.bd10VfTU6U@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
 
---nextPart1602428.iOa8tDQv8V
+--mP3DRpeJDSE+ciuQ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
 
-Hi Wolfram,
 
-On Monday 03 March 2014 17:27:31 Wolfram Sang wrote:
-> > While the parent is indeed selected at boot time only, and only one=
- parent
-> > is thus needed, parent selection could be performed by a DIP switch=
-
-> > connected to MD_CLK on the board for instance. In that case both pa=
-rents
-> > should be available in DT, as selection will be done by the kernel =
-at
-> > boot time, not at DT compile time.
->=20
-> OK, I understand the case. I still wonder about specifying two parent=
-s,
-> though. If a board uses USB_X1, it then has to spefify a dummy EXTAL
-> clock (or an empty one), just because USB_X1 is enumerated as second
-> entry?
-
-That's a good question. Mike, would it be possible to support "holes" i=
-n the=20
-DT clocks lists, like the GPIO DT bindings do ?
-
-> > > Again, now that I already coded it, what is the gain to remove it=
-? The
-> > > drawback is that other people might get encouraged to find reason=
-s to
-> > > allow them sloppy practices.
+> > > While the parent is indeed selected at boot time only, and only one p=
+arent
+> > > is thus needed, parent selection could be performed by a DIP switch
+> > > connected to MD_CLK on the board for instance. In that case both pare=
+nts
+> > > should be available in DT, as selection will be done by the kernel at
+> > > boot time, not at DT compile time.
 > >=20
-> > It will make the kernel binary smaller by removing code that is not=
- needed
-> > in practice.
+> > OK, I understand the case. I still wonder about specifying two parents,
+> > though. If a board uses USB_X1, it then has to spefify a dummy EXTAL
+> > clock (or an empty one), just because USB_X1 is enumerated as second
+> > entry?
 >=20
-> Sounds like a micro-optimazation to me. If you insist, we should BUG(=
-)
-> right away in that case, to make the code comprehensible. Returning w=
-ith
-> a leak and saying "we will probably fail somewhere" should really be
-> avoided IMO.
+> That's a good question. Mike, would it be possible to support "holes" in =
+the=20
+> DT clocks lists, like the GPIO DT bindings do ?
 
-It's a micro-optimization indeed, but a simple one, so I believe it mak=
-es=20
-sense. I'll leave it up to you in the end.
+I am currently playing with the status property for clocks, so we can
+"disable" clocks. Opinions?
 
-=2D-=20
-Regards,
+=46rom: Wolfram Sang <wsa@sang-engineering.com>
+Subject: [PATCH] clk: allow clocks to use the 'status' property
 
-Laurent Pinchart
+Similar to platform devices, this allows us to set up the clock
+hierarchy in dtsi files and enable the used clocks in the board file
+later.
 
---nextPart1602428.iOa8tDQv8V
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ drivers/clk/clk.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 5517944..0045f55 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -2542,6 +2542,9 @@ void __init of_clk_init(const struct of_device_id *ma=
+tches)
+ 		matches =3D &__clk_of_table;
+=20
+ 	for_each_matching_node_and_match(np, matches, &match) {
++		if (!of_device_is_available(np))
++			continue;
++
+ 		of_clk_init_cb_t clk_init_cb =3D match->data;
+ 		clk_init_cb(np);
+ 	}
+
+--mP3DRpeJDSE+ciuQ
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1.4.15 (GNU/Linux)
 
-iQEcBAABAgAGBQJTFbLHAAoJEIkPb2GL7hl1w4IIAIZKA2R8z7sfOn/OHSoBekXT
-aEa19lYQzRmjrQd2BCsC50Hv4zJVJm8Zhrdve0ayV1yJsdHRT6c89JtT/X+r1Wbd
-CCbkuV/YZhfz6H/NG44pSSpie+yYSfijvwR0eiPj6qrNMm0+vTTuFQLgqN07QwNv
-5ZnmlEiRMdn4PNwPqeGKocowVXjpX5I7LZwuddIKyhlkZRWVng6i99VEKmCcvm/d
-eNneKAWlyMFlBMV36/48PkxYigGplbaBvYJeea9HGx6wOupvDUfTlvKAOZBoNYR0
-7TGyt0eGBLD3OpiyBZhGfOeq7ysov9M1RnxswQuindGai5Unl+9x7ot62rwYNE0=
-=JdMG
+iQIcBAEBAgAGBQJTFbPZAAoJEBQN5MwUoCm2QvAQAJl1ZtNwd3OkCSRRjm1Ie8Fj
+xF2/tjBVSocYp+nYbD9oyBhh5s2lTOqEYnTsoXFRjdHkKhqrA0AO41toLVuyi4D0
+BSb9BmgiUH9GVINTxoN0/evu8Ht4vdHeW8iJ75XdgReSNJJjy36PaSQTUie8uygq
+wFp+Bq36Lh7I5GG7dCMSeh2dUMQc65mcnpTMvJteH1PQpEQGx9sUkuM3a0JhaDB8
+HDbyIQLuyX+I2agMAIA9xeJHVw+FfYT/tdmkfWfG931y2fVRADjSZHqscimpzYaC
+DVzqI7/oeDsETttGh+MAOSdvE1hrbFi2PIcD0g0118sdiM2W5TAsjXcKn/FAMADA
+devtC6keBi038raQtkVbZvlWTH9Et5YbKXYqGXzQT+11hoFu66dZdQJAQR9cxIqe
+ufxlK4TLBQie6QDmeBasDr+nf08U3tyiSuRe5dGcDDUp75Hxvkl2i7DGzzlN4Twz
+GPAXX4JrByrd0RHEc/Ri+U3rYulGv4vfj8xk0QY4wHUNUyALowXlF5l/kGauN1kl
+5z1phwVea754e4F49CU5bU2CsC7VMXYr7jJag//33o0q0hRH2hsCILkA1nk0asGm
+yoPD/DC9sxYzoLBLrfHDmlPVP0upWqHw70CutTSxDApJLPNSddvnvWxxCMcbuTbR
+OBPZBBjIDEDf+rK3Xv47
+=9yAS
 -----END PGP SIGNATURE-----
 
---nextPart1602428.iOa8tDQv8V--
-
+--mP3DRpeJDSE+ciuQ--
