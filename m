@@ -1,87 +1,145 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 30 Mar 2014 21:51:37 +0000
-Subject: [RFCv2] rcar_vin: copy flags from pdata
-Message-Id: <1396216297-10981-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:18 +0000
+Subject: [PATCH 11/22] clocksource: sh_mtu2: Replace hardcoded register values with macros
+Message-Id: <1393955249-18736-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: g.liakhovetski@gmx.de, linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-The platform data is a single word, so simply copy
-it into the device's private data structure than
-keeping a copy of the pointer.
+Define symbolic macros for all used registers bits.
 
-This will make changing to device-tree binding
-easier as it is one allocation instead of two.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 98 ++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 92 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 702dc47..47516df 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -126,13 +126,13 @@ struct rcar_vin_priv {
- 	int				sequence;
- 	/* State of the VIN module in capturing mode */
- 	enum rcar_vin_state		state;
--	struct rcar_vin_platform_data	*pdata;
- 	struct soc_camera_host		ici;
- 	struct list_head		capture;
- #define MAX_BUFFER_NUM			3
- 	struct vb2_buffer		*queue_buf[MAX_BUFFER_NUM];
- 	struct vb2_alloc_ctx		*alloc_ctx;
- 	enum v4l2_field			field;
-+	unsigned int			pdata_flags;
- 	unsigned int			vb_count;
- 	unsigned int			nr_hw_slots;
- 	bool				request_to_stop;
-@@ -275,12 +275,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 		break;
- 	case V4L2_MBUS_FMT_YUYV8_2X8:
- 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
- 		break;
- 	case V4L2_MBUS_FMT_YUYV10_2X10:
- 		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
- 		break;
- 	default:
-@@ -799,7 +799,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
- 	/* Make choises, based on platform preferences */
- 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
-@@ -807,7 +807,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 45e1e85..2cf0048 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -67,6 +67,88 @@ static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
+ #define TCNT 5 /* channel register */
+ #define TGR  6 /* channel register */
  
- 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
-@@ -1447,7 +1447,7 @@ static int rcar_vin_probe(struct platform_device *pdev)
- 	priv->ici.drv_name = dev_name(&pdev->dev);
- 	priv->ici.ops = &rcar_vin_host_ops;
++#define TCR_CCLR_NONE		(0 << 5)
++#define TCR_CCLR_TGRA		(1 << 5)
++#define TCR_CCLR_TGRB		(2 << 5)
++#define TCR_CCLR_SYNC		(3 << 5)
++#define TCR_CCLR_TGRC		(5 << 5)
++#define TCR_CCLR_TGRD		(6 << 5)
++#define TCR_CCLR_MASK		(7 << 5)
++#define TCR_CKEG_RISING		(0 << 3)
++#define TCR_CKEG_FALLING	(1 << 3)
++#define TCR_CKEG_BOTH		(2 << 3)
++#define TCR_CKEG_MASK		(3 << 3)
++/* Values 4 to 7 are channel-dependent */
++#define TCR_TPSC_P1		(0 << 0)
++#define TCR_TPSC_P4		(1 << 0)
++#define TCR_TPSC_P16		(2 << 0)
++#define TCR_TPSC_P64		(3 << 0)
++#define TCR_TPSC_CH0_TCLKA	(4 << 0)
++#define TCR_TPSC_CH0_TCLKB	(5 << 0)
++#define TCR_TPSC_CH0_TCLKC	(6 << 0)
++#define TCR_TPSC_CH0_TCLKD	(7 << 0)
++#define TCR_TPSC_CH1_TCLKA	(4 << 0)
++#define TCR_TPSC_CH1_TCLKB	(5 << 0)
++#define TCR_TPSC_CH1_P256	(6 << 0)
++#define TCR_TPSC_CH1_TCNT2	(7 << 0)
++#define TCR_TPSC_CH2_TCLKA	(4 << 0)
++#define TCR_TPSC_CH2_TCLKB	(5 << 0)
++#define TCR_TPSC_CH2_TCLKC	(6 << 0)
++#define TCR_TPSC_CH2_P1024	(7 << 0)
++#define TCR_TPSC_CH34_P256	(4 << 0)
++#define TCR_TPSC_CH34_P1024	(5 << 0)
++#define TCR_TPSC_CH34_TCLKA	(6 << 0)
++#define TCR_TPSC_CH34_TCLKB	(7 << 0)
++#define TCR_TPSC_MASK		(7 << 0)
++
++#define TMDR_BFE		(1 << 6)
++#define TMDR_BFB		(1 << 5)
++#define TMDR_BFA		(1 << 4)
++#define TMDR_MD_NORMAL		(0 << 0)
++#define TMDR_MD_PWM_1		(2 << 0)
++#define TMDR_MD_PWM_2		(3 << 0)
++#define TMDR_MD_PHASE_1		(4 << 0)
++#define TMDR_MD_PHASE_2		(5 << 0)
++#define TMDR_MD_PHASE_3		(6 << 0)
++#define TMDR_MD_PHASE_4		(7 << 0)
++#define TMDR_MD_PWM_SYNC	(8 << 0)
++#define TMDR_MD_PWM_COMP_CREST	(13 << 0)
++#define TMDR_MD_PWM_COMP_TROUGH	(14 << 0)
++#define TMDR_MD_PWM_COMP_BOTH	(15 << 0)
++#define TMDR_MD_MASK		(15 << 0)
++
++#define TIOC_IOCH(n)		((n) << 4)
++#define TIOC_IOCL(n)		((n) << 0)
++#define TIOR_OC_RETAIN		(0 << 0)
++#define TIOR_OC_0_CLEAR		(1 << 0)
++#define TIOR_OC_0_SET		(2 << 0)
++#define TIOR_OC_0_TOGGLE	(3 << 0)
++#define TIOR_OC_1_CLEAR		(5 << 0)
++#define TIOR_OC_1_SET		(6 << 0)
++#define TIOR_OC_1_TOGGLE	(7 << 0)
++#define TIOR_IC_RISING		(8 << 0)
++#define TIOR_IC_FALLING		(9 << 0)
++#define TIOR_IC_BOTH		(10 << 0)
++#define TIOR_IC_TCNT		(12 << 0)
++#define TIOR_MASK		(15 << 0)
++
++#define TIER_TTGE		(1 << 7)
++#define TIER_TTGE2		(1 << 6)
++#define TIER_TCIEU		(1 << 5)
++#define TIER_TCIEV		(1 << 4)
++#define TIER_TGIED		(1 << 3)
++#define TIER_TGIEC		(1 << 2)
++#define TIER_TGIEB		(1 << 1)
++#define TIER_TGIEA		(1 << 0)
++
++#define TSR_TCFD		(1 << 7)
++#define TSR_TCFU		(1 << 5)
++#define TSR_TCFV		(1 << 4)
++#define TSR_TGFD		(1 << 3)
++#define TSR_TGFC		(1 << 2)
++#define TSR_TGFB		(1 << 1)
++#define TSR_TGFA		(1 << 0)
++
+ static unsigned long mtu2_reg_offs[] = {
+ 	[TCR] = 0,
+ 	[TMDR] = 1,
+@@ -150,13 +232,17 @@ static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
+ 	rate = clk_get_rate(ch->mtu->clk) / 64;
+ 	periodic = (rate + HZ/2) / HZ;
  
--	priv->pdata = pdata;
-+	priv->pdata_flags = pdata->flags;
- 	priv->chip = pdev->id_entry->driver_data;
- 	spin_lock_init(&priv->lock);
- 	INIT_LIST_HEAD(&priv->capture);
+-	/* "Periodic Counter Operation" */
+-	sh_mtu2_write(ch, TCR, 0x23); /* TGRA clear, divide clock by 64 */
+-	sh_mtu2_write(ch, TIOR, 0);
++	/*
++	 * "Periodic Counter Operation"
++	 * Clear on TGRA compare match, divide clock by 64.
++	 */
++	sh_mtu2_write(ch, TCR, TCR_CCLR_TGRA | TCR_TPSC_P64);
++	sh_mtu2_write(ch, TIOR, TIOC_IOCH(TIOR_OC_0_CLEAR) |
++		      TIOC_IOCL(TIOR_OC_0_CLEAR));
+ 	sh_mtu2_write(ch, TGR, periodic);
+ 	sh_mtu2_write(ch, TCNT, 0);
+-	sh_mtu2_write(ch, TMDR, 0);
+-	sh_mtu2_write(ch, TIER, 0x01);
++	sh_mtu2_write(ch, TMDR, TMDR_MD_NORMAL);
++	sh_mtu2_write(ch, TIER, TIER_TGIEA);
+ 
+ 	/* enable channel */
+ 	sh_mtu2_start_stop_ch(ch, 1);
+@@ -182,7 +268,7 @@ static irqreturn_t sh_mtu2_interrupt(int irq, void *dev_id)
+ 
+ 	/* acknowledge interrupt */
+ 	sh_mtu2_read(ch, TSR);
+-	sh_mtu2_write(ch, TSR, 0xfe);
++	sh_mtu2_write(ch, TSR, ~TSR_TGFA);
+ 
+ 	/* notify clockevent layer */
+ 	ch->ced.event_handler(&ch->ced);
 -- 
-1.9.0
+1.8.3.2
 
