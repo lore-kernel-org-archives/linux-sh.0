@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 04 Mar 2014 11:42:28 +0000
+From: "Koul, Vinod" <vinod.koul@intel.com>
+Date: Tue, 04 Mar 2014 16:50:29 +0000
 Subject: Re: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <1733643.q3BHLOGLRM@avalon>
+Message-Id: <8D3F6266AEB6384E807C6FFC6FE195E303015899@BGSMSX101.gar.corp.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,119 +10,87 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tuesday 21 January 2014 13:10:30 Laurent Pinchart wrote:
-> On Tuesday 07 January 2014 16:08:37 Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > Ping ? Could this patch series (with patches v3.1 1/3, v3 2/3 and v3 3/3)
-> > be applied for v3.14 ? Same question for "DMA: shdma: Enable driver
-> > compilation with COMPILE_TEST".
-> 
-> PING ?
-
-HELLO ? ANYONE THERE ? This is v3.14 material.
-
-> > On Wednesday 11 December 2013 13:43:04 Laurent Pinchart wrote:
-> > > Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
-> > > variables, and cast pointers to uintptr_t instead of unsigned int where
-> > > applicable. This fixes warnings on platforms where pointers and/or
-> > > dma_addr_t have a different size than int
-> > > 
-> > > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
-> > > Cc: Vinod Koul <vinod.koul@intel.com>
-> > > Cc: dmaengine@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > ---
-> > > 
-> > >  drivers/dma/sh/shdma-base.c | 8 ++++----
-> > >  drivers/dma/sh/shdma-of.c   | 3 ++-
-> > >  drivers/dma/sh/sudmac.c     | 4 ++--
-> > >  3 files changed, 8 insertions(+), 7 deletions(-)
-> > > 
-> > > diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-> > > index 2e7b394..5367e01 100644
-> > > --- a/drivers/dma/sh/shdma-base.c
-> > > +++ b/drivers/dma/sh/shdma-base.c
-> > > @@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void
-> > > *arg) struct shdma_chan *schan = to_shdma_chan(chan);
-> > > 
-> > >  	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
-> > >  	const struct shdma_ops *ops = sdev->ops;
-> > > 
-> > > -	int match = (int)arg;
-> > > +	int match = (long)arg;
-> > > 
-> > >  	int ret;
-> > >  	
-> > >  	if (match < 0)
-> > > 
-> > > @@ -491,8 +491,8 @@ static struct shdma_desc *shdma_add_desc(struct
-> > > shdma_chan *schan, }
-> > > 
-> > >  	dev_dbg(schan->dev,
-> > > 
-> > > -		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
-> > > -		copy_size, *len, *src, *dst, &new->async_tx,
-> > > +		"chaining (%zu/%zu)@%pad -> %pad with %p, cookie %d\n",
-> > > +		copy_size, *len, src, dst, &new->async_tx,
-> > > 
-> > >  		new->async_tx.cookie);
-> > >  	
-> > >  	new->mark = DESC_PREPARED;
-> > > 
-> > > @@ -555,7 +555,7 @@ static struct dma_async_tx_descriptor
-> > > *shdma_prep_sg(struct shdma_chan *schan, goto err_get_desc;
-> > > 
-> > >  		do {
-> > > 
-> > > -			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
-> > > +			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %llx\n",
-> > > 
-> > >  				i, sg, len, (unsigned long long)sg_addr);
-> > >  			
-> > >  			if (direction = DMA_DEV_TO_MEM)
-> > > 
-> > > diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
-> > > index 06473a0..b4ff9d3 100644
-> > > --- a/drivers/dma/sh/shdma-of.c
-> > > +++ b/drivers/dma/sh/shdma-of.c
-> > > @@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct
-> > > of_phandle_args *dma_spec, /* Only slave DMA channels can be allocated
-> > > via
-> > > DT */
-> > > 
-> > >  	dma_cap_set(DMA_SLAVE, mask);
-> > > 
-> > > -	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
-> > > +	chan = dma_request_channel(mask, shdma_chan_filter,
-> > > +				   (void *)(uintptr_t)id);
-> > > 
-> > >  	if (chan)
-> > >  	
-> > >  		to_shdma_chan(chan)->hw_req = id;
-> > > 
-> > > diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-> > > index c7e9cdf..4e7df43 100644
-> > > --- a/drivers/dma/sh/sudmac.c
-> > > +++ b/drivers/dma/sh/sudmac.c
-> > > @@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan
-> > > *schan,
-> > > 
-> > >  	struct sudmac_chan *sc = to_chan(schan);
-> > >  	struct sudmac_desc *sd = to_desc(sdesc);
-> > > 
-> > > -	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
-> > > -		__func__, src, dst, *len);
-> > > +	dev_dbg(sc->shdma_chan.dev, "%s: src=%pad, dst=%pad, len=%zu\n",
-> > > +		__func__, &src, &dst, *len);
-> > > 
-> > >  	if (*len > schan->max_xfer_len)
-> > >  	
-> > >  		*len = schan->max_xfer_len;
-
--- 
-Regards,
-
-Laurent Pinchart
-
+T24gNCBNYXIgMjAxNCAxNzoxMSwgTGF1cmVudCBQaW5jaGFydCA8bGF1cmVudC5waW5jaGFydEBp
+ZGVhc29uYm9hcmQuY29tPiB3cm90ZToNCj4NCj4gT24gVHVlc2RheSAyMSBKYW51YXJ5IDIwMTQg
+MTM6MTA6MzAgTGF1cmVudCBQaW5jaGFydCB3cm90ZToNCj4gPiBPbiBUdWVzZGF5IDA3IEphbnVh
+cnkgMjAxNCAxNjowODozNyBMYXVyZW50IFBpbmNoYXJ0IHdyb3RlOg0KPiA+ID4gSGVsbG8sDQo+
+ID4gPg0KPiA+ID4gUGluZyA/IENvdWxkIHRoaXMgcGF0Y2ggc2VyaWVzICh3aXRoIHBhdGNoZXMg
+djMuMSAxLzMsIHYzIDIvMyBhbmQgdjMgMy8zKQ0KPiA+ID4gYmUgYXBwbGllZCBmb3IgdjMuMTQg
+PyBTYW1lIHF1ZXN0aW9uIGZvciAiRE1BOiBzaGRtYTogRW5hYmxlIGRyaXZlcg0KPiA+ID4gY29t
+cGlsYXRpb24gd2l0aCBDT01QSUxFX1RFU1QiLg0KPiA+DQo+ID4gUElORyA/DQo+DQo+IEhFTExP
+ID8gQU5ZT05FIFRIRVJFID8gVGhpcyBpcyB2My4xNCBtYXRlcmlhbC4NClNvcnJ5IGxvb2tzIGxp
+a2UgSSBtaXNzZWQgb3V0IGVhcmxpZXIuLi4gQW0ganVzdCBiYWNrIGZyb20gdmFjYXRpb24sIGdp
+dmUgbWUgZmV3IGRheXMgdG8gZ28gdGhydSB0aGlzIGFuZCBkbyB0aGUgbmVlZGZ1bC4uLg0KDQot
+LQ0KflZpbm9kDQpTZW50IGZyb20gbXkgY2VsbHBob25lDQoNCj4NCj4gPiA+IE9uIFdlZG5lc2Rh
+eSAxMSBEZWNlbWJlciAyMDEzIDEzOjQzOjA0IExhdXJlbnQgUGluY2hhcnQgd3JvdGU6DQo+ID4g
+PiA+IFVzZSB0aGUgJXp1IGFuZCAlcGFkIHByaW50ayBzcGVjaWZpZXJzIHRvIHByaW50IHNpemVf
+dCBhbmQgZG1hX2FkZHJfdA0KPiA+ID4gPiB2YXJpYWJsZXMsIGFuZCBjYXN0IHBvaW50ZXJzIHRv
+IHVpbnRwdHJfdCBpbnN0ZWFkIG9mIHVuc2lnbmVkIGludCB3aGVyZQ0KPiA+ID4gPiBhcHBsaWNh
+YmxlLiBUaGlzIGZpeGVzIHdhcm5pbmdzIG9uIHBsYXRmb3JtcyB3aGVyZSBwb2ludGVycyBhbmQv
+b3INCj4gPiA+ID4gZG1hX2FkZHJfdCBoYXZlIGEgZGlmZmVyZW50IHNpemUgdGhhbiBpbnQNCj4g
+PiA+ID4NCj4gPiA+ID4gQ2M6IEd1ZW5uYWRpIExpYWtob3ZldHNraSA8Zy5saWFraG92ZXRza2kr
+cmVuZXNhc0BnbWFpbC5jb20+DQo+ID4gPiA+IENjOiBWaW5vZCBLb3VsIDx2aW5vZC5rb3VsQGlu
+dGVsLmNvbT4NCj4gPiA+ID4gQ2M6IGRtYWVuZ2luZUB2Z2VyLmtlcm5lbC5vcmcNCj4gPiA+ID4g
+U2lnbmVkLW9mZi1ieTogTGF1cmVudCBQaW5jaGFydA0KPiA+ID4gPiA8bGF1cmVudC5waW5jaGFy
+dCtyZW5lc2FzQGlkZWFzb25ib2FyZC5jb20+DQo+ID4gPiA+IC0tLQ0KPiA+ID4gPg0KPiA+ID4g
+PiAgZHJpdmVycy9kbWEvc2gvc2hkbWEtYmFzZS5jIHwgOCArKysrLS0tLQ0KPiA+ID4gPiAgZHJp
+dmVycy9kbWEvc2gvc2hkbWEtb2YuYyAgIHwgMyArKy0NCj4gPiA+ID4gIGRyaXZlcnMvZG1hL3No
+L3N1ZG1hYy5jICAgICB8IDQgKystLQ0KPiA+ID4gPiAgMyBmaWxlcyBjaGFuZ2VkLCA4IGluc2Vy
+dGlvbnMoKyksIDcgZGVsZXRpb25zKC0pDQo+ID4gPiA+DQo+ID4gPiA+IGRpZmYgLS1naXQgYS9k
+cml2ZXJzL2RtYS9zaC9zaGRtYS1iYXNlLmMgYi9kcml2ZXJzL2RtYS9zaC9zaGRtYS1iYXNlLmMN
+Cj4gPiA+ID4gaW5kZXggMmU3YjM5NC4uNTM2N2UwMSAxMDA2NDQNCj4gPiA+ID4gLS0tIGEvZHJp
+dmVycy9kbWEvc2gvc2hkbWEtYmFzZS5jDQo+ID4gPiA+ICsrKyBiL2RyaXZlcnMvZG1hL3NoL3No
+ZG1hLWJhc2UuYw0KPiA+ID4gPiBAQCAtMjI3LDcgKzIyNyw3IEBAIGJvb2wgc2hkbWFfY2hhbl9m
+aWx0ZXIoc3RydWN0IGRtYV9jaGFuICpjaGFuLCB2b2lkDQo+ID4gPiA+ICphcmcpIHN0cnVjdCBz
+aGRtYV9jaGFuICpzY2hhbiA9IHRvX3NoZG1hX2NoYW4oY2hhbik7DQo+ID4gPiA+DQo+ID4gPiA+
+ICAgIHN0cnVjdCBzaGRtYV9kZXYgKnNkZXYgPSB0b19zaGRtYV9kZXYoc2NoYW4tPmRtYV9jaGFu
+LmRldmljZSk7DQo+ID4gPiA+ICAgIGNvbnN0IHN0cnVjdCBzaGRtYV9vcHMgKm9wcyA9IHNkZXYt
+Pm9wczsNCj4gPiA+ID4NCj4gPiA+ID4gLSBpbnQgbWF0Y2ggPSAoaW50KWFyZzsNCj4gPiA+ID4g
+KyBpbnQgbWF0Y2ggPSAobG9uZylhcmc7DQo+ID4gPiA+DQo+ID4gPiA+ICAgIGludCByZXQ7DQo+
+ID4gPiA+DQo+ID4gPiA+ICAgIGlmIChtYXRjaCA8IDApDQo+ID4gPiA+DQo+ID4gPiA+IEBAIC00
+OTEsOCArNDkxLDggQEAgc3RhdGljIHN0cnVjdCBzaGRtYV9kZXNjICpzaGRtYV9hZGRfZGVzYyhz
+dHJ1Y3QNCj4gPiA+ID4gc2hkbWFfY2hhbiAqc2NoYW4sIH0NCj4gPiA+ID4NCj4gPiA+ID4gICAg
+ZGV2X2RiZyhzY2hhbi0+ZGV2LA0KPiA+ID4gPg0KPiA+ID4gPiAtICAgICAgICAgImNoYWluaW5n
+ICgldS8ldSlAJXggLT4gJXggd2l0aCAlcCwgY29va2llICVkXG4iLA0KPiA+ID4gPiAtICAgICAg
+ICAgY29weV9zaXplLCAqbGVuLCAqc3JjLCAqZHN0LCAmbmV3LT5hc3luY190eCwNCj4gPiA+ID4g
+KyAgICAgICAgICJjaGFpbmluZyAoJXp1LyV6dSlAJXBhZCAtPiAlcGFkIHdpdGggJXAsIGNvb2tp
+ZSAlZFxuIiwNCj4gPiA+ID4gKyAgICAgICAgIGNvcHlfc2l6ZSwgKmxlbiwgc3JjLCBkc3QsICZu
+ZXctPmFzeW5jX3R4LA0KPiA+ID4gPg0KPiA+ID4gPiAgICAgICAgICAgIG5ldy0+YXN5bmNfdHgu
+Y29va2llKTsNCj4gPiA+ID4NCj4gPiA+ID4gICAgbmV3LT5tYXJrID0gREVTQ19QUkVQQVJFRDsN
+Cj4gPiA+ID4NCj4gPiA+ID4gQEAgLTU1NSw3ICs1NTUsNyBAQCBzdGF0aWMgc3RydWN0IGRtYV9h
+c3luY190eF9kZXNjcmlwdG9yDQo+ID4gPiA+ICpzaGRtYV9wcmVwX3NnKHN0cnVjdCBzaGRtYV9j
+aGFuICpzY2hhbiwgZ290byBlcnJfZ2V0X2Rlc2M7DQo+ID4gPiA+DQo+ID4gPiA+ICAgICAgICAg
+ICAgZG8gew0KPiA+ID4gPg0KPiA+ID4gPiAtICAgICAgICAgICAgICAgICBkZXZfZGJnKHNjaGFu
+LT5kZXYsICJBZGQgU0cgIyVkQCVwWyVkXSwgZG1hICVsbHhcbiIsDQo+ID4gPiA+ICsgICAgICAg
+ICAgICAgICAgIGRldl9kYmcoc2NoYW4tPmRldiwgIkFkZCBTRyAjJWRAJXBbJXp1XSwgZG1hICVs
+bHhcbiIsDQo+ID4gPiA+DQo+ID4gPiA+ICAgICAgICAgICAgICAgICAgICAgICAgICAgIGksIHNn
+LCBsZW4sICh1bnNpZ25lZCBsb25nIGxvbmcpc2dfYWRkcik7DQo+ID4gPiA+DQo+ID4gPiA+ICAg
+ICAgICAgICAgICAgICAgICBpZiAoZGlyZWN0aW9uID09IERNQV9ERVZfVE9fTUVNKQ0KPiA+ID4g
+Pg0KPiA+ID4gPiBkaWZmIC0tZ2l0IGEvZHJpdmVycy9kbWEvc2gvc2hkbWEtb2YuYyBiL2RyaXZl
+cnMvZG1hL3NoL3NoZG1hLW9mLmMNCj4gPiA+ID4gaW5kZXggMDY0NzNhMC4uYjRmZjlkMyAxMDA2
+NDQNCj4gPiA+ID4gLS0tIGEvZHJpdmVycy9kbWEvc2gvc2hkbWEtb2YuYw0KPiA+ID4gPiArKysg
+Yi9kcml2ZXJzL2RtYS9zaC9zaGRtYS1vZi5jDQo+ID4gPiA+IEBAIC0zMyw3ICszMyw4IEBAIHN0
+YXRpYyBzdHJ1Y3QgZG1hX2NoYW4gKnNoZG1hX29mX3hsYXRlKHN0cnVjdA0KPiA+ID4gPiBvZl9w
+aGFuZGxlX2FyZ3MgKmRtYV9zcGVjLCAvKiBPbmx5IHNsYXZlIERNQSBjaGFubmVscyBjYW4gYmUg
+YWxsb2NhdGVkDQo+ID4gPiA+IHZpYQ0KPiA+ID4gPiBEVCAqLw0KPiA+ID4gPg0KPiA+ID4gPiAg
+ICBkbWFfY2FwX3NldChETUFfU0xBVkUsIG1hc2spOw0KPiA+ID4gPg0KPiA+ID4gPiAtIGNoYW4g
+PSBkbWFfcmVxdWVzdF9jaGFubmVsKG1hc2ssIHNoZG1hX2NoYW5fZmlsdGVyLCAodm9pZCAqKWlk
+KTsNCj4gPiA+ID4gKyBjaGFuID0gZG1hX3JlcXVlc3RfY2hhbm5lbChtYXNrLCBzaGRtYV9jaGFu
+X2ZpbHRlciwNCj4gPiA+ID4gKyAgICAgICAgICAgICAgICAgICAgICAgICAgICAodm9pZCAqKSh1
+aW50cHRyX3QpaWQpOw0KPiA+ID4gPg0KPiA+ID4gPiAgICBpZiAoY2hhbikNCj4gPiA+ID4NCj4g
+PiA+ID4gICAgICAgICAgICB0b19zaGRtYV9jaGFuKGNoYW4pLT5od19yZXEgPSBpZDsNCj4gPiA+
+ID4NCj4gPiA+ID4gZGlmZiAtLWdpdCBhL2RyaXZlcnMvZG1hL3NoL3N1ZG1hYy5jIGIvZHJpdmVy
+cy9kbWEvc2gvc3VkbWFjLmMNCj4gPiA+ID4gaW5kZXggYzdlOWNkZi4uNGU3ZGY0MyAxMDA2NDQN
+Cj4gPiA+ID4gLS0tIGEvZHJpdmVycy9kbWEvc2gvc3VkbWFjLmMNCj4gPiA+ID4gKysrIGIvZHJp
+dmVycy9kbWEvc2gvc3VkbWFjLmMNCj4gPiA+ID4gQEAgLTE3OCw4ICsxNzgsOCBAQCBzdGF0aWMg
+aW50IHN1ZG1hY19kZXNjX3NldHVwKHN0cnVjdCBzaGRtYV9jaGFuDQo+ID4gPiA+ICpzY2hhbiwN
+Cj4gPiA+ID4NCj4gPiA+ID4gICAgc3RydWN0IHN1ZG1hY19jaGFuICpzYyA9IHRvX2NoYW4oc2No
+YW4pOw0KPiA+ID4gPiAgICBzdHJ1Y3Qgc3VkbWFjX2Rlc2MgKnNkID0gdG9fZGVzYyhzZGVzYyk7
+DQo+ID4gPiA+DQo+ID4gPiA+IC0gZGV2X2RiZyhzYy0+c2hkbWFfY2hhbi5kZXYsICIlczogc3Jj
+PSV4LCBkc3Q9JXgsIGxlbj0lZFxuIiwNCj4gPiA+ID4gLSAgICAgICAgIF9fZnVuY19fLCBzcmMs
+IGRzdCwgKmxlbik7DQo+ID4gPiA+ICsgZGV2X2RiZyhzYy0+c2hkbWFfY2hhbi5kZXYsICIlczog
+c3JjPSVwYWQsIGRzdD0lcGFkLCBsZW49JXp1XG4iLA0KPiA+ID4gPiArICAgICAgICAgX19mdW5j
+X18sICZzcmMsICZkc3QsICpsZW4pOw0KPiA+ID4gPg0KPiA+ID4gPiAgICBpZiAoKmxlbiA+IHNj
+aGFuLT5tYXhfeGZlcl9sZW4pDQo+ID4gPiA+DQo+ID4gPiA+ICAgICAgICAgICAgKmxlbiA9IHNj
+aGFuLT5tYXhfeGZlcl9sZW47DQo+DQo+IC0tDQo+IFJlZ2FyZHMsDQo+DQo+IExhdXJlbnQgUGlu
+Y2hhcnQNCj4NCg=
