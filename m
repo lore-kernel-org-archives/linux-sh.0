@@ -1,46 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Mar 2014 04:22:38 +0000
-Subject: Re: [PATCH] ARM: r7s72100: fix bus clock calculation
-Message-Id: <20140306042238.GC29693@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:08 +0000
+Subject: [PATCH 01/22] clocksource: sh_mtu2: Use request_irq() instead of setup_irq()
+Message-Id: <1393955249-18736-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Feb 28, 2014 at 10:32:55AM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> The picture in the datasheet is a little misleading, yet the divider of
-> the bus_clk is 1/3 and not 2/3.
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+The driver claims it needs to register an interrupt handler too early
+for request_irq(). This might have been true in the past, but the only
+meaningful difference between request_irq() and setup_irq() today is an
+additional kzalloc() call in request_irq(). As the driver calls
+kmalloc() itself we know that the slab allocator is available, we can
+thus switch to request_irq().
 
-Thanks, I have queued this up with "shmobile: " inserted into
-the subject.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/clocksource/sh_mtu2.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/clock-r7s72100.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-> index f17a5db..bee0073 100644
-> --- a/arch/arm/mach-shmobile/clock-r7s72100.c
-> +++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-> @@ -70,7 +70,7 @@ static struct clk pll_clk = {
->  
->  static unsigned long bus_recalc(struct clk *clk)
->  {
-> -	return clk->parent->rate * 2 / 3;
-> +	return clk->parent->rate / 3;
->  }
->  
->  static struct sh_clk_ops bus_clk_ops = {
-> -- 
-> 1.8.5.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index e30d76e..77992e0 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -37,7 +37,7 @@
+ struct sh_mtu2_priv {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+-	struct irqaction irqaction;
++	int irq;
+ 	struct platform_device *pdev;
+ 	unsigned long rate;
+ 	unsigned long periodic;
+@@ -244,10 +244,11 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_priv *p,
+ 	dev_info(&p->pdev->dev, "used for clock events\n");
+ 	clockevents_register_device(ced);
+ 
+-	ret = setup_irq(p->irqaction.irq, &p->irqaction);
++	ret = request_irq(p->irq, sh_mtu2_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&p->pdev->dev), p);
+ 	if (ret) {
+-		dev_err(&p->pdev->dev, "failed to request irq %d\n",
+-			p->irqaction.irq);
++		dev_err(&p->pdev->dev, "failed to request irq %d\n", p->irq);
+ 		return;
+ 	}
+ }
+@@ -265,7 +266,7 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+-	int irq, ret;
++	int ret;
+ 	ret = -ENXIO;
+ 
+ 	memset(p, 0, sizeof(*p));
+@@ -284,8 +285,8 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	irq = platform_get_irq(p->pdev, 0);
+-	if (irq < 0) {
++	p->irq = platform_get_irq(p->pdev, 0);
++	if (p->irq < 0) {
+ 		dev_err(&p->pdev->dev, "failed to get irq\n");
+ 		goto err0;
+ 	}
+@@ -297,13 +298,6 @@ static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	/* setup data for setup_irq() (too early for request_irq()) */
+-	p->irqaction.name = dev_name(&p->pdev->dev);
+-	p->irqaction.handler = sh_mtu2_interrupt;
+-	p->irqaction.dev_id = p;
+-	p->irqaction.irq = irq;
+-	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
+-
+ 	/* get hold of clock */
+ 	p->clk = clk_get(&p->pdev->dev, "mtu2_fck");
+ 	if (IS_ERR(p->clk)) {
+-- 
+1.8.3.2
+
