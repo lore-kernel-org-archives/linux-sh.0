@@ -1,59 +1,75 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 25 Mar 2014 16:56:38 +0000
-Subject: [PATCH v5 3/9] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-Message-Id: <1395766604-30926-4-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:12 +0000
+Subject: [PATCH 05/22] clocksource: sh_mtu2: Split channel setup to separate function
+Message-Id: <1393955249-18736-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds the device tree clock nodes for PCIe
+Move the channel setup code from sh_mtu2_setup to a new
+sh_mtu2_setup_channel function and call it from sh_mtu2_setup.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 29 +++++++++++++++++++----------
+ 1 file changed, 19 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..df9ec61 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -704,16 +704,17 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
- 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
--				 <&mmc0_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&rclk_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
--				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
-+				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
- 			>;
- 			clock-output-names  				"tpu0", "mmcif1", "sdhi3", "sdhi2",
--				"sdhi1", "sdhi0", "mmcif0", "cmt1";
-+				"sdhi1", "sdhi0", "mmcif0", "cmt1",
-+				"pcie";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5f..840dbc8 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -57,6 +57,7 @@
- #define R8A7790_CLK_SDHI1		13
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_PCIE		19
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
- #define R8A7790_CLK_USBDMAC0		30
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 256621c..8fd7059 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -273,6 +273,24 @@ static int sh_mtu2_register(struct sh_mtu2_channel *ch, char *name,
+ 	return 0;
+ }
+ 
++static int sh_mtu2_setup_channel(struct sh_mtu2_channel *ch,
++				 struct sh_mtu2_device *mtu)
++{
++	struct sh_timer_config *cfg = mtu->pdev->dev.platform_data;
++
++	memset(ch, 0, sizeof(*ch));
++	ch->mtu = mtu;
++
++	ch->irq = platform_get_irq(mtu->pdev, 0);
++	if (ch->irq < 0) {
++		dev_err(&mtu->pdev->dev, "failed to get irq\n");
++		return ch->irq;
++	}
++
++	return sh_mtu2_register(ch, (char *)dev_name(&mtu->pdev->dev),
++				cfg->clockevent_rating);
++}
++
+ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 			 struct platform_device *pdev)
+ {
+@@ -297,12 +315,6 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 		goto err0;
+ 	}
+ 
+-	mtu->channel.irq = platform_get_irq(mtu->pdev, 0);
+-	if (mtu->channel.irq < 0) {
+-		dev_err(&mtu->pdev->dev, "failed to get irq\n");
+-		goto err0;
+-	}
+-
+ 	/* map memory, let mapbase point to our channel */
+ 	mtu->mapbase = ioremap_nocache(res->start, resource_size(res));
+ 	if (mtu->mapbase = NULL) {
+@@ -322,10 +334,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 	if (ret < 0)
+ 		goto err2;
+ 
+-	mtu->channel.mtu = mtu;
+-
+-	ret = sh_mtu2_register(&mtu->channel, (char *)dev_name(&mtu->pdev->dev),
+-			       cfg->clockevent_rating);
++	ret = sh_mtu2_setup_channel(&mtu->channel, mtu);
+ 	if (ret < 0)
+ 		goto err3;
+ 
 -- 
-1.9.0
+1.8.3.2
 
