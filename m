@@ -1,35 +1,61 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 13 Mar 2014 09:50:07 +0000
-Subject: [PATCH 8/9] ARM: koelsch: Add PCIe to defconfig
-Message-Id: <1394704208-7490-9-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 04 Mar 2014 18:19:34 +0000
+Subject: Re: [PATCH 10/15] irda: sh_irda: Enable driver compilation with COMPILE_TEST
+Message-Id: <4876025.BhmDicoI5K@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <2434798.8bvsZzgdNb@avalon> <63153015.VK19yFZrrS@avalon>
+In-Reply-To: <63153015.VK19yFZrrS@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/configs/koelsch_defconfig |    3 +++
- 1 file changed, 3 insertions(+)
+Hi Samuel,
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 86faab5..ec14547 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -15,6 +15,9 @@ CONFIG_MACH_KOELSCH=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_MSI=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_NR_CPUS=8
+On Tuesday 07 January 2014 16:13:49 Laurent Pinchart wrote:
+> On Wednesday 11 December 2013 13:49:15 Laurent Pinchart wrote:
+> > Hi Samuel,
+> > 
+> > Could you please pick this patch up for v3.14 ?
+> 
+> Ping ?
+
+PING ?
+
+> > On Wednesday 27 November 2013 02:18:32 Laurent Pinchart wrote:
+> > > This helps increasing build testing coverage.
+> > > 
+> > > Cc: Samuel Ortiz <samuel@sortiz.org>
+> > > Cc: netdev@vger.kernel.org
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > Acked-by: Simon Horman <horms@verge.net.au>
+> > > ---
+> > > 
+> > >  drivers/net/irda/Kconfig | 3 ++-
+> > >  1 file changed, 2 insertions(+), 1 deletion(-)
+> > > 
+> > > diff --git a/drivers/net/irda/Kconfig b/drivers/net/irda/Kconfig
+> > > index 2a30193..cae5ee2 100644
+> > > --- a/drivers/net/irda/Kconfig
+> > > +++ b/drivers/net/irda/Kconfig
+> > > @@ -403,7 +403,8 @@ config MCS_FIR
+> > > 
+> > >  config SH_IRDA
+> > >  
+> > >  	tristate "SuperH IrDA driver"
+> > > 
+> > > -	depends on IRDA && ARCH_SHMOBILE
+> > > +	depends on IRDA
+> > > +	depends on ARCH_SHMOBILE || COMPILE_TEST
+> > > 
+> > >  	help
+> > >  	
+> > >  	  Say Y here if your want to enable SuperH IrDA devices.
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
