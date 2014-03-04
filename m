@@ -1,69 +1,94 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 16 Mar 2014 21:35:39 +0000
-Subject: [PATCH 02/06] ARM: shmobile: Install CPUIdle reset vector
-Message-Id: <20140316213539.15598.7228.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:17 +0000
+Subject: [PATCH 10/22] clocksource: sh_mtu2: Allocate channels dynamically
+Message-Id: <1393955249-18736-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This prepares the driver for multi-channel support.
 
-Install CPU reset vector for CPUIdle operation.
-
-Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/clocksource/sh_mtu2.c | 27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
 
- arch/arm/mach-shmobile/cpuidle.c |   27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/cpuidle.c
-+++ work/arch/arm/mach-shmobile/cpuidle.c
-@@ -8,6 +8,7 @@
-  * for more details.
-  */
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 94a5342..45e1e85 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -52,7 +52,8 @@ struct sh_mtu2_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
  
-+#include <linux/cpu.h>
- #include <linux/pm.h>
- #include <linux/cpuidle.h>
- #include <linux/suspend.h>
-@@ -15,6 +16,26 @@
- #include <linux/err.h>
- #include <asm/cpuidle.h>
- #include <asm/io.h>
-+#include <mach/common.h>
-+
-+static int shmobile_cpuidle_notifier_call(struct notifier_block *nfb,
-+					  unsigned long action, void *hcpu)
-+{
-+	unsigned int cpu = (long)hcpu;
-+
-+	switch (action) {
-+	case CPU_ONLINE:
-+		/* For this particular CPU register CPUIdle boot vector */
-+		shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
-+		break;
-+	};
-+
-+	return NOTIFY_OK;
-+}
-+
-+static struct notifier_block shmobile_cpuidle_notifier = {
-+	.notifier_call = shmobile_cpuidle_notifier_call,
-+};
+-	struct sh_mtu2_channel channel;
++	struct sh_mtu2_channel *channels;
++	unsigned int num_channels;
+ };
  
- static struct cpuidle_driver shmobile_cpuidle_default_driver = {
- 	.name			= "shmobile_cpuidle",
-@@ -33,5 +54,11 @@ void __init shmobile_cpuidle_set_driver(
- 
- int __init shmobile_cpuidle_init(void)
+ static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
+@@ -296,6 +297,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
  {
-+	/* Use CPU notifier for reset vector control */
-+	register_cpu_notifier(&shmobile_cpuidle_notifier);
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
++	void __iomem *base;
+ 	int ret;
+ 	ret = -ENXIO;
+ 
+@@ -315,16 +317,16 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 	}
+ 
+ 	/*
+-	 * Map memory, let channel.base point to our channel and mapbase to the
++	 * Map memory, let base point to our channel and mapbase to the
+ 	 * start/stop shared register.
+ 	 */
+-	mtu->channel.base = ioremap_nocache(res->start, resource_size(res));
+-	if (mtu->channel.base = NULL) {
++	base = ioremap_nocache(res->start, resource_size(res));
++	if (base = NULL) {
+ 		dev_err(&mtu->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+-	mtu->mapbase = mtu->channel.base + cfg->channel_offset;
++	mtu->mapbase = base + cfg->channel_offset;
+ 
+ 	/* get hold of clock */
+ 	mtu->clk = clk_get(&mtu->pdev->dev, "mtu2_fck");
+@@ -338,17 +340,28 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 	if (ret < 0)
+ 		goto err2;
+ 
+-	ret = sh_mtu2_setup_channel(&mtu->channel, mtu);
++	mtu->channels = kzalloc(sizeof(*mtu->channels), GFP_KERNEL);
++	if (mtu->channels = NULL) {
++		ret = -ENOMEM;
++		goto err3;
++	}
 +
-+	/* Make sure boot CPU also gets CPUIdle initialized */
-+	shmobile_cpuidle_notifier_call(NULL, CPU_ONLINE, 0);
++	mtu->num_channels = 1;
 +
- 	return cpuidle_register(cpuidle_drv, NULL);
++	mtu->channels[0].base = base;
++
++	ret = sh_mtu2_setup_channel(&mtu->channels[0], mtu);
+ 	if (ret < 0)
+ 		goto err3;
+ 
+ 	return 0;
+  err3:
++	kfree(mtu->channels);
+ 	clk_unprepare(mtu->clk);
+  err2:
+ 	clk_put(mtu->clk);
+  err1:
+-	iounmap(mtu->channel.base);
++	iounmap(base);
+  err0:
+ 	return ret;
  }
+-- 
+1.8.3.2
+
