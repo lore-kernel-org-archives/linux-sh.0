@@ -1,35 +1,90 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 06 Mar 2014 03:28:14 +0000
-Subject: [PATCH 00/02] ARM: shmobile: Consolidate early delay setup code
-Message-Id: <20140306032814.10814.2949.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:26 +0000
+Subject: [PATCH 19/22] ARM: shmobile: r7s72100: Switch to new style MTU2 device
+Message-Id: <1393955249-18736-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-ARM: shmobile: Consolidate early delay setup code
+The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
+style of platform data that handles the timer as a single device with
+multiple channel. Switch from the old-style platform data to the
+new-style platform data.
 
-[PATCH 01/02] ARM: shmobile: Add shared shmobile_init_delay()
-[PATCH 02/02] ARM: shmobile: Use shmobile_init_delay() on r8a7791/Koelsch
-
-Add code to retrieve early delay handling parameters from DT and
-as example convert r8a7791 and Koelsch. The first patch should be
-rather useful as-is but the second needs to be broken out into
-SoC and board specific bits to fit board/soc pull request style.
-Also, all mach-shmobile SoCs can be converted to use patch [1/1]
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/clock-r7s72100.c |  2 +-
+ arch/arm/mach-shmobile/setup-r7s72100.c | 26 +++++++++-----------------
+ 2 files changed, 10 insertions(+), 18 deletions(-)
 
- Written against renesas.git tag renesas-devel-v3.14-rc4-20140227
- and patch [2/2] also depends on
- [PATCH] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in C
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index f17a5db..6206744 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -204,7 +204,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+ 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+-	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
+@@ -215,6 +214,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
++	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP33]),
+ };
+ 
+ void __init r7s72100_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 9c0b3a9..545db15 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -62,24 +62,16 @@ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
+ 					  sizeof(scif##index##_platform_data))
+ 
+ 
+-static struct sh_timer_config mtu2_0_platform_data __initdata = {
+-	.name = "MTU2_0",
+-	.timer_bit = 0,
+-	.channel_offset = -0x80,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfcff0000, 0x400),
++	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] __initdata = {
+-	DEFINE_RES_MEM(0xfcff0300, 0x27),
+-	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
+-};
+-
+-#define r7s72100_register_mtu2(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
+-					  idx, mtu2_##idx##_resources,	\
+-					  ARRAY_SIZE(mtu2_##idx##_resources), \
+-					  &mtu2_##idx##_platform_data,	\
+-					  sizeof(struct sh_timer_config))
++#define r7s72100_register_mtu2()					\
++	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
++					  -1, mtu2_resources,		\
++					  ARRAY_SIZE(mtu2_resources),	\
++					  NULL, 0)
+ 
+ void __init r7s72100_add_dt_devices(void)
+ {
+@@ -91,7 +83,7 @@ void __init r7s72100_add_dt_devices(void)
+ 	r7s72100_register_scif(5);
+ 	r7s72100_register_scif(6);
+ 	r7s72100_register_scif(7);
+-	r7s72100_register_mtu2(0);
++	r7s72100_register_mtu2();
+ }
+ 
+ void __init r7s72100_init_early(void)
+-- 
+1.8.3.2
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |    2 -
- arch/arm/mach-shmobile/board-koelsch.c           |    2 -
- arch/arm/mach-shmobile/include/mach/common.h     |    1 
- arch/arm/mach-shmobile/include/mach/r8a7791.h    |    1 
- arch/arm/mach-shmobile/setup-r8a7791.c           |    9 -------
- arch/arm/mach-shmobile/timer.c                   |   28 ++++++++++++++++++++++
- 6 files changed, 32 insertions(+), 11 deletions(-)
