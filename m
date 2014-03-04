@@ -1,74 +1,128 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Tue, 25 Mar 2014 09:16:25 +0000
-Subject: Re: [PATCH 60/62] ARM: shmobile: work around CONFIG_PHYLIB=m
-Message-Id: <20140325091625.GM23076@pengutronix.de>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 04 Mar 2014 11:42:28 +0000
+Subject: Re: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
+Message-Id: <1733643.q3BHLOGLRM@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395257399-359545-1-git-send-email-arnd@arndb.de>
- <201403211643.24533.arnd@arndb.de>
- <20140324013556.GF23924@verge.net.au> <14100654.IXZcGSFRJS@wuerfel>
-In-Reply-To: <14100654.IXZcGSFRJS@wuerfel>
+References: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On Mon, Mar 24, 2014 at 01:04:57PM +0100, Arnd Bergmann wrote:
-> On Monday 24 March 2014 10:35:56 Simon Horman wrote:
-> > On Fri, Mar 21, 2014 at 04:43:24PM +0100, Arnd Bergmann wrote:
-> > > On Thursday 20 March 2014, Simon Horman wrote:
-> > > > I wonder if Kconfig for koelsch should be tightened up somehow to
-> > > > ensure that PHYLIB is either unselected or builtin.
-> > > >=20
-> > > > Also, a minor nit, I would prefer changes for different boards
-> > > > in different patches. But I can split the patch myself if its
-> > > > not going to be changed otherwise.
-> > >=20
-> > > I would prefer to take the entire series directly into arm-soc
-> > > this time, if you don't mind.
-> >=20
-> > That I'm happy to go along with though I don't understand the motivation
-> > for it. And regardless of how the patches go in I'd prefer if they were
-> > split as I suggested above.
->=20
-> Sorry, I misunderstood you at first. I thought you meant you only split
-> them up when you apply them yourself. It's no problem for me to split
-> up this patch as well and then apply it here.
->=20
-> > What I'm not so happy about is us potentially moving a problem from bei=
-ng a
-> > compile time error, which is easy to observe, to a run-time behavioural
-> > problem, which may be much less obvious to the beholder.
->=20
-> I agree that it's not nice, but I couldn't come with a better approach,
-> and we are doing the same thing on other platforms as well.
->=20
-> The problems are:
->=20
-> * leaving the code as it is today prevents me from running all
->   'make randconfig' kernels successfully. I use this as an important
->   test case for verifying stuff we pull into the arm-soc tree.
->   At the moment, I have a 160-patch series that I want to get merged
->   upstream over time.
->=20
-> * Using 'select PHYLIB' from the platform is nasty because we want
->   to be able to turn off whole subsystems (BLOCK, NET, I2C, ...)
->   in Kconfig independent of the board selection. PHYLIB requires
->   the network code.
->=20
-> * Using 'depends on' to disable the board option if PHYLIB is
->   a module is counterintuitive.
->=20
-> * Makeing PHYLIB always built-in when NETDEVICE is would be a
->   bit wasteful.
-maybe let the board
+On Tuesday 21 January 2014 13:10:30 Laurent Pinchart wrote:
+> On Tuesday 07 January 2014 16:08:37 Laurent Pinchart wrote:
+> > Hello,
+> > 
+> > Ping ? Could this patch series (with patches v3.1 1/3, v3 2/3 and v3 3/3)
+> > be applied for v3.14 ? Same question for "DMA: shdma: Enable driver
+> > compilation with COMPILE_TEST".
+> 
+> PING ?
 
-	select PHYLIB if NETDEVICE
+HELLO ? ANYONE THERE ? This is v3.14 material.
 
-is a nice compromise?
+> > On Wednesday 11 December 2013 13:43:04 Laurent Pinchart wrote:
+> > > Use the %zu and %pad printk specifiers to print size_t and dma_addr_t
+> > > variables, and cast pointers to uintptr_t instead of unsigned int where
+> > > applicable. This fixes warnings on platforms where pointers and/or
+> > > dma_addr_t have a different size than int
+> > > 
+> > > Cc: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+> > > Cc: Vinod Koul <vinod.koul@intel.com>
+> > > Cc: dmaengine@vger.kernel.org
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > ---
+> > > 
+> > >  drivers/dma/sh/shdma-base.c | 8 ++++----
+> > >  drivers/dma/sh/shdma-of.c   | 3 ++-
+> > >  drivers/dma/sh/sudmac.c     | 4 ++--
+> > >  3 files changed, 8 insertions(+), 7 deletions(-)
+> > > 
+> > > diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+> > > index 2e7b394..5367e01 100644
+> > > --- a/drivers/dma/sh/shdma-base.c
+> > > +++ b/drivers/dma/sh/shdma-base.c
+> > > @@ -227,7 +227,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void
+> > > *arg) struct shdma_chan *schan = to_shdma_chan(chan);
+> > > 
+> > >  	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
+> > >  	const struct shdma_ops *ops = sdev->ops;
+> > > 
+> > > -	int match = (int)arg;
+> > > +	int match = (long)arg;
+> > > 
+> > >  	int ret;
+> > >  	
+> > >  	if (match < 0)
+> > > 
+> > > @@ -491,8 +491,8 @@ static struct shdma_desc *shdma_add_desc(struct
+> > > shdma_chan *schan, }
+> > > 
+> > >  	dev_dbg(schan->dev,
+> > > 
+> > > -		"chaining (%u/%u)@%x -> %x with %p, cookie %d\n",
+> > > -		copy_size, *len, *src, *dst, &new->async_tx,
+> > > +		"chaining (%zu/%zu)@%pad -> %pad with %p, cookie %d\n",
+> > > +		copy_size, *len, src, dst, &new->async_tx,
+> > > 
+> > >  		new->async_tx.cookie);
+> > >  	
+> > >  	new->mark = DESC_PREPARED;
+> > > 
+> > > @@ -555,7 +555,7 @@ static struct dma_async_tx_descriptor
+> > > *shdma_prep_sg(struct shdma_chan *schan, goto err_get_desc;
+> > > 
+> > >  		do {
+> > > 
+> > > -			dev_dbg(schan->dev, "Add SG #%d@%p[%d], dma %llx\n",
+> > > +			dev_dbg(schan->dev, "Add SG #%d@%p[%zu], dma %llx\n",
+> > > 
+> > >  				i, sg, len, (unsigned long long)sg_addr);
+> > >  			
+> > >  			if (direction = DMA_DEV_TO_MEM)
+> > > 
+> > > diff --git a/drivers/dma/sh/shdma-of.c b/drivers/dma/sh/shdma-of.c
+> > > index 06473a0..b4ff9d3 100644
+> > > --- a/drivers/dma/sh/shdma-of.c
+> > > +++ b/drivers/dma/sh/shdma-of.c
+> > > @@ -33,7 +33,8 @@ static struct dma_chan *shdma_of_xlate(struct
+> > > of_phandle_args *dma_spec, /* Only slave DMA channels can be allocated
+> > > via
+> > > DT */
+> > > 
+> > >  	dma_cap_set(DMA_SLAVE, mask);
+> > > 
+> > > -	chan = dma_request_channel(mask, shdma_chan_filter, (void *)id);
+> > > +	chan = dma_request_channel(mask, shdma_chan_filter,
+> > > +				   (void *)(uintptr_t)id);
+> > > 
+> > >  	if (chan)
+> > >  	
+> > >  		to_shdma_chan(chan)->hw_req = id;
+> > > 
+> > > diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
+> > > index c7e9cdf..4e7df43 100644
+> > > --- a/drivers/dma/sh/sudmac.c
+> > > +++ b/drivers/dma/sh/sudmac.c
+> > > @@ -178,8 +178,8 @@ static int sudmac_desc_setup(struct shdma_chan
+> > > *schan,
+> > > 
+> > >  	struct sudmac_chan *sc = to_chan(schan);
+> > >  	struct sudmac_desc *sd = to_desc(sdesc);
+> > > 
+> > > -	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
+> > > -		__func__, src, dst, *len);
+> > > +	dev_dbg(sc->shdma_chan.dev, "%s: src=%pad, dst=%pad, len=%zu\n",
+> > > +		__func__, &src, &dst, *len);
+> > > 
+> > >  	if (*len > schan->max_xfer_len)
+> > >  	
+> > >  		*len = schan->max_xfer_len;
 
-Best regards
-Uwe
+-- 
+Regards,
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Laurent Pinchart
+
