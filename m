@@ -1,67 +1,113 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:30:19 +0000
-Subject: [PATCH 4/6] ARM: shmobile: bockw: remove old style audio clock
-Message-Id: <87d2hadhnr.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:14 +0000
+Subject: [PATCH 07/22] clocksource: sh_mtu2: Add memory base to sh_mtu2_channel structure
+Message-Id: <1393955249-18736-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The channel memory base is channel-specific, add it to the channel
+structure in preparation for support of multiple channels per device.
 
-Current audio clock didn't have dependency to device/driver,
-but, it was not good design for DT support.
-To avoid branch merge conflict issue,
-it is using this load map, and this patch is 3) part.
- 1) add new style clock in platform
- 2) add new style clock method in driver
- 3) remove old tyle clock from platform
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c |   10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 32 ++++++++++++++++++--------------
+ 1 file changed, 18 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index b4122f8..1aca107 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -591,6 +591,7 @@ static void __init bockw_init(void)
- {
- 	void __iomem *base;
- 	struct clk *clk;
-+	struct platform_device *pdev;
- 	int i;
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 2fe3ab4c..97714ce 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -38,7 +38,10 @@ struct sh_mtu2_device;
  
- 	r8a7778_clock_init();
-@@ -673,9 +674,6 @@ static void __init bockw_init(void)
+ struct sh_mtu2_channel {
+ 	struct sh_mtu2_device *mtu;
++
++	void __iomem *base;
+ 	int irq;
++
+ 	struct clock_event_device ced;
+ };
+ 
+@@ -74,39 +77,35 @@ static unsigned long mtu2_reg_offs[] = {
+ 
+ static inline unsigned long sh_mtu2_read(struct sh_mtu2_channel *ch, int reg_nr)
+ {
+-	struct sh_timer_config *cfg = ch->mtu->pdev->dev.platform_data;
+-	void __iomem *base = ch->mtu->mapbase;
+ 	unsigned long offs;
+ 
+ 	if (reg_nr = TSTR)
+-		return ioread8(base + cfg->channel_offset);
++		return ioread8(ch->mtu->mapbase);
+ 
+ 	offs = mtu2_reg_offs[reg_nr];
+ 
+ 	if ((reg_nr = TCNT) || (reg_nr = TGR))
+-		return ioread16(base + offs);
++		return ioread16(ch->base + offs);
+ 	else
+-		return ioread8(base + offs);
++		return ioread8(ch->base + offs);
+ }
+ 
+ static inline void sh_mtu2_write(struct sh_mtu2_channel *ch, int reg_nr,
+ 				unsigned long value)
+ {
+-	struct sh_timer_config *cfg = ch->mtu->pdev->dev.platform_data;
+-	void __iomem *base = ch->mtu->mapbase;
+ 	unsigned long offs;
+ 
+ 	if (reg_nr = TSTR) {
+-		iowrite8(value, base + cfg->channel_offset);
++		iowrite8(value, ch->mtu->mapbase);
+ 		return;
  	}
  
- 	/* for Audio */
--	clk = clk_get(NULL, "audio_clk_b");
--	clk_set_rate(clk, 24576000);
--	clk_put(clk);
- 	rsnd_codec_power(5, 1); /* enable ak4642 */
+ 	offs = mtu2_reg_offs[reg_nr];
  
- 	platform_device_register_simple(
-@@ -684,11 +682,15 @@ static void __init bockw_init(void)
- 	platform_device_register_simple(
- 		"ak4554-adc-dac", 1, NULL, 0);
+ 	if ((reg_nr = TCNT) || (reg_nr = TGR))
+-		iowrite16(value, base + offs);
++		iowrite16(value, ch->base + offs);
+ 	else
+-		iowrite8(value, base + offs);
++		iowrite8(value, ch->base + offs);
+ }
  
--	platform_device_register_resndata(
-+	pdev = platform_device_register_resndata(
- 		&platform_bus, "rcar_sound", -1,
- 		rsnd_resources, ARRAY_SIZE(rsnd_resources),
- 		&rsnd_info, sizeof(rsnd_info));
+ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+@@ -315,13 +314,18 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 		goto err0;
+ 	}
  
-+	clk = clk_get(&pdev->dev, "clk_b");
-+	clk_set_rate(clk, 24576000);
-+	clk_put(clk);
+-	/* map memory, let mapbase point to our channel */
+-	mtu->mapbase = ioremap_nocache(res->start, resource_size(res));
+-	if (mtu->mapbase = NULL) {
++	/*
++	 * Map memory, let channel.base point to our channel and mapbase to the
++	 * start/stop shared register.
++	 */
++	mtu->channel.base = ioremap_nocache(res->start, resource_size(res));
++	if (mtu->channel.base = NULL) {
+ 		dev_err(&mtu->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
+ 	}
+ 
++	mtu->mapbase = mtu->channel.base + cfg->channel_offset;
 +
- 	for (i = 0; i < ARRAY_SIZE(rsnd_card_info); i++) {
- 		struct platform_device_info cardinfo = {
- 			.parent         = &platform_bus,
+ 	/* get hold of clock */
+ 	mtu->clk = clk_get(&mtu->pdev->dev, "mtu2_fck");
+ 	if (IS_ERR(mtu->clk)) {
+@@ -344,7 +348,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+  err2:
+ 	clk_put(mtu->clk);
+  err1:
+-	iounmap(mtu->mapbase);
++	iounmap(mtu->channel.base);
+  err0:
+ 	return ret;
+ }
 -- 
-1.7.9.5
+1.8.3.2
 
