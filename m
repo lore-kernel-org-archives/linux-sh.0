@@ -1,59 +1,33 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 31 Mar 2014 10:30:48 +0000
-Subject: [PATCH v7 03/10] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-Message-Id: <1396261856-22465-4-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:19 +0000
+Subject: [PATCH 12/22] clocksource: sh_mtu2: Set cpumask to cpu_possible_mask
+Message-Id: <1393955249-18736-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds the device tree clock nodes for PCIe
+The MTU2 is not tied to CPU0, make it usable on any CPU.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..df9ec61 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -704,16 +704,17 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
- 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
--				 <&mmc0_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&rclk_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
--				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
-+				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
- 			>;
- 			clock-output-names  				"tpu0", "mmcif1", "sdhi3", "sdhi2",
--				"sdhi1", "sdhi0", "mmcif0", "cmt1";
-+				"sdhi1", "sdhi0", "mmcif0", "cmt1",
-+				"pcie";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5f..840dbc8 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -57,6 +57,7 @@
- #define R8A7790_CLK_SDHI1		13
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_PCIE		19
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
- #define R8A7790_CLK_USBDMAC0		30
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 2cf0048..702ce60 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -331,7 +331,7 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->rating = rating;
+-	ced->cpumask = cpumask_of(0);
++	ced->cpumask = cpu_possible_mask;
+ 	ced->set_mode = sh_mtu2_clock_event_mode;
+ 	ced->suspend = sh_mtu2_clock_event_suspend;
+ 	ced->resume = sh_mtu2_clock_event_resume;
 -- 
-1.9.0
+1.8.3.2
 
