@@ -1,49 +1,70 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Mar 2014 19:06:46 +0000
-Subject: [PATCH 1/5] drivers: sh: pm_runtime does not need idle callback
-Message-Id: <1395256010-12222-2-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:28 +0000
+Subject: [PATCH 21/22] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
+Message-Id: <1393955249-18736-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+The global spinlock is used to protect the shared start/stop register.
+Now that all MTU2 channels are handled by a single device instance, use
+a per-device spinlock.
 
-In the runtime_pm idle callback the code assumes that a NULL .runtime_idle
-entry is the same as a .runtime_idle entry that returns 0 as a result. This
-means the entry in drivers/sh/pm_runtime can be removed in favour of just
-leaving the entry NULL.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/sh/pm_runtime.c |    8 --------
- 1 file changed, 8 deletions(-)
+ drivers/clocksource/sh_mtu2.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 8afa5a4589f2..5cfbd825a9c8 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -21,18 +21,10 @@
- #include <linux/slab.h>
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 2931fea..ebdf9d1 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -47,14 +47,14 @@ struct sh_mtu2_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
  
- #ifdef CONFIG_PM_RUNTIME
--
--static int default_platform_runtime_idle(struct device *dev)
--{
--	/* suspend synchronously to disable clocks immediately */
--	return 0;
--}
--
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = pm_clk_suspend,
- 		.runtime_resume = pm_clk_resume,
--		.runtime_idle = default_platform_runtime_idle,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
++	raw_spinlock_t lock; /* Protect the shared registers */
++
+ 	struct sh_mtu2_channel *channels;
+ 	unsigned int num_channels;
+ 
+ 	bool has_clockevent;
  };
+ 
+-static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
+-
+ #define TSTR -1 /* shared register */
+ #define TCR  0 /* channel register */
+ #define TMDR 1 /* channel register */
+@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
++	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
+ 	value = sh_mtu2_read(ch, TSTR);
+ 
+ 	if (start)
+@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 		value &= ~(1 << ch->index);
+ 
+ 	sh_mtu2_write(ch, TSTR, value);
+-	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
+ }
+ 
+ static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
+@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 
+ 	mtu->pdev = pdev;
+ 
++	raw_spin_lock_init(&mtu->lock);
++
+ 	/* Get hold of clock. */
+ 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
+ 	if (IS_ERR(mtu->clk)) {
 -- 
-1.7.9.5
+1.8.3.2
 
