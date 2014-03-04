@@ -1,64 +1,171 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 06 Mar 2014 11:32:25 +0000
-Subject: [PATCH V2 05/12] ARM: shmobile: r7s72100: use workaround for non DT-clocks
-Message-Id: <1394105552-9744-6-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 04 Mar 2014 17:47:11 +0000
+Subject: [PATCH 04/22] clocksource: sh_mtu2: Rename struct sh_mtu2_priv to sh_mtu2_device
+Message-Id: <1393955249-18736-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Channel data is private as well, rename priv to device to make the
+distrinction between the core device and the channels clearer.
 
-SCIF2 and MTU2 are not yet prepared for DT usage, so use the common
-workaround via clkdev for now.
-
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/clocksource/sh_mtu2.c | 65 ++++++++++++++++++++++---------------------
+ 1 file changed, 33 insertions(+), 32 deletions(-)
 
-No changes since V1.
-
- arch/arm/mach-shmobile/board-genmai-reference.c | 15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 7630c1053e32..91dcdd0e026d 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -18,18 +18,29 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index e509f41..256621c 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -34,15 +34,15 @@
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
  
--#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+-struct sh_mtu2_priv;
++struct sh_mtu2_device;
  
-+#ifdef CONFIG_COMMON_CLK
-+/*
-+ * This is a really crude hack to provide clkdev support to platform
-+ * devices until they get moved to DT.
-+ */
-+static const struct clk_name clk_names[] = {
-+	{ "mtu2", NULL, "sh_mtu2.0" },
-+	{ "scif2", NULL, "sh-sci.2" },
-+};
-+#endif
-+
- static void __init genmai_add_standard_devices(void)
+ struct sh_mtu2_channel {
+-	struct sh_mtu2_priv *mtu;
++	struct sh_mtu2_device *mtu;
+ 	int irq;
+ 	struct clock_event_device ced;
+ };
+ 
+-struct sh_mtu2_priv {
++struct sh_mtu2_device {
+ 	struct platform_device *pdev;
+ 
+ 	void __iomem *mapbase;
+@@ -273,75 +273,76 @@ static int sh_mtu2_register(struct sh_mtu2_channel *ch, char *name,
+ 	return 0;
+ }
+ 
+-static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
++static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
++			 struct platform_device *pdev)
  {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), true);
- #else
- 	r7s72100_clock_init();
- #endif
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	int ret;
+ 	ret = -ENXIO;
+ 
+-	memset(p, 0, sizeof(*p));
+-	p->pdev = pdev;
++	memset(mtu, 0, sizeof(*mtu));
++	mtu->pdev = pdev;
+ 
+ 	if (!cfg) {
+-		dev_err(&p->pdev->dev, "missing platform data\n");
++		dev_err(&mtu->pdev->dev, "missing platform data\n");
+ 		goto err0;
+ 	}
+ 
+-	platform_set_drvdata(pdev, p);
++	platform_set_drvdata(pdev, mtu);
+ 
+-	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
++	res = platform_get_resource(mtu->pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+-		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
++		dev_err(&mtu->pdev->dev, "failed to get I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+-	p->channel.irq = platform_get_irq(p->pdev, 0);
+-	if (p->channel.irq < 0) {
+-		dev_err(&p->pdev->dev, "failed to get irq\n");
++	mtu->channel.irq = platform_get_irq(mtu->pdev, 0);
++	if (mtu->channel.irq < 0) {
++		dev_err(&mtu->pdev->dev, "failed to get irq\n");
+ 		goto err0;
+ 	}
+ 
+ 	/* map memory, let mapbase point to our channel */
+-	p->mapbase = ioremap_nocache(res->start, resource_size(res));
+-	if (p->mapbase = NULL) {
+-		dev_err(&p->pdev->dev, "failed to remap I/O memory\n");
++	mtu->mapbase = ioremap_nocache(res->start, resource_size(res));
++	if (mtu->mapbase = NULL) {
++		dev_err(&mtu->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+ 	/* get hold of clock */
+-	p->clk = clk_get(&p->pdev->dev, "mtu2_fck");
+-	if (IS_ERR(p->clk)) {
+-		dev_err(&p->pdev->dev, "cannot get clock\n");
+-		ret = PTR_ERR(p->clk);
++	mtu->clk = clk_get(&mtu->pdev->dev, "mtu2_fck");
++	if (IS_ERR(mtu->clk)) {
++		dev_err(&mtu->pdev->dev, "cannot get clock\n");
++		ret = PTR_ERR(mtu->clk);
+ 		goto err1;
+ 	}
+ 
+-	ret = clk_prepare(p->clk);
++	ret = clk_prepare(mtu->clk);
+ 	if (ret < 0)
+ 		goto err2;
+ 
+-	p->channel.mtu = p;
++	mtu->channel.mtu = mtu;
+ 
+-	ret = sh_mtu2_register(&p->channel, (char *)dev_name(&p->pdev->dev),
++	ret = sh_mtu2_register(&mtu->channel, (char *)dev_name(&mtu->pdev->dev),
+ 			       cfg->clockevent_rating);
+ 	if (ret < 0)
+ 		goto err3;
+ 
+ 	return 0;
+  err3:
+-	clk_unprepare(p->clk);
++	clk_unprepare(mtu->clk);
+  err2:
+-	clk_put(p->clk);
++	clk_put(mtu->clk);
+  err1:
+-	iounmap(p->mapbase);
++	iounmap(mtu->mapbase);
+  err0:
+ 	return ret;
+ }
+ 
+ static int sh_mtu2_probe(struct platform_device *pdev)
+ {
+-	struct sh_mtu2_priv *p = platform_get_drvdata(pdev);
++	struct sh_mtu2_device *mtu = platform_get_drvdata(pdev);
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	int ret;
+ 
+@@ -350,20 +351,20 @@ static int sh_mtu2_probe(struct platform_device *pdev)
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+ 
+-	if (p) {
++	if (mtu) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		goto out;
+ 	}
+ 
+-	p = kmalloc(sizeof(*p), GFP_KERNEL);
+-	if (p = NULL) {
++	mtu = kmalloc(sizeof(*mtu), GFP_KERNEL);
++	if (mtu = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = sh_mtu2_setup(p, pdev);
++	ret = sh_mtu2_setup(mtu, pdev);
+ 	if (ret) {
+-		kfree(p);
++		kfree(mtu);
+ 		pm_runtime_idle(&pdev->dev);
+ 		return ret;
+ 	}
 -- 
-1.9.0
+1.8.3.2
 
