@@ -1,59 +1,30 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 16 Mar 2014 21:35:56 +0000
-Subject: [PATCH 04/06] ARM: shmobile: Also build APMU code for non-SMP r8a7790
-Message-Id: <20140316213556.15598.38851.sendpatchset@w520>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 05 Mar 2014 01:54:36 +0000
+Subject: Re: [PATCH v2 2/2] pinctrl: sh-pfc: r8a7791: Add alternative MSIOF pin groups
+Message-Id: <CACRpkdaBKz6L+RUNTuEyxXv0brLO8+==zGir-2u7YMWA=a=_kA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393406217-20252-1-git-send-email-geert@linux-m68k.org>
+	<1393406217-20252-2-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393406217-20252-2-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, Feb 26, 2014 at 5:16 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
 
-Build APMU code on r8a7790 when CPUIdle is enabled regardless
-if SMP is enabled or not.
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> ---
+> v2:
+>   - Correct 2 pins (Thanks, Laurent!)
+>   - Add Acked-by
 
-Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+Patch applied.
 
- arch/arm/mach-shmobile/Makefile       |    1 +
- arch/arm/mach-shmobile/platsmp-apmu.c |    4 +++-
- 2 files changed, 4 insertions(+), 1 deletion(-)
-
---- 0003/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile
-@@ -55,6 +55,7 @@ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790
- 
- # CPU PM objects
- cpu-y				:= cpuidle.o platsmp.o headsmp.o
-+cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
- 
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
---- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ work/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -69,7 +69,7 @@ static int apmu_wrap(int cpu, int (*fn)(
- 
- static void apmu_init_cpu(struct resource *res, int cpu, int bit)
- {
--	if (apmu_cpus[cpu].iomem)
-+	if ((cpu >= ARRAY_SIZE(apmu_cpus)) || apmu_cpus[cpu].iomem)
- 		return;
- 
- 	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
-@@ -133,6 +133,7 @@ void __init shmobile_smp_apmu_prepare_cp
- 	apmu_parse_cfg(apmu_init_cpu);
- }
- 
-+#ifdef CONFIG_SMP
- int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
- 	/* For this particular CPU register boot vector */
-@@ -140,6 +141,7 @@ int shmobile_smp_apmu_boot_secondary(uns
- 
- 	return apmu_wrap(cpu, apmu_power_on);
- }
-+#endif
- 
- #ifdef CONFIG_HOTPLUG_CPU
- /* nicked from arch/arm/mach-exynos/hotplug.c */
+Yours,
+Linus Walleij
