@@ -1,32 +1,47 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 17 Mar 2014 11:15:14 +0000
-Subject: [RFC 3/6] ARM: shmobile: add sh_pm_runtime_init() to header
-Message-Id: <1395054917-27390-4-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 05 Mar 2014 19:24:01 +0000
+Subject: [PATCH 3/6] v4l: vsp1: uds: Enable scaling of alpha layer
+Message-Id: <1394047444-30077-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Add definition of sh_pm_runtime_init() to machine header to allow calling
-the pm_runtime initialisation code.
+Scaling of the alpha layer is disabled as both the RPF and WPF are
+configured to hardcode the alpha value to 255. This results in a 0 alpha
+value at the UDS output, making the image invisible when alpha blended
+in the BRU. Fix it by enabling scaling of the alpha layer.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/common.h | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/media/platform/vsp1/vsp1_uds.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index cb8e32d..4727d4f 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -52,4 +52,6 @@ static inline void __init shmobile_init_late(void)
- 	shmobile_cpuidle_init();
- }
+diff --git a/drivers/media/platform/vsp1/vsp1_uds.c b/drivers/media/platform/vsp1/vsp1_uds.c
+index 509c9fe..137299c 100644
+--- a/drivers/media/platform/vsp1/vsp1_uds.c
++++ b/drivers/media/platform/vsp1/vsp1_uds.c
+@@ -131,7 +131,7 @@ static int uds_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		return 0;
  
-+extern int sh_pm_runtime_init(void);
-+
- #endif /* __ARCH_MACH_COMMON_H */
+ 	/* Enable multi-tap scaling. */
+-	vsp1_uds_write(uds, VI6_UDS_CTRL, VI6_UDS_CTRL_BC);
++	vsp1_uds_write(uds, VI6_UDS_CTRL, VI6_UDS_CTRL_AON | VI6_UDS_CTRL_BC);
+ 
+ 	vsp1_uds_write(uds, VI6_UDS_PASS_BWIDTH,
+ 		       (uds_passband_width(uds->hscale)
+@@ -139,7 +139,6 @@ static int uds_s_stream(struct v4l2_subdev *subdev, int enable)
+ 		       (uds_passband_width(uds->vscale)
+ 				<< VI6_UDS_PASS_BWIDTH_V_SHIFT));
+ 
+-
+ 	/* Set the scaling ratios and the output size. */
+ 	format = &uds->entity.formats[UDS_PAD_SOURCE];
+ 
 -- 
-1.9.0
+1.8.3.2
 
