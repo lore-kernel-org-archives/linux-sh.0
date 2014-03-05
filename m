@@ -1,98 +1,28 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:29 +0000
-Subject: [PATCH 22/22] clocksource: sh_mtu2: Add DT support
-Message-Id: <1393955249-18736-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 05 Mar 2014 01:58:27 +0000
+Subject: Re: [PATCH] pinctrl: sh-pfc: r8a7791: SD1_CLK fix
+Message-Id: <CACRpkdYK_ej8f_+EUsgc_X-iJ-Ynp40az59i6D1z9f4k31v+rQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140226101026.16737.30404.sendpatchset@w520>
+In-Reply-To: <20140226101026.16737.30404.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, devicetree@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Valentine <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>
 
-Cc: devicetree@vger.kernel.org
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../devicetree/bindings/timer/renesas,mtu2.txt     | 37 ++++++++++++++++++++++
- drivers/clocksource/sh_mtu2.c                      |  8 +++++
- 2 files changed, 45 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+On Wed, Feb 26, 2014 at 6:10 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-new file mode 100644
-index 0000000..67edd25
---- /dev/null
-+++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
-@@ -0,0 +1,37 @@
-+* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
-+
-+The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
-+clock inputs and programmable compare match.
-+
-+Channels share hardware resources but their counter and compare match value
-+are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
-+
-+Required Properties:
-+
-+  - compatible: must contain "renesas,mtu2"
-+
-+  - reg: base address and length of the registers block for the timer module.
-+
-+  - interrupt-parent, interrupts: interrupt specifiers for the timer, one for
-+    each entry in interrupt-names.
-+  - interrupt-names: must contain one entry named "tgi?a" for each enabled
-+    channel, where "?" is the channel index expressed as one digit from "0" to
-+    "4".
-+
-+  - clocks: a list of phandle + clock-specifier pairs, one for each entry
-+    in clock-names.
-+  - clock-names: must contain "fck" for the functional clock.
-+
-+
-+Example: R7S72100 (RZ/A1H) MTU2 node
-+
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a", "tgi1a", "tgi2a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+	};
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index ebdf9d1..79387af 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -23,6 +23,7 @@
- #include <linux/ioport.h>
- #include <linux/irq.h>
- #include <linux/module.h>
-+#include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
-@@ -502,11 +503,18 @@ static const struct platform_device_id sh_mtu2_id_table[] = {
- };
- MODULE_DEVICE_TABLE(platform, sh_mtu2_id_table);
- 
-+static const struct of_device_id sh_mtu2_of_table[] = {
-+	{ .compatible = "renesas,mtu2" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, sh_mtu2_of_table);
-+
- static struct platform_driver sh_mtu2_device_driver = {
- 	.probe		= sh_mtu2_probe,
- 	.remove		= sh_mtu2_remove,
- 	.driver		= {
- 		.name	= "sh_mtu2",
-+		.of_match_table = of_match_ptr(sh_mtu2_of_table),
- 	},
- 	.id_table	= sh_mtu2_id_table,
- };
--- 
-1.8.3.2
+> From: Magnus Damm <damm@opensource.se>
+>
+> Fix the SD1_CLK handling for r8a7791. Without this patch
+> it is impossible to request all pins needed for SDHI1 on
+> the Koelsch board.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
+Thanks, applied for fixes.
+
+Yours,
+Linus Walleij
