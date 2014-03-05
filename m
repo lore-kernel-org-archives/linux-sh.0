@@ -1,170 +1,71 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 31 Mar 2014 11:27:45 +0000
-Subject: Re: [RFC 2/3] rcar_vin: add devicetree support
-Message-Id: <53395131.6090002@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 05 Mar 2014 19:24:04 +0000
+Subject: [PATCH 6/6] ARM: shmobile: r8a7791: Add VSP1 devices to DT
+Message-Id: <1394047444-30077-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396214765-23689-1-git-send-email-ben.dooks@codethink.co.uk> <1396214765-23689-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396214765-23689-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>, linux-media@vger.kernel.org
-Cc: g.liakhovetski@gmx.de, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hello.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
-On 31-03-2014 1:26, Ben Dooks wrote:
-
-> Add support for devicetree probe for the rcar-vin
-> driver.
-
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->   .../devicetree/bindings/media/rcar_vin.txt         | 79 ++++++++++++++++++++++
->   drivers/media/platform/soc_camera/rcar_vin.c       | 67 ++++++++++++++++--
->   2 files changed, 140 insertions(+), 6 deletions(-)
->   create mode 100644 Documentation/devicetree/bindings/media/rcar_vin.txt
-
-> diff --git a/Documentation/devicetree/bindings/media/rcar_vin.txt b/Documentation/devicetree/bindings/media/rcar_vin.txt
-> new file mode 100644
-> index 0000000..105b8de
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/media/rcar_vin.txt
-> @@ -0,0 +1,79 @@
-> +Renesas RCar Video Input driver (rcar_vin)
-> +------------------------------------------
-> +
-> +The rcar_vin device provides video input capabilities for the Renesas R-Car
-> +family of devices. The current blocks are always slaves and suppot one input
-> +channel which can be either RGB, YUYV or BT656.
-> +
-> + - compatible: Must be one of the following
-> +   - "renesas,vin-r8a7791" for the R8A7791 device
-> +   - "renesas,vin-r8a7790" for the R8A7790 device
-> +   - "renesas,vin-r8a7779" for the R8A7779 device
-> +   - "renesas,vin-r8a7778" for the R8A7778 device
-> + - reg: the register base and size for the device registers
-
-    Register base of the registers?
-
-[...]
-> +/* composite video input */
-> +&vin1 {
-> +        pinctrl-0 = <&vin1_pins>;
-> +        pinctrl-names = "default";
-> +
-> +        status = "ok";
-> +
-> +        port {
-> +                #address-cells = <1>;
-
-    Where is this used? I don't see "reg" prop in the sub-node...
-
-> +                #size-cells = <0>;
-> +
-> +                vin1ep0: endpoint {
-> +                        remote-endpoint = <&adv7180_1>;
-> +                        bus-width = <8>;
-> +                };
-> +        };
-> +};
-> +
-> +
-> +
-> +[1] video-interfaces.txt common video media interface
-> diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-> index 47516df..73c56c7 100644
-> --- a/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-[...]
-> @@ -1392,6 +1395,17 @@ static struct soc_camera_host_ops rcar_vin_host_ops = {
->   	.init_videobuf2	= rcar_vin_init_videobuf2,
->   };
->
-> +#ifdef CONFIG_OF
-
-    I don't think it's worth using this #ifdef -- the OF code is not under 
-#ifdef anyway...
-
-> +static struct of_device_id rcar_vin_of_table[] = {
-> +	{ .compatible = "renesas,vin-r8a7791", .data = (void *)RCAR_GEN2 },
-> +	{ .compatible = "renesas,vin-r8a7790", .data = (void *)RCAR_GEN2 },
-> +	{ .compatible = "renesas,vin-r8a7779", .data = (void *)RCAR_H1 },
-> +	{ .compatible = "renesas,vin-r8a7778", .data = (void *)RCAR_M1 },
-> +	{ },
-> +};
-> +MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
-> +#endif
-> +
->   static struct platform_device_id rcar_vin_id_table[] = {
->   	{ "r8a7791-vin",  RCAR_GEN2 },
->   	{ "r8a7790-vin",  RCAR_GEN2 },
-> @@ -1404,15 +1418,50 @@ MODULE_DEVICE_TABLE(platform, rcar_vin_id_table);
->
->   static int rcar_vin_probe(struct platform_device *pdev)
->   {
-> +	const struct of_device_id *match = NULL;
->   	struct rcar_vin_priv *priv;
->   	struct resource *mem;
->   	struct rcar_vin_platform_data *pdata;
-> +	unsigned int pdata_flags;
->   	int irq, ret;
->
-> -	pdata = pdev->dev.platform_data;
-> -	if (!pdata || !pdata->flags) {
-> -		dev_err(&pdev->dev, "platform data not set\n");
-> -		return -EINVAL;
-> +	if (pdev->dev.of_node) {
-> +		struct v4l2_of_endpoint ep;
-> +		struct device_node *np;
-> +
-> +		match = of_match_device(of_match_ptr(rcar_vin_of_table),
-> +					&pdev->dev);
-> +
-> +		np = v4l2_of_get_next_endpoint(pdev->dev.of_node, NULL);
-> +		if (!np) {
-> +			dev_err(&pdev->dev, "could not find endpoint\n");
-> +			return -EINVAL;
-> +		}
-> +
-> +		ret = v4l2_of_parse_endpoint(np, &ep);
-> +		if (ret) {
-> +			dev_err(&pdev->dev, "could not parse endpoint\n");
-> +			return ret;
-> +		}
-> +
-> +		if (ep.bus_type = V4L2_MBUS_BT656)
-> +			pdata_flags = RCAR_VIN_BT656;
-> +		else {
-
-    Need {} in all arms of this *if* statement.
-
-[...]
-> @@ -1447,8 +1496,13 @@ static int rcar_vin_probe(struct platform_device *pdev)
->   	priv->ici.drv_name = dev_name(&pdev->dev);
->   	priv->ici.ops = &rcar_vin_host_ops;
->
-> -	priv->pdata_flags = pdata->flags;
-> -	priv->chip = pdev->id_entry->driver_data;
-> +	priv->pdata_flags = pdata_flags;
-> +	if (!match)
-> +		priv->chip = pdev->id_entry->driver_data;
-> +	else
-> +		priv->chip = (enum chip_id)match->data;
-> +
-> +
-
-    Too many empty lines.
-
-> @@ -1489,6 +1543,7 @@ static struct platform_driver rcar_vin_driver = {
->   	.driver		= {
->   		.name		= DRV_NAME,
->   		.owner		= THIS_MODULE,
-> +		.of_match_table	= of_match_ptr(rcar_vin_of_table),
-
-    Don't think we need of_match_ptr() as well as #ifdef CONFIG_OF.
-
-[...]
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index b007f9e..315215f 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -462,6 +462,45 @@
+ 		status = "disabled";
+ 	};
+ 
++	vsp1@fe928000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe928000 0 0x8000>;
++		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_VSP1_SY>;
++
++		renesas,has-lut;
++		renesas,has-sru;
++		renesas,#rpf = <5>;
++		renesas,#uds = <3>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe930000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe930000 0 0x8000>;
++		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
++
++		renesas,has-lif;
++		renesas,has-lut;
++		renesas,#rpf = <4>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe938000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe938000 0 0x8000>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
++
++		renesas,has-lif;
++		renesas,has-lut;
++		renesas,#rpf = <4>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+1.8.3.2
 
