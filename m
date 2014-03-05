@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 05 Mar 2014 19:24:02 +0000
+Date: Wed, 05 Mar 2014 19:30:27 +0000
 Subject: [PATCH 4/6] v4l: vsp1: Add DT support
-Message-Id: <1394047444-30077-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <4542787.8JEGs6DclK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -9,7 +9,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
@@ -17,6 +17,8 @@ Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
  drivers/media/platform/vsp1/vsp1_drv.c             | 52 ++++++++++++++++++----
  2 files changed, 95 insertions(+), 8 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/media/renesas,vsp1.txt
+
+(With the DT mailing list CC'ed this time, sorry about that)
 
 diff --git a/Documentation/devicetree/bindings/media/renesas,vsp1.txt b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
 new file mode 100644
