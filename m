@@ -1,47 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 05 Mar 2014 18:03:05 +0000
-Subject: Re: [PATCH] irq-gic: remove file name from heading comment
-Message-Id: <531774E9.2000501@cogentembedded.com>
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Wed, 05 Mar 2014 13:25:47 +0000
+Subject: [PATCH v2 2/6] PCI: tegra: use new OF interrupt mapping when possible
+Message-Id: <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201312140224.53928.sergei.shtylyov@cogentembedded.com>
- <52D5CCFB.1090205@cogentembedded.com> <53166B67.2060804@cogentembedded.com>
- <alpine.DEB.2.02.1403050112180.18573@ionos.tec.linutronix.de>
-In-Reply-To: <alpine.DEB.2.02.1403050112180.18573@ionos.tec.linutronix.de>
+References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+This is the recommended method of doing the IRQ
+mapping. For old devicetrees we fall back to the
+previous practice.
 
-On 03/05/2014 03:27 AM, Thomas Gleixner wrote:
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/pci/host/pci-tegra.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
->>>> File names in the heading comments  fell out of favor long ago, and this
->>>> one
->>>> weren't even changed when the driver was moved from arch/arm/common/, so
->>>> remove
->>>> it at last...
-
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>>> ---
->>>> The patch is against the 'irq/core' branch of the 'tip.git' repo.
-
->>>      Thomas, is there a chance that you merge this patch for 3.14? Is it even
->>> the right branch for cleanups (I'm seeing fixes there)?
-
->>     Thomas, will you ever reply to me? Who's maintaining the GIC driver, you?
->> Or the patches shoud just go in via arm-soc.git?
-
-> That patch is so important^Wtrivial that it really can go via the
-> obvious trivial@kernel.org
-
-    I've never been redirected to trivial. I thought only typo fixes and such 
-go there. The question is why it did take so long to tell me to do this...
-
-> Sigh....
-
-    Yes... thanks anyway, I'll try sending to trivial.
-
-WBR, Sergei
+diff --git a/drivers/pci/host/pci-tegra.c b/drivers/pci/host/pci-tegra.c
+index 330f7e3a32dd..083cf37ca047 100644
+--- a/drivers/pci/host/pci-tegra.c
++++ b/drivers/pci/host/pci-tegra.c
+@@ -639,10 +639,15 @@ static int tegra_pcie_setup(int nr, struct pci_sys_data *sys)
+ static int tegra_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
+ {
+ 	struct tegra_pcie *pcie = sys_to_pcie(pdev->bus->sysdata);
++	int irq;
+ 
+ 	tegra_cpuidle_pcie_irqs_in_use();
+ 
+-	return pcie->irq;
++	irq = of_irq_parse_and_map_pci(pdev, slot, pin);
++	if (!irq)
++		irq = pcie->irq;
++
++	return irq;
+ }
+ 
+ static void tegra_pcie_add_bus(struct pci_bus *bus)
+-- 
+1.9.0
 
