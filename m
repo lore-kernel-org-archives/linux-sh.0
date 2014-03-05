@@ -1,59 +1,87 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 27 Mar 2014 10:40:39 +0000
-Subject: [PATCH v2] serial_core: Fix pm imbalance on unbind
-Message-Id: <1395916839-11502-1-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 05 Mar 2014 19:24:03 +0000
+Subject: [PATCH 5/6] ARM: shmobile: r8a7790: Add VSP1 devices to DT
+Message-Id: <1394047444-30077-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>, Peter Hurley <peter@hurleysoftware.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-When a serial port is closed, uart_close() takes care of shutting down the
-hardware, and powering it down.
-
-When a serial port is unbound while in use, uart_close() bypasses all of
-this, as this is supposed to be done through uart_hangup() (invoked via
-tty_vhangup() in uart_remove_one_port()).
-
-However, uart_hangup() does not set the hardware's power state, leaving it
-powered up.  This may also lead to unbounded nesting counts in clock and
-power management, depending on their internal implementation.
-
-Make sure to power down the port in uart_hangup(), except when the port is
-used as a serial console.
-
-For serial consoles, this operation must be postponed until after the port
-becomes completely unused. This case is not fixed yet, as it depends on a
-(future) fix for the tty->count vs. port->count imbalance on failed
-uart_open().
-
-After this, the module clock used by the sh-sci driver is disabled on
-unbind while the serial port is in use.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-  - Drop serial console case, as this needs other fixes first
+ arch/arm/boot/dts/r8a7790.dtsi | 55 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
 
- drivers/tty/serial/serial_core.c |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
-index 2cf5649a6dc0..0cec51ce8902 100644
---- a/drivers/tty/serial/serial_core.c
-+++ b/drivers/tty/serial/serial_core.c
-@@ -1452,6 +1452,8 @@ static void uart_hangup(struct tty_struct *tty)
- 		clear_bit(ASYNCB_NORMAL_ACTIVE, &port->flags);
- 		spin_unlock_irqrestore(&port->lock, flags);
- 		tty_port_tty_set(port, NULL);
-+		if (!uart_console(state->uart_port))
-+			uart_change_pm(state, UART_PM_STATE_OFF);
- 		wake_up_interruptible(&port->open_wait);
- 		wake_up_interruptible(&port->delta_msr_wait);
- 	}
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 618e5b5..979636b 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -407,6 +407,61 @@
+ 		status = "disabled";
+ 	};
+ 
++	vsp1@fe920000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe920000 0 0x8000>;
++		interrupts = <0 266 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_VSP1_SY>,
++			 <&mstp1_clks R8A7790_CLK_VSP1_RT>;
++		clock-names = "", "rt";
++
++		renesas,has-sru;
++		renesas,#rpf = <5>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe928000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe928000 0 0x8000>;
++		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_VSP1_SY>,
++			 <&mstp1_clks R8A7790_CLK_VSP1_RT>;
++		clock-names = "", "rt";
++
++		renesas,has-lut;
++		renesas,has-sru;
++		renesas,#rpf = <5>;
++		renesas,#uds = <3>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe930000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe930000 0 0x8000>;
++		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU0>;
++
++		renesas,has-lif;
++		renesas,has-lut;
++		renesas,#rpf = <4>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
++	vsp1@fe938000 {
++		compatible = "renesas,vsp1";
++		reg = <0 0xfe938000 0 0x8000>;
++		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU1>;
++
++		renesas,has-lif;
++		renesas,has-lut;
++		renesas,#rpf = <4>;
++		renesas,#uds = <1>;
++		renesas,#wpf = <4>;
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.7.9.5
+1.8.3.2
 
