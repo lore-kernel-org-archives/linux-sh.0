@@ -1,47 +1,52 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 24 Mar 2014 10:41:55 +0000
-Subject: Re: [PATCH] ARM: bockw: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <20140324104155.GC2269@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="GZVR6ND4mMseVXL/"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 05 Mar 2014 08:31:42 +0000
+Subject: Re: [PATCH v2 00/11] ARM: shmobile: MSIOF integration on r8a7790/lager and r8a7791/koelsch
+Message-Id: <CANqRtoSM-51NRVAtYOOAzZQ-pagC2JteC+M=SKMuBYniLFfhLA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ha6oi8dg.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87ha6oi8dg.wl%kuninori.morimoto.gx@gmail.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+On Tue, Feb 25, 2014 at 7:30 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>         Hi Simon, Magnus,
+>
+> This patch series integrates support for the MSIOF module in the Renesas
+> R-Car H2 (r8a7790) and M2 (r8a7791) SoCs on the Lager and Koelsch
+> development boards.
+>
+> It was tested on Lager and Koelsch, both legacy and DT, using a dummy
+> driver for the Renesas r2a11302ft PMIC that reads out the PMIC's version
+> ID.
+>
+>     [01/11] ARM: shmobile: r8a7790: Add MSIOF clocks
+>     [02/11] ARM: shmobile: r8a7791: Add MSIOF clocks
+>     [03/11] ARM: shmobile: lager legacy: Add MSIOF support
+>     [04/11] ARM: shmobile: koelsch legacy: Add MSIOF support
+>     [05/11] ARM: shmobile: r8a7790/lager dts: Rename label spi to qspi, add
+>             spi0 alias
+>     [06/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi,
+>             add spi0 alias
+>     [07/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
+>     [08/11] ARM: shmobile: r8a7791 dtsi: Add MSIOF nodes and aliases
+>     [09/11] ARM: shmobile: lager dts: Add MSIOF nodes
+>     [10/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
+>     [11/11] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
+>
+> These are (reworked versions of) the remaining patches not taken from v1.
+> Changelogs are available in the individual patches.
 
---GZVR6ND4mMseVXL/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hi Geert,
 
-On Sun, Mar 23, 2014 at 08:27:30PM -0700, Kuninori Morimoto wrote:
+Thanks for your efforts. All these look fine to me.
 
-> This Subject is using "ARM: bockw:" prefix,
-> but, should it be "ASoC: rcar" ?
+Acked-by: Magnus Damm <damm@opensource.se>
 
-No, this is good - applied, thanks.
+Exactly what to merge upstream depends on what the ARM SoC maintainers prefer.
 
---GZVR6ND4mMseVXL/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Cheers,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTMAvwAAoJELSic+t+oim9DUsP/iDndr8MKY7/Nuadj+nFzvjR
-yMpiQDtaFEC2clPjRMKy0Mn9BDnaeuVRUSdznSjqlPfk982oF2I0go4hNuAh8woO
-hn29rQM0lo1gnPZGRKftl/YqMZOAZcHfzZ2yYmSZBv2nlfWT2XMMS3+u17rhjfWs
-qRrBadjBpD5HjIziYnJBx6qjILag/2aW67RzDKAqdVcFx9UUGqPC4b7/gBowPamr
-ruAVkEozMsaqY4lqrjayJ6pGnNQj1rkLWxq83tpfH/ud/lRWJLRmvnNehQ5O9U65
-k53eED2DlZ2H1lGDTOO+zEsg8z5jYhWRjz8nJK43gFe9FP+99PE5jLNc/+srvC5D
-aNaudZOVnGDG+ujVFbOe2xQ2luxxRogeDmBPSMcqpRk8PhHC+6tEObMELphiom7U
-DHnaN773Y4HW0lgDNYuMDgHnfC29KiZQf4l/rjgAUAN84DZmuWHZiZNRnY3GWY2x
-l5OJTigvJxlXmhzvFsoi70tG1Rfhaoxxlde21ma72To8X8XqM5IkruTn8UmOL1N5
-PMUW4hBY5Vu04Gmlin/sceKU1Tvph/jiFFJB+dnPgTthQ6rYOs+1t4LknXMBUGnA
-e0ZZBGE3meMk7npzwcmhMCvgqTHKY+VS10S+ZMT5qbkG74eG2gPOqTA+v4fD0TDC
-SReKM1dFlTG1YkokFVkU
-=gfEI
------END PGP SIGNATURE-----
-
---GZVR6ND4mMseVXL/--
+/ magnus
