@@ -1,60 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Mar 2014 23:36:21 +0000
-Subject: [PATCH 5/5] [TEST] ARM: shmobile: r8a7791: Enable IOMMU support for the VSP1
-Message-Id: <1396049781-12941-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 05 Mar 2014 18:43:45 +0000
+Subject: [PATCH trivial] irq-gic: remove file name from heading comment
+Message-Id: <201403052243.46123.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+File names in the heading comments  fell out of favor long ago, and this one
+weren't even changed when the driver was moved from arch/arm/common/, so remove
+it at last...
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+The patch is against the 'for-next' branch of the 'trivial.git' repo.
+Thomas Gleixner has told me to send the patch to this tree instead of his one.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index bbadf7a..26edcbe 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -508,6 +508,8 @@
- 		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_SY>;
- 
-+		iommus = <&ipmmu_mx 10>;
-+
- 		renesas,has-lut;
- 		renesas,has-sru;
- 		renesas,#rpf = <5>;
-@@ -521,6 +523,8 @@
- 		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
- 
-+		iommus = <&ipmmu_mx 13>;
-+
- 		renesas,has-lif;
- 		renesas,has-lut;
- 		renesas,#rpf = <4>;
-@@ -534,6 +538,8 @@
- 		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
- 
-+		iommus = <&ipmmu_mx 14>;
-+
- 		renesas,has-lif;
- 		renesas,has-lut;
- 		renesas,#rpf = <4>;
-@@ -942,7 +948,6 @@
- 		compatible = "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951800 0 0x800>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
--		status = "disabled";
- 	};
- 
- 	ipmmu_rt: mmu@ffc80800 {
--- 
-1.8.3.2
+ drivers/irqchip/irq-gic.c |    2 --
+ 1 file changed, 2 deletions(-)
 
+Index: trivial/drivers/irqchip/irq-gic.c
+=================================--- trivial.orig/drivers/irqchip/irq-gic.c
++++ trivial/drivers/irqchip/irq-gic.c
+@@ -1,6 +1,4 @@
+ /*
+- *  linux/arch/arm/common/gic.c
+- *
+  *  Copyright (C) 2002 ARM Limited, All Rights Reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify
