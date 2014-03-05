@@ -1,101 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:51 +0000
-Subject: [PATCH v4 08/19] ARM: shmobile: r8a7779: Add helper to read mode pins
-Message-Id: <1394701202-25823-9-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 05 Mar 2014 19:23:58 +0000
+Subject: [PATCH 0/6] VSP1 Blend/ROP Unit and DT support
+Message-Id: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Add and use helper to read mode pins.
-This will be re-used when moving marzen-reference to
-the common clock framework.
+Hello,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
- 3 files changed, 17 insertions(+), 9 deletions(-)
+This patch series extends the VSP1 driver with support for the Blend/ROP Units
+as well as DT bindings. Please see individual patches for details.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 8e403ae..b1a5065 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -25,6 +25,7 @@
- #include <linux/clkdev.h>
- #include <mach/clock.h>
- #include <mach/common.h>
-+#include <mach/r8a7779.h>
- 
- /*
-  *		MD1 = 1			MD1 = 0
-@@ -52,9 +53,6 @@
- #define MSTPCR3		IOMEM(0xffc8003c)
- #define MSTPSR1		IOMEM(0xffc80044)
- 
--#define MODEMR		0xffcc0020
--
--
- /* ioremap() through clock mapping mandatory to avoid
-  * collision with ARM coherent DMA virtual memory range.
-  */
-@@ -209,14 +207,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7779_clock_init(void)
- {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
- 
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	if (mode & MD(1)) {
- 		plla_clk.rate = 1500000000;
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 88eecea..d5ba2d8 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -32,6 +32,7 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_init_late(void);
-+extern u32 r8a7779_read_mode_pins(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8e860b3..f6aeb7f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -802,6 +802,20 @@ void __init r8a7779_add_standard_devices_dt(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-+#define MODEMR		0xffcc0020
-+
-+u32 __init r8a7779_read_mode_pins(void)
-+{
-+	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-+	u32 mode;
-+
-+	BUG_ON(!modemr);
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+
-+	return mode;
-+}
-+
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
+The driver patches (1 to 4) and platform patches (5 to 6) can be merged
+independently once the DT bindings will be approved.
+
+The series has been tested with the VSP1-DU0 instance on the Lager and Koelsch
+boards.
+
+Laurent Pinchart (6):
+  v4l: vsp1: Support multi-input entities
+  v4l: vsp1: Add BRU support
+  v4l: vsp1: uds: Enable scaling of alpha layer
+  v4l: vsp1: Add DT support
+  ARM: shmobile: r8a7790: Add VSP1 devices to DT
+  ARM: shmobile: r8a7791: Add VSP1 devices to DT
+
+ .../devicetree/bindings/media/renesas,vsp1.txt     |  51 +++
+ arch/arm/boot/dts/r8a7790.dtsi                     |  55 +++
+ arch/arm/boot/dts/r8a7791.dtsi                     |  39 ++
+ drivers/media/platform/vsp1/Makefile               |   2 +-
+ drivers/media/platform/vsp1/vsp1.h                 |   2 +
+ drivers/media/platform/vsp1/vsp1_bru.c             | 395 +++++++++++++++++++++
+ drivers/media/platform/vsp1/vsp1_bru.h             |  39 ++
+ drivers/media/platform/vsp1/vsp1_drv.c             |  61 +++-
+ drivers/media/platform/vsp1/vsp1_entity.c          |  57 +--
+ drivers/media/platform/vsp1/vsp1_entity.h          |  24 +-
+ drivers/media/platform/vsp1/vsp1_hsit.c            |   7 +-
+ drivers/media/platform/vsp1/vsp1_lif.c             |   1 -
+ drivers/media/platform/vsp1/vsp1_lut.c             |   1 -
+ drivers/media/platform/vsp1/vsp1_regs.h            |  98 +++++
+ drivers/media/platform/vsp1/vsp1_rpf.c             |   7 +-
+ drivers/media/platform/vsp1/vsp1_rwpf.h            |   4 +
+ drivers/media/platform/vsp1/vsp1_sru.c             |   1 -
+ drivers/media/platform/vsp1/vsp1_uds.c             |   4 +-
+ drivers/media/platform/vsp1/vsp1_video.c           |  26 +-
+ drivers/media/platform/vsp1/vsp1_video.h           |   1 +
+ drivers/media/platform/vsp1/vsp1_wpf.c             |  13 +-
+ 21 files changed, 830 insertions(+), 58 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,vsp1.txt
+ create mode 100644 drivers/media/platform/vsp1/vsp1_bru.c
+ create mode 100644 drivers/media/platform/vsp1/vsp1_bru.h
+
 -- 
-1.8.5.2
+Regards,
+
+Laurent Pinchart
 
