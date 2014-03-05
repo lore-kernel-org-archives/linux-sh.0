@@ -1,68 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:07 +0000
-Subject: [PATCH 00/22] SH MTU2 DT support
-Message-Id: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 05 Mar 2014 13:56:48 +0000
+Subject: Re: [PATCH 00/22] SH MTU2 DT support
+Message-Id: <20140305135647.GB7985@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="EuxKj2iCbKjpUGkD"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
-Hello,
 
-This patch set implements DT support for the MTU2 driver.
+--EuxKj2iCbKjpUGkD
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-The first 17 patches clean up the driver to get rid of its platform data.
-Patches 18/22 and 19/22 then remove platform data from arch/ code. Patches
-20/22 and 21/22 drop support for platform data completely from the driver,
-and patch 22/22 finally add DT support.
 
-The patches are compile-tested only as I lack test hardware. Wolfram, would
-you be able to test this series with your CCF support patch set for RZ/A1H ?
+> This patch set implements DT support for the MTU2 driver.
 
-Laurent Pinchart (22):
-  clocksource: sh_mtu2: Use request_irq() instead of setup_irq()
-  clocksource: sh_mtu2: Turn sh_mtu2_priv fields into local variables
-  clocksource: sh_mtu2: Split channel fields from sh_mtu2_priv
-  clocksource: sh_mtu2: Rename struct sh_mtu2_priv to sh_mtu2_device
-  clocksource: sh_mtu2: Split channel setup to separate function
-  clocksource: sh_mtu2: Constify name argument to sh_mtu2_register()
-  clocksource: sh_mtu2: Add memory base to sh_mtu2_channel structure
-  clocksource: sh_mtu2: Add index to struct sh_mtu2_channel
-  clocksource: sh_mtu2: Replace kmalloc + memset with kzalloc
-  clocksource: sh_mtu2: Allocate channels dynamically
-  clocksource: sh_mtu2: Replace hardcoded register values with macros
-  clocksource: sh_mtu2: Set cpumask to cpu_possible_mask
-  clocksource: sh_mtu2: Hardcode MTU2 clock event rating to 200
-  clocksource: sh_mtu2: Add support for multiple channels per device
-  clocksource: sh_mtu2: Rename clock to "fck" in the non-legacy case
-  clocksource: sh_mtu2: Remove FSF mail address from GPL notice
-  clocksource: sh_mtu2: Sort headers alphabetically
-  sh: Switch to new style MTU2 device
-  ARM: shmobile: r7s72100: Switch to new style MTU2 device
-  clocksource: sh_mtu2: Drop support for legacy platform data
-  clocksource: sh_mtu2: Replace global spinlock with a per-device
-    spinlock
-  clocksource: sh_mtu2: Add DT support
+Cool!
 
- .../devicetree/bindings/timer/renesas,mtu2.txt     |  37 ++
- arch/arm/mach-shmobile/clock-r7s72100.c            |   2 +-
- arch/arm/mach-shmobile/setup-r7s72100.c            |  26 +-
- arch/sh/kernel/cpu/clock-cpg.c                     |   2 +-
- arch/sh/kernel/cpu/sh2a/clock-sh7264.c             |   2 +-
- arch/sh/kernel/cpu/sh2a/clock-sh7269.c             |   2 +-
- arch/sh/kernel/cpu/sh2a/setup-mxg.c                |  98 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7201.c             |  98 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7203.c             |  67 +--
- arch/sh/kernel/cpu/sh2a/setup-sh7206.c             |  98 +----
- arch/sh/kernel/cpu/sh2a/setup-sh7264.c             |  71 +---
- arch/sh/kernel/cpu/sh2a/setup-sh7269.c             |  67 +--
- drivers/clocksource/sh_mtu2.c                      | 452 +++++++++++++--------
- 13 files changed, 412 insertions(+), 610 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+> The patches are compile-tested only as I lack test hardware. Wolfram, would
+> you be able to test this series with your CCF support patch set for RZ/A1H ?
 
--- 
-Regards,
+Yes, will do, hopefully this week.
 
-Laurent Pinchart
 
+--EuxKj2iCbKjpUGkD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTFy0fAAoJEBQN5MwUoCm2ge4P/3YuDSs22fRmemkC0uO1WLEz
+8ARpk2sxpNzZ5fNTTjSQGG9AsDnlx9tIlQx5V0VsuZ3GFXOPiiyMfaJsxvhVlVBE
+vf82CiWQdT0ekiTwGYAyaos73xgWcTypKFFtSsRZAl6UMzBZlSvxJMpvGB5EIfPT
+Im7gAZruV+SphMqYpFamxmM6B/lfI7BNRClFP4A4nc4pOZqU5iUgyI6eVNMpnCn0
+u9CKhkIkXjVNj3osmGZvwPR+KaRDJMbp4UOzq668T1yjck1CyY6LugjB6LaEmqK2
+CF3J/pPrfIVNJdXBS+l206YSBSMTM4D6SA8+dsGfIgY1rOQLRwE2Jy6GS4VkMgi8
+M+e3dPQZRrBRbJ6Cw1g1mixYvuHna/QOnSDu4Be47HqjMWH86yuqL61OcwQqb0e2
+d5aupwgncsyvveoqns2OcEL/8wifuwu7labyX/tW02fkzm81J3ekb3dUZUqKwagb
+aGswZXMdrtlCMGmGp+uFj444Mj3l9g3yRrlfbWcpxdj8qX4YZdzR0+1/xqBw7co9
+Cu8rW6JIPpgTKIYYWDNNGUHVnY80X8PZWfJK8TNF/xk/4eoe4i8IFnNcHhj7epkk
+h4pkBxZIdr3tdGc+fzZGZTncIE39QSXJLgh6s/EroCoBJEK7y79C5zBjINm5Qs/D
+anLBNFBf5se3H89OLiV0
+=FlJg
+-----END PGP SIGNATURE-----
+
+--EuxKj2iCbKjpUGkD--
