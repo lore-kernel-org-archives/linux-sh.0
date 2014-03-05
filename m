@@ -1,71 +1,282 @@
-From: Richard Guy Briggs <rgb@redhat.com>
-Date: Wed, 05 Mar 2014 21:27:01 +0000
-Subject: [PATCH 0/6][RFC] audit: standardize and simplify syscall_get_arch()
-Message-Id: <cover.1393974970.git.rgb@redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 05 Mar 2014 19:23:59 +0000
+Subject: [PATCH 1/6] v4l: vsp1: Support multi-input entities
+Message-Id: <1394047444-30077-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-audit@redhat.com, linux-kernel@vger.kernel.org
-Cc: Richard Guy Briggs <rgb@redhat.com>, eparis@redhat.com, sgrubb@redhat.com, oleg@redhat.com, linux-arm-kernel@lists.infradead.org, x86@kernel.org, linux-ia64@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, linux-mips@linux-mips.org, linux@openrisc.net, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, linux-arch@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Each arch that supports audit requires syscall_get_arch() to able to log
-and identify architecture-dependent syscall numbers.  The information is used
-in at least two different subsystems, so standardize it in the same call across
-all arches.
+Rework the route configuration code to support entities with multiple
+sink pads.
 
-Use the standardized syscall_get_arch() locally to add the arch to the
-AUDIT_SECCOMP record to identify which syscall was issued.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/vsp1/vsp1_entity.c | 54 +++++++++++++++----------------
+ drivers/media/platform/vsp1/vsp1_entity.h | 23 +++++++++++--
+ drivers/media/platform/vsp1/vsp1_hsit.c   |  7 ++--
+ drivers/media/platform/vsp1/vsp1_lif.c    |  1 -
+ drivers/media/platform/vsp1/vsp1_lut.c    |  1 -
+ drivers/media/platform/vsp1/vsp1_rpf.c    |  1 -
+ drivers/media/platform/vsp1/vsp1_sru.c    |  1 -
+ drivers/media/platform/vsp1/vsp1_uds.c    |  1 -
+ drivers/media/platform/vsp1/vsp1_video.c  |  7 ++--
+ drivers/media/platform/vsp1/vsp1_wpf.c    |  1 -
+ 10 files changed, 54 insertions(+), 43 deletions(-)
 
-Since all the callers of syscall_get_arch() presently pass "current" and none
-of the arch-specific syscall_get_arch() implementations use the regs parameter,
-call syscall_get_arch() locally where it is needed and drop passing around
-arch, current and regs in __audit_syscall_entry() and audit_syscall_entry().
-
-Compiles and runs on i686, x86_64, ppc, ppc64, s390, s390x, manually tested in
-an x86_64 VM.  aarch64 will be added soon.
-
-Richard Guy Briggs (6):
-  syscall: define syscall_get_arch() for each audit-supported arch
-  audit: add arch field to seccomp event log
-  audit: __audit_syscall_entry: ignore arch arg and call
-    syscall_get_arch() directly
-  audit: drop arch from audit_syscall_entry() interface
-  audit: drop args from syscall_get_arch() interface
-  audit: drop arch from __audit_syscall_entry() interface
-
- arch/arm/include/asm/syscall.h        |    5 ++---
- arch/arm/kernel/ptrace.c              |    2 +-
- arch/ia64/include/asm/syscall.h       |    6 ++++++
- arch/ia64/kernel/ptrace.c             |    2 +-
- arch/microblaze/include/asm/syscall.h |    5 +++++
- arch/microblaze/kernel/ptrace.c       |    2 +-
- arch/mips/include/asm/syscall.h       |    6 +++---
- arch/mips/kernel/ptrace.c             |    3 +--
- arch/openrisc/include/asm/syscall.h   |    5 +++++
- arch/openrisc/kernel/ptrace.c         |    2 +-
- arch/parisc/include/asm/syscall.h     |   11 +++++++++++
- arch/parisc/kernel/ptrace.c           |    5 ++---
- arch/powerpc/include/asm/syscall.h    |   12 ++++++++++++
- arch/powerpc/kernel/ptrace.c          |    6 ++----
- arch/s390/include/asm/syscall.h       |    7 +++----
- arch/s390/kernel/ptrace.c             |    4 +---
- arch/sh/include/asm/syscall.h         |   16 ++++++++++++++++
- arch/sh/kernel/ptrace_32.c            |   13 +------------
- arch/sh/kernel/ptrace_64.c            |   16 +---------------
- arch/sparc/include/asm/syscall.h      |    7 +++++++
- arch/sparc/kernel/ptrace_64.c         |    5 +----
- arch/um/kernel/ptrace.c               |    3 +--
- arch/x86/ia32/ia32entry.S             |   12 ++++++------
- arch/x86/include/asm/syscall.h        |   10 ++++------
- arch/x86/kernel/entry_32.S            |   11 +++++------
- arch/x86/kernel/entry_64.S            |   11 +++++------
- arch/x86/kernel/ptrace.c              |    6 ++----
- arch/xtensa/kernel/ptrace.c           |    2 +-
- include/asm-generic/syscall.h         |    6 ++----
- include/linux/audit.h                 |    9 ++++-----
- include/uapi/linux/audit.h            |    1 +
- kernel/auditsc.c                      |    6 ++++--
- kernel/seccomp.c                      |    4 ++--
- 33 files changed, 120 insertions(+), 101 deletions(-)
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
+index 0226e47..966b185 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.c
++++ b/drivers/media/platform/vsp1/vsp1_entity.c
+@@ -100,8 +100,10 @@ static int vsp1_entity_link_setup(struct media_entity *entity,
+ 		if (source->sink)
+ 			return -EBUSY;
+ 		source->sink = remote->entity;
++		source->sink_pad = remote->index;
+ 	} else {
+ 		source->sink = NULL;
++		source->sink_pad = 0;
+ 	}
+ 
+ 	return 0;
+@@ -116,42 +118,40 @@ const struct media_entity_operations vsp1_media_ops = {
+  * Initialization
+  */
+ 
++static const struct vsp1_route vsp1_routes[] = {
++	{ VSP1_ENTITY_HSI, 0, VI6_DPR_HSI_ROUTE, { VI6_DPR_NODE_HSI, } },
++	{ VSP1_ENTITY_HST, 0, VI6_DPR_HST_ROUTE, { VI6_DPR_NODE_HST, } },
++	{ VSP1_ENTITY_LIF, 0, 0, { VI6_DPR_NODE_LIF, } },
++	{ VSP1_ENTITY_LUT, 0, VI6_DPR_LUT_ROUTE, { VI6_DPR_NODE_LUT, } },
++	{ VSP1_ENTITY_RPF, 0, VI6_DPR_RPF_ROUTE(0), { VI6_DPR_NODE_RPF(0), } },
++	{ VSP1_ENTITY_RPF, 1, VI6_DPR_RPF_ROUTE(1), { VI6_DPR_NODE_RPF(1), } },
++	{ VSP1_ENTITY_RPF, 2, VI6_DPR_RPF_ROUTE(2), { VI6_DPR_NODE_RPF(2), } },
++	{ VSP1_ENTITY_RPF, 3, VI6_DPR_RPF_ROUTE(3), { VI6_DPR_NODE_RPF(3), } },
++	{ VSP1_ENTITY_RPF, 4, VI6_DPR_RPF_ROUTE(4), { VI6_DPR_NODE_RPF(4), } },
++	{ VSP1_ENTITY_SRU, 0, VI6_DPR_SRU_ROUTE, { VI6_DPR_NODE_SRU, } },
++	{ VSP1_ENTITY_UDS, 0, VI6_DPR_UDS_ROUTE(0), { VI6_DPR_NODE_UDS(0), } },
++	{ VSP1_ENTITY_UDS, 1, VI6_DPR_UDS_ROUTE(1), { VI6_DPR_NODE_UDS(1), } },
++	{ VSP1_ENTITY_UDS, 2, VI6_DPR_UDS_ROUTE(2), { VI6_DPR_NODE_UDS(2), } },
++	{ VSP1_ENTITY_WPF, 0, 0, { VI6_DPR_NODE_WPF(0), } },
++	{ VSP1_ENTITY_WPF, 1, 0, { VI6_DPR_NODE_WPF(1), } },
++	{ VSP1_ENTITY_WPF, 2, 0, { VI6_DPR_NODE_WPF(2), } },
++	{ VSP1_ENTITY_WPF, 3, 0, { VI6_DPR_NODE_WPF(3), } },
++};
++
+ int vsp1_entity_init(struct vsp1_device *vsp1, struct vsp1_entity *entity,
+ 		     unsigned int num_pads)
+ {
+-	static const struct {
+-		unsigned int id;
+-		unsigned int reg;
+-	} routes[] = {
+-		{ VI6_DPR_NODE_HSI, VI6_DPR_HSI_ROUTE },
+-		{ VI6_DPR_NODE_HST, VI6_DPR_HST_ROUTE },
+-		{ VI6_DPR_NODE_LIF, 0 },
+-		{ VI6_DPR_NODE_LUT, VI6_DPR_LUT_ROUTE },
+-		{ VI6_DPR_NODE_RPF(0), VI6_DPR_RPF_ROUTE(0) },
+-		{ VI6_DPR_NODE_RPF(1), VI6_DPR_RPF_ROUTE(1) },
+-		{ VI6_DPR_NODE_RPF(2), VI6_DPR_RPF_ROUTE(2) },
+-		{ VI6_DPR_NODE_RPF(3), VI6_DPR_RPF_ROUTE(3) },
+-		{ VI6_DPR_NODE_RPF(4), VI6_DPR_RPF_ROUTE(4) },
+-		{ VI6_DPR_NODE_SRU, VI6_DPR_SRU_ROUTE },
+-		{ VI6_DPR_NODE_UDS(0), VI6_DPR_UDS_ROUTE(0) },
+-		{ VI6_DPR_NODE_UDS(1), VI6_DPR_UDS_ROUTE(1) },
+-		{ VI6_DPR_NODE_UDS(2), VI6_DPR_UDS_ROUTE(2) },
+-		{ VI6_DPR_NODE_WPF(0), 0 },
+-		{ VI6_DPR_NODE_WPF(1), 0 },
+-		{ VI6_DPR_NODE_WPF(2), 0 },
+-		{ VI6_DPR_NODE_WPF(3), 0 },
+-	};
+-
+ 	unsigned int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(routes); ++i) {
+-		if (routes[i].id = entity->id) {
+-			entity->route = routes[i].reg;
++	for (i = 0; i < ARRAY_SIZE(vsp1_routes); ++i) {
++		if (vsp1_routes[i].type = entity->type &&
++		    vsp1_routes[i].index = entity->index) {
++			entity->route = &vsp1_routes[i];
+ 			break;
+ 		}
+ 	}
+ 
+-	if (i = ARRAY_SIZE(routes))
++	if (i = ARRAY_SIZE(vsp1_routes))
+ 		return -EINVAL;
+ 
+ 	entity->vsp1 = vsp1;
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
+index e152798..dc31a31 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.h
++++ b/drivers/media/platform/vsp1/vsp1_entity.h
+@@ -30,13 +30,31 @@ enum vsp1_entity_type {
+ 	VSP1_ENTITY_WPF,
+ };
+ 
++/*
++ * struct vsp1_route - Entity routing configuration
++ * @type: Entity type this routing entry is associated with
++ * @index: Entity index this routing entry is associated with
++ * @reg: Output routing configuration register
++ * @inputs: Target node value for each input
++ *
++ * Each $vsp1_route entry describes routing configuration for the entity
++ * specified by the entry's @type and @index. @reg indicates the register that
++ * holds output routing configuration for the entity, and the @inputs array
++ * store the target node value for each input of the entity.
++ */
++struct vsp1_route {
++	enum vsp1_entity_type type;
++	unsigned int index;
++	unsigned int reg;
++	unsigned int inputs[4];
++};
++
+ struct vsp1_entity {
+ 	struct vsp1_device *vsp1;
+ 
+ 	enum vsp1_entity_type type;
+ 	unsigned int index;
+-	unsigned int id;
+-	unsigned int route;
++	const struct vsp1_route *route;
+ 
+ 	struct list_head list_dev;
+ 	struct list_head list_pipe;
+@@ -45,6 +63,7 @@ struct vsp1_entity {
+ 	unsigned int source_pad;
+ 
+ 	struct media_entity *sink;
++	unsigned int sink_pad;
+ 
+ 	struct v4l2_subdev subdev;
+ 	struct v4l2_mbus_framefmt *formats;
+diff --git a/drivers/media/platform/vsp1/vsp1_hsit.c b/drivers/media/platform/vsp1/vsp1_hsit.c
+index 28548535..db2950a 100644
+--- a/drivers/media/platform/vsp1/vsp1_hsit.c
++++ b/drivers/media/platform/vsp1/vsp1_hsit.c
+@@ -193,13 +193,10 @@ struct vsp1_hsit *vsp1_hsit_create(struct vsp1_device *vsp1, bool inverse)
+ 
+ 	hsit->inverse = inverse;
+ 
+-	if (inverse) {
++	if (inverse)
+ 		hsit->entity.type = VSP1_ENTITY_HSI;
+-		hsit->entity.id = VI6_DPR_NODE_HSI;
+-	} else {
++	else
+ 		hsit->entity.type = VSP1_ENTITY_HST;
+-		hsit->entity.id = VI6_DPR_NODE_HST;
+-	}
+ 
+ 	ret = vsp1_entity_init(vsp1, &hsit->entity, 2);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_lif.c b/drivers/media/platform/vsp1/vsp1_lif.c
+index 74a32e6..2b275f6 100644
+--- a/drivers/media/platform/vsp1/vsp1_lif.c
++++ b/drivers/media/platform/vsp1/vsp1_lif.c
+@@ -215,7 +215,6 @@ struct vsp1_lif *vsp1_lif_create(struct vsp1_device *vsp1)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	lif->entity.type = VSP1_ENTITY_LIF;
+-	lif->entity.id = VI6_DPR_NODE_LIF;
+ 
+ 	ret = vsp1_entity_init(vsp1, &lif->entity, 2);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_lut.c b/drivers/media/platform/vsp1/vsp1_lut.c
+index 4e9dc7c..fea36eb 100644
+--- a/drivers/media/platform/vsp1/vsp1_lut.c
++++ b/drivers/media/platform/vsp1/vsp1_lut.c
+@@ -229,7 +229,6 @@ struct vsp1_lut *vsp1_lut_create(struct vsp1_device *vsp1)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	lut->entity.type = VSP1_ENTITY_LUT;
+-	lut->entity.id = VI6_DPR_NODE_LUT;
+ 
+ 	ret = vsp1_entity_init(vsp1, &lut->entity, 2);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index bce2be5..97088d7 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -176,7 +176,6 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	rpf->entity.type = VSP1_ENTITY_RPF;
+ 	rpf->entity.index = index;
+-	rpf->entity.id = VI6_DPR_NODE_RPF(index);
+ 
+ 	ret = vsp1_entity_init(vsp1, &rpf->entity, 2);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
+index 7ab1a0b..aa0e04c 100644
+--- a/drivers/media/platform/vsp1/vsp1_sru.c
++++ b/drivers/media/platform/vsp1/vsp1_sru.c
+@@ -327,7 +327,6 @@ struct vsp1_sru *vsp1_sru_create(struct vsp1_device *vsp1)
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	sru->entity.type = VSP1_ENTITY_SRU;
+-	sru->entity.id = VI6_DPR_NODE_SRU;
+ 
+ 	ret = vsp1_entity_init(vsp1, &sru->entity, 2);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_uds.c b/drivers/media/platform/vsp1/vsp1_uds.c
+index 0e50b37..509c9fe 100644
+--- a/drivers/media/platform/vsp1/vsp1_uds.c
++++ b/drivers/media/platform/vsp1/vsp1_uds.c
+@@ -323,7 +323,6 @@ struct vsp1_uds *vsp1_uds_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	uds->entity.type = VSP1_ENTITY_UDS;
+ 	uds->entity.index = index;
+-	uds->entity.id = VI6_DPR_NODE_UDS(index);
+ 
+ 	ret = vsp1_entity_init(vsp1, &uds->entity, 2);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index b4687a8..ce83145 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -461,7 +461,7 @@ static int vsp1_pipeline_stop(struct vsp1_pipeline *pipe)
+ 
+ 	list_for_each_entry(entity, &pipe->entities, list_pipe) {
+ 		if (entity->route)
+-			vsp1_write(entity->vsp1, entity->route,
++			vsp1_write(entity->vsp1, entity->route->reg,
+ 				   VI6_DPR_NODE_UNUSED);
+ 
+ 		v4l2_subdev_call(&entity->subdev, video, s_stream, 0);
+@@ -680,11 +680,12 @@ static void vsp1_entity_route_setup(struct vsp1_entity *source)
+ {
+ 	struct vsp1_entity *sink;
+ 
+-	if (source->route = 0)
++	if (source->route->reg = 0)
+ 		return;
+ 
+ 	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
+-	vsp1_write(source->vsp1, source->route, sink->id);
++	vsp1_write(source->vsp1, source->route->reg,
++		   sink->route->inputs[source->sink_pad]);
+ }
+ 
+ static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 7baed81..974af6b 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -181,7 +181,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	wpf->entity.type = VSP1_ENTITY_WPF;
+ 	wpf->entity.index = index;
+-	wpf->entity.id = VI6_DPR_NODE_WPF(index);
+ 
+ 	ret = vsp1_entity_init(vsp1, &wpf->entity, 2);
+ 	if (ret < 0)
+-- 
+1.8.3.2
 
