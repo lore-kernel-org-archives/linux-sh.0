@@ -1,38 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:23 +0000
-Subject: [PATCH 16/22] clocksource: sh_mtu2: Remove FSF mail address from GPL notice
-Message-Id: <1393955249-18736-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Wed, 05 Mar 2014 05:43:35 +0000
+Subject: Re: [PATCH 5/7] ARM: dts: imx6: add PCIe interrupt mapping properties
+Message-Id: <20140305054333.GF8784@S2101-09.ap.freescale.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
+ <1393608523-17509-6-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1393608523-17509-6-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Do not include the paragraph about writing to the Free Software
-Foundation's mailing address from the sample GPL notice. The FSF has
-changed addresses in the past, and may do so again. Linux already
-includes a copy of the GPL.
+On Fri, Feb 28, 2014 at 06:28:41PM +0100, Lucas Stach wrote:
+> As defined by the common PCI bindings.
+> 
+> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> ---
+>  arch/arm/boot/dts/imx6qdl.dtsi | 11 +++++++++++
+>  1 file changed, 11 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+> index fb28b2ecb1db..db3339e7d3a2 100644
+> --- a/arch/arm/boot/dts/imx6qdl.dtsi
+> +++ b/arch/arm/boot/dts/imx6qdl.dtsi
+> @@ -10,6 +10,8 @@
+>   * http://www.gnu.org/copyleft/gpl.html
+>   */
+>  
+> +#include <dt-bindings/interrupt-controller/arm-gic.h>
+> +
+>  #include "skeleton.dtsi"
+>  
+>  / {
+> @@ -126,7 +128,16 @@
+>  				  0x81000000 0 0          0x01f80000 0 0x00010000 /* downstream I/O */
+>  				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
+>  			num-lanes = <1>;
+> +
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clocksource/sh_mtu2.c | 4 ----
- 1 file changed, 4 deletions(-)
+Please drop these blank lines between properties.
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 3a37857..510bd32 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -11,10 +11,6 @@
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-  */
- 
- #include <linux/init.h>
--- 
-1.8.3.2
+Shawn
+
+>  			interrupts = <0 123 0x04>;
+> +
+> +			#interrupt-cells = <1>;
+> +			interrupt-map-mask = <0 0 0 0x7>;
+> +			interrupt-map = <0 0 0 1 &intc GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
+> +			                <0 0 0 2 &intc GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+> +			                <0 0 0 3 &intc GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+> +			                <0 0 0 4 &intc GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
+> +
+>  			clocks = <&clks 189>, <&clks 187>, <&clks 206>, <&clks 144>;
+>  			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
+>  			status = "disabled";
+> -- 
+> 1.8.5.3
+> 
 
