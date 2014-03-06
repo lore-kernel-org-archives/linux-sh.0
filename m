@@ -1,50 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Mar 2014 00:24:37 +0000
-Subject: Re: [PATCH v2 11/11] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
-Message-Id: <20140307002437.GD11702@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Mar 2014 03:28:14 +0000
+Subject: [PATCH 00/02] ARM: shmobile: Consolidate early delay setup code
+Message-Id: <20140306032814.10814.2949.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
- <1393324219-3317-12-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393324219-3317-12-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 25, 2014 at 11:30:19AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+ARM: shmobile: Consolidate early delay setup code
 
-Hi Geert,
+[PATCH 01/02] ARM: shmobile: Add shared shmobile_init_delay()
+[PATCH 02/02] ARM: shmobile: Use shmobile_init_delay() on r8a7791/Koelsch
 
-as discussed elsewhere I have queued up the multiplatform portion of this patch.
-For reference the patch that I have queued up is as follows.
+Add code to retrieve early delay handling parameters from DT and
+as example convert r8a7791 and Koelsch. The first patch should be
+rather useful as-is but the second needs to be broken out into
+SoC and board specific bits to fit board/soc pull request style.
+Also, all mach-shmobile SoCs can be converted to use patch [1/1]
 
-
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-
-ARM: shmobile: multiplatform: Enable MSIOF in defconfig
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 83b0725..2a27d46 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -78,6 +78,7 @@ CONFIG_I2C_GPIO=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIO_EM=y
- CONFIG_GPIO_RCAR=y
- # CONFIG_HWMON is not set
--- 
-1.8.5.2
+ Written against renesas.git tag renesas-devel-v3.14-rc4-20140227
+ and patch [2/2] also depends on
+ [PATCH] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in C
 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |    2 -
+ arch/arm/mach-shmobile/board-koelsch.c           |    2 -
+ arch/arm/mach-shmobile/include/mach/common.h     |    1 
+ arch/arm/mach-shmobile/include/mach/r8a7791.h    |    1 
+ arch/arm/mach-shmobile/setup-r8a7791.c           |    9 -------
+ arch/arm/mach-shmobile/timer.c                   |   28 ++++++++++++++++++++++
+ 6 files changed, 32 insertions(+), 11 deletions(-)
