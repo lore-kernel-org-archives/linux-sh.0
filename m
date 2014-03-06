@@ -1,48 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Mar 2014 08:21:04 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager-reference: Work around core clock issues
-Message-Id: <20140317082102.GB22002@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Mar 2014 04:44:29 +0000
+Subject: [PATCH 1/7] ARM: shmobile: r8a7790: add Ether DT support
+Message-Id: <d8913c6799ed776d096a7f41d83afce815f93819.1394080829.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395022736-2921-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdU2xcoR95KC3LFbtjTaULOZQjQKYmbQhZUSteT=EHMbvg@mail.gmail.com>
-In-Reply-To: <CAMuHMdU2xcoR95KC3LFbtjTaULOZQjQKYmbQhZUSteT=EHMbvg@mail.gmail.com>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 17, 2014 at 09:01:30AM +0100, Geert Uytterhoeven wrote:
-> On Mon, Mar 17, 2014 at 3:18 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Due to issues with runtime PM clock management, clocks not explicitly
-> > managed by their drivers may not be enabled at all, or be inadvertently
-> > disabled by the clk_disable_unused() late initcall.
-> >
-> > Until this is fixed, add a temporary workaround, calling
-> > shmobile_clk_workaround() with enable = true.
-> >
-> > For now this enables the clocks for: ether, msiof1, qspi_mod, and
-> > thermal. More clocks can be added if needed.
-> >
-> > Based on work for the koelsch board by eert Uytterhoeven.
-> >
-> > Cc: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> (if the typo reported by Morimoto-san gets fixed ;-)
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Indeed, sorry about misspelling your name.
+Define the generic R8A7790 part of the Ether device node.
 
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6eb9613..e22520d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1,7 +1,8 @@
+ /*
+  * Device Tree Source for the r8a7790 SoC
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded Inc.
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -379,6 +380,17 @@
+ 		status = "disabled";
+ 	};
+ 
++	ether: ethernet@ee700000 {
++		compatible = "renesas,ether-r8a7790";
++		reg = <0 0xee700000 0 0x400>;
++		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7790_CLK_ETHER>;
++		phy-mode = "rmii";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sata0: sata@ee300000 {
+ 		compatible = "renesas,sata-r8a7790";
+ 		reg = <0 0xee300000 0 0x2000>;
+-- 
+1.8.5.2
+
