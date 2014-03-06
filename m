@@ -1,123 +1,39 @@
-From: Phil.Edworthy@renesas.com
-Date: Wed, 26 Mar 2014 09:12:22 +0000
-Subject: Re: [PATCH v5 5/9] dt-bindings: pci: rcar pcie device tree bindings
-Message-Id: <OF926D4427.71CAF95D-ON80257CA7.00321EAE-80257CA7.0032919D@eu.necel.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 06 Mar 2014 19:06:35 +0000
+Subject: Re: [PATCH 3/3] clk-mstp: add backwards comapt for indicies field
+Message-Id: <5318C73B.3040703@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
- <1395766604-30926-6-git-send-email-phil.edworthy@renesas.com>
- <5331E576.2000202@cogentembedded.com>
-In-Reply-To: <5331E576.2000202@cogentembedded.com>
+References: <1392314571-30107-3-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1392314571-30107-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+On 13/02/14 23:15, Laurent Pinchart wrote:
+> Hi Ben,
+>
+> Thank you for the patch.
+>
+> On Thursday 13 February 2014 18:02:51 Ben Dooks wrote:
+>> Add comaptibiltiy for older device trees by checking to see if
+>> the clock-indicies property is there and falling back to the
+>> older renesas,clock-indices field.
+>
+> I would drop this patch. The Renesas clocks DT bindings are too new (v3.14-
+> rc1, and for multiplatform kernels only) to be considered as stable in my
+> opinion.
 
-On: 25/03/2014 19:22, Sergei wrote:
-> Subject: Re: [PATCH v5 5/9] dt-bindings: pci: rcar pcie device tree 
-bindings
-> 
-> Hello.
-> 
-> On 03/25/2014 07:56 PM, Phil Edworthy wrote:
-> 
-> > This patch adds the bindings for the R-Car PCIe driver. The driver
-> > resides under drivers/pci/host/pcie-rcar.c
-> 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > ---
-> > v5:
-> >   - Add PCIe bus clock reference
-> >   - Add additional interrupt bindings
-> >   - Use dma-ranges property to specify inbound memory regions
-> > ---
-> >   Documentation/devicetree/bindings/pci/rcar-pci.txt | 44 
-++++++++++++++++++++++
-> >   1 file changed, 44 insertions(+)
-> >   create mode 100644 
-Documentation/devicetree/bindings/pci/rcar-pci.txt
-> >
-> > diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/
-> Documentation/devicetree/bindings/pci/rcar-pci.txt
-> > new file mode 100644
-> > index 0000000..61bf5ef
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-> > @@ -0,0 +1,44 @@
-> > +* Renesas RCar PCIe interface
-> > +
-> > +Required properties:
-> > +- compatible: should contain one of the following
-> > +   "renesas,pcie-r8a7779", "renesas,pcie-r8a7790", 
-"renesas,pcie-r8a7791"
-> > +- reg: base addresses and lengths of the pcie controller.
-> 
->     Hmm, need "registers" at end. And why plural?
-Ok, & yes it should be singular.
+I think this may be required as the current amount of
+development work being done means that either we need
+to be at a point where we can merge the driver change
+via Simon's tree, or to put the compatibility in and
+hope the driver update goes in first before we merge
+the dts/dtsi changes.
+
+I'm not sure which is the best way to do this?
 
 
-> > +- #address-cells: set to <3>
-> > +- #size-cells: set to <2>
-> > +- device_type: set to "pci"
-> > +- ranges: ranges for the PCI memory and I/O regions.
-> > +- dma-ranges: ranges for the inbound memory regions.
-> > +- interrupts: two interrupt sources for MSI interrupts, followed by 
-interrupt
-> > +   source for hardware related interrupts (e.g. link speed change).
-> > +- #interrupt-cells: set to <1>
-> > +- interrupt-map-mask and interrupt-map: standard PCI properties
-> > +   to define the mapping of the PCIe interface to interrupt
-> > +   numbers.
-> > +- clocks: from common clock binding: handle to pci clock.
-> 
->     s/handle/phandle/, s/pci/PCI/.
->     Actually, it's a clock specifier consisting not only of phandle but 
-also 
-> of clock #. Looking at your example, it's even a pair of clock 
-specifiers.
-Right, and yes it's two clocks - I missed that when adding the PCI bus 
-clock.
-
- 
-> > +- clock-names: from common clock binding: should be "pcie" and 
-"pcie_bus".
-> > +
-> > +Example:
-> > +
-> > +SoC specific DT Entry:
-> > +
-> > +   pcie: pcie@fe000000 {
-> > +      compatible = "renesas,pcie-r8a7791";
-> > +      reg = <0 0xfe000000 0 0x80000>;
-> > +      #address-cells = <3>;
-> > +      #size-cells = <2>;
-> > +      device_type = "pci";
-> > +      ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-> > +           0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-> > +           0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-> > +           0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-> > +      dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
-> > +               0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
-> 
->     Hmm, this prop looks board-dependent...
-Initially I thought that it would be board dependent and map the actual 
-DDR available. However, I then considered that it is probably ok to map 
-all possible DDR ranges that the device is capable of using. I'm ok with 
-either approach though...
-
-
-> > +      interrupts = <0 116 4 0 117 4 0 118 4>;
-> > +      #interrupt-cells = <1>;
-> > +      interrupt-map-mask = <0 0 0 0>;
-> > +      interrupt-map = <0 0 0 0 &gic 0 116 4>;
-> > +      clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
-> > +      clock-names = "pcie", "pcie_bus";
-> > +      status = "disabled";
-> > +   };
-> 
-> WBR, Sergei
-> 
-
-Thanks
-Phil
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
