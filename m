@@ -1,48 +1,41 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 20 Mar 2014 12:24:23 +0000
-Subject: Re: [PATCH 0/5] ARM: shmobile: Enable drivers/sh/pm_runtime.c on multi-platform
-Message-Id: <532ADDF7.70601@codethink.co.uk>
+Date: Thu, 06 Mar 2014 18:01:26 +0000
+Subject: [PATCH 8/9] ARM: shmobile: lager.dts: add usbphy reference
+Message-Id: <1394128887-4197-9-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395256010-12222-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1395256010-12222-1-git-send-email-geert@linux-m68k.org>
+References: <1394128887-4197-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1394128887-4197-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
+Cc: linux-kernel@lists.codethink.co.uk, sergei.shtylyov@cogentembedded.com, magnus.damn@opensource.se, horms@verge.net.au, Ben Dooks <ben.dooks@codethink.co.uk>, devicetree@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-On 20/03/14 13:19, Laurent Pinchart wrote:
-> Hi Geert,
->
-> On Thursday 20 March 2014 13:13:28 Geert Uytterhoeven wrote:
->> On Thu, Mar 20, 2014 at 1:01 PM, Laurent Pinchart wrote:
->>> On Thursday 20 March 2014 09:56:17 Ben Dooks wrote:
->>>> On 19/03/14 20:06, Geert Uytterhoeven wrote:
->>>>> This patchset enables the PM runtime code in drivers/sh/pm_runtime.c
->>>>> when running a multi-platform ARM kernel including support for
->>>>> shmobile. Before this code was only enabled for legacy shmobile
->>>>> kernels, leading to disabled clocks in multiplatform kernels, depending
->>>>> on implicit reset state or on the bootloader.
->>>>>
->>>>>     [1/5] drivers: sh: pm_runtime does not need idle callback
->>>>>     [2/5] sh: intc: Restrict INTC_USERIMASK to SH4A
->>>>
->>>> I thought there was already a of capable intc driver in the
->>>> irq drivers directory?
->>>
->>> I think Ben's point is that drivers/sh/intc might be completely unneeded
->>> for ARM.
->>
->> http://www.spinics.net/lists/linux-sh/msg30067.html
->>
->> "Furthermore, the core intc parts are used by sh7372/mackerel and
->>   sh73a0/kzm9g (and arch/sh) only, so I'm gonna restrict it to
->>   ARCH_SHMOBILE_LEGACY and SUPERH only."
->
-> My bad, sorry. If it wasn't for sh7372 and sh73a0 being old SoCs that's
-> probably something we should fix by moving the code to drivers/irqchip.
+Enable the usbphy node so that the phy driver is available.
 
-Something to look at later?
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+---
+Cc: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index fd6851f..63d58d6 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -246,3 +246,7 @@
+ 	pinctrl-0 = <&usb2_pins>;
+ 	pinctrl-names = "default";
+ };
++
++&usbphy {
++	status = "okay";
++};
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.9.0
+
