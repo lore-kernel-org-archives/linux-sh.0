@@ -1,28 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 26 Mar 2014 17:04:03 +0000
-Subject: Re: [PATCH] ARM: shmobile: Include at24.c in shmobile_defconfig
-Message-Id: <20140326170403.GC1091@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 06 Mar 2014 03:15:36 +0000
+Subject: [PATCH] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in DTS
+Message-Id: <20140306031536.10779.98781.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140326051911.2461.88848.sendpatchset@w520>
-In-Reply-To: <20140326051911.2461.88848.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 26, 2014 at 08:04:01AM +0100, Wolfram Sang wrote:
-> On Wed, Mar 26, 2014 at 02:19:11PM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > The Koelsch board includes an at24-compatible EEPROM hooked up via I2C.
-> > To increase hardware support enable the driver in the shmobile_defconfig
-> > multiplatform configuration.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> I would have squashed those two patches, but still:
-> 
-> Acked-by: Wolfram Sang <wsa@the-dreams.de>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up.
+The correct maximum CPU frequency for r8a7791 is 1500 MHz
+so update the r8a7791 SoC DTS to reflect this.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a7791.dtsi |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2014-03-06 10:52:09.000000000 +0900
+@@ -37,14 +37,14 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+-			clock-frequency = <1300000000>;
++			clock-frequency = <1500000000>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a15";
+ 			reg = <1>;
+-			clock-frequency = <1300000000>;
++			clock-frequency = <1500000000>;
+ 		};
+ 	};
+ 
