@@ -1,78 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Mar 2014 01:47:39 +0000
-Subject: Re: [PATCH 1/4] serial: sh-sci: Replace printk() by pr_*()
-Message-Id: <20140313014739.GO25813@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Mar 2014 05:05:16 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7791: Remove legacy clock aliases for DT devices
+Message-Id: <a8a8266229787241e1dfdb075a416e31da2fa1d7.1394082270.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394532680-4264-1-git-send-email-geert@linux-m68k.org>
- <1738100.8MZc8BUIum@avalon>
-In-Reply-To: <1738100.8MZc8BUIum@avalon>
+References: <cover.1394082270.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394082270.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-serial@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 11, 2014 at 11:30:52AM +0100, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patches.
-> 
-> I had patches similar to 3/4 and 4/4 in my tree, that's a sign you're going in 
-> the right direction (or at least the direction I consider to be right :-)). 
-> For the whole series,
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Acked-by: Simon Horman <horms@verge.net.au>
+Now that the r8a7791 DT platforms use the common clock framework,
+there's no need to manually create clock aliases for devices
+instantiated through DT, as those devices will reference their clocks
+directly in the device tree. Remove those aliases.
 
-Greg, could you pick up this series?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-> On Tuesday 11 March 2014 11:11:17 Geert Uytterhoeven wrote:
-> > From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> > 
-> > Make banner const while we're at it
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> > ---
-> >  drivers/tty/serial/sh-sci.c |    7 +++----
-> >  1 file changed, 3 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> > index 7958115e6a51..24ec6ef67984 100644
-> > --- a/drivers/tty/serial/sh-sci.c
-> > +++ b/drivers/tty/serial/sh-sci.c
-> > @@ -428,7 +428,7 @@ static int sci_probe_regmap(struct plat_sci_port *cfg)
-> >  		cfg->regtype = SCIx_HSCIF_REGTYPE;
-> >  		break;
-> >  	default:
-> > -		printk(KERN_ERR "Can't probe register map for given port\n");
-> > +		pr_err("Can't probe register map for given port\n");
-> >  		return -EINVAL;
-> >  	}
-> > 
-> > @@ -2389,8 +2389,7 @@ static inline int sci_probe_earlyprintk(struct
-> > platform_device *pdev)
-> > 
-> >  #endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
-> > 
-> > -static char banner[] __initdata > > -	KERN_INFO "SuperH (H)SCI(F) driver initialized\n";
-> > +static const char banner[] __initconst = "SuperH (H)SCI(F) driver
-> > initialized";
-> > 
-> >  static struct uart_driver sci_uart_driver = {
-> >  	.owner		= THIS_MODULE,
-> > @@ -2616,7 +2615,7 @@ static int __init sci_init(void)
-> >  {
-> >  	int ret;
-> > 
-> > -	printk(banner);
-> > +	pr_info("%s\n", banner);
-> > 
-> >  	ret = uart_register_driver(&sci_uart_driver);
-> >  	if (likely(ret = 0)) {
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 3e1b6b6..605fc77 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -267,7 +267,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+-	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+-- 
+1.8.5.2
+
