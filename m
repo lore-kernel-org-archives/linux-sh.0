@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 02 Mar 2014 22:52:44 +0000
+Date: Thu, 06 Mar 2014 19:05:40 +0000
 Subject: Re: [PATCH 1/3] clk: add clock-indices support
-Message-Id: <5313B63C.7060802@codethink.co.uk>
+Message-Id: <5318C704.30108@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392314571-30107-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1392314571-30107-1-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,11 +10,11 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 02/03/14 22:37, Laurent Pinchart wrote:
-> Hi Ben,
->
-> On Sunday 02 March 2014 22:28:09 Ben Dooks wrote:
->> On 23/02/14 21:00, Mike Turquette wrote:
+On 23/02/14 23:46, Mike Turquette wrote:
+> Quoting Laurent Pinchart (2014-02-23 14:40:46)
+>> Hi Mike,
+>>
+>> On Sunday 23 February 2014 13:00:24 Mike Turquette wrote:
 >>> Quoting Ben Dooks (2014-02-13 10:02:49)
 >>>
 >>>> Add a property called clock-indices to allow clock-output-names
@@ -30,15 +30,21 @@ On 02/03/14 22:37, Laurent Pinchart wrote:
 >>> cleanly for me.
 >>>
 >>> Can Laurent's patches and Ben's #2 be rebased and sent together as a PR?
->>> I'll leave it up to you guys to figure out the backwards compatibility
->>> issue with Ben's patch #3.
 >>
->> Thanks, I've only just found this in my mailbox.
->> Is there still any actions I need to take?
+>> Sure. I've pushed my pending patches to
+>>
+>>          git://linuxtv.org/pinchartl/fbdev.git clocks/next/drivers
+>>
+>> Ben, could you please rebase your patch on top of it and repost ? I'll then
+>> send a pull request to Mike.
 >
-> I've sent a pull request for my patches only. Could you please rebase yours ?
+> FYI, I've just pushed a new clk-next branch based on -rc3 out to my
+> linaro remote. You don't need to rebase but it's there if you want to
+> put your stuff on top of the latest.
 
-Ok, will go and see if I can find it.
+Thanks. Will look at re-doing the reneasas clock driver as soon as
+we can get some discussion on the best way to deal with the merging.
+
 
 -- 
 Ben Dooks				http://www.codethink.co.uk/
