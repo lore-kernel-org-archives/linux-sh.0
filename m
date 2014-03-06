@@ -1,37 +1,34 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 27 Mar 2014 09:26:56 +0000
-Subject: [PATCH v6 10/10] ARM: shmobile: koelsch: Add PCIe to defconfig
-Message-Id: <1395912416-20087-11-git-send-email-phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 06 Mar 2014 11:32:22 +0000
+Subject: [PATCH V2 02/12] ARM: shmobile: r7s72100: document MSTP clock support
+Message-Id: <1394105552-9744-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
+References: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-v6:
- - Add shmobile to subject
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/configs/koelsch_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 86faab5..ec14547 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -15,6 +15,9 @@ CONFIG_MACH_KOELSCH=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_MSI=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_NR_CPUS=8
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index a6a352c2771e..395b2e8ecfd1 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
 -- 
 1.9.0
 
