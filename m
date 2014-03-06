@@ -1,145 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:18 +0000
-Subject: [PATCH 11/22] clocksource: sh_mtu2: Replace hardcoded register values with macros
-Message-Id: <1393955249-18736-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Mar 2014 04:44:34 +0000
+Subject: [PATCH 6/7] ARM: shmobile: Add SDHI devices to r8a7791 DTSI
+Message-Id: <b7ed8a0dd4f1d41464c3ab050c3688c4a7fc15b3.1394080829.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Define symbolic macros for all used registers bits.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add SDHI0, SDHI1 and SDHI2 to the r8a7791 DTSI.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_mtu2.c | 98 ++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 92 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 45e1e85..2cf0048 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -67,6 +67,88 @@ static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
- #define TCNT 5 /* channel register */
- #define TGR  6 /* channel register */
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 0852734..b007f9e 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -246,6 +246,33 @@
+ 		#gpio-range-cells = <3>;
+ 	};
  
-+#define TCR_CCLR_NONE		(0 << 5)
-+#define TCR_CCLR_TGRA		(1 << 5)
-+#define TCR_CCLR_TGRB		(2 << 5)
-+#define TCR_CCLR_SYNC		(3 << 5)
-+#define TCR_CCLR_TGRC		(5 << 5)
-+#define TCR_CCLR_TGRD		(6 << 5)
-+#define TCR_CCLR_MASK		(7 << 5)
-+#define TCR_CKEG_RISING		(0 << 3)
-+#define TCR_CKEG_FALLING	(1 << 3)
-+#define TCR_CKEG_BOTH		(2 << 3)
-+#define TCR_CKEG_MASK		(3 << 3)
-+/* Values 4 to 7 are channel-dependent */
-+#define TCR_TPSC_P1		(0 << 0)
-+#define TCR_TPSC_P4		(1 << 0)
-+#define TCR_TPSC_P16		(2 << 0)
-+#define TCR_TPSC_P64		(3 << 0)
-+#define TCR_TPSC_CH0_TCLKA	(4 << 0)
-+#define TCR_TPSC_CH0_TCLKB	(5 << 0)
-+#define TCR_TPSC_CH0_TCLKC	(6 << 0)
-+#define TCR_TPSC_CH0_TCLKD	(7 << 0)
-+#define TCR_TPSC_CH1_TCLKA	(4 << 0)
-+#define TCR_TPSC_CH1_TCLKB	(5 << 0)
-+#define TCR_TPSC_CH1_P256	(6 << 0)
-+#define TCR_TPSC_CH1_TCNT2	(7 << 0)
-+#define TCR_TPSC_CH2_TCLKA	(4 << 0)
-+#define TCR_TPSC_CH2_TCLKB	(5 << 0)
-+#define TCR_TPSC_CH2_TCLKC	(6 << 0)
-+#define TCR_TPSC_CH2_P1024	(7 << 0)
-+#define TCR_TPSC_CH34_P256	(4 << 0)
-+#define TCR_TPSC_CH34_P1024	(5 << 0)
-+#define TCR_TPSC_CH34_TCLKA	(6 << 0)
-+#define TCR_TPSC_CH34_TCLKB	(7 << 0)
-+#define TCR_TPSC_MASK		(7 << 0)
++	sdhi0: sd@ee100000 {
++		compatible = "renesas,sdhi-r8a7791";
++		reg = <0 0xee100000 0 0x200>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
++		status = "disabled";
++	};
 +
-+#define TMDR_BFE		(1 << 6)
-+#define TMDR_BFB		(1 << 5)
-+#define TMDR_BFA		(1 << 4)
-+#define TMDR_MD_NORMAL		(0 << 0)
-+#define TMDR_MD_PWM_1		(2 << 0)
-+#define TMDR_MD_PWM_2		(3 << 0)
-+#define TMDR_MD_PHASE_1		(4 << 0)
-+#define TMDR_MD_PHASE_2		(5 << 0)
-+#define TMDR_MD_PHASE_3		(6 << 0)
-+#define TMDR_MD_PHASE_4		(7 << 0)
-+#define TMDR_MD_PWM_SYNC	(8 << 0)
-+#define TMDR_MD_PWM_COMP_CREST	(13 << 0)
-+#define TMDR_MD_PWM_COMP_TROUGH	(14 << 0)
-+#define TMDR_MD_PWM_COMP_BOTH	(15 << 0)
-+#define TMDR_MD_MASK		(15 << 0)
++	sdhi1: sd@ee140000 {
++		compatible = "renesas,sdhi-r8a7791";
++		reg = <0 0xee140000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SDHI1>;
++		status = "disabled";
++	};
 +
-+#define TIOC_IOCH(n)		((n) << 4)
-+#define TIOC_IOCL(n)		((n) << 0)
-+#define TIOR_OC_RETAIN		(0 << 0)
-+#define TIOR_OC_0_CLEAR		(1 << 0)
-+#define TIOR_OC_0_SET		(2 << 0)
-+#define TIOR_OC_0_TOGGLE	(3 << 0)
-+#define TIOR_OC_1_CLEAR		(5 << 0)
-+#define TIOR_OC_1_SET		(6 << 0)
-+#define TIOR_OC_1_TOGGLE	(7 << 0)
-+#define TIOR_IC_RISING		(8 << 0)
-+#define TIOR_IC_FALLING		(9 << 0)
-+#define TIOR_IC_BOTH		(10 << 0)
-+#define TIOR_IC_TCNT		(12 << 0)
-+#define TIOR_MASK		(15 << 0)
++	sdhi2: sd@ee160000 {
++		compatible = "renesas,sdhi-r8a7791";
++		reg = <0 0xee160000 0 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_SDHI2>;
++		status = "disabled";
++	};
 +
-+#define TIER_TTGE		(1 << 7)
-+#define TIER_TTGE2		(1 << 6)
-+#define TIER_TCIEU		(1 << 5)
-+#define TIER_TCIEV		(1 << 4)
-+#define TIER_TGIED		(1 << 3)
-+#define TIER_TGIEC		(1 << 2)
-+#define TIER_TGIEB		(1 << 1)
-+#define TIER_TGIEA		(1 << 0)
-+
-+#define TSR_TCFD		(1 << 7)
-+#define TSR_TCFU		(1 << 5)
-+#define TSR_TCFV		(1 << 4)
-+#define TSR_TGFD		(1 << 3)
-+#define TSR_TGFC		(1 << 2)
-+#define TSR_TGFB		(1 << 1)
-+#define TSR_TGFA		(1 << 0)
-+
- static unsigned long mtu2_reg_offs[] = {
- 	[TCR] = 0,
- 	[TMDR] = 1,
-@@ -150,13 +232,17 @@ static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
- 	rate = clk_get_rate(ch->mtu->clk) / 64;
- 	periodic = (rate + HZ/2) / HZ;
- 
--	/* "Periodic Counter Operation" */
--	sh_mtu2_write(ch, TCR, 0x23); /* TGRA clear, divide clock by 64 */
--	sh_mtu2_write(ch, TIOR, 0);
-+	/*
-+	 * "Periodic Counter Operation"
-+	 * Clear on TGRA compare match, divide clock by 64.
-+	 */
-+	sh_mtu2_write(ch, TCR, TCR_CCLR_TGRA | TCR_TPSC_P64);
-+	sh_mtu2_write(ch, TIOR, TIOC_IOCH(TIOR_OC_0_CLEAR) |
-+		      TIOC_IOCL(TIOR_OC_0_CLEAR));
- 	sh_mtu2_write(ch, TGR, periodic);
- 	sh_mtu2_write(ch, TCNT, 0);
--	sh_mtu2_write(ch, TMDR, 0);
--	sh_mtu2_write(ch, TIER, 0x01);
-+	sh_mtu2_write(ch, TMDR, TMDR_MD_NORMAL);
-+	sh_mtu2_write(ch, TIER, TIER_TGIEA);
- 
- 	/* enable channel */
- 	sh_mtu2_start_stop_ch(ch, 1);
-@@ -182,7 +268,7 @@ static irqreturn_t sh_mtu2_interrupt(int irq, void *dev_id)
- 
- 	/* acknowledge interrupt */
- 	sh_mtu2_read(ch, TSR);
--	sh_mtu2_write(ch, TSR, 0xfe);
-+	sh_mtu2_write(ch, TSR, ~TSR_TGFA);
- 
- 	/* notify clockevent layer */
- 	ch->ced.event_handler(&ch->ced);
+ 	scifa0: serial@e6c40000 {
+ 		compatible = "renesas,scifa-r8a7791", "renesas,scifa";
+ 		reg = <0 0xe6c40000 0 64>;
 -- 
-1.8.3.2
+1.8.5.2
 
