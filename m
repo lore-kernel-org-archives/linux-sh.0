@@ -1,35 +1,36 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 17 Mar 2014 07:37:03 +0000
-Subject: Re: [GIT PULL 0/9] Renesas ARM Based SoC Clock Updates for v3.15
-Message-Id: <20140317073703.GF21917@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 06 Mar 2014 04:44:33 +0000
+Subject: [PATCH 5/7] ARM: shmobile: r8a7791: fix clock index for i2c5
+Message-Id: <1f662dde5c287c33da84d4aaaec8a75f2aab8ee7.1394080829.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393401266.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 26, 2014 at 04:57:33PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd, Hi Kevin,
-> 
-> please consider these Renesas ARM based SoC clock updates for v3.15.
-> 
-> As requested these have been split out from SoC updates.
-> 
-> This pull request is based on "Renesas ARM based SoC updates for v3.15",
-> tagged as tags/renesas-soc-for-v3.15, which you have previously pulled.
-> 
-> 
-> The following changes since commit 012a7069b5a10a0851584d71a1facdc40a972319:
-> 
->   ARM: shmobile: r8a7790: Add PCI USB host clock support (2014-02-04 10:25:03 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.15
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Thanks, merged into next/drivers.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 45c369d..0852734 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -743,7 +743,7 @@
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD
+-				R8A7791_CLK_I2C4 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
++				R8A7791_CLK_I2C5 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
+ 				R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+ 			>;
+ 			clock-output-names -- 
+1.8.5.2
 
--Olof
