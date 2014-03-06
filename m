@@ -1,33 +1,17 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Thu, 06 Mar 2014 09:33:16 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Thu, 06 Mar 2014 17:41:12 +0000
 Subject: Re: [PATCH v2 1/6] ARM: dts: tegra: add PCIe interrupt mapping properties
-Message-Id: <1394098396.4535.1.camel@weser.hi.pengutronix.de>
+Message-Id: <5318B338.8000709@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
  <1394025951-32438-2-git-send-email-l.stach@pengutronix.de>
- <53179D5D.4070303@wwwdotorg.org>
-In-Reply-To: <53179D5D.4070303@wwwdotorg.org>
+In-Reply-To: <1394025951-32438-2-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Am Mittwoch, den 05.03.2014, 14:55 -0700 schrieb Stephen Warren:
-> On 03/05/2014 06:25 AM, Lucas Stach wrote:
-> > Those are defined by the common PCI binding.
-> 
-> It sounds like there's no dependency between pathces 1/6 and 2/6, so I
-> should apply 1/6 to the Tegra tree, and Bjorn apply 2/6 to the PCI tree?
+On 03/05/2014 06:25 AM, Lucas Stach wrote:
+> Those are defined by the common PCI binding.
 
-Right, that's why I split the patches between driver and DT changes. As
-this change should be fully backward compatible to old DTs there
-shouldn't be any harm.
-
-Regards,
-Lucas
--- 
-Pengutronix e.K.                           | Lucas Stach                 |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
-
+I've applied this to Tegra's for-3.15/dt branch.
