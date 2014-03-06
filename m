@@ -1,50 +1,103 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 06 Mar 2014 11:24:57 +0000
-Subject: Re: [PATCH v3 1/3] DMA: shdma: Fix warnings due to improper casts and printk formats
-Message-Id: <2961845.2oE3ehzAEj@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 06 Mar 2014 11:32:31 +0000
+Subject: [PATCH V2 11/12] ARM: shmobile: r7s72100: add spi clocks to dtsi
+Message-Id: <1394105552-9744-12-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1386765786-1926-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Vinod,
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-On Thursday 06 March 2014 11:38:05 Vinod Koul wrote:
-> On Tue, Mar 04, 2014 at 06:07:55PM +0100, Laurent Pinchart wrote:
-> > On Tuesday 04 March 2014 16:50:29 Koul, Vinod wrote:
-> > > On 4 Mar 2014 17:11, Laurent Pinchart wrote:
-> > > > On Tuesday 21 January 2014 13:10:30 Laurent Pinchart wrote:
-> > > > > On Tuesday 07 January 2014 16:08:37 Laurent Pinchart wrote:
-> > > > > > Hello,
-> > > > > > 
-> > > > > > Ping ? Could this patch series (with patches v3.1 1/3, v3 2/3 and
-> > > > > > v3 3/3) be applied for v3.14 ? Same question for "DMA: shdma:
-> > > > > > Enable driver compilation with COMPILE_TEST".
-> > > > > 
-> > > > > PING ?
-> > > > 
-> > > > HELLO ? ANYONE THERE ? This is v3.14 material.
-> > > 
-> > > Sorry looks like I missed out earlier... Am just back from vacation,
-> > > give me few days to go thru this and do the needful...
-> > 
-> > No worries, and thanks for handling this. I'm glad to know you're still
-> > alive :-)
-> 
-> Well i shouldnt have missed this earlier!
-> 
-> Anyway I have applied these. Since these are fixing warning I am going to
-> push them to 3.15. Sending warnings fixes to Linus after rc4 isn't a good
-> idea. Sorry bad timing :(
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ arch/arm/boot/dts/r7s72100.dtsi            | 18 ++++++++++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h |  7 +++++++
+ 2 files changed, 25 insertions(+)
 
-No worries. Given that the COMPILE_TEST patch didn't go in v3.14 the warning 
-fixes can be delayed until 3.15.
-
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 7d2f12ede1f7..d074ae9a684d 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -129,6 +129,19 @@
+ 			>;
+ 			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
+ 		};
++
++		mstp10_clks: mstp10_clks@fcfe043c {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe043c 4>;
++			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
++				 <&p1_clk>;
++			renesas,clock-indices = <
++				R7S72100_CLK_SPI0 R7S72100_CLK_SPI1 R7S72100_CLK_SPI2 R7S72100_CLK_SPI3
++				R7S72100_CLK_SPI4
++			>;
++			clock-output-names = "spi0", "spi1", "spi2", "spi3", "spi4";
++		};
+ 	};
+ 
+ 	cpus {
+@@ -326,6 +339,7 @@
+ 			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI0>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -339,6 +353,7 @@
+ 			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI1>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -352,6 +367,7 @@
+ 			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI2>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -365,6 +381,7 @@
+ 			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI3>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -378,6 +395,7 @@
+ 			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI4>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+index 46fab31d070a..fa9132bd5b35 100644
+--- a/include/dt-bindings/clock/r7s72100-clock.h
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -28,4 +28,11 @@
+ #define R7S72100_CLK_I2C2	5
+ #define R7S72100_CLK_I2C3	4
+ 
++/* MSTP10 */
++#define R7S72100_CLK_SPI0	7
++#define R7S72100_CLK_SPI1	6
++#define R7S72100_CLK_SPI2	5
++#define R7S72100_CLK_SPI3	4
++#define R7S72100_CLK_SPI4	3
++
+ #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.0
 
