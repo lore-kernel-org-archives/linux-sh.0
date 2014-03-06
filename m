@@ -1,97 +1,76 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 27 Mar 2014 20:47:39 +0000
-Subject: [PATCH 4/7] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
-Message-Id: <1395953262-4290-5-git-send-email-geert@linux-m68k.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 06 Mar 2014 11:32:20 +0000
+Subject: [PATCH V2 00/12] CCF support for Renesas r7s72100
+Message-Id: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395953262-4290-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1395953262-4290-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
----
- arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+This series moves the r7s72100 platfrom from the legacy clock implementation to
+the common clock framework.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc9e5cb..b0ddf58ac872 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -113,6 +113,7 @@
- 		gpio-ranges = <&pfc 0 0 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
- 	};
- 
- 	gpio1: gpio@e6051000 {
-@@ -124,6 +125,7 @@
- 		gpio-ranges = <&pfc 0 32 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
- 	};
- 
- 	gpio2: gpio@e6052000 {
-@@ -135,6 +137,7 @@
- 		gpio-ranges = <&pfc 0 64 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
- 	};
- 
- 	gpio3: gpio@e6053000 {
-@@ -146,6 +149,7 @@
- 		gpio-ranges = <&pfc 0 96 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
- 	};
- 
- 	gpio4: gpio@e6054000 {
-@@ -157,6 +161,7 @@
- 		gpio-ranges = <&pfc 0 128 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
- 	};
- 
- 	gpio5: gpio@e6055000 {
-@@ -168,6 +173,7 @@
- 		gpio-ranges = <&pfc 0 160 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
- 	};
- 
- 	thermal@e61f0000 {
-@@ -757,15 +763,20 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
-+			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
- 				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
-+				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
-+				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
- 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
- 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
- 				R8A7790_CLK_I2C0
- 			>;
- 			clock-output-names +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
- 				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
- 	};
+This series has been tested with the renesas-devel-v3.14-rc4-20140227 tag. It
+has a build dependency [1] because it uses the clkdev workaround. If you want
+to boot into a console, you also have a runtime dependency [2]. A git branch
+can be found here:
+
+Patches 1-5 is the minimal set to activate CCF and get the board booting into a
+console. Patches 6-8 add SCIF support, 9+10 I2C support, and 11+12 SPI support.
+
+Changes since V1:
+
+Patches 2 and 6-12 are new. Patches 1,3,4 got updates, see the changelog there.
+
+Patch 1 should probably go via clock tree (it has no dependencies). The rest
+via shmobile. Please apply.
+
+   Wolfram
+
+PS: A tree can be found here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r7s-ccf
+
+[1] http://www.spinics.net/lists/arm-kernel/msg310279.html (ARM: shmobile: Introduce shmobile_clk_workaround())
+[2] http://lkml.org/lkml/2014/2/20/205 ([PATCH V7 0/3] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits)
+
+
+Wolfram Sang (12):
+  clk: shmobile: add CPG driver for rz-platforms
+  ARM: shmobile: r7s72100: document MSTP clock support
+  ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
+  ARM: shmobile: r7s72100: use workaround for non DT-clocks
+  ARM: shmobile: r7s72100: add scif nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: activate scif2 for console output
+  ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy
+    support
+  ARM: shmobile: r7s72100: add i2c clocks to dtsi
+  ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock
+    support
+  ARM: shmobile: r7s72100: add spi clocks to dtsi
+  ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock
+    support
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,rz-cpg-clocks.txt       |  29 +++
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  12 ++
+ arch/arm/boot/dts/r7s72100.dtsi                    | 223 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-genmai-reference.c    |  14 +-
+ arch/arm/mach-shmobile/board-genmai.c              |  44 ++++
+ arch/arm/mach-shmobile/clock-r7s72100.c            |   9 -
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  43 ----
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-rz.c                      | 113 +++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h         |  38 ++++
+ 11 files changed, 472 insertions(+), 55 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-rz.c
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
+
 -- 
-1.7.9.5
+1.9.0
 
