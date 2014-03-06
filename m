@@ -1,52 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 09:00:00 +0000
-Subject: [PATCH v4 17/19] ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
-Message-Id: <1394701202-25823-18-git-send-email-horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 06 Mar 2014 18:01:22 +0000
+Subject: [PATCH 4/9] usb: phy: check for of_node when getting phy
+Message-Id: <1394128887-4197-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Let the multiplatform Marzen support boot with the legacy DTS for
-Marzen as well as the Marzen reference DTS.
+If the PHY is specified by usb-phy handle in the device tree, then
+usb_get_phy_dev() should use the device tree specified PHY. This
+fixes the issue where device-tree booted Renesas SoCs fail to find
+the PHY for the USB controllers.
 
-Based on work for the Koelsch board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/Makefile                      | 2 +-
- arch/arm/mach-shmobile/board-marzen-reference.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+Cc: linux-usb@vger.kernel.org
+Cc: Felipe Balbi <balbi@ti.com>
+---
+ drivers/usb/phy/phy.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 69cd6b7..cbec54c 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -262,7 +262,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
--	r8a7779-marzen-reference.dtb
-+	r8a7779-marzen.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
- 	socfpga_cyclone5_sockit.dtb \
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 5823c83..741a076 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -68,6 +68,7 @@ static void __init marzen_init(void)
- }
+diff --git a/drivers/usb/phy/phy.c b/drivers/usb/phy/phy.c
+index 8afa813..92b3c09 100644
+--- a/drivers/usb/phy/phy.c
++++ b/drivers/usb/phy/phy.c
+@@ -224,6 +224,29 @@ struct usb_phy *usb_get_phy_dev(struct device *dev, u8 index)
+ 	struct usb_phy	*phy = NULL;
+ 	unsigned long	flags;
  
- static const char *marzen_boards_compat_dt[] __initdata = {
-+	"renesas,marzen",
- 	"renesas,marzen-reference",
- 	NULL,
- };
++	if (dev->of_node) {
++		struct device_node *node;
++
++		node = of_parse_phandle(dev->of_node, "usb-phy", index);
++		if (!node) {
++			dev_dbg(dev, "failed to get %s phandle\n",
++				dev->of_node->full_name);
++			return ERR_PTR(-ENODEV);
++		}
++
++		spin_lock_irqsave(&phy_lock, flags);
++
++		phy = __of_usb_find_phy(node);
++		if (IS_ERR(phy) || !try_module_get(phy->dev->driver->owner)) {
++			phy = ERR_PTR(-EPROBE_DEFER);
++			of_node_put(node);
++			goto err0;
++		}
++
++		get_device(phy->dev);
++		goto err0;
++	}
++
+ 	spin_lock_irqsave(&phy_lock, flags);
+ 
+ 	phy = __usb_find_phy_dev(dev, &phy_bind_list, index);
 -- 
-1.8.5.2
+1.9.0
 
