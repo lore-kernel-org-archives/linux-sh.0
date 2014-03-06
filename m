@@ -1,65 +1,144 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:20 +0000
-Subject: [PATCH 13/22] clocksource: sh_mtu2: Hardcode MTU2 clock event rating to 200
-Message-Id: <1393955249-18736-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 06 Mar 2014 11:32:26 +0000
+Subject: [PATCH V2 06/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
+Message-Id: <1394105552-9744-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All boards use clock event ratings of 200 for the MTU2, hardcode it in
-the driver.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/clocksource/sh_mtu2.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r7s72100.dtsi | 104 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 104 insertions(+)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 702ce60..14cc7b6 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -323,14 +323,14 @@ static void sh_mtu2_clock_event_resume(struct clock_event_device *ced)
- }
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 2429b5be2e56..a926f61f7f69 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -23,6 +23,14 @@
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
++		serial0 = &scif0;
++		serial1 = &scif1;
++		serial2 = &scif2;
++		serial3 = &scif3;
++		serial4 = &scif4;
++		serial5 = &scif5;
++		serial6 = &scif6;
++		serial7 = &scif7;
+ 		spi0 = &spi0;
+ 		spi1 = &spi1;
+ 		spi2 = &spi2;
+@@ -200,6 +208,102 @@
+ 		status = "disabled";
+ 	};
  
- static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
--					const char *name, unsigned long rating)
-+					const char *name)
- {
- 	struct clock_event_device *ced = &ch->ced;
- 	int ret;
- 
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
--	ced->rating = rating;
-+	ced->rating = 200;
- 	ced->cpumask = cpu_possible_mask;
- 	ced->set_mode = sh_mtu2_clock_event_mode;
- 	ced->suspend = sh_mtu2_clock_event_suspend;
-@@ -351,10 +351,10 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
- }
- 
- static int sh_mtu2_register(struct sh_mtu2_channel *ch, const char *name,
--			    unsigned long clockevent_rating)
-+			    bool clockevent)
- {
--	if (clockevent_rating)
--		sh_mtu2_register_clockevent(ch, name, clockevent_rating);
-+	if (clockevent)
-+		sh_mtu2_register_clockevent(ch, name);
- 
- 	return 0;
- }
-@@ -375,7 +375,7 @@ static int sh_mtu2_setup_channel(struct sh_mtu2_channel *ch,
- 	}
- 
- 	return sh_mtu2_register(ch, dev_name(&mtu->pdev->dev),
--				cfg->clockevent_rating);
-+				cfg->clockevent_rating != 0);
- }
- 
- static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
++	scif0: serial@e8007000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007000 64>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 191 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e8007800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007800 64>;
++		interrupts = <0 194 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 195 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif2: serial@e8008000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008000 64>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif3: serial@e8008800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008800 64>;
++		interrupts = <0 202 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 203 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif4: serial@e8009000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009000 64>;
++		interrupts = <0 206 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 207 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif5: serial@e8009800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009800 64>;
++		interrupts = <0 210 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 211 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif6: serial@e800a000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a000 64>;
++		interrupts = <0 214 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 215 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif7: serial@e800a800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a800 64>;
++		interrupts = <0 218 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 219 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	spi0: spi@e800c800 {
+ 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
+ 		reg = <0xe800c800 0x24>;
 -- 
-1.8.3.2
+1.9.0
 
