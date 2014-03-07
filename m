@@ -1,60 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 02 Mar 2014 20:59:11 +0000
-Subject: Re: [PATCH 1/2] iommu: Add driver for Renesas VMSA-compatible IPMMU
-Message-Id: <9614296.npf9XYVJ8Q@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 07 Mar 2014 02:38:16 +0000
+Subject: Re: [PATCH 00/12] ARM: shmobile: Rework include path for SoC files
+Message-Id: <20140307023813.GG11702@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393601099-4413-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1393601099-4413-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdUcrANSqUmS6QJkcms_bU=aYLBXjBUL5ep=k0eQxYzw6g@mail.gmail.com>
-In-Reply-To: <CAMuHMdUcrANSqUmS6QJkcms_bU=aYLBXjBUL5ep=k0eQxYzw6g@mail.gmail.com>
+References: <20140224054058.1143.14096.sendpatchset@w520>
+In-Reply-To: <20140224054058.1143.14096.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, Linux-sh list <linux-sh@vger.kernel.org>, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
-
-Thank you for the review.
-
-On Friday 28 February 2014 18:48:22 Geert Uytterhoeven wrote:
-> On Fri, Feb 28, 2014 at 4:24 PM, Laurent Pinchart wrote:
-> > +/*
-> > + * VMSA that states in section B3.6.3 "Control of Secure or Non-secure
-> > memory
->
-> VMSA states
+On Mon, Feb 24, 2014 at 02:40:58PM +0900, Magnus Damm wrote:
+> ARM: shmobile: Rework include path for SoC files
 > 
-> > + * access, Long-descriptor format" that the NStable bit being set in a
-> > table + * descriptor will result in the NStable and NS bits of all child
-> > entries being + * ignored and considered as being set. The IPMMU seems
-> > not to comply with this, + * as it generates a secure access page fault
-> > if any of the NStable and NS bits + * isn't set when running in
-> > non-secure mode.
-> > + */
-> > 
-> > +       /*
-> > +        * TTBCR
-> > +        * We use long descriptor, with inner-shareable WBWA tables and
-> > allocate
->
-> descriptors
+> [PATCH 01/12] ARM: shmobile: Add temporary include workaround
+> [PATCH 02/12] ARM: shmobile: Rework include path for sh7372
+> [PATCH 03/12] ARM: shmobile: Rework include path for sh73a0
+> [PATCH 04/12] ARM: shmobile: Rework include path for EMEV2
+> [PATCH 05/12] ARM: shmobile: Rework include path for r8a7740
+> [PATCH 06/12] ARM: shmobile: Rework include path for r8a7778
+> [PATCH 07/12] ARM: shmobile: Rework include path for r8a7779
+> [PATCH 08/12] ARM: shmobile: Rework include path for r8a7790
+> [PATCH 09/12] ARM: shmobile: Rework include path for r8a7791
+> [PATCH 10/12] ARM: shmobile: Rework include path for r8a73a4
+> [PATCH 11/12] ARM: shmobile: Rework include path for r7s72100
+> [PATCH 12/12] ARM: shmobile: Rework include path for common bits
 > 
-> > +        * the whole 32-bit VA space to TTBR0.
-> > +        */
-> > 
-> > +       /*
-> > +        * Clear the error status flags. Unlike traditionnal interrupt
-> > flag
+> Start converting the mach-shmobile subarchitecture from <mach/something.h>
+> to "something.h". This series covers shared code base and SoC code,
+> however actual header files are not moved yet. Upcoming series that
+> depend on this one will have to convert board code as well. When SoCs
+> code and board code have been converted then actual header files can
+> be moved and temporary include path workarounds can be removed.
 > 
-> traditional
-> 
-> Sorry, only comments on the comments ;-)
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-I'll of course assume this means that the driver is perfect ;-)
-
-I'll fix all this in v2.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks, I have queued this up.
