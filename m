@@ -1,54 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Mar 2014 08:20:35 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7779: Use clks as MSTP007 parent
-Message-Id: <2475718.tNWNF9Ap5s@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 07 Mar 2014 00:24:22 +0000
+Subject: [ANNOUNCE] Renesas Tree is Closed for v3.15
+Message-Id: <20140307002422.GB11702@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au> <1394783739-29168-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394783739-29168-2-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+References: <20131230013640.GA1944@verge.net.au>
+In-Reply-To: <20131230013640.GA1944@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: Mark Brown <broonie-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hi,
 
-Thank you for the patch.
+The Renesas tree is now closed for v3.15.
 
-On Friday 14 March 2014 16:55:38 Simon Horman wrote:
-> According to the documentation the parent clock of
-> MSTP007 should be clks not clkp.
-> 
-> Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+I am not planning to accept any more patches for v3.15 other than fixes.
+And I am not planning to send any more pull-request for v3.15 other than
+fixes.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+I have tagged renesas-next-v3.14-rc1-20140306 with the
+branches that I have either already sent pull requests for or fixes that I
+have queued up.
 
-> 
-> ---
-> 
-> v2
-> * First post, as suggested by Laurent Pinchart
-> ---
->  arch/arm/mach-shmobile/clock-r8a7778.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c
-> b/arch/arm/mach-shmobile/clock-r8a7778.c index 2009a9b..9989b1b 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7778.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-> @@ -170,7 +170,7 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP010] = SH_CLK_MSTP32(&p_clk, MSTPCR0, 10, 0), /* SSI2 */
->  	[MSTP009] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  9, 0), /* SSI3 */
->  	[MSTP008] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  8, 0), /* SRU */
-> -	[MSTP007] = SH_CLK_MSTP32(&p_clk, MSTPCR0,  7, 0), /* HSPI */
-> +	[MSTP007] = SH_CLK_MSTP32(&s_clk, MSTPCR0,  7, 0), /* HSPI */
->  };
-> 
->  static struct clk_lookup lookups[] = {
+I do not plan to update this again until after v3.15-rc1 is released.
 
--- 
-Regards,
 
-Laurent Pinchart
+I have tagged renesas-devel-v3.14-rc5-20140307 which is based on
+renesas-next-v3.14-rc1-20140306 and v3.14-rc5. It includes a small number
+of patches queued up for v3.16.
 
+I will continue queuing up patches for v3.15 as they become ready.
+
+
+I realise that there are most likely patches that people anticipated would
+make it into v3.15 but have not made the cut. I sympathise with this
+but arm-soc has a cut-off of v3.14-rc6 and this means I have to have
+things queued up well before then. Your understanding is appreciated.
