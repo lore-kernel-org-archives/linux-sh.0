@@ -1,58 +1,99 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Mar 2014 22:39:46 +0000
-Subject: Re: [PATCH 1/2] clk: shmobile: clk-mstp: change to using clock-indices
-Message-Id: <20140311223946.GB22767@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 07 Mar 2014 16:55:19 +0000
+Subject: serial core: crash / race condition on unbind
+Message-Id: <CAMuHMdVV_NrQ3PPJwPNx7MoM9TWLdk02d+10zNipNcC7VC0HAA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
- <1394196400-17112-2-git-send-email-ben.dooks@codethink.co.uk>
- <20140311051605.GB3649@verge.net.au>
- <531EEE6A.3080802@codethink.co.uk>
-In-Reply-To: <531EEE6A.3080802@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-serial@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Mar 11, 2014 at 11:07:22AM +0000, Ben Dooks wrote:
-> On 11/03/14 05:16, Simon Horman wrote:
-> >On Fri, Mar 07, 2014 at 12:46:39PM +0000, Ben Dooks wrote:
-> >>With the addition of clock-indices, we need to change the renesas
-> >>clock implementation to use these instead of the local definition.
-> >>
-> >>Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> >>---
-> >>  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 +-
-> >>  drivers/clk/shmobile/clk-mstp.c                                     | 2 +-
-> >>  2 files changed, 2 insertions(+), 2 deletions(-)
-> >>
-> >>diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> >>index 5992dce..02a25d9 100644
-> >>--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> >>+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> >>@@ -43,7 +43,7 @@ Example
-> >>  		clock-output-names > >>  			"tpu0", "mmcif1", "sdhi3", "sdhi2",
-> >>  			 "sdhi1", "sdhi0", "mmcif0";
-> >>-		renesas,clock-indices = <
-> >>+		clock-indices = <
-> >>  			R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
-> >>  			R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
-> >>  			R8A7790_CLK_MMCIF0
-> >>diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
-> >>index 42d5912..95a2aa7 100644
-> >>--- a/drivers/clk/shmobile/clk-mstp.c
-> >>+++ b/drivers/clk/shmobile/clk-mstp.c
-> >>@@ -197,7 +197,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
-> >>  			continue;
-> >>
-> >>  		parent_name = of_clk_get_parent_name(np, i);
-> >>-		ret = of_property_read_u32_index(np, "renesas,clock-indices", i,
-> >>+		ret = of_property_read_u32_index(np, "clock-indices", i,
-> >>  						 &clkidx);
-> >>  		if (parent_name = NULL || ret < 0)
-> >>  			break;
-> >
-> >Won't this break compatibility with existing DTBs?
-> 
-> That was the point of patch 2.
+When unbinding a serial driver, uart_remove_one_port() clears
+uart_state.uart_port:
 
-Thanks, sorry for missing that.
+        state->uart_port = NULL;
+
+If the serial port is still in use (e.g. by getty), uart_close() will be
+called later:
+
+        static void uart_close(struct tty_struct *tty, struct file *filp)
+        {
+                struct uart_state *state = tty->driver_data;
+                struct uart_port *uport;
+
+                ...
+
+                if (!state)
+                        return;
+
+                uport = state->uart_port;
+
+uport is NULL
+
+                ...
+
+                pr_debug("uart_close(%d) called\n", uport->line);
+
+If debugging is enabled, it will already crash here while dereferencing uport
+(this one is easily fixed)
+
+                if (tty_port_close_start(port, tty, filp) = 0)
+                        return;
+
+                ...
+
+                uart_flush_buffer(tty);
+
+uart_flush_buffer() will try to obtain the port's spinlock:
+
+        static void uart_flush_buffer(struct tty_struct *tty)
+        {
+                struct uart_state *state = tty->driver_data;
+                struct uart_port *port;
+
+                ...
+
+                port = state->uart_port;
+
+port is NULL
+
+                ...
+
+                spin_lock_irqsave(&port->lock, flags);
+
+Crash!!
+
+It doesn't always crash, though.
+
+Sometimes uart_close() returns after the tty_port_close_start() above,
+without a crash (bypassing e.g. the call to uart_change_pm() :-(
+Sometimes it crashs in uart_chars_in_buffer(), which also tries to take the
+spinlock:
+    tty_port_close_start()
+        tty_wait_until_sent_from_close()
+            tty_wait_until_sent()
+                tty_chars_in_buffer()
+                    uart_chars_in_buffer()
+                        spin_lock_irqsave(&state->uart_port->lock, flags);
+
+I'm not that familiar with the internals of the serial core. Perhaps
+uart_close()
+should return early if uport is NULL, just like if state is NULL?
+However, that means the uart_change_pm(state, UART_PM_STATE_OFF)
+is bypassed again.
+
+This is with sh-sci, but I don't think the driver matters.
+
+Thanks for your comments and suggestions!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
