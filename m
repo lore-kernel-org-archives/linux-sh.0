@@ -1,50 +1,69 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:48:28 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 07 Mar 2014 16:48:52 +0000
 Subject: Re: [PATCH V3 06/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
-Message-Id: <20140307164828.GK28943@katana>
+Message-Id: <1588047.pDivzA3PtA@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="lildS9pRFgpM/xzO"
+Content-Type: multipart/mixed; boundary="nextPart13154847.QyJKWzLJLR"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
  <14375215.AZLobqST6Y@avalon> <20140307164427.GI28943@katana>
- <1588047.pDivzA3PtA@avalon>
-In-Reply-To: <1588047.pDivzA3PtA@avalon>
+In-Reply-To: <20140307164427.GI28943@katana>
 To: linux-arm-kernel@lists.infradead.org
 
 
---lildS9pRFgpM/xzO
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart13154847.QyJKWzLJLR
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
+Hi Wolfram,
 
-> When you say standard pattern, do you mean the practice followed by most =
-=2Edts=20
-> in mainline, or is there an actual document that recommends this pattern ?
+On Friday 07 March 2014 17:44:27 Wolfram Sang wrote:
+> > > > As port usages is board specific, shouldn't this be moved to th=
+e board
+> > > > .dts file, with only serial0 =3D &scif2 ?
+> > >=20
+> > > Nope, the intention of these aliases is to have a consistent numb=
+ering
+> > > of SCIF cores, similar to platform.dev_id.
+> >=20
+> > But do we want that ? Isn't it better from a user point of view to =
+have
+> > ttySC0 regardless of whether scif2 or scif3 is used when the board =
+has a
+> > single serial port only ?
+>=20
+> Some prefer this, some that. The current standard pattern is what I
+> implemented. I think consistency makes sense for my series. If you li=
+ke to
+> prefer another pattern, please start a discussion at the devicetree l=
+ist.
 
-I mean the first. There might be the latter, don't know.
+When you say standard pattern, do you mean the practice followed by mos=
+t .dts=20
+in mainline, or is there an actual document that recommends this patter=
+n ?
 
+=2D-=20
+Regards,
 
---lildS9pRFgpM/xzO
+Laurent Pinchart
+
+--nextPart13154847.QyJKWzLJLR
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTGfhcAAoJEBQN5MwUoCm255wQAIihOL2eiXs2jOXofTsXQSy/
-9kX1RqTviB6x5cpm6OVsE4LwDroe2hK3YXhSvWoIUUGnwSJhJAnQ/eAYnKPoZqPa
-UsY6fk/9SX7FqYTskhH/X251qfL6Y3E7hhoXzvHmZzouhRPvxZ05ufHmDfDZulzc
-KLwmWNpYk0syZO1AQv/PxrQTKj5lLAyWjVOhAb8zeyWMl5kjUEFJAMwvFM9BHUK3
-X1NVQH2Z1aUi0fI9JsUm9i27HPo0NeO72LGBypQ3AFOlHv73Bg6Eqc/YhqwigBgF
-TP9V00liAWWdKerCv+9pxht7PyDLnl75ega4EsY4ZTRzl6R60tuHry9B2gqnKlv5
-SbyrgQc5ss6hTfYmPcwpwTLWddjRmkt2Znsu9UhhwjOCzePmH5P3Q43NBMIXoh9V
-OmcdY9LlZwKz1eMOFIHt75q/2SANcbnnnG/kuU8hQJBLMVztgu6L8df/TrwPHCxT
-sW5CcMJU7Hp4n6ofXNBj33Heq+ZnJ+7Ys4aIduOqf5mXi+Rnl3bT74dY8uF2JXmX
-kT0GAqH6T73+bQeEdaKn5/SFrh+/k9nDBe5ad06vbZJqa3X+w/hCSSeLnThDfQAA
-h+yCiaFNJT2QN/YFX6RpHA0a1b5fMD/2K0vagdRK+VWnar0EQ8oi604y4PwF7DZE
-JSUtYEiC5ORk7B8lUEFN
-=h9mi
+iQEcBAABAgAGBQJTGfh0AAoJEIkPb2GL7hl1do8H/jJ/fEhpGYiVrkR4YWUXBSHv
+WbY/agYABHuy4NWCAqqShFJS2Y3TprZk0Y5ggJNItvE7DNIFeejY9Lg5KdrdouU5
+ks86vgHTvowCcKjSIZVo6qyAPjWReRFE/OD4S/sQXG2DTZOnQJa+ws0nuGaUaJ9b
+inEmbO2kPL4gBvXKbAGsh3ECrb++UbHO9SV1AeU8XFjSC1wgzOjObacsQcgL9aez
+RJEXDUpi/yF56oDEeYDV6a1pKFfiFR5lWSf26lTgbuIk44xU8aSp2wMvW1LApd1j
+O0fTFxA+0rS1Do3bUHQK0N7mcP/AVuj9qq8FOyeVa+o8EZjbvdga3all78wXAEE=
+=VAjB
 -----END PGP SIGNATURE-----
 
---lildS9pRFgpM/xzO--
+--nextPart13154847.QyJKWzLJLR--
+
