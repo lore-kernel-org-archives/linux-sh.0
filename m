@@ -1,69 +1,77 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:25:10 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 07 Mar 2014 16:37:36 +0000
 Subject: Re: [PATCH V3 06/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
-Message-Id: <20140307162510.GF28943@katana>
+Message-Id: <14375215.AZLobqST6Y@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="uTRFFR9qmiCqR05s"
+Content-Type: multipart/mixed; boundary="nextPart4265553.HzsJuCG9lE"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
- <1394208048-32495-7-git-send-email-wsa@the-dreams.de>
- <1930280.sZNcfhZEL8@avalon>
-In-Reply-To: <1930280.sZNcfhZEL8@avalon>
+ <1930280.sZNcfhZEL8@avalon> <20140307162510.GF28943@katana>
+In-Reply-To: <20140307162510.GF28943@katana>
 To: linux-arm-kernel@lists.infradead.org
 
 
---uTRFFR9qmiCqR05s
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart4265553.HzsJuCG9lE
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
+Hi Wolfram,
 
-> > diff --git a/arch/arm/boot/dts/r7s72100.dtsi
-> > b/arch/arm/boot/dts/r7s72100.dtsi index 6af5c28c670e..d49afe30c1d7 1006=
-44
-> > --- a/arch/arm/boot/dts/r7s72100.dtsi
-> > +++ b/arch/arm/boot/dts/r7s72100.dtsi
-> > @@ -23,6 +23,14 @@
-> >  		i2c1 =3D &i2c1;
-> >  		i2c2 =3D &i2c2;
-> >  		i2c3 =3D &i2c3;
-> > +		serial0 =3D &scif0;
-> > +		serial1 =3D &scif1;
-> > +		serial2 =3D &scif2;
-> > +		serial3 =3D &scif3;
-> > +		serial4 =3D &scif4;
-> > +		serial5 =3D &scif5;
-> > +		serial6 =3D &scif6;
-> > +		serial7 =3D &scif7;
+On Friday 07 March 2014 17:25:10 Wolfram Sang wrote:
+> > > diff --git a/arch/arm/boot/dts/r7s72100.dtsi
+> > > b/arch/arm/boot/dts/r7s72100.dtsi index 6af5c28c670e..d49afe30c1d=
+7
+> > > 100644
+> > > --- a/arch/arm/boot/dts/r7s72100.dtsi
+> > > +++ b/arch/arm/boot/dts/r7s72100.dtsi
+> > > @@ -23,6 +23,14 @@
+> > >  =09=09i2c1 =3D &i2c1;
+> > >  =09=09i2c2 =3D &i2c2;
+> > >  =09=09i2c3 =3D &i2c3;
+> > > +=09=09serial0 =3D &scif0;
+> > > +=09=09serial1 =3D &scif1;
+> > > +=09=09serial2 =3D &scif2;
+> > > +=09=09serial3 =3D &scif3;
+> > > +=09=09serial4 =3D &scif4;
+> > > +=09=09serial5 =3D &scif5;
+> > > +=09=09serial6 =3D &scif6;
+> > > +=09=09serial7 =3D &scif7;
+> >=20
+> > As port usages is board specific, shouldn't this be moved to the bo=
+ard
+> > .dts file, with only serial0 =3D &scif2 ?
 >=20
-> As port usages is board specific, shouldn't this be moved to the board .d=
-ts=20
-> file, with only serial0 =3D &scif2 ?
+> Nope, the intention of these aliases is to have a consistent numberin=
+g
+> of SCIF cores, similar to platform.dev_id.
 
-Nope, the intention of these aliases is to have a consistent numbering
-of SCIF cores, similar to platform.dev_id.
+But do we want that ? Isn't it better from a user point of view to have=
+ ttySC0=20
+regardless of whether scif2 or scif3 is used when the board has a singl=
+e=20
+serial port only ?
 
+=2D-=20
+Regards,
 
---uTRFFR9qmiCqR05s
+Laurent Pinchart
+
+--nextPart4265553.HzsJuCG9lE
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTGfLmAAoJEBQN5MwUoCm2LnYP/R+4Om2eS9td5OyiiyNjfTTj
-7nYzodQvQVQ8DjoW3lUeH78LulweXvyIZmYITgCudNeMEQ98d9kmT0xm/pbIf9N7
-tMUfrUjGWURtmTve2rposK2R2rYurFtIaKangloa93rAy1n91UH7yil2iS/as0g0
-JFDkI4UIo05XUNfKD5PLxGTBrFnC3vJJTbs/VYXICB/GegL1ILI/kgLT1N9XOLpX
-LFDG4y+aV3HwTC3tfzdcX8K8Hiz+MpTTi3T98izcoIu0EvRwoEuPWT4iOqTvmXUS
-t/SiIhpAcXH/7k7cBjkLVSl5mPoFrQogaoRMYxOQm590pl4yI+IK/pstuPVyG0TJ
-Hhr0NXWoUlPajCz3EEOB/ckoBwYBYjUSSgMhstNYrLaDX4SFUOOGizSSgEIA9ohs
-Y6jXnKCslRqlfka61JTB9phVbnoijaeK3qaC1HIQ2CX/SN2Id8hzI8wl0DNOFPko
-oLJB0Nn9y7vPucOEFCriwy8g0qLEchozFB7HgI6rMTewhpBBBeFe0l+omCWzxi69
-4l2Ae17Ur5dajtcbtQVvRgAX9Hs5x5vHfjPUfAIr04lXwD0t5f1MIGFOI4GbQJ6M
-H3EzrONhfHWeUptK85IVe4f7Cf6dh6Jhss6i+KuxQ0/3u8H/cfJrjDtAbvTvC9lB
-hND93PFq5yZ2EIqbrZrw
-=AQqV
+iQEcBAABAgAGBQJTGfXQAAoJEIkPb2GL7hl1nzkH/3kmdAJ00/F6EItE/bj4x7aE
+wLDIeIcF1x0PZ+DpBNjGn/EcQg1r85jROKp8tQH3i+DWx0G34CyZHV2rJdQTJigk
+qr2F1oJIvxdgVmWc98HKbzVyYKtE0zZoSrRWGz1VQy0xRRj6AWjXRjwi0TNV3AEf
+ddFKj1zg0IUBfDkfRSMuaNJ47/3GcZkM5EZSpsJmBf7RB0oPOR68Uk2OsaTaTWH4
+INUja9VYDEz+fly/GTmjMyDWGSDyFf7YTCJhRWIBKIpupZPEr4KqeLEZU12j665t
+EGxB76C7ljK47MYTpxLgWmqSO0QaFaUIhmUg0yVvQFdBq3J6yjLOo76HdTR7GQo=
+=82wZ
 -----END PGP SIGNATURE-----
 
---uTRFFR9qmiCqR05s--
+--nextPart4265553.HzsJuCG9lE--
+
