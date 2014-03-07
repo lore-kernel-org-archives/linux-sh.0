@@ -1,65 +1,92 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:53 +0000
-Subject: [PATCH v4 10/19] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board
-Message-Id: <1394701202-25823-11-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Mar 2014 16:00:45 +0000
+Subject: [PATCH V3 09/12] ARM: shmobile: r7s72100: add i2c clocks to dtsi
+Message-Id: <1394208048-32495-10-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Move the clock initialisation and OF device population from
-SoC to board code. This is in keeping with the pattern used by Lager.
-And the clock portion is part of decoupling clock initialisation
-from SoC code in preparation for moving to the common clock framework.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
- arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r7s72100.dtsi            | 15 +++++++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h |  6 ++++++
+ 2 files changed, 21 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 2773936..c22e5c2 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index d49afe30c1d7..9f7a06dc5e30 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -118,6 +118,17 @@
+ 			>;
+ 			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
+ 		};
++
++		mstp9_clks: mstp9_clks@fcfe0438 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0438 4>;
++			clocks = <&p0_clk>, <&p0_clk>, <&p0_clk>, <&p0_clk>;
++			renesas,clock-indices = <
++				R7S72100_CLK_I2C0 R7S72100_CLK_I2C1 R7S72100_CLK_I2C2 R7S72100_CLK_I2C3
++			>;
++			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
++		};
+ 	};
  
-+#include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -27,7 +28,9 @@
+ 	cpus {
+@@ -153,6 +164,7 @@
+ 			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -170,6 +182,7 @@
+ 			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -187,6 +200,7 @@
+ 			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -204,6 +218,7 @@
+ 			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+index d0e2d91025c2..b412bb2c93b1 100644
+--- a/include/dt-bindings/clock/r7s72100-clock.h
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -24,4 +24,10 @@
+ #define R7S72100_CLK_SCIF6	1
+ #define R7S72100_CLK_SCIF7	0
  
- static void __init marzen_init(void)
- {
-+	r8a7779_clock_init();
- 	r8a7779_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
- }
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index f28b8c7..3471a9b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -784,12 +784,8 @@ void __init r8a7779_init_delay(void)
- 
- void __init r8a7779_add_standard_devices_dt(void)
- {
--	/* clocks are setup late during boot in the case of DT */
--	r8a7779_clock_init();
--
- 	platform_add_devices(r8a7779_devices_dt,
- 			     ARRAY_SIZE(r8a7779_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- #define MODEMR		0xffcc0020
++/* MSTP9 */
++#define R7S72100_CLK_I2C0	7
++#define R7S72100_CLK_I2C1	6
++#define R7S72100_CLK_I2C2	5
++#define R7S72100_CLK_I2C3	4
++
+ #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
 -- 
-1.8.5.2
+1.9.0
 
