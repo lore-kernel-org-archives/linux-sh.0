@@ -1,85 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Mar 2014 04:12:28 +0000
-Subject: Re: [PATCH v2 3/6] PCI: rcar: use new OF interrupt mapping when possible
-Message-Id: <20140306041228.GA28351@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Mar 2014 16:00:36 +0000
+Subject: [PATCH V3 00/12] CCF support for Renesas r7s72100
+Message-Id: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
- <1394025951-32438-4-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1394025951-32438-4-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 05, 2014 at 02:25:48PM +0100, Lucas Stach wrote:
-> This is the recommended method of doing the IRQ
-> mapping. Still fall back to the old method in order
-> to not break the just submitted board files.
-> 
-> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+This series moves the r7s72100 platfrom from the legacy clock implementation to
+the common clock framework.
 
-Assuming that it does what it says on the wrapper:
+This series has been tested with the renesas-devel-v3.14-rc5-20140307v2 tag.
+If you want to boot into a console, you have a runtime dependency [1].
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Patches 1-5 is the minimal set to activate CCF and get the board booting into a
+console. Patches 6-8 add SCIF support, 9+10 I2C support, and 11+12 SPI support.
+
+Changes since V2:
+
+Patches 1+3 got updates, patch 12 was not send out last time due to sendmail error.
+
+Patch 1 should probably go via clock tree (it has no dependencies). The rest
+via shmobile. Please apply.
+
+   Wolfram
+
+PS: A tree can be found here with this series only:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r7s-ccf
+
+And here with a quick hack to make the system bootable:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r7s-ccf-bootable
+
+[1] http://lkml.org/lkml/2014/2/20/205 ([PATCH V7 0/3] clocksource: Consolidate SH and ARM mach-shmobile Kconfig bits)
 
 
-> ---
-> v2: pass in parent device to pci_common_init(), to
->     make DT parsing work.
-> ---
->  drivers/pci/host/pci-rcar-gen2.c | 12 +++++++++---
->  1 file changed, 9 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-> index ceec147baec3..3a0914163ad0 100644
-> --- a/drivers/pci/host/pci-rcar-gen2.c
-> +++ b/drivers/pci/host/pci-rcar-gen2.c
-> @@ -15,6 +15,7 @@
->  #include <linux/io.h>
->  #include <linux/kernel.h>
->  #include <linux/module.h>
-> +#include <linux/of_pci.h>
->  #include <linux/pci.h>
->  #include <linux/platform_device.h>
->  #include <linux/pm_runtime.h>
-> @@ -160,8 +161,13 @@ static int __init rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
->  {
->  	struct pci_sys_data *sys = dev->bus->sysdata;
->  	struct rcar_pci_priv *priv = sys->private_data;
-> +	int irq;
-> +
-> +	irq = of_irq_parse_and_map_pci(dev, slot, pin);
-> +	if (!irq)
-> +		irq = priv->irq;
->  
-> -	return priv->irq;
-> +	return irq;
->  }
->  
->  /* PCI host controller setup */
-> @@ -249,6 +255,8 @@ static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
->  	void **private_data;
->  	int count;
->  
-> +	pci_common_init_dev(priv->dev, &rcar_hw_pci);
-> +
->  	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
->  		goto add_priv;
->  
-> @@ -322,8 +330,6 @@ static int __init rcar_pci_init(void)
->  	int retval;
->  
->  	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
-> -	if (!retval)
-> -		pci_common_init(&rcar_hw_pci);
->  
->  	/* Private data pointer array is not needed any more */
->  	kfree(rcar_hw_pci.private_data);
-> -- 
-> 1.9.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Wolfram Sang (12):
+  clk: shmobile: add CPG driver for rz-platforms
+  ARM: shmobile: r7s72100: document MSTP clock support
+  ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
+  ARM: shmobile: r7s72100: use workaround for non DT-clocks
+  ARM: shmobile: r7s72100: add scif nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: activate scif2 for console output
+  ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy
+    support
+  ARM: shmobile: r7s72100: add i2c clocks to dtsi
+  ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock
+    support
+  ARM: shmobile: r7s72100: add spi clocks to dtsi
+  ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock
+    support
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,rz-cpg-clocks.txt       |  29 +++
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  12 ++
+ arch/arm/boot/dts/r7s72100.dtsi                    | 223 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-genmai-reference.c    |  14 +-
+ arch/arm/mach-shmobile/board-genmai.c              |  44 ++++
+ arch/arm/mach-shmobile/clock-r7s72100.c            |   9 -
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  43 ----
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-rz.c                      | 103 ++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h         |  40 ++++
+ 11 files changed, 464 insertions(+), 55 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-rz.c
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
+
+-- 
+1.9.0
+
