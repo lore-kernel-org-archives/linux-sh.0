@@ -1,102 +1,181 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Mar 2014 14:04:41 +0000
-Subject: Re: [PATCH v2 4/5] ARM: shmobile: r8a7790: add IIC(B) clocks to dtsi
-Message-Id: <1467516.9721qlt3iV@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Mar 2014 16:00:39 +0000
+Subject: [PATCH V3 03/12] ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+Message-Id: <1394208048-32495-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
- <1395773789-17249-5-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1395773789-17249-5-git-send-email-wsa@the-dreams.de>
+References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Thank you for the patch.
+Only essential clocks are added for now. Other clocks will be added when
+needed.
 
-On Tuesday 25 March 2014 19:56:28 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Change since V2:
 
-> ---
-> Change since V1:
-> 
-> * renamed i2c4-7 to iic0-3
-> 
->  arch/arm/boot/dts/r8a7790.dtsi | 27 ++++++++++++++-------------
->  1 file changed, 14 insertions(+), 13 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index da69afc9e5cb..21e6602c630b 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -702,18 +702,19 @@
->  		mstp3_clks: mstp3_clks@e615013c {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-> -			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
-> -				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks 
-R8A7790_CLK_SD0>,
-> -				 <&mmc0_clk>, <&rclk_clk>;
-> +			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
-> +				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks
-> R8A7790_CLK_SD0>, <&mmc0_clk>, +				 <&hp_clk>, <&hp_clk>, 
-<&rclk_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> -				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
-> -				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
-> -				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
-> +				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 
-R8A7790_CLK_SDHI3
-> +				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
-> R8A7790_CLK_MMCIF0 +				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 
-R8A7790_CLK_CMT1
-> 
->  			>;
-> 
->  			clock-output-names > -				"tpu0", "mmcif1", "sdhi3", "sdhi2",
-> -				"sdhi1", "sdhi0", "mmcif0", "cmt1";
-> +				"iic2", "tpu0", "mmcif1", "sdhi3",
-> +				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
-> +				"iic0", "iic1", "cmt1";
->  		};
->  		mstp5_clks: mstp5_clks@e6150144 {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> @@ -757,16 +758,16 @@
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
-> +			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, 
-<&cp_clk>,
->  				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> -				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
-> -				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
-> -				R8A7790_CLK_I2C0
-> +				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
-> R8A7790_CLK_IICDVFS +				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 
-R8A7790_CLK_I2C1
-> R8A7790_CLK_I2C0
->  			>;
-> 
->  			clock-output-names > -				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
-> +				"rcan1", "rcan0", "qspi_mod", "iic3",
-> +				"i2c3",	"i2c2", "i2c1", "i2c0";
->  		};
->  	};
+* Use macro to reference the PLL
 
+Changes since V1:
+* add usb_x1 clock
+* reference usb_x1 to cpg
+* improved wording
+* #clock-cells consistently first property
+
+ arch/arm/boot/dts/r7s72100.dtsi            | 86 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r7s72100-clock.h | 27 ++++++++++
+ 2 files changed, 112 insertions(+), 1 deletion(-)
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
+
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ee700717a34b..6af5c28c670e 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -1,13 +1,15 @@
+ /*
+  * Device Tree Source for the r7s72100 SoC
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-14 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/clock/r7s72100-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -28,6 +30,88 @@
+ 		spi4 = &spi4;
+ 	};
+ 
++	clocks {
++		ranges;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		/* External clocks */
++		extal_clk: extal_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			/* If clk present, value must be set by board */
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		usb_x1_clk: usb_x1_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			/* If clk present, value must be set by board */
++			clock-frequency = <0>;
++			clock-output-names = "usb_x1";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@fcfe0000 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-cpg-clocks",
++				     "renesas,rz-cpg-clocks";
++			reg = <0xfcfe0000 0x18>;
++			clocks = <&extal_clk>, <&usb_x1_clk>;
++			clock-output-names = "pll", "i", "g";
++		};
++
++		/* Fixed factor clocks */
++		b_clk: b_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
++			clock-mult = <1>;
++			clock-div = <3>;
++			clock-output-names = "b";
++		};
++		p1_clk: p1_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
++			clock-mult = <1>;
++			clock-div = <6>;
++			clock-output-names = "p1";
++		};
++		p0_clk: p0_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
++			clock-mult = <1>;
++			clock-div = <12>;
++			clock-output-names = "p0";
++		};
++
++		/* MSTP clocks */
++		mstp3_clks: mstp3_clks@fcfe0420 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0420 4>;
++			clocks = <&p0_clk>;
++			renesas,clock-indices = <R7S72100_CLK_MTU2>;
++			clock-output-names = "mtu2";
++		};
++
++		mstp4_clks: mstp4_clks@fcfe0424 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0424 4>;
++			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
++				 <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>;
++			renesas,clock-indices = <
++				R7S72100_CLK_SCIF0 R7S72100_CLK_SCIF1 R7S72100_CLK_SCIF2 R7S72100_CLK_SCIF3
++				R7S72100_CLK_SCIF4 R7S72100_CLK_SCIF5 R7S72100_CLK_SCIF6 R7S72100_CLK_SCIF7
++			>;
++			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+new file mode 100644
+index 000000000000..d0e2d91025c2
+--- /dev/null
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -0,0 +1,27 @@
++/*
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R7S72100_H__
++#define __DT_BINDINGS_CLOCK_R7S72100_H__
++
++#define R7S72100_CLK_PLL	0
++
++/* MSTP3 */
++#define R7S72100_CLK_MTU2	3
++
++/* MSTP4 */
++#define R7S72100_CLK_SCIF0	7
++#define R7S72100_CLK_SCIF1	6
++#define R7S72100_CLK_SCIF2	5
++#define R7S72100_CLK_SCIF3	4
++#define R7S72100_CLK_SCIF4	3
++#define R7S72100_CLK_SCIF5	2
++#define R7S72100_CLK_SCIF6	1
++#define R7S72100_CLK_SCIF7	0
++
++#endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.0
 
