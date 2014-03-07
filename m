@@ -1,64 +1,72 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:29:47 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 07 Mar 2014 16:36:25 +0000
 Subject: Re: [PATCH V3 00/12] CCF support for Renesas r7s72100
-Message-Id: <20140307162946.GG28943@katana>
+Message-Id: <1552759.qGZNIXqrb1@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="uc35eWnScqDcQrv5"
+Content-Type: multipart/mixed; boundary="nextPart1971137.3Xe0itulrT"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
- <2368991.bjBJjms8qn@avalon>
-In-Reply-To: <2368991.bjBJjms8qn@avalon>
+ <2368991.bjBJjms8qn@avalon> <20140307162946.GG28943@katana>
+In-Reply-To: <20140307162946.GG28943@katana>
 To: linux-arm-kernel@lists.infradead.org
 
 
---uc35eWnScqDcQrv5
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart1971137.3Xe0itulrT
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-Hi Laurent,
+Hi Wolfram,
 
-> Beside the comment to patch 06/12, I would have moved patches 06/12 to 08=
-/12=20
-> to the beginning of the series, in order to avoid adding a clock workarou=
-nd=20
-> for the serial clock only to remove it a couple of patches later.
+On Friday 07 March 2014 17:29:47 Wolfram Sang wrote:
+> Hi Laurent,
+>=20
+> > Beside the comment to patch 06/12, I would have moved patches 06/12=
+ to
+> > 08/12 to the beginning of the series, in order to avoid adding a cl=
+ock
+> > workaround for the serial clock only to remove it a couple of patch=
+es
+> > later.
+>=20
+> That would have saved only 2 lines since we need the workaround anyho=
+w
+> (MTU2) and would break the incremental approach of this series somewh=
+at.
+> I'd like to keep it.
 
-That would have saved only 2 lines since we need the workaround anyhow
-(MTU2) and would break the incremental approach of this series somewhat.
-I'd like to keep it.
+It would have saved one patch. If Simon needs to apply CCF support sepa=
+rately=20
+I'm fine with that approach, but if both changes are applied at the sam=
+e time=20
+the SCIF patches could go in first.
 
-> Oh, and one might ask you to fix the 80 columns checkpatch warnings for p=
-atch=20
-> 01/12 :-)=20
+> > Oh, and one might ask you to fix the 80 columns checkpatch warnings=
+ for
+> > patch 01/12 :-)
+>=20
+> Broken intentionally for the sake of readability :)
 
-Broken intentionally for the sake of readability :)
+=2D-=20
+Regards,
 
-Thanks,
+Laurent Pinchart
 
-   Wolfram
-
-
---uc35eWnScqDcQrv5
+--nextPart1971137.3Xe0itulrT
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTGfP6AAoJEBQN5MwUoCm2XY0P/RfAiBJ2zdblVQEqE0HhFoAY
-yF9hGfWq0phLauDaYCxwqsMdI3egpxk1b/clS97VgapUHdJ+Zwy0p8S8P5tdCt/u
-zFs08ajzd05Zl79NUloH53x2Oh2lRZS+7gNKE146GEIZsfbEOPV8hLa2djdQX9h6
-QQ4hY3kUir4yf8TK6XU84n+eE1vAG7DsKP48Jzgezo6Xbdx2zJtbOGkL+aIvgGDX
-rWRiZsNmeWmD4zTyNRr9q3aoVMwSCOLDMMx5RTqVsyoxQVWaeaURyDYapLCV/KYX
-x//a7WBKkfdNxTkg1iFDec3FkzC6PQt+rr/DjheIOTOAnutSWBZkKGvxYbU+O7Kw
-E0LmadSHmDuP9XiHOYit3QCHTtjxghAnDb0jqE1YS7+14Zp3blvjcK+btWw/CIoo
-GPzXWBllxmulbS8ydB6KAcm0VUHGuAE9JozNMavywMQHF7b/KHwXQj0gYsLKIxsT
-ZCYRi2SBAiVBolso2R7UyO1n93eUWWHhn5Tkwzct5GUlErMa4Uzbgi/b5gPXhGIS
-djW/56po7WBvNJ87uxyCdyIw+k6kDBHpEeLzrFynh71QBiYjpaG3/UtMuKozdbzw
-faYUZbrX1l1qbTjHOKS3V1ak8s7v0s+wdW2Dm+ladbFtWwi9oVAjgeyF9Xpj+y5F
-XMsg2hdd93o1hMiafuII
-=rizy
+iQEcBAABAgAGBQJTGfWcAAoJEIkPb2GL7hl1yEgIAIM6KpxtTCni5n7MngqOMF7W
+FzHjdVrbM6LP2zUqTs2Af07+zSPlBe6ZAUjCwDJWY1lKeY9v1iDlo1YWac1gL5Y9
+nsXi7zIRkOUU6CTGtPNzLu924iQaCj38DrkdwFAC5S+wlUacDcMctn9vigqe1waD
+aCFxTCCRwWQmzqKDqoZymr+eQfOAjs4q2N7pbuoxHYLoWHurt3k+tgats+MiohGV
+1H6KEuesMJ43qsfC+BSwyqK1CCMrGn8waq4PAtb40OSyeJf7jN+5mcG7nQfE+Nla
+sh75ZJWR2Sy6b+5MwfM7RS8EAdQVNMBgtebYDNlFR+2pMEVj1Y90jFHTqIBFoZY=
+=aJlR
 -----END PGP SIGNATURE-----
 
---uc35eWnScqDcQrv5--
+--nextPart1971137.3Xe0itulrT--
+
