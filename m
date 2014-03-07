@@ -1,40 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Mar 2014 05:05:16 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7791: Remove legacy clock aliases for DT devices
-Message-Id: <a8a8266229787241e1dfdb075a416e31da2fa1d7.1394082270.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 07 Mar 2014 12:46:40 +0000
+Subject: [PATCH 2/2] clk: shmobile: clk-mstp: add backwards comapt for indices field
+Message-Id: <1394196400-17112-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1394082270.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1394082270.git.horms+renesas@verge.net.au>
+References: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add comaptibiltiy for older device trees by checking to see if
+the clock-indices property is there and falling back to the
+older renesas,clock-indices field.
 
-Now that the r8a7791 DT platforms use the common clock framework,
-there's no need to manually create clock aliases for devices
-instantiated through DT, as those devices will reference their clocks
-directly in the device tree. Remove those aliases.
+This can be removed once all device-trees are converted.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/clk/shmobile/clk-mstp.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 3e1b6b6..605fc77 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -267,7 +267,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
--	CLKDEV_DEV_ID("e61f0000.thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 95a2aa7..fe63d40 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -156,6 +156,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
+ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ {
+ 	struct mstp_clock_group *group;
++	const char *idxname;
+ 	struct clk **clks;
+ 	unsigned int i;
+ 
+@@ -184,6 +185,11 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 	for (i = 0; i < MSTP_MAX_CLOCKS; ++i)
+ 		clks[i] = ERR_PTR(-ENOENT);
+ 
++	if (of_find_property(np, "clock-indices", &i))
++		idxname = "clock-indices";
++	else
++		idxname = "renesas,clock-indices";
++
+ 	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
+ 		const char *parent_name;
+ 		const char *name;
+@@ -197,8 +203,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 			continue;
+ 
+ 		parent_name = of_clk_get_parent_name(np, i);
+-		ret = of_property_read_u32_index(np, "clock-indices", i,
+-						 &clkidx);
++		ret = of_property_read_u32_index(np, idxname, i, &clkidx);
+ 		if (parent_name = NULL || ret < 0)
+ 			break;
+ 
 -- 
-1.8.5.2
+1.9.0
 
