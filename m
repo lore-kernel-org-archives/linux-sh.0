@@ -1,22 +1,35 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Mar 2014 06:11:00 +0000
-Subject: Re: [PATCH 03/03] ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
-Message-Id: <20140313061057.GF8802@verge.net.au>
+Date: Fri, 07 Mar 2014 02:38:24 +0000
+Subject: Re: [PATCH] ARM: shmobile: Remove EMEV2 header file
+Message-Id: <20140307023821.GH11702@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140312233608.17009.65690.sendpatchset@w520>
- <20140312233635.17009.37946.sendpatchset@w520>
-In-Reply-To: <20140312233635.17009.37946.sendpatchset@w520>
+References: <20140217073508.11156.21720.sendpatchset@w520>
+ <20140218000926.GB4776@verge.net.au>
+ <20140218023103.GA17063@verge.net.au>
+ <CANqRtoSmphPAaxOFjAQcZ8RDigJpjYG3yCFMr5C_cw6JCHghkw@mail.gmail.com>
+In-Reply-To: <CANqRtoSmphPAaxOFjAQcZ8RDigJpjYG3yCFMr5C_cw6JCHghkw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 13, 2014 at 08:36:35AM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
+On Tue, Feb 18, 2014 at 11:35:25AM +0900, Magnus Damm wrote:
+> On Tue, Feb 18, 2014 at 11:31 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Tue, Feb 18, 2014 at 09:09:29AM +0900, Simon Horman wrote:
+> >> On Mon, Feb 17, 2014 at 04:35:08PM +0900, Magnus Damm wrote:
+> >> > From: Magnus Damm <damm@opensource.se>
+> >> >
+> >> > There is no C board code left for the EMEV2 SoC, so
+> >> > get rid of the emev2.h include file to save some lines.
+> >> > While at it make functions static.
+> >> >
+> >> > Signed-off-by: Magnus Damm <damm@opensource.se>
+> >>
+> >> Thanks, I have queued this up.
+> >
+> > I have changed my mind and decided to defer this patch
+> > to avoid a tedious dependency of an SoC patch on a board patch.
 > 
-> Convert the Koelsch DT reference code to use the newly introduced
-> function shmobile_clk_workaround().
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+> That's fine. We can handle further cleanup later. Thanks for your help!
 
-Thanks, I have queued this up.
+I have now queued it up again.
