@@ -1,171 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:11 +0000
-Subject: [PATCH 04/22] clocksource: sh_mtu2: Rename struct sh_mtu2_priv to sh_mtu2_device
-Message-Id: <1393955249-18736-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 07 Mar 2014 13:01:38 +0000
+Subject: [PATCH 4/5] rcar_vin: copy flags from pdata
+Message-Id: <1394197299-17528-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-kernel@vger.kernel.org, magnus.damm@opensource.se, linux-sh@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Channel data is private as well, rename priv to device to make the
-distrinction between the core device and the channels clearer.
+The platform data is a single word, so simply copy
+it into the device's private data structure than
+keeping a copy of the pointer.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This will make changing to device-tree binding
+easier as it is one allocation instead of two.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- drivers/clocksource/sh_mtu2.c | 65 ++++++++++++++++++++++---------------------
- 1 file changed, 33 insertions(+), 32 deletions(-)
+ drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index e509f41..256621c 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -34,15 +34,15 @@
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 702dc47..47516df 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -126,13 +126,13 @@ struct rcar_vin_priv {
+ 	int				sequence;
+ 	/* State of the VIN module in capturing mode */
+ 	enum rcar_vin_state		state;
+-	struct rcar_vin_platform_data	*pdata;
+ 	struct soc_camera_host		ici;
+ 	struct list_head		capture;
+ #define MAX_BUFFER_NUM			3
+ 	struct vb2_buffer		*queue_buf[MAX_BUFFER_NUM];
+ 	struct vb2_alloc_ctx		*alloc_ctx;
+ 	enum v4l2_field			field;
++	unsigned int			pdata_flags;
+ 	unsigned int			vb_count;
+ 	unsigned int			nr_hw_slots;
+ 	bool				request_to_stop;
+@@ -275,12 +275,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		break;
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
+ 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
+-		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
+ 		break;
+ 	case V4L2_MBUS_FMT_YUYV10_2X10:
+ 		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
+-		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
+ 		break;
+ 	default:
+@@ -799,7 +799,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
+ 	/* Make choises, based on platform preferences */
+ 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
+-		if (priv->pdata->flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
++		if (priv->pdata_flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
+@@ -807,7 +807,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
  
--struct sh_mtu2_priv;
-+struct sh_mtu2_device;
+ 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
+-		if (priv->pdata->flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
++		if (priv->pdata_flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
+@@ -1447,7 +1447,7 @@ static int rcar_vin_probe(struct platform_device *pdev)
+ 	priv->ici.drv_name = dev_name(&pdev->dev);
+ 	priv->ici.ops = &rcar_vin_host_ops;
  
- struct sh_mtu2_channel {
--	struct sh_mtu2_priv *mtu;
-+	struct sh_mtu2_device *mtu;
- 	int irq;
- 	struct clock_event_device ced;
- };
- 
--struct sh_mtu2_priv {
-+struct sh_mtu2_device {
- 	struct platform_device *pdev;
- 
- 	void __iomem *mapbase;
-@@ -273,75 +273,76 @@ static int sh_mtu2_register(struct sh_mtu2_channel *ch, char *name,
- 	return 0;
- }
- 
--static int sh_mtu2_setup(struct sh_mtu2_priv *p, struct platform_device *pdev)
-+static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
-+			 struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	struct resource *res;
- 	int ret;
- 	ret = -ENXIO;
- 
--	memset(p, 0, sizeof(*p));
--	p->pdev = pdev;
-+	memset(mtu, 0, sizeof(*mtu));
-+	mtu->pdev = pdev;
- 
- 	if (!cfg) {
--		dev_err(&p->pdev->dev, "missing platform data\n");
-+		dev_err(&mtu->pdev->dev, "missing platform data\n");
- 		goto err0;
- 	}
- 
--	platform_set_drvdata(pdev, p);
-+	platform_set_drvdata(pdev, mtu);
- 
--	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
-+	res = platform_get_resource(mtu->pdev, IORESOURCE_MEM, 0);
- 	if (!res) {
--		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
-+		dev_err(&mtu->pdev->dev, "failed to get I/O memory\n");
- 		goto err0;
- 	}
- 
--	p->channel.irq = platform_get_irq(p->pdev, 0);
--	if (p->channel.irq < 0) {
--		dev_err(&p->pdev->dev, "failed to get irq\n");
-+	mtu->channel.irq = platform_get_irq(mtu->pdev, 0);
-+	if (mtu->channel.irq < 0) {
-+		dev_err(&mtu->pdev->dev, "failed to get irq\n");
- 		goto err0;
- 	}
- 
- 	/* map memory, let mapbase point to our channel */
--	p->mapbase = ioremap_nocache(res->start, resource_size(res));
--	if (p->mapbase = NULL) {
--		dev_err(&p->pdev->dev, "failed to remap I/O memory\n");
-+	mtu->mapbase = ioremap_nocache(res->start, resource_size(res));
-+	if (mtu->mapbase = NULL) {
-+		dev_err(&mtu->pdev->dev, "failed to remap I/O memory\n");
- 		goto err0;
- 	}
- 
- 	/* get hold of clock */
--	p->clk = clk_get(&p->pdev->dev, "mtu2_fck");
--	if (IS_ERR(p->clk)) {
--		dev_err(&p->pdev->dev, "cannot get clock\n");
--		ret = PTR_ERR(p->clk);
-+	mtu->clk = clk_get(&mtu->pdev->dev, "mtu2_fck");
-+	if (IS_ERR(mtu->clk)) {
-+		dev_err(&mtu->pdev->dev, "cannot get clock\n");
-+		ret = PTR_ERR(mtu->clk);
- 		goto err1;
- 	}
- 
--	ret = clk_prepare(p->clk);
-+	ret = clk_prepare(mtu->clk);
- 	if (ret < 0)
- 		goto err2;
- 
--	p->channel.mtu = p;
-+	mtu->channel.mtu = mtu;
- 
--	ret = sh_mtu2_register(&p->channel, (char *)dev_name(&p->pdev->dev),
-+	ret = sh_mtu2_register(&mtu->channel, (char *)dev_name(&mtu->pdev->dev),
- 			       cfg->clockevent_rating);
- 	if (ret < 0)
- 		goto err3;
- 
- 	return 0;
-  err3:
--	clk_unprepare(p->clk);
-+	clk_unprepare(mtu->clk);
-  err2:
--	clk_put(p->clk);
-+	clk_put(mtu->clk);
-  err1:
--	iounmap(p->mapbase);
-+	iounmap(mtu->mapbase);
-  err0:
- 	return ret;
- }
- 
- static int sh_mtu2_probe(struct platform_device *pdev)
- {
--	struct sh_mtu2_priv *p = platform_get_drvdata(pdev);
-+	struct sh_mtu2_device *mtu = platform_get_drvdata(pdev);
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	int ret;
- 
-@@ -350,20 +351,20 @@ static int sh_mtu2_probe(struct platform_device *pdev)
- 		pm_runtime_enable(&pdev->dev);
- 	}
- 
--	if (p) {
-+	if (mtu) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
- 		goto out;
- 	}
- 
--	p = kmalloc(sizeof(*p), GFP_KERNEL);
--	if (p = NULL) {
-+	mtu = kmalloc(sizeof(*mtu), GFP_KERNEL);
-+	if (mtu = NULL) {
- 		dev_err(&pdev->dev, "failed to allocate driver data\n");
- 		return -ENOMEM;
- 	}
- 
--	ret = sh_mtu2_setup(p, pdev);
-+	ret = sh_mtu2_setup(mtu, pdev);
- 	if (ret) {
--		kfree(p);
-+		kfree(mtu);
- 		pm_runtime_idle(&pdev->dev);
- 		return ret;
- 	}
+-	priv->pdata = pdata;
++	priv->pdata_flags = pdata->flags;
+ 	priv->chip = pdev->id_entry->driver_data;
+ 	spin_lock_init(&priv->lock);
+ 	INIT_LIST_HEAD(&priv->capture);
 -- 
-1.8.3.2
+1.9.0
 
