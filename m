@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 07 Mar 2014 13:01:38 +0000
-Subject: [PATCH 4/5] rcar_vin: copy flags from pdata
-Message-Id: <1394197299-17528-5-git-send-email-ben.dooks@codethink.co.uk>
+Date: Fri, 07 Mar 2014 13:01:37 +0000
+Subject: [PATCH 3/5] media: soc_camera: rcar_vin: Add support for 10-bit YUV cameras
+Message-Id: <1394197299-17528-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
@@ -9,81 +9,49 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-kernel@vger.kernel.org, magnus.damm@opensource.se, linux-sh@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-kernel@vger.kernel.org, magnus.damm@opensource.se, linux-sh@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Phil Edworthy <phil.edworthy@renesas.com>
 
-The platform data is a single word, so simply copy
-it into the device's private data structure than
-keeping a copy of the pointer.
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-This will make changing to device-tree binding
-easier as it is one allocation instead of two.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ drivers/media/platform/soc_camera/rcar_vin.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 702dc47..47516df 100644
+index 3b1c05a..702dc47 100644
 --- a/drivers/media/platform/soc_camera/rcar_vin.c
 +++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -126,13 +126,13 @@ struct rcar_vin_priv {
- 	int				sequence;
- 	/* State of the VIN module in capturing mode */
- 	enum rcar_vin_state		state;
--	struct rcar_vin_platform_data	*pdata;
- 	struct soc_camera_host		ici;
- 	struct list_head		capture;
- #define MAX_BUFFER_NUM			3
- 	struct vb2_buffer		*queue_buf[MAX_BUFFER_NUM];
- 	struct vb2_alloc_ctx		*alloc_ctx;
- 	enum v4l2_field			field;
-+	unsigned int			pdata_flags;
- 	unsigned int			vb_count;
- 	unsigned int			nr_hw_slots;
- 	bool				request_to_stop;
-@@ -275,12 +275,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 		break;
- 	case V4L2_MBUS_FMT_YUYV8_2X8:
+@@ -68,6 +68,8 @@
+ #define VNMC_YCAL		(1 << 19)
+ #define VNMC_INF_YUV8_BT656	(0 << 16)
+ #define VNMC_INF_YUV8_BT601	(1 << 16)
++#define VNMC_INF_YUV10_BT656	(2 << 16)
++#define VNMC_INF_YUV10_BT601	(3 << 16)
+ #define VNMC_INF_YUV16		(5 << 16)
+ #define VNMC_VUP		(1 << 10)
+ #define VNMC_IM_ODD		(0 << 3)
+@@ -275,6 +277,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
  		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
+ 		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
  			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
- 		break;
- 	case V4L2_MBUS_FMT_YUYV10_2X10:
- 		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
- 		break;
++		break;
++	case V4L2_MBUS_FMT_YUYV10_2X10:
++		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
++		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
++		break;
  	default:
-@@ -799,7 +799,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
- 	/* Make choises, based on platform preferences */
- 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
-@@ -807,7 +807,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
+ 		break;
+ 	}
+@@ -1003,6 +1011,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
+ 	switch (code) {
+ 	case V4L2_MBUS_FMT_YUYV8_1X16:
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
++	case V4L2_MBUS_FMT_YUYV10_2X10:
+ 		if (cam->extra_fmt)
+ 			break;
  
- 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
-@@ -1447,7 +1447,7 @@ static int rcar_vin_probe(struct platform_device *pdev)
- 	priv->ici.drv_name = dev_name(&pdev->dev);
- 	priv->ici.ops = &rcar_vin_host_ops;
- 
--	priv->pdata = pdata;
-+	priv->pdata_flags = pdata->flags;
- 	priv->chip = pdev->id_entry->driver_data;
- 	spin_lock_init(&priv->lock);
- 	INIT_LIST_HEAD(&priv->capture);
 -- 
 1.9.0
 
