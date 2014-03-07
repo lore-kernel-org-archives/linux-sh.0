@@ -1,44 +1,82 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 07 Mar 2014 10:10:11 +0000
-Subject: Re: [PATCH 3/3] clk-mstp: add backwards comapt for indicies field
-Message-Id: <58097128.FjP4hkbmQo@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 07 Mar 2014 13:01:36 +0000
+Subject: [PATCH 2/5] ARM: lager: add vin1 node
+Message-Id: <1394197299-17528-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392314571-30107-3-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1392314571-30107-3-git-send-email-ben.dooks@codethink.co.uk>
+References: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-kernel@vger.kernel.org, magnus.damm@opensource.se, linux-sh@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Hi Ben,
+Add device-tree for vin1 (composite video in) on the
+lager board.
 
-On Thursday 06 March 2014 19:06:35 Ben Dooks wrote:
-> On 13/02/14 23:15, Laurent Pinchart wrote:
-> > Hi Ben,
-> > 
-> > Thank you for the patch.
-> > 
-> > On Thursday 13 February 2014 18:02:51 Ben Dooks wrote:
-> >> Add comaptibiltiy for older device trees by checking to see if
-> >> the clock-indicies property is there and falling back to the
-> >> older renesas,clock-indices field.
-> > 
-> > I would drop this patch. The Renesas clocks DT bindings are too new
-> > (v3.14-rc1, and for multiplatform kernels only) to be considered as stable
-> > in my opinion.
-> 
-> I think this may be required as the current amount of development work being
-> done means that either we need to be at a point where we can merge the
-> driver change via Simon's tree, or to put the compatibility in and hope the
-> driver update goes in first before we merge the dts/dtsi changes.
-> 
-> I'm not sure which is the best way to do this?
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 38 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
-I assume that backward compat will get the most votes, so I won't fight 
-against it :-)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a087421..7528cfc 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -158,6 +158,11 @@
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
+ 	};
++
++	vin1_pins: vin {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
+ };
+ 
+ &mmcif1 {
+@@ -239,8 +244,41 @@
+ 	status = "ok";
+ 	pinctrl-0 = <&i2c2_pins>;
+ 	pinctrl-names = "default";
++
++	adv7180: adv7180@0x20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin1>;
++
++		port {
++			adv7180_1: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin1ep0>;
++			};
++		};
++	};
++
+ };
+ 
+ &i2c3	{
+ 	status = "ok";
+ };
++
++/* composite video input */
++&vin1 {
++	pinctrl-0 = <&vin1_pins>;
++	pinctrl-names = "default";
++
++	status = "ok";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin1ep0: endpoint {
++			remote-endpoint = <&adv7180_1>;
++			bus-width = <8>;
++		};
++	};
++};
++
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.0
 
