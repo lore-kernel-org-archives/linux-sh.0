@@ -1,116 +1,144 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 12 Mar 2014 10:23:58 +0000
-Subject: Re: [PATCH 1/5] pinctrl: pfc: r8a7790: add i2c0 muxing
-Message-Id: <2710482.IIJcHq53An@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Mar 2014 16:00:42 +0000
+Subject: [PATCH V3 06/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
+Message-Id: <1394208048-32495-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394573078-20767-1-git-send-email-wsa@the-dreams.de>
- <1394573078-20767-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394573078-20767-2-git-send-email-wsa@the-dreams.de>
+References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Thank you for the patch.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 104 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 104 insertions(+)
 
-On Tuesday 11 March 2014 22:24:34 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Add the muxing for the last missing i2c rcar core.
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> Cc: Linus Walleij <linus.walleij@linaro.org>
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 20 ++++++++++++++++++++
->  1 file changed, 20 insertions(+)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index c381ae63c508..bd21022cf9bf
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> @@ -782,6 +782,7 @@ enum {
->  	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
->  	TCLK1_B_MARK,
-> 
-> +	I2C0_SCL_MARK, I2C0_SDA_MARK,
->  	I2C3_SCL_MARK, I2C3_SDA_MARK,
->  	PINMUX_MARK_END,
->  };
-> @@ -1722,6 +1723,9 @@ static const u16 pinmux_data[] = {
->  	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
->  	PINMUX_IPSR_MODSEL_DATA(IP16_7, TCLK1_B, SEL_TMU1_1),
-> 
-> +	PINMUX_DATA(I2C0_SCL_MARK, FN_SEL_IIC0_1),
-> +	PINMUX_DATA(I2C0_SDA_MARK, FN_SEL_IIC0_1),
-> +
->  	PINMUX_DATA(I2C3_SCL_MARK, FN_SEL_IICDVFS_1),
->  	PINMUX_DATA(I2C3_SDA_MARK, FN_SEL_IICDVFS_1),
->  };
-> @@ -1735,6 +1739,8 @@ static const struct sh_pfc_pin pinmux_pins[] = {
->  	PINMUX_GPIO_GP_ALL(),
-> 
->  	/* Pins not associated with a GPIO port */
-> +	SH_PFC_PIN_NAMED(ROW_GROUP_A('G'), 15, AG15),
-> +	SH_PFC_PIN_NAMED(ROW_GROUP_A('F'), 15, AF15),
-
-I would swap those two lines to keep pin entries sorted alphabetically.
-
->  	SH_PFC_PIN_NAMED(ROW_GROUP_A('J'), 15, AJ15),
->  	SH_PFC_PIN_NAMED(ROW_GROUP_A('H'), 15, AH15),
-
-I realize that those two lines should be swapped as well. You could do so in 
-the same patch.
-
->  };
-> @@ -2054,6 +2060,14 @@ static const unsigned int hscif1_ctrl_b_pins[] = {
->  static const unsigned int hscif1_ctrl_b_mux[] = {
->  	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
->  };
-> +/* - I2C0
-> ------------------------------------------------------------------- */
-> +static const unsigned int i2c0_pins[] = {
-> +	/* SCL, SDA */
-> +	PIN_A_NUMBER('G', 15), PIN_A_NUMBER('F', 15),
-> +};
-> +static const unsigned int i2c0_mux[] = {
-> +	I2C0_SCL_MARK, I2C0_SDA_MARK,
-> +};
->  /* - I2C1
-> ------------------------------------------------------------------- */
-> static const unsigned int i2c1_pins[] = {
->  	/* SCL, SDA */
-> @@ -3626,6 +3640,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] > { SH_PFC_PIN_GROUP(hscif1_data_b),
->  	SH_PFC_PIN_GROUP(hscif1_clk_b),
->  	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
-> +	SH_PFC_PIN_GROUP(i2c0),
->  	SH_PFC_PIN_GROUP(i2c1),
->  	SH_PFC_PIN_GROUP(i2c1_b),
->  	SH_PFC_PIN_GROUP(i2c1_c),
-> @@ -3895,6 +3910,10 @@ static const char * const hscif1_groups[] = {
->  	"hscif1_ctrl_b",
->  };
-> 
-> +static const char * const i2c0_groups[] = {
-> +	"i2c0",
-> +};
-> +
->  static const char * const i2c1_groups[] = {
->  	"i2c1",
->  	"i2c1_b",
-> @@ -4203,6 +4222,7 @@ static const struct sh_pfc_function pinmux_functions[]
-> = { SH_PFC_FUNCTION(eth),
->  	SH_PFC_FUNCTION(hscif0),
->  	SH_PFC_FUNCTION(hscif1),
-> +	SH_PFC_FUNCTION(i2c0),
->  	SH_PFC_FUNCTION(i2c1),
->  	SH_PFC_FUNCTION(i2c2),
->  	SH_PFC_FUNCTION(i2c3),
-
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 6af5c28c670e..d49afe30c1d7 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -23,6 +23,14 @@
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
++		serial0 = &scif0;
++		serial1 = &scif1;
++		serial2 = &scif2;
++		serial3 = &scif3;
++		serial4 = &scif4;
++		serial5 = &scif5;
++		serial6 = &scif6;
++		serial7 = &scif7;
+ 		spi0 = &spi0;
+ 		spi1 = &spi1;
+ 		spi2 = &spi2;
+@@ -200,6 +208,102 @@
+ 		status = "disabled";
+ 	};
+ 
++	scif0: serial@e8007000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007000 64>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 191 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e8007800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007800 64>;
++		interrupts = <0 194 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 195 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif2: serial@e8008000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008000 64>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif3: serial@e8008800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008800 64>;
++		interrupts = <0 202 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 203 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif4: serial@e8009000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009000 64>;
++		interrupts = <0 206 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 207 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif5: serial@e8009800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009800 64>;
++		interrupts = <0 210 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 211 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif6: serial@e800a000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a000 64>;
++		interrupts = <0 214 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 215 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif7: serial@e800a800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a800 64>;
++		interrupts = <0 218 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 219 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	spi0: spi@e800c800 {
+ 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
+ 		reg = <0xe800c800 0x24>;
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.0
 
