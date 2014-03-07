@@ -1,157 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 07 Mar 2014 16:13:34 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Mar 2014 16:25:10 +0000
 Subject: Re: [PATCH V3 06/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
-Message-Id: <1930280.sZNcfhZEL8@avalon>
+Message-Id: <20140307162510.GF28943@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="uTRFFR9qmiCqR05s"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
  <1394208048-32495-7-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394208048-32495-7-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <1930280.sZNcfhZEL8@avalon>
+In-Reply-To: <1930280.sZNcfhZEL8@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
 
-Thank you for the patch.
+--uTRFFR9qmiCqR05s
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Friday 07 March 2014 17:00:42 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> ---
->  arch/arm/boot/dts/r7s72100.dtsi | 104 +++++++++++++++++++++++++++++++++++++
->  1 file changed, 104 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r7s72100.dtsi
-> b/arch/arm/boot/dts/r7s72100.dtsi index 6af5c28c670e..d49afe30c1d7 100644
-> --- a/arch/arm/boot/dts/r7s72100.dtsi
-> +++ b/arch/arm/boot/dts/r7s72100.dtsi
-> @@ -23,6 +23,14 @@
->  		i2c1 = &i2c1;
->  		i2c2 = &i2c2;
->  		i2c3 = &i2c3;
-> +		serial0 = &scif0;
-> +		serial1 = &scif1;
-> +		serial2 = &scif2;
-> +		serial3 = &scif3;
-> +		serial4 = &scif4;
-> +		serial5 = &scif5;
-> +		serial6 = &scif6;
-> +		serial7 = &scif7;
 
-As port usages is board specific, shouldn't this be moved to the board .dts 
-file, with only serial0 = &scif2 ?
+> > diff --git a/arch/arm/boot/dts/r7s72100.dtsi
+> > b/arch/arm/boot/dts/r7s72100.dtsi index 6af5c28c670e..d49afe30c1d7 1006=
+44
+> > --- a/arch/arm/boot/dts/r7s72100.dtsi
+> > +++ b/arch/arm/boot/dts/r7s72100.dtsi
+> > @@ -23,6 +23,14 @@
+> >  		i2c1 =3D &i2c1;
+> >  		i2c2 =3D &i2c2;
+> >  		i2c3 =3D &i2c3;
+> > +		serial0 =3D &scif0;
+> > +		serial1 =3D &scif1;
+> > +		serial2 =3D &scif2;
+> > +		serial3 =3D &scif3;
+> > +		serial4 =3D &scif4;
+> > +		serial5 =3D &scif5;
+> > +		serial6 =3D &scif6;
+> > +		serial7 =3D &scif7;
+>=20
+> As port usages is board specific, shouldn't this be moved to the board .d=
+ts=20
+> file, with only serial0 =3D &scif2 ?
 
->  		spi0 = &spi0;
->  		spi1 = &spi1;
->  		spi2 = &spi2;
-> @@ -200,6 +208,102 @@
->  		status = "disabled";
->  	};
-> 
-> +	scif0: serial@e8007000 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe8007000 64>;
-> +		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 191 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif1: serial@e8007800 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe8007800 64>;
-> +		interrupts = <0 194 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 195 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif2: serial@e8008000 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe8008000 64>;
-> +		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif3: serial@e8008800 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe8008800 64>;
-> +		interrupts = <0 202 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 203 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif4: serial@e8009000 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe8009000 64>;
-> +		interrupts = <0 206 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 207 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif5: serial@e8009800 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe8009800 64>;
-> +		interrupts = <0 210 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 211 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif6: serial@e800a000 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe800a000 64>;
-> +		interrupts = <0 214 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 215 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
-> +	scif7: serial@e800a800 {
-> +		compatible = "renesas,scif-r7s72100", "renesas,scif";
-> +		reg = <0xe800a800 64>;
-> +		interrupts = <0 218 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 219 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
-> +			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
-> +		clock-names = "sci_ick";
-> +		status = "disabled";
-> +	};
-> +
->  	spi0: spi@e800c800 {
->  		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
->  		reg = <0xe800c800 0x24>;
+Nope, the intention of these aliases is to have a consistent numbering
+of SCIF cores, similar to platform.dev_id.
 
--- 
-Regards,
 
-Laurent Pinchart
+--uTRFFR9qmiCqR05s
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTGfLmAAoJEBQN5MwUoCm2LnYP/R+4Om2eS9td5OyiiyNjfTTj
+7nYzodQvQVQ8DjoW3lUeH78LulweXvyIZmYITgCudNeMEQ98d9kmT0xm/pbIf9N7
+tMUfrUjGWURtmTve2rposK2R2rYurFtIaKangloa93rAy1n91UH7yil2iS/as0g0
+JFDkI4UIo05XUNfKD5PLxGTBrFnC3vJJTbs/VYXICB/GegL1ILI/kgLT1N9XOLpX
+LFDG4y+aV3HwTC3tfzdcX8K8Hiz+MpTTi3T98izcoIu0EvRwoEuPWT4iOqTvmXUS
+t/SiIhpAcXH/7k7cBjkLVSl5mPoFrQogaoRMYxOQm590pl4yI+IK/pstuPVyG0TJ
+Hhr0NXWoUlPajCz3EEOB/ckoBwYBYjUSSgMhstNYrLaDX4SFUOOGizSSgEIA9ohs
+Y6jXnKCslRqlfka61JTB9phVbnoijaeK3qaC1HIQ2CX/SN2Id8hzI8wl0DNOFPko
+oLJB0Nn9y7vPucOEFCriwy8g0qLEchozFB7HgI6rMTewhpBBBeFe0l+omCWzxi69
+4l2Ae17Ur5dajtcbtQVvRgAX9Hs5x5vHfjPUfAIr04lXwD0t5f1MIGFOI4GbQJ6M
+H3EzrONhfHWeUptK85IVe4f7Cf6dh6Jhss6i+KuxQ0/3u8H/cfJrjDtAbvTvC9lB
+hND93PFq5yZ2EIqbrZrw
+=AQqV
+-----END PGP SIGNATURE-----
+
+--uTRFFR9qmiCqR05s--
