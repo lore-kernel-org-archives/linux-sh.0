@@ -1,55 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 14 Mar 2014 23:27:59 +0000
-Subject: [PATCH 1/3] sh_eth: convert pr_*() to netdev_*() calls
-Message-Id: <201403150327.55110.sergei.shtylyov@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 07 Mar 2014 16:00:43 +0000
+Subject: [PATCH V3 07/12] ARM: shmobile: r7s72100: genmai: activate scif2 for console output
+Message-Id: <1394208048-32495-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201403150321.47674.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201403150321.47674.sergei.shtylyov@cogentembedded.com>
+References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, joe@perches.com
+To: linux-arm-kernel@lists.infradead.org
 
-Convert pr_*() to netdev_*() calls as the latter provide info on a device.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Suggested-by: Joe Perches <joe@perches.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -400,7 +400,8 @@ static void sh_eth_select_mii(struct net
- 		value = 0x0;
- 		break;
- 	default:
--		pr_warn("PHY interface mode was not setup. Set to MII.\n");
-+		netdev_warn(ndev,
-+			    "PHY interface mode was not setup. Set to MII.\n");
- 		value = 0x1;
- 		break;
- 	}
-@@ -854,7 +855,7 @@ static int sh_eth_check_reset(struct net
- 		cnt--;
- 	}
- 	if (cnt <= 0) {
--		pr_err("Device reset failed\n");
-+		netdev_err(ndev, "Device reset failed\n");
- 		ret = -ETIMEDOUT;
- 	}
- 	return ret;
-@@ -2924,8 +2925,8 @@ static int sh_eth_drv_probe(struct platf
- 	}
- 
- 	/* print device information */
--	pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
--		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
-+	netdev_info(ndev, "Base address at 0x%x, %pM, IRQ %d.\n",
-+		    (u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
- 
- 	platform_set_drvdata(pdev, ndev);
- 
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 941e72ce7c82..82901a2cd947 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -48,3 +48,7 @@
+ 		pagesize = <64>;
+ 	};
+ };
++
++&scif2 {
++	status = "okay";
++};
+-- 
+1.9.0
+
