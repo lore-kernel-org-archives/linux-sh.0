@@ -1,88 +1,428 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 28 Mar 2014 14:46:36 +0000
-Subject: Re: [RFC] Serial port aliases in DT
-Message-Id: <CAL_JsqLJjEkuhKWwoq_+LgX4E0=VLr-+M2aB9ejLAkKUxSBb4g@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 10 Mar 2014 02:25:58 +0000
+Subject: [PATCH v3] shdma: add R-Car Audio DMAC peri peri driver
+Message-Id: <87wqg2rdqk.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5448979.WQPtOb56tW@avalon>
-	<CAL_Jsq+SWZUz4D+3pdDs5yfi_XbTODC0ytt1S5KpmR_C5vVL=A@mail.gmail.com>
-	<20140327151829.GX17250@pengutronix.de>
-	<4966076.uASvrV0Iy2@wuerfel>
-	<20140328072827.GY17250@pengutronix.de>
-In-Reply-To: <20140328072827.GY17250-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>
+References: <878uu6gle8.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <878uu6gle8.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sascha Hauer <s.hauer-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>
-Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-spec-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, dmaengine@vger.kernel.org
 
-On Fri, Mar 28, 2014 at 2:28 AM, Sascha Hauer <s.hauer@pengutronix.de> wrote:
-> On Thu, Mar 27, 2014 at 07:26:27PM +0100, Arnd Bergmann wrote:
->> On Thursday 27 March 2014 16:18:29 Sascha Hauer wrote:
->> > On Thu, Mar 27, 2014 at 08:54:09AM -0500, Rob Herring wrote:
->> > > >>
->> > > >> > This however comes back to the more general issue of serial port device
->> > > >> > naming: Linux traditionally uses separate names per driver (e.g. ttySC0
->> > > >> > instead of ttyS0).
->> > > >> >
->> > > >> > There has been discussion in the past about changing this to let all
->> > > >> > drivers use the same namespace, but it's not yet clear to me how we'd do
->> > > >> > this in a 100% backwards compatible way. Maybe it's best left to udev to
->> > > >> > figure out the driver independent name, but then we definitely should use
->> > > >> > the alias for that name.
->> > >
->> > > This discussion has come up in just the last month or so.
->> > >
->> > > My opinion is device name numbering should start at 0 with 0 being the
->> > > preferred console device.
->> >
->> > That's completely different to everything I've heard and seen so far
->> >
->> > For specifying the console we have the linux,stdout-path property in the
->> > chosen node. My preferred console may not be a serial port at all in
->> > which case I would end up with a serial0 = &lcd0 alias.
->>
->> Agreed. Also, don't we already have /dev/console for the preferred console
->> device?
->>
->> >  Many
->> > devicetrees specify aliases for i2c/spi/mmc controllers aswell.  Should
->> > they order their i2c controllers in the order of preference now?
->> >
->> > Most dtsi files in the kernel specify a SoC specific order of aliases
->> > and I think this makes the most sense.
->>
->> I disagree with this one: the aliases should be a board specific
->> property, if not settable in the boot loader. This is how it traditionally
->> work on OF, and I think it's the most sensible approach for end users:
->> If the machine has multiple serial ports coming out the back, they are
->> normally numbered in some way, and the numbers should match what you
->> see in the OS, regardless of what the SoC calls them.
->
-> Freescale starts numbering the devices at 1, Linux normally starts at 0.
-> This leads to enough confusion already. I really don't want to have an
-> additional board vendor specific translation. This would mean when
-> talking about an UART we would not only have to make clear whether we
-> mean freescale numbering or Linux numbering, but also whether we me mean
-> board vendor numbering. Things like earlyprintk would still have the SoC
-> numbering. Bootloaders which still use the SoC numbering would add to
-> the confusion.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I'm working on a series to support early console from command line or
-DT (linux,stdout-path). This should mostly replace using DEBUG_LL for
-earlyprintk (although they can coexist).
+Add support Audio DMAC peri peri driver
+for Renesas R-Car Gen2 SoC, using 'shdma-base'
+DMA driver framework.
 
-> I really don't think making the numbering board specific is going to
-> improve the situation.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-The way I look at is if I pick-up any board with UARTs labeled in some
-way with ordering whether it is 0,1,2; 1,2,3; or A,B,C that I can
-count on connecting to the 1st port and get a console on /dev/ttyS0. I
-really don't care what physical UART that corresponds to and I don't
-want to have to go look it up on every different board. That works on
-any PC ever made no matter what chipset. It should be for ARM as well.
-We should be designing things to just work for an experienced Linux
-user, not someone familiar with particular h/w knowledge. Of course we
-are not there yet with separate namespaces for each UART, but that is
-a kernel problem which we need to fix.
+ - remove error message when devm_kzalloc() was failed
 
-Rob
+ drivers/dma/sh/Kconfig                         |    6 +
+ drivers/dma/sh/Makefile                        |    1 +
+ drivers/dma/sh/rcar-audmapp.c                  |  321 ++++++++++++++++++++++++
+ include/linux/platform_data/dma-rcar-audmapp.h |   34 +++
+ 4 files changed, 362 insertions(+)
+ create mode 100644 drivers/dma/sh/rcar-audmapp.c
+ create mode 100644 include/linux/platform_data/dma-rcar-audmapp.h
+
+diff --git a/drivers/dma/sh/Kconfig b/drivers/dma/sh/Kconfig
+index dadd9e01..b4c8138 100644
+--- a/drivers/dma/sh/Kconfig
++++ b/drivers/dma/sh/Kconfig
+@@ -29,6 +29,12 @@ config RCAR_HPB_DMAE
+ 	help
+ 	  Enable support for the Renesas R-Car series DMA controllers.
+ 
++config RCAR_AUDMAC_PP
++	tristate "Renesas R-Car Audio DMAC Peripheral Peripheral support"
++	depends on SH_DMAE_BASE
++	help
++	  Enable support for the Renesas R-Car Audio DMAC Peripheral Peripheral controllers.
++
+ config SHDMA_R8A73A4
+ 	def_bool y
+ 	depends on ARCH_R8A73A4 && SH_DMAE != n
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+index e856af2..1ce88b2 100644
+--- a/drivers/dma/sh/Makefile
++++ b/drivers/dma/sh/Makefile
+@@ -7,3 +7,4 @@ endif
+ shdma-objs := $(shdma-y)
+ obj-$(CONFIG_SUDMAC) += sudmac.o
+ obj-$(CONFIG_RCAR_HPB_DMAE) += rcar-hpbdma.o
++obj-$(CONFIG_RCAR_AUDMAC_PP) += rcar-audmapp.o
+diff --git a/drivers/dma/sh/rcar-audmapp.c b/drivers/dma/sh/rcar-audmapp.c
+new file mode 100644
+index 0000000..884ad3b80
+--- /dev/null
++++ b/drivers/dma/sh/rcar-audmapp.c
+@@ -0,0 +1,321 @@
++/*
++ * drivers/dma/sh/rcar-audmapp.c
++ *
++ * Copyright (C) 2013 Renesas Electronics Corporation
++ * Copyright (C) 2013 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * based on the drivers/dma/sh/shdma.c
++ *
++ * Copyright (C) 2011-2012 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ * Copyright (C) 2009 Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
++ * Copyright (C) 2009 Renesas Solutions, Inc. All rights reserved.
++ * Copyright (C) 2007 Freescale Semiconductor, Inc. All rights reserved.
++ *
++ * This is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ */
++#include <linux/delay.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/dmaengine.h>
++#include <linux/platform_data/dma-rcar-audmapp.h>
++#include <linux/platform_device.h>
++#include <linux/shdma-base.h>
++
++/*
++ * DMA register
++ */
++#define PDMASAR		0x00
++#define PDMADAR		0x04
++#define PDMACHCR	0x0c
++
++/* PDMACHCR */
++#define PDMACHCR_DE		(1 << 0)
++
++#define AUDMAPP_MAX_CHANNELS	29
++
++/* Default MEMCPY transfer size = 2^2 = 4 bytes */
++#define LOG2_DEFAULT_XFER_SIZE	2
++#define AUDMAPP_SLAVE_NUMBER	256
++#define AUDMAPP_LEN_MAX		(16 * 1024 * 1024)
++
++struct audmapp_chan {
++	struct shdma_chan shdma_chan;
++	struct audmapp_slave_config *config;
++	void __iomem *base;
++};
++
++struct audmapp_device {
++	struct shdma_dev shdma_dev;
++	struct audmapp_pdata *pdata;
++	struct device *dev;
++	void __iomem *chan_reg;
++};
++
++#define to_chan(chan) container_of(chan, struct audmapp_chan, shdma_chan)
++#define to_dev(chan) container_of(chan->shdma_chan.dma_chan.device,	\
++				  struct audmapp_device, shdma_dev.dma_dev)
++
++static void audmapp_write(struct audmapp_chan *auchan, u32 data, u32 reg)
++{
++	struct audmapp_device *audev = to_dev(auchan);
++	struct device *dev = audev->dev;
++
++	dev_dbg(dev, "w %p : %08x\n", auchan->base + reg, data);
++
++	iowrite32(data, auchan->base + reg);
++}
++
++static u32 audmapp_read(struct audmapp_chan *auchan, u32 reg)
++{
++	return ioread32(auchan->base + reg);
++}
++
++static void audmapp_halt(struct shdma_chan *schan)
++{
++	struct audmapp_chan *auchan = to_chan(schan);
++	int i;
++
++	audmapp_write(auchan, 0, PDMACHCR);
++
++	for(i = 0; i < 1024; i++) {
++		if (0 = audmapp_read(auchan, PDMACHCR))
++			return;
++		udelay(1);
++	}
++}
++
++static void audmapp_start_xfer(struct shdma_chan *schan,
++			       struct shdma_desc *sdecs)
++{
++	struct audmapp_chan *auchan = to_chan(schan);
++	struct audmapp_device *audev = to_dev(auchan);
++	struct audmapp_slave_config *cfg = auchan->config;
++	struct device *dev = audev->dev;
++	u32 chcr = cfg->chcr | PDMACHCR_DE;
++
++	dev_dbg(dev, "src/dst/chcr = %x/%x/%x\n",
++		cfg->src, cfg->dst, cfg->chcr);
++
++	audmapp_write(auchan, cfg->src,	PDMASAR);
++	audmapp_write(auchan, cfg->dst,	PDMADAR);
++	audmapp_write(auchan, chcr,	PDMACHCR);
++}
++
++static struct audmapp_slave_config *
++audmapp_find_slave(struct audmapp_chan *auchan, int slave_id)
++{
++	struct audmapp_device *audev = to_dev(auchan);
++	struct audmapp_pdata *pdata = audev->pdata;
++	struct audmapp_slave_config *cfg;
++	int i;
++
++	if (slave_id >= AUDMAPP_SLAVE_NUMBER)
++		return NULL;
++
++	for (i = 0, cfg = pdata->slave; i < pdata->slave_num; i++, cfg++)
++		if (cfg->slave_id = slave_id)
++			return cfg;
++
++	return NULL;
++}
++
++static int audmapp_set_slave(struct shdma_chan *schan, int slave_id,
++			     dma_addr_t slave_addr, bool try)
++{
++	struct audmapp_chan *auchan = to_chan(schan);
++	struct audmapp_slave_config *cfg +		audmapp_find_slave(auchan, slave_id);
++
++	if (!cfg)
++		return -ENODEV;
++	if (try)
++		return 0;
++
++	auchan->config	= cfg;
++
++	return 0;
++}
++
++static int audmapp_desc_setup(struct shdma_chan *schan,
++			      struct shdma_desc *sdecs,
++			      dma_addr_t src, dma_addr_t dst, size_t *len)
++{
++	struct audmapp_chan *auchan = to_chan(schan);
++	struct audmapp_slave_config *cfg = auchan->config;
++
++	if (!cfg)
++		return -ENODEV;
++
++	if (*len > (size_t)AUDMAPP_LEN_MAX)
++		*len = (size_t)AUDMAPP_LEN_MAX;
++
++	return 0;
++}
++
++static void audmapp_setup_xfer(struct shdma_chan *schan,
++			       int slave_id)
++{
++}
++
++static dma_addr_t audmapp_slave_addr(struct shdma_chan *schan)
++{
++	return 0; /* always fixed address */
++}
++
++static bool audmapp_channel_busy(struct shdma_chan *schan)
++{
++	struct audmapp_chan *auchan = to_chan(schan);
++	u32 chcr = audmapp_read(auchan, PDMACHCR);
++
++	return chcr & ~PDMACHCR_DE;
++}
++
++static bool audmapp_desc_completed(struct shdma_chan *schan,
++				   struct shdma_desc *sdesc)
++{
++	return true;
++}
++
++static struct shdma_desc *audmapp_embedded_desc(void *buf, int i)
++{
++	return &((struct shdma_desc *)buf)[i];
++}
++
++static const struct shdma_ops audmapp_shdma_ops = {
++	.halt_channel	= audmapp_halt,
++	.desc_setup	= audmapp_desc_setup,
++	.set_slave	= audmapp_set_slave,
++	.start_xfer	= audmapp_start_xfer,
++	.embedded_desc	= audmapp_embedded_desc,
++	.setup_xfer	= audmapp_setup_xfer,
++	.slave_addr	= audmapp_slave_addr,
++	.channel_busy	= audmapp_channel_busy,
++	.desc_completed	= audmapp_desc_completed,
++};
++
++static int audmapp_chan_probe(struct platform_device *pdev,
++			      struct audmapp_device *audev, int id)
++{
++	struct shdma_dev *sdev = &audev->shdma_dev;
++	struct audmapp_chan *auchan;
++	struct shdma_chan *schan;
++	struct device *dev = audev->dev;
++
++	auchan = devm_kzalloc(dev, sizeof(struct audmapp_chan), GFP_KERNEL);
++	if (!auchan)
++		return -ENOMEM;
++
++	schan = &auchan->shdma_chan;
++	schan->max_xfer_len = AUDMAPP_LEN_MAX;
++
++	shdma_chan_probe(sdev, schan, id);
++
++	auchan->base = audev->chan_reg + 0x20 + (0x10 * id);
++	dev_dbg(dev, "%02d : %p / %p", id, auchan->base, audev->chan_reg);
++
++	return 0;
++}
++
++static void audmapp_chan_remove(struct audmapp_device *audev)
++{
++	struct dma_device *dma_dev = &audev->shdma_dev.dma_dev;
++	struct shdma_chan *schan;
++	int i;
++
++	shdma_for_each_chan(schan, &audev->shdma_dev, i) {
++		BUG_ON(!schan);
++		shdma_chan_remove(schan);
++	}
++	dma_dev->chancnt = 0;
++}
++
++static int audmapp_probe(struct platform_device *pdev)
++{
++	struct audmapp_pdata *pdata = pdev->dev.platform_data;
++	struct audmapp_device *audev;
++	struct shdma_dev *sdev;
++	struct dma_device *dma_dev;
++	struct resource *res;
++	int err, i;
++
++	if (!pdata)
++		return -ENODEV;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++
++	audev = devm_kzalloc(&pdev->dev, sizeof(struct audmapp_device),
++			     GFP_KERNEL);
++	if (!audev)
++		return -ENOMEM;
++
++	audev->dev	= &pdev->dev;
++	audev->pdata	= pdata;
++	audev->chan_reg	= devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(audev->chan_reg))
++		return PTR_ERR(audev->chan_reg);
++
++	sdev		= &audev->shdma_dev;
++	sdev->ops	= &audmapp_shdma_ops;
++	sdev->desc_size	= sizeof(struct shdma_desc);
++
++	dma_dev			= &sdev->dma_dev;
++	dma_dev->copy_align	= LOG2_DEFAULT_XFER_SIZE;
++	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
++
++	err = shdma_init(&pdev->dev, sdev, AUDMAPP_MAX_CHANNELS);
++	if (err < 0)
++		return err;
++
++	platform_set_drvdata(pdev, audev);
++
++	/* Create DMA Channel */
++	for (i = 0; i < AUDMAPP_MAX_CHANNELS; i++) {
++		err = audmapp_chan_probe(pdev, audev, i);
++		if (err)
++			goto chan_probe_err;
++	}
++
++	err = dma_async_device_register(dma_dev);
++	if (err < 0)
++		goto chan_probe_err;
++
++	return err;
++
++chan_probe_err:
++	audmapp_chan_remove(audev);
++	shdma_cleanup(sdev);
++
++	return err;
++}
++
++static int audmapp_remove(struct platform_device *pdev)
++{
++	struct audmapp_device *audev = platform_get_drvdata(pdev);
++	struct dma_device *dma_dev = &audev->shdma_dev.dma_dev;
++
++	dma_async_device_unregister(dma_dev);
++
++	audmapp_chan_remove(audev);
++	shdma_cleanup(&audev->shdma_dev);
++
++	return 0;
++}
++
++static struct platform_driver audmapp_driver = {
++	.probe		= audmapp_probe,
++	.remove		= audmapp_remove,
++	.driver		= {
++		.owner	= THIS_MODULE,
++		.name	= "rcar-audmapp-engine",
++	},
++};
++module_platform_driver(audmapp_driver);
++
++MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
++MODULE_DESCRIPTION("Renesas R-Car Audio DMAC peri-peri driver");
++MODULE_LICENSE("GPL");
+diff --git a/include/linux/platform_data/dma-rcar-audmapp.h b/include/linux/platform_data/dma-rcar-audmapp.h
+new file mode 100644
+index 0000000..346df66
+--- /dev/null
++++ b/include/linux/platform_data/dma-rcar-audmapp.h
+@@ -0,0 +1,34 @@
++/*
++ * include/linux/sh_audma-pp.h
++ *     This file is header file for Audio-DMAC-pp peripheral.
++ *
++ * Copyright (C) 2013 Renesas Electronics Corporation
++ *
++ * This file is based on the include/linux/sh_dma.h
++ *
++ * Header for the new SH dmaengine driver
++ *
++ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#ifndef SH_AUDMAPP_H
++#define SH_AUDMAPP_H
++
++#include <linux/dmaengine.h>
++
++struct audmapp_slave_config {
++	int		slave_id;
++	dma_addr_t	src;
++	dma_addr_t	dst;
++	u32		chcr;
++};
++
++struct audmapp_pdata {
++	struct audmapp_slave_config *slave;
++	int slave_num;
++};
++
++#endif /* SH_AUDMAPP_H */
+-- 
+1.7.9.5
+
