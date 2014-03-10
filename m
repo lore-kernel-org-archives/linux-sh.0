@@ -1,50 +1,86 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 21 Mar 2014 10:32:39 +0000
-Subject: [PATCH v4 0/9] R-Car Gen2 PCIe host driver
-Message-Id: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 10 Mar 2014 11:26:57 +0000
+Subject: [PATCH V2 2/5] ARM: shmobile: r8a7791: add IIC(B) clocks to dtsi
+Message-Id: <1394450820-8158-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is version 4 of a PCIe Host driver for the R-Car Gen2 devices,
-i.e. R-Car H2 (r8a7790) and R-Car M2 (r8a7791). This version includes
-DT support, and includes a patch to add MSI.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-v4:
- - Patch 0001 changed to correct use of runtime PM
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
 
-Thanks
-Phil
+Changes since V1: kept sorting by bit number
 
-Phil Edworthy (9):
-  PCI: host: rcar: Add Renesas R-Car PCIe driver
-  PCI: host: rcar: Add MSI support
-  ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-  ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
-  dt-bindings: pci: rcar pcie device tree bindings
-  ARM: shmobile: Add PCIe device tree nodes for R8A7790
-  ARM: shmobile: Add PCIe device tree nodes for R8A7791 Koelsch board
-  ARM: koelsch: Add PCIe to defconfig
-  ARM: koelsch: Add HAVE_ARM_ARCH_TIMER to defconfig
+Note: Adding clocks whilst keeping the current sorting is very likely to
+break a previously working clock IMO. Imagine adding PCIEC clock inbetween IIC0
+and IIC1 here. Adding chronologically and grouped by similar function blocks is
+easier to track IMO. An example addition could then look like:
 
- Documentation/devicetree/bindings/pci/rcar-pci.txt |  40 +
- arch/arm/boot/dts/r8a7790.dtsi                     |  26 +-
- arch/arm/boot/dts/r8a7791-koelsch.dts              |   4 +
- arch/arm/boot/dts/r8a7791.dtsi                     |  26 +-
- arch/arm/configs/koelsch_defconfig                 |   4 +
- drivers/pci/host/Kconfig                           |   6 +
- drivers/pci/host/Makefile                          |   1 +
- drivers/pci/host/pcie-rcar.c                       | 831 +++++++++++++++++++++
- drivers/pci/host/pcie-rcar.h                       |  87 +++
- include/dt-bindings/clock/r8a7790-clock.h          |   1 +
- include/dt-bindings/clock/r8a7791-clock.h          |   1 +
- 11 files changed, 1022 insertions(+), 5 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
- create mode 100644 drivers/pci/host/pcie-rcar.c
- create mode 100644 drivers/pci/host/pcie-rcar.h
+ 	R8A7791_CLK_TPU0
+ 	R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+ 	R8A7791_CLK_MMCIF0
+ 	R8A7791_CLK_CMT1
+	R8A7791_CLK_IIC0 R8A7791_CLK_IIC1
++	R8A7791_CLK_PCIEC
 
+ arch/arm/boot/dts/r8a7791.dtsi | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 71bac2ca4bcd..858a8a923b00 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -716,15 +716,16 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>,
+-				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>;
++			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
++				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
+-				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
++				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
++				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
+ 			>;
+ 			clock-output-names -				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1";
++				"tpu0", "sdhi2", "sdhi1", "sdhi0",
++				"mmcif0", "i2c7", "i2c8", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+@@ -768,17 +769,17 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>,
+-				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+-				 <&p_clk>;
++			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&p_clk>,
++				 <&cp_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				 <&p_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD
+-				R8A7791_CLK_I2C5 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
+-				R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
++				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
++				R8A7791_CLK_IICDVFS R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
++				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+ 			>;
+ 			clock-output-names -				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c4", "i2c3",
++				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3",
+ 				"i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
 -- 
 1.9.0
 
