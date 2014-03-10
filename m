@@ -1,70 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:56 +0000
-Subject: [PATCH v4 13/19] ARM: shmobile: marzen-reference: Initialize CPG device
-Message-Id: <1394701202-25823-14-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 10 Mar 2014 11:26:59 +0000
+Subject: [PATCH V2 4/5] ARM: shmobile: koelsch: make i2c2-pfc node unique
+Message-Id: <1394450820-8158-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On multiplatform kernels clocks are handled by the CCF CPG driver. It
-must be explicitly initialized by a call to r8a7779_clocks_init() with
-the value of the boot mode pins.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Based on similar work for the Koelsch board by Laurent Pinchart.
+This node should have a unique name so it can be distinguished when
+other i2c busses are added later.
 
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index d3e8319..e261431 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,7 +19,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+Changes since V1: added ack
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index e24fed9c0462..5e90f18db1fb 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -199,7 +199,7 @@
+ 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
  
--#include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/clocksource.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -27,11 +28,17 @@
- #include <asm/irq.h>
- #include <asm/mach/arch.h>
- 
--static void __init marzen_init(void)
-+static void __init marzen_init_timer(void)
- {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
--#else
-+	r8a7779_clocks_init(r8a7779_read_mode_pins());
-+#endif
-+	clocksource_of_init();
-+}
-+
-+static void __init marzen_init(void)
-+{
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7779_clock_init();
- #endif
- 	r8a7779_add_standard_devices_dt();
-@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_init_delay,
-+	.init_time	= marzen_init_timer,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
+-	i2c2_pins: i2c {
++	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
+ 	};
 -- 
-1.8.5.2
+1.9.0
 
