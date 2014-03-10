@@ -1,43 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Mar 2014 08:47:46 +0000
-Subject: Re: [PATCH 00/12] ARM: shmobile: Rework include path for SoC files
-Message-Id: <20140310084740.GC24411@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 10 Mar 2014 08:36:43 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Clock Updates for v3.15
+Message-Id: <cover.1394440226.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224054058.1143.14096.sendpatchset@w520>
- <20140307023813.GG11702@verge.net.au>
-In-Reply-To: <20140307023813.GG11702@verge.net.au>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 07, 2014 at 11:38:16AM +0900, Simon Horman wrote:
-> On Mon, Feb 24, 2014 at 02:40:58PM +0900, Magnus Damm wrote:
-> > ARM: shmobile: Rework include path for SoC files
-> > 
-> > [PATCH 01/12] ARM: shmobile: Add temporary include workaround
-> > [PATCH 02/12] ARM: shmobile: Rework include path for sh7372
-> > [PATCH 03/12] ARM: shmobile: Rework include path for sh73a0
-> > [PATCH 04/12] ARM: shmobile: Rework include path for EMEV2
-> > [PATCH 05/12] ARM: shmobile: Rework include path for r8a7740
-> > [PATCH 06/12] ARM: shmobile: Rework include path for r8a7778
-> > [PATCH 07/12] ARM: shmobile: Rework include path for r8a7779
-> > [PATCH 08/12] ARM: shmobile: Rework include path for r8a7790
-> > [PATCH 09/12] ARM: shmobile: Rework include path for r8a7791
-> > [PATCH 10/12] ARM: shmobile: Rework include path for r8a73a4
-> > [PATCH 11/12] ARM: shmobile: Rework include path for r7s72100
-> > [PATCH 12/12] ARM: shmobile: Rework include path for common bits
-> > 
-> > Start converting the mach-shmobile subarchitecture from <mach/something.h>
-> > to "something.h". This series covers shared code base and SoC code,
-> > however actual header files are not moved yet. Upcoming series that
-> > depend on this one will have to convert board code as well. When SoCs
-> > code and board code have been converted then actual header files can
-> > be moved and temporary include path workarounds can be removed.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Thanks, I have queued this up.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-As Olof has indicated that he is not happy with the first patch of
-the series I have dropped the entire series for now.
+Please consider this third round of Renesas ARM based SoC clock updates
+for v3.15.
+
+I am posting this series after the release of v3.14-rc6 as it only
+contains a fix.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-clock2-for-v3.15,
+which I have already sent a pull-request for.
+
+
+The following changes since commit 9ced1d47719b5f32e4231338dd362c136518ed08:
+
+  ARM: shmobile: r8a7790: add sound SCU clock support (2014-02-24 10:03:02 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock3-for-v3.15
+
+for you to fetch changes up to d93023f81d2c79595e64e4f516f03af4e4c73c13:
+
+  ARM: shmobile: r7s72100: fix bus clock calculation (2014-03-06 13:22:02 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC Clock Updates for v3.15
+
+r7s72100 (RZ/A1H) SoC
+* Correct bus clock calculation
+
+----------------------------------------------------------------
+Wolfram Sang (1):
+      ARM: shmobile: r7s72100: fix bus clock calculation
+
+ arch/arm/mach-shmobile/clock-r7s72100.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
