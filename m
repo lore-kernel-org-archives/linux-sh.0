@@ -1,57 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Mar 2014 10:11:18 +0000
-Subject: [PATCH 2/4] serial: sh-sci: Remove useless casts
-Message-Id: <1394532680-4264-2-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 10 Mar 2014 08:36:45 +0000
+Subject: [PATCH] ARM: shmobile: r7s72100: fix bus clock calculation
+Message-Id: <d93023f81d2c79595e64e4f516f03af4e4c73c13.1394440226.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394532680-4264-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394532680-4264-1-git-send-email-geert@linux-m68k.org>
+References: <cover.1394440226.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394440226.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The picture in the datasheet is a little misleading, yet the divider of
+the bus_clk is 1/3 and not 2/3.
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 24ec6ef67984..4529dbca2287 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2423,25 +2423,25 @@ struct sci_port_info {
- static const struct of_device_id of_sci_match[] = {
- 	{
- 		.compatible = "renesas,scif",
--		.data = (void *)&(const struct sci_port_info) {
-+		.data = &(const struct sci_port_info) {
- 			.type = PORT_SCIF,
- 			.regtype = SCIx_SH4_SCIF_REGTYPE,
- 		},
- 	}, {
- 		.compatible = "renesas,scifa",
--		.data = (void *)&(const struct sci_port_info) {
-+		.data = &(const struct sci_port_info) {
- 			.type = PORT_SCIFA,
- 			.regtype = SCIx_SCIFA_REGTYPE,
- 		},
- 	}, {
- 		.compatible = "renesas,scifb",
--		.data = (void *)&(const struct sci_port_info) {
-+		.data = &(const struct sci_port_info) {
- 			.type = PORT_SCIFB,
- 			.regtype = SCIx_SCIFB_REGTYPE,
- 		},
- 	}, {
- 		.compatible = "renesas,hscif",
--		.data = (void *)&(const struct sci_port_info) {
-+		.data = &(const struct sci_port_info) {
- 			.type = PORT_HSCIF,
- 			.regtype = SCIx_HSCIF_REGTYPE,
- 		},
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index f17a5db..bee0073 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -70,7 +70,7 @@ static struct clk pll_clk = {
+ 
+ static unsigned long bus_recalc(struct clk *clk)
+ {
+-	return clk->parent->rate * 2 / 3;
++	return clk->parent->rate / 3;
+ }
+ 
+ static struct sh_clk_ops bus_clk_ops = {
 -- 
-1.7.9.5
+1.8.5.2
 
