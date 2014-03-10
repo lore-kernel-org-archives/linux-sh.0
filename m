@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Mar 2014 08:36:43 +0000
-Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Clock Updates for v3.15
-Message-Id: <cover.1394440226.git.horms+renesas@verge.net.au>
+Date: Mon, 10 Mar 2014 08:36:55 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Updates for v3.15
+Message-Id: <cover.1394440471.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1378362045.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
@@ -12,38 +12,36 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider this third round of Renesas ARM based SoC clock updates
-for v3.15.
+Please consider this third round of Renesas ARM based SoC updates for v3.15.
 
-I am posting this series after the release of v3.14-rc6 as it only
-contains a fix.
+I am sending this pull request after the release of v3.14-rc6
+as it only includes a fix.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-clock2-for-v3.15,
+such requests, tagged as renesas-soc2-for-v3.15,
 which I have already sent a pull-request for.
 
 
-The following changes since commit 9ced1d47719b5f32e4231338dd362c136518ed08:
+The following changes since commit c4ca5d80e03559fd95c526ece5ce39fc732a2511:
 
-  ARM: shmobile: r8a7790: add sound SCU clock support (2014-02-24 10:03:02 +0900)
+  ARM: shmobile: Move SYSC base variable to inside ifdefs (2014-02-26 14:53:35 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock3-for-v3.15
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.15
 
-for you to fetch changes up to d93023f81d2c79595e64e4f516f03af4e4c73c13:
+for you to fetch changes up to 56ff873122c4baab43df241c7701d043b8ec8a8e:
 
-  ARM: shmobile: r7s72100: fix bus clock calculation (2014-03-06 13:22:02 +0900)
-
-----------------------------------------------------------------
-Third Round of Renesas ARM Based SoC Clock Updates for v3.15
-
-r7s72100 (RZ/A1H) SoC
-* Correct bus clock calculation
+  ARM: shmobile: APMU: Fix warnings due to improper printk formats (2014-03-06 13:14:03 +0900)
 
 ----------------------------------------------------------------
-Wolfram Sang (1):
-      ARM: shmobile: r7s72100: fix bus clock calculation
+Third Round of Renesas ARM Based SoC Updates for v3.15
 
- arch/arm/mach-shmobile/clock-r7s72100.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Fix warnings due to improper printk formats in shared APMU code.
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: APMU: Fix warnings due to improper printk formats
+
+ arch/arm/mach-shmobile/platsmp-apmu.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
