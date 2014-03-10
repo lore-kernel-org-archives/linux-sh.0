@@ -1,36 +1,51 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 10 Mar 2014 11:26:56 +0000
-Subject: [PATCH V2 1/5] ARM: shmobile: r8a7791: add IIC0/1 clock macros
-Message-Id: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 10 Mar 2014 11:36:12 +0000
+Subject: Re: [PATCH V2 1/5] ARM: shmobile: r8a7791: add IIC0/1 clock macros
+Message-Id: <9236675.ot3B0M2rgc@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Hi Wolfram,
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
----
+Thank you for the patches.
 
-Changes since V1: kept sorting intact
+For the whole series,
 
- include/dt-bindings/clock/r8a7791-clock.h | 2 ++
- 1 file changed, 2 insertions(+)
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 30f82f286e29..2df1a11faeb3 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -51,6 +51,8 @@
- #define R8A7791_CLK_SDHI1		12
- #define R8A7791_CLK_SDHI0		14
- #define R8A7791_CLK_MMCIF0		15
-+#define R8A7791_CLK_IIC0		18
-+#define R8A7791_CLK_IIC1		23
- #define R8A7791_CLK_SSUSB		28
- #define R8A7791_CLK_CMT1		29
- #define R8A7791_CLK_USBDMAC0		30
+On Monday 10 March 2014 12:26:56 Wolfram Sang wrote:
+> From: Wolfram Sang <wsa@sang-engineering.com>
+> 
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> ---
+> 
+> Changes since V1: kept sorting intact
+> 
+>  include/dt-bindings/clock/r8a7791-clock.h | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/include/dt-bindings/clock/r8a7791-clock.h
+> b/include/dt-bindings/clock/r8a7791-clock.h index
+> 30f82f286e29..2df1a11faeb3 100644
+> --- a/include/dt-bindings/clock/r8a7791-clock.h
+> +++ b/include/dt-bindings/clock/r8a7791-clock.h
+> @@ -51,6 +51,8 @@
+>  #define R8A7791_CLK_SDHI1		12
+>  #define R8A7791_CLK_SDHI0		14
+>  #define R8A7791_CLK_MMCIF0		15
+> +#define R8A7791_CLK_IIC0		18
+> +#define R8A7791_CLK_IIC1		23
+>  #define R8A7791_CLK_SSUSB		28
+>  #define R8A7791_CLK_CMT1		29
+>  #define R8A7791_CLK_USBDMAC0		30
+
 -- 
-1.9.0
+Regards,
+
+Laurent Pinchart
 
