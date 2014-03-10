@@ -1,59 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 07 Mar 2014 16:59:04 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 10 Mar 2014 07:27:19 +0000
 Subject: Re: [PATCH V3 00/12] CCF support for Renesas r7s72100
-Message-Id: <1725290.WIBK8uYmkH@avalon>
+Message-Id: <20140310072719.GB2571@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart5859945.KQlTq0hEDz"
+Content-Type: multipart/mixed; boundary="yNb1oOkm5a9FJOVX"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
  <1552759.qGZNIXqrb1@avalon> <20140307164741.GJ28943@katana>
-In-Reply-To: <20140307164741.GJ28943@katana>
+ <1725290.WIBK8uYmkH@avalon>
+In-Reply-To: <1725290.WIBK8uYmkH@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
 
---nextPart5859945.KQlTq0hEDz
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+--yNb1oOkm5a9FJOVX
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On Friday 07 March 2014 17:47:41 Wolfram Sang wrote:
-> > > That would have saved only 2 lines since we need the workaround a=
-nyhow
-> > > (MTU2) and would break the incremental approach of this series so=
-mewhat.
-> > > I'd like to keep it.
-> >=20
-> > It would have saved one patch. If Simon needs to apply CCF support
-> > separately I'm fine with that approach, but if both changes are app=
-lied
-> > at the same time the SCIF patches could go in first.
->=20
-> Which one would be saved? We need to workaround anyhow (patch 5) and
-> some scif cleanup besides the workaround is needed, too (patch 7). No=
-?
 
-Indeed, I got it wrong. We can leave it as-is then.
+> Indeed, I got it wrong. We can leave it as-is then.
 
-=2D-=20
-Regards,
+Great. So I guess, this series can be applied now?
 
-Laurent Pinchart
 
---nextPart5859945.KQlTq0hEDz
+--yNb1oOkm5a9FJOVX
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1.4.15 (GNU/Linux)
 
-iQEcBAABAgAGBQJTGfrYAAoJEIkPb2GL7hl1UB4H/jHQA578Js/2IgTMSrPzy3Tq
-lLZIoVG9hHNOAJaGfIpmDSebTpdXFcFcaOS78SOTh7gqNjB8f4Ff2PNsf+N1n8UP
-M+wgg2L/KyFIvVVtmIg3Leo95Wg1U89J0h5pzWmSBpejzZpxrd+1VWnE5tFbB+Oc
-5iHwEiOqz4bK4zyDi8HlUzyjFOGidHbhXyrmfrsrjaMSKiWYA7PSBm/cV+kRGswf
-mTqU0vr5ozrnTFVXFPcL97xWgOUW8xtgmyp6qxzZBS7hefY1c1BYAzanp6+gZPxZ
-nowmhMS6rriAJ4CEmRFnm8IFAf40qiOJ2QotgJGLHHpX6KpGSZxJY+uI1j5j5Bo=
-=Pmqp
+iQIcBAEBAgAGBQJTHWlXAAoJEBQN5MwUoCm2kKcP/jAli/Wj+161MFBeG2Bk1pId
+8zHLc8lytWd/9QvKBhTMQAwlzT6e7P3Cw8uHTENHHS3Uta3NTD19ZJ8s9vZqqk2x
+RzesoYqlkYtANrh6BOlWbakDoy0nOeCR0DcRdNbKCcOQfqLKGxmLn0Kq+E12hkNZ
+32UY8NDpaBfWvNwAUbDSMoJWx8HtMt9GG5cwrUMMd0G0lZv5Rr3N1dtMvDWH7sZ9
+d1UzNdr+B7J3hivb9XIfhHBzXQLzoHmHHZz8w/nVDQuURJe9nFwRaCR5ZFgR9Ler
+/VBbvyiv6X9AQzvPmwiHvkNJb2W2tbUaOKUpFnZpo7aFY1LcTejf1k73FhcMjmFR
+6fztuEi0Q0Rmn2Jp6+Lar5iiTJat9SkfUe+gn21j2gzEzeCxZN02MLwmd2bF2u2D
+sO7LrAV61aNSgRMToM8Hbluo4M5+Hym0nhbrFua+eNyJqs1fZ2aBWeTQdviKJLH/
+rU01lyQiGIMrSI43TGGKkAH2aNRSsOa0exNPip8I8EPbOSm4PQM9VV2pNWB3Yj8C
+T++4HZm7ek3lVHodZht/8Ck+HF38p7n4V7JBfPwLFRn7BGiqamHlMyUPYWQ9lzAv
+krflbO7jtJ6P5olWVNKCGAJmBVWBFlPuxYUc7++BfWptYpUGg5hrQ9PizgwCWGEw
+Rm7ex3E712C2eNGLWjDz
+=GDlP
 -----END PGP SIGNATURE-----
 
---nextPart5859945.KQlTq0hEDz--
-
+--yNb1oOkm5a9FJOVX--
