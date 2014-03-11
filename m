@@ -1,74 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Mar 2014 09:40:51 +0000
-Subject: [PATCH v3 resend] spi: hs-spi: Improve bindings
-Message-Id: <1394530851-20244-1-git-send-email-geert@linux-m68k.org>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 11 Mar 2014 09:49:25 +0000
+Subject: Re: [PATCH v3 resend] spi: hs-spi: Improve bindings
+Message-Id: <20140311094925.GH28112@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="sZRnawO6aO3tZKd5"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+References: <1394530851-20244-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1394530851-20244-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-  - Add future-proof "renesas,hspi-<soctype>" compatible values,
-  - Add missing "interrupt-parent", "#address-cells", and "#size-cells"
-    properties,
-  - Add reference to pinctrl documentation,
-  - Add example bindings.
+--sZRnawO6aO3tZKd5
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
-Mark: Can you please ack and take this, so Simon can apply the patches that
-      use these bindings? Thx!
+On Tue, Mar 11, 2014 at 10:40:51AM +0100, Geert Uytterhoeven wrote:
 
-v3:
-  - Split in two patches: bindings and dtsi updates
-v2:
-  - Add Tested-by
-  - List full example compatible properties with soctypes instead of just
-    the soctypes, so checkpatch can validate DTSes.
+> Mark: Can you please ack and take this, so Simon can apply the patches that
+>       use these bindings? Thx!
 
- Documentation/devicetree/bindings/spi/sh-hspi.txt |   28 ++++++++++++++++++---
- 1 file changed, 25 insertions(+), 3 deletions(-)
+Why would I ack it and not apply it?
 
-diff --git a/Documentation/devicetree/bindings/spi/sh-hspi.txt b/Documentation/devicetree/bindings/spi/sh-hspi.txt
-index 30b57b1c8a13..319bad4af875 100644
---- a/Documentation/devicetree/bindings/spi/sh-hspi.txt
-+++ b/Documentation/devicetree/bindings/spi/sh-hspi.txt
-@@ -1,7 +1,29 @@
- Renesas HSPI.
- 
- Required properties:
--- compatible : 	"renesas,hspi"
--- reg : Offset and length of the register set for the device
--- interrupts : interrupt line used by HSPI
-+- compatible       : "renesas,hspi-<soctype>", "renesas,hspi" as fallback.
-+		     Examples with soctypes are:
-+		       - "renesas,hspi-r8a7778" (R-Car M1)
-+		       - "renesas,hspi-r8a7779" (R-Car H1)
-+- reg              : Offset and length of the register set for the device
-+- interrupt-parent : The phandle for the interrupt controller that
-+		     services interrupts for this device
-+- interrupts       : Interrupt specifier
-+- #address-cells   : Must be <1>
-+- #size-cells      : Must be <0>
-+
-+Pinctrl properties might be needed, too.  See
-+Documentation/devicetree/bindings/pinctrl/renesas,*.
-+
-+Example:
-+
-+	hspi0: spi@fffc7000 {
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
-+		reg = <0xfffc7000 0x18>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- 
--- 
-1.7.9.5
+--sZRnawO6aO3tZKd5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTHtwiAAoJELSic+t+oim9fnAP/02ERjEPU70G2VN2Af15auOL
+pMk87BcPvijEIt/fVdobBCOh3QR36gDGhgcq8/vDMbRrKfH9LQyiu+qBOAmQ34Vm
+56755sEULotxt20JvSA0Rnpmk6VIHcgZrlwqGz28fbWsNTqKiDfNDADDpd4wRruE
+/JHfJcXtYZaY/XCCYO1gAnk+hHYKNXsKk1iRFUFb/28zzlpYtY2EwU3PsP1sHVXX
+St4+qEbopGv8tdi84tVvNGItRAvJBhySxTn1Z1KCqXa7gtGQTtfNAyIeq/NnIFrK
+IHGU17igwAAvC/Y6BiWMh9FczsSrGLcy/usdO3J7CvXq+Eqt8IvGuOHPjFbsg635
+Rol+qYtzeNGT//cxOa2ItMD33JhzgX49yld7q5dHscqWaVqr7/iDZ2aMGJeIG4vb
+JVO/7g345yKJOJGzhz+AtEeYs2awjKTthmMwCFh9HG5M5DsLRH/TLy0tmYdSfjuK
+JavPSO0LgBFeDTtF+YaLARsUX/XdD+OrndfKktUSUHIQlR8sL/Ui9r/j/DeGFla7
+2MlFYu1OGGBkpYQDv+QSqeXWk0pFCpRNymUbOjt+qummznA2kHtZglnuQ49fM/8w
+TFv+4eOPUWGYj+HkvGoFp8Rl4EukJdEfBaKh3QOTFmz0jvtfk4oFkzu0SJFO/JFs
+wiLi/a03jcqknsU8u1A8
+=is/3
+-----END PGP SIGNATURE-----
+
+--sZRnawO6aO3tZKd5--
