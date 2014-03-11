@@ -1,32 +1,41 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 17 Mar 2014 07:39:13 +0000
-Subject: Re: [GIT PULL v2 0/7] Second Round of Renesas ARM Based SoC Updates for v3.15
-Message-Id: <20140317073913.GG21917@quad.lixom.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 09:59:10 +0000
+Subject: [PATCH 1/3] spi: sh-hspi: Add missing call to pm_runtime_disable() in failure path
+Message-Id: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393400446.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wed, Feb 26, 2014 at 04:57:51PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> please consider this second round of Renesas ARM based SoC updates for v3.15.
-> As requested I have broken out clock changes into a separate branch which
-> I will send a pull-request for separately.
-> 
-> 
-> The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
-> 
->   Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.15
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Merged into next/soc. Thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/spi/spi-sh-hspi.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
+index 3b170b9f3471..9009456bdf4d 100644
+--- a/drivers/spi/spi-sh-hspi.c
++++ b/drivers/spi/spi-sh-hspi.c
+@@ -278,11 +278,13 @@ static int hspi_probe(struct platform_device *pdev)
+ 	ret = devm_spi_register_master(&pdev->dev, master);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "spi_register_master error.\n");
+-		goto error1;
++		goto error2;
+ 	}
+ 
+ 	return 0;
+ 
++ error2:
++	pm_runtime_disable(&pdev->dev);
+  error1:
+ 	clk_put(clk);
+  error0:
+-- 
+1.7.9.5
 
--Olof
