@@ -1,58 +1,72 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 28 Mar 2014 20:13:00 +0000
-Subject: Re: [RFC] sh_eth: use RNC mode for R8A7790
-Message-Id: <5335D7CC.3070100@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 09:59:12 +0000
+Subject: [PATCH 3/3] spi: rspi: Add runtime PM support, using spi core auto_runtime_pm
+Message-Id: <1394531952-3905-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396025185-7911-1-git-send-email-ben.dooks@codethink.co.uk> <5335DDC7.8040400@cogentembedded.com>
-In-Reply-To: <5335DDC7.8040400@cogentembedded.com>
+References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1394531952-3905-1-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, magnus.damm@opensource.se, nobuhiro.iwamatsu.yj@renesas.com
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-On 28/03/14 20:38, Sergei Shtylyov wrote:
-> Hello.
->
-> On 03/28/2014 07:46 PM, Ben Dooks wrote:
->
->> The current behaviour of the sh_eth driver is not to use the RNC bit
->> for the receive ring. This means that every packet recieved is not only
->> generating an IRQ but it also stops the receive ring DMA as well until
->> the driver re-enables it after unloading the packet.
->
->> This means that a number of the following errors are generated due to
->> the receive packet FIFO overflowing due to nowhere to put packets:
->
->>     net eth0: Receive FIFO Overflow
->
->> Setting the RMCR_RNC configuration has so far been tested with an NFS
->> root filesystem and the driver has not failed yet. It is not yet known
->> why this is not set for R8A779x operation
->
->     The reason is simple: it's not set on almost all 100 Mbs devices
-> except SH7757 (and most recently added R7S72100), so this was a matter
-> of copy-paste. I've had setting this bit on at least R-Car devices on my
-> aganda for some time but couldn't get to it yet.
->
->> (Feedback on this issue or other testing is welcome)
->
->     OK, I'll try it with netperf UDP test known to generate handful of
-> the aforementioned errors, when I have time.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-I find the best way is to either use NFS-root or turn on all the
-locking debugging, it seems to slow things down enough for the
-RX FIFO to overflow.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/spi/spi-rspi.c |   12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
- From a quick debug, I saw that each RX IRQ delivered one packet
-from the ring buffer before requiring the hardware received to
-be re-started.
-
-So far I have not had any chance to make any speed tests, however
-it has cleared off a lot of the fifo messages off my nfs-root tests
-here. I've had a ring-error, but that was due to another driver
-holding interrupts for far too long.
-
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 92bec7e91046..1fb0ad213324 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -33,6 +33,7 @@
+ #include <linux/dmaengine.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/of_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/sh_dma.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/rspi.h>
+@@ -1111,7 +1112,7 @@ static int rspi_remove(struct platform_device *pdev)
+ 	struct rspi_data *rspi = platform_get_drvdata(pdev);
+ 
+ 	rspi_release_dma(rspi);
+-	clk_disable_unprepare(rspi->clk);
++	pm_runtime_disable(&pdev->dev);
+ 
+ 	return 0;
+ }
+@@ -1242,16 +1243,13 @@ static int rspi_probe(struct platform_device *pdev)
+ 		goto error1;
+ 	}
+ 
+-	ret = clk_prepare_enable(rspi->clk);
+-	if (ret < 0) {
+-		dev_err(&pdev->dev, "unable to prepare/enable clock\n");
+-		goto error1;
+-	}
++	pm_runtime_enable(&pdev->dev);
+ 
+ 	init_waitqueue_head(&rspi->wait);
+ 
+ 	master->bus_num = pdev->id;
+ 	master->setup = rspi_setup;
++	master->auto_runtime_pm = true;
+ 	master->transfer_one = ops->transfer_one;
+ 	master->prepare_message = rspi_prepare_message;
+ 	master->unprepare_message = rspi_unprepare_message;
+@@ -1312,7 +1310,7 @@ static int rspi_probe(struct platform_device *pdev)
+ error3:
+ 	rspi_release_dma(rspi);
+ error2:
+-	clk_disable_unprepare(rspi->clk);
++	pm_runtime_disable(&pdev->dev);
+ error1:
+ 	spi_master_put(master);
+ 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
