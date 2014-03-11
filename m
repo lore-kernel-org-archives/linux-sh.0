@@ -1,58 +1,54 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 11 Mar 2014 10:47:13 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 13:10:31 +0000
 Subject: Re: [PATCH 3/3] spi: rspi: Add runtime PM support, using spi core auto_runtime_pm
-Message-Id: <20140311104713.GN28112@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="yz2cksEFSLwGxgnH"
+Message-Id: <CAMuHMdWoPWebnyUu2uGebbnzu68Lh4qsgzpu-otnwMmvaeY1hQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
- <1394531952-3905-3-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394531952-3905-3-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+	<1394531952-3905-3-git-send-email-geert@linux-m68k.org>
+	<20140311104713.GN28112@sirena.org.uk>
+In-Reply-To: <20140311104713.GN28112@sirena.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
+Hi Mark,
 
---yz2cksEFSLwGxgnH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Tue, Mar 11, 2014 at 11:47 AM, Mark Brown <broonie@kernel.org> wrote:
+> On Tue, Mar 11, 2014 at 10:59:12AM +0100, Geert Uytterhoeven wrote:
+>> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+>
+> Applied, thanks, though...
+>
+>> -     ret = clk_prepare_enable(rspi->clk);
+>> -     if (ret < 0) {
+>> -             dev_err(&pdev->dev, "unable to prepare/enable clock\n");
+>> -             goto error1;
+>> -     }
+>> +     pm_runtime_enable(&pdev->dev);
+>
+> ...due to the runtime PM API being configurable you're supposed to start
+> off with the device runtime enabled (this applies to some of the other
+> patches too).  I'm not sure that's terribly realistic for these drivers
+> though.
 
-On Tue, Mar 11, 2014 at 10:59:12AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Can you please elaborate what should be fixed?
 
-Applied, thanks, though...
+If I disable CONFIG_PM_RUNTIME, the kernel prints:
 
-> -	ret = clk_prepare_enable(rspi->clk);
-> -	if (ret < 0) {
-> -		dev_err(&pdev->dev, "unable to prepare/enable clock\n");
-> -		goto error1;
-> -	}
-> +	pm_runtime_enable(&pdev->dev);
+    Runtime PM disabled, clock forced on.
 
-...due to the runtime PM API being configurable you're supposed to start
-off with the device runtime enabled (this applies to some of the other
-patches too).  I'm not sure that's terribly realistic for these drivers
-though.
+and the clock is enabled all the time (verified by looking at the clock
+registers)?
 
---yz2cksEFSLwGxgnH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Gr{oetje,eeting}s,
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+                        Geert
 
-iQIcBAEBAgAGBQJTHumuAAoJELSic+t+oim9blYQAJMQLchaOBTQkKwCXy/KFVw4
-TVk28TcfSv3FZVKK6d9VwaW0onVIP13895pToQLgJ7aKYn2/j5RZyNFuAde7sMY0
-1n4aIqte6e/MnXZUSw+dLZbw41q2ZnYbY42fHHNeOjjTMzy3dUydwRXe4uXTDicK
-U8p3fRoD5mt3DaH15WMn/WZqo1yqnerICFDhXNMsr31pNTY2+cUyT2TXmV/WDOrz
-coKBk8BbB6tY51rca2DlQPW5/xezdVRTRuBdkpNkltovXqnQR/L8rXkiT/Q/I2pU
-Ql2HZTZReMpjyUUw6vdq17SJsgtlQRfBgAFA1Y3B7HlRQzr9ARxQuz+MXZcnHaXV
-b81c7adkmSJ5P49SN9XQ5rtzoi4ai0k0A5ghF5fGe94V1ky5IiWF9jOOFu3Cj9hl
-q0mBdfb2r4FiPrWcXeKhw5blpAzz+1IzejYcXx312YVIT3KicfIjl71G7GTwa1P8
-mOw42wLauP6LeOv6Ly5weIapa5FkT26awhdoM4rbR/EX9kqbk/m42yPC42aSZfaj
-mLPbeo8349bK8X0fmp7eV5rLYQn2GjaYHSa1AQySybn1qFj92H6wbwg2ekEw0uQG
-1DTZxgDxBYL9adIV8J1nQcoRxFMlPtWO4VrOyzVUvsyvyzD4avUYRdGwhQxIxRuI
-czIWmTdQGjTTosB0UxDa
-=AeiQ
------END PGP SIGNATURE-----
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---yz2cksEFSLwGxgnH--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
