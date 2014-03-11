@@ -1,64 +1,39 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 05 Mar 2014 15:07:46 +0000
-Subject: Re: [PATCH 3/4] clk: shmobile: add CPG driver for rz-platforms
-Message-Id: <20140305150746.GA9228@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="y0ulUmNC+osPPQO6"
+Date: Tue, 11 Mar 2014 21:24:33 +0000
+Subject: [PATCH 0/5] ARM: shmobile: r8a7790: enable IIC(B) cores
+Message-Id: <1394573078-20767-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393621768-12568-1-git-send-email-wsa@the-dreams.de>
- <2207635.bd10VfTU6U@avalon> <20140305135431.GA7985@katana>
- <1460103.hdWs652aMT@avalon>
-In-Reply-To: <1460103.hdWs652aMT@avalon>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+This series allows r8a7790 boards to use the alternative IIC(B) controller
+handled by the i2c-sh_mobile driver. Since both i2c cores always use the same
+pins only in a different function group, you can easily use this or that core
+for your devices. For that reason, there is currently no enablement on the
+Lager board, since it needs discussion which core we want to have on which bus.
+sh_mobile seems more stable currently, so I'd vote for that.
 
---y0ulUmNC+osPPQO6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Please review and apply if no issues found.
 
+Thanks,
 
-> That's fine with me (although given the low complexity I would probably h=
-ave=20
-> gone directly to supporting both clocks) as long as we can ensure both fo=
-rward=20
-
-We need to wait for GPIO support anyhow to get it real.
-
-> and backward compatibility. Should we give a name to the clock input thro=
-ugh=20
-> the clock-names property for that reason ?
-
-Not needed IMO.
-
-> > Note that the devkit will most likely be the only board ever with a
-> > selectable root clock.
->=20
-> Most probably, but that's no reason not to support it :-)
-
-Not in itself. Yet a low demand might be, a demand of 0 surely is ;)
+   Wolfram
 
 
---y0ulUmNC+osPPQO6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Wolfram Sang (5):
+  pinctrl: pfc: r8a7790: add i2c0 muxing
+  pinctrl: pfc: r8a7790: add mux data for IIC(B) cores
+  ARM: shmobile: r8a7790: add IIC0-2 clock macros
+  ARM: shmobile: r8a7790: add IIC(B) clocks to dtsi
+  ARM: shmobile: r8a7790: add IIC(B) cores to dtsi
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+ arch/arm/boot/dts/r8a7790.dtsi            |  71 +++++++++++++---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c      | 136 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7790-clock.h |   3 +
+ 3 files changed, 196 insertions(+), 14 deletions(-)
 
-iQIcBAEBAgAGBQJTFz3BAAoJEBQN5MwUoCm25P4P/2+hXs1y7vkNIcG6IOS2xOXj
-Qnp5MdKlZVEawK3bDpLseHtgeFsESejnk6Icoux2GRTvUqFdZryI3TsOitYJPwsm
-KDPg7wGAi4WkJNQiRzNp5KoY363fKy3d+Pvb1Cq6Tv13bykCpTOssn5hPjHVAF1z
-aCyyTFpUdzOjXTq/cl8RHYePTJl1wG2sznuq+3flqlma0AfqcBkFPZ6xoigoM1wb
-HnsSYOjNMoGw1vg2dgR44u9s9hhtR5Rr21rEh4dcAwXJ7t5Yzd5UXcgyGfgd7jOc
-mkwLEdrfgClklWrwoepGXlfCX0/6UuBHhAlGUE/w1aA/a1z0s3nVdSA8pwiwBYaB
-NfH5NYonyhkC/L8XBqA4L4Mr9H0RsRCi41DQiRAQM38zqm9rQtcteIcnc28yfGrS
-bS1+N9ZF2EwVh2EZGYsolVo2d0s55Xse8H/Zz48xxlUcW2UoUufikKLyXOBI8AVN
-8HKoHasW5xuVjCqKcXrAvkRC8lxBKrWE3ZRretROqojYgea5+RvRMHJ5FQr4mjlD
-CJ9pEK7/rEr7Bot4w6LcZ5WtP9FW2aL87dw8f6CH2D6GMlLEQQtXqpvQGrQXb9s3
-t5SiX1EiNebel7I9eyYGyIC4tcrXCFKzi+RIlK32D3DVGFKG9jKs30OmJnNsIe5v
-piXojS0reZoach46S2VK
-=5HZ6
------END PGP SIGNATURE-----
+-- 
+1.9.0
 
---y0ulUmNC+osPPQO6--
