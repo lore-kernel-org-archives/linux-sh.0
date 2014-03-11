@@ -1,92 +1,63 @@
-From: Phil.Edworthy@renesas.com
-Date: Wed, 26 Mar 2014 10:12:31 +0000
-Subject: Re: [PATCH v5 2/9] PCI: host: rcar: Add MSI support
-Message-Id: <OF62BCE896.5AFD55D6-ON80257CA7.0037C4A7-80257CA7.00381353@eu.necel.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 17:43:18 +0000
+Subject: Re: Build regressions/improvements in v3.14-rc6
+Message-Id: <CAMuHMdWvQ3aux_901uoiw4k_YJ37Wbvdaroz3z-3GVxBPzoMWQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
- <1395766604-30926-3-git-send-email-phil.edworthy@renesas.com>
- <5331B733.8090802@codethink.co.uk>
-In-Reply-To: <5331B733.8090802@codethink.co.uk>
+References: <1394528182-32013-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1394528182-32013-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: the arch/x86 maintainers <x86@kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Ben,
+On Tue, Mar 11, 2014 at 9:56 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.14-rc6[1]  to v3.14-rc5[3], the summaries are:
+>   - build errors: +10/-4
 
-On: 25/03/2014 17:05, Ben wrote:
-> Subject: Re: [PATCH v5 2/9] PCI: host: rcar: Add MSI support
-> 
-> On 25/03/14 16:56, Phil Edworthy wrote:
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > ---
-> > v5:
-> >   - Return IRQ_NONE from MSI isr when there is no pending MSI
-> >   - Add additional interrupt bindings
-> > +
-> > +static void rcar_msi_free(struct rcar_msi *chip, unsigned long irq)
-> > +{
-> > +   struct device *dev = chip->chip.dev;
-> > +
-> > +   mutex_lock(&chip->lock);
-> > +
-> > +   if (!test_bit(irq, chip->used))
-> > +      dev_err(dev, "trying to free unused MSI#%lu\n", irq);
-> 
-> Does the upper level not check for this?
-Yes, the default_teardown_msi_irqs function checks for unused MSIs, so we 
-don't really need to check here.
+Only fuzz from the randconfig police:
 
+  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
+implicit declaration of function 'dma_alloc_writecombine'
+[-Werror=implicit-function-declaration]:  => 91:2
+  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
+implicit declaration of function 'dma_free_writecombine'
+[-Werror=implicit-function-declaration]:  => 176:3
 
-> > +   else
-> > +      clear_bit(irq, chip->used);
-> > +
-> > +   mutex_unlock(&chip->lock);
-> 
-> 
-> > +}
-> > +
-> > +static irqreturn_t rcar_pcie_msi_irq(int irq, void *data)
-> > +{
-> > +   struct rcar_pcie *pcie = data;
-> > +   struct rcar_msi *msi = &pcie->msi;
-> > +   unsigned long reg;
-> > +
-> > +   reg = pci_read_reg(pcie, PCIEMSIFR);
-> > +
-> > +   /* MSI & INTx share an interrupt - we only handle MSI here */
-> > +   if (!reg)
-> > +      return IRQ_NONE;
-> > +
-> > +   while (reg) {
-> > +      unsigned int index = find_first_bit(&reg, 32);
-> > +      unsigned int irq;
-> > +
-> > +      /* clear the interrupt */
-> > +      pci_write_reg(pcie, 1 << index, PCIEMSIFR);
-> > +
-> > +      irq = irq_find_mapping(msi->domain, index);
-> > +      if (irq) {
-> > +         if (test_bit(index, msi->used))
-> > +            generic_handle_irq(irq);
-> > +         else
-> > +            dev_info(pcie->dev, "unhandled MSI\n");
-> > +      } else {
-> > +         /*
-> > +          * that's weird who triggered this?
-> > +          * just clear it
-> > +          */
-> > +         dev_info(pcie->dev, "unexpected MSI\n");
-> > +      }
-> 
-> You may want to change this to something that is either rate-limited
-> or is say debug level so it does not spam the console if something
-> does go wrong.
-I'll change that to debug level.
+sh-randconfig
 
-> Also the comment could easily be made one line
->    /* Weird, unknown MSI IRQ, just clear it */
-Sure!
+  + /scratch/kisskb/src/kernel/bounds.c: error: -mcall-aixdesc must be
+big endian:  => 1:0
+  + /scratch/kisskb/src/scripts/mod/devicetable-offsets.c: error:
+-mcall-aixdesc must be big endian:  => 1:0
+  + /scratch/kisskb/src/scripts/mod/empty.c: error: -mcall-aixdesc
+must be big endian:  => 1:0
+  + <stdin>: error: -mcall-aixdesc must be big endian:  => 1:0
 
-Thanks
-Phil
+powerpc-randconfig
+
+  + error: No rule to make target /etc/sound/pndsperm.bin:  => N/A
+  + error: No rule to make target /etc/sound/pndspini.bin:  => N/A
+  + error: No rule to make target /etc/sound/trxpro.hex:  => N/A
+
+i386-randconfig
+
+  + error: initramfs.c: undefined reference to `__stack_chk_guard':
+=> .init.text+0x1aef)
+
+x86_64-randconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/head/7258/ (all 119 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/7236/ (all 119 configs)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
