@@ -1,42 +1,46 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 11 Mar 2014 17:10:37 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 11 Mar 2014 17:24:21 +0000
 Subject: Re: rcar-i2c: always reads a byte
-Message-Id: <531F438D.80001@codethink.co.uk>
+Message-Id: <20140311172421.GC1179@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="hYooF8G/hrfVAmum"
 List-Id: <linux-sh.vger.kernel.org>
-References: <531F3686.7050808@codethink.co.uk> <20140311164043.GA1179@katana> <531F3CD3.4030408@codethink.co.uk>
-In-Reply-To: <531F3CD3.4030408@codethink.co.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+References: <531F3686.7050808@codethink.co.uk>
+ <20140311164043.GA1179@katana>
+In-Reply-To: <20140311164043.GA1179@katana>
+To: Ben Dooks <ben.dooks@codethink.co.uk>
 Cc: linux-i2c@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
 
-On 11/03/14 16:41, Ben Dooks wrote:
-> On 11/03/14 16:40, Wolfram Sang wrote:
->> On Tue, Mar 11, 2014 at 04:15:02PM +0000, Ben Dooks wrote:
->>> I have noticed the following behaviour with the i2c-rcar driver
->>> with the following single i2c_msg structure:
->>>
->>>     msg[0].addr = 0x12;
->>>     msg[0].flags = I2C_M_RD;
->>>     msg[0].len = 0;
->>>     msg[0].buf = data;
->>>
->>> The system issues an address transaction followed by a single byte
->>> read.
->>
->> This fits to my observation that the rcar driver cannot do SMBUS_QUICK
->> (e.g. via i2cdetect). I assumed that handling a length of 0 is broken. I
->> haven't had a deeper look yet, so I can't say much. So, you either go
->> for it yourself, or you wait until I posted my IIC enablement series for
->> Lager. Then, you can switch to the IIC core with the sh_mobile driver.
->> That one does SMBUS_QUICK correctly.
->
-> I'll have a deeper look into this, I think there may be a solution.
 
-I've tried issuing the ESG + FSB  bits as a command, however that
-did not work.
+--hYooF8G/hrfVAmum
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+> or you wait until I posted my IIC enablement series for Lager.
+
+I'll post it this evening, forgot to mention that.
+
+
+--hYooF8G/hrfVAmum
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTH0bFAAoJEBQN5MwUoCm2Og0P/15H1kNSJ/OTbSeiLDqxz54L
+sFlbegY+VZNQ+PzZIPypL3bxUVivjr9+fPfEOh1Ade4xDJm8/zrOo5SKM6Qt8ZzN
+shQfQ6E5Udl7jp0G1QCjLz9+abCS4X+advcIGZQrOZHtCqCTyDIbZVWxb+tipMo7
+Gt+Ofq8cRMoB87VFPlrVkwzofWUx06LkBRbEHVZLUU0XYByDtpmk/E8bD0pH+WhS
+YFR+vBGOIgBD/3AfuMmx8GLBjUeUycrcD/o7NpCTT3qdHJG7lkRFPZ0d+9Q4MptH
+kVXSbChN7IcQmlG82ayoW0xC99xVU/mAg0OPhP7Vxa/hlbkDRVoW6STM1O1JLgO0
+MQAaxUE19r5pBIAAKRs7lWBbdpHE8gIW3NHZVL8Zsb7H0LQUTrAxc+MIs/tOjfzf
+JayWcS2QcIbpbDN1vj+bYCXnKa1T89ZANG4suLJsWZFaibakWkiGyrtGBLXPYZ7n
+UIvpR/yuKjmhjdghAJr7HG05gZNCZF50FDC3oWiuZE17/7pVY739COtvp63oX4DD
+2HA5p/XAXn9EmnQHXSpt2HQ7N9i5vNalSiA7K5zOJnzEH+Ui6cl9bwUDe71b46ui
+5Ea3aAd6DVcu8FZf4cjRssrR87zIyrVkFJ7TevHaoN5juxVqMxbbQY/yJSxSbwgg
+jLjYnIE3nUUujWnRn1eo
+=EAsB
+-----END PGP SIGNATURE-----
+
+--hYooF8G/hrfVAmum--
