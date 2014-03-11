@@ -1,38 +1,48 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 11 Mar 2014 16:41:55 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 11 Mar 2014 16:47:23 +0000
 Subject: Re: rcar-i2c: always reads a byte
-Message-Id: <531F3CD3.4030408@codethink.co.uk>
+Message-Id: <20140311164723.GB1179@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="JYK4vJDZwFMowpUq"
 List-Id: <linux-sh.vger.kernel.org>
-References: <531F3686.7050808@codethink.co.uk> <20140311164043.GA1179@katana>
-In-Reply-To: <20140311164043.GA1179@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+References: <531F3686.7050808@codethink.co.uk>
+ <20140311164043.GA1179@katana>
+ <531F3CD3.4030408@codethink.co.uk>
+In-Reply-To: <531F3CD3.4030408@codethink.co.uk>
+To: Ben Dooks <ben.dooks@codethink.co.uk>
 Cc: linux-i2c@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
 
-On 11/03/14 16:40, Wolfram Sang wrote:
-> On Tue, Mar 11, 2014 at 04:15:02PM +0000, Ben Dooks wrote:
->> I have noticed the following behaviour with the i2c-rcar driver
->> with the following single i2c_msg structure:
->>
->> 	msg[0].addr = 0x12;
->> 	msg[0].flags = I2C_M_RD;
->> 	msg[0].len = 0;
->> 	msg[0].buf = data;
->>
->> The system issues an address transaction followed by a single byte
->> read.
->
-> This fits to my observation that the rcar driver cannot do SMBUS_QUICK
-> (e.g. via i2cdetect). I assumed that handling a length of 0 is broken. I
-> haven't had a deeper look yet, so I can't say much. So, you either go
-> for it yourself, or you wait until I posted my IIC enablement series for
-> Lager. Then, you can switch to the IIC core with the sh_mobile driver.
-> That one does SMBUS_QUICK correctly.
 
-I'll have a deeper look into this, I think there may be a solution.
+--JYK4vJDZwFMowpUq
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+
+> I'll have a deeper look into this, I think there may be a solution.
+
+There surely is :)
+
+
+--JYK4vJDZwFMowpUq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTHz4bAAoJEBQN5MwUoCm25akP/3exfTE2D0jYm0q4afAPBMuZ
+UNiykGQAy9vxjyInsEgwaUlEStfyJAR6b3BEJsmMFfNhnhbgKQiK33PxIkKcns9L
+l5xevxf5KNqj4erWOXluTcq1j02kzZB7NHWms213xYMLY8aQjzuWhCpghFu7modO
+wHxZC2dp8+cA2U39bO3VmN6yfza5DHMeNQjWioY1RFoCBvbKySfjGjjzdVwqJ2vA
+uUV/A2qp9UvbM4+YDxOJZ5XAHBnG1AvCyPhBlMqLBTU9Ag+IQOCkWn5pspnS+GN5
+3Id1+skEnAN/8jWt0zYwVBUv9sp9FJIPLge5FRMdQMF2zcZqtfKLrp+ZqoPKF7jr
+LXWPZUW19oiUtY5sEX+4vZoe7FSkFZ5Z+MrL/IjafqXB2+afil2Cd39o5T0jxs/W
+m9BNoydyOAFnf+eEOdQgsr5qGsRGspnfyBpR+dm72qfkAl8/gCkFnSyhmdFyc1Xr
+nr3JuBKopK1ULu2ASitZxnohsyk9/G8kjE7wucKMXmZPmT1lBdH3pM2bIH9ZjVHn
+aE4VOOt1M54/+2ilPzEij8WkztcDyBjGy4T6+xZi0D2llat2Q9T0J+zlwr0/6uHO
+GF8g+zTSqKhAR0g/PQZQRLs6GDeMmYtvt1KEkzVQA5Kc1YocindTWGH/U7XqWyGD
+9av2TAi1vb6CgWavFYEq
+=j/0C
+-----END PGP SIGNATURE-----
+
+--JYK4vJDZwFMowpUq--
