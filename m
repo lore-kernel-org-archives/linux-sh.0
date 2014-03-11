@@ -1,77 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 12 Mar 2014 18:22:57 +0000
-Subject: Re: [PATCH 00/22] SH MTU2 DT support
-Message-Id: <1494085.tZpBLnavTq@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1770098.1NLqldQ83b"
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 11 Mar 2014 21:24:36 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7790: add IIC0-2 clock macros
+Message-Id: <1394573078-20767-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: linux-sh@vger.kernel.org
-
-
---nextPart1770098.1NLqldQ83b
-Content-Transfer-Encoding: quoted-printable
+References: <1394573078-20767-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1394573078-20767-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-On Wednesday 12 March 2014 19:04:02 Wolfram Sang wrote:
-> > > > The patches are compile-tested only as I lack test hardware. Wo=
-lfram,
-> > > > would you be able to test this series with your CCF support pat=
-ch set
-> > > > for RZ/A1H ?
-> > >=20
-> > > Applying to current renesas/devel fails. What is this based on? O=
-r
-> > > better: is there a branch available somewhere?
-> >=20
-> > I've just rebased my timers devel branch on top of Simon's latest d=
-evel
-> > branch and pushed the result to
-> >=20
-> > =09git://linuxtv.org/pinchartl/fbdev.git timers/devel
->=20
-> Thanks! I merged this into my r7s-ccf branch now. I could boot into a=
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ include/dt-bindings/clock/r8a7790-clock.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
-> shell and the printk-timestamps make sense. So, for the whole series
->=20
-> Tested-by: Wolfram Sang <wsa@sang-engineering.com>
->=20
-> Daniel, I assume you use git-filter-branch, or shall I tag every patc=
-h
-> individually?
-
-Thank you for the tests. I'll apply your Tested-by tag to my branch. We=
-'re=20
-still missing review of the DT bindings for this series. I'll ping the=20=
-
-devicetree mailing list, and if I don't get a reply in a week, I'll jus=
-t send=20
-a pull request to Daniel.
-
-=2D-=20
-Regards,
-
-Laurent Pinchart
-
---nextPart1770098.1NLqldQ83b
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJTIKYNAAoJEIkPb2GL7hl1vesH/AqwjlZEzYaf/VRzQU/vXtRe
-88M19S8KTHgUMkbt1NMBI1IfKiHKZVVh5csy524bgPJ+JHsHS3/myM8J4LT16/eV
-GYVYvxtevnk7W9oOAbxd++GXsNXg+4RIK+5ZPTySOvZ+bApUYMb3oWj4WbMBRdEq
-0jJpFRkoklxRq4pVNWJceRz73rqUIoThpqUieDpv065+FLebIZbDjcnkV5K4lXDX
-AiV7KhmRjKx1hxXlyI75S6Yk7BepEe6NTWTE8X+s+1cryJpvlY+RnM34elGywEjT
-/GHWJwLPWi/WJW6E0TuYMWwk5RTZ0tf0BmHT9cvX8FT1QV3zQH0r8r4gKYxKIes=
-=MjRj
------END PGP SIGNATURE-----
-
---nextPart1770098.1NLqldQ83b--
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 6548a5fbcf4a..4d3e935b3f1b 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -50,6 +50,7 @@
+ #define R8A7790_CLK_SYS_DMAC0		19
+ 
+ /* MSTP3 */
++#define R8A7790_CLK_IIC2		0
+ #define R8A7790_CLK_TPU0		4
+ #define R8A7790_CLK_MMCIF1		5
+ #define R8A7790_CLK_SDHI3		11
+@@ -57,6 +58,8 @@
+ #define R8A7790_CLK_SDHI1		13
+ #define R8A7790_CLK_SDHI0		14
+ #define R8A7790_CLK_MMCIF0		15
++#define R8A7790_CLK_IIC0		18
++#define R8A7790_CLK_IIC1		23
+ #define R8A7790_CLK_SSUSB		28
+ #define R8A7790_CLK_CMT1		29
+ #define R8A7790_CLK_USBDMAC0		30
+-- 
+1.9.0
 
