@@ -1,60 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 12 Mar 2014 11:28:08 +0000
-Subject: Re: [PATCH 2/3] spi: sh-msiof: Convert to spi core auto_runtime_pm framework
-Message-Id: <CANqRtoQ7-=_UVrj1FarF2CaGWTLNUhrWOJJ5-Poncp7EdkhqPw@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 09:40:51 +0000
+Subject: [PATCH v3 resend] spi: hs-spi: Improve bindings
+Message-Id: <1394530851-20244-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
-	<2274545.CyQ67zvVqo@avalon>
-	<CANqRtoRR9Q8Q=ACqhnLBpTavn0K5cD1=dBkjkfZ8kb+H68GuOw@mail.gmail.com>
-	<1972290.yxP8Fj4BuZ@avalon>
-In-Reply-To: <1972290.yxP8Fj4BuZ@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Mark Brown <broonie@kernel.org>
+Cc: Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Laurent,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On Wed, Mar 12, 2014 at 8:26 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> On Wednesday 12 March 2014 10:23:48 Magnus Damm wrote:
->> On Wed, Mar 12, 2014 at 1:32 AM, Laurent Pinchart wrote:
->> > On Tuesday 11 March 2014 17:23:37 Geert Uytterhoeven wrote:
->> >> Hi Laurent,
->> >>
->> >> On Tue, Mar 11, 2014 at 4:55 PM, Laurent Pinchart wrote:
->> >> > Does this require drivers/sh/pm_runtime.c to be compiled in ?
->> >>
->> >> Let's check...
->> >>
->> >> My koelsch-legacy kernel has drivers/sh/pm_runtime.c compiled in.
->> >> My koelsch-reference kernel hasn't.
->> >>
->> >> However, under the -reference kernel many MSTP clocks (incl. MSIOF)
->> >> seem to be enabled all the time, while under -legacy they are enabled and
->> >> disabled on demand.
->> >
->> > Is PM_RUNTIME enabled in both cases ?
->> >
->> > There's something fishy in there that we should try to fix without too
->> > further much delay. Ben Dooks has pointed out the problem a couple of
->> > months ago, but the discussion on the mailing list just died.
->>
->> Yes, Runtime PM is not working as expected in the multiplatform case,
->> that is true. I propose that we keep Runtime PM disabled in the
->> Kconfig for R-Car Gen2 for now to keep things simple.
->
-> Isn't it ? I thought it was only broken with regard to clocks, but I might be
-> missing something.
+  - Add future-proof "renesas,hspi-<soctype>" compatible values,
+  - Add missing "interrupt-parent", "#address-cells", and "#size-cells"
+    properties,
+  - Add reference to pinctrl documentation,
+  - Add example bindings.
 
-Perhaps the correct way to put it is that we have not yet figured out
-how to enable Runtime PM in a way that is suitable for multiplatform.
-Which means that clocks are behaving differently in the legacy case
-and in the multiplatform case.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+Mark: Can you please ack and take this, so Simon can apply the patches that
+      use these bindings? Thx!
 
-Thanks,
+v3:
+  - Split in two patches: bindings and dtsi updates
+v2:
+  - Add Tested-by
+  - List full example compatible properties with soctypes instead of just
+    the soctypes, so checkpatch can validate DTSes.
 
-/ magnus
+ Documentation/devicetree/bindings/spi/sh-hspi.txt |   28 ++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/spi/sh-hspi.txt b/Documentation/devicetree/bindings/spi/sh-hspi.txt
+index 30b57b1c8a13..319bad4af875 100644
+--- a/Documentation/devicetree/bindings/spi/sh-hspi.txt
++++ b/Documentation/devicetree/bindings/spi/sh-hspi.txt
+@@ -1,7 +1,29 @@
+ Renesas HSPI.
+ 
+ Required properties:
+-- compatible : 	"renesas,hspi"
+-- reg : Offset and length of the register set for the device
+-- interrupts : interrupt line used by HSPI
++- compatible       : "renesas,hspi-<soctype>", "renesas,hspi" as fallback.
++		     Examples with soctypes are:
++		       - "renesas,hspi-r8a7778" (R-Car M1)
++		       - "renesas,hspi-r8a7779" (R-Car H1)
++- reg              : Offset and length of the register set for the device
++- interrupt-parent : The phandle for the interrupt controller that
++		     services interrupts for this device
++- interrupts       : Interrupt specifier
++- #address-cells   : Must be <1>
++- #size-cells      : Must be <0>
++
++Pinctrl properties might be needed, too.  See
++Documentation/devicetree/bindings/pinctrl/renesas,*.
++
++Example:
++
++	hspi0: spi@fffc7000 {
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
++		reg = <0xfffc7000 0x18>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
+ 
+-- 
+1.7.9.5
+
