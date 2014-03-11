@@ -1,40 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Mar 2014 16:23:37 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 11 Mar 2014 16:32:26 +0000
 Subject: Re: [PATCH 2/3] spi: sh-msiof: Convert to spi core auto_runtime_pm framework
-Message-Id: <CAMuHMdVOUuFsObEag_MwUT_jaqfOHMEcUScrkbaTEitmyJr+NQ@mail.gmail.com>
+Message-Id: <2274545.CyQ67zvVqo@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
-	<1394531952-3905-2-git-send-email-geert@linux-m68k.org>
-	<1802214.NxZUiJcWLG@avalon>
-In-Reply-To: <1802214.NxZUiJcWLG@avalon>
+References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org> <1802214.NxZUiJcWLG@avalon> <CAMuHMdVOUuFsObEag_MwUT_jaqfOHMEcUScrkbaTEitmyJr+NQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdVOUuFsObEag_MwUT_jaqfOHMEcUScrkbaTEitmyJr+NQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Mark Brown <broonie@kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Laurent,
+On Tuesday 11 March 2014 17:23:37 Geert Uytterhoeven wrote:
+> Hi Laurent,
+> 
+> On Tue, Mar 11, 2014 at 4:55 PM, Laurent Pinchart wrote:
+> > Does this require drivers/sh/pm_runtime.c to be compiled in ?
+> 
+> Let's check...
+> 
+> My koelsch-legacy kernel has drivers/sh/pm_runtime.c compiled in.
+> My koelsch-reference kernel hasn't.
+> 
+> However, under the -reference kernel many MSTP clocks (incl. MSIOF)
+> seem to be enabled all the time, while under -legacy they are enabled and
+> disabled on demand.
 
-On Tue, Mar 11, 2014 at 4:55 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Does this require drivers/sh/pm_runtime.c to be compiled in ?
+Is PM_RUNTIME enabled in both cases ?
 
-Let's check...
 
-My koelsch-legacy kernel has drivers/sh/pm_runtime.c compiled in.
-My koelsch-reference kernel hasn't.
+There's something fishy in there that we should try to fix without too further 
+much delay. Ben Dooks has pointed out the problem a couple of months ago, but 
+the discussion on the mailing list just died.
 
-However, under the -reference kernel many MSTP clocks (incl. MSIOF)
-seem to be enabled all the time, while under -legacy they are enabled and
-disabled on demand.
+-- 
+Regards,
 
-Gr{oetje,eeting}s,
+Laurent Pinchart
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
