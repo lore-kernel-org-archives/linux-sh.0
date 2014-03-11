@@ -1,46 +1,108 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 11 Mar 2014 10:45:01 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 11 Mar 2014 15:55:15 +0000
 Subject: Re: [PATCH 2/3] spi: sh-msiof: Convert to spi core auto_runtime_pm framework
-Message-Id: <20140311104501.GM28112@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="1UYQ7+YJ04uCMQbO"
+Message-Id: <1802214.NxZUiJcWLG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
- <1394531952-3905-2-git-send-email-geert@linux-m68k.org>
+References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org> <1394531952-3905-2-git-send-email-geert@linux-m68k.org>
 In-Reply-To: <1394531952-3905-2-git-send-email-geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
+Hi Geert,
 
---1UYQ7+YJ04uCMQbO
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thank you for the patch.
 
-On Tue, Mar 11, 2014 at 10:59:11AM +0100, Geert Uytterhoeven wrote:
+Does this require drivers/sh/pm_runtime.c to be compiled in ?
+
+On Tuesday 11 March 2014 10:59:11 Geert Uytterhoeven wrote:
 > From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> Cc: Magnus Damm <magnus.damm@gmail.com>
+> ---
+>  drivers/spi/spi-sh-msiof.c |   25 +------------------------
+>  1 file changed, 1 insertion(+), 24 deletions(-)
+> 
+> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+> index 739eb2f12ecc..e850d03e7190 100644
+> --- a/drivers/spi/spi-sh-msiof.c
+> +++ b/drivers/spi/spi-sh-msiof.c
+> @@ -448,9 +448,6 @@ static int sh_msiof_prepare_message(struct spi_master
+> *master, struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
+>  	const struct spi_device *spi = msg->spi;
+> 
+> -	pm_runtime_get_sync(&p->pdev->dev);
+> -	clk_enable(p->clk);
+> -
+>  	/* Configure pins before asserting CS */
+>  	sh_msiof_spi_set_pin_regs(p, !!(spi->mode & SPI_CPOL),
+>  				  !!(spi->mode & SPI_CPHA),
+> @@ -460,16 +457,6 @@ static int sh_msiof_prepare_message(struct spi_master
+> *master, return 0;
+>  }
+> 
+> -static int sh_msiof_unprepare_message(struct spi_master *master,
+> -				      struct spi_message *msg)
+> -{
+> -	struct sh_msiof_spi_priv *p = spi_master_get_devdata(master);
+> -
+> -	clk_disable(p->clk);
+> -	pm_runtime_put(&p->pdev->dev);
+> -	return 0;
+> -}
+> -
+>  static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
+>  				  void (*tx_fifo)(struct sh_msiof_spi_priv *,
+>  						  const void *, int, int),
+> @@ -742,12 +729,6 @@ static int sh_msiof_spi_probe(struct platform_device
+> *pdev) goto err1;
+>  	}
+> 
+> -	ret = clk_prepare(p->clk);
+> -	if (ret < 0) {
+> -		dev_err(&pdev->dev, "unable to prepare clock\n");
+> -		goto err1;
+> -	}
+> -
+>  	p->pdev = pdev;
+>  	pm_runtime_enable(&pdev->dev);
+> 
+> @@ -768,8 +749,8 @@ static int sh_msiof_spi_probe(struct platform_device
+> *pdev) master->num_chipselect = p->info->num_chipselect;
+>  	master->setup = sh_msiof_spi_setup;
+>  	master->prepare_message = sh_msiof_prepare_message;
+> -	master->unprepare_message = sh_msiof_unprepare_message;
+>  	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 32);
+> +	master->auto_runtime_pm = true;
+>  	master->transfer_one = sh_msiof_transfer_one;
+> 
+>  	ret = devm_spi_register_master(&pdev->dev, master);
+> @@ -782,7 +763,6 @@ static int sh_msiof_spi_probe(struct platform_device
+> *pdev)
+> 
+>   err2:
+>  	pm_runtime_disable(&pdev->dev);
+> -	clk_unprepare(p->clk);
+>   err1:
+>  	spi_master_put(master);
+>  	return ret;
+> @@ -790,10 +770,7 @@ static int sh_msiof_spi_probe(struct platform_device
+> *pdev)
+> 
+>  static int sh_msiof_spi_remove(struct platform_device *pdev)
+>  {
+> -	struct sh_msiof_spi_priv *p = platform_get_drvdata(pdev);
+> -
+>  	pm_runtime_disable(&pdev->dev);
+> -	clk_unprepare(p->clk);
+>  	return 0;
+>  }
 
-Applied, thanks.
+-- 
+Regards,
 
---1UYQ7+YJ04uCMQbO
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Laurent Pinchart
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTHukpAAoJELSic+t+oim9Y10QAJNGQaUHHHBOzF0XF8MX3ZlL
-4+k4Hra7LZ0Rp5ubClBK+5NfXPPoouPYrGIG9KjsyrJq3HhN4ajDH+goEOIVhllO
-idCaCXqyqiOzQlXz7jDmWHzTrr7zSkwcU2L6VBXUq8DPZwO3oMf01bCdLg9SBgZ1
-jEcrxluELvviWcd44TstEmnlAelJgmgvoTQfrrY3cDeRhUEjmI77JXPeCb6ynGDU
-I5E06riJgo0CdqD0Y+e7dd63RJNUlTc/cT0/AU9leHfByPVyLo9NXlBQnw/83t92
-QJLyY4h+kYQ7ofOSvi6psAxeWuJJqJgpflZcs/BbdS404GcQ3UcPfRWCU6MGmorA
-EcnQmw7cA56el5xiLvmdgItvvwm8OVy3hKGF8v06IE75RNNSAH+oLD14pEiROWqC
-OwRZ9KPrd1fkQcOpVfFS0j15kxNeoM+JQE5mHYR0CcDrUwuCetOxkXZubEgYaJZX
-Towf8w4iGG6eD8pG9Tnt8PTIY0sLsvWIkymZF86k+MgBiYN359tjBYImDfbP6/Ji
-A2wVWlqNA+e+hpuq2v57lZYNFThs03Yh5W1/ss/BHKPN27MfBiCOt45JS1J8aFeI
-78LGqtj/bodWTW3O4cNiTW0XqlNxkVsoHBBNmIbiq/I5DWA+C96csNZe961UgvuD
-CajT45wjqyHefdeN1zCH
-=nKLy
------END PGP SIGNATURE-----
-
---1UYQ7+YJ04uCMQbO--
