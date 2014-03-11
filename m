@@ -1,86 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 20 Mar 2014 11:55:29 +0000
-Subject: Re: [PATCH] [PATCH v2] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <1651225.dIHP4GJALN@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 09:43:26 +0000
+Subject: [PATCH v2] spi: sh-msiof: Remove "renesas,msiof-sh7724" from bindings
+Message-Id: <1394531006-20341-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395308007-13956-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1395308007-13956-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org, linux-sh@vger.kernel.org, davem@davemloft.net, sergei.shtylyov@cogentembedded.com, laurent.pinchart+renesas@ideasonboard.com
+To: Mark Brown <broonie@kernel.org>
+Cc: devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Ben,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thank you for the patch.
+It's not implemented in the driver, so it's a bad example.
 
-On Thursday 20 March 2014 10:33:27 Ben Dooks wrote:
-> The pm_rumtime work queue is causing the device to be suspended during
-> initialisation, thus the initialisation may not be able to access registers
-> properly. As the code is called from a work queue, it is possible that this
-> is not seen from certain configurations/builds due to the asynchronos
-> nature of the code.
-> 
-> Another issue has also been found where the network device registration
-> calls back into the driver thus causing further pm_runtime calls that
-> also caused issues with the MDIO bus code.
-> 
-> Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
-> pm system does not suspend it during the probe() call and remove the
-> now unnecessary pm_runtime_resume() call.
-> 
-> This fixes the external abort that can cause /sbin/init or other such
-> init processed to die.
-> 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> 
-> ---
-> Cc: sergei.shtylyov@cogentembedded.com
-> Cc: laurent.pinchart+renesas@ideasonboard.com
-> cc: netdev@vger.kernel.org
-> 
-> Note, Laurent this should probably be applied before your
-> current series as it may require changes to the exit sequence.
-> 
-> Fixes from v1:
-> 	- use pm_runtime_put() over pm_runtime_put_sync() as
-> 	  we do not need to guaranteed the device has powered
->           off after probe.
-> ---
->  drivers/net/ethernet/renesas/sh_eth.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
-> b/drivers/net/ethernet/renesas/sh_eth.c index 4f76b5e..955e422 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-> @@ -2869,7 +2869,7 @@ static int sh_eth_drv_probe(struct platform_device
-> *pdev) spin_lock_init(&mdp->lock);
->  	mdp->pdev = pdev;
->  	pm_runtime_enable(&pdev->dev);
-> -	pm_runtime_resume(&pdev->dev);
-> +	pm_runtime_get_sync(&pdev->dev);
-> 
->  	if (pdev->dev.of_node)
->  		pd = sh_eth_parse_dt(&pdev->dev);
-> @@ -2961,6 +2961,7 @@ static int sh_eth_drv_probe(struct platform_device
-> *pdev) pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
->  		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
-> 
-> +	pm_runtime_put(&pdev->dev);
->  	platform_set_drvdata(pdev, ndev);
-> 
->  	return ret;
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v2:
+  - Add Acked-by
 
-Don't you also need a pm_runtime_put() call in the error path at the end of 
-the probe function ? I've had a quick look at the device core and there 
-doesn't seem to be any automatic runtime PM cleanup performed when probe fails 
-(I might have missed it though, so please double-check).
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |    1 -
+ 1 file changed, 1 deletion(-)
 
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index 1f0cb33763a1..f24baf3b6cc1 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -5,7 +5,6 @@ Required properties:
+ 			 "renesas,sh-msiof" for SuperH, or
+ 			 "renesas,sh-mobile-msiof" for SH Mobile series.
+ 			 Examples with soctypes are:
+-			 "renesas,msiof-sh7724" (SH)
+ 			 "renesas,msiof-r8a7790" (R-Car H2)
+ 			 "renesas,msiof-r8a7791" (R-Car M2)
+ - reg                  : Offset and length of the register set for the device
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
