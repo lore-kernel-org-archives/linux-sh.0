@@ -1,45 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:49 +0000
-Subject: [PATCH v4 06/19] ARM: shmobile: marzen: Specify external clock frequency in DT
-Message-Id: <1394701202-25823-7-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 10:11:20 +0000
+Subject: [PATCH 4/4] serial: sh-sci: Replace hardcoded 3 by UART_PM_STATE_OFF
+Message-Id: <1394532680-4264-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+References: <1394532680-4264-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1394532680-4264-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-The external crystal frequency is 31.25 on the Marzen board.
-Specify it in the device tree.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Based on work for the Lager board by Laurent Pinchart.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
-v3
-* Update r8a7779-marzen.dts instead of r8a7779-marzen-reference.dts
----
- arch/arm/boot/dts/r8a7779-marzen.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/tty/serial/sh-sci.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index eda6240..2c727cd 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -68,6 +68,10 @@
- 	status = "okay";
- };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e0c7db0027b7..cceaaee2b585 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1955,7 +1955,7 @@ static void sci_pm(struct uart_port *port, unsigned int state,
+ 	struct sci_port *sci_port = to_sci_port(port);
  
-+&extal_clk {
-+	clock-frequency = <31250000>;
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif2_pins &scif4_pins>;
- 	pinctrl-names = "default";
+ 	switch (state) {
+-	case 3:
++	case UART_PM_STATE_OFF:
+ 		sci_port_disable(sci_port);
+ 		break;
+ 	default:
 -- 
-1.8.5.2
+1.7.9.5
 
