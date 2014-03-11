@@ -1,58 +1,45 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 27 Mar 2014 09:26:50 +0000
-Subject: [PATCH v6 04/10] ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
-Message-Id: <1395912416-20087-5-git-send-email-phil.edworthy@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 09:11:21 +0000
+Subject: [PATCH v2] sh: sh7757: switch RSPI clock to dev ID match
+Message-Id: <1394529081-28703-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds the device tree clock nodes for PCIe
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Switch the RSPI MSTP clock on SH7757 from a con ID match to a dev ID
+match, so we can start looking it up using clk_get() with a NULL ID.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 7 +++++--
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 6 insertions(+), 2 deletions(-)
+Andrew, as there's no active SH-maintainer, can you please pick this up?
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 71bac2c..ccfba57 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -717,14 +717,17 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>,
--				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>;
-+				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>,
-+				<&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
- 				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
-+				R8A7791_CLK_PCIE
- 			>;
- 			clock-output-names -				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1";
-+				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1",
-+				"pcie";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 30f82f2..d3e2cf5 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -51,6 +51,7 @@
- #define R8A7791_CLK_SDHI1		12
- #define R8A7791_CLK_SDHI0		14
- #define R8A7791_CLK_MMCIF0		15
-+#define R8A7791_CLK_PCIE		19
- #define R8A7791_CLK_SSUSB		28
- #define R8A7791_CLK_CMT1		29
- #define R8A7791_CLK_USBDMAC0		30
+This is a prerequisite for "spi: rspi: Use NULL as the clock ID", which is
+queued for v3.15:
+https://git.kernel.org/cgit/linux/kernel/git/broonie/spi.git/commit/drivers/spi/spi-rspi.c?h=for-next&id)f397b739ceef90c8b848f6579cbacd088e896e
+
+v2: Add Tested-by
+
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+index e84a43229b9c..5c0e3c335161 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+@@ -132,7 +132,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("usb_fck", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP102]),
+ 	CLKDEV_CON_ID("mmc0", &mstp_clks[MSTP220]),
+-	CLKDEV_CON_ID("rspi2", &mstp_clks[MSTP127]),
++	CLKDEV_DEV_ID("rspi.2", &mstp_clks[MSTP127]),
+ };
+ 
+ int __init arch_clk_init(void)
 -- 
-1.9.0
+1.7.9.5
 
