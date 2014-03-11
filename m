@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 07 Mar 2014 17:57:17 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 11 Mar 2014 10:47:56 +0000
 Subject: Re: NFS root on Koelsch reference
-Message-Id: <531A1694.9060405@cogentembedded.com>
+Message-Id: <CAMuHMdW3YeOUGhy8oL3Tmq5sQhzeSFuXQsUR8AUmi+PH1-rN4w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAMuHMdUND0D8rj4K3ZPqx1XqS7czK3PeHfBqTu2WRWQw3Ecj1A@mail.gmail.com>
 In-Reply-To: <CAMuHMdUND0D8rj4K3ZPqx1XqS7czK3PeHfBqTu2WRWQw3Ecj1A@mail.gmail.com>
@@ -10,34 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Hi Sergei,
 
-On 03/06/2014 10:24 PM, Ben Dooks wrote:
+On Fri, Mar 7, 2014 at 7:57 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+>> We also need a fix for the Micrel PHY to set the LED mode on the
+>> Lager board. I've sent that but it seems to have stalled.
+>
+>    While we're not having it, try changing "renesas,ether-link-active-low"
+> prop to "renesas,no-ether-link" in the Koelsch device tree file.
 
->> Now we have DT support for Ethernet on r8a7791, I struggled a bit to get NFS
->> root working on Koelsch reference.
+Thanks, that decreases the part between nfsroot mount and system ready
+from 54 s to 15 s, hence
 
->> While I still need "[PATCH] ARM: shmobile: compile drivers/sh for
->> CONFIG_ARCH_SHMOBILE_MULTI" to make the thermal sensor warning
->> go away, this same patch causes a kernel panic when starting userspace from
->> NFS root on Koelsch reference:
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
->> VFS: Mounted root (nfs filesystem) readonly on device 0:12.
->> devtmpfs: mounted
->> Freeing unused kernel memory: 204K (c042b000 - c045e000)
->> Unhandled fault: imprecise external abort (0x1406) at 0x00000000
->> Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007
+Gr{oetje,eeting}s,
 
-    Geert, do you have CONFIG_PM_RUNTIME in your .config?
+                        Geert
 
-> I am also trying to get a patch in to stop these being fatal to the
-> system.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> We also need a fix for the Micrel PHY to set the LED mode on the
-> Lager board. I've sent that but it seems to have stalled.
-
-    While we're not having it, try changing "renesas,ether-link-active-low" 
-prop to "renesas,no-ether-link" in the Koelsch device tree file.
-
-WBR, Sergei
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
