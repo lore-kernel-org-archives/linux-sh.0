@@ -1,191 +1,116 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 06 Mar 2014 12:16:45 +0000
-Subject: Re: [PATCH V2 03/12] ARM: shmobile: r7s72100: add essential clock nodes to dtsi
-Message-Id: <31686239.1N332dKyCy@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Mar 2014 23:36:17 +0000
+Subject: [PATCH v2 01/03] ARM: shmobile: Introduce shmobile_clk_workaround()
+Message-Id: <20140312233617.17009.94940.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
- <1394105552-9744-4-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394105552-9744-4-git-send-email-wsa@the-dreams.de>
+References: <20140312233608.17009.65690.sendpatchset@w520>
+In-Reply-To: <20140312233608.17009.65690.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+From: Magnus Damm <damm@opensource.se>
 
-Thank you for the patch.
+Introduce a new clock workaround function used by DT reference
+code on the mach-shmobile subarchitecture. The new function
+shmobile_clk_workaround() is used to configure clkdev to
+allow DT and platform devices to coexist. It is possible for
+the DT reference board code to also request enabling of the clock
+in case the driver does not implement clock control.
 
-On Thursday 06 March 2014 12:32:23 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Only essential clocks are added for now. Other clocks will be added when
-> needed.
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> ---
-> 
-> Changes since V1:
-> * add usb_x1 clock
-> * reference usb_x1 to cpg
-> * improved wording
-> * #clock-cells consistently first property
-> 
->  arch/arm/boot/dts/r7s72100.dtsi            | 86 ++++++++++++++++++++++++++-
->  include/dt-bindings/clock/r7s72100-clock.h | 25 +++++++++
->  2 files changed, 110 insertions(+), 1 deletion(-)
->  create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
-> 
-> diff --git a/arch/arm/boot/dts/r7s72100.dtsi
-> b/arch/arm/boot/dts/r7s72100.dtsi index ee700717a34b..2429b5be2e56 100644
-> --- a/arch/arm/boot/dts/r7s72100.dtsi
-> +++ b/arch/arm/boot/dts/r7s72100.dtsi
-> @@ -1,13 +1,15 @@
->  /*
->   * Device Tree Source for the r7s72100 SoC
->   *
-> - * Copyright (C) 2013 Renesas Solutions Corp.
-> + * Copyright (C) 2013-14 Renesas Solutions Corp.
-> + * Copyright (C) 2014 Wolfram Sang, Sang Engineering
-> <wsa@sang-engineering.com>
->   *
->   * This file is licensed under the terms of the GNU General Public License
->   * version 2.  This program is licensed "as is" without any warranty of any
->   * kind, whether express or implied.
->   */
-> 
-> +#include <dt-bindings/clock/r7s72100-clock.h>
->  #include <dt-bindings/interrupt-controller/irq.h>
-> 
->  / {
-> @@ -28,6 +30,88 @@
->  		spi4 = &spi4;
->  	};
-> 
-> +	clocks {
-> +		ranges;
-> +		#address-cells = <1>;
-> +		#size-cells = <1>;
-> +
-> +		/* External clocks */
-> +		extal_clk: extal_clk {
-> +			#clock-cells = <0>;
-> +			compatible = "fixed-clock";
-> +			/* If clk present, value must be set by board */
-> +			clock-frequency = <0>;
-> +			clock-output-names = "extal";
-> +		};
-> +
-> +		usb_x1_clk: usb_x1_clk {
-> +			#clock-cells = <0>;
-> +			compatible = "fixed-clock";
-> +			/* If clk present, value must be set by board */
-> +			clock-frequency = <0>;
-> +			clock-output-names = "usb_x1";
-> +		};
-> +
-> +		/* Special CPG clocks */
-> +		cpg_clocks: cpg_clocks@fcfe0000 {
-> +			#clock-cells = <1>;
-> +			compatible = "renesas,r7s72100-cpg-clocks",
-> +				     "renesas,rz-cpg-clocks";
-> +			reg = <0xfcfe0000 0x18>;
-> +			clocks = <&extal_clk>, <&usb_x1_clk>;
-> +			clock-output-names = "pll", "i", "g";
-> +		};
-> +
-> +		/* Fixed factor clocks */
-> +		b_clk: b_clk {
-> +			#clock-cells = <0>;
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks 0>;
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-What about adding #define's for the CPG clocks to include/dt-
-bindings/clock/r7s72100-clock.h like is done for the R8A7790 and R8A7791 ?
+ Changes since V1:
+ - Reworked patch dependency, updated include file path
 
-> +			clock-mult = <1>;
-> +			clock-div = <3>;
-> +			clock-output-names = "b";
-> +		};
-> +		p1_clk: p1_clk {
-> +			#clock-cells = <0>;
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks 0>;
-> +			clock-mult = <1>;
-> +			clock-div = <6>;
-> +			clock-output-names = "p1";
-> +		};
-> +		p0_clk: p0_clk {
-> +			#clock-cells = <0>;
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks 0>;
-> +			clock-mult = <1>;
-> +			clock-div = <12>;
-> +			clock-output-names = "p0";
-> +		};
-> +
-> +		/* MSTP clocks */
-> +		mstp3_clks: mstp3_clks@fcfe0420 {
-> +			#clock-cells = <1>;
-> +			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> +			reg = <0xfcfe0420 4>;
-> +			clocks = <&p0_clk>;
-> +			renesas,clock-indices = <R7S72100_CLK_MTU2>;
-> +			clock-output-names = "mtu2";
-> +		};
-> +
-> +		mstp4_clks: mstp4_clks@fcfe0424 {
-> +			#clock-cells = <1>;
-> +			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> +			reg = <0xfcfe0424 4>;
-> +			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
-> +				 <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>;
-> +			renesas,clock-indices = <
-> +				R7S72100_CLK_SCIF0 R7S72100_CLK_SCIF1 R7S72100_CLK_SCIF2
-> R7S72100_CLK_SCIF3 +				R7S72100_CLK_SCIF4 R7S72100_CLK_SCIF5
-> R7S72100_CLK_SCIF6 R7S72100_CLK_SCIF7 +			>;
-> +			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4",
-> "scif5", "scif6", "scif7"; +		};
-> +	};
-> +
->  	cpus {
->  		#address-cells = <1>;
->  		#size-cells = <0>;
-> diff --git a/include/dt-bindings/clock/r7s72100-clock.h
-> b/include/dt-bindings/clock/r7s72100-clock.h new file mode 100644
-> index 000000000000..eced0a8382b0
-> --- /dev/null
-> +++ b/include/dt-bindings/clock/r7s72100-clock.h
-> @@ -0,0 +1,25 @@
-> +/*
-> + * Copyright (C) 2014 Wolfram Sang, Sang Engineering
-> <wsa@sang-engineering.com> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License as published by
-> + * the Free Software Foundation; version 2 of the License.
-> + */
-> +
-> +#ifndef __DT_BINDINGS_CLOCK_R7S72100_H__
-> +#define __DT_BINDINGS_CLOCK_R7S72100_H__
-> +
-> +/* MSTP3 */
-> +#define R7S72100_CLK_MTU2	3
-> +
-> +/* MSTP4 */
-> +#define R7S72100_CLK_SCIF0	7
-> +#define R7S72100_CLK_SCIF1	6
-> +#define R7S72100_CLK_SCIF2	5
-> +#define R7S72100_CLK_SCIF3	4
-> +#define R7S72100_CLK_SCIF4	3
-> +#define R7S72100_CLK_SCIF5	2
-> +#define R7S72100_CLK_SCIF6	1
-> +#define R7S72100_CLK_SCIF7	0
-> +
-> +#endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+ arch/arm/mach-shmobile/Makefile             |    2 -
+ arch/arm/mach-shmobile/clock.c              |   29 +++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/clock.h |   16 ++++++++++++++
+ 3 files changed, 46 insertions(+), 1 deletion(-)
 
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-03-13 08:29:12.000000000 +0900
+@@ -21,8 +21,8 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ 
+ # Clock objects
+-ifndef CONFIG_COMMON_CLK
+ obj-y				+= clock.o
++ifndef CONFIG_COMMON_CLK
+ obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
+--- 0001/arch/arm/mach-shmobile/clock.c
++++ work/arch/arm/mach-shmobile/clock.c	2014-03-13 08:29:35.000000000 +0900
+@@ -21,6 +21,32 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++
++#ifdef CONFIG_COMMON_CLK
++#include <linux/clk.h>
++#include <linux/clkdev.h>
++#include <mach/clock.h>
++
++void __init shmobile_clk_workaround(const struct clk_name *clks,
++				    int nr_clks, bool enable)
++{
++	const struct clk_name *clkn;
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < nr_clks; ++i) {
++		clkn = clks + i;
++		clk = clk_get(NULL, clkn->clk);
++		if (!IS_ERR(clk)) {
++			clk_register_clkdev(clk, clkn->con_id, clkn->dev_id);
++			if (enable)
++				clk_prepare_enable(clk);
++			clk_put(clk);
++		}
++	}
++}
++
++#else /* CONFIG_COMMON_CLK */
+ #include <linux/sh_clk.h>
+ #include <linux/export.h>
+ #include <mach/clock.h>
+@@ -58,3 +84,6 @@ void __clk_put(struct clk *clk)
+ {
+ }
+ EXPORT_SYMBOL(__clk_put);
++
++#endif /* CONFIG_COMMON_CLK */
++
+--- 0001/arch/arm/mach-shmobile/include/mach/clock.h
++++ work/arch/arm/mach-shmobile/include/mach/clock.h	2014-03-13 08:29:12.000000000 +0900
+@@ -1,6 +1,21 @@
+ #ifndef CLOCK_H
+ #define CLOCK_H
+ 
++#ifdef CONFIG_COMMON_CLK
++/* temporary clock configuration helper for platform devices */
++
++struct clk_name {
++	const char *clk;
++	const char *con_id;
++	const char *dev_id;
++};
++
++void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
++			     bool enable);
++
++#else /* CONFIG_COMMON_CLK */
++/* legacy clock implementation */
++
+ unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
+ extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
+ 
+@@ -36,4 +51,5 @@ do {			\
+ 	(p)->div = d;	\
+ } while (0)
+ 
++#endif /* CONFIG_COMMON_CLK */
+ #endif
