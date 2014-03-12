@@ -1,55 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 11 Mar 2014 17:57:41 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Mar 2014 01:23:48 +0000
 Subject: Re: [PATCH 2/3] spi: sh-msiof: Convert to spi core auto_runtime_pm framework
-Message-Id: <25839523.lJE8x4ql34@avalon>
+Message-Id: <CANqRtoRR9Q8Q=ACqhnLBpTavn0K5cD1=dBkjkfZ8kb+H68GuOw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org> <2274545.CyQ67zvVqo@avalon> <CAMuHMdXEOygh0--niiLcXFgnRNPi_b0EGPKVBg2Q6Ws01YmNjw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXEOygh0--niiLcXFgnRNPi_b0EGPKVBg2Q6Ws01YmNjw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
+	<1802214.NxZUiJcWLG@avalon>
+	<CAMuHMdVOUuFsObEag_MwUT_jaqfOHMEcUScrkbaTEitmyJr+NQ@mail.gmail.com>
+	<2274545.CyQ67zvVqo@avalon>
+In-Reply-To: <2274545.CyQ67zvVqo@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert+renesas-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Hi Geert,
+On Wed, Mar 12, 2014 at 1:32 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Tuesday 11 March 2014 17:23:37 Geert Uytterhoeven wrote:
+>> Hi Laurent,
+>>
+>> On Tue, Mar 11, 2014 at 4:55 PM, Laurent Pinchart wrote:
+>> > Does this require drivers/sh/pm_runtime.c to be compiled in ?
+>>
+>> Let's check...
+>>
+>> My koelsch-legacy kernel has drivers/sh/pm_runtime.c compiled in.
+>> My koelsch-reference kernel hasn't.
+>>
+>> However, under the -reference kernel many MSTP clocks (incl. MSIOF)
+>> seem to be enabled all the time, while under -legacy they are enabled and
+>> disabled on demand.
+>
+> Is PM_RUNTIME enabled in both cases ?
+>
+>
+> There's something fishy in there that we should try to fix without too further
+> much delay. Ben Dooks has pointed out the problem a couple of months ago, but
+> the discussion on the mailing list just died.
 
-On Tuesday 11 March 2014 18:44:21 Geert Uytterhoeven wrote:
-> On Tue, Mar 11, 2014 at 5:32 PM, Laurent Pinchart wrote:
-> > On Tuesday 11 March 2014 17:23:37 Geert Uytterhoeven wrote:
-> >> On Tue, Mar 11, 2014 at 4:55 PM, Laurent Pinchart wrote:
-> >> > Does this require drivers/sh/pm_runtime.c to be compiled in ?
-> >> 
-> >> Let's check...
-> >> 
-> >> My koelsch-legacy kernel has drivers/sh/pm_runtime.c compiled in.
-> >> My koelsch-reference kernel hasn't.
-> >> 
-> >> However, under the -reference kernel many MSTP clocks (incl. MSIOF)
-> >> seem to be enabled all the time, while under -legacy they are enabled and
-> >> disabled on demand.
-> > 
-> > Is PM_RUNTIME enabled in both cases ?
-> 
-> Yes it is.
-> 
-> > There's something fishy in there that we should try to fix without too
-> > further much delay. Ben Dooks has pointed out the problem a couple of
-> > months ago, but the discussion on the mailing list just died.
-> 
-> Indeed. I'll look into it next week, unless someone beats me to it.
-> 
-> Note that I dropped Ben's patch to include drivers/sh, as I can't boot into
-> userspace with it.
+Yes, Runtime PM is not working as expected in the multiplatform case,
+that is true. I propose that we keep Runtime PM disabled in the
+Kconfig for R-Car Gen2 for now to keep things simple.
 
-The patch also had the issue of not being compatible with multiplatform 
-kernels, as it resulted in Renesas-specific code being executed for all 
-platforms.
+From my side I see it as two separate solutions. The short term fix is
+to temporarily work around drivers that depend on Runtime PM for clock
+control, I propose enabling selected clocks statically using the
+function introduced by this series:
 
-If you can find the old mail thread you can just reply to it (CC'ing me) and 
-I'll make sure to refresh my memory and explain my concerns again.
+[PATCH 00/03] ARM: shmobile: Break out and extend clock workaround
+http://www.spinics.net/lists/arm-kernel/msg310278.html
 
--- 
-Regards,
+The long term fix I'm not sure sure about, but I trust Geert to figure
+it out. =)
 
-Laurent Pinchart
+Regardless, rushing to fix this "correctly" seems as useful to me as
+dead line driven DT development....
 
+Thanks,
+
+/ magnus
