@@ -1,35 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 23 Mar 2014 10:13:20 +0000
-Subject: Re: [PATCH v4 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
-Message-Id: <CAMuHMdVMCeZwX_67ktCYcYLe_P3+X5EeRbUDT3ZJjcgvU=Hwqg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Mar 2014 23:36:08 +0000
+Subject: [PATCH v2 00/03] ARM: shmobile: Break out and extend clock workaround V2
+Message-Id: <20140312233608.17009.65690.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
- <1395397968-6242-7-git-send-email-phil.edworthy@renesas.com>
- <532C5ADE.4030708@cogentembedded.com>
-In-Reply-To: <532C5ADE.4030708@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 21, 2014 at 4:29 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
->> +
->> +       pcie: pcie@fe000000 {
->> +               compatible = "renesas,r8a7790-pcie";
->
->    The convention adopted on this list is to put the "pcie" first, and SoC
-> name the last.
+ARM: shmobile: Break out and extend clock workaround V2
 
-Except for clock bindings ;-)
+[PATCH v2 01/03] ARM: shmobile: Introduce shmobile_clk_workaround()
+[PATCH 02/03] ARM: shmobile: Use shmobile_clk_workaround() on Lager
+[PATCH 03/03] ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
 
-Gr{oetje,eeting}s,
+These patches consolidates the clkdev workaround present in the DT
+reference version of board code for Lager and Koelsch, and it also
+extends it to allow static enablement of a selected set of clocks
+during boot. The latter is needed for USB PCI support patches that
+have been posted.
 
-                        Geert
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ Changes since V1:
+ - Reworked dependencies, updated header file path in patch [1/3].
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ Written against renesas.git tag renesas-devel-v3.14-rc6-20140311
+
+ arch/arm/mach-shmobile/Makefile                  |    2 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   71 ++++++++--------------
+ arch/arm/mach-shmobile/board-lager-reference.c   |   65 +++++++-------------
+ arch/arm/mach-shmobile/clock.c                   |   29 ++++++++
+ arch/arm/mach-shmobile/include/mach/clock.h      |   16 ++++
+ 5 files changed, 99 insertions(+), 84 deletions(-)
