@@ -1,160 +1,110 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Mon, 24 Mar 2014 12:53:47 +0000
-Subject: Re: [PATCH v4 5/9] dt-bindings: pci: rcar pcie device tree bindings
-Message-Id: <1395665627.5062.12.camel@weser.hi.pengutronix.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 12 Mar 2014 23:36:26 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Use shmobile_clk_workaround() on Lager
+Message-Id: <20140312233626.17009.24749.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
- <1395397968-6242-6-git-send-email-phil.edworthy@renesas.com>
- <1395401031.4554.9.camel@weser.hi.pengutronix.de>
- <OF03C9E23D.07B7D998-ON80257CA2.004E5877-80257CA2.004E9BFB@eu.necel.com>
- <1395412213.4554.17.camel@weser.hi.pengutronix.de>
- <OFC7DD5DAC.D378B300-ON80257CA2.0051ECEE-80257CA2.00529F98@LocalDomain>
- <OF9DD6173A.94976872-ON80257CA5.0041752F-80257CA5.0042532C@eu.necel.com>
- <533021F6.2000702@codethink.co.uk>
- <OF85DD7B1D.716DE42D-ON80257CA5.00443087-80257CA5.004447DB@LocalDomain>
- <OF01E3AAFE.D9BF866A-ON80257CA5.0045F63A-80257CA5.00463029@eu.necel.com>
-In-Reply-To: <OF01E3AAFE.D9BF866A-ON80257CA5.0045F63A-80257CA5.00463029@eu.necel.com>
+References: <20140312233608.17009.65690.sendpatchset@w520>
+In-Reply-To: <20140312233608.17009.65690.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Am Montag, den 24.03.2014, 12:46 +0000 schrieb
-Phil.Edworthy@renesas.com:
-> Hi Ben,
-> 
-> On: 24/03/2014 12:25, Phil wrote:
-> > Subject: Re: [PATCH v4 5/9] dt-bindings: pci: rcar pcie device tree 
-> bindings
-> > 
-> > Hi Ben,
-> > 
-> > On: 24/03/2014 12:16, Ben wrote:
-> > > Subject: Re: [PATCH v4 5/9] dt-bindings: pci: rcar pcie device tree 
-> bindings
-> > > 
-> > > On 24/03/14 12:04, Phil.Edworthy@renesas.com wrote:
-> > > > Hi Lucas,
-> > > >
-> > > > On: 21/03/2014 15:02, Phil wrote:
-> > > >> Subject: Re: [PATCH v4 5/9] dt-bindings: pci: rcar pcie device tree
-> > > > bindings
-> > > >>
-> > > >> Hi Lucas,
-> > > >>
-> > > >> On: 21/03/2014 14:31, Lucas wrote:
-> > > >>> Subject: Re: [PATCH v4 5/9] dt-bindings: pci: rcar pcie device 
-> tree
-> > > > bindings
-> > > >>>
-> > > >>> Am Freitag, den 21.03.2014, 14:18 +0000 schrieb
-> > > >>> Phil.Edworthy@renesas.com:
-> > > >>>> Hi Lucas,
-> > > >>>>
-> > > >>>> On 21/03/2014 11:24, Lucas wrote:
-> > > >>>>> Subject: Re: [PATCH v4 5/9] dt-bindings: pci: rcar pcie device
-> > > > tree
-> > > >>>> bindings
-> > > >>>>>
-> > > >>>>> Am Freitag, den 21.03.2014, 10:32 +0000 schrieb Phil Edworthy:
-> > > >>>>>> This patch adds the bindings for the rcar PCIE driver. The
-> > > > driver
-> > > >>>>>> resides under drivers/pci/host/pcie-rcar.c
-> > > >>>>>>
-> > > >>>>>> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > > >>>>>
-> > > >>>>> I have one question below. If you can answer this with yes after
-> > > >>>>> thinking again about it, this is:
-> > > >>>>>
-> > > >>>>> Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
-> > > >>>>>> ---
-> > > >>>>>>   Documentation/devicetree/bindings/pci/rcar-pci.txt | 40
-> > > >>>> ++++++++++++++++++++++
-> > > >>>>>>   1 file changed, 40 insertions(+)
-> > > >>>>>>   create mode 100644
-> > > > Documentation/devicetree/bindings/pci/rcar-pci.txt
-> > > >>>>>>
-> > > >>>>>> diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt
-> > > > b/
-> > > >>>>> Documentation/devicetree/bindings/pci/rcar-pci.txt
-> > > >>>>>> new file mode 100644
-> > > >>>>>> index 0000000..0e219b0
-> > > >>>>>> --- /dev/null
-> > > >>>>>> +++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-> > > >>>>>> @@ -0,0 +1,40 @@
-> > > >>>>>> +* Renesas RCar PCIe interface
-> > > >>>>>> +
-> > > >>>>>> +Required properties:
-> > > >>>>>> +- compatible: should contain one of the following
-> > > >>>>>> +   "renesas,r8a7779-pcie", "renesas,r8a7790-pcie",
-> > > >>>> "renesas,r8a7791-pcie"
-> > > >>>>>> +- reg: base addresses and lengths of the pcie controller.
-> > > >>>>>> +- #address-cells: set to <3>
-> > > >>>>>> +- #size-cells: set to <2>
-> > > >>>>>> +- device_type: set to "pci"
-> > > >>>>>> +- ranges: ranges for the PCI memory and I/O regions
-> > > >>>>>> +- interrupts: interrupt values for MSI interrupt
-> > > >>>>>> +- #interrupt-cells: set to <1>
-> > > >>>>>> +- interrupt-map-mask and interrupt-map: standard PCI 
-> properties
-> > > >>>>>> +   to define the mapping of the PCIe interface to interrupt
-> > > >>>>>> +   numbers.
-> > > >>>>>> +- clocks: from common clock binding: handle to pci clock.
-> > > >>>>>> +- clock-names: from common clock binding: should be "pcie"
-> > > >>>>>
-> > > >>>>> You really only have one PCIe clock? So the controller is
-> > > > generating the
-> > > >>>>> PCIe bus clock from it's register clock? No need to enable any
-> > > > other
-> > > >>>>> clock for PCIe to work?
-> > > >>>> Yes, just the one clock. The PCIe bus clock is an external clock
-> > > > dedicated
-> > > >>>> to PCIe and SATA, and we have no control over it.
-> > > >>>>
-> > > >>> Is this some kind of always-on clock? If not you probably want a
-> > > >>> reference to it from the PCIe driver even if it's shared between 
-> SATA
-> > > >>> and PCIe. After all you don't want to end up unconditionally 
-> enabling
-> > > >>> this clock from the board or SoC level just to have PCIe working,
-> > > > right?
-> > > >> Ok, I see, I'll need a reference to a board clock, even if it's 
-> always
-> > > > on for
-> > > >> these boards.
-> > > > One small question...
-> > > >
-> > > > The patches added the PCIe host controller to two devices, r8a7790 
-> and
-> > > > r8a7791. The r8a7790-based Lager board doesn't have the necessary 
-> hardware
-> > > > to use PCIe, so should I add a dummy pcie_bus clock to the Lager 
-> board
-> > > > dts, even though PCIe is not used?
-> > > >
-> > > > I'm just wondering what the dts file looks like for a board that 
-> doesn't
-> > > > support many interfaces. Does it become littered with dummy clocks 
-> and
-> > > > regulators?
-> > > 
-> > > The bridge node should be set to disabled by default so it never gets
-> > > probed. Any boards that want to use it can over-ride the status to be
-> > > enabled.
-> > Ok, thanks.
-> Hmm, yes it doesn't get probed, but you still get a build problem as the 
-> DT entry references an clock that doesn't exist. Maybe I'm missing 
-> something...
-> 
-If the clock is a board supplied one then you have to supply to clocks
-property from the board dts, to get rid of the compile failure. You can
-not have phandles in the PCIe node referencing a non-existing clock.
+From: Magnus Damm <damm@opensource.se>
 
-Regards,
-Lucas
--- 
-Pengutronix e.K.                           | Lucas Stach                 |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+Convert the Lager DT reference code to use the newly introduced
+function shmobile_clk_workaround().
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-lager-reference.c |   65 +++++++++---------------
+ 1 file changed, 25 insertions(+), 40 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-02-24 16:17:32.000000000 +0900
+@@ -18,12 +18,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk.h>
+-#include <linux/clkdev.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+@@ -86,46 +85,32 @@ static void __init lager_add_du_device(v
+ 	platform_device_register_full(&info);
+ }
+ 
++/*
++ * This is a really crude hack to provide clkdev support to platform
++ * devices until they get moved to DT.
++ */
++static const struct clk_name clk_names[] = {
++	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifb0", NULL, "sh-sci.2" },
++	{ "scifb1", NULL, "sh-sci.3" },
++	{ "scifb2", NULL, "sh-sci.4" },
++	{ "scifa2", NULL, "sh-sci.5" },
++	{ "scif0", NULL, "sh-sci.6" },
++	{ "scif1", NULL, "sh-sci.7" },
++	{ "hscif0", NULL, "sh-sci.8" },
++	{ "hscif1", NULL, "sh-sci.9" },
++	{ "du0", "du.0", "rcar-du-r8a7790" },
++	{ "du1", "du.1", "rcar-du-r8a7790" },
++	{ "du2", "du.2", "rcar-du-r8a7790" },
++	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
++	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
++};
++
+ static void __init lager_add_standard_devices(void)
+ {
+-	/*
+-	 * This is a really crude hack to provide clkdev support to platform
+-	 * devices until they get moved to DT.
+-	 */
+-	static const struct clk_name {
+-		const char *clk;
+-		const char *con_id;
+-		const char *dev_id;
+-	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
+-		{ "scifa0", NULL, "sh-sci.0" },
+-		{ "scifa1", NULL, "sh-sci.1" },
+-		{ "scifb0", NULL, "sh-sci.2" },
+-		{ "scifb1", NULL, "sh-sci.3" },
+-		{ "scifb2", NULL, "sh-sci.4" },
+-		{ "scifa2", NULL, "sh-sci.5" },
+-		{ "scif0", NULL, "sh-sci.6" },
+-		{ "scif1", NULL, "sh-sci.7" },
+-		{ "hscif0", NULL, "sh-sci.8" },
+-		{ "hscif1", NULL, "sh-sci.9" },
+-		{ "du0", "du.0", "rcar-du-r8a7790" },
+-		{ "du1", "du.1", "rcar-du-r8a7790" },
+-		{ "du2", "du.2", "rcar-du-r8a7790" },
+-		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
+-		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+-	};
+-	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
+-		clk = clk_get(NULL, clk_names[i].clk);
+-		if (!IS_ERR(clk)) {
+-			clk_register_clkdev(clk, clk_names[i].con_id,
+-					    clk_names[i].dev_id);
+-			clk_put(clk);
+-		}
+-	}
+-
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
