@@ -1,45 +1,49 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Mon, 31 Mar 2014 23:13:35 +0000
-Subject: Re: [PATCH] clk: shmobile: fix setting paretn clock rate
-Message-Id: <20140331231335.5762.46624@quantum>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 12 Mar 2014 06:47:36 +0000
+Subject: [PATCH 0/2][RFC] ASoC: fsi/rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396288047-6647-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396288047-6647-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Quoting Ben Dooks (2014-03-31 10:47:27)
-> If the driver needs to change a clock rate, then it must be propogated
-> through the MSTP clock to the parent clock (such as shdi0 -> sd0). Without
-> this we cannot up-rate default clocks which are really slow (such as the
-> mmcif1 which defaults to 12MHz where it could be running at 97MHz)
-> 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Taken into clk-next.
+Hi Mark, Simon
 
-Regards,
-Mike
+These patches fixup Renesas fsi/rcar driver's
+SND_SOC_DAIFMT_CBx_CFx flag settings.
 
-> ---
->  drivers/clk/shmobile/clk-mstp.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
-> index 7bfdcfc..9fc754b 100644
-> --- a/drivers/clk/shmobile/clk-mstp.c
-> +++ b/drivers/clk/shmobile/clk-mstp.c
-> @@ -139,7 +139,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
->  
->         init.name = name;
->         init.ops = &cpg_mstp_clock_ops;
-> -       init.flags = CLK_IS_BASIC;
-> +       init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT;
->         init.parent_names = &parent_name;
->         init.num_parents = 1;
->  
-> -- 
-> 1.9.0
-> 
+I had misunderstand these settings...
+But this is still [RFC], since it modifies DT side code too.
+
+>> Mark
+
+#1 patch depends on Jyri's
+"Fix simple-card *-master DT parameter handling"
+if it was accepted
+
+>> Simon
+
+Can you check #1 patch which modifys SH-ARM platform ?
+
+Kuninori Morimoto (2):
+      1) ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags
+      2) ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
+
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    3 ++-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |    2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva.c     |    4 +---
+ arch/arm/mach-shmobile/board-kzm9g.c               |    4 +---
+ arch/arm/mach-shmobile/board-mackerel.c            |    6 ++----
+ arch/sh/boards/mach-ecovec24/setup.c               |    4 +---
+ arch/sh/boards/mach-se/7724/setup.c                |    4 +---
+ sound/soc/sh/fsi.c                                 |    2 +-
+ sound/soc/sh/rcar/core.c                           |    4 ++--
+ 9 files changed, 13 insertions(+), 20 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
