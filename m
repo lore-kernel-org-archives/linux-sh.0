@@ -1,52 +1,78 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Thu, 20 Mar 2014 21:14:32 +0000
-Subject: Re: [PATCH/RFC] serial_core: Fix pm imbalance on unbind
-Message-Id: <20140320211432.GA2813@kroah.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 12 Mar 2014 18:40:39 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: Fix SCIFA3-5 clocks
+Message-Id: <1394649639-23358-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394481265-7275-1-git-send-email-geert@linux-m68k.org>
- <CAMuHMdVmrEoRkqUB=3mBRNrPEJiR701YUmr8C7HX1O6UxT_NUg@mail.gmail.com>
-In-Reply-To: <CAMuHMdVmrEoRkqUB=3mBRNrPEJiR701YUmr8C7HX1O6UxT_NUg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Jiri Slaby <jslaby@suse.cz>, linux-serial@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 20, 2014 at 11:23:00AM +0100, Geert Uytterhoeven wrote:
-> Hi Greg,
-> 
-> On Mon, Mar 10, 2014 at 8:54 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> >
-> > When a serial port is closed, uart_close() takes care of shutting down the
-> > hardware, and powering it down.
-> >
-> > When a serial port is unbound while in use, uart_close() bypasses all of
-> > this, as this is supposed to be done through uart_hangup() (invoked via
-> > tty_vhangup() in uart_remove_one_port()).
-> >
-> > However, uart_hangup() does not set the hardware's power state, leaving it
-> > powered up.  This may also lead to unbounded nesting counts in clock and
-> > power management, depending on their internal implementation.
-> >
-> > Make sure to power down the port in uart_hangup(), except when the port is
-> > used as a serial console. For serial consoles, this must be postponed until
-> > after their deregistration in uart_remove_one_port() (symmetry with
-> > registration in uart_configure_port(), invoked from uart_add_one_port()).
-> >
-> > After this, the module clock used by the sh-sci driver is disabled on
-> > unbind while the serial port is in use.
-> >
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> 
-> I noticed you have applied all serial patches I've sent, except for this one.
-> Is there any specific reason you skipped this one?
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-It was marked "RFC" so I didn't think it was to be applied...
+The MSTP clocks for SCIFA3-5 are MSTP1106-1108, not MSTP1105-1107
 
-If it's ready, please resend.
+Also reinsert them at the correct position to preserve sort order.
 
-thanks,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+The clock index macros for DT sources are already OK.
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c |   15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-greg k-h
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 605fc778e3e2..701383fe3267 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -170,6 +170,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ 
+ /* MSTP */
+ enum {
++	MSTP1108, MSTP1107, MSTP1106,
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+ 	MSTP917,
+ 	MSTP815, MSTP814,
+@@ -180,12 +181,15 @@ enum {
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+ 	MSTP216, MSTP207, MSTP206,
+-	MSTP204, MSTP203, MSTP202, MSTP1105, MSTP1106, MSTP1107,
++	MSTP204, MSTP203, MSTP202,
+ 	MSTP124,
+ 	MSTP_NR
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP1108] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 8, MSTPSR11, 0), /* SCIFA5 */
++	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA4 */
++	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA3 */
+ 	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
+ 	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
+ 	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
+@@ -218,9 +222,6 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
+ 	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
+ 	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
+-	[MSTP1105] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 5, MSTPSR11, 0), /* SCIFA3 */
+-	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA4 */
+-	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA5 */
+ 	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
+ };
+ 
+@@ -259,9 +260,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.9", &mstp_clks[MSTP718]), /* SCIF3 */
+ 	CLKDEV_DEV_ID("sh-sci.10", &mstp_clks[MSTP715]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.11", &mstp_clks[MSTP714]), /* SCIF5 */
+-	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1105]), /* SCIFA3 */
+-	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1106]), /* SCIFA4 */
+-	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1107]), /* SCIFA5 */
++	CLKDEV_DEV_ID("sh-sci.12", &mstp_clks[MSTP1106]), /* SCIFA3 */
++	CLKDEV_DEV_ID("sh-sci.13", &mstp_clks[MSTP1107]), /* SCIFA4 */
++	CLKDEV_DEV_ID("sh-sci.14", &mstp_clks[MSTP1108]), /* SCIFA5 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+-- 
+1.7.9.5
+
