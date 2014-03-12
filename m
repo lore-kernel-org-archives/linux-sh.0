@@ -1,24 +1,21 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Mar 2014 08:40:44 +0000
+Date: Wed, 12 Mar 2014 08:43:56 +0000
 Subject: Re: [PATCH v3 04/20] ARM: shmobile: r8a7779: Add clocks
-Message-Id: <20140312084043.GC25813@verge.net.au>
+Message-Id: <20140312084355.GD25813@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
  <1393400016-23433-5-git-send-email-horms+renesas@verge.net.au>
- <20493371.uo7oml5YRN@avalon>
-In-Reply-To: <20493371.uo7oml5YRN@avalon>
+ <7964326.0VzqzhpvEl@avalon>
+In-Reply-To: <7964326.0VzqzhpvEl@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 26, 2014 at 02:15:14PM +0100, Laurent Pinchart wrote:
+On Wed, Feb 26, 2014 at 03:45:03PM +0100, Laurent Pinchart wrote:
 > Hi Simon,
 > 
-> Thank you for the patch.
-
-Thanks, I will address these problems.
-
+> One more comment.
 > 
 > On Wednesday 26 February 2014 16:33:20 Simon Horman wrote:
 > > Declare all core and MSTP clocks currently used by r8a7779-based boards.
@@ -84,144 +81,7 @@ Thanks, I will address these problems.
 > > +		cpg_clocks: cpg_clocks@0xe6150000 {
 > > +			compatible = "renesas,r8a7779-cpg-clocks";
 > > +			reg = <0 0xe6150000 0 0x1000>;
-> > +			clocks = <&extal_clk>;
-> > +			#clock-cells = <1>;
-> > +			clock-output-names = "plla", "z", "zs", "s",
-> > +					     "s1", "p", "out";
-> > +		};
-> > +
-> > +		/* Fixed factor clocks */
-> > +		i_clk: i_clk {
-> > +			compatible = "fixed-factor-clock";
-> > +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> > +			#clock-cells = <0>;
-> > +			clock-div = <2>;
-> > +			clock-mult = <1>;
-> > +			clock-output-names = "i";
-> > +		};
-> > +		s3_clk: s3_clk {
-> > +			compatible = "fixed-factor-clock";
-> > +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> > +			#clock-cells = <0>;
-> > +			clock-div = <8>;
-> > +			clock-mult = <1>;
-> > +			clock-output-names = "s3";
-> > +		};
-> > +		s4_clk: s4_clk {
-> > +			compatible = "fixed-factor-clock";
-> > +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> > +			#clock-cells = <0>;
-> > +			clock-div = <16>;
-> > +			clock-mult = <1>;
-> > +			clock-output-names = "s4";
-> > +		};
-> > +		g_clk: g_clk {
-> > +			compatible = "fixed-factor-clock";
-> > +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> > +			#clock-cells = <0>;
-> > +			clock-div = <24>;
-> > +			clock-mult = <1>;
-> > +			clock-output-names = "g";
-> > +		};
-> > +
-> > +		/* Gate clocks */
-> > +		mstp0_clks: mstp0_clks {
-> > +			compatible = "renesas,r8a7779-mstp-clocks", "renesas,cpg-mstp-
-> clocks";
-> > +			reg = <0 0xffc80030 0 4>;
-> > +			clocks = <&cpg_clocks R8A7779_CLK_P>,
-> > <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>;
 > 
-> Aren't the HSPI and HSCIF parent clocks clks ? Aren't the SCIF parent clocks 
-> clks1 ?
-> 
-> > +			#clock-cells = <1>;
-> > +			renesas,clock-indices = <
-> > +				R8A7779_CLK_HSPI R8A7779_CLK_TMU0 R8A7779_CLK_TMU0
-> > +				R8A7779_CLK_TMU0 R8A7779_CLK_SCIF5 R8A7779_CLK_SCIF4
-> > +				R8A7779_CLK_SCIF3 R8A7779_CLK_SCIF2 R8A7779_CLK_SCIF1
-> > +				R8A7779_CLK_SCIF0 R8A7779_CLK_I2C3 R8A7779_CLK_I2C2
-> > +				R8A7779_CLK_I2C1 R8A7779_CLK_I2C0
-> > +			>;
-> > +			clock-output-names > > +				"hspi", "tmu00", "tmu01",
-> > +				"tmu02", "scif5", "scif4",
-> 
-> The clock names should be tmu0, tmu1 and tmu2, not tmu00, tmu01 and tmu02.
-> 
-> > +				"scif3", "scif2", "scif1",
-> > +				"scif0", "i2c3", "i2c2",
-> > +				"i2c1", "i2c0";
-> > +		};
-> > +		mstp1_clks: mstp1_clks {
-> > +			compatible = "renesas,r8a7779-mstp-clocks", "renesas,cpg-mstp-
-> clocks";
-> > +			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
-> > +			clocks = <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks 
-> R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>;
-> 
-> Please verify the clock parents here as well.
-> 
-> > +			#clock-cells = <1>;
-> > +			renesas,clock-indices = <
-> > +				R8A7779_CLK_USB01 R8A7779_CLK_USB01
-> > +				R8A7779_CLK_USB2 R8A7779_CLK_USB2
-> > +				R8A7779_CLK_DU R8A7779_CLK_VIN2
-> > +				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
-> > +				R8A7779_CLK_ETHER R8A7779_CLK_SATA
-> > +				R8A7779_CLK_PCIE R8A7779_CLK_VIN3
-> > +			>;
-> > +			clock-output-names > > +				"ehci0", "ohci0",
-> > +				"ehci1", "ohci1",
-> > +				"du", "vin2",
-> > +				"vin1", "vin0",
-> > +				"ether", "sata",
-> > +				"pcie", "vin3";
-> > +		};
-> > +		mstp3_clks: mstp3_clks {
-> > +			compatible = "renesas,r8a7779-mstp-clocks", "renesas,cpg-mstp-
-> clocks";
-> > +			reg = <0 0xffc8003c 0 4>;
-> > +			clocks = <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks 
-> R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>,
-> > +				 <&cpg_clocks R8A7779_CLK_P>, <&cpg_clocks R8A7779_CLK_P>;
-> 
-> Aren't the MMC and SDHI parent clocks clks4 ?
-> 
-> > +			#clock-cells = <1>;
-> > +			renesas,clock-indices = <
-> > +				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
-> > +				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
-> > +				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
-> > +			>;
-> > +			clock-output-names > > +				"sdhi3", "sdhi2",
-> > +				"sdhi1", "sdhi0",
-> > +				"mmc1", "mmc0";
-> > +		};
-> > +	};
-> >  };
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> Copied from H2 ? :-) This should probably be
+
+Thanks :)
