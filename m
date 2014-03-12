@@ -1,100 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Mar 2014 14:05:34 +0000
-Subject: Re: [PATCH v2 5/5] ARM: shmobile: r8a7790: add IIC(B) cores to dtsi
-Message-Id: <3372432.uDFHLQLanr@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 12 Mar 2014 18:44:50 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Use rcar_gen2_read_mode_pins() helper
+Message-Id: <1394649890-23485-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
- <1395773789-17249-6-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1395773789-17249-6-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thank you for the patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c |   11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
-On Tuesday 25 March 2014 19:56:29 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> Change since V1:
-> 
-> * renamed i2c4-7 to iic0-3
-> 
->  arch/arm/boot/dts/r8a7790.dtsi | 44
-> ++++++++++++++++++++++++++++++++++++++++++ 1 file changed, 44 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index 21e6602c630b..b78d718479e0 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -24,6 +24,10 @@
->  		i2c1 = &i2c1;
->  		i2c2 = &i2c2;
->  		i2c3 = &i2c3;
-> +		i2c4 = &iic0;
-> +		i2c5 = &iic1;
-> +		i2c6 = &iic2;
-> +		i2c7 = &iic3;
->  		spi0 = &qspi;
->  		spi1 = &msiof0;
->  		spi2 = &msiof1;
-> @@ -236,6 +240,46 @@
->  		status = "disabled";
->  	};
-> 
-> +	iic0: i2c@e6500000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-> +		reg = <0 0xe6500000 0 0x425>;
-> +		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
-> +		status = "disabled";
-> +	};
-> +
-> +	iic1: i2c@e6510000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-> +		reg = <0 0xe6510000 0 0x425>;
-> +		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7790_CLK_IIC1>;
-> +		status = "disabled";
-> +	};
-> +
-> +	iic2: i2c@e6520000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-> +		reg = <0 0xe6520000 0 0x425>;
-> +		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7790_CLK_IIC2>;
-> +		status = "disabled";
-> +	};
-> +
-> +	iic3: i2c@e60b0000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-> +		reg = <0 0xe60b0000 0 0x425>;
-> +		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp9_clks R8A7790_CLK_IICDVFS>;
-> +		status = "disabled";
-> +	};
-> +
->  	mmcif0: mmcif@ee200000 {
->  		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
->  		reg = <0 0xee200000 0 0x80>;
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 701383fe3267..36e57508d879 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -25,6 +25,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/rcar-gen2.h>
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+@@ -43,8 +44,6 @@
+  *	see "p1 / 2" on R8A7791_CLOCK_ROOT() below
+  */
+ 
+-#define MD(nr)	(1 << nr)
+-
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
+ 
+@@ -68,7 +67,6 @@
+ #define MSTPSR9		IOMEM(0xe61509a4)
+ #define MSTPSR11	IOMEM(0xe61509ac)
+ 
+-#define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+ #define SD1CKCR		0xE6150078
+ #define SD2CKCR		0xE615026c
+@@ -295,14 +293,9 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7791_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = rcar_gen2_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	switch (mode & (MD(14) | MD(13))) {
+ 	case 0:
+ 		R8A7791_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
