@@ -1,77 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 12 Mar 2014 12:26:37 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 12 Mar 2014 18:04:02 +0000
 Subject: Re: [PATCH 00/22] SH MTU2 DT support
-Message-Id: <7154417.GQCi9BMEKT@avalon>
+Message-Id: <20140312180402.GA28891@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart32435673.rWEfVlxA0B"
+Content-Type: multipart/mixed; boundary="NzB8fVQJ5HfG6fxh"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1393955249-18736-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
 
---nextPart32435673.rWEfVlxA0B
+--NzB8fVQJ5HfG6fxh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
 
-Hi Wolfram,
 
-On Wednesday 12 March 2014 09:29:44 Wolfram Sang wrote:
-> On Tue, Mar 04, 2014 at 06:47:07PM +0100, Laurent Pinchart wrote:
-> > Hello,
-> >=20
-> > This patch set implements DT support for the MTU2 driver.
-> >=20
-> > The first 17 patches clean up the driver to get rid of its platform=
- data.
-> > Patches 18/22 and 19/22 then remove platform data from arch/ code. =
-Patches
-> > 20/22 and 21/22 drop support for platform data completely from the =
-driver,
-> > and patch 22/22 finally add DT support.
-> >=20
-> > The patches are compile-tested only as I lack test hardware. Wolfra=
-m,
-> > would you be able to test this series with your CCF support patch s=
-et for
-> > RZ/A1H ?
->
-> Applying to current renesas/devel fails. What is this based on? Or
-> better: is there a branch available somewhere?
+> > > The patches are compile-tested only as I lack test hardware. Wolfram,
+> > > would you be able to test this series with your CCF support patch set=
+ for
+> > > RZ/A1H ?
+> >
+> > Applying to current renesas/devel fails. What is this based on? Or
+> > better: is there a branch available somewhere?
+>=20
+> I've just rebased my timers devel branch on top of Simon's latest devel b=
+ranch=20
+> and pushed the result to
+>=20
+> 	git://linuxtv.org/pinchartl/fbdev.git timers/devel
 
-I've just rebased my timers devel branch on top of Simon's latest devel=
- branch=20
-and pushed the result to
+Thanks! I merged this into my r7s-ccf branch now. I could boot into a
+shell and the printk-timestamps make sense. So, for the whole series
 
-=09git://linuxtv.org/pinchartl/fbdev.git timers/devel
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 
-Please ignore the WIP and other hacks before "clocksource: sh_mtu2: Use=
-=20
-request_irq() instead of setup_irq()", and the very last "ARM: shmobile=
-:=20
-Remove unused sh_timer_config members" patch.
+Daniel, I assume you use git-filter-branch, or shall I tag every patch
+individually?
 
-=2D-=20
-Regards,
+Kind regards,
 
-Laurent Pinchart
+   Wolfram
 
---nextPart32435673.rWEfVlxA0B
+
+--NzB8fVQJ5HfG6fxh
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1.4.15 (GNU/Linux)
 
-iQEcBAABAgAGBQJTIFKDAAoJEIkPb2GL7hl1IvQH/jgAfy+sQ8bpr+jKIZx2ggVr
-YTiKlPl5/CLvKPPdZYzn9tJvluTydsotW/Taewp1ewFUf4HFWkHsC9QLI94WD2vL
-QVIa+h/7YYIhaJaGUBQSVqw6pOvqxw/Erkybp2agZs0gfmcQSexxVvXjkR66kQbg
-eMZivy3Gp1q5cVPdKBtzp8bYij1uvruTMY6w+2RazWwIBiE5DDrN9gg6PPYZfF30
-jkRh2/MgZDLKAD3hvI7ndaDWHM5WjKT2sTQHx7e1MURq/ChnQvjTQSZ1DXsy+Z1k
-/W1f2JWPKXmcerYbK7zJwJbBKq6y2lA9T6uhsnHbSKHVNJ0FzARraLTJwGZspTk=
-=7VdJ
+iQIcBAEBAgAGBQJTIKGRAAoJEBQN5MwUoCm2PEIQAIQF3CHVF9WhjylGqUljY1Sh
+Syj5i/JSalAvp/I1AeNz5XSfVZkk+sUzw7PT8oV3HIFfQPM2UwcQv3IQRusHsYmg
+NYN8Krn3a2+APDY8gC4fLnx6bkxDvPqZs3YMGL7Q40U5AwE6p6f6kFHMul5LNuKQ
+juNGzzRzgTyJaRa3J/g8tf2kqciMDtVHOHk9ChywmO6HQRz/9k9nJTvzyRiaNEqA
+ljpWhdZ6dMN3dGIGGvkT7VmoEjHQzSHS+P05tMmdeJ4mfCoVTwokviOPqB0IMey5
+DcZp8EIuemAW+d/e2P8jvI12WuUwBheIxVflrwouQtk+Sl08ZBqngapfTR+UyvmB
+ZNui921YEgXqGMASjhwfpV8WUrvx0+t1RR2XXe5JeaUTjK1hTcVZMBLRpM4Y6P1m
+uwcj72kEIrXScwuvIo2Ak/vNCOvn6e/YTGTh0CoP8zSNanky4foaG1mVrRGbV6Js
+UqZYz7Pfbt3KYBR2l/N6/L5RlPU4SOnYGpmx6/OboHa1VjOYiwj/ajXq+GLFGpXg
+U9c+gthaHB8uD2V9ymJsmPgRhZ2w36+JGQVtrcO2pGl+urt1mElrN0hfi4OQlUM+
+AAJVfzJEhufSJbfTBViVVGG0FcIG+UR2XDlXM1e6ULZHHCbxGf07+U1uRkEiIs8M
+Y884IMyv0pl85Hq8FUZ+
+=mxma
 -----END PGP SIGNATURE-----
 
---nextPart32435673.rWEfVlxA0B--
-
+--NzB8fVQJ5HfG6fxh--
