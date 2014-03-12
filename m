@@ -1,86 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 06 Mar 2014 03:28:33 +0000
-Subject: [PATCH 02/02] ARM: shmobile: Use shmobile_init_delay() on r8a7791/Koelsch
-Message-Id: <20140306032833.10814.12191.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Wed, 12 Mar 2014 06:48:35 +0000
+Subject: [PATCH 2/2][RFC] ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <87r467rjy8.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140306032814.10814.2949.sendpatchset@w520>
-In-Reply-To: <20140306032814.10814.2949.sendpatchset@w520>
+References: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Prototype to convert Koelsch and r8a7791 to using
-shmobile_init_delay() and by that allow removing
-CPU frequency information from the C code.
+SND_SOC_DAIFMT_CBx_CFx means "codec" side master/slave mode.
+Then, rcar will be master mode if it was SND_SOC_DAIFMT_CBS_CFS.
 
-Needs to be reworked to fit ARM SoC board/SoC branch style.
-
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ sound/soc/sh/rcar/core.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |    2 +-
- arch/arm/mach-shmobile/board-koelsch.c           |    2 +-
- arch/arm/mach-shmobile/include/mach/r8a7791.h    |    1 -
- arch/arm/mach-shmobile/setup-r8a7791.c           |    9 +--------
- 4 files changed, 3 insertions(+), 11 deletions(-)
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 6a1b45df..d836e8a 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -510,10 +510,10 @@ static int rsnd_soc_dai_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 	/* set master/slave audio interface */
+ 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+ 	case SND_SOC_DAIFMT_CBM_CFM:
+-		rdai->clk_master = 1;
++		rdai->clk_master = 0;
+ 		break;
+ 	case SND_SOC_DAIFMT_CBS_CFS:
+-		rdai->clk_master = 0;
++		rdai->clk_master = 1; /* codec is slave, cpu is master */
+ 		break;
+ 	default:
+ 		return -EINVAL;
+-- 
+1.7.9.5
 
---- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-03-06 12:08:22.000000000 +0900
-@@ -139,7 +139,7 @@ static const char * const koelsch_boards
- 
- DT_MACHINE_START(KOELSCH_DT, "koelsch")
- 	.smp		= smp_ops(r8a7791_smp_ops),
--	.init_early	= r8a7791_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
- 	.init_machine	= koelsch_add_standard_devices,
- 	.init_late	= shmobile_init_late,
---- 0001/arch/arm/mach-shmobile/board-koelsch.c
-+++ work/arch/arm/mach-shmobile/board-koelsch.c	2014-03-06 12:08:22.000000000 +0900
-@@ -522,7 +522,7 @@ static const char * const koelsch_boards
- 
- DT_MACHINE_START(KOELSCH_DT, "koelsch")
- 	.smp		= smp_ops(r8a7791_smp_ops),
--	.init_early	= r8a7791_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
- 	.init_machine	= koelsch_init,
- 	.init_late	= shmobile_init_late,
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7791.h	2014-03-06 12:08:22.000000000 +0900
-@@ -5,7 +5,6 @@ void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
--void r8a7791_init_early(void);
- extern struct smp_operations r8a7791_smp_ops;
- 
- #endif /* __ASM_R8A7791_H__ */
---- 0003/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-03-06 12:08:22.000000000 +0900
-@@ -210,13 +210,6 @@ void __init r8a7791_add_standard_devices
- 	r8a7791_register_thermal();
- }
- 
--void __init r8a7791_init_early(void)
--{
--#ifndef CONFIG_ARM_ARCH_TIMER
--	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
--#endif
--}
--
- #ifdef CONFIG_USE_OF
- static const char *r8a7791_boards_compat_dt[] __initdata = {
- 	"renesas,r8a7791",
-@@ -225,7 +218,7 @@ static const char *r8a7791_boards_compat
- 
- DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
- 	.smp		= smp_ops(r8a7791_smp_ops),
--	.init_early	= r8a7791_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
- 	.dt_compat	= r8a7791_boards_compat_dt,
- MACHINE_END
