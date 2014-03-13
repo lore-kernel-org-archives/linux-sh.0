@@ -1,60 +1,65 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 14 Mar 2014 07:55:39 +0000
-Subject: [PATCH v2 2/2] spi: sh-hspi: Do not specifically request shyway_clk clock
-Message-Id: <1394783739-29168-3-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 08:59:53 +0000
+Subject: [PATCH v4 10/19] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board
+Message-Id: <1394701202-25823-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394783739-29168-1-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Rather than requesting the shyway_clk call clk_get with
-the device and a NULL con_id.
-
-This is in keeping with the way that clk_get() is called
-on other drivers used by Renesas Gen 1 SoCs. And I believe
-it is compatible with supplying clocks via DT, unlike the current code.
+Move the clock initialisation and OF device population from
+SoC to board code. This is in keeping with the pattern used by Lager.
+And the clock portion is part of decoupling clock initialisation
+from SoC code in preparation for moving to the common clock framework.
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
---
-
-It appears to me that the two uses of this driver are
-the r8a7778 and r8a7779 SoCs.
-
-The r8a7779 already clocks setup to allow this driver to continue to work
-with this change applied.
-
-The r8a7778 has clocks incorrectly setup to allow this driver to continue
-to work with this change applied. This problem is addressed in
-"ARM: shmobile: r8a7779: Use clks as MSTP007 parent" which is thus
-a pre-requisite of this patch.
-
-v2
-* Update changelog
 ---
- drivers/spi/spi-sh-hspi.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
-index 82d2f92..e975892 100644
---- a/drivers/spi/spi-sh-hspi.c
-+++ b/drivers/spi/spi-sh-hspi.c
-@@ -274,9 +274,9 @@ static int hspi_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 2773936..c22e5c2 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
--	clk = clk_get(NULL, "shyway_clk");
-+	clk = clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(clk)) {
--		dev_err(&pdev->dev, "shyway_clk is required\n");
-+		dev_err(&pdev->dev, "couldn't get clock\n");
- 		ret = -EINVAL;
- 		goto error0;
- 	}
++#include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -27,7 +28,9 @@
+ 
+ static void __init marzen_init(void)
+ {
++	r8a7779_clock_init();
+ 	r8a7779_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index f28b8c7..3471a9b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -784,12 +784,8 @@ void __init r8a7779_init_delay(void)
+ 
+ void __init r8a7779_add_standard_devices_dt(void)
+ {
+-	/* clocks are setup late during boot in the case of DT */
+-	r8a7779_clock_init();
+-
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			     ARRAY_SIZE(r8a7779_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ #define MODEMR		0xffcc0020
 -- 
 1.8.5.2
 
