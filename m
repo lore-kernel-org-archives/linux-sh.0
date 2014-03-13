@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 13 Mar 2014 11:38:27 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 13 Mar 2014 11:43:36 +0000
 Subject: Re: [PATCH] clk: shmobile: mstp: Fix the is_enabled() operation
-Message-Id: <CAMuHMdUFiMssxFLke_UFJrqSgFc5cBmQLoZPWynZwZ3G6mEudA@mail.gmail.com>
+Message-Id: <532199E8.1050109@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394658274-6348-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1394658274-6348-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,23 +10,24 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Mar 13, 2014 at 12:27 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> The only clocks we do enable are those we register with
-> shmobile_clk_workaround():
+On 13/03/14 11:37, Geert Uytterhoeven wrote:
+> Hi Ben,
 >
-> MSTP sata0 ON
+> On Thu, Mar 13, 2014 at 12:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>>> Yes, now it disables the hardware clock bits for all clocks that are not
+>>> in
+>>> use according to CCF:
+>>
+>> Do you have the drivers/sh fix in?
+>
+> No, I removed that due to bad interaction with userspace:
+>
+> Unhandled fault: imprecise external abort (0x1406) at 0x00000000
 
-Sata0 is not registered with shmobile_clk_workaround(), so probably is
-managed manually by its driver.
+Hmm, so if you disable clocks that peripherals need then there's no
+surprise that the system fails to boot :/ I added an patch to stop
+the abort being fatal to allow continued boot.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
