@@ -1,56 +1,44 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 27 Mar 2014 09:26:52 +0000
-Subject: [PATCH v6 06/10] ARM: shmobile: r8a7790: Add PCIe device nodes
-Message-Id: <1395912416-20087-7-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 08:59:45 +0000
+Subject: [PATCH v4 02/19] clk: shmobile: r8a7779: Add MSTP clock support
+Message-Id: <1394701202-25823-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
+References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Add MSTP clock support for the r8a7779 SoC
 
-v6:
- - Split device and board DT changes
+The only change required appears to be to note a new
+compatibility string in the bindings.
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+v3
+* As suggested by Laurent Pinchart
+  - Add entry in numerical order
+---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index df9ec61..dbcea57 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -821,4 +821,28 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	pcie: pcie@fe000000 {
-+		compatible = "renesas,pcie-r8a7790";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		/* Map all possible DDR as inbound ranges */
-+		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
-+			      0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
-+		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH
-+			      0 117 IRQ_TYPE_LEVEL_HIGH
-+			      0 118 IRQ_TYPE_LEVEL_HIGH>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_PCIE>, <&pcie_bus_clk>;
-+		clock-names = "pcie", "pcie_bus";
-+		status = "disabled";
-+	};
- };
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 5992dce..0708937 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
 -- 
-1.9.0
+1.8.5.2
 
