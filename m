@@ -1,88 +1,70 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:36:59 +0000
-Subject: [PATCH 3/7] ARM: shmobile: r8a7778: add R-Car sound support on DTSI
-Message-Id: <874n2mdhco.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 08:59:56 +0000
+Subject: [PATCH v4 13/19] ARM: shmobile: marzen-reference: Initialize CPG device
+Message-Id: <1394701202-25823-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On multiplatform kernels clocks are handled by the CCF CPG driver. It
+must be explicitly initialized by a call to r8a7779_clocks_init() with
+the value of the boot mode pins.
 
-This patch adds R-Car sound support on DTSI.
-R-Car sound driver requests SRU/SSI/ADG clocks,
-but, r8a7778 still doesn't support common clock yet.
-So, it can't probe without local hack at this point.
+Based on similar work for the Koelsch board by Laurent Pinchart.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi |   54 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 3c6fab5..2581c70 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -232,4 +232,58 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index d3e8319..e261431 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,7 +19,8 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/clocksource.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -27,11 +28,17 @@
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ 
+-static void __init marzen_init(void)
++static void __init marzen_init_timer(void)
+ {
+ #ifdef CONFIG_COMMON_CLK
+-	of_clk_init(NULL);
+-#else
++	r8a7779_clocks_init(r8a7779_read_mode_pins());
++#endif
++	clocksource_of_init();
++}
 +
-+	rcar_sound: rcar_sound@0xffd90000 {
-+		#sound-dai-cells = <1>;
-+		compatible =  "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1", "renesas,rcar_sound";
-+		interrupt-parent = <&gic>;
-+		reg =	<0xffd90000 0x1000>, /* SRU */
-+			<0xfffe0000 0x100>,  /* ADG */
-+			<0xffd91000 0x1240>; /* SSI */
-+
-+		status = "disabled";
-+
-+		rcar_sound,src {
-+			src0: src@0 { };
-+			src1: src@1 { };
-+			src2: src@2 { };
-+			src3: src@3 { };
-+			src4: src@4 { };
-+			src5: src@5 { };
-+			src6: src@6 { };
-+			src7: src@7 { };
-+			src8: src@8 { };
-+		};
-+
-+		rcar_sound,ssi {
-+			ssi0: ssi@0 {
-+				interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi1: ssi@1 {
-+				interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi2: ssi@2 {
-+				interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi3: ssi@3 {
-+				interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi4: ssi@4 {
-+				interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi5: ssi@5 {
-+				interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi6: ssi@6 {
-+				interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi7: ssi@7 {
-+				interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi8: ssi@8 {
-+				interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+		};
-+	};
-+
- };
++static void __init marzen_init(void)
++{
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7779_clock_init();
+ #endif
+ 	r8a7779_add_standard_devices_dt();
+@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_init_delay,
++	.init_time	= marzen_init_timer,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_machine	= marzen_init,
 -- 
-1.7.9.5
+1.8.5.2
 
