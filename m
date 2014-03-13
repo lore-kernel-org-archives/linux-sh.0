@@ -1,94 +1,142 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:17 +0000
-Subject: [PATCH 10/22] clocksource: sh_mtu2: Allocate channels dynamically
-Message-Id: <1393955249-18736-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 08:59:48 +0000
+Subject: [PATCH v4 05/19] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+Message-Id: <1394701202-25823-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This prepares the driver for multi-channel support.
+Copy the device nodes from Marzen reference into the Marzen device tree
+file. This will allow us to use a single DTS file regardless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+will be used.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Based on a similar change for the Lager board by Laurent Pinchart.
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/clocksource/sh_mtu2.c | 27 ++++++++++++++++++++-------
- 1 file changed, 20 insertions(+), 7 deletions(-)
+v3
+* Updated for recent changes to Marzen reference DTS
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 93 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 94a5342..45e1e85 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -52,7 +52,8 @@ struct sh_mtu2_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index a7af2c2..eda6240 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -11,6 +11,8 @@
  
--	struct sh_mtu2_channel channel;
-+	struct sh_mtu2_channel *channels;
-+	unsigned int num_channels;
+ /dts-v1/;
+ #include "r8a7779.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "marzen";
+@@ -24,4 +26,95 @@
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x40000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	lan0@18000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18000000 0x100>;
++		pinctrl-0 = <&lan0_pins>;
++		pinctrl-names = "default";
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&irqpin0 {
++	status = "okay";
++};
++
++&pfc {
++	pinctrl-0 = <&scif2_pins &scif4_pins>;
++	pinctrl-names = "default";
++
++	lan0_pins: lan0 {
++		intc {
++			renesas,groups = "intc_irq1_b";
++			renesas,function = "intc";
++		};
++		lbsc {
++			renesas,groups = "lbsc_ex_cs0";
++			renesas,function = "lbsc";
++		};
++	};
++
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data_c";
++		renesas,function = "scif2";
++	};
++
++	scif4_pins: serial4 {
++		renesas,groups = "scif4_data";
++		renesas,function = "scif4";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
  };
- 
- static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
-@@ -296,6 +297,7 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	struct resource *res;
-+	void __iomem *base;
- 	int ret;
- 	ret = -ENXIO;
- 
-@@ -315,16 +317,16 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 	}
- 
- 	/*
--	 * Map memory, let channel.base point to our channel and mapbase to the
-+	 * Map memory, let base point to our channel and mapbase to the
- 	 * start/stop shared register.
- 	 */
--	mtu->channel.base = ioremap_nocache(res->start, resource_size(res));
--	if (mtu->channel.base = NULL) {
-+	base = ioremap_nocache(res->start, resource_size(res));
-+	if (base = NULL) {
- 		dev_err(&mtu->pdev->dev, "failed to remap I/O memory\n");
- 		goto err0;
- 	}
- 
--	mtu->mapbase = mtu->channel.base + cfg->channel_offset;
-+	mtu->mapbase = base + cfg->channel_offset;
- 
- 	/* get hold of clock */
- 	mtu->clk = clk_get(&mtu->pdev->dev, "mtu2_fck");
-@@ -338,17 +340,28 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 	if (ret < 0)
- 		goto err2;
- 
--	ret = sh_mtu2_setup_channel(&mtu->channel, mtu);
-+	mtu->channels = kzalloc(sizeof(*mtu->channels), GFP_KERNEL);
-+	if (mtu->channels = NULL) {
-+		ret = -ENOMEM;
-+		goto err3;
-+	}
-+
-+	mtu->num_channels = 1;
-+
-+	mtu->channels[0].base = base;
-+
-+	ret = sh_mtu2_setup_channel(&mtu->channels[0], mtu);
- 	if (ret < 0)
- 		goto err3;
- 
- 	return 0;
-  err3:
-+	kfree(mtu->channels);
- 	clk_unprepare(mtu->clk);
-  err2:
- 	clk_put(mtu->clk);
-  err1:
--	iounmap(mtu->channel.base);
-+	iounmap(base);
-  err0:
- 	return ret;
- }
 -- 
-1.8.3.2
+1.8.5.2
 
