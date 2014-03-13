@@ -1,78 +1,80 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 06 Mar 2014 18:01:24 +0000
-Subject: [PATCH 6/9] ARM: shmobile: lager.dts: add pci 0/1/2
-Message-Id: <1394128887-4197-7-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 08:59:43 +0000
+Subject: [PATCH v4 00/19]  ARM: shmobile: r8a7779, marzen: CCF and multiplatform
+Message-Id: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394128887-4197-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1394128887-4197-1-git-send-email-ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org, magnus.damn-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Enable pci1 and pci2 nodes for USB controllers attached to the AHB<>PCI
-bridge devices. Node pci0 is added for the moment, but not enabled as it
-could be switched to usb-gadget mode later.
+The aim of this series is to add common clock framework and in turn
+multiplatform support to the r8a7779 SoC and marzen-reference.  It
+subsequently removes non-multiplatform support from marzen-reference.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
----
-Cc: linux-sh@vger.kernel.org
-Cc: devicetree@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Simon Horman <horms@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+This is based on work for R-Car Gen2 by Laurent Pinchart and Magnus Damm.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 26a9010..fd6851f 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -148,6 +148,21 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	usb2_pins: usb2 {
-+		renesas,groups = "usb2";
-+		renesas,function = "usb2";
-+	};
- };
- 
- &mmcif1 {
-@@ -214,3 +229,20 @@
- 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
- 	status = "okay";
- };
-+
-+&pci0 {
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci2 {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
+
+This series is based on the renesas-devel-v3.14-rc6-20140313v3
+tag of my renesas tree.
+
+This series requires "spi: sh-hspi: Do not specifically request shyway_clk"
+in order for HSPI to be initialised when booting using multiplatform.
+
+This series is known not to work when
+booting with SMP enabled and maxcpus not set to 1.
+
+This series attempts to address the extensive review
+received for v3 of this series. Changes are noted
+in the changelog of individual patches.
+
+Simon Horman (19):
+  clk: shmobile: r8a7779: Add clocks support
+  clk: shmobile: r8a7779: Add MSTP clock support
+  ARM: shmobile: r8a7779: Add clock index macros for DT sources
+  ARM: shmobile: r8a7779: Add clocks
+  ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+  ARM: shmobile: marzen: Specify external clock frequency in DT
+  ARM: shmobile: r8a7779: Reference clocks
+  ARM: shmobile: r8a7779: Add helper to read mode pins
+  ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to
+    clock-r8a7779.c
+  ARM: shmobile: marzen-reference: Move clock and OF device
+    initialisation into board code
+  ARM: shmobile: r8a7779: Do not include sh_clk.h in r8a7779.h
+  ARM: shmobile: r8a7779: Initial multiplatform support
+  ARM: shmobile: marzen-reference: Initialize CPG device
+  ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and TMU
+  ARM: shmobile: marzen: Add to shmobile defconfig
+  ARM: shmobile: Remove non-multiplatform Marzen reference support
+  ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
+  ARM: shmobile: Remove Marzen reference DTS
+  ARM: shmobile: marzen-reference: Remove legacy clock support
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  27 +++
+ arch/arm/boot/dts/Makefile                         |   4 +-
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts     | 120 --------------
+ arch/arm/boot/dts/r8a7779-marzen.dts               |  97 +++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi                     | 163 +++++++++++++++++++
+ arch/arm/configs/shmobile_defconfig                |   2 +
+ arch/arm/mach-shmobile/Kconfig                     |  22 +--
+ arch/arm/mach-shmobile/Makefile                    |   2 +-
+ arch/arm/mach-shmobile/Makefile.boot               |   1 -
+ arch/arm/mach-shmobile/board-marzen-reference.c    |  30 ++++
+ arch/arm/mach-shmobile/clock-r8a7779.c             |  22 ++-
+ arch/arm/mach-shmobile/include/mach/r8a7779.h      |   2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c             |  28 ++--
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7779.c                 | 181 +++++++++++++++++++++
+ include/dt-bindings/clock/r8a7779-clock.h          |  64 ++++++++
+ include/linux/clk/shmobile.h                       |   3 +
+ 18 files changed, 609 insertions(+), 161 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+ delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
+ create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
+ create mode 100644 include/dt-bindings/clock/r8a7779-clock.h
+
 -- 
-1.9.0
+1.8.5.2
 
