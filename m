@@ -1,32 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Fri, 14 Mar 2014 00:54:55 +0000
-Subject: Re: [PATCH 0/2 v2] ASoC: fsi/rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <87d2hpppk3.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 09:00:00 +0000
+Subject: [PATCH v4 17/19] ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
+Message-Id: <1394701202-25823-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
+References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Simon <horms@verge.net.au>
-Cc: Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
+Let the multiplatform Marzen support boot with the legacy DTS for
+Marzen as well as the Marzen reference DTS.
 
-Hi Mark, Simon
+Based on work for the Koelsch board by Laurent Pinchart.
 
-These are v2 of Renesas fsi/rcar driver's
-SND_SOC_DAIFMT_CBx_CFx flag fixup patches.
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/Makefile                      | 2 +-
+ arch/arm/mach-shmobile/board-marzen-reference.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-Kuninori Morimoto (2):
-      ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags
-      ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |    4 +---
- arch/arm/mach-shmobile/board-kzm9g.c           |    4 +---
- arch/arm/mach-shmobile/board-mackerel.c        |    6 ++----
- arch/sh/boards/mach-ecovec24/setup.c           |    4 +---
- arch/sh/boards/mach-se/7724/setup.c            |    4 +---
- sound/soc/sh/fsi.c                             |    2 +-
- sound/soc/sh/rcar/core.c                       |    4 ++--
- 7 files changed, 9 insertions(+), 19 deletions(-)
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 69cd6b7..cbec54c 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -262,7 +262,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7779-marzen-reference.dtb
++	r8a7779-marzen.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 5823c83..741a076 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -68,6 +68,7 @@ static void __init marzen_init(void)
+ }
+ 
+ static const char *marzen_boards_compat_dt[] __initdata = {
++	"renesas,marzen",
+ 	"renesas,marzen-reference",
+ 	NULL,
+ };
+-- 
+1.8.5.2
 
