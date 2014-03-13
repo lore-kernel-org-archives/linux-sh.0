@@ -1,77 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Mar 2014 04:44:32 +0000
-Subject: [PATCH 4/7] ARM: shmobile: koelsch: add Ether DT support
-Message-Id: <08e8f0f35522bad37556a80c6df0578374f5091c.1394080829.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 13 Mar 2014 09:50:06 +0000
+Subject: [PATCH 7/9] ARM: shmobile: Add PCIe device tree nodes for R8A7791 Koelsch board
+Message-Id: <1394704208-7490-8-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1394080829.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
+References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch adds the device tree nodes for the R8A7791 Koelsch board
 
-Define the Koelsch board dependent part of the Ether device node.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
+ arch/arm/boot/dts/r8a7791.dtsi        |   19 +++++++++++++++++++
+ 2 files changed, 23 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index bf6ba0c..603af8c 100644
+index e24fed9..17c953f 100644
 --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
 +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -2,7 +2,8 @@
-  * Device Tree Source for the Koelsch board
-  *
-  * Copyright (C) 2013 Renesas Electronics Corporation
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded, Inc.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -146,12 +147,37 @@
- 		renesas,function = "scif1";
- 	};
- 
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq0";
-+		renesas,function = "intc";
-+	};
-+
- 	qspi_pins: spi {
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
+@@ -352,3 +352,7 @@
+ 		spi-cpha;
  	};
  };
- 
-+&ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
 +
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "ok";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+	};
++&pcie {
++	status = "okay";
 +};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index ccfba57..915a5a6 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -836,4 +836,23 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
 +
- &sata0 {
- 	status = "okay";
++	pcie: pcie@fe000000 {
++		compatible = "renesas,r8a7791-pcie";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_PCIE>;
++		clock-names = "pcie";
++		status = "disabled";
++	};
  };
 -- 
-1.8.5.2
+1.7.9.5
 
