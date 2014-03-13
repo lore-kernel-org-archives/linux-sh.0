@@ -1,69 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 07 Mar 2014 16:48:52 +0000
-Subject: Re: [PATCH V3 06/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
-Message-Id: <1588047.pDivzA3PtA@avalon>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart13154847.QyJKWzLJLR"
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 13 Mar 2014 09:50:04 +0000
+Subject: [PATCH 5/9] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <1394704208-7490-6-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
- <14375215.AZLobqST6Y@avalon> <20140307164427.GI28943@katana>
-In-Reply-To: <20140307164427.GI28943@katana>
-To: linux-arm-kernel@lists.infradead.org
-
-
---nextPart13154847.QyJKWzLJLR
-Content-Transfer-Encoding: quoted-printable
+References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>, devicetree@vger.kernel.org
 
-Hi Wolfram,
+This patch adds the bindings for the rcar PCIE driver. The driver
+resides under drivers/pci/host/pcie-rcar.c
 
-On Friday 07 March 2014 17:44:27 Wolfram Sang wrote:
-> > > > As port usages is board specific, shouldn't this be moved to th=
-e board
-> > > > .dts file, with only serial0 =3D &scif2 ?
-> > >=20
-> > > Nope, the intention of these aliases is to have a consistent numb=
-ering
-> > > of SCIF cores, similar to platform.dev_id.
-> >=20
-> > But do we want that ? Isn't it better from a user point of view to =
-have
-> > ttySC0 regardless of whether scif2 or scif3 is used when the board =
-has a
-> > single serial port only ?
->=20
-> Some prefer this, some that. The current standard pattern is what I
-> implemented. I think consistency makes sense for my series. If you li=
-ke to
-> prefer another pattern, please start a discussion at the devicetree l=
-ist.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 40 ++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
 
-When you say standard pattern, do you mean the practice followed by mos=
-t .dts=20
-in mainline, or is there an actual document that recommends this patter=
-n ?
-
-=2D-=20
-Regards,
-
-Laurent Pinchart
-
---nextPart13154847.QyJKWzLJLR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJTGfh0AAoJEIkPb2GL7hl1do8H/jJ/fEhpGYiVrkR4YWUXBSHv
-WbY/agYABHuy4NWCAqqShFJS2Y3TprZk0Y5ggJNItvE7DNIFeejY9Lg5KdrdouU5
-ks86vgHTvowCcKjSIZVo6qyAPjWReRFE/OD4S/sQXG2DTZOnQJa+ws0nuGaUaJ9b
-inEmbO2kPL4gBvXKbAGsh3ECrb++UbHO9SV1AeU8XFjSC1wgzOjObacsQcgL9aez
-RJEXDUpi/yF56oDEeYDV6a1pKFfiFR5lWSf26lTgbuIk44xU8aSp2wMvW1LApd1j
-O0fTFxA+0rS1Do3bUHQK0N7mcP/AVuj9qq8FOyeVa+o8EZjbvdga3all78wXAEE=
-=VAjB
------END PGP SIGNATURE-----
-
---nextPart13154847.QyJKWzLJLR--
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+new file mode 100644
+index 0000000..0e219b0
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -0,0 +1,40 @@
++* Renesas RCar PCIe interface
++
++Required properties:
++- compatible: should contain one of the following
++	"renesas,r8a7779-pcie", "renesas,r8a7790-pcie", "renesas,r8a7791-pcie"
++- reg: base addresses and lengths of the pcie controller.
++- #address-cells: set to <3>
++- #size-cells: set to <2>
++- device_type: set to "pci"
++- ranges: ranges for the PCI memory and I/O regions
++- interrupts: interrupt values for MSI interrupt
++- #interrupt-cells: set to <1>
++- interrupt-map-mask and interrupt-map: standard PCI properties
++	to define the mapping of the PCIe interface to interrupt
++	numbers.
++- clocks: from common clock binding: handle to pci clock.
++- clock-names: from common clock binding: should be "pcie"
++
++Example:
++
++SoC specific DT Entry:
++
++	pcie: pcie@0x01000000 {
++		compatible = "renesas,r8a7790-pcie";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		interrupts = <0 116 4>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 4>;
++		clocks = <&mstp3_clks R8A7790_CLK_PCIE>;
++		clock-names = "pcie";
++		status = "disabled";
++	};
+-- 
+1.9.0
 
