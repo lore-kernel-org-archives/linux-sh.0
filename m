@@ -1,41 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Mar 2014 09:59:10 +0000
-Subject: [PATCH 1/3] spi: sh-hspi: Add missing call to pm_runtime_disable() in failure path
-Message-Id: <1394531952-3905-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 06:29:58 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager: Annotate clk_names with __initconst
+Message-Id: <1394692198-30715-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394692198-30715-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394692198-30715-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/spi/spi-sh-hspi.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
-index 3b170b9f3471..9009456bdf4d 100644
---- a/drivers/spi/spi-sh-hspi.c
-+++ b/drivers/spi/spi-sh-hspi.c
-@@ -278,11 +278,13 @@ static int hspi_probe(struct platform_device *pdev)
- 	ret = devm_spi_register_master(&pdev->dev, master);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "spi_register_master error.\n");
--		goto error1;
-+		goto error2;
- 	}
- 
- 	return 0;
- 
-+ error2:
-+	pm_runtime_disable(&pdev->dev);
-  error1:
- 	clk_put(clk);
-  error0:
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index c76248b..7ff395e 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -89,7 +89,7 @@ static void __init lager_add_du_device(void)
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+  */
+-static const struct clk_name clk_names[] = {
++static const struct clk_name clk_names[] __initconst = {
+ 	{ "cmt0", NULL, "sh_cmt.0" },
+ 	{ "scifa0", NULL, "sh-sci.0" },
+ 	{ "scifa1", NULL, "sh-sci.1" },
 -- 
-1.7.9.5
+1.8.5.2
 
