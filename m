@@ -1,93 +1,68 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 10 Mar 2014 11:26:58 +0000
-Subject: [PATCH V2 3/5] ARM: shmobile: r8a7791: add IIC(B) cores to dtsi
-Message-Id: <1394450820-8158-3-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Mar 2014 09:00:02 +0000
+Subject: [PATCH v4 19/19] ARM: shmobile: marzen-reference: Remove legacy clock support
+Message-Id: <1394701202-25823-20-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Marzen DT reference is now only built for multiplatform
+which means that CCF comes with the package. Remove unused legacy
+code ifdefs to clean up the code.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Based on similar work for the Koelsch board by Magnus Damm.
+
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
+v4
+* As suggested by Geert Uytterhoeven
+  - Remove bogus "these" from changelog
+* Rebase
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-Changes since V1: use better compatible name "renesas,iic-r8a7791"
-
- arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 858a8a923b00..f71670a5bfbc 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -27,6 +27,9 @@
- 		i2c3 = &i2c3;
- 		i2c4 = &i2c4;
- 		i2c5 = &i2c5;
-+		i2c6 = &i2c6;
-+		i2c7 = &i2c7;
-+		i2c8 = &i2c8;
- 		spi0 = &qspi;
- 		spi1 = &msiof0;
- 		spi2 = &msiof1;
-@@ -184,6 +187,7 @@
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 741a076..f96fe65 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -31,13 +31,10 @@
  
-+	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -235,6 +239,7 @@
- 	};
+ static void __init marzen_init_timer(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-#endif
+ 	clocksource_of_init();
+ }
  
- 	i2c5: i2c@e6528000 {
-+		/* doesn't need pinmux */
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,i2c-r8a7791";
-@@ -244,6 +249,37 @@
- 		status = "disabled";
- 	};
+-#ifdef CONFIG_COMMON_CLK
+ /*
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+@@ -53,15 +50,10 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "tmu1", NULL, "sh_tmu.1" },
+ 	{ "tmu2", NULL, "sh_tmu.2" },
+ };
+-#endif
  
-+	i2c6: i2c@e60b0000 {
-+		/* doesn't need pinmux */
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
-+		reg = <0 0xe60b0000 0 0x425>;
-+		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
-+		status = "disabled";
-+	};
-+
-+	i2c7: i2c@e6500000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
-+		reg = <0 0xe6500000 0 0x425>;
-+		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
-+		status = "disabled";
-+	};
-+
-+	i2c8: i2c@e6510000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
-+		reg = <0 0xe6510000 0 0x425>;
-+		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7791";
- 		reg = <0 0xe6060000 0 0x250>;
+ static void __init marzen_init(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-#else
+-	r8a7779_clock_init();
+-#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
 -- 
-1.9.0
+1.8.5.2
 
