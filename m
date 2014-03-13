@@ -1,101 +1,39 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 31 Mar 2014 10:10:37 +0000
-Subject: Re: [RFCv3,3/3] soc_camera: initial of code
-Message-Id: <53393F1D.1030603@codethink.co.uk>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Thu, 13 Mar 2014 08:29:23 +0000
+Subject: [RFC] spi: Using Trigger number to transmit/receive data
+Message-Id: <1394699364-5669-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396216471-11532-3-git-send-email-ben.dooks@codethink.co.uk> <1396258114-30124-1-git-send-email-josh.wu@atmel.com>
-In-Reply-To: <1396258114-30124-1-git-send-email-josh.wu@atmel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Josh Wu <josh.wu@atmel.com>
-Cc: g.liakhovetski@gmx.de, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: broonie@kernel.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, kuninori.morimoto.gx@renesas.com, geert+renesas@linux-m68k.org
 
-On 31/03/14 10:28, Josh Wu wrote:
-> Hi, Ben
->
-> Thanks for the patch, I just test atmel-isi with the your patch,
-> I find the "mclk" registered in soc-camera driver cannot be find
-> by the soc-camera sensors. See comment in below:
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Ok, I guess that the driver I have does not need the
-mclk clock.
+Hi,
 
->
->> ... ...
->
->> +#ifdef CONFIG_OF
->> +static int soc_of_bind(struct soc_camera_host *ici,
->> +		       struct device_node *ep,
->> +		       struct device_node *remote)
->> +{
->> +	struct soc_camera_device *icd;
->> +	struct soc_camera_desc sdesc = {.host_desc.bus_id = ici->nr,};
->> +	struct soc_camera_async_client *sasc;
->> +	struct soc_camera_async_subdev *sasd;
->> +	struct v4l2_async_subdev **asd_array;
->> +	char clk_name[V4L2_SUBDEV_NAME_SIZE];
->> +	int ret;
->> +
->> +	/* alloacte a new subdev and add match info to it */
->> +	sasd = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasd), GFP_KERNEL);
->> +	if (!sasd)
->> +		return -ENOMEM;
->> +
->> +	asd_array = devm_kzalloc(ici->v4l2_dev.dev,
->> +				 sizeof(struct v4l2_async_subdev **),
->> +				 GFP_KERNEL);
->> +	if (!asd_array)
->> +		return -ENOMEM;
->> +
->> +	sasd->asd.match.of.node = remote;
->> +	sasd->asd.match_type = V4L2_ASYNC_MATCH_OF;
->> +	asd_array[0] = &sasd->asd;
->> +
->> +	/* Or shall this be managed by the soc-camera device? */
->> +	sasc = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasc), GFP_KERNEL);
->> +	if (!sasc)
->> +		return -ENOMEM;
->> +
->> +	/* HACK: just need a != NULL */
->> +	sdesc.host_desc.board_info = ERR_PTR(-ENODATA);
->> +
->> +	ret = soc_camera_dyn_pdev(&sdesc, sasc);
->> +	if (ret < 0)
->> +		return ret;
->> +
->> +	sasc->sensor = &sasd->asd;
->> +
->> +	icd = soc_camera_add_pdev(sasc);
->> +	if (!icd) {
->> +		platform_device_put(sasc->pdev);
->> +		return -ENOMEM;
->> +	}
->> +
->> +	//sasc->notifier.subdevs = asd;
->> +	sasc->notifier.subdevs = asd_array;
->> +	sasc->notifier.num_subdevs = 1;
->> +	sasc->notifier.bound = soc_camera_async_bound;
->> +	sasc->notifier.unbind = soc_camera_async_unbind;
->> +	sasc->notifier.complete = soc_camera_async_complete;
->> +
->> +	icd->sasc = sasc;
->> +	icd->parent = ici->v4l2_dev.dev;
->> +
->> +	snprintf(clk_name, sizeof(clk_name), "of-%s",
->> +		 of_node_full_name(remote));
->
-> The clk_name you register here is a OF string, but for the i2c sensors, which
-> call the v4l2_clk_get by using dev_name(&client->dev). It is format like:
-> "1-0030", combined i2c adaptor ID and addr.
-> So the i2c sensor can not find this registered mclk as the name is not match.
+This is the patch of QSPI that support for r8a7790 SOC. The pupose of 
+this patch is to transmit and receive the 32 bytes of data when the data 
+already has prepared on Transmit/Receive Buffer. Using Transmit/Receive 
+Buffer Data Trigger Number to do that instead transmits/receives a byte 
+of data. With this patch will improve the speed of transfer data.
 
-Hmm, this sounds like something that really should go
-away and be handled by the clk system instead.
+These patches was developed base on the upstream-v3.14-rc5 and have 
+tested on the Lager board.
+Please consider the following patches for the r8a7790 Soc.
 
-[snip]
+Thank you!
 
+Cao Minh Hiep
+
+
+Hiep Cao Minh (1):
+  spi: Using Trigger number to transmit/receive data
+
+ drivers/spi/spi-rspi.c |  144 +++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 124 insertions(+), 20 deletions(-)
 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
