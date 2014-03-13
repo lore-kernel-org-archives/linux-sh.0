@@ -1,33 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:37:13 +0000
-Subject: [PATCH 5/7] ARM: shmobile: bockw: enable sound codec for DT
-Message-Id: <871txqdhc8.wl%kuninori.morimoto.gx@gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 13 Mar 2014 09:50:08 +0000
+Subject: [PATCH 9/9] ARM: koelsch: Add HAVE_ARM_ARCH_TIMER to defconfig
+Message-Id: <1394704208-7490-10-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This is fixes a boot problem when the R-Car PCIe driver is enabled.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/Kconfig |    2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/configs/koelsch_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index d042c30..c688b7e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -210,6 +210,8 @@ config MACH_BOCKW_REFERENCE
- 	select ARCH_REQUIRE_GPIOLIB
- 	select RENESAS_INTC_IRQPIN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SND_SOC_AK4554 if SND_SIMPLE_CARD
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	select USE_OF
- 	---help---
- 	   Use reference implementation of BockW board support
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index ec14547..67666b6 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -15,6 +15,7 @@ CONFIG_MACH_KOELSCH=y
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_754322=y
++CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_PCI=y
+ CONFIG_PCI_MSI=y
+ CONFIG_PCI_RCAR_GEN2_PCIE=y
 -- 
 1.7.9.5
 
