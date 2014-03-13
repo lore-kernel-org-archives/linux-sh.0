@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 13 Mar 2014 11:37:24 +0000
+Date: Thu, 13 Mar 2014 11:38:27 +0000
 Subject: Re: [PATCH] clk: shmobile: mstp: Fix the is_enabled() operation
-Message-Id: <CAMuHMdXOoTeEb=WhbYULCjbFFuj-TaCt+ycGHjzH=3jqwKEjaQ@mail.gmail.com>
+Message-Id: <CAMuHMdUFiMssxFLke_UFJrqSgFc5cBmQLoZPWynZwZ3G6mEudA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394658274-6348-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1394658274-6348-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,18 +10,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ben,
-
-On Thu, Mar 13, 2014 at 12:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> Yes, now it disables the hardware clock bits for all clocks that are not
->> in
->> use according to CCF:
+On Thu, Mar 13, 2014 at 12:27 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> The only clocks we do enable are those we register with
+> shmobile_clk_workaround():
 >
-> Do you have the drivers/sh fix in?
+> MSTP sata0 ON
 
-No, I removed that due to bad interaction with userspace:
-
-Unhandled fault: imprecise external abort (0x1406) at 0x00000000
+Sata0 is not registered with shmobile_clk_workaround(), so probably is
+managed manually by its driver.
 
 Gr{oetje,eeting}s,
 
