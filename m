@@ -1,67 +1,36 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 20 Mar 2014 21:02:43 +0000
-Subject: Re: [PATCH v3] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <532B5773.7020700@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 14 Mar 2014 07:55:37 +0000
+Subject: [PATCH v2 0/2] spi: sh-hspi: Do not specifically request shyway_clk clock
+Message-Id: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk> <3894339.LtO9XLDneL@avalon> <532B3CD7.5050005@cogentembedded.com>
-In-Reply-To: <532B3CD7.5050005@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org, linux-sh@vger.kernel.org, davem@davemloft.net
+To: Mark Brown <broonie@linaro.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-On 20/03/14 20:09, Sergei Shtylyov wrote:
-> Hello.
->
-> On 03/20/2014 09:01 PM, Laurent Pinchart wrote:
->
->>> The pm_rumtime work queue is causing the device to be suspended during
->>> initialisation, thus the initialisation may not be able to access
->>> registers
->>> properly. As the code is called from a work queue, it is possible
->>> that this
->>> is not seen from certain configurations/builds due to the asynchronos
->>> nature of the code.
->
->>> Another issue has also been found where the network device registration
->>> calls back into the driver thus causing further pm_runtime calls that
->>> also caused issues with the MDIO bus code.
->
->>> Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
->>> pm system does not suspend it during the probe() call and remove the
->>> now unnecessary pm_runtime_resume() call.
->
->>> This fixes the external abort that can cause /sbin/init or other such
->>> init processed to die.
->
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
->
->>> ---
->>> Cc: sergei.shtylyov@cogentembedded.com
->>> Cc: laurent.pinchart+renesas@ideasonboard.com
->>> cc: netdev@vger.kernel.org
->
->>> Note, Laurent this should probably be applied before your
->>> current series as it may require changes to the exit sequence.
->
->> Would you like me to include the patch in that series when I'll send a
->> pull
->> request ?
->
->>> Fixes from v1:
->>>     - use pm_runtime_put() over pm_runtime_put_sync() as
->>>       we do not need to guaranteed the device has powered
->>>            off after probe.
->
->>> Fixed from v2:
->>>     - call pm_runtime_put() in error path
+Rather than requesting the shyway_clk call clk_get with
+the device and a NULL con_id.
 
-Thanks, that looks like another issue that got missed.
-I will submit v3
+This is in keeping with the way that clk_get() is called
+on other drivers used by Renesas Gen 1 SoCs. And I believe
+it is compatible with supplying clocks via DT, unlike the current code.
 
+
+This series supplies a fix for the r8a7779, a consumer of the driver,
+so that the hspi clocks it supplies have the correct source.
+
+And a fix for the sh-hspi driver to address the problem
+described above.
+
+Simon Horman (2):
+  ARM: shmobile: r8a7779: Use clks as MSTP007 parent
+  spi: sh-hspi: Do not specifically request shyway_clk clock
+
+ arch/arm/mach-shmobile/clock-r8a7778.c | 2 +-
+ drivers/spi/spi-sh-hspi.c              | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.5.2
+
