@@ -1,137 +1,52 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Fri, 14 Mar 2014 05:39:37 +0000
-Subject: Re: [PATCH] ARM: shmobile: Break out R-Car SYSC PM code
-Message-Id: <20140314053937.GA11610@quad.lixom.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 14 Mar 2014 10:06:41 +0000
+Subject: [PATCH resend v3 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
+Message-Id: <1394791601-25317-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140115074308.8471.64824.sendpatchset@w520>
- <CAOesGMjaTB-kBrm1av0uc8N-+4TRBZm5fxjJbsZLJe5OuqLu+g@mail.gmail.com>
- <CANqRtoRMkezRZvoH4Q1T3mwwhU9T=ZOFVGE5KN+sLBEqpXO=mg@mail.gmail.com>
- <CANqRtoQ2PDb5siknAndO3TgDghgTKPVa-ez-t2eQDcypDnsJTw@mail.gmail.com>
- <20140309052210.GB12854@quad.lixom.net>
- <CANqRtoQx16qgC-5wxi_SPDKMy+qztt-aTTa7TEY04+aT4a1=wA@mail.gmail.com>
- <CAOesGMg9Abd_JwLLjyDARmFzuN3Kh=HsZMmcS1mfncdEdOOUww@mail.gmail.com>
- <CANqRtoQTvnHBjM2eQccAJWCddN1LPgjNnd3Q6Gp=iUQkgM7tmQ@mail.gmail.com>
-In-Reply-To: <CANqRtoQTvnHBjM2eQccAJWCddN1LPgjNnd3Q6Gp=iUQkgM7tmQ@mail.gmail.com>
+References: <1394791601-25317-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1394791601-25317-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 13, 2014 at 10:02:03AM +0900, Magnus Damm wrote:
-> On Thu, Mar 13, 2014 at 9:04 AM, Olof Johansson <olof@lixom.net> wrote:
-> > On Wed, Mar 12, 2014 at 3:26 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >> On Sun, Mar 9, 2014 at 2:22 PM, Olof Johansson <olof@lixom.net> wrote:
-> >>> On Tue, Feb 25, 2014 at 11:09:52AM +0900, Magnus Damm wrote:
-> >>>> Hi Olof,
-> >>>>
-> >>>> On Thu, Feb 20, 2014 at 6:45 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >>>> > On Thu, Feb 20, 2014 at 6:36 PM, Olof Johansson <olof@lixom.net> wrote:
-> >>>> >> I spotted this patch since it adds new include/mach contents, comment below:
-> >>>> >>
-> >>>> >> On Tue, Jan 14, 2014 at 11:43 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >>>> >>
-> >>>> >>> --- /dev/null
-> >>>> >>> +++ work/arch/arm/mach-shmobile/include/mach/pm-rcar.h  2014-01-15 13:30:38.000000000 +0900
-> >>>> >>> @@ -0,0 +1,15 @@
-> >>>> >>> +#ifndef PM_RCAR_H
-> >>>> >>> +#define PM_RCAR_H
-> >>>> >>> +
-> >>>> >>> +struct rcar_sysc_ch {
-> >>>> >>> +       unsigned long chan_offs;
-> >>>> >>> +       unsigned int chan_bit;
-> >>>> >>> +       unsigned int isr_bit;
-> >>>> >>> +};
-> >>>> >>> +
-> >>>> >>> +int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
-> >>>> >>> +int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
-> >>>> >>> +bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
-> >>>> >>> +void __iomem *rcar_sysc_init(phys_addr_t base);
-> >>>> >>> +
-> >>>> >>> +#endif /* PM_RCAR_H */
-> >>>> >>
-> >>>> >>
-> >>>> >> These prototypes are only ever used by code in arch/arm/mach-shmobile,
-> >>>> >> right? There's no reason to expose it to the global include namespace,
-> >>>> >> and you'll just have to remove it when the platform is converted to
-> >>>> >> multiplatform.
-> >>>> >>
-> >>>> >> So, I suggest moving this to be at arch/arm/mach-shmobile/pm-rcar.h
-> >>>> >> instead (and included as "pm-rcar.h" instead of <mach/pm-rcar.h>).
-> >>>> >
-> >>>> > Thanks for your help with the patches! You are right that these are
-> >>>> > never used outside mach-shmobile, and moving headers out of "mach"
-> >>>> > certainly makes sense.
-> >>>>
-> >>>> FYI, the following series includes my attempt to address this issue:
-> >>>>
-> >>>> [PATCH 00/12] ARM: shmobile: Rework include path for SoC files
-> >>>> [PATCH 01/12] ARM: shmobile: Add temporary include workaround
-> >>>> [PATCH 02/12] ARM: shmobile: Rework include path for sh7372
-> >>>> [PATCH 03/12] ARM: shmobile: Rework include path for sh73a0
-> >>>> [PATCH 04/12] ARM: shmobile: Rework include path for EMEV2
-> >>>> [PATCH 05/12] ARM: shmobile: Rework include path for r8a7740
-> >>>> [PATCH 06/12] ARM: shmobile: Rework include path for r8a7778
-> >>>> [PATCH 07/12] ARM: shmobile: Rework include path for r8a7779
-> >>>> [PATCH 08/12] ARM: shmobile: Rework include path for r8a7790
-> >>>> [PATCH 09/12] ARM: shmobile: Rework include path for r8a7791
-> >>>> [PATCH 10/12] ARM: shmobile: Rework include path for r8a73a4
-> >>>> [PATCH 11/12] ARM: shmobile: Rework include path for r7s72100
-> >>>> [PATCH 12/12] ARM: shmobile: Rework include path for common bits
-> >>>>
-> >>>> If you would like me to rework the code somehow then please let me
-> >>>> know. I also intend to ask a different developer to convert the actual
-> >>>> boards once these changes have been merged by Simon, hope this is a
-> >>>> good way forward for you.
-> >>>
-> >>> It certainly looks like a good way forward, thanks for doing this.
-> >>
-> >> Ok, thanks. The list of patches above is the first step forward from my side.
-> >>
-> >> I'm afraid that I'm a bit confused by your comments in thread:
-> >> "Re: [PATCH v2] ARM: shmobile: Add temporary include workaround"
-> >>
-> >> The single v2 patch on the line above is just a bug fixed version of [01/12].
-> >>
-> >> Can you please clarify if you're ok with the series or if you want me
-> >> to rework it somehow?
-> >
-> > Oh, yeah, that's confusing -- my "looks good, please go ahead" was for
-> > patch 2-12, I don't think you actually need 1/12 at this time since
-> > you move the include file over and change the include statements in
-> > the same time in the other 11 patches?
-> 
-> My current set of patches do not move the location of the include file
-> just yet. The reason for this is that this series targets SoC code
-> only, but both board files and SoC files use the same header files. So
-> until all files are converted the workaround is needed.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Oh, my bad. When I saw the change from <mach/file.h> to "file.h", I missed that
-there was no diff move that accompanied it.
+Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
+board code.
 
-> I'd be happy to adjust the patches to fit your recommendation and move
-> the header file in the same patch. But then I need to touch both SoC
-> code and board code in the same patch - which is fine - but I would
-> like to know what branch to target if so.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3:
+  - No changes
 
-We're still talking mostly about code under mach-shmobile though, right?
-I think most of these header files are only actually used underneath of there.
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-If so, then it's fine to just do it in one branch. The rules for how we sort
-our branches are guidelines, and where it doesn't make sense to follow them, we
-don't. :)
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 06cda19dac6a..f76f6ec01e19 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -109,4 +109,18 @@
+ 	pinctrl-0 = <&hspi0_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
+ };
+-- 
+1.7.9.5
 
-> So how would you like to consume this cleanup? And when? =)
-
-For something like this, that has a build-time possibility to check for
-introduced breakage (i.e. no likelihood for some strange random regression at
-runtime), I'm OK with the patches coming in late. I.e. there's time for 3.15 if
-you want to try getting it in. If not, we can queue it up as a base branch for
-any other changes for 3.16.
-
-As far as how to consume it: send a branch with these patches on there, we'll
-merge it in. If it's relatively conflict-free we'll do it under next/clenaup
-for early merge, otherwise we'll save it for the end of our branches, etc. It'd
-be a great cleanup to get merged so we'll make it work somehow!
-
-
--Olof
