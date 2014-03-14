@@ -1,213 +1,125 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Mar 2014 14:02:30 +0000
-Subject: Re: [PATCH v2 2/5] pinctrl: pfc: r8a7790: add mux data for IIC(B) cores
-Message-Id: <1573801.ZCY1H3qPEP@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 14 Mar 2014 10:06:40 +0000
+Subject: [PATCH resend v3 1/2] ARM: shmobile: r8a7778/r8a7779 dtsi: Improve and correct HSPI nodes
+Message-Id: <1394791601-25317-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
- <1395773789-17249-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1395773789-17249-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Thank you for the patch.
+  - Add "renesas,hspi-r8a7778" resp. "renesas,hspi-r8a7779" compatible
+    values,
+  - Correct reference to parent interrupt controller
+    (use "interrupt-parent" instead of "interrupt-controller"),
+  - Add missing "#address-cells" and "#size-cells" properties, which are
+    needed when populating the SPI buses.
 
-On Tuesday 25 March 2014 19:56:26 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+resend:
+  - Simon: The bindings updates (formerly 1/3) are now in spi/for-next,
+    so please apply. Thanks!
+v3:
+  - Split in two patches: bindings and dtsi updates
+v2:
+  - Add Tested-by
+  - List full example compatible properties with soctypes instead of just
+    the soctypes, so checkpatch can validate DTSes.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ arch/arm/boot/dts/r8a7778.dtsi |   18 ++++++++++++------
+ arch/arm/boot/dts/r8a7779.dtsi |   18 ++++++++++++------
+ 2 files changed, 24 insertions(+), 12 deletions(-)
 
-> ---
-> Change since V1:
-> 
-> * renamed i2c4-7 to iic0-3
-> 
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 118
-> ++++++++++++++++++++++++++++++++++- 1 file changed, 116 insertions(+), 2
-> deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index bcb47d138b02..99b62b1ee752
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> @@ -782,8 +782,8 @@ enum {
->  	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
->  	TCLK1_B_MARK,
-> 
-> -	I2C0_SCL_MARK, I2C0_SDA_MARK,
-> -	I2C3_SCL_MARK, I2C3_SDA_MARK,
-> +	IIC0_SCL_MARK, IIC0_SDA_MARK, I2C0_SCL_MARK, I2C0_SDA_MARK,
-> +	IIC3_SCL_MARK, IIC3_SDA_MARK, I2C3_SCL_MARK, I2C3_SDA_MARK,
->  	PINMUX_MARK_END,
->  };
-> 
-> @@ -1723,9 +1723,13 @@ static const u16 pinmux_data[] = {
->  	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
->  	PINMUX_IPSR_MODSEL_DATA(IP16_7, TCLK1_B, SEL_TMU1_1),
-> 
-> +	PINMUX_DATA(IIC0_SCL_MARK, FN_SEL_IIC0_0),
-> +	PINMUX_DATA(IIC0_SDA_MARK, FN_SEL_IIC0_0),
->  	PINMUX_DATA(I2C0_SCL_MARK, FN_SEL_IIC0_1),
->  	PINMUX_DATA(I2C0_SDA_MARK, FN_SEL_IIC0_1),
-> 
-> +	PINMUX_DATA(IIC3_SCL_MARK, FN_SEL_IICDVFS_0),
-> +	PINMUX_DATA(IIC3_SDA_MARK, FN_SEL_IICDVFS_0),
->  	PINMUX_DATA(I2C3_SCL_MARK, FN_SEL_IICDVFS_1),
->  	PINMUX_DATA(I2C3_SDA_MARK, FN_SEL_IICDVFS_1),
->  };
-> @@ -2134,6 +2138,80 @@ static const unsigned int i2c3_pins[] = {
->  static const unsigned int i2c3_mux[] = {
->  	I2C3_SCL_MARK, I2C3_SDA_MARK,
->  };
-> +/* - IIC0 (I2C4)
-> ------------------------------------------------------------ */ +static
-> const unsigned int iic0_pins[] = {
-> +	/* SCL, SDA */
-> +	PIN_A_NUMBER('G', 15), PIN_A_NUMBER('F', 15),
-> +};
-> +static const unsigned int iic0_mux[] = {
-> +	IIC0_SCL_MARK, IIC0_SDA_MARK,
-> +};
-> +/* - IIC1 (I2C5)
-> ------------------------------------------------------------ */ +static
-> const unsigned int iic1_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(1, 16), RCAR_GP_PIN(1, 17),
-> +};
-> +static const unsigned int iic1_mux[] = {
-> +	IIC1_SCL_MARK, IIC1_SDA_MARK,
-> +};
-> +static const unsigned int iic1_b_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(3, 6), RCAR_GP_PIN(3, 7),
-> +};
-> +static const unsigned int iic1_b_mux[] = {
-> +	IIC1_SCL_B_MARK, IIC1_SDA_B_MARK,
-> +};
-> +static const unsigned int iic1_c_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(4, 30), RCAR_GP_PIN(4, 27),
-> +};
-> +static const unsigned int iic1_c_mux[] = {
-> +	IIC1_SCL_C_MARK, IIC1_SDA_C_MARK,
-> +};
-> +/* - IIC2 (I2C6)
-> ------------------------------------------------------------ */ +static
-> const unsigned int iic2_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(5, 5), RCAR_GP_PIN(5, 6),
-> +};
-> +static const unsigned int iic2_mux[] = {
-> +	IIC2_SCL_MARK, IIC2_SDA_MARK,
-> +};
-> +static const unsigned int iic2_b_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(4, 0), RCAR_GP_PIN(4, 1),
-> +};
-> +static const unsigned int iic2_b_mux[] = {
-> +	IIC2_SCL_B_MARK, IIC2_SDA_B_MARK,
-> +};
-> +static const unsigned int iic2_c_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(0, 6), RCAR_GP_PIN(0, 7),
-> +};
-> +static const unsigned int iic2_c_mux[] = {
-> +	IIC2_SCL_C_MARK, IIC2_SDA_C_MARK,
-> +};
-> +static const unsigned int iic2_d_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(3, 14), RCAR_GP_PIN(3, 15),
-> +};
-> +static const unsigned int iic2_d_mux[] = {
-> +	IIC2_SCL_D_MARK, IIC2_SDA_D_MARK,
-> +};
-> +static const unsigned int iic2_e_pins[] = {
-> +	/* SCL, SDA */
-> +	RCAR_GP_PIN(2, 18), RCAR_GP_PIN(2, 19),
-> +};
-> +static const unsigned int iic2_e_mux[] = {
-> +	IIC2_SCL_E_MARK, IIC2_SDA_E_MARK,
-> +};
-> +/* - IIC3 (I2C7)
-> ------------------------------------------------------------ */ +static
-> const unsigned int iic3_pins[] = {
-> +/* SCL, SDA */
-> +	PIN_A_NUMBER('J', 15), PIN_A_NUMBER('H', 15),
-> +};
-> +static const unsigned int iic3_mux[] = {
-> +	IIC3_SCL_MARK, IIC3_SDA_MARK,
-> +};
->  /* - INTC
-> ------------------------------------------------------------------- */
-> static const unsigned int intc_irq0_pins[] = {
->  	/* IRQ */
-> @@ -3650,6 +3728,16 @@ static const struct sh_pfc_pin_group pinmux_groups[]
-> = { SH_PFC_PIN_GROUP(i2c2_d),
->  	SH_PFC_PIN_GROUP(i2c2_e),
->  	SH_PFC_PIN_GROUP(i2c3),
-> +	SH_PFC_PIN_GROUP(iic0),
-> +	SH_PFC_PIN_GROUP(iic1),
-> +	SH_PFC_PIN_GROUP(iic1_b),
-> +	SH_PFC_PIN_GROUP(iic1_c),
-> +	SH_PFC_PIN_GROUP(iic2),
-> +	SH_PFC_PIN_GROUP(iic2_b),
-> +	SH_PFC_PIN_GROUP(iic2_c),
-> +	SH_PFC_PIN_GROUP(iic2_d),
-> +	SH_PFC_PIN_GROUP(iic2_e),
-> +	SH_PFC_PIN_GROUP(iic3),
->  	SH_PFC_PIN_GROUP(intc_irq0),
->  	SH_PFC_PIN_GROUP(intc_irq1),
->  	SH_PFC_PIN_GROUP(intc_irq2),
-> @@ -3932,6 +4020,28 @@ static const char * const i2c3_groups[] = {
->  	"i2c3",
->  };
-> 
-> +static const char * const iic0_groups[] = {
-> +	"iic0",
-> +};
-> +
-> +static const char * const iic1_groups[] = {
-> +	"iic1",
-> +	"iic1_b",
-> +	"iic1_c",
-> +};
-> +
-> +static const char * const iic2_groups[] = {
-> +	"iic2",
-> +	"iic2_b",
-> +	"iic2_c",
-> +	"iic2_d",
-> +	"iic2_e",
-> +};
-> +
-> +static const char * const iic3_groups[] = {
-> +	"iic3",
-> +};
-> +
->  static const char * const intc_groups[] = {
->  	"intc_irq0",
->  	"intc_irq1",
-> @@ -4226,6 +4336,10 @@ static const struct sh_pfc_function
-> pinmux_functions[] = { SH_PFC_FUNCTION(i2c1),
->  	SH_PFC_FUNCTION(i2c2),
->  	SH_PFC_FUNCTION(i2c3),
-> +	SH_PFC_FUNCTION(iic0),
-> +	SH_PFC_FUNCTION(iic1),
-> +	SH_PFC_FUNCTION(iic2),
-> +	SH_PFC_FUNCTION(iic3),
->  	SH_PFC_FUNCTION(intc),
->  	SH_PFC_FUNCTION(mmc0),
->  	SH_PFC_FUNCTION(mmc1),
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 85c5b3b99f5e..3c6fab5c9702 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -204,26 +204,32 @@
+ 	};
+ 
+ 	hspi0: spi@fffc7000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc7000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ 
+ 	hspi1: spi@fffc8000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc8000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ 
+ 	hspi2: spi@fffc6000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc6000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index d0561d4c7c46..8b1a336ee401 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -256,26 +256,32 @@
+ 	};
+ 
+ 	hspi0: spi@fffc7000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
+ 		reg = <0xfffc7000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ 
+ 	hspi1: spi@fffc8000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
+ 		reg = <0xfffc8000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ 
+ 	hspi2: spi@fffc6000 {
+-		compatible = "renesas,hspi";
++		compatible = "renesas,hspi-r8a7779", "renesas,hspi";
+ 		reg = <0xfffc6000 0x18>;
+-		interrupt-controller = <&gic>;
++		interrupt-parent = <&gic>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		#address-cells = <1>;
++		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
-
+1.7.9.5
 
