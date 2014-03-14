@@ -1,25 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 26 Mar 2014 17:02:51 +0000
-Subject: Re: [PATCH] ARM: shmobile: Include i2c-shmobile.c in shmobile_defconfig
-Message-Id: <20140326170251.GB1091@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 14 Mar 2014 23:11:27 +0000
+Subject: [PATCH] sh_eth: exit probe with unknown register layout
+Message-Id: <201403150311.25173.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140326051619.2454.811.sendpatchset@w520>
-In-Reply-To: <20140326051619.2454.811.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Wed, Mar 26, 2014 at 08:03:02AM +0100, Wolfram Sang wrote:
-> On Wed, Mar 26, 2014 at 02:16:19PM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm@opensource.se>
-> > 
-> > Many SoCs include I2C controller instances compatible with
-> > the i2c-shmobile.c driver. To increase hardware support enable
-> > the driver in the shmobile_defconfig multiplatform configuration.
-> > 
-> > Signed-off-by: Magnus Damm <damm@opensource.se>
-> 
-> Acked-by: Wolfram Sang <wsa@the-dreams.de>
+Exit the driver's probe() method when the register layout is unknown as the
+driver would cause kernel oops in this case anyway.
 
-Thanks, I have queued this up.
+While at it, move the corresponding error message printout and convert it from
+pr_err() to dev_err().
+
+Suggested-by: Joe Perches <joe@perches.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+This fix is against DaveM 'net-next.git' repo since the issue it solves is not
+critical.
+
+ drivers/net/ethernet/renesas/sh_eth.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2703,7 +2703,6 @@ static const u16 *sh_eth_get_register_of
+ 		reg_offset = sh_eth_offset_fast_sh3_sh2;
+ 		break;
+ 	default:
+-		pr_err("Unknown register type (%d)\n", register_type);
+ 		break;
+ 	}
+ 
+@@ -2859,6 +2858,12 @@ static int sh_eth_drv_probe(struct platf
+ 		mdp->cd = (struct sh_eth_cpu_data *)match->data;
+ 	}
+ 	mdp->reg_offset = sh_eth_get_register_offset(mdp->cd->register_type);
++	if (!mdp->reg_offset) {
++		dev_err(&pdev->dev, "Unknown register type (%d)\n",
++			mdp->cd->register_type);
++		ret = -EINVAL;
++		goto out_release;
++	}
+ 	sh_eth_set_default_cpu_data(mdp->cd);
+ 
+ 	/* set function */
