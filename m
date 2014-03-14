@@ -1,165 +1,60 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 30 Mar 2014 21:54:31 +0000
-Subject: [RFCv3 3/3] soc_camera: initial of code
-Message-Id: <1396216471-11532-3-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 14 Mar 2014 07:55:39 +0000
+Subject: [PATCH v2 2/2] spi: sh-hspi: Do not specifically request shyway_clk clock
+Message-Id: <1394783739-29168-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396216471-11532-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396216471-11532-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394783739-29168-1-git-send-email-horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: g.liakhovetski@gmx.de, linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: Mark Brown <broonie-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 
-Add initial support for OF based soc-camera devices that may be used
-by any of the soc-camera drivers. The driver itself will need converting
-to use OF.
+Rather than requesting the shyway_clk call clk_get with
+the device and a NULL con_id.
 
-These changes allow the soc-camera driver to do the connecting of any
-async capable v4l2 device to the soc-camera driver. This has currently
-been tested on the Renesas Lager board.
+This is in keeping with the way that clk_get() is called
+on other drivers used by Renesas Gen 1 SoCs. And I believe
+it is compatible with supplying clocks via DT, unlike the current code.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+--
+
+It appears to me that the two uses of this driver are
+the r8a7778 and r8a7779 SoCs.
+
+The r8a7779 already clocks setup to allow this driver to continue to work
+with this change applied.
+
+The r8a7778 has clocks incorrectly setup to allow this driver to continue
+to work with this change applied. This problem is addressed in
+"ARM: shmobile: r8a7779: Use clks as MSTP007 parent" which is thus
+a pre-requisite of this patch.
+
+v2
+* Update changelog
 ---
- drivers/media/platform/soc_camera/soc_camera.c | 111 ++++++++++++++++++++++++-
- 1 file changed, 110 insertions(+), 1 deletion(-)
+ drivers/spi/spi-sh-hspi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-index 4b8c024..afe22d4 100644
---- a/drivers/media/platform/soc_camera/soc_camera.c
-+++ b/drivers/media/platform/soc_camera/soc_camera.c
-@@ -36,6 +36,7 @@
- #include <media/v4l2-common.h>
- #include <media/v4l2-ioctl.h>
- #include <media/v4l2-dev.h>
-+#include <media/v4l2-of.h>
- #include <media/videobuf-core.h>
- #include <media/videobuf2-core.h>
+diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
+index 82d2f92..e975892 100644
+--- a/drivers/spi/spi-sh-hspi.c
++++ b/drivers/spi/spi-sh-hspi.c
+@@ -274,9 +274,9 @@ static int hspi_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
  
-@@ -1579,6 +1580,112 @@ static void scan_async_host(struct soc_camera_host *ici)
- #define scan_async_host(ici)		do {} while (0)
- #endif
- 
-+#ifdef CONFIG_OF
-+static int soc_of_bind(struct soc_camera_host *ici,
-+		       struct device_node *ep,
-+		       struct device_node *remote)
-+{
-+	struct soc_camera_device *icd;
-+	struct soc_camera_desc sdesc = {.host_desc.bus_id = ici->nr,};
-+	struct soc_camera_async_client *sasc;
-+	struct soc_camera_async_subdev *sasd;
-+	struct v4l2_async_subdev **asd_array;
-+	char clk_name[V4L2_SUBDEV_NAME_SIZE];
-+	int ret;
-+
-+	/* alloacte a new subdev and add match info to it */
-+	sasd = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasd), GFP_KERNEL);
-+	if (!sasd)
-+		return -ENOMEM;
-+
-+	asd_array = devm_kzalloc(ici->v4l2_dev.dev,
-+				 sizeof(struct v4l2_async_subdev **),
-+				 GFP_KERNEL);
-+	if (!asd_array)
-+		return -ENOMEM;
-+
-+	sasd->asd.match.of.node = remote;
-+	sasd->asd.match_type = V4L2_ASYNC_MATCH_OF;
-+	asd_array[0] = &sasd->asd;
-+
-+	/* Or shall this be managed by the soc-camera device? */
-+	sasc = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasc), GFP_KERNEL);
-+	if (!sasc)
-+		return -ENOMEM;
-+
-+	/* HACK: just need a != NULL */
-+	sdesc.host_desc.board_info = ERR_PTR(-ENODATA);
-+
-+	ret = soc_camera_dyn_pdev(&sdesc, sasc);
-+	if (ret < 0)
-+		return ret;
-+
-+	sasc->sensor = &sasd->asd;
-+
-+	icd = soc_camera_add_pdev(sasc);
-+	if (!icd) {
-+		platform_device_put(sasc->pdev);
-+		return -ENOMEM;
-+	}
-+
-+	//sasc->notifier.subdevs = asd;
-+	sasc->notifier.subdevs = asd_array;
-+	sasc->notifier.num_subdevs = 1;
-+	sasc->notifier.bound = soc_camera_async_bound;
-+	sasc->notifier.unbind = soc_camera_async_unbind;
-+	sasc->notifier.complete = soc_camera_async_complete;
-+
-+	icd->sasc = sasc;
-+	icd->parent = ici->v4l2_dev.dev;
-+
-+	snprintf(clk_name, sizeof(clk_name), "of-%s",
-+		 of_node_full_name(remote));
-+
-+	icd->clk = v4l2_clk_register(&soc_camera_clk_ops, clk_name, "mclk", icd);
-+	if (IS_ERR(icd->clk)) {
-+		ret = PTR_ERR(icd->clk);
-+		goto eclkreg;
-+	}
-+
-+	ret = v4l2_async_notifier_register(&ici->v4l2_dev, &sasc->notifier);
-+	if (!ret)
-+		return 0;
-+
-+eclkreg:
-+	icd->clk = NULL;
-+	platform_device_unregister(sasc->pdev);
-+	dev_err(ici->v4l2_dev.dev, "group probe failed: %d\n", ret);
-+
-+	return ret;
-+}
-+
-+static inline void scan_of_host(struct soc_camera_host *ici)
-+{
-+	struct device_node *np = ici->v4l2_dev.dev->of_node;
-+	struct device_node *epn = NULL;
-+	struct device_node *ren;
-+
-+	while (true) {
-+		epn = v4l2_of_get_next_endpoint(np, epn);
-+		if (!epn)
-+			break;
-+
-+		ren = v4l2_of_get_remote_port(epn);
-+		if (!ren) {
-+			pr_info("%s: no remote for %s\n",
-+				__func__,  of_node_full_name(epn));
-+			continue;
-+		}
-+
-+		/* so we now have a remote node to connect */
-+		soc_of_bind(ici, epn, ren->parent);
-+	}
-+}
-+
-+#else
-+static inline void scan_of_host(struct soc_camera_host *ici) { }
-+#endif
-+
- /* Called during host-driver probe */
- static int soc_camera_probe(struct soc_camera_host *ici,
- 			    struct soc_camera_device *icd)
-@@ -1830,7 +1937,9 @@ int soc_camera_host_register(struct soc_camera_host *ici)
- 	mutex_init(&ici->host_lock);
- 	mutex_init(&ici->clk_lock);
- 
--	if (ici->asd_sizes)
-+	if (ici->v4l2_dev.dev->of_node)
-+		scan_of_host(ici);
-+	else if (ici->asd_sizes)
- 		/*
- 		 * No OF, host with a list of subdevices. Don't try to mix
- 		 * modes by initialising some groups statically and some
+-	clk = clk_get(NULL, "shyway_clk");
++	clk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(clk)) {
+-		dev_err(&pdev->dev, "shyway_clk is required\n");
++		dev_err(&pdev->dev, "couldn't get clock\n");
+ 		ret = -EINVAL;
+ 		goto error0;
+ 	}
 -- 
-1.9.0
+1.8.5.2
 
