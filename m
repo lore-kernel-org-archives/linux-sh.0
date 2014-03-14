@@ -1,41 +1,113 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:00:40 +0000
-Subject: [PATCH V3 04/12] ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
-Message-Id: <1394208048-32495-5-git-send-email-wsa@the-dreams.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 14 Mar 2014 23:31:05 +0000
+Subject: [PATCH 3/3] sh_eth: fold netif_msg_*() and netdev_*() calls into netif_*() invocations
+Message-Id: <201403150330.59864.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+References: <201403150321.47674.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201403150321.47674.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, joe@perches.com
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Now that we call netdev_*() under netif_msg_*() checks, we can fold these into
+netif_*() macro invocations.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Suggested-by: Joe Perches <joe@perches.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ drivers/net/ethernet/renesas/sh_eth.c |   33 +++++++++++----------------------
+ 1 file changed, 11 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index e664611a47c8..941e72ce7c82 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -30,6 +30,14 @@
- 	};
- };
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1557,8 +1557,7 @@ ignore_link:
+ 		/* Unused write back interrupt */
+ 		if (intr_status & EESR_TABT) {	/* Transmit Abort int */
+ 			ndev->stats.tx_aborted_errors++;
+-			if (netif_msg_tx_err(mdp))
+-				netdev_err(ndev, "Transmit Abort\n");
++			netif_err(mdp, tx_err, ndev, "Transmit Abort\n");
+ 		}
+ 	}
  
-+&extal_clk {
-+	clock-frequency = <13330000>;
-+};
-+
-+&usb_x1_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c2 {
- 	status = "okay";
- 	clock-frequency = <400000>;
--- 
-1.9.0
-
+@@ -1567,45 +1566,38 @@ ignore_link:
+ 		if (intr_status & EESR_RFRMER) {
+ 			/* Receive Frame Overflow int */
+ 			ndev->stats.rx_frame_errors++;
+-			if (netif_msg_rx_err(mdp))
+-				netdev_err(ndev, "Receive Abort\n");
++			netif_err(mdp, rx_err, ndev, "Receive Abort\n");
+ 		}
+ 	}
+ 
+ 	if (intr_status & EESR_TDE) {
+ 		/* Transmit Descriptor Empty int */
+ 		ndev->stats.tx_fifo_errors++;
+-		if (netif_msg_tx_err(mdp))
+-			netdev_err(ndev, "Transmit Descriptor Empty\n");
++		netif_err(mdp, tx_err, ndev, "Transmit Descriptor Empty\n");
+ 	}
+ 
+ 	if (intr_status & EESR_TFE) {
+ 		/* FIFO under flow */
+ 		ndev->stats.tx_fifo_errors++;
+-		if (netif_msg_tx_err(mdp))
+-			netdev_err(ndev, "Transmit FIFO Under flow\n");
++		netif_err(mdp, tx_err, ndev, "Transmit FIFO Under flow\n");
+ 	}
+ 
+ 	if (intr_status & EESR_RDE) {
+ 		/* Receive Descriptor Empty int */
+ 		ndev->stats.rx_over_errors++;
+-
+-		if (netif_msg_rx_err(mdp))
+-			netdev_err(ndev, "Receive Descriptor Empty\n");
++		netif_err(mdp, rx_err, ndev, "Receive Descriptor Empty\n");
+ 	}
+ 
+ 	if (intr_status & EESR_RFE) {
+ 		/* Receive FIFO Overflow int */
+ 		ndev->stats.rx_fifo_errors++;
+-		if (netif_msg_rx_err(mdp))
+-			netdev_err(ndev, "Receive FIFO Overflow\n");
++		netif_err(mdp, rx_err, ndev, "Receive FIFO Overflow\n");
+ 	}
+ 
+ 	if (!mdp->cd->no_ade && (intr_status & EESR_ADE)) {
+ 		/* Address Error */
+ 		ndev->stats.tx_fifo_errors++;
+-		if (netif_msg_tx_err(mdp))
+-			netdev_err(ndev, "Address Error\n");
++		netif_err(mdp, tx_err, ndev, "Address Error\n");
+ 	}
+ 
+ 	mask = EESR_TWB | EESR_TABT | EESR_ADE | EESR_TDE | EESR_TFE;
+@@ -2064,11 +2056,9 @@ static void sh_eth_tx_timeout(struct net
+ 
+ 	netif_stop_queue(ndev);
+ 
+-	if (netif_msg_timer(mdp)) {
+-		netdev_err(ndev,
+-			   "transmit timed out, status %8.8x, resetting...\n",
+-			   (int)sh_eth_read(ndev, EESR));
+-	}
++	netif_err(mdp, timer, ndev,
++		  "transmit timed out, status %8.8x, resetting...\n",
++		  (int)sh_eth_read(ndev, EESR));
+ 
+ 	/* tx_errors count up */
+ 	ndev->stats.tx_errors++;
+@@ -2103,8 +2093,7 @@ static int sh_eth_start_xmit(struct sk_b
+ 	spin_lock_irqsave(&mdp->lock, flags);
+ 	if ((mdp->cur_tx - mdp->dirty_tx) >= (mdp->num_tx_ring - 4)) {
+ 		if (!sh_eth_txfree(ndev)) {
+-			if (netif_msg_tx_queued(mdp))
+-				netdev_warn(ndev, "TxFD exhausted.\n");
++			netif_warn(mdp, tx_queued, ndev, "TxFD exhausted.\n");
+ 			netif_stop_queue(ndev);
+ 			spin_unlock_irqrestore(&mdp->lock, flags);
+ 			return NETDEV_TX_BUSY;
