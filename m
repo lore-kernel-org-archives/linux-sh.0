@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 14 Mar 2014 21:13:06 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 15 Mar 2014 11:19:58 +0000
 Subject: Re: [PATCH] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <53237EEF.9080900@cogentembedded.com>
+Message-Id: <2721089.MvRMsm1vb3@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,43 +10,53 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Hi Ben,
 
-On 03/14/2014 10:19 PM, Ben Dooks wrote:
+Thank you for the patch.
 
->>>> It seems the pm_rumtime work queue is causing the device to be suspended
->>>> during initialisation, thus the initialisation may not be able to access
->>>> registers properly. Use pm_runtime_get_sync() and pm_runtime_put_sync()
->>>> to ensure that the pm system does not suspend it during the probe()
->>>> call.
+On Friday 14 March 2014 19:00:05 Ben Dooks wrote:
+> It seems the pm_rumtime work queue is causing the device to be suspended
+> during initialisation,
 
->>> If this work's for Geert then I'll look into updating the header and
->>> sending it to the netdev list.
+Have you investigated through which call path(s) this happens ? If device can 
+be runtime suspended during their probe function despite calling 
+pm_runtime_resume() then I don't see the point of that function at all.
 
->>     I keep wondering why I'm seeing no issues in my setup... I don't
->> have drivers/sh/ patch and have CONFIG_PM_RUNTIME=y. Seeing no issues on
->> multiplatform kernels on neither Lager nor Koelsch (however, other
->> platforms are not enabled).
+> thus the initialisation may not be able to access registers properly. Use
+> pm_runtime_get_sync() and pm_runtime_put_sync() to ensure that the pm system
+> does not suspend it during the probe() call.
+> 
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+>  drivers/net/ethernet/renesas/sh_eth.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
+> b/drivers/net/ethernet/renesas/sh_eth.c index 4f76b5e..88aac2c 100644
+> --- a/drivers/net/ethernet/renesas/sh_eth.c
+> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -2870,6 +2870,7 @@ static int sh_eth_drv_probe(struct platform_device
+> *pdev) mdp->pdev = pdev;
+>  	pm_runtime_enable(&pdev->dev);
+>  	pm_runtime_resume(&pdev->dev);
+> +	pm_runtime_get_sync(&pdev->dev);
 
-> Without drivers/sh there is no specification to the pm code to do
-> anything with the platform or OF devices. This means the clocks are
-> not being auto-managed, which in turn means the clock is probably
-> being left on from the boot-loader and thus the unit works correctly.
+I believe pm_runtime_resume() isn't needed anymore if we call 
+pm_runtime_get_sync().
 
-    Yeah, I TFTP-boot over Ether from U-Boot. I wonder how others' setup is 
-different from mine.
+>  	if (pdev->dev.of_node)
+>  		pd = sh_eth_parse_dt(&pdev->dev);
+> @@ -2961,6 +2962,7 @@ static int sh_eth_drv_probe(struct platform_device
+> *pdev) pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
+>  		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+> 
+> +	pm_runtime_put_sync(&pdev->dev);
+>  	platform_set_drvdata(pdev, ndev);
+> 
+>  	return ret;
 
-> Unfortunately, without drivers/sh patched a number of other drivers
-> fail to work. This means we need it or something similar in the kernel.
+-- 
+Regards,
 
-    I wonder how drivers/sh/ came to existence at all. :-) Although there's 
-also drivers/parisc/...
-
-> I will spend some time over the weekend moving the code out of the
-> drivers/sh to somewhere else so that this does not occur again.
-
-    Thanks for your work. I just wasn't aware of these issues when I ported 
-Ether to DT -- it Just Worked (TM).
-
-WBR, Sergei
+Laurent Pinchart
 
