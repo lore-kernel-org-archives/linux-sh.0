@@ -1,50 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Mar 2014 14:57:49 +0000
-Subject: drivers/sh/intc?
-Message-Id: <CAMuHMdVBQzgb0eL0YW5r2Da62K-=qNN69RziZxbGe6ZDaaYPwg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 16 Mar 2014 21:35:39 +0000
+Subject: [PATCH 02/06] ARM: shmobile: Install CPUIdle reset vector
+Message-Id: <20140316213539.15598.7228.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+From: Magnus Damm <damm@opensource.se>
 
-INTC_USERIMASK seems to be the only option in drivers/sh/intc
-that may be used on ARCH_SHMOBILE:
+Install CPU reset vector for CPUIdle operation.
 
-config INTC_USERIMASK
-        bool "Userspace interrupt masking support"
-        depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-        help
-          This enables support for hardware-assisted userspace hardirq
-          masking.
+Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-          SH-4A and newer interrupt blocks all support a special shadowed
-          page with all non-masking registers obscured when mapped in to
-          userspace. This is primarily for use by userspace device
-          drivers that are using special priority levels.
+ arch/arm/mach-shmobile/cpuidle.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-          If in doubt, say N.
-
-Git history doesn't help much, as the whole Kconfig file was added as one
-commit (incremental steps were forgotten).
-
-However, register_intc_userimask() is called from sh4a code only, and
-thus never from arm/shmobile code.
-So I guess it's safe to remove the dependency?
-
-Furthermore, the core intc parts are used by sh7372/mackerel and
-sh73a0/kzm9g (and arch/sh) only, so I'm gonna restrict it to
-ARCH_SHMOBILE_LEGACY and SUPERH only.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0001/arch/arm/mach-shmobile/cpuidle.c
++++ work/arch/arm/mach-shmobile/cpuidle.c
+@@ -8,6 +8,7 @@
+  * for more details.
+  */
+ 
++#include <linux/cpu.h>
+ #include <linux/pm.h>
+ #include <linux/cpuidle.h>
+ #include <linux/suspend.h>
+@@ -15,6 +16,26 @@
+ #include <linux/err.h>
+ #include <asm/cpuidle.h>
+ #include <asm/io.h>
++#include <mach/common.h>
++
++static int shmobile_cpuidle_notifier_call(struct notifier_block *nfb,
++					  unsigned long action, void *hcpu)
++{
++	unsigned int cpu = (long)hcpu;
++
++	switch (action) {
++	case CPU_ONLINE:
++		/* For this particular CPU register CPUIdle boot vector */
++		shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
++		break;
++	};
++
++	return NOTIFY_OK;
++}
++
++static struct notifier_block shmobile_cpuidle_notifier = {
++	.notifier_call = shmobile_cpuidle_notifier_call,
++};
+ 
+ static struct cpuidle_driver shmobile_cpuidle_default_driver = {
+ 	.name			= "shmobile_cpuidle",
+@@ -33,5 +54,11 @@ void __init shmobile_cpuidle_set_driver(
+ 
+ int __init shmobile_cpuidle_init(void)
+ {
++	/* Use CPU notifier for reset vector control */
++	register_cpu_notifier(&shmobile_cpuidle_notifier);
++
++	/* Make sure boot CPU also gets CPUIdle initialized */
++	shmobile_cpuidle_notifier_call(NULL, CPU_ONLINE, 0);
++
+ 	return cpuidle_register(cpuidle_drv, NULL);
+ }
