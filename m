@@ -1,19 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 24 Mar 2014 02:01:09 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: kzm9g-reference dts: Use KEY_* macros for gpio-keys
-Message-Id: <20140324020108.GD8777@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 17 Mar 2014 02:19:56 +0000
+Subject: [PATCH] ARM: shmobile: koelsch-reference: Annotate clk_names as __initconst
+Message-Id: <1395022796-3199-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
- <1395603302-32056-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1395603302-32056-2-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 23, 2014 at 08:35:02PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks, I have queued up this patch.
+Based on renesas-devel-v3.14-rc6-20140314
+Requires "ARM: shmobile: koelsch-reference: Work around core clock issues"
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a39114a..63117d52 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -110,7 +110,7 @@ static const struct clk_name clk_names[] __initconst = {
+ /*
+  * This is a really crude hack to work around core platform clock issues
+  */
+-static const struct clk_name clk_enables[] = {
++static const struct clk_name clk_enables[] __initconst = {
+ 	{ "ether", NULL, "ee700000.ethernet" },
+ 	{ "i2c2", NULL, "e6530000.i2c" },
+ 	{ "msiof0", NULL, "e6e20000.spi" },
+-- 
+1.8.5.2
+
