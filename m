@@ -1,46 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Mar 2014 07:35:46 +0000
-Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v3.15
-Message-Id: <20140317073546.GA28083@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 17 Mar 2014 07:49:03 +0000
+Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC Clock Updates for v3.15
+Message-Id: <20140317074903.GK21917@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1392961872.git.horms+renesas@verge.net.au>
- <20140317071840.GD21917@quad.lixom.net>
-In-Reply-To: <20140317071840.GD21917@quad.lixom.net>
+References: <cover.1394440226.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394440226.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 17, 2014 at 12:22:45AM -0700, Olof Johansson wrote:
-> On Fri, Feb 21, 2014 at 03:12:51PM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider this third round of Renesas ARM based SoC DT updates for v3.15.
-> > 
-> > This pull request is based on the previous round of
-> > such requests, tagged as renesas-dt2-for-v3.15,
-> > which I have already sent a pull-request for.
-> > 
-> > 
-> > The following changes since commit e02ee513eed4bb780848a5cedbd4b39afb395d3e:
-> > 
-> >   ARM: shmobile: koelsch dts: Add QSPI nodes (2014-02-06 20:36:12 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v3.15
+On Mon, Mar 10, 2014 at 05:36:43PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Merged.
+> Please consider this third round of Renesas ARM based SoC clock updates
+> for v3.15.
 > 
-> For new DT contents, please pick a sort order. Most platforms use the actual
-> unit address as the ordering, and not alphabetical based on node name. If you
-> sort, new additions are less likely to conflict since they won't just be
-> appended.
+> I am posting this series after the release of v3.14-rc6 as it only
+> contains a fix.
 > 
-> If you pick an order, you'll maybe have to re-sort some of your DTS files. Do
-> so at the beginning of a release cycle and use that as a base for any new
-> changes when you do.
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-clock2-for-v3.15,
+> which I have already sent a pull-request for.
+> 
+> 
+> The following changes since commit 9ced1d47719b5f32e4231338dd362c136518ed08:
+> 
+>   ARM: shmobile: r8a7790: add sound SCU clock support (2014-02-24 10:03:02 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock3-for-v3.15
 
-Thanks. I believe we have been aiming, though not at all consistently,
-for alphabetical order. I'll see about getting things cleaned up
-for the beginning of the next cycle.
+Merged, thanks.
+
+
+-Olof
