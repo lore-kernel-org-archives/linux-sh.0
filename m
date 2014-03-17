@@ -1,40 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:58 +0000
-Subject: [PATCH v4 15/19] ARM: shmobile: marzen: Add to shmobile defconfig
-Message-Id: <1394701202-25823-16-git-send-email-horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 17 Mar 2014 07:39:13 +0000
+Subject: Re: [GIT PULL v2 0/7] Second Round of Renesas ARM Based SoC Updates for v3.15
+Message-Id: <20140317073913.GG21917@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1393400446.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393400446.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add marzen to shmobile defconfig now that it supports multiplatform
+On Wed, Feb 26, 2014 at 04:57:51PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> please consider this second round of Renesas ARM based SoC updates for v3.15.
+> As requested I have broken out clock changes into a separate branch which
+> I will send a pull-request for separately.
+> 
+> 
+> The following changes since commit 38dbfb59d1175ef458d006556061adeaa8751b72:
+> 
+>   Linus 3.14-rc1 (2014-02-02 16:42:13 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.15
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/shmobile_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+Merged into next/soc. Thanks.
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 2a27d46..1d8e10a 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -9,11 +9,13 @@ CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- CONFIG_ARCH_SHMOBILE_MULTI=y
-+CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_MACH_KOELSCH=y
- CONFIG_MACH_LAGER=y
-+CONFIG_MACH_MARZEN=y
- # CONFIG_SWP_EMULATE is not set
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
--- 
-1.8.5.2
 
+-Olof
