@@ -1,33 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 04 Mar 2014 17:47:19 +0000
-Subject: [PATCH 12/22] clocksource: sh_mtu2: Set cpumask to cpu_possible_mask
-Message-Id: <1393955249-18736-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Mon, 17 Mar 2014 11:43:23 +0000
+Subject: Re: [Linux-kernel] [RFC 5/6] drivers: move drivers/sh/pm_runtime.c to drivers/base
+Message-Id: <1395056603.12161.122.camel@xylophone>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The MTU2 is not tied to CPU0, make it usable on any CPU.
+On Mon, 2014-03-17 at 11:15 +0000, Ben Dooks wrote:
+> Move the drivers/sh/pm_runtime.c code to drivers/base as it may be of
+> use to any systems that need some generic platformbus power management.
+[...]
+> --- /dev/null
+> +++ b/drivers/base/pm_runtime_platform.c
+[...]
+> +#if defined(CONFIG_ARCH_SHMOBILE_LEGACY) || defined(CONFIG_SH)
+> +core_initcall(platformbus_pm_runtime_init);
+> +#endif
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clocksource/sh_mtu2.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+It looks like this bit is actually needed in patch 2/6.  I'm not sure
+how these different platform config symbols are used, though.
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 2cf0048..702ce60 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -331,7 +331,7 @@ static void sh_mtu2_register_clockevent(struct sh_mtu2_channel *ch,
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
- 	ced->rating = rating;
--	ced->cpumask = cpumask_of(0);
-+	ced->cpumask = cpu_possible_mask;
- 	ced->set_mode = sh_mtu2_clock_event_mode;
- 	ced->suspend = sh_mtu2_clock_event_suspend;
- 	ced->resume = sh_mtu2_clock_event_resume;
--- 
-1.8.3.2
+[...]
+> --- a/drivers/sh/pm_runtime.c
+> +++ /dev/null
+[...]
+> -int __init sh_pm_runtime_init(void)
+> -{
+> -	default_pm_on = true;
+> -	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
+> -	return 0;
+> -}
+[...]
+
+This appears to break SHMobile until 6/6 "ARM: shmobile: change to use
+platformbus_pm_runtime_init" is also applied.  They should be folded
+together.
+
+Ben.
+
 
