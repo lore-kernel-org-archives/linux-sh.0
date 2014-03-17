@@ -1,36 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 02 Mar 2014 10:36:29 +0000
-Subject: Re: [PATCH v2 14/40] clocksource: sh_cmt: Set cpumask to cpu_possible_mask
-Message-Id: <2942338.46QFBXXizV@avalon>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 17 Mar 2014 06:29:07 +0000
+Subject: Re: [GIT PULL] Renesas intc Updates for v3.15
+Message-Id: <20140317062907.GA21917@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393603090-23144-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1393603090-23144-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1392962498.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392962498.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
-
-Thank you for the review.
-
-On Saturday 01 March 2014 18:52:00 Geert Uytterhoeven wrote:
-> Hi Laurent,
+On Fri, Feb 21, 2014 at 03:11:58PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> On Fri, Feb 28, 2014 at 4:57 PM, Laurent Pinchart
+> Please consider this Renesas ARM based SoC intc updates for v3.15.
 > 
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > On UP systems no dummy timer is instantiated. The CMT timer has a rating
-> > of 125 on those systems and is used directly a clock event device for
+> Previously merging code for this driver was handled Paul Mundt
+> as part of his maintenance of SUPERH. However, SUPERH is in
+> the process of being orphaned. And as this driver is also listed
+> as being maintained by Magnus and myself as part of ARM/SHMOBILE ARM
+> I have picked up this patch.
 > 
-> as clock event device.
+> If you would prefer not to handle this that is quite fine by me but in that
+> case I would appreciate advice on where I should send pull-requests.
 
-I'll fix that in v3.
+Do you anticipate any new development besides some minor one-off fixes and
+touching code that's related to shmobile/sh reworks?
 
-> > CPU0 without broadcasting.
+If it's a low-volume thing that is likely to mostly have overlap with
+arm-soc/shmobile stuff then we might just as well take most of it. Otherwise,
+I think most architecture maintainers send things directly to Linus.
 
--- 
-Regards,
+Either way, I'll merge this for now.
 
-Laurent Pinchart
 
+-Olof
