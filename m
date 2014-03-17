@@ -1,47 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 10 Mar 2014 08:36:55 +0000
-Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Updates for v3.15
-Message-Id: <cover.1394440471.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 17 Mar 2014 07:00:29 +0000
+Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC Boards Updates for v3.15
+Message-Id: <20140317070029.GB21917@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1378362045.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
+References: <cover.1392960310.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1392960310.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Fri, Feb 21, 2014 at 03:12:25PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider this third round of Renesas ARM based SoC
+> boards updates for v3.15.
+> 
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-boards2-for-v3.15,
+> which I have already sent a pull-request for.
+> 
+> 
+> The following changes since commit 03fec7dee502d43114f384a1588ce84a3c9bf38d:
+> 
+>   ARM: shmobile: genmai: Enable r7s72100-ether (2014-02-07 09:20:03 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards3-for-v3.15
+> 
+> for you to fetch changes up to 6197c08ab81cf1430cbe7346fd6ca0b5a18580bf:
+> 
+>   ARM: shmobile: Remove Lager DT reference legacy clock bits (2014-02-18 09:15:49 +0900)
 
-Please consider this third round of Renesas ARM based SoC updates for v3.15.
-
-I am sending this pull request after the release of v3.14-rc6
-as it only includes a fix.
-
-This pull request is based on the previous round of
-such requests, tagged as renesas-soc2-for-v3.15,
-which I have already sent a pull-request for.
+Merged, thanks.
 
 
-The following changes since commit c4ca5d80e03559fd95c526ece5ce39fc732a2511:
-
-  ARM: shmobile: Move SYSC base variable to inside ifdefs (2014-02-26 14:53:35 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc3-for-v3.15
-
-for you to fetch changes up to 56ff873122c4baab43df241c7701d043b8ec8a8e:
-
-  ARM: shmobile: APMU: Fix warnings due to improper printk formats (2014-03-06 13:14:03 +0900)
-
-----------------------------------------------------------------
-Third Round of Renesas ARM Based SoC Updates for v3.15
-
-Fix warnings due to improper printk formats in shared APMU code.
-
-----------------------------------------------------------------
-Laurent Pinchart (1):
-      ARM: shmobile: APMU: Fix warnings due to improper printk formats
-
- arch/arm/mach-shmobile/platsmp-apmu.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+-Olof
