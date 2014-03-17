@@ -1,7 +1,7 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 17 Mar 2014 09:41:33 +0000
+Date: Mon, 17 Mar 2014 11:20:32 +0000
 Subject: Re: [PATCH] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <5326C34D.2020304@codethink.co.uk>
+Message-Id: <5326DA80.2020101@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,23 +10,54 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 17/03/14 09:22, Geert Uytterhoeven wrote:
+On 15/03/14 11:19, Laurent Pinchart wrote:
 > Hi Ben,
 >
-> On Fri, Mar 14, 2014 at 8:00 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> Thank you for the patch.
+>
+> On Friday 14 March 2014 19:00:05 Ben Dooks wrote:
 >> It seems the pm_rumtime work queue is causing the device to be suspended
->> during initialisation, thus the initialisation may not be able to access
->> registers properly. Use pm_runtime_get_sync() and pm_runtime_put_sync()
->> to ensure that the pm system does not suspend it during the probe() call.
+>> during initialisation,
+>
+> Have you investigated through which call path(s) this happens ? If device can
+> be runtime suspended during their probe function despite calling
+> pm_runtime_resume() then I don't see the point of that function at all.
+>
+>> thus the initialisation may not be able to access registers properly. Use
+>> pm_runtime_get_sync() and pm_runtime_put_sync() to ensure that the pm system
+>> does not suspend it during the probe() call.
 >>
 >> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>> ---
+>>   drivers/net/ethernet/renesas/sh_eth.c | 2 ++
+>>   1 file changed, 2 insertions(+)
+>>
+>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
+>> b/drivers/net/ethernet/renesas/sh_eth.c index 4f76b5e..88aac2c 100644
+>> --- a/drivers/net/ethernet/renesas/sh_eth.c
+>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+>> @@ -2870,6 +2870,7 @@ static int sh_eth_drv_probe(struct platform_device
+>> *pdev) mdp->pdev = pdev;
+>>   	pm_runtime_enable(&pdev->dev);
+>>   	pm_runtime_resume(&pdev->dev);
+>> +	pm_runtime_get_sync(&pdev->dev);
 >
-> Thanks, this fixes the "imprecise external abort" on Koelsch.
+> I believe pm_runtime_resume() isn't needed anymore if we call
+> pm_runtime_get_sync().
 >
-> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+>>   	if (pdev->dev.of_node)
+>>   		pd = sh_eth_parse_dt(&pdev->dev);
+>> @@ -2961,6 +2962,7 @@ static int sh_eth_drv_probe(struct platform_device
+>> *pdev) pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
+>>   		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+>>
+>> +	pm_runtime_put_sync(&pdev->dev);
+>>   	platform_set_drvdata(pdev, ndev);
+>>
+>>   	return ret;
 
-Thanks, will consider sending this to the netdev list later.
-
+I will look at removing the pm_runtime_resume call as well in this
+patch.
 
 -- 
 Ben Dooks				http://www.codethink.co.uk/
