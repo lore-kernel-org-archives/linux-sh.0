@@ -1,126 +1,29 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 20 Mar 2014 13:59:02 +0000
-Subject: [PATCH 5/5] sh_eth: Remove goto statements that jump straight to a return
-Message-Id: <1395324035-22918-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 17 Mar 2014 11:15:17 +0000
+Subject: [RFC 6/6] ARM: shmobile: change to use platformbus_pm_runtime_init
+Message-Id: <1395054917-27390-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-"goto" is well accepted for error paths in the kernel but should not be
-used unnecessarily. Return the correct value directly instead of using a
-goto when possible.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- drivers/net/ethernet/renesas/sh_eth.c | 30 +++++++++---------------------
- 1 file changed, 9 insertions(+), 21 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index ace6da2..e4bff18 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -873,7 +873,7 @@ static int sh_eth_reset(struct net_device *ndev)
- 
- 		ret = sh_eth_check_reset(ndev);
- 		if (ret)
--			goto out;
-+			return ret;
- 
- 		/* Table Init */
- 		sh_eth_write(ndev, 0x0, TDLAR);
-@@ -900,7 +900,6 @@ static int sh_eth_reset(struct net_device *ndev)
- 			     EDMR);
- 	}
- 
--out:
- 	return ret;
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 4727d4f..0ba234b 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -52,6 +52,6 @@ static inline void __init shmobile_init_late(void)
+ 	shmobile_cpuidle_init();
  }
  
-@@ -1264,7 +1263,7 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
- 	/* Soft Reset */
- 	ret = sh_eth_reset(ndev);
- 	if (ret)
--		goto out;
-+		return ret;
+-extern int sh_pm_runtime_init(void);
++#define sh_pm_runtime_init platformbus_pm_runtime_init
  
- 	if (mdp->cd->rmiimode)
- 		sh_eth_write(ndev, 0x1, RMIIMODE);
-@@ -1343,7 +1342,6 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
- 		netif_start_queue(ndev);
- 	}
- 
--out:
- 	return ret;
- }
- 
-@@ -2605,10 +2603,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp,
- 
- 	/* create bit control struct for PHY */
- 	bitbang = devm_kzalloc(dev, sizeof(struct bb_info), GFP_KERNEL);
--	if (!bitbang) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!bitbang)
-+		return -ENOMEM;
- 
- 	/* bitbang init */
- 	bitbang->addr = mdp->addr + mdp->reg_offset[PIR];
-@@ -2621,10 +2617,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp,
- 
- 	/* MII controller setting */
- 	mdp->mii_bus = alloc_mdio_bitbang(&bitbang->ctrl);
--	if (!mdp->mii_bus) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!mdp->mii_bus)
-+		return -ENOMEM;
- 
- 	/* Hook up MII support for ethtool */
- 	mdp->mii_bus->name = "sh_mii";
-@@ -2659,8 +2653,6 @@ static int sh_mdio_init(struct sh_eth_private *mdp,
- 
- out_free_bus:
- 	free_mdio_bitbang(mdp->mii_bus);
--
--out:
- 	return ret;
- }
- 
-@@ -2773,15 +2765,12 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (unlikely(res = NULL)) {
- 		dev_err(&pdev->dev, "invalid resource\n");
--		ret = -EINVAL;
--		goto out;
-+		return -EINVAL;
- 	}
- 
- 	ndev = alloc_etherdev(sizeof(struct sh_eth_private));
--	if (!ndev) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!ndev)
-+		return -ENOMEM;
- 
- 	/* The sh Ether-specific entries in the device structure. */
- 	ndev->base_addr = res->start;
-@@ -2922,7 +2911,6 @@ out_release:
- 	if (ndev)
- 		free_netdev(ndev);
- 
--out:
- 	return ret;
- }
- 
+ #endif /* __ARCH_MACH_COMMON_H */
 -- 
-1.8.3.2
+1.9.0
 
