@@ -1,93 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:37:21 +0000
-Subject: [PATCH 6/7] ARM: shmobile: lager: add R-Car sound support on DTS
-Message-Id: <87zjkec2rl.wl%kuninori.morimoto.gx@gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 17 Mar 2014 07:37:03 +0000
+Subject: Re: [GIT PULL 0/9] Renesas ARM Based SoC Clock Updates for v3.15
+Message-Id: <20140317073703.GF21917@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1393401266.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1393401266.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Feb 26, 2014 at 04:57:33PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd, Hi Kevin,
+> 
+> please consider these Renesas ARM based SoC clock updates for v3.15.
+> 
+> As requested these have been split out from SoC updates.
+> 
+> This pull request is based on "Renesas ARM based SoC updates for v3.15",
+> tagged as tags/renesas-soc-for-v3.15, which you have previously pulled.
+> 
+> 
+> The following changes since commit 012a7069b5a10a0851584d71a1facdc40a972319:
+> 
+>   ARM: shmobile: r8a7790: Add PCI USB host clock support (2014-02-04 10:25:03 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.15
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7790-lager.dts |   51 +++++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
+Thanks, merged into next/drivers.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index a55c5f8..bb92a7a 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -139,6 +139,21 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
-+
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound 0>;
-+		};
-+		simple-audio-card,codec {
-+			sound-dai = <&snd_codec>;
-+			bitclock-master;
-+			frame-master;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
- };
- 
- &extal_clk {
-@@ -199,6 +214,14 @@
- 				 "msiof1_tx";
- 		renesas,function = "msiof1";
- 	};
-+	sound_pins: sound {
-+		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
-+		renesas,function = "ssi";
-+	};
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a";
-+		renesas,function = "audio_clk";
-+	};
- };
- 
- &ether {
-@@ -297,3 +320,31 @@
- 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
- 	status = "okay";
- };
-+
-+&i2c2 {
-+	status = "okay";
-+	snd_codec: ak4643 {
-+		#sound-dai-cells = <0>;
-+		compatible = "asahi-kasei,ak4643";
-+		reg = <0x12>;
-+	};
-+};
-+
-+&rcar_sound {
-+	pinctrl-names = "default", "audio_clock";
-+	pinctrl-0 = <&sound_pins>;
-+	pinctrl-1 = <&sound_clk_pins>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi1 {
-+	shared-pin;
-+};
--- 
-1.7.9.5
 
+-Olof
