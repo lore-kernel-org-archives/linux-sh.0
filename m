@@ -1,71 +1,36 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 31 Mar 2014 10:30:45 +0000
-Subject: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
-Message-Id: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Mar 2014 18:04:46 +0000
+Subject: [PATCH 0/2] Lager & Koelsch: Set ethernet PHY LED mode
+Message-Id: <1395165888-1498-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is version 7 of a PCIe Host driver for the R-Car Gen2 devices,
-i.e. R-Car H2 (r8a7790) and R-Car M2 (r8a7791).
+Hello,
 
-v7:
- - Change binding description of clocks to 'clock specifiers'
+These two patches set the ethernet PHY LED mode to output etherner link status
+on LED0 for the Lager and Koelsch board.
 
-v6:
- - Correct DT bindings description for reg and clocks
- - Split device and board DT changes
- - Add shmobile to subject for shmobile DT patches
- - Don't check MSI irq number is valid, as upper level checks this
- - Change "Unexpected MSI" msg to debug level
- - Reword "Unexpected MSI" comment so that it's one line
- - Remove patch that adds HAVE_ARM_ARCH_TIMER to koelsch defconfig as not needed
+Both have a runtime dependency on "sh_eth: update OF PHY registeration" and
+"phy: micrel: add of configuration for LED mode" (scheduled for merge in v3.15)
+to have any effect. Without those dependencies the led-mode property will be
+ignored. The patches can thus be merged separately.
 
-v5:
- - Use module_platform_driver instead of subsys_initcall
- - Use the of_device_id data field for HW init function
- - Init hw_pci struct in declaration
- - Renesas SoC compatible string has peripheral before device name
- - Add PCIe bus clock reference
- - Use dma-ranges property to specify inbound memory regions
- - Support multiple IO windows and correct resources
- - Return IRQ_NONE from MSI isr when there is no pending MSI
- - Add additional interrupt bindings
+Ben, I haven't seen similar patches being posted to the linux-sh mailing list,
+but I might have missed them. I apologize if that's the case.
 
-v4:
- - Use runtime PM properly
+Laurent Pinchart (2):
+  ARM: shmobile: lager: Set ethernet PHY LED mode
+  ARM: shmobile: koelsch: Set ethernet PHY LED mode
 
-Phil Edworthy (10):
-  PCI: host: rcar: Add Renesas R-Car PCIe driver
-  PCI: host: rcar: Add MSI support
-  ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-  ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
-  dt-bindings: pci: rcar pcie device tree bindings
-  ARM: shmobile: r8a7790: Add PCIe device nodes
-  ARM: shmobile: lager: Add PCIe device nodes
-  ARM: shmobile: r8a7791: Add PCIe device nodes
-  ARM: shmobile: koelsch: Add PCIe device nodes
-  ARM: shmobile: koelsch: Add PCIe to defconfig
-
- Documentation/devicetree/bindings/pci/rcar-pci.txt |  45 +
- arch/arm/boot/dts/r8a7790-lager.dts                |  10 +
- arch/arm/boot/dts/r8a7790.dtsi                     |  31 +-
- arch/arm/boot/dts/r8a7791-koelsch.dts              |  14 +
- arch/arm/boot/dts/r8a7791.dtsi                     |  31 +-
- arch/arm/configs/koelsch_defconfig                 |   3 +
- drivers/pci/host/Kconfig                           |   6 +
- drivers/pci/host/Makefile                          |   1 +
- drivers/pci/host/pcie-rcar.c                       | 929 +++++++++++++++++++++
- drivers/pci/host/pcie-rcar.h                       |  87 ++
- include/dt-bindings/clock/r8a7790-clock.h          |   1 +
- include/dt-bindings/clock/r8a7791-clock.h          |   1 +
- 12 files changed, 1154 insertions(+), 5 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
- create mode 100644 drivers/pci/host/pcie-rcar.c
- create mode 100644 drivers/pci/host/pcie-rcar.h
+ arch/arm/boot/dts/r8a7790-lager.dts   | 1 +
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
+ 2 files changed, 2 insertions(+)
 
 -- 
-1.9.0
+Regards,
+
+Laurent Pinchart
 
