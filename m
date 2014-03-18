@@ -1,73 +1,56 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 17 Mar 2014 22:09:33 +0000
+Date: Tue, 18 Mar 2014 20:17:46 +0000
 Subject: Re: [PATCH] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <532780A9.3030005@cogentembedded.com>
+Message-Id: <5328B7F7.8060109@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395056275-5005-1-git-send-email-ben.dooks@codethink.co.uk> <2780951.47jzSPgHnH@avalon> <53277782.6070804@cogentembedded.com> <2182534.rxjU11HcCL@avalon>
-In-Reply-To: <2182534.rxjU11HcCL@avalon>
+References: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, linux-sh@vger.kernel.org, netdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 03/18/2014 12:34 AM, Laurent Pinchart wrote:
+On 03/17/2014 05:01 PM, Ben Dooks wrote:
 
->>>> The pm_rumtime work queue is causing the device to be suspended during
->>>> initialisation, thus the initialisation may not be able to access
->>>> registers properly. As the code is called from a work queue, it is
->>>> possible that this is not seen from certain configurations/builds due to
->>>> the asynchronos nature of the code.
+>>>>> I have yet to ascertain how this ends up happening with device probe,
+>>>>> it seems to be very dependant on the code.
 
->>>> Use pm_runtime_get_sync() and pm_runtime_put_sync() to ensure that the
->>>> pm system does not suspend it during the probe() call and remove the
->>>> now unnecessary pm_runtime_resume() call.
+>>>> Adding a WARN() in cpg_mstp_clock_endisable():
 
->>>> This fixes the external abort that can cause /sbin/init or other such
->>>> init processed to die.
+[...]
 
->>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>>> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
->>>> ---
+>>> this explains it, the call to stats causes a get_sync/put_sync which
+>>> puts the device into a state where it /could/ be suspended and thus
+>>> does get suspended in this case from the pm code.
 
->>>>    drivers/net/ethernet/renesas/sh_eth.c | 3 ++-
->>>>    1 file changed, 2 insertions(+), 1 deletion(-)
+>>> I'm not /sure/ why the pm_runtime code is not protecting against
+>>> running this when a device probe is in progress, but it seems the
+>>> best thing is to ensure that we always do a get/put sync in the
+>>> driver to ensure we have a reference during probe.
 
->>>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
->>>> b/drivers/net/ethernet/renesas/sh_eth.c index 4f76b5e..f1cfd64 100644
->>>> --- a/drivers/net/ethernet/renesas/sh_eth.c
->>>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->>>> @@ -2869,7 +2869,7 @@ static int sh_eth_drv_probe(struct platform_device
->>>> *pdev) spin_lock_init(&mdp->lock);
->>>>
->>>>    	mdp->pdev = pdev;
->>>>    	pm_runtime_enable(&pdev->dev);
->>>>
->>>> -	pm_runtime_resume(&pdev->dev);
->>>> +	pm_runtime_get_sync(&pdev->dev);
+>> Wouldn't it be better to register the MDIO bus before registering the network
+>> device ? It looks like the current order is prone to race conditions.
 
->>> Now that we've found out that the problem is caused by registering the
->>> network device before registering the mdio bus, shouldn't the proper
->>> solution be to register the network device last in the probe function ?
+> Not sure, requires input?
 
->> Unfortunately, it's not easy to do, as sh_mdio_init() uses net_device::dev.
->> Probably could get rid of that use by partly reverting my managed device API
->> patch since the only user seems to be devm_kzalloc() in that function, at
->> least I hope so... still looking into this.
+    People say that the driver should be ready to receive the ndo_open() 
+method call even before register_netdev() returns. I have prepared the patch 
+to probe MDIO before calling register_netdev() now, need to sanity test it.
 
-> What about using pdev->dev instead ?
+>> Another potential issue, does the network layer guarantee that the device will
+>> always be opened by an .ndo_open() call before performing any MDIO operation ?
+>> sh_mmd_ctrl, sh_set_mdio and sh_get_mdio access sh-eth registers, could we be
+>> missing runtime PM calls in those call paths ?
 
-    Well, that seems possible too.
+> I'm not sure if there is any guarantee, I don't think the PHY driver
+> does any sort of open on probe. I do have a patch to ensure that the
+> MDIO operations are wrapped with pm_runtime_{get,put}_sync() calls as
+> the probe of the PHY often fails without it.
 
->> BTW, quite many drivers have the same problem, doing different things after
->> register_netdev() call, many of them probing MDIO as well.
-
-> Great, that means more opportunities to fix bugs :-D
-
-    For somebody else, maybe. My manager tells me not to spend time even on 
-the 'sh_eth' driver... sigh.
+    Respin this patch please (addressing my comments), so that DaveM could 
+take it.
 
 WBR, Sergei
 
