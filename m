@@ -1,56 +1,34 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 27 Mar 2014 09:26:54 +0000
-Subject: [PATCH v6 08/10] ARM: shmobile: r8a7791: Add PCIe device nodes
-Message-Id: <1395912416-20087-9-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Mar 2014 18:04:48 +0000
+Subject: [PATCH 2/2] ARM: shmobile: koelsch: Set ethernet PHY LED mode
+Message-Id: <1395165888-1498-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+The Koelsch board uses the ethernet PHY LED0 as a link signal connected
+to the ethernet controller. Specify the corresponding LED mode for the
+PHY.
 
-v6:
- - Split device and board DT changes
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index ccfba57..7a4be4c 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -836,4 +836,28 @@
- 		#size-cells = <0>;
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 36ac36d..8609d32 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -273,6 +273,7 @@
+ 		reg = <1>;
+ 		interrupt-parent = <&irqc0>;
+ 		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
  	};
-+
-+	pcie: pcie@fe000000 {
-+		compatible = "renesas,pcie-r8a7791";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		/* Map all possible DDR as inbound ranges */
-+		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
-+			      0x43000000 2 0x00000000 2 0x00000000 1 0x00000000>;
-+		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH
-+			      0 117 IRQ_TYPE_LEVEL_HIGH
-+			      0 118 IRQ_TYPE_LEVEL_HIGH>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
-+		clock-names = "pcie", "pcie_bus";
-+		status = "disabled";
-+	};
  };
+ 
 -- 
-1.9.0
+1.8.3.2
 
