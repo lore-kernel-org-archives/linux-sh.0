@@ -1,52 +1,101 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 26 Mar 2014 07:55:37 +0000
-Subject: Re: Build regressions/improvements in v3.14-rc8
-Message-Id: <CAMuHMdWQmAmG8oebHh8SVodAp_TXHX1wLBoEZRfMz=HRxVdQmg@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Mar 2014 23:25:54 +0000
+Subject: [PATCH/RFC 3/5] sh_eth: Simplify MDIO bus initialization and release
+Message-Id: <1395185156-6681-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395820064-19148-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1395820064-19148-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 26, 2014 at 8:47 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> JFYI, when comparing v3.14-rc8[1]  to v3.14-rc7[3], the summaries are:
->   - build errors: +6/-1
+The network device passed to the sh_mdio_init and sh_mdio_release
+functions is only used to access the sh_eth_private instance. Pass it
+directly to those functions.
 
-  + /scratch/kisskb/src/arch/powerpc/include/asm/io.h: error:
-'virt_phys_offset' undeclared (first use in this function):  =>
-814:16, 807:16, 770:9, 787:17
-  + /scratch/kisskb/src/include/linux/mm.h: error: 'virt_phys_offset'
-undeclared (first use in this function):  => 890:9, 1402:20, 494:22
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 27 +++++++++------------------
+ 1 file changed, 9 insertions(+), 18 deletions(-)
 
-powerpc-randconfig
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 7f7085e..55715f3 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2592,29 +2592,23 @@ static void sh_eth_tsu_init(struct sh_eth_private *mdp)
+ }
+ 
+ /* MDIO bus release function */
+-static int sh_mdio_release(struct net_device *ndev)
++static int sh_mdio_release(struct sh_eth_private *mdp)
+ {
+-	struct mii_bus *bus = dev_get_drvdata(&ndev->dev);
+-
+ 	/* unregister mdio bus */
+-	mdiobus_unregister(bus);
+-
+-	/* remove mdio bus info from net_device */
+-	dev_set_drvdata(&ndev->dev, NULL);
++	mdiobus_unregister(mdp->mii_bus);
+ 
+ 	/* free bitbang info */
+-	free_mdio_bitbang(bus);
++	free_mdio_bitbang(mdp->mii_bus);
+ 
+ 	return 0;
+ }
+ 
+ /* MDIO bus init function */
+-static int sh_mdio_init(struct net_device *ndev, int id,
++static int sh_mdio_init(struct sh_eth_private *mdp, int id,
+ 			struct sh_eth_plat_data *pd)
+ {
+ 	int ret, i;
+ 	struct bb_info *bitbang;
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 	struct device *dev = &mdp->pdev->dev;
+ 
+ 	/* create bit control struct for PHY */
+@@ -2654,10 +2648,9 @@ static int sh_mdio_init(struct net_device *ndev, int id,
+ 		goto out_free_bus;
+ 	}
+ 
+-	/* register mdio bus */
+-	if (ndev->dev.parent->of_node) {
+-		ret = of_mdiobus_register(mdp->mii_bus,
+-					  ndev->dev.parent->of_node);
++	/* register MDIO bus */
++	if (dev->of_node) {
++		ret = of_mdiobus_register(mdp->mii_bus, dev->of_node);
+ 	} else {
+ 		for (i = 0; i < PHY_MAX_ADDR; i++)
+ 			mdp->mii_bus->irq[i] = PHY_POLL;
+@@ -2670,8 +2663,6 @@ static int sh_mdio_init(struct net_device *ndev, int id,
+ 	if (ret)
+ 		goto out_free_bus;
+ 
+-	dev_set_drvdata(&ndev->dev, mdp->mii_bus);
+-
+ 	return 0;
+ 
+ out_free_bus:
+@@ -2911,7 +2902,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 		goto out_napi_del;
+ 
+ 	/* mdio bus init */
+-	ret = sh_mdio_init(ndev, pdev->id, pd);
++	ret = sh_mdio_init(mdp, pdev->id, pd);
+ 	if (ret) {
+ 		dev_err(&ndev->dev, "failed to initialise MDIO\n");
+ 		goto out_unregister;
+@@ -2945,7 +2936,7 @@ static int sh_eth_drv_remove(struct platform_device *pdev)
+ 	struct net_device *ndev = platform_get_drvdata(pdev);
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+-	sh_mdio_release(ndev);
++	sh_mdio_release(mdp);
+ 	unregister_netdev(ndev);
+ 	netif_napi_del(&mdp->napi);
+ 	pm_runtime_disable(&pdev->dev);
+-- 
+1.8.3.2
 
-  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
-'CHCR_TS_HIGH_MASK' undeclared (first use in this function):  => 98:12
-  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
-'CHCR_TS_HIGH_SHIFT' undeclared (first use in this function):  =>
-98:34, 145:10
-  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
-'CHCR_TS_LOW_MASK' undeclared (first use in this function):  => 97:21
-  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
-'CHCR_TS_LOW_SHIFT' undeclared (first use in this function):  =>
-97:42, 145:10
-
-sh-randconfig
-
-> [1] http://kisskb.ellerman.id.au/kisskb/head/7303/ (all 119 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/7277/ (all 119 configs)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
