@@ -1,60 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:30:34 +0000
-Subject: [PATCH 6/6] ARM: shmobile: lager: switch to use dai info for R-Car sound
-Message-Id: <87a9cedhnb.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Mar 2014 18:04:47 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: Set ethernet PHY LED mode
+Message-Id: <1395165888-1498-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The Lager board uses the ethernet PHY LED0 as a link signal connected to
+the ethernet controller. Specify the corresponding LED mode for the PHY.
 
-Now, R-Car sound driver supports dai info settings.
-switch to use it
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c |   17 ++++++++++++-----
- 1 file changed, 12 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 18c7e03..05c263b 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -567,20 +567,27 @@ static struct resource rsnd_resources[] __initdata = {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index bf919f7..2bde075 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -184,6 +184,7 @@
+ 		reg = <1>;
+ 		interrupt-parent = <&irqc0>;
+ 		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		led-mode = <1>;
+ 	};
  };
  
- static struct rsnd_ssi_platform_info rsnd_ssi[] = {
--	RSND_SSI_SET(0, 0, gic_spi(370), RSND_SSI_PLAY),
--	RSND_SSI_SET(0, 0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI(0, gic_spi(370), 0),
-+	RSND_SSI(0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
- };
- 
--static struct rsnd_scu_platform_info rsnd_scu[2] = {
-+static struct rsnd_src_platform_info rsnd_src[2] = {
- 	/* no member at this point */
- };
- 
-+static struct rsnd_dai_platform_info rsnd_dai = {
-+	.playback = { .ssi = &rsnd_ssi[0], },
-+	.capture  = { .ssi = &rsnd_ssi[1], },
-+};
-+
- static struct rcar_snd_info rsnd_info = {
- 	.flags		= RSND_GEN2,
- 	.ssi_info	= rsnd_ssi,
- 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
--	.scu_info	= rsnd_scu,
--	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
-+	.src_info	= rsnd_src,
-+	.src_info_nr	= ARRAY_SIZE(rsnd_src),
-+	.dai_info	= &rsnd_dai,
-+	.dai_info_nr	= 1,
- };
- 
- static struct asoc_simple_card_info rsnd_card_info = {
 -- 
-1.7.9.5
+1.8.3.2
 
