@@ -1,48 +1,45 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 25 Mar 2014 18:56:27 +0000
-Subject: [PATCH v2 3/5] ARM: shmobile: r8a7790: add IIC0-2 clock macros
-Message-Id: <1395773789-17249-4-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Mar 2014 23:25:51 +0000
+Subject: [PATCH/RFC 0/5] Fix the sh_eth race between open and MDIO bus registration
+Message-Id: <1395185156-6681-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Hello,
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
-Change since V1:
+This patch series attempts to fix the race condition that exists in the sh_eth
+driver between network device open and MDIO bus registration. The actual fix
+is in patch 4/5, with previous patches preparing the driver and patch 5/5
+cleaning up an unrelated issue.
 
-* added Ack
+I've based the idea on Sergei's attempt to fix the problem and can successfully
+boot the Koelsch board over NFS with this series. I might have missed other
+issues though, hence the RFC status.
 
- include/dt-bindings/clock/r8a7790-clock.h | 3 +++
- 1 file changed, 3 insertions(+)
+The patches are based on top of Simon's latest devel branch plus the following
+two patches
 
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5fbcf4a..4d3e935b3f1b 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -50,6 +50,7 @@
- #define R8A7790_CLK_SYS_DMAC0		19
- 
- /* MSTP3 */
-+#define R8A7790_CLK_IIC2		0
- #define R8A7790_CLK_TPU0		4
- #define R8A7790_CLK_MMCIF1		5
- #define R8A7790_CLK_SDHI3		11
-@@ -57,6 +58,8 @@
- #define R8A7790_CLK_SDHI1		13
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_IIC0		18
-+#define R8A7790_CLK_IIC1		23
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
- #define R8A7790_CLK_USBDMAC0		30
+	sh_eth: add device tree support
+	sh_eth: update OF PHY registeration
+
+Sergei, assuming this series gets accepted, should I send it to the netdev
+mailing list or would you like to take it in your tree to avoid conflicts ?
+
+Laurent Pinchart (5):
+  sh_eth: Use the platform device for memory allocation
+  sh_eth: Use the platform device as the MDIO bus parent
+  sh_eth: Simplify MDIO bus initialization and release
+  sh_eth: Register MDIO bus before registering the network device
+  sh_eth: Remove goto statements that jump straight to a return
+
+ drivers/net/ethernet/renesas/sh_eth.c | 82 +++++++++++++----------------------
+ 1 file changed, 29 insertions(+), 53 deletions(-)
+
 -- 
-1.9.0
+Regards,
+
+Laurent Pinchart
 
