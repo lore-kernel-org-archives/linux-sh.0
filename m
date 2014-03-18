@@ -1,36 +1,49 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 17 Mar 2014 11:49:40 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Mar 2014 00:27:48 +0000
 Subject: Re: [PATCH] ARM: shmobile: koelsch-reference: Annotate clk_names as __initconst
-Message-Id: <5326E154.9040800@cogentembedded.com>
+Message-Id: <20140318002748.GB6275@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395022796-3199-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1395022796-3199-1-git-send-email-horms+renesas@verge.net.au>
+ <5326E154.9040800@cogentembedded.com>
+In-Reply-To: <5326E154.9040800@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On Mon, Mar 17, 2014 at 03:49:40PM +0400, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 17-03-2014 6:19, Simon Horman wrote:
+> 
+>    Apparently you meant clk_enables in the subject, not clk_names.
 
-On 17-03-2014 6:19, Simon Horman wrote:
+Thanks, I have queued up the following:
 
-    Apparently you meant clk_enables in the subject, not clk_names.
 
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-[...]
+From: Simon Horman <horms+renesas@verge.net.au>
 
-> diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-> index a39114a..63117d52 100644
-> --- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-> +++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-> @@ -110,7 +110,7 @@ static const struct clk_name clk_names[] __initconst = {
->   /*
->    * This is a really crude hack to work around core platform clock issues
->    */
-> -static const struct clk_name clk_enables[] = {
-> +static const struct clk_name clk_enables[] __initconst = {
+ARM: shmobile: koelsch-reference: Annotate clk_enables as __initconst
 
-WBR, Sergei
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a39114a..63117d52 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -110,7 +110,7 @@ static const struct clk_name clk_names[] __initconst = {
+ /*
+  * This is a really crude hack to work around core platform clock issues
+  */
+-static const struct clk_name clk_enables[] = {
++static const struct clk_name clk_enables[] __initconst = {
+ 	{ "ether", NULL, "ee700000.ethernet" },
+ 	{ "i2c2", NULL, "e6530000.i2c" },
+ 	{ "msiof0", NULL, "e6e20000.spi" },
+-- 
+1.8.5.2
 
