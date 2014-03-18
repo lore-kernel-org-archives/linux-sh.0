@@ -1,36 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 14 Mar 2014 07:55:37 +0000
-Subject: [PATCH v2 0/2] spi: sh-hspi: Do not specifically request shyway_clk clock
-Message-Id: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Mar 2014 00:32:55 +0000
+Subject: Re: [PATCH v2 0/2] spi: sh-hspi: Do not specifically request shyway_clk clock
+Message-Id: <20140318003254.GB19571@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Mark Brown <broonie@linaro.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
 
-Rather than requesting the shyway_clk call clk_get with
-the device and a NULL con_id.
+On Fri, Mar 14, 2014 at 04:55:37PM +0900, Simon Horman wrote:
+> Rather than requesting the shyway_clk call clk_get with
+> the device and a NULL con_id.
+> 
+> This is in keeping with the way that clk_get() is called
+> on other drivers used by Renesas Gen 1 SoCs. And I believe
+> it is compatible with supplying clocks via DT, unlike the current code.
+> 
+> 
+> This series supplies a fix for the r8a7779, a consumer of the driver,
+> so that the hspi clocks it supplies have the correct source.
+> 
+> And a fix for the sh-hspi driver to address the problem
+> described above.
+> 
+> Simon Horman (2):
+>   ARM: shmobile: r8a7779: Use clks as MSTP007 parent
+>   spi: sh-hspi: Do not specifically request shyway_clk clock
+> 
+>  arch/arm/mach-shmobile/clock-r8a7778.c | 2 +-
+>  drivers/spi/spi-sh-hspi.c              | 4 ++--
+>  2 files changed, 3 insertions(+), 3 deletions(-)
 
-This is in keeping with the way that clk_get() is called
-on other drivers used by Renesas Gen 1 SoCs. And I believe
-it is compatible with supplying clocks via DT, unlike the current code.
+Hi Mark,
 
+as the first mach-shmobile patch is a run-time dependency for the
+second SPI driver patch could you consider taking both of them?
 
-This series supplies a fix for the r8a7779, a consumer of the driver,
-so that the hspi clocks it supplies have the correct source.
-
-And a fix for the sh-hspi driver to address the problem
-described above.
-
-Simon Horman (2):
-  ARM: shmobile: r8a7779: Use clks as MSTP007 parent
-  spi: sh-hspi: Do not specifically request shyway_clk clock
-
- arch/arm/mach-shmobile/clock-r8a7778.c | 2 +-
- drivers/spi/spi-sh-hspi.c              | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
-
--- 
-1.8.5.2
-
+I have checked and I do not expect any conflicts anywhere beetween
+v3.14-rc1 and what I have queued up in the devel branch of my renesas tree.
