@@ -1,68 +1,116 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Mar 2014 23:50:01 +0000
-Subject: Re: [PATCH] spi: sh-hspi: Do not specifically request shyway_clk clock
-Message-Id: <20140313234958.GA28137@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 18 Mar 2014 19:39:58 +0000
+Subject: Re: [PATCH] phy: micrel: add of configuration for LED mode
+Message-Id: <5328AF1A.3090008@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394699450-31286-1-git-send-email-horms+renesas@verge.net.au>
- <2144304.qo37EGpAOW@avalon>
-In-Reply-To: <2144304.qo37EGpAOW@avalon>
+References: <1393415280-10227-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1393415280-10227-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Mark Brown <broonie@linaro.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Ben Dooks <ben.dooks@codethink.co.uk>, linux-kernel@lists.codethink.co.uk, devicetree@vger.kernel.org, netdev@vger.kernel.org
+Cc: f.fainelli@gmail.com, linux-sh@vger.kernel.org
 
-On Thu, Mar 13, 2014 at 11:10:25AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Thursday 13 March 2014 17:30:50 Simon Horman wrote:
-> > Rather than requesting the shyway_clk call clk_get with
-> > the device and a NULL con_id.
-> > 
-> > This is in keeping with the way that clk_get() is called
-> > on other drivers used by Renesas Gen 1 SoCs. And I believe
-> > it is compatible with supplying clocks via DT, unlike the current code.
-> > 
-> > It appears to me that the two uses of this driver are
-> > the r8a7778 and r8a7779 SoCs. Both of which have already clocks setup
-> > to allow this driver to continue to work with this change applied.
-> 
-> If I'm not mistaken the hspi clocks on r8a7778 are children of clkp, while the 
-> shyway clock is a alias to clks. The only r8a7778 documentation I have access 
-> to is in Japanese so I'm not 100% sure, but I believe the MSTP007 parent clock 
-> should be clks.
-> 
-> The problem is not present in our r8a7779 code, the MSTP007 parent is clks 
-> there.
+Hello.
 
-Thanks for noticing that. I'll send a patch fix the r8a7778 clock code.
+On 02/26/2014 02:48 PM, Ben Dooks wrote:
 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  drivers/spi/spi-sh-hspi.c | 4 ++--
-> >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/drivers/spi/spi-sh-hspi.c b/drivers/spi/spi-sh-hspi.c
-> > index 82d2f92..e975892 100644
-> > --- a/drivers/spi/spi-sh-hspi.c
-> > +++ b/drivers/spi/spi-sh-hspi.c
-> > @@ -274,9 +274,9 @@ static int hspi_probe(struct platform_device *pdev)
-> >  		return -ENOMEM;
-> >  	}
-> > 
-> > -	clk = clk_get(NULL, "shyway_clk");
-> > +	clk = clk_get(&pdev->dev, NULL);
-> >  	if (IS_ERR(clk)) {
-> > -		dev_err(&pdev->dev, "shyway_clk is required\n");
-> > +		dev_err(&pdev->dev, "couldn't get clock\n");
-> >  		ret = -EINVAL;
-> >  		goto error0;
-> >  	}
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+> Add support for the led-mode property for the following PHYs
+> which have a single LED mode configuration value.
+
+> KSZ8001 and KSZ8041 which both use register 0x1e bits 15,14 and
+> KSZ8021, KSZ8031 and KSZ8051 which use register 0x1f bits 5,4
+> to control the LED configuration.
+
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[...]
+
+    Missed this patch, unfortunately and now it has been merged already... doh.
+
+> diff --git a/drivers/net/phy/micrel.c b/drivers/net/phy/micrel.c
+> index 5a8993b..0c9e434 100644
+> --- a/drivers/net/phy/micrel.c
+> +++ b/drivers/net/phy/micrel.c
+> @@ -148,15 +148,52 @@ static int ks8737_config_intr(struct phy_device *phydev)
+>   	return rc < 0 ? rc : 0;
+>   }
+>
+> +static int kszphy_setup_led(struct phy_device *phydev,
+> +			    unsigned int reg, unsigned int shift)
+> +{
+> +
+> +	struct device *dev = &phydev->dev;
+> +	struct device_node *of_node = dev->of_node;
+> +	int rc, temp;
+> +	u32 val;
+> +
+> +	if (!of_node && dev->parent->of_node)
+> +		of_node = dev->parent->of_node;
+> +
+> +	if (of_property_read_u32(of_node, "micrel,led-mode", &val))
+> +		return 0;
+> +
+> +	temp = phy_read(phydev, reg);
+> +	if (temp < 0)
+> +		return temp;
+> +
+> +	temp &= 3 << shift;
+
+    Hm, I guess you meant ~(3 << shift), else it wouldn't work as expected if 
+the LED field is currently non-zero. Also, I think you didn't want to mask off 
+unrelated bits. I'm surprised nobody has noticed this before...
+
+> +	temp |= val << shift;
+> +	rc = phy_write(phydev, reg, temp);
+> +
+> +	return rc < 0 ? rc : 0;
+> +}
+> +
+>   static int kszphy_config_init(struct phy_device *phydev)
+>   {
+>   	return 0;
+>   }
+>
+> +static int kszphy_config_init_led8041(struct phy_device *phydev)
+
+    Why not ksz8041_config_init() like other names in this file?
+Why mention LED in the name at all?
+
+> +{
+> +	/* single led control, register 0x1e bits 15..14 */
+> +	return kszphy_setup_led(phydev, 0x1e, 14);
+> +}
+> +
+>   static int ksz8021_config_init(struct phy_device *phydev)
+>   {
+> -	int rc;
+>   	const u16 val = KSZPHY_OMSO_B_CAST_OFF | KSZPHY_OMSO_RMII_OVERRIDE;
+> +	int rc;
+> +
+> +	rc = kszphy_setup_led(phydev, 0x1f, 4);
+> +	if (rc)
+> +		dev_err(&phydev->dev, "failed to set led mode\n");
+
+    LED.
+
+> +
+>   	phy_write(phydev, MII_KSZPHY_OMSO, val);
+>   	rc = ksz_config_flags(phydev);
+>   	return rc < 0 ? rc : 0;
+> @@ -166,6 +203,10 @@ static int ks8051_config_init(struct phy_device *phydev)
+>   {
+>   	int rc;
+>
+> +	rc = kszphy_setup_led(phydev, 0x1f, 4);
+> +	if (rc)
+> +		dev_err(&phydev->dev, "failed to set led mode\n");
+
+    LED.
+
+> +
+>   	rc = ksz_config_flags(phydev);
+>   	return rc < 0 ? rc : 0;
+>   }
+
+WBR, Sergei
+
