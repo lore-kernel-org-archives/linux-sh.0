@@ -1,23 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 17 Mar 2014 02:28:55 +0000
-Subject: Re: [PATCH resend v3 2/2] ARM: shmobile: bockw reference dts: Add SPI FLASH
-Message-Id: <20140317022855.GC20793@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 Mar 2014 12:52:47 +0000
+Subject: [PATCH] ARM: shmobile: Add Lager clock workarounds for SDHI and MMCIF
+Message-Id: <20140318125247.21670.94176.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394791601-25317-1-git-send-email-geert@linux-m68k.org>
- <1394791601-25317-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394791601-25317-2-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Mar 14, 2014 at 11:06:41AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> 
-> Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
-> board code.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, I have queued this up.
+Add MMCIF1, SDHI0 and SDHI2 to the clock workaround list for
+Lager multiplatform. Without these additional lines wakeup
+from Suspend-to-RAM never happens.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-devel-v3.14-rc7-20140318
+
+ arch/arm/mach-shmobile/board-lager-reference.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- 0001/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-03-18 19:36:34.000000000 +0900
+@@ -114,7 +114,10 @@ static const struct clk_name clk_names[]
+ static const struct clk_name clk_enables[] __initconst = {
+ 	{ "ether", NULL, "ee700000.ethernet" },
+ 	{ "msiof1", NULL, "e6e10000.spi" },
++	{ "mmcif1", NULL, "ee220000.mmc" },
+ 	{ "qspi_mod", NULL, "e6b10000.spi" },
++	{ "sdhi0", NULL, "ee100000.sd" },
++	{ "sdhi2", NULL, "ee140000.sd" },
+ 	{ "thermal", NULL, "e61f0000.thermal" },
+ };
+ 
