@@ -1,59 +1,122 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 21 Mar 2014 10:32:42 +0000
-Subject: [PATCH v4 3/9] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-Message-Id: <1395397968-6242-4-git-send-email-phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 18 Mar 2014 23:25:56 +0000
+Subject: [PATCH/RFC 5/5] sh_eth: Remove goto statements that jump straight to a return
+Message-Id: <1395185156-6681-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds the device tree clock nodes for PCIe
+"goto" is well accepted for error paths in the kernel but should not be
+used unnecessarily. Return the correct value directly instead of using a
+goto when possible.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c | 30 +++++++++---------------------
+ 1 file changed, 9 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..df9ec61 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -704,16 +704,17 @@
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
- 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
--				 <&mmc0_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&rclk_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
- 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
--				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
-+				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
- 			>;
- 			clock-output-names  				"tpu0", "mmcif1", "sdhi3", "sdhi2",
--				"sdhi1", "sdhi0", "mmcif0", "cmt1";
-+				"sdhi1", "sdhi0", "mmcif0", "cmt1",
-+				"pcie";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5f..840dbc8 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -57,6 +57,7 @@
- #define R8A7790_CLK_SDHI1		13
- #define R8A7790_CLK_SDHI0		14
- #define R8A7790_CLK_MMCIF0		15
-+#define R8A7790_CLK_PCIE		19
- #define R8A7790_CLK_SSUSB		28
- #define R8A7790_CLK_CMT1		29
- #define R8A7790_CLK_USBDMAC0		30
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index d8cc78c..e31a395 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -872,7 +872,7 @@ static int sh_eth_reset(struct net_device *ndev)
+ 
+ 		ret = sh_eth_check_reset(ndev);
+ 		if (ret)
+-			goto out;
++			return ret;
+ 
+ 		/* Table Init */
+ 		sh_eth_write(ndev, 0x0, TDLAR);
+@@ -899,7 +899,6 @@ static int sh_eth_reset(struct net_device *ndev)
+ 			     EDMR);
+ 	}
+ 
+-out:
+ 	return ret;
+ }
+ 
+@@ -1263,7 +1262,7 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 	/* Soft Reset */
+ 	ret = sh_eth_reset(ndev);
+ 	if (ret)
+-		goto out;
++		return ret;
+ 
+ 	if (mdp->cd->rmiimode)
+ 		sh_eth_write(ndev, 0x1, RMIIMODE);
+@@ -1342,7 +1341,6 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 		netif_start_queue(ndev);
+ 	}
+ 
+-out:
+ 	return ret;
+ }
+ 
+@@ -2613,10 +2611,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp, int id,
+ 
+ 	/* create bit control struct for PHY */
+ 	bitbang = devm_kzalloc(dev, sizeof(struct bb_info), GFP_KERNEL);
+-	if (!bitbang) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
++	if (!bitbang)
++		return -ENOMEM;
+ 
+ 	/* bitbang init */
+ 	bitbang->addr = mdp->addr + mdp->reg_offset[PIR];
+@@ -2629,10 +2625,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp, int id,
+ 
+ 	/* MII controller setting */
+ 	mdp->mii_bus = alloc_mdio_bitbang(&bitbang->ctrl);
+-	if (!mdp->mii_bus) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
++	if (!mdp->mii_bus)
++		return -ENOMEM;
+ 
+ 	/* Hook up MII support for ethtool */
+ 	mdp->mii_bus->name = "sh_mii";
+@@ -2667,8 +2661,6 @@ static int sh_mdio_init(struct sh_eth_private *mdp, int id,
+ 
+ out_free_bus:
+ 	free_mdio_bitbang(mdp->mii_bus);
+-
+-out:
+ 	return ret;
+ }
+ 
+@@ -2782,15 +2774,12 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (unlikely(res = NULL)) {
+ 		dev_err(&pdev->dev, "invalid resource\n");
+-		ret = -EINVAL;
+-		goto out;
++		return -EINVAL;
+ 	}
+ 
+ 	ndev = alloc_etherdev(sizeof(struct sh_eth_private));
+-	if (!ndev) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
++	if (!ndev)
++		return -ENOMEM;
+ 
+ 	/* The sh Ether-specific entries in the device structure. */
+ 	ndev->base_addr = res->start;
+@@ -2925,7 +2914,6 @@ out_release:
+ 	if (ndev)
+ 		free_netdev(ndev);
+ 
+-out:
+ 	return ret;
+ }
+ 
 -- 
-1.9.0
+1.8.3.2
 
