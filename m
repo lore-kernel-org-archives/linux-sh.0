@@ -1,45 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 25 Mar 2014 20:57:31 +0000
-Subject: Re: [PATCH v5 8/9] ARM: koelsch: Add PCIe to defconfig
-Message-Id: <20140325205731.GB27673@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 18 Mar 2014 12:57:48 +0000
+Subject: [PATCH] ARM: shmobile: Add DTS gpio-keys support for SW2 on Lager
+Message-Id: <20140318125748.21994.38046.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
- <1395766604-30926-9-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395766604-30926-9-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Please update the subject of this patch to:
+From: Magnus Damm <damm@opensource.se>
 
-ARM: shmobile: koelsch: Add PCIe to defconfig
+Add DTS gpio-keys support for SW2 on the Lager board.
+This makes the DT code match the legacy board code.
 
-On Tue, Mar 25, 2014 at 04:56:43PM +0000, Phil Edworthy wrote:
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> ---
->  arch/arm/configs/koelsch_defconfig | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-> index 86faab5..ec14547 100644
-> --- a/arch/arm/configs/koelsch_defconfig
-> +++ b/arch/arm/configs/koelsch_defconfig
-> @@ -15,6 +15,9 @@ CONFIG_MACH_KOELSCH=y
->  CONFIG_CPU_BPREDICT_DISABLE=y
->  CONFIG_PL310_ERRATA_588369=y
->  CONFIG_ARM_ERRATA_754322=y
-> +CONFIG_PCI=y
-> +CONFIG_PCI_MSI=y
-> +CONFIG_PCI_RCAR_GEN2_PCIE=y
->  CONFIG_SMP=y
->  CONFIG_SCHED_MC=y
->  CONFIG_NR_CPUS=8
-> -- 
-> 1.9.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against renesas-devel-v3.14-rc7-20140318
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7790-lager.dts
++++ work/arch/arm/boot/dts/r8a7790-lager.dts	2014-03-18 21:13:46.000000000 +0900
+@@ -12,6 +12,7 @@
+ /dts-v1/;
+ #include "r8a7790.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	model = "Lager";
+@@ -36,6 +37,39 @@
+ 		#size-cells = <1>;
+ 	};
+ 
++	gpio_keys {
++		compatible = "gpio-keys";
++
++		button@1 {
++			linux,code = <KEY_1>;
++			label = "SW2-1";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
++		};
++		button@2 {
++			linux,code = <KEY_2>;
++			label = "SW2-2";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
++		};
++		button@3 {
++			linux,code = <KEY_3>;
++			label = "SW2-3";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++			gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
++		};
++		button@4 {
++			linux,code = <KEY_4>;
++			label = "SW2-4";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led6 {
