@@ -1,68 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 10 Mar 2014 01:56:14 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: Add temporary include workaround
-Message-Id: <CANqRtoRJ+x8pvc1ZN6OkUTcVn=-ThSeQ75EoOmDPGdgEn+pHZg@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 19 Mar 2014 19:06:45 +0000
+Subject: [PATCH 0/5] ARM: shmobile: Enable drivers/sh/pm_runtime.c on multi-platform
+Message-Id: <1395256010-12222-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224224446.14786.79602.sendpatchset@w520>
- <20140309053508.GC12854@quad.lixom.net>
-In-Reply-To: <20140309053508.GC12854@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sun, Mar 9, 2014 at 2:35 PM, Olof Johansson <olof@lixom.net> wrote:
-> On Tue, Feb 25, 2014 at 07:44:46AM +0900, Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> Add temporary include path in the mach-shmobile Makefile to
->> aid coversion from using <mach/something.h> to "something.h"
->> in the source files.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->>
->> ---
->>
->>  Changes since V1:
->>  - Use += instead of := to avoid breaking MULTIPLATFORM
->>
->>  arch/arm/mach-shmobile/Makefile |    2 ++
->>  1 file changed, 2 insertions(+)
->>
->> --- 0001/arch/arm/mach-shmobile/Makefile
->> +++ work/arch/arm/mach-shmobile/Makefile      2014-02-25 07:41:56.000000000 +0900
->> @@ -4,6 +4,8 @@
->>
->>  ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/arch/arm/mach-shmobile/include
->>
->> +ccflags-y += -I$(srctree)/arch/arm/mach-shmobile/include/mach
->> +
->>  # Common objects
->>  obj-y                                := timer.o console.o
->>
->
-> Hmm. Not a fan of doing this. Let's just do the include file move with
-> the include string changes instead on each instance.
+This patchset enables the PM runtime code in drivers/sh/pm_runtime.c when
+running a multi-platform ARM kernel including support for shmobile.
+Before this code was only enabled for legacy shmobile kernels, leading to
+disabled clocks in multiplatform kernels, depending on implicit reset state
+or on the bootloader.
 
-Sure, I'm open to anything here. How would you like me to write the
-code to make it easy for Simon and you to merge it?
+  [1/5] drivers: sh: pm_runtime does not need idle callback
+  [2/5] sh: intc: Restrict INTC_USERIMASK to SH4A
+  [3/5] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
+  [4/5] ARM: shmobile: Call sh_pm_runtime_init() from platform code on all
+        SoCs
+  [5/5] drivers: sh: Remove automatic sh_pm_runtime_init() if
+        ARCH_SHMOBILE_LEGACY
 
-I'm asking because most header files are used by both SoC code and
-board code, and because of that I went with different changes for
-different topic branches. So to cope with the topic branch split my
-current patches do this:
+Patches 1 and 3 were authored by Ben Dooks, with some changes made by me
+(for patch 3). Patch 4 was based on a patch by Ben for r8a7790.
 
-1) Introduce workaround to allow new header location
-2) Convert SoC files to using new header location
-3) Convert Board files to using new header location
-4) Move header files
-5) Remove recently introduced workaround
-6) Remove existing multiplatform include path workaround
+After this it should be safe to revert the various commits to "Work around
+core clock issues". Note that this is just a port of the existing
+sh(mobile)-specifc PM runtime code from legacy to multi-platform, so
+expect more work to fix the core issues.
 
-I'm happy to change things around, but please let me know how you guys
-would like to consume this change so I can decide what to write
-against.
+This was tested on Koelsch, both legacy and multi-platform.
 
-Thanks,
+Many thanks to Ben Dooks, Laurent Pinchart, and Magnus Damm for the
+valuable input, investigations, and discussions.
 
-/ magnus
+Thanks for your comments, and test results on other boards/SoCs (esp.
+SoCs supporting power domains, like sh7372, r8a7740, and r8a7779)!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
