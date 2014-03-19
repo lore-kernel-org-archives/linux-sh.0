@@ -1,36 +1,23 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 18 Mar 2014 12:54:34 +0000
-Subject: [PATCH] ARM: shmobile: Add Koelsch clock workarounds for SDHI
-Message-Id: <20140318125434.21678.77225.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 19 Mar 2014 00:07:26 +0000
+Subject: Re: [PATCH] ARM: shmobile: Add Koelsch clock workarounds for SDHI
+Message-Id: <20140319000723.GD14494@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140318125434.21678.77225.sendpatchset@w520>
+In-Reply-To: <20140318125434.21678.77225.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Mar 18, 2014 at 09:54:34PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add SDHI0, SDHI1 and SDHI2 to the clock workaround list for
+> Koelsch multiplatform. Without these additional lines wakeup
+> from Suspend-to-RAM never happens.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Add SDHI0, SDHI1 and SDHI2 to the clock workaround list for
-Koelsch multiplatform. Without these additional lines wakeup
-from Suspend-to-RAM never happens.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- Written against renesas-devel-v3.14-rc7-20140318
-
- arch/arm/mach-shmobile/board-koelsch-reference.c |    3 +++
- 1 file changed, 3 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-03-18 21:38:22.000000000 +0900
-@@ -115,6 +115,9 @@ static const struct clk_name clk_enables
- 	{ "i2c2", NULL, "e6530000.i2c" },
- 	{ "msiof0", NULL, "e6e20000.spi" },
- 	{ "qspi_mod", NULL, "e6b10000.spi" },
-+	{ "sdhi0", NULL, "ee100000.sd" },
-+	{ "sdhi1", NULL, "ee140000.sd" },
-+	{ "sdhi2", NULL, "ee160000.sd" },
- 	{ "thermal", NULL, "e61f0000.thermal" },
- };
- 
+Thanks, I have queued this up under the assumption that
+a proper fix will be coming at some point.
