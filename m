@@ -1,31 +1,65 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 20 Mar 2014 16:49:24 +0000
-Subject: Re: [PATCH 1/9 v3] PCI: host: rcar: Add Renesas R-Car PCIe driver
-Message-Id: <532B1C14.6050902@codethink.co.uk>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 19 Mar 2014 19:29:57 +0000
+Subject: [PATCH 60/62] ARM: shmobile: work around CONFIG_PHYLIB=m
+Message-Id: <1395257399-359545-61-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com> <1394704208-7490-2-git-send-email-phil.edworthy@renesas.com> <OFA03366C1.FF33E94A-ON80257CA1.005B32AE-80257CA1.005BAE71@eu.necel.com>
-In-Reply-To: <OFA03366C1.FF33E94A-ON80257CA1.005B32AE-80257CA1.005BAE71@eu.necel.com>
+References: <1395257399-359545-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1395257399-359545-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil.Edworthy@renesas.com
-Cc: linux-pci@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 20/03/14 17:41, Phil.Edworthy@renesas.com wrote:
-> Hi,
->
-> Whilst looking at something else, I've realised that I completely messed
-> up my use of runtime PM in this driver... I'll fix that up & resend.
+When phylib is set to be built as a module, the lager and koelsch
+boards fail to build:
 
-Yes, you don't need the suspend/resume hooks at-all by the looks
-of it. Hopefully the pm_runtime driver for shmobile will be sorted
-upstream soon.
+arch/arm/mach-shmobile/built-in.o: In function `lager_ksz8041_fixup':
+:(.text+0x738): undefined reference to `mdiobus_read'
+:(.text+0x73c): undefined reference to `mdiobus_write'
+arch/arm/mach-shmobile/built-in.o: In function `koelsch_ksz8041_fixup':
+:(.text+0x7e8): undefined reference to `mdiobus_read'
+:(.text+0x7ec): undefined reference to `mdiobus_write'
 
-And it looks as if your hooks would never have been called anyway
-as your probe does a pm_runtime_get_sync() to keep the pm_runtime
-for the device open (which probably for this bus bridge is what
-you wanted)
+To work around that problem, this changes the code to check for
+IS_BUILTIN rather than IS_ENABLED, turning the error into a runtime
+problem. It's now possible to build random configurations, but the
+phy may be set up incorrectly in this case.
 
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/arm/mach-shmobile/board-koelsch.c | 2 +-
+ arch/arm/mach-shmobile/board-lager.c   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 5a034ff..b724f33 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -510,7 +510,7 @@ static void __init koelsch_init(void)
+ 
+ 	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
+ 
+-	if (IS_ENABLED(CONFIG_PHYLIB))
++	if (IS_BUILTIN(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7791-ether-ff:01",
+ 					  koelsch_ksz8041_fixup);
+ }
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f0104bf..67b1069 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -869,7 +869,7 @@ static void __init lager_init(void)
+ 
+ 	irq_set_irq_type(irq_pin(0), IRQ_TYPE_LEVEL_LOW);
+ 
+-	if (IS_ENABLED(CONFIG_PHYLIB))
++	if (IS_BUILTIN(CONFIG_PHYLIB))
+ 		phy_register_fixup_for_id("r8a7790-ether-ff:01",
+ 					  lager_ksz8041_fixup);
+ }
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.3.2
+
