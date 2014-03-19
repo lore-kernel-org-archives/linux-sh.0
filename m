@@ -1,75 +1,49 @@
-From: tip-bot for Thomas Gleixner <tipbot@zytor.com>
-Date: Tue, 04 Mar 2014 16:43:21 +0000
-Subject: [tip:irq/core] sh: Use irq_set_affinity instead of homebrewn code
-Message-Id: <tip-6decf1a33c386d4addc2ed9d269c3868f08c70bb@git.kernel.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 19 Mar 2014 19:06:46 +0000
+Subject: [PATCH 1/5] drivers: sh: pm_runtime does not need idle callback
+Message-Id: <1395256010-12222-2-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140223212736.774961401@linutronix.de>
-In-Reply-To: <20140223212736.774961401@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-tip-commits@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, hpa@zytor.com, mingo@kernel.org, peterz@infradead.org, lethal@linux-sh.org, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-Commit-ID:  6decf1a33c386d4addc2ed9d269c3868f08c70bb
-Gitweb:     http://git.kernel.org/tip/6decf1a33c386d4addc2ed9d269c3868f08c70bb
-Author:     Thomas Gleixner <tglx@linutronix.de>
-AuthorDate: Sun, 23 Feb 2014 21:40:10 +0000
-Committer:  Thomas Gleixner <tglx@linutronix.de>
-CommitDate: Tue, 4 Mar 2014 17:37:55 +0100
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-sh: Use irq_set_affinity instead of homebrewn code
+In the runtime_pm idle callback the code assumes that a NULL .runtime_idle
+entry is the same as a .runtime_idle entry that returns 0 as a result. This
+means the entry in drivers/sh/pm_runtime can be removed in favour of just
+leaving the entry NULL.
 
-There is no point in having an incomplete copy of irq_set_affinity()
-for the hotplug irq migration code.
-
-Use the core function instead.
-
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: sh <linux-sh@vger.kernel.org>
-Link: http://lkml.kernel.org/r/20140223212736.774961401@linutronix.de
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/sh/kernel/irq.c | 18 +-----------------
- 1 file changed, 1 insertion(+), 17 deletions(-)
+ drivers/sh/pm_runtime.c |    8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
-index 0833736..65a1ecd 100644
---- a/arch/sh/kernel/irq.c
-+++ b/arch/sh/kernel/irq.c
-@@ -217,19 +217,6 @@ void __init init_IRQ(void)
- }
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 8afa5a4589f2..5cfbd825a9c8 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,18 +21,10 @@
+ #include <linux/slab.h>
  
- #ifdef CONFIG_HOTPLUG_CPU
--static void route_irq(struct irq_data *data, unsigned int irq, unsigned int cpu)
+ #ifdef CONFIG_PM_RUNTIME
+-
+-static int default_platform_runtime_idle(struct device *dev)
 -{
--	struct irq_desc *desc = irq_to_desc(irq);
--	struct irq_chip *chip = irq_data_get_irq_chip(data);
--
--	printk(KERN_INFO "IRQ%u: moving from cpu%u to cpu%u\n",
--	       irq, data->node, cpu);
--
--	raw_spin_lock_irq(&desc->lock);
--	chip->irq_set_affinity(data, cpumask_of(cpu), false);
--	raw_spin_unlock_irq(&desc->lock);
+-	/* suspend synchronously to disable clocks immediately */
+-	return 0;
 -}
 -
- /*
-  * The CPU has been marked offline.  Migrate IRQs off this CPU.  If
-  * the affinity settings do not allow other CPUs, force them onto any
-@@ -250,11 +237,8 @@ void migrate_irqs(void)
- 						    irq, cpu);
- 
- 				cpumask_setall(data->affinity);
--				newcpu = cpumask_any_and(data->affinity,
--							 cpu_online_mask);
- 			}
--
--			route_irq(data, irq, newcpu);
-+			irq_set_affinity(irq, data->affinity);
- 		}
- 	}
- }
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+ 		.runtime_suspend = pm_clk_suspend,
+ 		.runtime_resume = pm_clk_resume,
+-		.runtime_idle = default_platform_runtime_idle,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+1.7.9.5
+
