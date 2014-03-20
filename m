@@ -1,80 +1,67 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 20 Mar 2014 18:09:55 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 20 Mar 2014 21:02:43 +0000
 Subject: Re: [PATCH v3] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <532B3CD7.5050005@cogentembedded.com>
+Message-Id: <532B5773.7020700@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk> <3894339.LtO9XLDneL@avalon>
-In-Reply-To: <3894339.LtO9XLDneL@avalon>
+References: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk> <3894339.LtO9XLDneL@avalon> <532B3CD7.5050005@cogentembedded.com>
+In-Reply-To: <532B3CD7.5050005@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org, linux-sh@vger.kernel.org, davem@davemloft.net
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org, linux-sh@vger.kernel.org, davem@davemloft.net
 
-Hello.
+On 20/03/14 20:09, Sergei Shtylyov wrote:
+> Hello.
+>
+> On 03/20/2014 09:01 PM, Laurent Pinchart wrote:
+>
+>>> The pm_rumtime work queue is causing the device to be suspended during
+>>> initialisation, thus the initialisation may not be able to access
+>>> registers
+>>> properly. As the code is called from a work queue, it is possible
+>>> that this
+>>> is not seen from certain configurations/builds due to the asynchronos
+>>> nature of the code.
+>
+>>> Another issue has also been found where the network device registration
+>>> calls back into the driver thus causing further pm_runtime calls that
+>>> also caused issues with the MDIO bus code.
+>
+>>> Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
+>>> pm system does not suspend it during the probe() call and remove the
+>>> now unnecessary pm_runtime_resume() call.
+>
+>>> This fixes the external abort that can cause /sbin/init or other such
+>>> init processed to die.
+>
+>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>>> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+>
+>>> ---
+>>> Cc: sergei.shtylyov@cogentembedded.com
+>>> Cc: laurent.pinchart+renesas@ideasonboard.com
+>>> cc: netdev@vger.kernel.org
+>
+>>> Note, Laurent this should probably be applied before your
+>>> current series as it may require changes to the exit sequence.
+>
+>> Would you like me to include the patch in that series when I'll send a
+>> pull
+>> request ?
+>
+>>> Fixes from v1:
+>>>     - use pm_runtime_put() over pm_runtime_put_sync() as
+>>>       we do not need to guaranteed the device has powered
+>>>            off after probe.
+>
+>>> Fixed from v2:
+>>>     - call pm_runtime_put() in error path
 
-On 03/20/2014 09:01 PM, Laurent Pinchart wrote:
+Thanks, that looks like another issue that got missed.
+I will submit v3
 
->> The pm_rumtime work queue is causing the device to be suspended during
->> initialisation, thus the initialisation may not be able to access registers
->> properly. As the code is called from a work queue, it is possible that this
->> is not seen from certain configurations/builds due to the asynchronos
->> nature of the code.
 
->> Another issue has also been found where the network device registration
->> calls back into the driver thus causing further pm_runtime calls that
->> also caused issues with the MDIO bus code.
-
->> Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
->> pm system does not suspend it during the probe() call and remove the
->> now unnecessary pm_runtime_resume() call.
-
->> This fixes the external abort that can cause /sbin/init or other such
->> init processed to die.
-
->> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-
->> ---
->> Cc: sergei.shtylyov@cogentembedded.com
->> Cc: laurent.pinchart+renesas@ideasonboard.com
->> cc: netdev@vger.kernel.org
-
->> Note, Laurent this should probably be applied before your
->> current series as it may require changes to the exit sequence.
-
-> Would you like me to include the patch in that series when I'll send a pull
-> request ?
-
->> Fixes from v1:
->> 	- use pm_runtime_put() over pm_runtime_put_sync() as
->> 	  we do not need to guaranteed the device has powered
->>            off after probe.
-
->> Fixed from v2:
->> 	- call pm_runtime_put() in error path
->> ---
->>   drivers/net/ethernet/renesas/sh_eth.c | 7 +++++--
->>   1 file changed, 5 insertions(+), 2 deletions(-)
-
->> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
->> b/drivers/net/ethernet/renesas/sh_eth.c index 4f76b5e..610da51 100644
->> --- a/drivers/net/ethernet/renesas/sh_eth.c
->> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-[...]
->> @@ -2976,6 +2978,7 @@ out_release:
->>   	if (ndev)
->>   		free_netdev(ndev);
->>
->> +	pm_runtime_put(&pdev->dev);
-
-> Do we also need a pm_runtime_disable() here ?
-
-    I've looked at other drivers and it looks like we do.
-
->>   out:
->>   	return ret;
->>   }
-
-WBR, Sergei
-
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
