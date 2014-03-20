@@ -1,43 +1,82 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Wed, 12 Mar 2014 06:48:35 +0000
-Subject: [PATCH 2/2][RFC] ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <87r467rjy8.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 20 Mar 2014 13:59:06 +0000
+Subject: [PATCH 4/5] sh_eth: Register MDIO bus before registering the network device
+Message-Id: <1395324035-22918-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
+References: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Simon <horms@verge.net.au>, Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Ben Dooks <ben.dooks@codethink.co.uk>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Network API functions that rely on the MDIO bus can be called as soon as
+the driver calls register_netdev(). Register the MDIO bus before the
+network device to avoid race conditions.
 
-SND_SOC_DAIFMT_CBx_CFx means "codec" side master/slave mode.
-Then, rcar will be master mode if it was SND_SOC_DAIFMT_CBS_CFS.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- sound/soc/sh/rcar/core.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c | 20 +++++++++-----------
+ 1 file changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 6a1b45df..d836e8a 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -510,10 +510,10 @@ static int rsnd_soc_dai_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
- 	/* set master/slave audio interface */
- 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
- 	case SND_SOC_DAIFMT_CBM_CFM:
--		rdai->clk_master = 1;
-+		rdai->clk_master = 0;
- 		break;
- 	case SND_SOC_DAIFMT_CBS_CFS:
--		rdai->clk_master = 0;
-+		rdai->clk_master = 1; /* codec is slave, cpu is master */
- 		break;
- 	default:
- 		return -EINVAL;
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index e9224f2..ace6da2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2891,6 +2891,13 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
++	/* MDIO bus init */
++	ret = sh_mdio_init(mdp, pd);
++	if (ret) {
++		dev_err(&ndev->dev, "failed to initialise MDIO\n");
++		goto out_release;
++	}
++
+ 	netif_napi_add(ndev, &mdp->napi, sh_eth_poll, 64);
+ 
+ 	/* network device register */
+@@ -2898,13 +2905,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		goto out_napi_del;
+ 
+-	/* mdio bus init */
+-	ret = sh_mdio_init(mdp, pd);
+-	if (ret) {
+-		dev_err(&ndev->dev, "failed to initialise MDIO\n");
+-		goto out_unregister;
+-	}
+-
+ 	/* print device information */
+ 	netdev_info(ndev, "Base address at 0x%x, %pM, IRQ %d.\n",
+ 		    (u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+@@ -2913,11 +2913,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 
+ 	return ret;
+ 
+-out_unregister:
+-	unregister_netdev(ndev);
+-
+ out_napi_del:
+ 	netif_napi_del(&mdp->napi);
++	sh_mdio_release(mdp);
+ 
+ out_release:
+ 	/* net_dev free */
+@@ -2933,9 +2931,9 @@ static int sh_eth_drv_remove(struct platform_device *pdev)
+ 	struct net_device *ndev = platform_get_drvdata(pdev);
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+-	sh_mdio_release(mdp);
+ 	unregister_netdev(ndev);
+ 	netif_napi_del(&mdp->napi);
++	sh_mdio_release(mdp);
+ 	pm_runtime_disable(&pdev->dev);
+ 	free_netdev(ndev);
+ 
 -- 
-1.7.9.5
+1.8.3.2
 
