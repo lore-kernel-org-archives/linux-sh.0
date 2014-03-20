@@ -1,60 +1,126 @@
-From: Richard Guy Briggs <rgb@redhat.com>
-Date: Wed, 05 Mar 2014 21:27:03 +0000
-Subject: [PATCH 2/6][RFC] audit: add arch field to seccomp event log
-Message-Id: <7f3959e9f2c971e91d63287518beb30aff56d917.1393974970.git.rgb@redhat.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 20 Mar 2014 13:59:02 +0000
+Subject: [PATCH 5/5] sh_eth: Remove goto statements that jump straight to a return
+Message-Id: <1395324035-22918-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1393974970.git.rgb@redhat.com>
-In-Reply-To: <cover.1393974970.git.rgb@redhat.com>
+References: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-audit@redhat.com, linux-kernel@vger.kernel.org
-Cc: linux-arch@vger.kernel.org, linux-mips@linux-mips.org, linux-ia64@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org, Richard Guy Briggs <rgb@redhat.com>, microblaze-uclinux@itee.uq.edu.au, linux@openrisc.net, x86@kernel.org, oleg@redhat.com, eparis@redhat.com, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, sgrubb@redhat.com, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Ben Dooks <ben.dooks@codethink.co.uk>
 
-The AUDIT_SECCOMP record looks something like this:
+"goto" is well accepted for error paths in the kernel but should not be
+used unnecessarily. Return the correct value directly instead of using a
+goto when possible.
 
-type=SECCOMP msg=audit(1373478171.953:32775): auidC25 uidC25 gidC25 ses=1 subj=unconfined_u:unconfined_r:unconfined_t:s0 pid381 comm="test" sig1 syscall#1 compat=0 ip=0x39ea8bca89 code=0x0
-
-In order to determine what syscall 231 maps to, we need to have the arch= field right before it.
-
-To see the event, compile this test.c program:
-
-==int main(void)
-{
-        return seccomp_load(seccomp_init(SCMP_ACT_KILL));
-}
-==
-gcc -g test.c -o test -lseccomp
-
-After running the program, find the record by:  ausearch --start recent -m SECCOMP -i
-
-Signed-off-by: Richard Guy Briggs <rgb@redhat.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- kernel/auditsc.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c | 30 +++++++++---------------------
+ 1 file changed, 9 insertions(+), 21 deletions(-)
 
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 3bc12d2..7317f46 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -67,6 +67,7 @@
- #include <linux/binfmts.h>
- #include <linux/highmem.h>
- #include <linux/syscalls.h>
-+#include <asm/syscall.h>
- #include <linux/capability.h>
- #include <linux/fs_struct.h>
- #include <linux/compat.h>
-@@ -2415,6 +2416,8 @@ void __audit_seccomp(unsigned long syscall, long signr, int code)
- 		return;
- 	audit_log_task(ab);
- 	audit_log_format(ab, " sig=%ld", signr);
-+	audit_log_format(ab, " arch=%x",
-+			 syscall_get_arch(current, task_pt_regs(current)));
- 	audit_log_format(ab, " syscall=%ld", syscall);
- 	audit_log_format(ab, " compat=%d", is_compat_task());
- 	audit_log_format(ab, " ip=0x%lx", KSTK_EIP(current));
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index ace6da2..e4bff18 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -873,7 +873,7 @@ static int sh_eth_reset(struct net_device *ndev)
+ 
+ 		ret = sh_eth_check_reset(ndev);
+ 		if (ret)
+-			goto out;
++			return ret;
+ 
+ 		/* Table Init */
+ 		sh_eth_write(ndev, 0x0, TDLAR);
+@@ -900,7 +900,6 @@ static int sh_eth_reset(struct net_device *ndev)
+ 			     EDMR);
+ 	}
+ 
+-out:
+ 	return ret;
+ }
+ 
+@@ -1264,7 +1263,7 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 	/* Soft Reset */
+ 	ret = sh_eth_reset(ndev);
+ 	if (ret)
+-		goto out;
++		return ret;
+ 
+ 	if (mdp->cd->rmiimode)
+ 		sh_eth_write(ndev, 0x1, RMIIMODE);
+@@ -1343,7 +1342,6 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ 		netif_start_queue(ndev);
+ 	}
+ 
+-out:
+ 	return ret;
+ }
+ 
+@@ -2605,10 +2603,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp,
+ 
+ 	/* create bit control struct for PHY */
+ 	bitbang = devm_kzalloc(dev, sizeof(struct bb_info), GFP_KERNEL);
+-	if (!bitbang) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
++	if (!bitbang)
++		return -ENOMEM;
+ 
+ 	/* bitbang init */
+ 	bitbang->addr = mdp->addr + mdp->reg_offset[PIR];
+@@ -2621,10 +2617,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp,
+ 
+ 	/* MII controller setting */
+ 	mdp->mii_bus = alloc_mdio_bitbang(&bitbang->ctrl);
+-	if (!mdp->mii_bus) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
++	if (!mdp->mii_bus)
++		return -ENOMEM;
+ 
+ 	/* Hook up MII support for ethtool */
+ 	mdp->mii_bus->name = "sh_mii";
+@@ -2659,8 +2653,6 @@ static int sh_mdio_init(struct sh_eth_private *mdp,
+ 
+ out_free_bus:
+ 	free_mdio_bitbang(mdp->mii_bus);
+-
+-out:
+ 	return ret;
+ }
+ 
+@@ -2773,15 +2765,12 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (unlikely(res = NULL)) {
+ 		dev_err(&pdev->dev, "invalid resource\n");
+-		ret = -EINVAL;
+-		goto out;
++		return -EINVAL;
+ 	}
+ 
+ 	ndev = alloc_etherdev(sizeof(struct sh_eth_private));
+-	if (!ndev) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
++	if (!ndev)
++		return -ENOMEM;
+ 
+ 	/* The sh Ether-specific entries in the device structure. */
+ 	ndev->base_addr = res->start;
+@@ -2922,7 +2911,6 @@ out_release:
+ 	if (ndev)
+ 		free_netdev(ndev);
+ 
+-out:
+ 	return ret;
+ }
+ 
 -- 
-1.7.1
+1.8.3.2
 
