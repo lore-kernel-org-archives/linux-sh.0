@@ -1,92 +1,109 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 20 Mar 2014 17:34:37 +0000
-Subject: [PATCH v3] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 20 Mar 2014 17:59:48 +0000
+Subject: Re: [PATCH v3] sh_eth: ensure pm_runtime cannot suspend the device during init
+Message-Id: <3894339.LtO9XLDneL@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, davem@davemloft.net, Ben Dooks <ben.dooks@codethink.co.uk>, sergei.shtylyov@cogentembedded.com, laurent.pinchart+renesas@ideasonboard.com
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org, linux-sh@vger.kernel.org, davem@davemloft.net, sergei.shtylyov@cogentembedded.com
 
-The pm_rumtime work queue is causing the device to be suspended during
-initialisation, thus the initialisation may not be able to access registers
-properly. As the code is called from a work queue, it is possible that this
-is not seen from certain configurations/builds due to the asynchronos
-nature of the code.
+Hi Ben,
 
-Another issue has also been found where the network device registration
-calls back into the driver thus causing further pm_runtime calls that
-also caused issues with the MDIO bus code.
+Thank you for the patch.
 
-Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
-pm system does not suspend it during the probe() call and remove the
-now unnecessary pm_runtime_resume() call.
+On Thursday 20 March 2014 18:34:37 Ben Dooks wrote:
+> The pm_rumtime work queue is causing the device to be suspended during
+> initialisation, thus the initialisation may not be able to access registers
+> properly. As the code is called from a work queue, it is possible that this
+> is not seen from certain configurations/builds due to the asynchronos
+> nature of the code.
+> 
+> Another issue has also been found where the network device registration
+> calls back into the driver thus causing further pm_runtime calls that
+> also caused issues with the MDIO bus code.
+> 
+> Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
+> pm system does not suspend it during the probe() call and remove the
+> now unnecessary pm_runtime_resume() call.
+> 
+> This fixes the external abort that can cause /sbin/init or other such
+> init processed to die.
+> 
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> 
+> ---
+> Cc: sergei.shtylyov@cogentembedded.com
+> Cc: laurent.pinchart+renesas@ideasonboard.com
+> cc: netdev@vger.kernel.org
+> 
+> Note, Laurent this should probably be applied before your
+> current series as it may require changes to the exit sequence.
 
-This fixes the external abort that can cause /sbin/init or other such
-init processed to die.
+Would you like me to include the patch in that series when I'll send a pull 
+request ?
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Fixes from v1:
+> 	- use pm_runtime_put() over pm_runtime_put_sync() as
+> 	  we do not need to guaranteed the device has powered
+>           off after probe.
+> 
+> Fixed from v2:
+> 	- call pm_runtime_put() in error path
+> ---
+>  drivers/net/ethernet/renesas/sh_eth.c | 7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
+> b/drivers/net/ethernet/renesas/sh_eth.c index 4f76b5e..610da51 100644
+> --- a/drivers/net/ethernet/renesas/sh_eth.c
+> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -2841,6 +2841,9 @@ static int sh_eth_drv_probe(struct platform_device
+> *pdev) goto out;
+>  	}
+> 
+> +	pm_runtime_enable(&pdev->dev);
+> +	pm_runtime_get_sync(&pdev->dev);
+> +
+>  	/* The sh Ether-specific entries in the device structure. */
+>  	ndev->base_addr = res->start;
+>  	devno = pdev->id;
+> @@ -2868,8 +2871,6 @@ static int sh_eth_drv_probe(struct platform_device
+> *pdev)
+> 
+>  	spin_lock_init(&mdp->lock);
+>  	mdp->pdev = pdev;
+> -	pm_runtime_enable(&pdev->dev);
+> -	pm_runtime_resume(&pdev->dev);
+> 
+>  	if (pdev->dev.of_node)
+>  		pd = sh_eth_parse_dt(&pdev->dev);
+> @@ -2961,6 +2962,7 @@ static int sh_eth_drv_probe(struct platform_device
+> *pdev) pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
+>  		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+> 
+> +	pm_runtime_put(&pdev->dev);
+>  	platform_set_drvdata(pdev, ndev);
+> 
+>  	return ret;
+> @@ -2976,6 +2978,7 @@ out_release:
+>  	if (ndev)
+>  		free_netdev(ndev);
+> 
+> +	pm_runtime_put(&pdev->dev);
 
----
-Cc: sergei.shtylyov@cogentembedded.com
-Cc: laurent.pinchart+renesas@ideasonboard.com
-cc: netdev@vger.kernel.org
+Do we also need a pm_runtime_disable() here ?
 
-Note, Laurent this should probably be applied before your
-current series as it may require changes to the exit sequence.
+>  out:
+>  	return ret;
+>  }
 
-Fixes from v1:
-	- use pm_runtime_put() over pm_runtime_put_sync() as
-	  we do not need to guaranteed the device has powered
-          off after probe.
-
-Fixed from v2:
-	- call pm_runtime_put() in error path
----
- drivers/net/ethernet/renesas/sh_eth.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 4f76b5e..610da51 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2841,6 +2841,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 		goto out;
- 	}
- 
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_get_sync(&pdev->dev);
-+
- 	/* The sh Ether-specific entries in the device structure. */
- 	ndev->base_addr = res->start;
- 	devno = pdev->id;
-@@ -2868,8 +2871,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 
- 	spin_lock_init(&mdp->lock);
- 	mdp->pdev = pdev;
--	pm_runtime_enable(&pdev->dev);
--	pm_runtime_resume(&pdev->dev);
- 
- 	if (pdev->dev.of_node)
- 		pd = sh_eth_parse_dt(&pdev->dev);
-@@ -2961,6 +2962,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 	pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
- 		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
- 
-+	pm_runtime_put(&pdev->dev);
- 	platform_set_drvdata(pdev, ndev);
- 
- 	return ret;
-@@ -2976,6 +2978,7 @@ out_release:
- 	if (ndev)
- 		free_netdev(ndev);
- 
-+	pm_runtime_put(&pdev->dev);
- out:
- 	return ret;
- }
 -- 
-1.9.0
+Regards,
+
+Laurent Pinchart
 
