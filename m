@@ -1,52 +1,47 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 11 Mar 2014 10:42:38 +0000
-Subject: Re: [PATCH v3 resend] spi: hs-spi: Improve bindings
-Message-Id: <20140311104238.GL28112@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Bmt9nG8I+kxQNpDu"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 20 Mar 2014 15:04:36 +0000
+Subject: Re: DMABOUNCE in pci-rcar
+Message-Id: <532B0384.1000400@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394530851-20244-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394530851-20244-1-git-send-email-geert@linux-m68k.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+References: <201402241200.21944.arnd@arndb.de>
+ <CAErSpo5RV=w+DkgHSZZPOFGiEBBxMSraLV3TepYUZwDJuV+Jzg@mail.gmail.com>
+ <5165962.7bqj51B15Z@wuerfel>
+In-Reply-To: <5165962.7bqj51B15Z@wuerfel>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+On 26/02/14 20:57, Arnd Bergmann wrote:
+> On Wednesday 26 February 2014 12:48:17 Bjorn Helgaas wrote:
+>> On Mon, Feb 24, 2014 at 4:00 AM, Arnd Bergmann <arnd@arndb.de> wrote:
+>>> Hi Magnus,
+>>>
+>>> I noticed during randconfig testing that you enabled DMABOUNCE for the
+>>> pci-rcar-gen2 driver as posted in this patch https://lkml.org/lkml/2014/2/5/30
+>>>
+>>> I didn't see the original post unfortunately, but I fear we have to
+>>> revert it and come up with a better solution, ...
+>>
+>> Sounds like I should drop the following patches from my pci/host-rcar
+>> branch for now?
+>>
+>>    PCI: rcar: Add DMABOUNCE support
+>>    PCI: rcar: Enable BOUNCE in case of HIGHMEM
+>>    PCI: rcar: Make the Kconfig dependencies more generic
+>
+> Sounds good to me. The last patch is actually fine, but you'll have to
+> fix the context to apply it without the other two.
 
---Bmt9nG8I+kxQNpDu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+As a note, if we now boot a Lager with DT on 3.14-rc3 series the USB
+controllers no longer work with full 2GiB RAM enabled in the device
+tree.
 
-On Tue, Mar 11, 2014 at 10:40:51AM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->=20
->   - Add future-proof "renesas,hspi-<soctype>" compatible values,
->   - Add missing "interrupt-parent", "#address-cells", and "#size-cells"
->     properties,
->   - Add reference to pinctrl documentation,
->   - Add example bindings.
+Could we work around this by having 1GiB of memory defined in the
+32bit memory and then add the rest of the 3GiB from the >32bit
+area via LPAE? Will the kernel ever try to allocate DMA memory from
+anything >32bit?
 
-Applied, thanks.
-
---Bmt9nG8I+kxQNpDu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTHuibAAoJELSic+t+oim9ZlQP/3jxyCoTzY2djVSNOUs2LK8N
-zNbaGUb/INdm+qA3Of78Sv0S+s2C6lh5UwDyX5q4h2JJiNJgVEEmndZeyj//WzXj
-+PqywinI3W9pg9eGMo2mTKindsugaly2o0RS6J27ar/Q0ae4WWSAt+Dkmybhfa6d
-0bBc6MMWoVU4mEZvw9BSVlZ2ZFvjQ5TCN89AiXLdsVxhLUrh6WWM3Dubj/5U3/81
-KZWKKgTWbMVnQBwJw0RuYEYWqwrT0BvDxdy2fVaBrNoEee14epCRoVgNag7VOIep
-b9vRyu88sEIRsp6UNurze0i5JnxyYdRAwH0ML6y/pEl59OQBoFyuehR8vG8Ai1Ld
-VnvrZ2N18HnA0dCtPCrBJ8v7YQVlR6TLMYwQF8rFlWaRo8VkKlZc/evLVAeNNHAj
-vSJVZ5gszclMqwr2AnaG3ZQ5FOB/7O/4oX3tEsQJ7OjAjasanSl9DvR96kCHjOJ1
-iEVoAPmxnAkPlgtX0EYWM4x+OPuay5LXoNLfHhiNdoJllVqW6876HSzJbRI46b1B
-YDNsXZD554Bt91l55d7JXz86eWgxcx+PtyKjmlWWUrhMHIfxtwOGRbMMR6m1UtuT
-jhpIXq/Tfyvg9Ay+zlwD9Bd8ff35t9E+onXItrrBMBGIDOyf94ihp5WfvmJkFMiP
-y7gHlKDVYmEnyf9aAAbh
-=hF9s
------END PGP SIGNATURE-----
-
---Bmt9nG8I+kxQNpDu--
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
