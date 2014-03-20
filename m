@@ -1,71 +1,84 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 05 Mar 2014 19:24:04 +0000
-Subject: [PATCH 6/6] ARM: shmobile: r8a7791: Add VSP1 devices to DT
-Message-Id: <1394047444-30077-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 20 Mar 2014 16:54:33 +0000
+Subject: [PATCH] drivers/sh: pm_runtime implementation needs to suspend and resume devices
+Message-Id: <1395334473-27600-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1394047444-30077-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+If we override the platform bus calls for pm_runtime then we end up
+with the calls to the devices' suspend and resume methods ignored
+in favour of the bus ones.
+
+Change to calling the pm_runtime calls to suspend and resume the
+devices specifically in the drivers/sh/pm_runtime.c implementation
+to allow any device that may want to run power management to do so.
+
+Note, all the current sh driver implementations do not use their
+own power management code so this is not a major implementation
+issues.
+
+This also brings the implementation into line with the versions
+used by the Davinci and Keystone PM domain code, so once fully
+tested these implementations could be merged together.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ drivers/sh/pm_runtime.c | 37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index b007f9e..315215f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -462,6 +462,45 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index f4f8851..ced5307 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,10 +21,43 @@
+ #include <linux/slab.h>
  
-+	vsp1@fe928000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe928000 0 0x8000>;
-+		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_SY>;
+ #ifdef CONFIG_PM_RUNTIME
++static int sh_pm_runtime_suspend(struct device *dev)
++{
++	int ret;
 +
-+		renesas,has-lut;
-+		renesas,has-sru;
-+		renesas,#rpf = <5>;
-+		renesas,#uds = <3>;
-+		renesas,#wpf = <4>;
-+	};
++	ret = pm_generic_runtime_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend device\n");
++		return ret;
++	}
 +
-+	vsp1@fe930000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe930000 0 0x8000>;
-+		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
++	ret = pm_clk_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend clock\n");
++		pm_generic_runtime_resume(dev);
++		return ret;
++	}
 +
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
++	return 0;
++}
 +
-+	vsp1@fe938000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe938000 0 0x8000>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
++static int sh_pm_runtime_resume(struct device *dev)
++{
++	int ret;
 +
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
++	ret = pm_clk_resume(dev);
++	if (ret) {
++		dev_err(dev, "failed to resume clock\n");
++		return ret;
++	}
 +
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
++	return pm_generic_runtime_resume(dev);
++}
++
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = pm_clk_suspend,
+-		.runtime_resume = pm_clk_resume,
++		.runtime_suspend = sh_pm_runtime_suspend,
++		.runtime_resume = sh_pm_runtime_resume,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
 -- 
-1.8.3.2
+1.9.0
 
