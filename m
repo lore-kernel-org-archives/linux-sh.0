@@ -1,55 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 20 Mar 2014 10:23:00 +0000
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Thu, 20 Mar 2014 21:14:32 +0000
 Subject: Re: [PATCH/RFC] serial_core: Fix pm imbalance on unbind
-Message-Id: <CAMuHMdVmrEoRkqUB=3mBRNrPEJiR701YUmr8C7HX1O6UxT_NUg@mail.gmail.com>
+Message-Id: <20140320211432.GA2813@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394481265-7275-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394481265-7275-1-git-send-email-geert@linux-m68k.org>
+ <CAMuHMdVmrEoRkqUB=3mBRNrPEJiR701YUmr8C7HX1O6UxT_NUg@mail.gmail.com>
+In-Reply-To: <CAMuHMdVmrEoRkqUB=3mBRNrPEJiR701YUmr8C7HX1O6UxT_NUg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: linux-serial@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Jiri Slaby <jslaby@suse.cz>, linux-serial@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Greg,
+On Thu, Mar 20, 2014 at 11:23:00AM +0100, Geert Uytterhoeven wrote:
+> Hi Greg,
+> 
+> On Mon, Mar 10, 2014 at 8:54 PM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+> > From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> >
+> > When a serial port is closed, uart_close() takes care of shutting down the
+> > hardware, and powering it down.
+> >
+> > When a serial port is unbound while in use, uart_close() bypasses all of
+> > this, as this is supposed to be done through uart_hangup() (invoked via
+> > tty_vhangup() in uart_remove_one_port()).
+> >
+> > However, uart_hangup() does not set the hardware's power state, leaving it
+> > powered up.  This may also lead to unbounded nesting counts in clock and
+> > power management, depending on their internal implementation.
+> >
+> > Make sure to power down the port in uart_hangup(), except when the port is
+> > used as a serial console. For serial consoles, this must be postponed until
+> > after their deregistration in uart_remove_one_port() (symmetry with
+> > registration in uart_configure_port(), invoked from uart_add_one_port()).
+> >
+> > After this, the module clock used by the sh-sci driver is disabled on
+> > unbind while the serial port is in use.
+> >
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> 
+> I noticed you have applied all serial patches I've sent, except for this one.
+> Is there any specific reason you skipped this one?
 
-On Mon, Mar 10, 2014 at 8:54 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->
-> When a serial port is closed, uart_close() takes care of shutting down the
-> hardware, and powering it down.
->
-> When a serial port is unbound while in use, uart_close() bypasses all of
-> this, as this is supposed to be done through uart_hangup() (invoked via
-> tty_vhangup() in uart_remove_one_port()).
->
-> However, uart_hangup() does not set the hardware's power state, leaving it
-> powered up.  This may also lead to unbounded nesting counts in clock and
-> power management, depending on their internal implementation.
->
-> Make sure to power down the port in uart_hangup(), except when the port is
-> used as a serial console. For serial consoles, this must be postponed until
-> after their deregistration in uart_remove_one_port() (symmetry with
-> registration in uart_configure_port(), invoked from uart_add_one_port()).
->
-> After this, the module clock used by the sh-sci driver is disabled on
-> unbind while the serial port is in use.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+It was marked "RFC" so I didn't think it was to be applied...
 
-I noticed you have applied all serial patches I've sent, except for this one.
-Is there any specific reason you skipped this one?
+If it's ready, please resend.
 
-Thanks!
+thanks,
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+greg k-h
