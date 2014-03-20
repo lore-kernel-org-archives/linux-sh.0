@@ -1,30 +1,40 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 05 Mar 2014 01:54:36 +0000
-Subject: Re: [PATCH v2 2/2] pinctrl: sh-pfc: r8a7791: Add alternative MSIOF pin groups
-Message-Id: <CACRpkdaBKz6L+RUNTuEyxXv0brLO8+==zGir-2u7YMWA=a=_kA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 20 Mar 2014 13:59:18 +0000
+Subject: [PATCH 2/5] sh_eth: Use the platform device as the MDIO bus parent
+Message-Id: <1395324035-22918-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393406217-20252-1-git-send-email-geert@linux-m68k.org>
-	<1393406217-20252-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1393406217-20252-2-git-send-email-geert@linux-m68k.org>
+References: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Wed, Feb 26, 2014 at 5:16 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
+The MDIO bus parent is set to the network device. Beside not reflecting
+the hardware topology, this prevents registering the MDIO bus before
+initializing the network device. Fix it by setting the MDIO bus parent
+to the platform device.
 
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> v2:
->   - Correct 2 pins (Thanks, Laurent!)
->   - Add Acked-by
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Patch applied.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index f669e2a..443f14f 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2633,7 +2633,7 @@ static int sh_mdio_init(struct net_device *ndev, int id,
+ 
+ 	/* Hook up MII support for ethtool */
+ 	mdp->mii_bus->name = "sh_mii";
+-	mdp->mii_bus->parent = &ndev->dev;
++	mdp->mii_bus->parent = dev;
+ 	snprintf(mdp->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
+ 		 mdp->pdev->name, id);
+ 
+-- 
+1.8.3.2
 
-Yours,
-Linus Walleij
