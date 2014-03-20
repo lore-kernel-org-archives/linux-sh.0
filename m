@@ -1,46 +1,115 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 31 Mar 2014 14:30:00 +0000
-Subject: Re: [PATCH 4/5] ARM: shmobile: r8a7791: Add IPMMU DT nodes
-Message-Id: <53397BE8.6030707@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 20 Mar 2014 13:59:29 +0000
+Subject: [PATCH 3/5] sh_eth: Simplify MDIO bus initialization and release
+Message-Id: <1395324035-22918-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1396049781-12941-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdV5kV_cz3b1gW7qW_z22JtWd9BpoXN2=_XjBqJfcG-yWQ@mail.gmail.com> <2517875.vv2t3ch4DC@avalon>
-In-Reply-To: <2517875.vv2t3ch4DC@avalon>
+References: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On 31/03/14 15:01, Laurent Pinchart wrote:
-> Hi Geert,
->
-> On Monday 31 March 2014 10:52:28 Geert Uytterhoeven wrote:
->> On Sat, Mar 29, 2014 at 12:36 AM, Laurent Pinchart wrote:
->>> +       ipmmu_sy0: mmu@e6280800 {
->>> +               compatible = "renesas,ipmmu-vmsa";
->>> +               reg = <0 0xe6280800 0 0x800>;
->>
->> Shouldn't this be "reg = <0 0xe6280000 0 0x1000>", i.e. expose both
->> banks?
->>
->> Is there any specific reason you're using the second bank of registers?
->> These may read as zero, depending on the SoC mode.
->
-> That's a very good question, and I have no clear answer. According to the
-> datasheet the second bank of registers is an alias for the non-secure IPMMU
-> registers. It looks like we're running in secure mode (that's what I assume
-> the "CPU: All CPU(s) started in SVC mode." kernel log message means), and the
-> secure IPMMU didn't seem to be functional when I've tested it.
->
-> This requires more investigation, but I'm not familiar with secure mode, and
-> the IPMMU documentation is really sparse in that area.
+The network device passed to the sh_mdio_init and sh_mdio_release
+functions is only used to access the sh_eth_private instance. Pass it
+directly to those functions.
 
-The default for the R8A7790 is to start in secure-svc mode.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 30 +++++++++++-------------------
+ 1 file changed, 11 insertions(+), 19 deletions(-)
 
-I would test it in non-secure SVC but the security framework we
-are using blocks access to the IPMMU blocks :/
-
-
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 443f14f..e9224f2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2583,29 +2583,24 @@ static void sh_eth_tsu_init(struct sh_eth_private *mdp)
+ }
+ 
+ /* MDIO bus release function */
+-static int sh_mdio_release(struct net_device *ndev)
++static int sh_mdio_release(struct sh_eth_private *mdp)
+ {
+-	struct mii_bus *bus = dev_get_drvdata(&ndev->dev);
+-
+ 	/* unregister mdio bus */
+-	mdiobus_unregister(bus);
+-
+-	/* remove mdio bus info from net_device */
+-	dev_set_drvdata(&ndev->dev, NULL);
++	mdiobus_unregister(mdp->mii_bus);
+ 
+ 	/* free bitbang info */
+-	free_mdio_bitbang(bus);
++	free_mdio_bitbang(mdp->mii_bus);
+ 
+ 	return 0;
+ }
+ 
+ /* MDIO bus init function */
+-static int sh_mdio_init(struct net_device *ndev, int id,
++static int sh_mdio_init(struct sh_eth_private *mdp,
+ 			struct sh_eth_plat_data *pd)
+ {
+ 	int ret, i;
+ 	struct bb_info *bitbang;
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
++	struct platform_device *pdev = mdp->pdev;
+ 	struct device *dev = &mdp->pdev->dev;
+ 
+ 	/* create bit control struct for PHY */
+@@ -2635,7 +2630,7 @@ static int sh_mdio_init(struct net_device *ndev, int id,
+ 	mdp->mii_bus->name = "sh_mii";
+ 	mdp->mii_bus->parent = dev;
+ 	snprintf(mdp->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
+-		 mdp->pdev->name, id);
++		 pdev->name, pdev->id);
+ 
+ 	/* PHY IRQ */
+ 	mdp->mii_bus->irq = devm_kzalloc(dev, sizeof(int) * PHY_MAX_ADDR,
+@@ -2645,10 +2640,9 @@ static int sh_mdio_init(struct net_device *ndev, int id,
+ 		goto out_free_bus;
+ 	}
+ 
+-	/* register mdio bus */
+-	if (ndev->dev.parent->of_node) {
+-		ret = of_mdiobus_register(mdp->mii_bus,
+-					  ndev->dev.parent->of_node);
++	/* register MDIO bus */
++	if (dev->of_node) {
++		ret = of_mdiobus_register(mdp->mii_bus, dev->of_node);
+ 	} else {
+ 		for (i = 0; i < PHY_MAX_ADDR; i++)
+ 			mdp->mii_bus->irq[i] = PHY_POLL;
+@@ -2661,8 +2655,6 @@ static int sh_mdio_init(struct net_device *ndev, int id,
+ 	if (ret)
+ 		goto out_free_bus;
+ 
+-	dev_set_drvdata(&ndev->dev, mdp->mii_bus);
+-
+ 	return 0;
+ 
+ out_free_bus:
+@@ -2907,7 +2899,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 		goto out_napi_del;
+ 
+ 	/* mdio bus init */
+-	ret = sh_mdio_init(ndev, pdev->id, pd);
++	ret = sh_mdio_init(mdp, pd);
+ 	if (ret) {
+ 		dev_err(&ndev->dev, "failed to initialise MDIO\n");
+ 		goto out_unregister;
+@@ -2941,7 +2933,7 @@ static int sh_eth_drv_remove(struct platform_device *pdev)
+ 	struct net_device *ndev = platform_get_drvdata(pdev);
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 
+-	sh_mdio_release(ndev);
++	sh_mdio_release(mdp);
+ 	unregister_netdev(ndev);
+ 	netif_napi_del(&mdp->napi);
+ 	pm_runtime_disable(&pdev->dev);
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.3.2
+
