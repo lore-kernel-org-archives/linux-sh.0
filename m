@@ -1,67 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 02 Mar 2014 20:35:28 +0000
-Subject: Re: [PATCH v2 21/40] clocksource: sh_cmt: Request IRQ for clock event device only
-Message-Id: <3258448.OkuRkXDiH4@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 20 Mar 2014 09:33:27 +0000
+Subject: [PATCH] [PATCH v2] sh_eth: ensure pm_runtime cannot suspend the device during init
+Message-Id: <1395308007-13956-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393603090-23144-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1393603090-23144-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, davem@davemloft.net, Ben Dooks <ben.dooks@codethink.co.uk>, sergei.shtylyov@cogentembedded.com, laurent.pinchart+renesas@ideasonboard.com
 
-Hi Geert,
+The pm_rumtime work queue is causing the device to be suspended during
+initialisation, thus the initialisation may not be able to access registers
+properly. As the code is called from a work queue, it is possible that this
+is not seen from certain configurations/builds due to the asynchronos
+nature of the code.
 
-On Saturday 01 March 2014 18:46:46 Geert Uytterhoeven wrote:
-> On Fri, Feb 28, 2014 at 4:57 PM, Laurent Pinchart wrote:
-> > --- a/drivers/clocksource/sh_cmt.c
-> > +++ b/drivers/clocksource/sh_cmt.c
-> > @@ -789,6 +789,8 @@ static void sh_cmt_register_clockevent(struct
-> > sh_cmt_channel *ch,> 
-> >                                        const char *name)
-> >  {
-> >         struct clock_event_device *ced = &ch->ced;
-> > +       int irq;
-> > +       int ret;
-> > 
-> >         ced->name = name;
-> >         ced->features = CLOCK_EVT_FEAT_PERIODIC;
-> > @@ -803,6 +805,20 @@ static void sh_cmt_register_clockevent(struct
-> > sh_cmt_channel *ch,> 
-> >         dev_info(&ch->cmt->pdev->dev, "ch%u: used for clock events\n",
-> >                  ch->index);
-> >         
-> >         clockevents_register_device(ced);
-> > +
-> > +       irq = platform_get_irq(ch->cmt->pdev, ch->cmt->legacy ? 0 :
-> > ch->index);
-> > +       if (irq < 0) {
-> > +               dev_err(&ch->cmt->pdev->dev, "ch%u: failed to get irq\n",
-> > +                       ch->index);
-> > +               return;
-> 
-> So the failure is no longer passed upstream, as sh_cmt_register_clockevent()
-> returns void. Can you please change it to return the error code?
+Another issue has also been found where the network device registration
+calls back into the driver thus causing further pm_runtime calls that
+also caused issues with the MDIO bus code.
 
-Sure, I'll fix that for v3.
+Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
+pm system does not suspend it during the probe() call and remove the
+now unnecessary pm_runtime_resume() call.
 
-> Interestingly, its caller (sh_cmt_register()) does return an error code,
-> but currently this is hardcoded to zero.
-> And the caller of sh_cmt_register() already checks for an error code.
-> 
-> > +       }
-> > +
-> > +       ret = request_irq(irq, sh_cmt_interrupt,
-> > +                         IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-> > +                         dev_name(&ch->cmt->pdev->dev), ch);
-> > +       if (ret)
-> > +               dev_err(&ch->cmt->pdev->dev, "ch%u: failed to request irq
-> > %d\n", +                       ch->index, irq);
-> > 
-> >  }
+This fixes the external abort that can cause /sbin/init or other such
+init processed to die.
 
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+
+---
+Cc: sergei.shtylyov@cogentembedded.com
+Cc: laurent.pinchart+renesas@ideasonboard.com
+cc: netdev@vger.kernel.org
+
+Note, Laurent this should probably be applied before your
+current series as it may require changes to the exit sequence.
+
+Fixes from v1:
+	- use pm_runtime_put() over pm_runtime_put_sync() as
+	  we do not need to guaranteed the device has powered
+          off after probe.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 4f76b5e..955e422 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2869,7 +2869,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	spin_lock_init(&mdp->lock);
+ 	mdp->pdev = pdev;
+ 	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_resume(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	if (pdev->dev.of_node)
+ 		pd = sh_eth_parse_dt(&pdev->dev);
+@@ -2961,6 +2961,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
+ 		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+ 
++	pm_runtime_put(&pdev->dev);
+ 	platform_set_drvdata(pdev, ndev);
+ 
+ 	return ret;
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.0
 
