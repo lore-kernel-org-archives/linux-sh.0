@@ -1,121 +1,92 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Mar 2014 00:03:05 +0000
-Subject: Re: [PATCH v3 15/20] ARM: shmobile: marzen-reference: Instantiate clkdevs for SCIF and TMU
-Message-Id: <20140313000304.GG25813@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 20 Mar 2014 17:34:37 +0000
+Subject: [PATCH v3] sh_eth: ensure pm_runtime cannot suspend the device during init
+Message-Id: <1395336877-12402-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
- <1393400016-23433-16-git-send-email-horms+renesas@verge.net.au>
- <1792922.9Bi30kDKcG@avalon>
-In-Reply-To: <1792922.9Bi30kDKcG@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, davem@davemloft.net, Ben Dooks <ben.dooks@codethink.co.uk>, sergei.shtylyov@cogentembedded.com, laurent.pinchart+renesas@ideasonboard.com
 
-On Wed, Feb 26, 2014 at 02:24:01PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> On Wednesday 26 February 2014 16:33:31 Simon Horman wrote:
-> > Now that the common clock framework is supported, the clock lookup
-> > entries in clock-r8a7779.c are not registered anymore. Devices must
-> > instead reference their clocks in the device tree. However, SCIF and CMT
-> > devices are still instantiated through platform code, and thus need a
-> > clock lookup entry.
-> > 
-> > Retrieve the SCIF and CMT clock entries by name and register clkdevs for
-> > the corresponding devices. This will be removed when the SCIF and CMT
-> > devices will be instantiated from the device tree.
-> > 
-> > Based on work for the Koelsch board by Laurent Pinchart.
-> > 
-> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > ---
-> > v3
-> > * Initialise TMU clocks instead of CMT clocks
-> >   - It is TMU that Marzen uses as a clocksource
-> > * Refactor clock initialisation hack as per more recent mainline
-> >   code for Koelsch
-> > * Use IS_ERR to check the return value of clk_get()
-> > ---
-> >  arch/arm/mach-shmobile/board-marzen-reference.c | 31 +++++++++++++++++++++-
-> > 1 file changed, 30 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c
-> > b/arch/arm/mach-shmobile/board-marzen-reference.c index e261431..a5974d2
-> > 100644
-> > --- a/arch/arm/mach-shmobile/board-marzen-reference.c
-> > +++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-> > @@ -19,7 +19,9 @@
-> >   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 
-> > USA */
-> > 
-> > +#include <linux/clk.h>
-> >  #include <linux/clk/shmobile.h>
-> > +#include <linux/clkdev.h>
-> >  #include <linux/clocksource.h>
-> >  #include <linux/of_platform.h>
-> >  #include <mach/r8a7779.h>
-> > @@ -38,7 +40,34 @@ static void __init marzen_init_timer(void)
-> > 
-> >  static void __init marzen_init(void)
-> >  {
-> > -#ifndef CONFIG_COMMON_CLK
-> > +#ifdef CONFIG_COMMON_CLK
-> > +	static const struct clk_name {
-> > +		const char *clk;
-> > +		const char *con_id;
-> > +		const char *dev_id;
-> > +	} clk_names[] = {
-> > +		{ "scif0", NULL, "sh-sci.0" },
-> > +		{ "scif1", NULL, "sh-sci.1" },
-> > +		{ "scif2", NULL, "sh-sci.2" },
-> > +		{ "scif3", NULL, "sh-sci.3" },
-> > +		{ "scif4", NULL, "sh-sci.4" },
-> > +		{ "scif5", NULL, "sh-sci.5" },
-> 
-> Any chance to switch the board the DT-based SCIF instead ? ;-)
+The pm_rumtime work queue is causing the device to be suspended during
+initialisation, thus the initialisation may not be able to access registers
+properly. As the code is called from a work queue, it is possible that this
+is not seen from certain configurations/builds due to the asynchronos
+nature of the code.
 
-As is typical for me, I'd like to handle that as a follow-up
-rather than a pre-requisite.
+Another issue has also been found where the network device registration
+calls back into the driver thus causing further pm_runtime calls that
+also caused issues with the MDIO bus code.
 
-> 
-> > +		{ "tmu00", NULL, "sh_tmu.0" },
-> > +		{ "tmu01", NULL, "sh_tmu.1" },
-> > +		{ "tmu02", NULL, "sh_tmu.2" },
-> 
-> Those clocks should be tmu0, tmu1 and tmu2.
+Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
+pm system does not suspend it during the probe() call and remove the
+now unnecessary pm_runtime_resume() call.
 
-Thanks, I have fixed that.
+This fixes the external abort that can cause /sbin/init or other such
+init processed to die.
 
-> 
-> > +	};
-> > +	struct clk *clk;
-> > +	unsigned int i;
-> > +
-> > +	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
-> > +		clk = clk_get(NULL, clk_names[i].clk);
-> > +		if (!IS_ERR(clk)) {
-> > +			clk_register_clkdev(clk, clk_names[i].con_id,
-> > +					    clk_names[i].dev_id);
-> > +			clk_put(clk);
-> > +		}
-> > +	}
-> > +#else
-> >  	r8a7779_clock_init();
-> >  #endif
-> >  	r8a7779_add_standard_devices_dt();
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+
+---
+Cc: sergei.shtylyov@cogentembedded.com
+Cc: laurent.pinchart+renesas@ideasonboard.com
+cc: netdev@vger.kernel.org
+
+Note, Laurent this should probably be applied before your
+current series as it may require changes to the exit sequence.
+
+Fixes from v1:
+	- use pm_runtime_put() over pm_runtime_put_sync() as
+	  we do not need to guaranteed the device has powered
+          off after probe.
+
+Fixed from v2:
+	- call pm_runtime_put() in error path
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 4f76b5e..610da51 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2841,6 +2841,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 		goto out;
+ 	}
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	/* The sh Ether-specific entries in the device structure. */
+ 	ndev->base_addr = res->start;
+ 	devno = pdev->id;
+@@ -2868,8 +2871,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 
+ 	spin_lock_init(&mdp->lock);
+ 	mdp->pdev = pdev;
+-	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_resume(&pdev->dev);
+ 
+ 	if (pdev->dev.of_node)
+ 		pd = sh_eth_parse_dt(&pdev->dev);
+@@ -2961,6 +2962,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
+ 		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+ 
++	pm_runtime_put(&pdev->dev);
+ 	platform_set_drvdata(pdev, ndev);
+ 
+ 	return ret;
+@@ -2976,6 +2978,7 @@ out_release:
+ 	if (ndev)
+ 		free_netdev(ndev);
+ 
++	pm_runtime_put(&pdev->dev);
+ out:
+ 	return ret;
+ }
+-- 
+1.9.0
+
