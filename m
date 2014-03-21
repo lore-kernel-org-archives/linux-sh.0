@@ -1,58 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 27 Mar 2014 20:47:35 +0000
-Subject: [PATCH 0/7] ARM: shmobile: Add rcar-gpio clock support
-Message-Id: <1395953262-4290-1-git-send-email-geert@linux-m68k.org>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 21 Mar 2014 10:32:46 +0000
+Subject: [PATCH v4 7/9] ARM: shmobile: Add PCIe device tree nodes for R8A7791 Koelsch board
+Message-Id: <1395397968-6242-8-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This series adds support to control the MSTP clocks of the GPIO blocks
-on R-Car SoCs. Currently we depend on reset state / the bootloader to
-have the right clocks enabled. If they're not enabled, GPIO will fail,
-but not crash:
-  - No heartbeat LED (if you had it enabled),
-  - Keypad switches don't work,
-  - System doesn't wake-up from suspend when pressing a keypad switch.
+This patch adds the device tree nodes for the R8A7791 Koelsch board
 
-After applying this series, the MSTP clocks of the GPIO blocks will be
-enabled automatically by runtime PM (or statically, if CONFIG_PM_RUNTIME=n)
-during boot up.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts |  4 ++++
+ arch/arm/boot/dts/r8a7791.dtsi        | 19 +++++++++++++++++++
+ 2 files changed, 23 insertions(+)
 
-    [1/7] gpio: rcar: Add helper variable dev = &pdev->dev
-    [2/7] gpio: rcar: Add optional functional clock to bindings
-    [3/7] gpio: rcar: Add minimal runtime PM support
-    [4/7] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
-    [5/7] ARM: shmobile: r8a7791 dtsi: Add GPIO clocks
-    [6/7] ARM: shmobile: r8a7790 legacy: Add GPIO clocks
-    [7/7] ARM: shmobile: r8a7791 legacy: Add GPIO clocks
-
-For multiplatform, this depends on the series "[PATCH 0/5] ARM: shmobile:
-Enable drivers/sh/pm_runtime.c on multi-platform" (or any other method
-to enable drivers/sh/pm_runtime.c) to actually work.
-
-For legacy, this slightly conflicts with that series, as
-sh_pm_runtime_init() will be called too late to actually work.
-
-However, it should be safe to apply this series, even without the
-prerequisites.
-
-This was tested on r8a7791/Koelsch, both legacy and multiplatform.
-The changes for r8a7790 were straight-forward.
-Similar changes will have to be made for r8a7778 and r8a7779, but I don't
-have datasheets for those.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index e24fed9..17c953f 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -352,3 +352,7 @@
+ 		spi-cpha;
+ 	};
+ };
++
++&pcie {
++	status = "okay";
++};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index ccfba57..915a5a6 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -836,4 +836,23 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pcie: pcie@fe000000 {
++		compatible = "renesas,r8a7791-pcie";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_PCIE>;
++		clock-names = "pcie";
++		status = "disabled";
++	};
+ };
+-- 
+1.9.0
 
