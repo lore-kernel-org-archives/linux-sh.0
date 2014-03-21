@@ -1,61 +1,75 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Mar 2014 13:23:49 +0000
+From: Peter Hurley <peter@hurleysoftware.com>
+Date: Fri, 21 Mar 2014 22:41:19 +0000
 Subject: Re: [PATCH resend] serial_core: Fix pm imbalance on unbind
-Message-Id: <CAMuHMdUBiUzpvTzkhaguOQoDc8XJH7NvnNe2Z+jL6UeEitpJPg@mail.gmail.com>
+Message-Id: <532CC00F.3000501@hurleysoftware.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395392905-29569-1-git-send-email-geert@linux-m68k.org>
-	<532C394A.3050408@hurleysoftware.com>
-In-Reply-To: <532C394A.3050408@hurleysoftware.com>
+References: <1395392905-29569-1-git-send-email-geert@linux-m68k.org>	<532C394A.3050408@hurleysoftware.com> <CAMuHMdUBiUzpvTzkhaguOQoDc8XJH7NvnNe2Z+jL6UeEitpJPg@mail.gmail.com>
+In-Reply-To: <CAMuHMdUBiUzpvTzkhaguOQoDc8XJH7NvnNe2Z+jL6UeEitpJPg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Hurley <peter@hurleysoftware.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>, linux-serial@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hi Peter,
+Hi Geert,
 
-On Fri, Mar 21, 2014 at 2:06 PM, Peter Hurley <peter@hurleysoftware.com> wrote:
->> @@ -2681,10 +2683,12 @@ int uart_remove_one_port(struct uart_driver *drv,
->> struct uart_port *uport)
->>         }
+On 03/21/2014 09:23 AM, Geert Uytterhoeven wrote:
+> Hi Peter,
+>
+> On Fri, Mar 21, 2014 at 2:06 PM, Peter Hurley <peter@hurleysoftware.com> wrote:
+>>> @@ -2681,10 +2683,12 @@ int uart_remove_one_port(struct uart_driver *drv,
+>>> struct uart_port *uport)
+>>>          }
+>>>
+>>>          /*
+>>> -        * If the port is used as a console, unregister it
+>>> +        * If the port is used as a console, unregister it, and power it
+>>> down
+>>>           */
+>>> -       if (uart_console(uport))
+>>> +       if (uart_console(uport)) {
+>>>                  unregister_console(uport->cons);
+>>> +               uart_change_pm(state, UART_PM_STATE_OFF);
 >>
->>         /*
->> -        * If the port is used as a console, unregister it
->> +        * If the port is used as a console, unregister it, and power it
->> down
->>          */
->> -       if (uart_console(uport))
->> +       if (uart_console(uport)) {
->>                 unregister_console(uport->cons);
->> +               uart_change_pm(state, UART_PM_STATE_OFF);
+>> Won't this power off the port while tty consoles may still be open?
 >
-> Won't this power off the port while tty consoles may still be open?
+> I didn't see that actually happening.
 
-I didn't see that actually happening.
+Ok, but I still think this isn't right. See below.
 
-> I think the right thing here is to unregister_console then set uport->cons > NULL
+>> I think the right thing here is to unregister_console then set uport->cons >> NULL
+>>
+>> [uport->cons is properly reassigned when/if a port is re-added via
+>> uart_add_one_port()).]
 >
-> [uport->cons is properly reassigned when/if a port is re-added via
-> uart_add_one_port()).]
+> But indeed, for concistency/symmetry uport->state and uport->cons
+> should be resend, but that's something separate.
 
-But indeed, for concistency/symmetry uport->state and uport->cons
-should be resend, but that's something separate.
+I don't see this as being a "looks good" problem; I see this as being
+"what's the right way to teardown a uart device that's going away when
+a tty console is running on it", and there are too many problems with
+uart_remove_one_port() doing:
 
-> Then, uart_close() will power off the port when all ttys using the port have
-> been closed.
+      state->uart_port = NULL
 
-uart_close() won't get that far, so uart_change_pm() won't be called.
+to keep with that solution.
 
-See also https://lkml.org/lkml/2014/3/10/651, and my workaround for the
-crash https://lkml.org/lkml/2014/3/17/231.
+>> Then, uart_close() will power off the port when all ttys using the port have
+>> been closed.
+>
+> uart_close() won't get that far, so uart_change_pm() won't be called.
 
-Gr{oetje,eeting}s,
+And this is the central problem: uart_close() must complete normally
+if a tty console is still running on a device.
 
-                        Geert
+For example, if uart_shutdown() isn't getting called, then who's freeing
+the ring buffer page?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> See also https://lkml.org/lkml/2014/3/10/651, and my workaround for the
+> crash https://lkml.org/lkml/2014/3/17/231.
+
+See my comments to the v2 patch there.
+
+Regards,
+Peter Hurley
