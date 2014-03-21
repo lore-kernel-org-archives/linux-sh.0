@@ -1,41 +1,38 @@
-From: Phil.Edworthy@renesas.com
-Date: Fri, 21 Mar 2014 15:06:48 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 21 Mar 2014 15:42:44 +0000
 Subject: Re: [PATCH v4 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
-Message-Id: <OF1B1A84A2.0FE335EF-ON80257CA2.0052C1C4-80257CA2.005304D4@eu.necel.com>
+Message-Id: <532C6BF7.1050404@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
- <1395397968-6242-7-git-send-email-phil.edworthy@renesas.com>
- <532C5B70.5060509@cogentembedded.com>
-In-Reply-To: <532C5B70.5060509@cogentembedded.com>
+ <532C5ADE.4030708@cogentembedded.com>
+ <OF4D80B18E.5A1F55AB-ON80257CA2.0051AADA-80257CA2.0051D412@eu.necel.com>
+ <6044873.2S2Xlhp0hC@wuerfel>
+In-Reply-To: <6044873.2S2Xlhp0hC@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hello.
 
-On: 21/03/2014 14:32, Sergei wrote:
-> Subject: Re: [PATCH v4 6/9] ARM: shmobile: Add PCIe device tree nodes 
-for R8A7790
-> 
-> Hello.
-> 
-> On 03/21/2014 01:32 PM, Phil Edworthy wrote:
-> 
-> > This patch adds the device tree nodes for R8A7790
-> 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > ---
-> >   arch/arm/boot/dts/r8a7790.dtsi | 19 +++++++++++++++++++
-> >   1 file changed, 19 insertions(+)
-> 
->     Why are you not enabling PCIe for Lager, only on Koelsch?
-The Lager board doesn't have PCIe hardware. Note that it's possible to 
-modify the Lager board and convert the SATA signals to PCIe, and we've 
-done that to check that it works on R-Car H2.
+On 03/21/2014 05:57 PM, Arnd Bergmann wrote:
 
-> WBR, Sergei
-> 
+>>>> +      reg = <0 0xfe000000 0 0x80000>;
+>>>> +      #address-cells = >;
+>>>> +      #size-cells = <2>;
+>>>> +      device_type = "pci";
 
-Thanks
-Phil
+>>>      This legacy property is only meaningful for the true OF firmware and thus
+>>> have been phased out (it's only actively used for the memory nodes).
+
+>> Ok, thanks for pointing this out.
+
+> I think the code still relies on it for PCI though.
+
+    OK, I have found where it does that but the recommended value seems to be 
+"pciex" for PCI-Express case.
+
+> 	Arnd
+
+WBR, Sergei
+
