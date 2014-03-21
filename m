@@ -1,48 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 31 Mar 2014 14:09:41 +0000
-Subject: Re: [PATCH 3/5] iommu/ipmmu-vmsa: Add device tree support
-Message-Id: <4940423.MM1jLpQkNj@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 21 Mar 2014 10:32:45 +0000
+Subject: [PATCH v4 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
+Message-Id: <1395397968-6242-7-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1396049781-12941-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<CAMuHMdU7esZ35xe+iTRNbeXmD7bSHXEakTOrTfXEs8h5yQLFfA@mail.gmail.com>
-In-Reply-To: <CAMuHMdU7esZ35xe+iTRNbeXmD7bSHXEakTOrTfXEs8h5yQLFfA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+This patch adds the device tree nodes for R8A7790
 
-On Monday 31 March 2014 10:45:00 Geert Uytterhoeven wrote:
-> On Sat, Mar 29, 2014 at 12:36 AM, Laurent Pinchart wrote:
-> > @@ -828,16 +829,31 @@ static phys_addr_t ipmmu_iova_to_phys(struct
-> > iommu_domain *io_domain,> 
-> >  static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device
-> >  *dev) {
-> > 
-> > +       ret = of_parse_phandle_with_fixed_args(dev->of_node, "iommus",
-> > +                                              1, 0, &args);
-> 
-> drivers/of/base.c:of_parse_phandle_with_fixed_args():
-> 
-> "Caller is responsible to call of_node_put() on the returned out_args->node
->  pointer."
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-Thank you for the review. I'll fix that in v2.
-
-> > +       if (ret < 0)
-> > +               return -1;
-> > +
-> > +       if (args.np != mmu->dev->of_node)
-> > +               return -1;
-> > +
-> > +       return args.args[0];
-> >  }
-
-- 
-Regards,
-
-Laurent Pinchart
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index df9ec61..e7d498a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -821,4 +821,23 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pcie: pcie@fe000000 {
++		compatible = "renesas,r8a7790-pcie";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_PCIE>;
++		clock-names = "pcie";
++		status = "disabled";
++	};
+ };
+-- 
+1.9.0
 
