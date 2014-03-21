@@ -1,74 +1,68 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 19 Mar 2014 15:33:40 +0000
-Subject: Re: [PATCH/RFC 3/5] sh_eth: Simplify MDIO bus initialization and release
-Message-Id: <5329B8D4.6020006@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Mar 2014 09:08:25 +0000
+Subject: [PATCH resend] serial_core: Fix pm imbalance on unbind
+Message-Id: <1395392905-29569-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395185156-6681-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1395185156-6681-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 19.03.2014 19:28, Laurent Pinchart wrote:
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
->>> The network device passed to the sh_mdio_init and sh_mdio_release
->>> functions is only used to access the sh_eth_private instance. Pass it
->>> directly to those functions.
+When a serial port is closed, uart_close() takes care of shutting down the
+hardware, and powering it down.
 
->>> Signed-off-by: Laurent Pinchart
->>> <laurent.pinchart+renesas@ideasonboard.com>
->>> ---
->>>
->>>    drivers/net/ethernet/renesas/sh_eth.c | 27 +++++++++------------------
->>>    1 file changed, 9 insertions(+), 18 deletions(-)
->>>
->>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c
->>> b/drivers/net/ethernet/renesas/sh_eth.c index 7f7085e..55715f3 100644
->>> --- a/drivers/net/ethernet/renesas/sh_eth.c
->>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
->>> @@ -2592,29 +2592,23 @@ static void sh_eth_tsu_init(struct sh_eth_private
->>> *mdp)
->>>    }
->>>
->>>    /* MDIO bus release function */
->>> -static int sh_mdio_release(struct net_device *ndev)
->>> +static int sh_mdio_release(struct sh_eth_private *mdp)
->>>   {
->>> -	struct mii_bus *bus = dev_get_drvdata(&ndev->dev);
+When a serial port is unbound while in use, uart_close() bypasses all of
+this, as this is supposed to be done through uart_hangup() (invoked via
+tty_vhangup() in uart_remove_one_port()).
 
->> I think you should have kept the variable, just changed the initializer, so
->> that repetitive 'mdp->mii_bus' derefs could be avoided.
+However, uart_hangup() does not set the hardware's power state, leaving it
+powered up.  This may also lead to unbounded nesting counts in clock and
+power management, depending on their internal implementation.
 
-> I've actually pondered about that, but given that mdp->mii_bus is used twice
-> only I've decided to remove the local variable.
+Make sure to power down the port in uart_hangup(), except when the port is
+used as a serial console. For serial consoles, this must be postponed until
+after their deregistration in uart_remove_one_port() (symmetry with
+registration in uart_configure_port(), invoked from uart_add_one_port()).
 
-    Ah, then indeed not worth it, probably. I somehow managed to count 3 
-times. :-)
+After this, the module clock used by the sh-sci driver is disabled on
+unbind while the serial port is in use.
 
->> [...]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ drivers/tty/serial/serial_core.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
->>> @@ -2654,10 +2648,9 @@ static int sh_mdio_init(struct net_device *ndev,
->>> int id,
->>>    		goto out_free_bus;
->>>    	}
->>>
->>> -	/* register mdio bus */
->>> -	if (ndev->dev.parent->of_node) {
->>> -		ret = of_mdiobus_register(mdp->mii_bus,
->>> -					  ndev->dev.parent->of_node);
->>> +	/* register MDIO bus */
->>> +	if (dev->of_node) {
->>> +		ret = of_mdiobus_register(mdp->mii_bus, dev->of_node);
->>
->> This change looks like it belongs to another, earlier patch, where you
->> introduce the 'dev' variable. Although... it seems to only be necessiated by
->> this patch, so you're probably right.
-
-> That's also a question I've asked myself :-) Both options make sense, and I've
-> decided to pick this one.
-
-    Yes, I completely agree now.
-
-WBR, Sergei
+diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
+index 2cf5649a6dc0..56dda84f82a5 100644
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -1452,6 +1452,8 @@ static void uart_hangup(struct tty_struct *tty)
+ 		clear_bit(ASYNCB_NORMAL_ACTIVE, &port->flags);
+ 		spin_unlock_irqrestore(&port->lock, flags);
+ 		tty_port_tty_set(port, NULL);
++		if (!uart_console(state->uart_port))
++			uart_change_pm(state, UART_PM_STATE_OFF);
+ 		wake_up_interruptible(&port->open_wait);
+ 		wake_up_interruptible(&port->delta_msr_wait);
+ 	}
+@@ -2681,10 +2683,12 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *uport)
+ 	}
+ 
+ 	/*
+-	 * If the port is used as a console, unregister it
++	 * If the port is used as a console, unregister it, and power it down
+ 	 */
+-	if (uart_console(uport))
++	if (uart_console(uport)) {
+ 		unregister_console(uport->cons);
++		uart_change_pm(state, UART_PM_STATE_OFF);
++	}
+ 
+ 	/*
+ 	 * Free the port IO and memory resources, if any.
+-- 
+1.7.9.5
 
