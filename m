@@ -1,57 +1,101 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Fri, 28 Mar 2014 15:47:36 +0000
-Subject: Re: [PATCH v2 0/6] PCI irq mapping fixes and cleanups
-Message-Id: <1396021656.4563.3.camel@weser.hi.pengutronix.de>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 21 Mar 2014 11:09:14 +0000
+Subject: [PATCH v5] sh_eth: ensure pm_runtime cannot suspend the device during init
+Message-Id: <1395400154-25710-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, davem@davemloft.net, Ben Dooks <ben.dooks@codethink.co.uk>, sergei.shtylyov@cogentembedded.com, laurent.pinchart+renesas@ideasonboard.com
 
-Friendly ping.
+The pm_rumtime work queue is causing the device to be suspended during
+initialisation, thus the initialisation may not be able to access registers
+properly. As the code is called from a work queue, it is possible that this
+is not seen from certain configurations/builds due to the asynchronos
+nature of the code.
 
-Bjorn could you please pick the patches labeled "PCI: ..." up? Both the
-Tegra and i.MX dts changes are already queued up for 3.15 and I think
-all patches gathered enough acks and tested-bys for this to be low risk.
+Another issue has also been found where the network device registration
+calls back into the driver thus causing further pm_runtime calls that
+also caused issues with the MDIO bus code. This has now been checked
+and is the only place the MDIO can be called without the device open.
 
-Regards,
-Lucas
+Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
+pm system does not suspend it during the probe() call and remove the
+now unnecessary pm_runtime_resume() call. Also add a call in the error
+path to call pm_runtime_disable().
 
-Am Mittwoch, den 05.03.2014, 14:25 +0100 schrieb Lucas Stach:
-> This series cleans up the PCI irq mapping for all
-> the ARM PCI host drivers, so they handle it in the
-> way defined in the common PCI bindings.
-> 
-> I've worked in all the feedback I received on the first
-> round of this series and left out the i.MX pcie driver
-> changes, as these need more work includig breaking
-> of the existing binding, which I'll send as a separate
-> series.
-> 
-> Lucas Stach (6):
->   ARM: dts: tegra: add PCIe interrupt mapping properties
->   PCI: tegra: use new OF interrupt mapping when possible
->   PCI: rcar: use new OF interrupt mapping when possible
->   ARM: dts: exynos5440: fix PCIe interrupt mapping
->   ARM: dts: imx6: add PCIe interrupt mapping properties
->   PCI: designware: use new OF interrupt mapping when possible
-> 
->  .../devicetree/bindings/pci/nvidia,tegra20-pcie.txt          |  8 ++++++++
->  arch/arm/boot/dts/exynos5440.dtsi                            |  6 ++++--
->  arch/arm/boot/dts/imx6qdl.dtsi                               |  8 ++++++++
->  arch/arm/boot/dts/tegra20.dtsi                               |  4 ++++
->  arch/arm/boot/dts/tegra30.dtsi                               |  4 ++++
->  drivers/pci/host/pci-rcar-gen2.c                             | 12 +++++++++---
->  drivers/pci/host/pci-tegra.c                                 |  7 ++++++-
->  drivers/pci/host/pcie-designware.c                           | 12 +++++++++---
->  8 files changed, 52 insertions(+), 9 deletions(-)
-> 
+This fixes the external abort that can cause /sbin/init or other such
+init processed to die.
 
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+
+---
+Cc: sergei.shtylyov@cogentembedded.com
+Cc: laurent.pinchart+renesas@ideasonboard.com
+cc: netdev@vger.kernel.org
+
+Note, Laurent this should probably be applied before your
+current series as it may require changes to the exit sequence.
+
+Fixes from v1:
+	- use pm_runtime_put() over pm_runtime_put_sync() as
+	  we do not need to guaranteed the device has powered
+          off after probe.
+
+Fixed from v2:
+	- call pm_runtime_put() in error path
+
+Fixed from v3:
+	- call pm_runtime_disable() in error path
+
+Conflicts:
+	drivers/net/ethernet/renesas/sh_eth.c
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index e4bff18..6a9509c 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2772,6 +2772,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	if (!ndev)
+ 		return -ENOMEM;
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	/* The sh Ether-specific entries in the device structure. */
+ 	ndev->base_addr = res->start;
+ 	devno = pdev->id;
+@@ -2799,8 +2802,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 
+ 	spin_lock_init(&mdp->lock);
+ 	mdp->pdev = pdev;
+-	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_resume(&pdev->dev);
+ 
+ 	if (pdev->dev.of_node)
+ 		pd = sh_eth_parse_dt(&pdev->dev);
+@@ -2898,6 +2899,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	netdev_info(ndev, "Base address at 0x%x, %pM, IRQ %d.\n",
+ 		    (u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
+ 
++	pm_runtime_put(&pdev->dev);
+ 	platform_set_drvdata(pdev, ndev);
+ 
+ 	return ret;
+@@ -2911,6 +2913,8 @@ out_release:
+ 	if (ndev)
+ 		free_netdev(ndev);
+ 
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	return ret;
+ }
+ 
 -- 
-Pengutronix e.K.                           | Lucas Stach                 |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+1.9.0
 
