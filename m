@@ -1,55 +1,72 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 21 Mar 2014 10:30:16 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 21 Mar 2014 10:57:23 +0000
 Subject: Re: [PATCH] sh_eth: pm_runtime should not need null operations
-Message-Id: <CAMuHMdWO-kNdWT_AxzAmCTrx3NerWpTG+auFNZTcL5hsbN+++A@mail.gmail.com>
+Message-Id: <532C1B13.7000805@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395396913-24354-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1395396913-24354-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1395396913-24354-1-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdWO-kNdWT_AxzAmCTrx3NerWpTG+auFNZTcL5hsbN+++A@mail.gmail.com>
+In-Reply-To: <CAMuHMdWO-kNdWT_AxzAmCTrx3NerWpTG+auFNZTcL5hsbN+++A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "David S. Miller" <davem@davemloft.net>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-kernel@lists.codethink.co.uk, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "David S. Miller" <davem@davemloft.net>, "Rafael J. Wysocki" <rjw@rjwysocki.net>
 
-Hi Ben,
+On 21/03/14 11:30, Geert Uytterhoeven wrote:
+> Hi Ben,
+>
+> On Fri, Mar 21, 2014 at 11:15 AM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>> The driver has a no-op for the pm_runtime callbacks but
+>> the pm_runtime core should correctly ignore drivers without
+>> any pm_rumtime callback ops.
+>
+> The pm_runtime core doesn't ignore non-existing runtime_{suspend,resume}
+> callbacks, it turns them into a failure withv -ENOSYS.
+> Only non-existing runtime_idle callbacks are ignored.
 
-On Fri, Mar 21, 2014 at 11:15 AM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> The driver has a no-op for the pm_runtime callbacks but
-> the pm_runtime core should correctly ignore drivers without
-> any pm_rumtime callback ops.
+I've added Rafael Wysocki as he may be able to add better
+feedback to this issue.
 
-The pm_runtime core doesn't ignore non-existing runtime_{suspend,resume}
-callbacks, it turns them into a failure withv -ENOSYS.
-Only non-existing runtime_idle callbacks are ignored.
+[snip rpm_susend code block]
 
-rpm_suspend():
+I got very confused here. The clock_ops sets dev->pm_domain
+which over-rides the use of the dev->driver->pm entry as the
+primary pm for the device. The code above the bit you snipped
+does a ladder looking for the pm_runtime entry it calls and
+would stop at finding dev->pm_domain as so:
 
-        callback = rpm_get_suspend_cb(dev);
+from drivers/base/power/runtime.c:
+     495         if (dev->pm_domain)
+     496                 callback = dev->pm_domain->ops.runtime_suspend;
+  ...
+     502                 callback = dev->bus->pm->runtime_suspend;
+     503         else
+     504                 callback = NULL;
 
-        retval = rpm_callback(callback, dev);
-        if (retval)
-                goto fail;
 
-(rpm_callback() returns -ENOSYS if !callback).
+So for drivers on shmobile with drivers/sh/pm_runtime.c enabled
+we would never call the drivers' entry as the ops that this code
+introduces just calls the pm_clk calls and does not send the
+events on.
 
-pm_runtime_force_suspend():
+If we send the events on, then we would use pm_generic_runtime_suspend()
+to send it. This call treats the lack of runtime_pm driver entry as a
+do nothing and return 0 which means in this case the code in sh_eth
+is not necessary to have any pm_runtime functions.
 
-        callback = rpm_get_suspend_cb(dev);
+This means depending on if we have a pm_domain in the path we get
+different treatment of NULL runtime pm ops pointer. I am not sure
+how to handle this, as IIRC a number of other drivers for Renesas
+currently assume that the NULL case is going to be fine for them.
 
-        if (!callback) {
-                ret = -ENOSYS;
-                goto err;
-        }
+Changing pm_generic_runtime_suspend() to return ENOSYS would end
+up breaking davinci and probably a number of other platforms.
 
-Same for resume.
+So questions:
 
-Gr{oetje,eeting}s,
+- Should rpm_suspend() ignore the lack of pm_runtime operations?
+- Do we need to add a generic `ignore pm runtime callback`
+- Are any other shmobile drivers similarly affected?
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
