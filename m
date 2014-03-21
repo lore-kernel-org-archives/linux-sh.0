@@ -1,98 +1,32 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 21 Mar 2014 10:14:48 +0000
-Subject: [PATCH v4] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <1395396888-24306-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 Mar 2014 10:19:35 +0000
+Subject: Re: [PATCH v4] sh_eth: ensure pm_runtime cannot suspend the device during init
+Message-Id: <CAMuHMdWt+z08vK0TcQ9VZN0QiybqVK568RR-0NPCoT6cmf6LKA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395396888-24306-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1395396888-24306-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, davem@davemloft.net, Ben Dooks <ben.dooks@codethink.co.uk>, sergei.shtylyov@cogentembedded.com, laurent.pinchart+renesas@ideasonboard.com
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-kernel@lists.codethink.co.uk, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "David S. Miller" <davem@davemloft.net>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The pm_rumtime work queue is causing the device to be suspended during
-initialisation, thus the initialisation may not be able to access registers
-properly. As the code is called from a work queue, it is possible that this
-is not seen from certain configurations/builds due to the asynchronos
-nature of the code.
+Hi Ben,
 
-Another issue has also been found where the network device registration
-calls back into the driver thus causing further pm_runtime calls that
-also caused issues with the MDIO bus code. This has now been checked
-and is the only place the MDIO can be called without the device open.
+On Fri, Mar 21, 2014 at 11:14 AM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> Note, Laurent this should probably be applied before your
+> current series as it may require changes to the exit sequence.
 
-Use pm_runtime_get_sync() and pm_runtime_put() to ensure that the
-pm system does not suspend it during the probe() call and remove the
-now unnecessary pm_runtime_resume() call. Also add a call in the error
-path to call pm_runtime_disable().
+Laurent's series is already in netdev-next, so I think you'll have to
+build on top of that.
 
-This fixes the external abort that can cause /sbin/init or other such
-init processed to die.
+Gr{oetje,eeting}s,
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+                        Geert
 
----
-Cc: sergei.shtylyov@cogentembedded.com
-Cc: laurent.pinchart+renesas@ideasonboard.com
-cc: netdev@vger.kernel.org
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Note, Laurent this should probably be applied before your
-current series as it may require changes to the exit sequence.
-
-Fixes from v1:
-	- use pm_runtime_put() over pm_runtime_put_sync() as
-	  we do not need to guaranteed the device has powered
-          off after probe.
-
-Fixed from v2:
-	- call pm_runtime_put() in error path
-
-Fixed from v3:
-	- call pm_runtime_disable() in error path
----
- drivers/net/ethernet/renesas/sh_eth.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 4f76b5e..b908507 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2841,6 +2841,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 		goto out;
- 	}
- 
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_get_sync(&pdev->dev);
-+
- 	/* The sh Ether-specific entries in the device structure. */
- 	ndev->base_addr = res->start;
- 	devno = pdev->id;
-@@ -2868,8 +2871,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 
- 	spin_lock_init(&mdp->lock);
- 	mdp->pdev = pdev;
--	pm_runtime_enable(&pdev->dev);
--	pm_runtime_resume(&pdev->dev);
- 
- 	if (pdev->dev.of_node)
- 		pd = sh_eth_parse_dt(&pdev->dev);
-@@ -2961,6 +2962,7 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 	pr_info("Base address at 0x%x, %pM, IRQ %d.\n",
- 		(u32)ndev->base_addr, ndev->dev_addr, ndev->irq);
- 
-+	pm_runtime_put(&pdev->dev);
- 	platform_set_drvdata(pdev, ndev);
- 
- 	return ret;
-@@ -2976,6 +2978,8 @@ out_release:
- 	if (ndev)
- 		free_netdev(ndev);
- 
-+	pm_runtime_put(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
- out:
- 	return ret;
- }
--- 
-1.9.0
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
