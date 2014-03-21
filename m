@@ -1,23 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Mar 2014 16:53:35 +0000
-Subject: Re: [PATCH] ARM: shmobile: Use r8a7740 suffix for i2c, mmcif, fsi2 compat strings
-Message-Id: <20140328165334.GE3745@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 21 Mar 2014 10:15:13 +0000
+Subject: [PATCH] sh_eth: pm_runtime should not need null operations
+Message-Id: <1395396913-24354-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395917144-402-1-git-send-email-ulrich.hecht@gmail.com>
- <20140327120202.GB13469@katana>
-In-Reply-To: <20140327120202.GB13469@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk, netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, davem@davemloft.net, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Thu, Mar 27, 2014 at 01:02:02PM +0100, Wolfram Sang wrote:
-> On Thu, Mar 27, 2014 at 11:45:44AM +0100, Ulrich Hecht wrote:
-> > Add "renesas,*-r8a7740" to the compatible strings for consistency with other
-> > devices.
-> > 
-> > Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-> 
-> Acked-by: Wolfram Sang <wsa@the-dreams.de>
+The driver has a no-op for the pm_runtime callbacks but
+the pm_runtime core should correctly ignore drivers without
+any pm_rumtime callback ops.
 
-Thanks, I will queue this up.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 23 -----------------------
+ 1 file changed, 23 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index b908507..bb93333e 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -2998,28 +2998,6 @@ static int sh_eth_drv_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-#ifdef CONFIG_PM
+-static int sh_eth_runtime_nop(struct device *dev)
+-{
+-	/* Runtime PM callback shared between ->runtime_suspend()
+-	 * and ->runtime_resume(). Simply returns success.
+-	 *
+-	 * This driver re-initializes all registers after
+-	 * pm_runtime_get_sync() anyway so there is no need
+-	 * to save and restore registers here.
+-	 */
+-	return 0;
+-}
+-
+-static const struct dev_pm_ops sh_eth_dev_pm_ops = {
+-	.runtime_suspend = sh_eth_runtime_nop,
+-	.runtime_resume = sh_eth_runtime_nop,
+-};
+-#define SH_ETH_PM_OPS (&sh_eth_dev_pm_ops)
+-#else
+-#define SH_ETH_PM_OPS NULL
+-#endif
+-
+ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7619-ether", (kernel_ulong_t)&sh7619_data },
+ 	{ "sh771x-ether", (kernel_ulong_t)&sh771x_data },
+@@ -3043,7 +3021,6 @@ static struct platform_driver sh_eth_driver = {
+ 	.id_table = sh_eth_id_table,
+ 	.driver = {
+ 		   .name = CARDNAME,
+-		   .pm = SH_ETH_PM_OPS,
+ 		   .of_match_table = of_match_ptr(sh_eth_match_table),
+ 	},
+ };
+-- 
+1.9.0
+
