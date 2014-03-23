@@ -1,36 +1,35 @@
-From: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
-Date: Fri, 21 Mar 2014 16:49:43 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 23 Mar 2014 10:13:20 +0000
 Subject: Re: [PATCH v4 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
-Message-Id: <20140321164943.GB3374@obsidianresearch.com>
+Message-Id: <CAMuHMdVMCeZwX_67ktCYcYLe_P3+X5EeRbUDT3ZJjcgvU=Hwqg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
+ <1395397968-6242-7-git-send-email-phil.edworthy@renesas.com>
  <532C5ADE.4030708@cogentembedded.com>
- <OF4D80B18E.5A1F55AB-ON80257CA2.0051AADA-80257CA2.0051D412@eu.necel.com>
- <6044873.2S2Xlhp0hC@wuerfel> <532C6BF7.1050404@cogentembedded.com>
- <OFCC2858D2.BB49EE27-ON80257CA2.005AA51E-80257CA2.005AC3A0@eu.necel.com>
-In-Reply-To: <OFCC2858D2.BB49EE27-ON80257CA2.005AA51E-80257CA2.005AC3A0@eu.necel.com>
+In-Reply-To: <532C5ADE.4030708@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 21, 2014 at 04:31:24PM +0000, Phil.Edworthy@renesas.com wrote:
-> >     OK, I have found where it does that but the recommended value
-> > seems to be "pciex" for PCI-Express case.
-> 
-> Ok, but why then do all the other PCIe hosts use "pci"?
+On Fri, Mar 21, 2014 at 4:29 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+>> +
+>> +       pcie: pcie@fe000000 {
+>> +               compatible = "renesas,r8a7790-pcie";
+>
+>    The convention adopted on this list is to put the "pcie" first, and SoC
+> name the last.
 
-Because that is what the PCI bus binding standard says to do, and
-new drivers have been pushed toward conforming to that document.
+Except for clock bindings ;-)
 
-I'm not sure if "pciex" was ever standardized, I haven't see a spec
-that reflects that at least.
+Gr{oetje,eeting}s,
 
-Commit 14e2abb732e485ee57d9d5b2cb8884652238e5c1 introduced support for
-the "pciex" word, but it looks driven by proprietary choices by IBM..
+                        Geert
 
-In any event there isn't a single 'device_type = "pciex";' pre-exsting
-in the kernel bindings today, so please don't add one :)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Regards,
-Jason
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
