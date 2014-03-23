@@ -1,70 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 06 Mar 2014 19:54:51 +0000
-Subject: Re: [PATCH 3/9] phy-rcar-usb-gen2: add device tree support
-Message-Id: <5318E09D.6000305@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 23 Mar 2014 19:35:01 +0000
+Subject: [PATCH 1/2] ARM: shmobile: armadillo-reference dts: Use KEY_* macros for gpio-keys
+Message-Id: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394128887-4197-1-git-send-email-ben.dooks@codethink.co.uk> <1394128887-4197-4-git-send-email-ben.dooks@codethink.co.uk> <5318C973.70501@cogentembedded.com> <5318BC3A.808@codethink.co.uk>
-In-Reply-To: <5318BC3A.808@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-sh@vger.kernel.org, linux-usb@vger.kernel.org, linux-kernel@lists.codethink.co.uk, magnus.damn@opensource.se, horms@verge.net.au, Felipe Balbi <balbi@ti.com>, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-On 03/06/2014 09:19 PM, Ben Dooks wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+---
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
->>> Add support for the phy-rcar-gen2-usb driver to be probed from device
->>> tree.
-
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-[...]
-
->>>   drivers/usb/phy/phy-rcar-gen2-usb.c                | 34
->>> +++++++++++++++++---
->>>   3 files changed, 66 insertions(+), 5 deletions(-)
->>>   create mode 100644
->>> Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
-
->>> diff --git
->>> a/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
->>> b/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
->>> new file mode 100644
->>> index 0000000..5351a30
->>> --- /dev/null
->>> +++ b/Documentation/devicetree/bindings/usb/renesas,rcar-gen2-usb-phy.txt
->>> @@ -0,0 +1,36 @@
->>> +Renesas RCar gen2 USB PHY bindings
->>> +----------------------------------
->>> +
->>> +Bindings for the USB PHY block used in some Renesas SoCs.
->>> +
->>> +Required properties:
->>> + - compatible:  "renesas,usb-phy-r8a7790" for the R8A7790 SoC
->>> +        "renesas,usb-phy-r8a7791" for the R8A7791 SoC
->>> + - reg : A single region to access device registers
->>> + - clocks : The reference to the clock to use for this block
->>> + - clock-names : The name for the clock at index 0 (must be "usbhs")
->>> +
->>> +Optional properties:
->>> +
->>> + - renesas,usb0-device: boolean, if present USB0 is connected to HS
->>> device
->>> +            otherwise the USB0 is connected to OHCI/EHCI host.
-
->>     IIUC, the testing has shown that USBHS is dual-role controller in
->> that case, i.e. supports both host and device roles (the manual has the
->> host controller details too). Vladimir, is it so?
-
-> Currently there is no auto-detection for this, so it gets set at
-> start time.
-
-    The mode can be auto-detected by reading SW5. My point was however, that 
-it doesn't seem correct to call the prop "renesas,usb0-device". I'd rather 
-suggest "renesas,usb0-usbhs" if you keep sticking to the scheme opposite to 
-the platform data.
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 95a849bf921f..97342a4820cf 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -11,6 +11,7 @@
+ /dts-v1/;
+ #include "r8a7740.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pwm/pwm.h>
+ 
+@@ -77,26 +78,26 @@
+ 
+ 		power-key {
+ 			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
+-			linux,code = <116>;
++			linux,code = <KEY_POWER>;
+ 			label = "SW3";
+ 			gpio-key,wakeup;
+ 		};
+ 
+ 		back-key {
+ 			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
+-			linux,code = <158>;
++			linux,code = <KEY_BACK>;
+ 			label = "SW4";
+ 		};
+ 
+ 		menu-key {
+ 			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
+-			linux,code = <139>;
++			linux,code = <KEY_MENU>;
+ 			label = "SW5";
+ 		};
+ 
+ 		home-key {
+ 			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
+-			linux,code = <102>;
++			linux,code = <KEY_HOME>;
+ 			label = "SW6";
+ 		};
+ 	};
+-- 
+1.7.9.5
 
