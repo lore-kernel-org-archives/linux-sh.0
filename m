@@ -1,75 +1,101 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Tue, 11 Mar 2014 03:43:23 +0000
-Subject: Re: [PATCH 1/2] serial_core: Unregister console in uart_remove_one_port()
-Message-Id: <531E865B.9090707@hurleysoftware.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 24 Mar 2014 03:27:30 +0000
+Subject: [PATCH] ARM: bockw: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <87ha6oi8dg.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393593694-30262-1-git-send-email-geert@linux-m68k.org> <531E61AC.6040706@hurleysoftware.com>
-In-Reply-To: <531E61AC.6040706@hurleysoftware.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@linux-m68k.org>, One Thousand Gnomes <gnomes@lxorguk.ukuu.org.uk>
+To: Mark Brown <broonie@kernel.org>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On 03/10/2014 09:06 PM, Peter Hurley wrote:
-> [ +cc Alan ]
->
-> On 02/28/2014 08:21 AM, Geert Uytterhoeven wrote:
->> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->>
->> If the serial port being removed is used as a console, it must also be
->> unregistered from the console subsystem using unregister_console().
->>
->> uart_ops.release_port() will release resources (e.g. iounmap() the serial
->> port registers), causing a crash on subsequent kernel output if the console
->> is still registered.
->
-> This brings up an interesting point:  where are the serial_core drivers
-> indicating to the tty core that the port is bound to a console?
-> IOW, I cannot find a single 'port->console = 1' anywhere in the serial tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Answering half my own question: I see that serial_core doesn't use
-tty_port_shutdown() but rather has it's own uart_shutdown() equivalent, and
-thus doesn't use 'port->console'.
+SND_SOC_DAIFMT_CBx_CFx means "codec" side master/slave mode.
+Then, rcar will be master mode if it was SND_SOC_DAIFMT_CBS_CFS.
 
-Ok.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Mark, Simon
 
-But I still don't see what prevents a uart_port_shutdown() on a running
-serial console.
+I'm so sorry. current Mark's fix/rcar branch has
+SND_SOC_DAIFMT_CBx_CFx fixup patches,
+but it didn't care about bockw board.
+This patch is for it.
+This Subject is using "ARM: bockw:" prefix,
+but, should it be "ASoC: rcar" ?
 
-Regards,
-Peter Hurley
+ arch/arm/mach-shmobile/board-bockw.c |   16 +++++-----------
+ 1 file changed, 5 insertions(+), 11 deletions(-)
 
-> It would be bad if the uart port disappears while a console is running
-> on it...
->
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
->> ---
->>   drivers/tty/serial/serial_core.c |    6 ++++++
->>   1 file changed, 6 insertions(+)
->>
->> diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
->> index ece2049bd270..8ece7f14d89d 100644
->> --- a/drivers/tty/serial/serial_core.c
->> +++ b/drivers/tty/serial/serial_core.c
->> @@ -2677,6 +2677,12 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *uport)
->>           tty_vhangup(port->tty);
->>
->>       /*
->> +     * If the port is used as a console, unregister it
->> +     */
->> +    if (uart_console(uport))
->> +        unregister_console(uport->cons);
->> +
->> +    /*
->>        * Free the port IO and memory resources, if any.
->>        */
->>       if (uport->type != PORT_UNKNOWN)
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index b5867b7..f444be2 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -467,14 +467,12 @@ static struct asoc_simple_card_info rsnd_card_info[] = {
+ 		.card		= "SSI56-AK4643",
+ 		.codec		= "ak4642-codec.0-0012",
+ 		.platform	= "rcar_sound",
+-		.daifmt		= SND_SOC_DAIFMT_LEFT_J,
++		.daifmt		= SND_SOC_DAIFMT_LEFT_J | SND_SOC_DAIFMT_CBM_CFM,
+ 		.cpu_dai = {
+ 			.name	= "rsnd-dai.0",
+-			.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 		},
+ 		.codec_dai = {
+ 			.name	= "ak4642-hifi",
+-			.fmt	= SND_SOC_DAIFMT_CBM_CFM,
+ 			.sysclk	= 11289600,
+ 		},
+ 	},
+@@ -484,10 +482,9 @@ static struct asoc_simple_card_info rsnd_card_info[] = {
+ 		.card		= "SSI3-AK4554(playback)",
+ 		.codec		= "ak4554-adc-dac.0",
+ 		.platform	= "rcar_sound",
++		.daifmt		= SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_RIGHT_J,
+ 		.cpu_dai = {
+ 			.name	= "rsnd-dai.1",
+-			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
+-				  SND_SOC_DAIFMT_RIGHT_J,
+ 		},
+ 		.codec_dai = {
+ 			.name	= "ak4554-hifi",
+@@ -499,10 +496,9 @@ static struct asoc_simple_card_info rsnd_card_info[] = {
+ 		.card		= "SSI4-AK4554(capture)",
+ 		.codec		= "ak4554-adc-dac.0",
+ 		.platform	= "rcar_sound",
++		.daifmt		= SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_LEFT_J,
+ 		.cpu_dai = {
+ 			.name	= "rsnd-dai.2",
+-			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
+-				  SND_SOC_DAIFMT_LEFT_J,
+ 		},
+ 		.codec_dai = {
+ 			.name	= "ak4554-hifi",
+@@ -514,10 +510,9 @@ static struct asoc_simple_card_info rsnd_card_info[] = {
+ 		.card		= "SSI7-AK4554(playback)",
+ 		.codec		= "ak4554-adc-dac.1",
+ 		.platform	= "rcar_sound",
++		.daifmt		= SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_RIGHT_J,
+ 		.cpu_dai = {
+ 			.name	= "rsnd-dai.3",
+-			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
+-				  SND_SOC_DAIFMT_RIGHT_J,
+ 		},
+ 		.codec_dai = {
+ 			.name	= "ak4554-hifi",
+@@ -529,10 +524,9 @@ static struct asoc_simple_card_info rsnd_card_info[] = {
+ 		.card		= "SSI8-AK4554(capture)",
+ 		.codec		= "ak4554-adc-dac.1",
+ 		.platform	= "rcar_sound",
++		.daifmt		= SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_LEFT_J,
+ 		.cpu_dai = {
+ 			.name	= "rsnd-dai.4",
+-			.fmt	= SND_SOC_DAIFMT_CBM_CFM |
+-				  SND_SOC_DAIFMT_LEFT_J,
+ 		},
+ 		.codec_dai = {
+ 			.name	= "ak4554-hifi",
+-- 
+1.7.9.5
 
