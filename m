@@ -1,63 +1,18 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 23 Mar 2014 19:35:01 +0000
-Subject: [PATCH 1/2] ARM: shmobile: armadillo-reference dts: Use KEY_* macros for gpio-keys
-Message-Id: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 24 Mar 2014 02:00:58 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: armadillo-reference dts: Use KEY_* macros for gpio-keys
+Message-Id: <20140324020058.GC8777@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Sun, Mar 23, 2014 at 08:35:01PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 95a849bf921f..97342a4820cf 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -11,6 +11,7 @@
- /dts-v1/;
- #include "r8a7740.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- #include <dt-bindings/pwm/pwm.h>
- 
-@@ -77,26 +78,26 @@
- 
- 		power-key {
- 			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
--			linux,code = <116>;
-+			linux,code = <KEY_POWER>;
- 			label = "SW3";
- 			gpio-key,wakeup;
- 		};
- 
- 		back-key {
- 			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
--			linux,code = <158>;
-+			linux,code = <KEY_BACK>;
- 			label = "SW4";
- 		};
- 
- 		menu-key {
- 			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
--			linux,code = <139>;
-+			linux,code = <KEY_MENU>;
- 			label = "SW5";
- 		};
- 
- 		home-key {
- 			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
--			linux,code = <102>;
-+			linux,code = <KEY_HOME>;
- 			label = "SW6";
- 		};
- 	};
--- 
-1.7.9.5
-
+Thanks, I have queued up this patch.
