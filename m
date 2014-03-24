@@ -1,85 +1,19 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 23 Mar 2014 19:35:02 +0000
-Subject: [PATCH 2/2] ARM: shmobile: kzm9g-reference dts: Use KEY_* macros for gpio-keys
-Message-Id: <1395603302-32056-2-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 24 Mar 2014 02:01:09 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: kzm9g-reference dts: Use KEY_* macros for gpio-keys
+Message-Id: <20140324020108.GD8777@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1395603302-32056-1-git-send-email-geert@linux-m68k.org>
+ <1395603302-32056-2-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1395603302-32056-2-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+On Sun, Mar 23, 2014 at 08:35:02PM +0100, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index eb8886b535e4..a99171c8a782 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -14,6 +14,7 @@
- /dts-v1/;
- #include "sh73a0.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
-@@ -112,43 +113,43 @@
- 
- 		back-key {
- 			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
--			linux,code = <158>;
-+			linux,code = <KEY_BACK>;
- 			label = "SW3";
- 		};
- 
- 		right-key {
- 			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
--			linux,code = <106>;
-+			linux,code = <KEY_RIGHT>;
- 			label = "SW2-R";
- 		};
- 
- 		left-key {
- 			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
--			linux,code = <105>;
-+			linux,code = <KEY_LEFT>;
- 			label = "SW2-L";
- 		};
- 
- 		enter-key {
- 			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
--			linux,code = <28>;
-+			linux,code = <KEY_ENTER>;
- 			label = "SW2-P";
- 		};
- 
- 		up-key {
- 			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
--			linux,code = <103>;
-+			linux,code = <KEY_UP>;
- 			label = "SW2-U";
- 		};
- 
- 		down-key {
- 			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
--			linux,code = <108>;
-+			linux,code = <KEY_DOWN>;
- 			label = "SW2-D";
- 		};
- 
- 		home-key {
- 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
--			linux,code = <102>;
-+			linux,code = <KEY_HOME>;
- 			label = "SW1";
- 		};
- 	};
--- 
-1.7.9.5
-
+Thanks, I have queued up this patch.
