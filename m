@@ -1,51 +1,105 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 14 Mar 2014 19:34:45 +0000
-Subject: Re: [PATCH 2/2] ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <20140314193445.GG366@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="C6nHA5rIg3zAawEK"
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 25 Mar 2014 18:56:25 +0000
+Subject: [PATCH v2 1/5] pinctrl: pfc: r8a7790: add i2c0 muxing
+Message-Id: <1395773789-17249-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
- <87d2hpppk3.wl%kuninori.morimoto.gx@gmail.com>
- <87a9ctpph2.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87a9ctpph2.wl%kuninori.morimoto.gx@gmail.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Simon <horms@verge.net.au>, Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
+References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Wolfram Sang <wsa@sang-engineering.com>
 
---C6nHA5rIg3zAawEK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Add the muxing for the last missing i2c rcar core. Fix the sorting for
+SH_PFC_PIN_NAMED while we are here.
 
-On Thu, Mar 13, 2014 at 05:56:43PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> SND_SOC_DAIFMT_CBx_CFx means "codec" side master/slave mode.
-> Then, rcar will be master mode if it was SND_SOC_DAIFMT_CBS_CFS.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+Change since V1:
 
-Applied, thanks.
+* sorted SH_PFC_PIN_NAMED pins
 
---C6nHA5rIg3zAawEK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index c381ae63c508..bcb47d138b02 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -782,6 +782,7 @@ enum {
+ 	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
+ 	TCLK1_B_MARK,
+ 
++	I2C0_SCL_MARK, I2C0_SDA_MARK,
+ 	I2C3_SCL_MARK, I2C3_SDA_MARK,
+ 	PINMUX_MARK_END,
+ };
+@@ -1722,6 +1723,9 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
+ 	PINMUX_IPSR_MODSEL_DATA(IP16_7, TCLK1_B, SEL_TMU1_1),
+ 
++	PINMUX_DATA(I2C0_SCL_MARK, FN_SEL_IIC0_1),
++	PINMUX_DATA(I2C0_SDA_MARK, FN_SEL_IIC0_1),
++
+ 	PINMUX_DATA(I2C3_SCL_MARK, FN_SEL_IICDVFS_1),
+ 	PINMUX_DATA(I2C3_SDA_MARK, FN_SEL_IICDVFS_1),
+ };
+@@ -1735,8 +1739,10 @@ static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ 
+ 	/* Pins not associated with a GPIO port */
+-	SH_PFC_PIN_NAMED(ROW_GROUP_A('J'), 15, AJ15),
++	SH_PFC_PIN_NAMED(ROW_GROUP_A('F'), 15, AF15),
++	SH_PFC_PIN_NAMED(ROW_GROUP_A('G'), 15, AG15),
+ 	SH_PFC_PIN_NAMED(ROW_GROUP_A('H'), 15, AH15),
++	SH_PFC_PIN_NAMED(ROW_GROUP_A('J'), 15, AJ15),
+ };
+ 
+ /* - AUDIO CLOCK ------------------------------------------------------------ */
+@@ -2054,6 +2060,14 @@ static const unsigned int hscif1_ctrl_b_pins[] = {
+ static const unsigned int hscif1_ctrl_b_mux[] = {
+ 	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
+ };
++/* - I2C0 ------------------------------------------------------------------- */
++static const unsigned int i2c0_pins[] = {
++	/* SCL, SDA */
++	PIN_A_NUMBER('G', 15), PIN_A_NUMBER('F', 15),
++};
++static const unsigned int i2c0_mux[] = {
++	I2C0_SCL_MARK, I2C0_SDA_MARK,
++};
+ /* - I2C1 ------------------------------------------------------------------- */
+ static const unsigned int i2c1_pins[] = {
+ 	/* SCL, SDA */
+@@ -3626,6 +3640,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hscif1_data_b),
+ 	SH_PFC_PIN_GROUP(hscif1_clk_b),
+ 	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
++	SH_PFC_PIN_GROUP(i2c0),
+ 	SH_PFC_PIN_GROUP(i2c1),
+ 	SH_PFC_PIN_GROUP(i2c1_b),
+ 	SH_PFC_PIN_GROUP(i2c1_c),
+@@ -3895,6 +3910,10 @@ static const char * const hscif1_groups[] = {
+ 	"hscif1_ctrl_b",
+ };
+ 
++static const char * const i2c0_groups[] = {
++	"i2c0",
++};
++
+ static const char * const i2c1_groups[] = {
+ 	"i2c1",
+ 	"i2c1_b",
+@@ -4203,6 +4222,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(eth),
+ 	SH_PFC_FUNCTION(hscif0),
+ 	SH_PFC_FUNCTION(hscif1),
++	SH_PFC_FUNCTION(i2c0),
+ 	SH_PFC_FUNCTION(i2c1),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c3),
+-- 
+1.9.0
 
-iQIcBAEBAgAGBQJTI1nSAAoJELSic+t+oim9cYEP/iz/SrbiAlumIaYaQ1dpM3Rr
-CyRZZvrGEUeIvX11NMp9ik4ex8np6nS3t41mcjl8qONKX+RoyBowkzQbk9IuRSmr
-hUlYt6K01Fr87Vy2Csibb1REJPpJ2YAWa/MZStTsiNKYh9fGmuYmmlqdPAfFM6gm
-JFNTyjVS7dnVTAdR4+1l/x+D5ICobNyMX/nk0IvP1Ydyiqn+9ogXOk3uqc2gtyDq
-oybOoqmgdCMvNQI9UmZs4HVWWxDjmvPOhxmP4iHsiV/D3QlB+b7pC2mV8dWxIXip
-kvXZN8NZFyYfYZbfuvABr8PyffCvbxmALGBanMwHcd9+BYk1MFktjmHKZYOpWE8d
-xI3qF2rDcBOsamEWTpY0bR7p4nXQfsbZ4nOwXoZL1BNNFXjkvvb8BLwNLKrEsLyr
-FrYXzKeLT6w02Er6DExDnEKQplDDrA00OV/pY1ivANSJd9ZZTzGOejgi+cj71c4R
-sM1/nUscc2W1LzOOJ55ESA8cx/0we7Vj5lBdh29ZCCDYwA0h0VykLBnXeXVAX70C
-U0AjGdZJS7aIPAguvm/MPr9k5E7cXXvwgsilt9u91Gd0UK1paBd8xhUI3dNXPYMx
-qBLrBH7BUGpQfPW3GdCqY3WieYPq5lDppfXFBpWn5f8NyXP+XHVxt0MSmdNpBjN5
-7ce0DSwzgvYNd8oGjkwy
-=Ery8
------END PGP SIGNATURE-----
-
---C6nHA5rIg3zAawEK--
