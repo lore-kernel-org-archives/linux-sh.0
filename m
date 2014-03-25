@@ -1,60 +1,96 @@
-From: Shawn Guo <shawn.guo@linaro.org>
-Date: Wed, 05 Mar 2014 05:43:35 +0000
-Subject: Re: [PATCH 5/7] ARM: dts: imx6: add PCIe interrupt mapping properties
-Message-Id: <20140305054333.GF8784@S2101-09.ap.freescale.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:30:26 +0000
+Subject: [PATCH 5/6] ARM: shmobile: bockw: switch to use dai info for R-Car sound
+Message-Id: <87bnwudhnj.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
- <1393608523-17509-6-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1393608523-17509-6-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 28, 2014 at 06:28:41PM +0100, Lucas Stach wrote:
-> As defined by the common PCI bindings.
-> 
-> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> ---
->  arch/arm/boot/dts/imx6qdl.dtsi | 11 +++++++++++
->  1 file changed, 11 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
-> index fb28b2ecb1db..db3339e7d3a2 100644
-> --- a/arch/arm/boot/dts/imx6qdl.dtsi
-> +++ b/arch/arm/boot/dts/imx6qdl.dtsi
-> @@ -10,6 +10,8 @@
->   * http://www.gnu.org/copyleft/gpl.html
->   */
->  
-> +#include <dt-bindings/interrupt-controller/arm-gic.h>
-> +
->  #include "skeleton.dtsi"
->  
->  / {
-> @@ -126,7 +128,16 @@
->  				  0x81000000 0 0          0x01f80000 0 0x00010000 /* downstream I/O */
->  				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
->  			num-lanes = <1>;
-> +
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Please drop these blank lines between properties.
+Now, R-Car sound driver supports dai info settings.
+switch to use it
 
-Shawn
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-bockw.c |   53 ++++++++++++++++++++++------------
+ 1 file changed, 35 insertions(+), 18 deletions(-)
 
->  			interrupts = <0 123 0x04>;
-> +
-> +			#interrupt-cells = <1>;
-> +			interrupt-map-mask = <0 0 0 0x7>;
-> +			interrupt-map = <0 0 0 1 &intc GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
-> +			                <0 0 0 2 &intc GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
-> +			                <0 0 0 3 &intc GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
-> +			                <0 0 0 4 &intc GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
-> +
->  			clocks = <&clks 189>, <&clks 187>, <&clks 206>, <&clks 144>;
->  			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
->  			status = "disabled";
-> -- 
-> 1.8.5.3
-> 
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index 1aca107..f444be2 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -345,24 +345,39 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_UNUSED, /* SSI 0 */
+ 	RSND_SSI_UNUSED, /* SSI 1 */
+ 	RSND_SSI_UNUSED, /* SSI 2 */
+-	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
+-	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
+-	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
+-	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
+-	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI(HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), 0),
++	RSND_SSI(HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI(HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), 0),
++	RSND_SSI(HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
++	RSND_SSI(HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), 0),
++	RSND_SSI(HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
+ };
+ 
+-static struct rsnd_scu_platform_info rsnd_scu[9] = {
+-	{ .flags = 0, }, /* SRU 0 */
+-	{ .flags = 0, }, /* SRU 1 */
+-	{ .flags = 0, }, /* SRU 2 */
+-	{ .flags = RSND_SCU_USE_HPBIF, },
+-	{ .flags = RSND_SCU_USE_HPBIF, },
+-	{ .flags = RSND_SCU_USE_HPBIF, },
+-	{ .flags = RSND_SCU_USE_HPBIF, },
+-	{ .flags = RSND_SCU_USE_HPBIF, },
+-	{ .flags = RSND_SCU_USE_HPBIF, },
++static struct rsnd_src_platform_info rsnd_src[9] = {
++	RSND_SRC_UNUSED, /* SRU 0 */
++	RSND_SRC_UNUSED, /* SRU 1 */
++	RSND_SRC_UNUSED, /* SRU 2 */
++	RSND_SRC(0, 0),
++	RSND_SRC(0, 0),
++	RSND_SRC(0, 0),
++	RSND_SRC(0, 0),
++	RSND_SRC(0, 0),
++	RSND_SRC(0, 0),
++};
++
++static struct rsnd_dai_platform_info rsnd_dai[] = {
++	{
++		.playback = { .ssi = &rsnd_ssi[5], .src = &rsnd_src[5] },
++		.capture  = { .ssi = &rsnd_ssi[6], .src = &rsnd_src[6] },
++	}, {
++		.playback = { .ssi = &rsnd_ssi[3], .src = &rsnd_src[3] },
++	}, {
++		.capture  = { .ssi = &rsnd_ssi[4], .src = &rsnd_src[4] },
++	}, {
++		.playback = { .ssi = &rsnd_ssi[7], .src = &rsnd_src[7] },
++	}, {
++		.capture  = { .ssi = &rsnd_ssi[8], .src = &rsnd_src[8] },
++	},
+ };
+ 
+ enum {
+@@ -437,8 +452,10 @@ static struct rcar_snd_info rsnd_info = {
+ 	.flags		= RSND_GEN1,
+ 	.ssi_info	= rsnd_ssi,
+ 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
+-	.scu_info	= rsnd_scu,
+-	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
++	.src_info	= rsnd_src,
++	.src_info_nr	= ARRAY_SIZE(rsnd_src),
++	.dai_info	= rsnd_dai,
++	.dai_info_nr	= ARRAY_SIZE(rsnd_dai),
+ 	.start		= rsnd_start,
+ 	.stop		= rsnd_stop,
+ };
+-- 
+1.7.9.5
 
