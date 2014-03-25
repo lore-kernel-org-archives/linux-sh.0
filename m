@@ -1,61 +1,93 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:00:41 +0000
-Subject: [PATCH V3 05/12] ARM: shmobile: r7s72100: use workaround for non DT-clocks
-Message-Id: <1394208048-32495-6-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:37:21 +0000
+Subject: [PATCH 6/7] ARM: shmobile: lager: add R-Car sound support on DTS
+Message-Id: <87zjkec2rl.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-SCIF2 and MTU2 are not yet prepared for DT usage, so use the common
-workaround via clkdev for now.
-
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-genmai-reference.c | 15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts |   51 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 7630c1053e32..91dcdd0e026d 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -18,18 +18,29 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+#ifdef CONFIG_COMMON_CLK
-+/*
-+ * This is a really crude hack to provide clkdev support to platform
-+ * devices until they get moved to DT.
-+ */
-+static const struct clk_name clk_names[] = {
-+	{ "mtu2", NULL, "sh_mtu2.0" },
-+	{ "scif2", NULL, "sh-sci.2" },
-+};
-+#endif
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a55c5f8..bb92a7a 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -139,6 +139,21 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
 +
- static void __init genmai_add_standard_devices(void)
- {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), true);
- #else
- 	r7s72100_clock_init();
- #endif
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 0>;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&snd_codec>;
++			bitclock-master;
++			frame-master;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -199,6 +214,14 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &ether {
+@@ -297,3 +320,31 @@
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&i2c2 {
++	status = "okay";
++	snd_codec: ak4643 {
++		#sound-dai-cells = <0>;
++		compatible = "asahi-kasei,ak4643";
++		reg = <0x12>;
++	};
++};
++
++&rcar_sound {
++	pinctrl-names = "default", "audio_clock";
++	pinctrl-0 = <&sound_pins>;
++	pinctrl-1 = <&sound_clk_pins>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi1 {
++	shared-pin;
++};
 -- 
-1.9.0
+1.7.9.5
 
