@@ -1,31 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 24 Mar 2014 01:58:17 +0000
-Subject: Re: [PATCH 0/2] Lager & Koelsch: Set ethernet PHY LED mode
-Message-Id: <20140324015817.GB8777@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:29:25 +0000
+Subject: [PATCH 0/6] ARM: shmobile: r8a7778/r8a7790: use new style sound data
+Message-Id: <87ior2dhp9.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395165888-1498-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1395165888-1498-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 19, 2014 at 09:23:31AM +0100, Ben Dooks wrote:
-> On 18/03/14 19:04, Laurent Pinchart wrote:
-> >Hello,
-> >
-> >These two patches set the ethernet PHY LED mode to output etherner link status
-> >on LED0 for the Lager and Koelsch board.
-> >
-> >Both have a runtime dependency on "sh_eth: update OF PHY registeration" and
-> >"phy: micrel: add of configuration for LED mode" (scheduled for merge in v3.15)
-> >to have any effect. Without those dependencies the led-mode property will be
-> >ignored. The patches can thus be merged separately.
-> >
-> >Ben, I haven't seen similar patches being posted to the linux-sh mailing list,
-> >but I might have missed them. I apologize if that's the case.
-> 
-> It is entirely possible they have been missed, there is so much
-> outstanding at the moment that it is easy to miss the odd patch :/
 
-Thanks, I will queue up this series.
+Hi Simon
+
+Next R-Car sound driver supports new style platform data
+which is required for DT support.
+We need switch to new style on platform.
+Current sound driver has new/old style compatibility,
+but, I would like to remove old style compatibility immediately.
+I can do it if these patches are accepted.
+
+These patches are based on...
+
+    1) Simon's renesas-devel-v3.14-rc7-20140324
+    2) Mark's  asoc/topic/rcar
+    3) Mark's  asoc/topic/simple
+    4) Mark's  asoc/fix/rcar
+
+Simon, can you use 2) branch for these patches ?
+3) is needed to use sound, but not needed for compile.
+4) will goes to linus/master soon
+
+I would like to ask Mark to use cross brach between Simon's tree.
+Is it possible ?
+
+Kuninori Morimoto (6):
+      ARM: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
+      ARM: shmobile: r8a7778: remove old style audio clock
+      ARM: shmobile: r8a7790: remove old style audio clock
+      ARM: shmobile: bockw: remove old style audio clock
+      ARM: shmobile: bockw: switch to use dai info for R-Car sound
+      ARM: shmobile: lager: switch to use dai info for R-Car sound
+
+ arch/arm/mach-shmobile/board-bockw.c   |   63 +++++++++++++++++++++-----------
+ arch/arm/mach-shmobile/board-lager.c   |   21 +++++++----
+ arch/arm/mach-shmobile/clock-r8a7778.c |   22 +++++------
+ arch/arm/mach-shmobile/clock-r8a7790.c |   24 +++++-------
+ 4 files changed, 73 insertions(+), 57 deletions(-)
