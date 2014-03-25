@@ -1,64 +1,79 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 11 Mar 2014 13:34:38 +0000
-Subject: Re: [PATCH 7/7] PCI: designware: split samsung and fsl bindings
-Message-Id: <201403111434.38834.arnd@arndb.de>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Mar 2014 16:56:40 +0000
+Subject: [PATCH v5 5/9] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <1395766604-30926-6-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
- <201403041553.40202.arnd@arndb.de>
- <1393947259.9405.18.camel@weser.hi.pengutronix.de>
-In-Reply-To: <1393947259.9405.18.camel@weser.hi.pengutronix.de>
+References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 04 March 2014, Lucas Stach wrote:
-> > > On i.MX6 the clock names (which I have to agree are pretty bad) map as
-> > > follows:
-> > > pcie_axi: host controller main register/bus access clock
-> > > pcie_ref_125m: pcie phy reference clock
-> > > 
-> > > sata_ref_100m: pcie bus 100MHz reference clock
-> > 
-> > That doesn't explain why it's called "sata_ref_100m".
-> > 
-> I agree this is bad naming. It's called this way because someone decided
-> to name it like the internal clock it is sourced from on most boards.
-> This really should be pcie_ref, or something. I suspect this corresponds
-> to the pcie_bus clock in the Exynos binding in which case we should just
-> name it this way.
+This patch adds the bindings for the R-Car PCIe driver. The driver
+resides under drivers/pci/host/pcie-rcar.c
 
-Ok, so Exynos is missing one of the other clocks then? Or is the 
-pcie_ref_125m clock something that should actually be listed under
-the node of the PHY?
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v5:
+ - Add PCIe bus clock reference
+ - Add additional interrupt bindings
+ - Use dma-ranges property to specify inbound memory regions
+---
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 44 ++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
 
-> > > lvds_gate: bad abstraction. Decides if the reference clock is sourced
-> > > internal (i.e. the 100MHz ref clock above) or from an SoC external
-> > > source. We should really find a better way of representing this in the
-> > > clock tree.
-> > 
-> > I don't understand this description at all. Can you try to explain that
-> > with different words?
-> > 
-> On i.MX6 the PCIe reference clock is routed through a generic clock pad,
-> which can be configured either as input or output. When the i.MX is the
-> PCI master we source the clock from sata_ref_100m and configure this pad
-> as clock output.
-> Somebody decided to abstract the input/output switch as a gate, which is
-> arguably wrong, this should be a mux deciding between internal or
-> external clock source.
-> 
-> The PCIe host driver should really only need the clk pad clock,
-> activation of the sata_ref_100m clock should be handled through
-> parent<->child relationship of those clocks in the clock tree, which
-> isn't properly handled right now. I'll try to fix this up, but it won't
-> be backward compatible in any way.
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+new file mode 100644
+index 0000000..61bf5ef
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -0,0 +1,44 @@
++* Renesas RCar PCIe interface
++
++Required properties:
++- compatible: should contain one of the following
++	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
++- reg: base addresses and lengths of the pcie controller.
++- #address-cells: set to <3>
++- #size-cells: set to <2>
++- device_type: set to "pci"
++- ranges: ranges for the PCI memory and I/O regions.
++- dma-ranges: ranges for the inbound memory regions.
++- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
++	source for hardware related interrupts (e.g. link speed change).
++- #interrupt-cells: set to <1>
++- interrupt-map-mask and interrupt-map: standard PCI properties
++	to define the mapping of the PCIe interface to interrupt
++	numbers.
++- clocks: from common clock binding: handle to pci clock.
++- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
++
++Example:
++
++SoC specific DT Entry:
++
++	pcie: pcie@fe000000 {
++		compatible = "renesas,pcie-r8a7791";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
++			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
++		interrupts = <0 116 4 0 117 4 0 118 4>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 4>;
++		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
++		clock-names = "pcie", "pcie_bus";
++		status = "disabled";
++	};
+-- 
+1.9.0
 
-Is it possible to treat this clock as a "global" clock rather than a device
-specific one, and pass NULL as the device for clk_get?
-
-That's not nice, but at least it gives you a way to keep it out of the
-binding, and "just" creates a dependency between the specific PCI host
-controller and the way that clock is wired up on a particular SoC.
-
-	Arnd
