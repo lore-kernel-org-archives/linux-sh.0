@@ -1,174 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Mar 2014 04:44:35 +0000
-Subject: [PATCH 7/7] ARM: shmobile: Add SDHI devices for Koelsch DTS
-Message-Id: <2c60a7df72711fb8b4be1e6aa651ab166a8931bc.1394080829.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 25 Mar 2014 18:56:24 +0000
+Subject: [PATCH v2 0/5] ARM: shmobile: r8a7790: enable IIC(B) cores
+Message-Id: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1394080829.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This series allows r8a7790 boards to use the alternative IIC(B) controller
+handled by the i2c-sh_mobile driver. Since both i2c cores always use the same
+pins only in a different function group, you can easily use this or that core
+for your devices. For that reason, there is currently no enablement on the
+Lager board, since it needs discussion which core we want to have on which bus.
+sh_mobile seems more stable currently, so I'd vote for that. However, this can
+be applied incrementally later.
 
-Add DT support for SDHI0, SDHI1 and SDHI2 on Koelsch.
+This series is still based on renesas-devel-v3.14-rc5-20140307v2 and has been
+tested on a Lager board. The main intention of this version is to gather
+further comments or ACKs. Once all is good, I will then rebase the series onto
+latest renesas-devel around next rc1 time as discussed with Magnus.
 
-The board specific handling of CD and WP pins are
-using GPIOs. SDHI0 and SDHI1 are hooked up to regular
-SD connectors while SDHI2 is using micro-SD which
-is lacking WP signal.
+Branch is here: git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r8a7790-iic
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 119 ++++++++++++++++++++++++++++++++++
- 1 file changed, 119 insertions(+)
+All comments from Laurent have been addressed since V1. Please review.
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 603af8c..bdd73e6 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -103,6 +103,78 @@
- 			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
-+
-+	vcc_sdhi0: regulator@0 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio7 17 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi0: regulator@1 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI0 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
-+
-+	vcc_sdhi1: regulator@2 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI1 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio7 18 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi1: regulator@3 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI1 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
-+
-+	vcc_sdhi2: regulator@4 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI2 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio7 19 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi2: regulator@5 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI2 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
- };
- 
- &extal_clk {
-@@ -157,6 +229,21 @@
- 		renesas,function = "intc";
- 	};
- 
-+	sdhi0_pins: sd0 {
-+		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi1_pins: sd1 {
-+		renesas,gpios = "sdhi1_data4", "sdhi1_ctrl";
-+		renesas,function = "sdhi1";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+
- 	qspi_pins: spi {
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
-@@ -182,6 +269,38 @@
- 	status = "okay";
- };
- 
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi0>;
-+	vqmmc-supply = <&vccq_sdhi0>;
-+	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
-+	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
-+	status = "okay";
-+};
-+
-+&sdhi1 {
-+	pinctrl-0 = <&sdhi1_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi1>;
-+	vqmmc-supply = <&vccq_sdhi1>;
-+	cd-gpios = <&gpio6 14 GPIO_ACTIVE_LOW>;
-+	wp-gpios = <&gpio6 15 GPIO_ACTIVE_HIGH>;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi2>;
-+	vqmmc-supply = <&vccq_sdhi2>;
-+	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
-+	status = "okay";
-+};
-+
- &spi {
- 	pinctrl-0 = <&qspi_pins>;
- 	pinctrl-names = "default";
+Thanks,
+
+   Wolfram
+
+
+Wolfram Sang (5):
+  pinctrl: pfc: r8a7790: add i2c0 muxing
+  pinctrl: pfc: r8a7790: add mux data for IIC(B) cores
+  ARM: shmobile: r8a7790: add IIC0-2 clock macros
+  ARM: shmobile: r8a7790: add IIC(B) clocks to dtsi
+  ARM: shmobile: r8a7790: add IIC(B) cores to dtsi
+
+ arch/arm/boot/dts/r8a7790.dtsi            |  71 ++++++++++++---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c      | 138 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7790-clock.h |   3 +
+ 3 files changed, 197 insertions(+), 15 deletions(-)
+
 -- 
-1.8.5.2
+1.9.0
 
