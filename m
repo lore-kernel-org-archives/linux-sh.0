@@ -1,87 +1,180 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 30 Mar 2014 21:26:03 +0000
-Subject: [RFC 1/3] rcar_vin: copy flags from pdata
-Message-Id: <1396214765-23689-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:37:28 +0000
+Subject: [PATCH 7/7] ARM: shmobile: bockw: add R-Car sound support on DTS
+Message-Id: <87y4zyc2re.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: g.liakhovetski@gmx.de, linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-The platform data is a single word, so simply copy
-it into the device's private data structure than
-keeping a copy of the pointer.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This will make changing to device-tree binding
-easier as it is one allocation instead of two.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |  138 +++++++++++++++++++++++++
+ 1 file changed, 138 insertions(+)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 702dc47..47516df 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -126,13 +126,13 @@ struct rcar_vin_priv {
- 	int				sequence;
- 	/* State of the VIN module in capturing mode */
- 	enum rcar_vin_state		state;
--	struct rcar_vin_platform_data	*pdata;
- 	struct soc_camera_host		ici;
- 	struct list_head		capture;
- #define MAX_BUFFER_NUM			3
- 	struct vb2_buffer		*queue_buf[MAX_BUFFER_NUM];
- 	struct vb2_alloc_ctx		*alloc_ctx;
- 	enum v4l2_field			field;
-+	unsigned int			pdata_flags;
- 	unsigned int			vb_count;
- 	unsigned int			nr_hw_slots;
- 	bool				request_to_stop;
-@@ -275,12 +275,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 		break;
- 	case V4L2_MBUS_FMT_YUYV8_2X8:
- 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
- 		break;
- 	case V4L2_MBUS_FMT_YUYV10_2X10:
- 		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
- 		break;
- 	default:
-@@ -799,7 +799,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
- 	/* Make choises, based on platform preferences */
- 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
-@@ -807,7 +807,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f76f6ec..7d467f6 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -53,6 +53,87 @@
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
  
- 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
-@@ -1447,7 +1447,7 @@ static int rcar_vin_probe(struct platform_device *pdev)
- 	priv->ici.drv_name = dev_name(&pdev->dev);
- 	priv->ici.ops = &rcar_vin_host_ops;
++	sound_card1 {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 0>;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4643_codec>;
++			bitclock-master;
++			frame-master;
++			system-clock-frequency = <11289600>;
++		};
++	};
++
++	sound_card2 {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "right_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 1>;
++			bitclock-master;
++			frame-master;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4554_codec_0>;
++		};
++	};
++
++	sound_card3 {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 2>;
++			bitclock-master;
++			frame-master;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4554_codec_0>;
++		};
++	};
++
++	sound_card4 {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "right_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 3>;
++			bitclock-master;
++			frame-master;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4554_codec_1>;
++		};
++	};
++
++	sound_card5 {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "right_j";
++		simple-audio-card,cpu {
++			sound-dai = <&rcar_sound 4>;
++			bitclock-master;
++			frame-master;
++		};
++		simple-audio-card,codec {
++			sound-dai = <&ak4554_codec_1>;
++		};
++	};
++
++	ak4554_codec_0: ak4554 {
++		#sound-dai-cells = <0>;
++		compatible = "asahi-kasei,ak4554";
++	};
++
++	ak4554_codec_1: ak4554 {
++		#sound-dai-cells = <0>;
++		compatible = "asahi-kasei,ak4554";
++	};
++
+ };
  
--	priv->pdata = pdata;
-+	priv->pdata_flags = pdata->flags;
- 	priv->chip = pdev->id_entry->driver_data;
- 	spin_lock_init(&priv->lock);
- 	INIT_LIST_HEAD(&priv->capture);
+ &mmcif {
+@@ -93,6 +174,19 @@
+ 		renesas,groups = "hspi0_a";
+ 		renesas,function = "hspi0";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi34_ctrl", "ssi3_data", "ssi4_data",
++				 "ssi5_ctrl", "ssi5_data", "ssi6_ctrl",
++				 "ssi6_data", "ssi78_ctrl", "ssi7_data",
++				 "ssi8_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a", "audio_clk_b";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &sdhi0 {
+@@ -124,3 +218,47 @@
+ 		};
+ 	};
+ };
++
++&i2c0 {
++	status = "okay";
++	ak4643_codec: ak4643 {
++		#sound-dai-cells = <0>;
++		compatible = "asahi-kasei,ak4643";
++		reg = <0x12>;
++	};
++};
++
++&rcar_sound {
++	pinctrl-names = "default", "audio_clock";
++	pinctrl-0 = <&sound_pins>;
++	pinctrl-2 = <&sound_clk_pins>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi5>;
++			capture  = <&ssi6>;
++		};
++		dai1 {
++			playback = <&ssi3>;
++		};
++		dai2 {
++			capture  = <&ssi4>;
++		};
++		dai3 {
++			capture  = <&ssi7>;
++		};
++		dai4 {
++			capture  = <&ssi8>;
++		};
++	};
++};
++
++&ssi4 {
++	shared-pin;
++};
++
++&ssi8 {
++	shared-pin;
++};
 -- 
-1.9.0
+1.7.9.5
 
