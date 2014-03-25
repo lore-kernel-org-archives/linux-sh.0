@@ -1,39 +1,32 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 06 Mar 2014 11:32:30 +0000
-Subject: [PATCH V2 10/12] ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock support
-Message-Id: <1394105552-9744-11-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:37:06 +0000
+Subject: [PATCH 4/7] ARM: shmobile: lager: enable sound codec for DT
+Message-Id: <8738i6dhcg.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394105552-9744-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Not used anymore since we switched to CCF.
-
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ----
- 1 file changed, 4 deletions(-)
+ arch/arm/mach-shmobile/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index f17a5db00221..dd14cfb7ac12 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -199,10 +199,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
--	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
--	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
--	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
--	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
- 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index edf61e5..d042c30 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -52,6 +52,7 @@ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+ 	select MICREL_PHY if SH_ETH
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD
  
+ comment "Renesas ARM SoCs System Configuration"
+ endif
 -- 
-1.9.0
+1.7.9.5
 
