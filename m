@@ -1,265 +1,374 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 11 Mar 2014 22:32:31 +0000
-Subject: Re: [PATCH v2] phy-rcar-gen2-usb: add device tree support
-Message-Id: <531F9D02.5060009@cogentembedded.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Mar 2014 16:56:37 +0000
+Subject: [PATCH v5 2/9] PCI: host: rcar: Add MSI support
+Message-Id: <1395766604-30926-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201403010407.54639.sergei.shtylyov@cogentembedded.com>	<CANqRtoRTtsF64jZ-n_VbmzkRehUoBWQLEd5jfAL86wyLrvAUPQ@mail.gmail.com>	<5319D75C.5020701@cogentembedded.com>	<531A5CD7.6030903@cogentembedded.com> <CANqRtoTBYZ4=Ct_q6KjGaOtyLum-qpU9Qm06-qxqVm5unUC_3A@mail.gmail.com>
-In-Reply-To: <CANqRtoTBYZ4=Ct_q6KjGaOtyLum-qpU9Qm06-qxqVm5unUC_3A@mail.gmail.com>
+References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Felipe Balbi <balbi@ti.com>, Linux-USB <linux-usb@vger.kernel.org>, robh+dt@kernel.org, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, Grant Likely <grant.likely@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, SH-Linux <linux-sh@vger.kernel.org>, Valentine Barshak <valentine.barshak@cogentembedded.com>, rob@landley.net, linux-doc@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v5:
+ - Return IRQ_NONE from MSI isr when there is no pending MSI
+ - Add additional interrupt bindings
+---
+ drivers/pci/host/pcie-rcar.c | 246 ++++++++++++++++++++++++++++++++++++++++++-
+ drivers/pci/host/pcie-rcar.h |   5 +
+ 2 files changed, 250 insertions(+), 1 deletion(-)
 
-On 03/10/2014 02:00 PM, Magnus Damm wrote:
-
->>>>> Add support of the device tree probing for the Renesas R-Car generation
->>>>> 2 SoCs
->>>>> documenting the device tree binding as necessary.
-
->>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>>>> ---
->>>>> This patch is against the 'next' branch of Felipe Balbi's 'usb.git'
->>>>> repo.
-
->>>>> Changes in version 2:
->>>>> - restored devm_clk_get() call and the error handling logic in the
->>>>> probe()
->>>>>     method, removed clk_put() call in the remove() method.
-
->>>>>    Documentation/devicetree/bindings/usb/rcar-gen2-phy.txt |   29
->>>>> +++++++++++
->>>>>    drivers/usb/phy/phy-rcar-gen2-usb.c                     |   42
->>>>> ++++++++++++++--
->>>>>    2 files changed, 68 insertions(+), 3 deletions(-)
-
->>>>> Index: usb/Documentation/devicetree/bindings/usb/rcar-gen2-phy.txt
->>>>> =================================>>>>> --- /dev/null
->>>>> +++ usb/Documentation/devicetree/bindings/usb/rcar-gen2-phy.txt
->>>>> @@ -0,0 +1,29 @@
->>>>> +* Renesas R-Car generation 2 USB PHY
->>>>> +
->>>>> +This file provides information on what the device node for the R-Car
->>>>> generation
->>>>> +2 USB PHY contains.
->>>>> +
->>>>> +Required properties:
->>>>> +- compatible: "renesas,usb-phy-r8a7790" if the device is a part of
->>>>> R8A7790
->>>>> SoC.
->>>>> +             "renesas,usb-phy-r8a7791" if the device is a part of
->>>>> R8A7791
->>>>> SoC.
->>>>> +- reg: offset and length of the register block.
->>>>> +- clocks: clock phandle and specifier pair.
->>>>> +- clock-names: string, clock input name, must be "usbhs".
->>>>> +
->>>>> +Optional properties:
->>>>> +- renesas,channel0-pci: boolean, specify when USB channel 0 should be
->>>>> connected
->>>>> +                       to PCI EHCI/OHCI; otherwise, it will be
->>>>> connected
->>>>> to the
->>>>> +                       USBHS controller.
->>>>> +- renesas,channel2-pci: boolean, specify when USB channel 2 should be
->>>>> connected
->>>>> +                       to PCI EHCI/OHCI; otherwise, it will be
->>>>> connected
->>>>> to the
->>>>> +                       USBSS controller (xHCI).
-
->>>> Thanks for your efforts here, but this DT binding looks like a mix of
->>>> software configuration and hardware description.
-
->>>      I disagree. I have already explained to Mark Rutland how selecting a
->>> particular controller for a particular USB port should depend on the kind
->>> of
->>> the USB connector used, i.e. the board hardware.
-
-> Just to clarify, I'm talking about the selection of USB IP that is
-> happening inside the SoC.
-
-    I'm talking about the same thing.
-
-> You are right that there are also board
-> specific dependencies, but that's a different issue.
-
-    I don't really think so.
-
-> As an example, on
-> Lager it is possible to use either USB 2.0 Host device functionality
-> or USB 3.0 Host functionality using the same USB 3.0-compatible
-> connector that is being exposed by the Lager board.
-
-    Note that USB 3.0 controller (xHCI) knows how to talk USB 2.0 and 1.1 
-protocols, and I see little sense enabling EHCI/OHCI for USB 3.0 port (as it's 
-done now), unless the xHCI hardware/driver is very buggy.
-
-> In this case the
-> board needs to describe that it has a USB3.0-compatbile connector on
-
-    Hm, I think we'll then be the first trying to describe the board connector 
-types in the device tree, at least I can't remember any example off the top of 
-my head.
-
-> r8a7790 USB2, while the r8a7790 PHY driver and USB Host controller
-> glue needs to represent which internal devices that are mapped to
-> USB2.
-
-> I imagine that there are board-specific DT bits for Lager that
-> describe USB2 as USB3.0 compatible. Then there are r8a7790 specific
-> bits that show how the USB2.0 host controller and the USB3.0 host
-> controller both point to the USB2 channel included in the USB PHY. The
-> last portion is not modified by the board-level integrator, only the
-> board specific bits.
-
-    So, those "board specific bits" would be considered the ultimate source of 
-information of how to program USB channel MUXes, right? Or you mean to only 
-provide the USB connector info there?
-    My main concern is where the data to program MUXes would be placed and, 
-maybe more importantly, in what way they would be conveyed to the PHY driver, 
-while you seem mainly concerning about the topology representation.
-
->>>>> +Example (Lager board):
->>>>> +
->>>>> +       usb-phy@e6590100 {
->>>>> +               compatible = "renesas,usb-phy-r8a7790";
->>>>> +               reg = <0 0xe6590100 0 0x100>;
->>>>> +               clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
->>>>> +               clock-names = "usbhs";
->>>>> +               renesas,channel2-pci;
->>>>> +       };
-
->>>> As an example, instead of relying on "renesas,channel0-pci" or
->>>> "renesas,channel2-pci" to specify which hard coded software
->>>> configuration you want please rework this to expose 3 separate
->>>> channels and use DT to point each host controller to the right
->>>> channel.
-
->>>      So you want to expose the channels as "virtual devices"? Or what do
->>> you want?
-
-> I'm not sure what "virtual devices" would be,
-
-    Devices without the "reg" property. By the way, from the manuals it didn't 
-became crystal clear to me whether USBHS internal PHY (that is programmable 
-and controls USB0/2 channel MUX among other things) and USB 2.0/3.0 PHY (that 
-is not programmable but USB 3.0 part of which can be used alternatively as 
-SATA0 PHY) is even one and the same thing. The PHY registers we control thru 
-the dedicated PHY driver are documented along with other USBHS registers, so 
-one might have an impression this PHY is dedicated to USBHS only... If this is 
-not so, the USB PHY design and the way it's documented seems quite 
-questionable to me.
-
-> but channel sub nodes sounds like one possibility.
-
-    OK.
-
->>     OK, let's assume you want either "virtual" PHYs or channel subnodes in
->> the PHY node we have now. Now what the PHY driver should do with all these
->> phandles pointing from the controller nodes to the PHY nodes or the channel
->> subnodes? Scan all device tree in search of the nodes having certain prop
->> and get info from such nodes on how to program the channel MUXing register
->> using their "compatible" props? Sorry, that doesn't appeal to me at all.
-
-> I can't say that I'm 100% sure what is the best solution for this, but
-> I'm quite OK with basically anything that describes the hardware
-> mapping between PHY ports and host controllers in a sane way.
-
-> Exactly how to represent this in a sane way is however not trivial.
-> But how fun would that be? =)
-
-    I'm afraid I'm not a huge fan of device trees (although I had to acquaint 
-myself with them back in 2006, my first experience wasn't quite successful), 
-so the fun for me seems somewhat dubious... I'm of the opinion that plain old 
-platform devices are far more flexible than DT, and seeing DT more as a 
-necessary evil used to bring the ARM kernel to the more reasonable sizes
-and follow the x86 suit with the multiplatform builds...
-
-> One example from my side (which may be bad, not sure) is to point from
-> each USB Host controller to a subnode in the USB PHY device. But then
-> you will have to scan all though devices to find the link which may
-> not be what you want.
-
-    Yes, I would like to avoid that.
-
->>     Now if we got the phandles pointing from the PHY node back to the
->> selected controllers, things would look somewhat better. Yet it still looks
->> like an unnecessary complication of what I'm proposing and so doesn't appeal
->> to me much either.
-
-> So my other example is probably same as your proposal above, which
-> would be to point all USB Host controllers to the same USB PHY, but as
-> DT properties in the PHY device have one list per USB port that points
-> back to all possible USB Host controllers. That would make scanning
-> easier.
-
-    OK...
-
->>     So, what's your intent here (other than to make my life harder :-)?
-
-> Of course, only to make your life harder. =)
-
-    Well, so far you seem to succeed. :-)
-
-> My goal is to describe the hardware connections between the PHY ports
-> and the USB Host controllers so we eventually in software would be
-> able to switch between USBHS for Function (or maybe Host) and USB PCI
-> for USB Host on a board where the hardware allows us to do so. I want
-> to be able to over time improve the kernel and do this without having
-> to modify the DTS.
-
-    Not sure I understand what you're imagining here...
-
-> Actually, I'd like the DTS to show us how we can
-> switch the hardware.
-
-    That's clear. I'm only not sure we really need that information in the 
-device tree in order to switch the hardware. Oh well...
-
-> This is quite different from hard coding one connection in the DTS.
-
-    Well, having such limited platform data, I had little choice but mimic it 
-in DT as it's usually done, at least for a first try...
-
->>> Also, it seems almost impossible to represent some USB controllers in DT
->>> -- such as USBHS in particular.
-
-> I'm not sure if impossible is the word I would pick, but it is indeed
-> difficult.
-
-    Let's agree on "very difficult". :-)
-
-> My opinion is that we cannot rush this kind of development.
-> It is fine to take shortcuts with platform devices, but with DT we
-> want to get it right.
-
-    OK... but that makes the PHY DT work a matter of quite distant future, 
-doesn't it? I mean unless we use much avoided so far auxdata thing for USBHS.
-
->>     I've spent several days staring at the various USBHS code and I'm going
->> to send you a more detailed report on USBHS vs DT issues.
-
-> Sure, if that makes you happy, but I'm more interested in patches myself. =)
-
-    No, it won't, so let's skip it.
-
->>>> So this is a NAK on my side. I expect better.
-
->>>      Thanks for your long awaited feedback.
-
->>     I'm not convinced that what you're proposing is indeed better though.
-
-> Well, I'm looking forward to a better proposal then! =)
-
-    Unfortunately, I'm lacking your imagination here. :-)
-
-> Thanks,
-
-> / magnus
-
-WBR, Sergei
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index c22c896..280f370 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -15,8 +15,11 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/irqdomain.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/msi.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_pci.h>
+@@ -28,6 +31,8 @@
+ 
+ #define DRV_NAME "rcar-pcie"
+ 
++#define INT_PCI_MSI_NR	32
++
+ #define RCONF(x)	(PCICONF(0)+(x))
+ #define RPMCAP(x)	(PMCAP(0)+(x))
+ #define REXPCAP(x)	(EXPCAP(0)+(x))
+@@ -40,6 +45,21 @@
+ #define PCI_MAX_RESOURCES 4
+ #define MAX_NR_INBOUND_MAPS 6
+ 
++struct rcar_msi {
++	DECLARE_BITMAP(used, INT_PCI_MSI_NR);
++	struct irq_domain *domain;
++	struct msi_chip chip;
++	unsigned long pages;
++	struct mutex lock;
++	int irq1;
++	int irq2;
++};
++
++static inline struct rcar_msi *to_rcar_msi(struct msi_chip *chip)
++{
++	return container_of(chip, struct rcar_msi, chip);
++}
++
+ /* Structure representing the PCIe interface */
+ struct rcar_pcie {
+ 	struct device		*dev;
+@@ -48,6 +68,7 @@ struct rcar_pcie {
+ 	u8			root_bus_nr;
+ 	struct clk		*clk;
+ 	struct clk		*bus_clk;
++	struct			rcar_msi msi;
+ };
+ 
+ static inline struct rcar_pcie *sys_to_pcie(struct pci_sys_data *sys)
+@@ -292,6 +313,15 @@ static int rcar_pcie_setup(int nr, struct pci_sys_data *sys)
+ 	return 1;
+ }
+ 
++static void rcar_pcie_add_bus(struct pci_bus *bus)
++{
++	if (IS_ENABLED(CONFIG_PCI_MSI)) {
++		struct rcar_pcie *pcie = sys_to_pcie(bus->sysdata);
++
++		bus->msi = &pcie->msi.chip;
++	}
++}
++
+ static void __init rcar_pcie_enable(struct rcar_pcie *pcie)
+ {
+ 	struct platform_device *pdev = to_platform_device(pcie->dev);
+@@ -301,6 +331,7 @@ static void __init rcar_pcie_enable(struct rcar_pcie *pcie)
+ 		.setup          = rcar_pcie_setup,
+ 		.map_irq        = of_irq_parse_and_map_pci,
+ 		.ops            = &rcar_pcie_ops,
++		.add_bus        = rcar_pcie_add_bus,
+ 	};
+ 
+ 	pci_common_init_dev(&pdev->dev, &hw);
+@@ -408,6 +439,10 @@ static int __init rcar_pcie_hw_init(struct rcar_pcie *pcie)
+ 	/* Enable MAC data scrambling. */
+ 	rcar_rmw32(pcie, MACCTLR, SCRAMBLE_DISABLE, 0);
+ 
++	/* Enable MSI */
++	if (IS_ENABLED(CONFIG_PCI_MSI))
++		pci_write_reg(pcie, 0x101f0000, PCIEMSITXR);
++
+ 	/* Finish initialization - establish a PCI Express link */
+ 	pci_write_reg(pcie, CFINIT, PCIETCTLR);
+ 
+@@ -461,11 +496,194 @@ static int __init rcar_pcie_hw_init_h1(struct rcar_pcie *pcie)
+ 	return -ETIMEDOUT;
+ }
+ 
++static int rcar_msi_alloc(struct rcar_msi *chip)
++{
++	int msi;
++
++	mutex_lock(&chip->lock);
++
++	msi = find_first_zero_bit(chip->used, INT_PCI_MSI_NR);
++	if (msi < INT_PCI_MSI_NR)
++		set_bit(msi, chip->used);
++	else
++		msi = -ENOSPC;
++
++	mutex_unlock(&chip->lock);
++
++	return msi;
++}
++
++static void rcar_msi_free(struct rcar_msi *chip, unsigned long irq)
++{
++	struct device *dev = chip->chip.dev;
++
++	mutex_lock(&chip->lock);
++
++	if (!test_bit(irq, chip->used))
++		dev_err(dev, "trying to free unused MSI#%lu\n", irq);
++	else
++		clear_bit(irq, chip->used);
++
++	mutex_unlock(&chip->lock);
++}
++
++static irqreturn_t rcar_pcie_msi_irq(int irq, void *data)
++{
++	struct rcar_pcie *pcie = data;
++	struct rcar_msi *msi = &pcie->msi;
++	unsigned long reg;
++
++	reg = pci_read_reg(pcie, PCIEMSIFR);
++
++	/* MSI & INTx share an interrupt - we only handle MSI here */
++	if (!reg)
++		return IRQ_NONE;
++
++	while (reg) {
++		unsigned int index = find_first_bit(&reg, 32);
++		unsigned int irq;
++
++		/* clear the interrupt */
++		pci_write_reg(pcie, 1 << index, PCIEMSIFR);
++
++		irq = irq_find_mapping(msi->domain, index);
++		if (irq) {
++			if (test_bit(index, msi->used))
++				generic_handle_irq(irq);
++			else
++				dev_info(pcie->dev, "unhandled MSI\n");
++		} else {
++			/*
++			 * that's weird who triggered this?
++			 * just clear it
++			 */
++			dev_info(pcie->dev, "unexpected MSI\n");
++		}
++
++		/* see if there's any more pending in this vector */
++		reg = pci_read_reg(pcie, PCIEMSIFR);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int rcar_msi_setup_irq(struct msi_chip *chip, struct pci_dev *pdev,
++			       struct msi_desc *desc)
++{
++	struct rcar_msi *msi = to_rcar_msi(chip);
++	struct rcar_pcie *pcie = container_of(chip, struct rcar_pcie, msi.chip);
++	struct msi_msg msg;
++	unsigned int irq;
++	int hwirq;
++
++	hwirq = rcar_msi_alloc(msi);
++	if (hwirq < 0)
++		return hwirq;
++
++	irq = irq_create_mapping(msi->domain, hwirq);
++	if (!irq) {
++		rcar_msi_free(msi, hwirq);
++		return -EINVAL;
++	}
++
++	irq_set_msi_desc(irq, desc);
++
++	msg.address_lo = pci_read_reg(pcie, PCIEMSIALR) & ~MSIFE;
++	msg.address_hi = pci_read_reg(pcie, PCIEMSIAUR);
++	msg.data = hwirq;
++
++	write_msi_msg(irq, &msg);
++
++	return 0;
++}
++
++static void rcar_msi_teardown_irq(struct msi_chip *chip, unsigned int irq)
++{
++	struct rcar_msi *msi = to_rcar_msi(chip);
++	struct irq_data *d = irq_get_irq_data(irq);
++
++	rcar_msi_free(msi, d->hwirq);
++}
++
++static struct irq_chip rcar_msi_irq_chip = {
++	.name = "R-Car PCIe MSI",
++	.irq_enable = unmask_msi_irq,
++	.irq_disable = mask_msi_irq,
++	.irq_mask = mask_msi_irq,
++	.irq_unmask = unmask_msi_irq,
++};
++
++static int rcar_msi_map(struct irq_domain *domain, unsigned int irq,
++			 irq_hw_number_t hwirq)
++{
++	irq_set_chip_and_handler(irq, &rcar_msi_irq_chip, handle_simple_irq);
++	irq_set_chip_data(irq, domain->host_data);
++	set_irq_flags(irq, IRQF_VALID);
++
++	return 0;
++}
++
++static const struct irq_domain_ops msi_domain_ops = {
++	.map = rcar_msi_map,
++};
++
++static int rcar_pcie_enable_msi(struct rcar_pcie *pcie)
++{
++	struct platform_device *pdev = to_platform_device(pcie->dev);
++	struct rcar_msi *msi = &pcie->msi;
++	unsigned long base;
++	int err;
++
++	mutex_init(&msi->lock);
++
++	msi->chip.dev = pcie->dev;
++	msi->chip.setup_irq = rcar_msi_setup_irq;
++	msi->chip.teardown_irq = rcar_msi_teardown_irq;
++
++	msi->domain = irq_domain_add_linear(pcie->dev->of_node, INT_PCI_MSI_NR,
++					    &msi_domain_ops, &msi->chip);
++	if (!msi->domain) {
++		dev_err(&pdev->dev, "failed to create IRQ domain\n");
++		return -ENOMEM;
++	}
++
++	/* Two irqs are for MSI, but they are also used for non-MSI irqs */
++	err = devm_request_irq(&pdev->dev, msi->irq1, rcar_pcie_msi_irq,
++			       IRQF_SHARED, rcar_msi_irq_chip.name, pcie);
++	if (err < 0) {
++		dev_err(&pdev->dev, "failed to request IRQ: %d\n", err);
++		goto err;
++	}
++
++	err = devm_request_irq(&pdev->dev, msi->irq2, rcar_pcie_msi_irq,
++			       IRQF_SHARED, rcar_msi_irq_chip.name, pcie);
++	if (err < 0) {
++		dev_err(&pdev->dev, "failed to request IRQ: %d\n", err);
++		goto err;
++	}
++
++	/* setup MSI data target */
++	msi->pages = __get_free_pages(GFP_KERNEL, 0);
++	base = virt_to_phys((void *)msi->pages);
++
++	pci_write_reg(pcie, base | MSIFE, PCIEMSIALR);
++	pci_write_reg(pcie, 0, PCIEMSIAUR);
++
++	/* enable all MSI interrupts */
++	pci_write_reg(pcie, 0xffffffff, PCIEMSIIER);
++
++	return 0;
++
++err:
++	irq_domain_remove(msi->domain);
++	return err;
++}
++
+ static int __init rcar_pcie_get_resources(struct platform_device *pdev,
+ 	struct rcar_pcie *pcie)
+ {
+ 	struct resource res;
+-	int err;
++	int err, i;
+ 
+ 	err = of_address_to_resource(pdev->dev.of_node, 0, &res);
+ 	if (err)
+@@ -490,6 +708,22 @@ static int __init rcar_pcie_get_resources(struct platform_device *pdev,
+ 	if (err)
+ 		goto err_map_reg;
+ 
++	i = irq_of_parse_and_map(pdev->dev.of_node, 0);
++	if (i < 0) {
++		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
++		err = -ENOENT;
++		goto err_map_reg;
++	}
++	pcie->msi.irq1 = i;
++
++	i = irq_of_parse_and_map(pdev->dev.of_node, 1);
++	if (i < 0) {
++		dev_err(pcie->dev, "cannot get platform resources for msi interrupt\n");
++		err = -ENOENT;
++		goto err_map_reg;
++	}
++	pcie->msi.irq2 = i;
++
+ 	pcie->base = devm_ioremap_resource(&pdev->dev, &res);
+ 	if (IS_ERR(pcie->base)) {
+ 		err = PTR_ERR(pcie->base);
+@@ -657,6 +891,16 @@ static int __init rcar_pcie_probe(struct platform_device *pdev)
+ 	 if (err)
+ 		return err;
+ 
++	if (IS_ENABLED(CONFIG_PCI_MSI)) {
++		err = rcar_pcie_enable_msi(pcie);
++		if (err < 0) {
++			dev_err(&pdev->dev,
++				"failed to enable MSI support: %d\n",
++				err);
++			return err;
++		}
++	}
++
+ 	of_id = of_match_device(rcar_pcie_of_match, pcie->dev);
+ 	if (!of_id || !of_id->data)
+ 		return -EINVAL;
+diff --git a/drivers/pci/host/pcie-rcar.h b/drivers/pci/host/pcie-rcar.h
+index 3dc026b..4f0c678 100644
+--- a/drivers/pci/host/pcie-rcar.h
++++ b/drivers/pci/host/pcie-rcar.h
+@@ -13,6 +13,7 @@
+ #define PCIEMSR			0x000028
+ #define PCIEINTXR		0x000400
+ #define PCIEPHYSR		0x0007f0
++#define PCIEMSITXR		0x000840
+ 
+ /* Transfer control */
+ #define PCIETCTLR		0x02000
+@@ -28,6 +29,10 @@
+ #define PCIEPMSR		0x02034
+ #define PCIEPMSCIER		0x02038
+ #define PCIEMSIFR		0x02044
++#define PCIEMSIALR		0x02048
++#define  MSIFE			1
++#define PCIEMSIAUR		0x0204c
++#define PCIEMSIIER		0x02050
+ 
+ /* root port address */
+ #define PCIEPRAR(x)		(0x02080 + ((x) * 0x4))
+-- 
+1.9.0
 
