@@ -1,56 +1,58 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Mon, 17 Mar 2014 11:35:17 +0000
-Subject: Re: [Linux-kernel] [RFC 2/6] shmobile: prepare to allow export of sh_pm_runtime_init()
-Message-Id: <1395056117.12161.117.camel@xylophone>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Mar 2014 16:56:39 +0000
+Subject: [PATCH v5 4/9] ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+Message-Id: <1395766604-30926-5-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 2014-03-17 at 11:15 +0000, Ben Dooks wrote:
-> In a multi-platform kernel, we cannot simply add this as a initcall
-> as it may be built and run on archtiectures other than the SHMOBILE
-> so export the sh_pm_runtime_init() call to be used from the machine
-> specific code.
-> 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->  drivers/sh/pm_runtime.c | 9 ++++++---
->  1 file changed, 6 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-> index 5cfbd82..f4f8851 100644
-> --- a/drivers/sh/pm_runtime.c
-> +++ b/drivers/sh/pm_runtime.c
-> @@ -42,16 +42,19 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
->  	.con_ids = { NULL, },
->  };
->  
-> -static int __init sh_pm_runtime_init(void)
-> +static bool default_pm_on;
-> +
-> +int __init sh_pm_runtime_init(void)
->  {
-> +	default_pm_on = true;
->  	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
->  	return 0;
->  }
-> -core_initcall(sh_pm_runtime_init);
+This patch adds the device tree clock nodes for PCIe
 
-This appears to break initialisation until 4/6 "ARM: shmobile: r8a7790:
-call sh_pm_runtime_init()" is applied.  I think patches 2-4 must all be
-folded together.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi            | 7 +++++--
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 6 insertions(+), 2 deletions(-)
 
-Ben.
-
->  static int __init sh_pm_runtime_late_init(void)
->  {
-> -	pm_genpd_poweroff_unused();
-> +	if (default_pm_on)
-> +		pm_genpd_poweroff_unused();
->  	return 0;
->  }
->  late_initcall(sh_pm_runtime_late_init);
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 71bac2c..ccfba57 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -717,14 +717,17 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>,
+-				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>;
++				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>,
++				<&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
+ 				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
++				R8A7791_CLK_PCIE
+ 			>;
+ 			clock-output-names -				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1";
++				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1",
++				"pcie";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 30f82f2..d3e2cf5 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -51,6 +51,7 @@
+ #define R8A7791_CLK_SDHI1		12
+ #define R8A7791_CLK_SDHI0		14
+ #define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_PCIE		19
+ #define R8A7791_CLK_SSUSB		28
+ #define R8A7791_CLK_CMT1		29
+ #define R8A7791_CLK_USBDMAC0		30
+-- 
+1.9.0
 
