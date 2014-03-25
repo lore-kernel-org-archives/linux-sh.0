@@ -1,57 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 06 Mar 2014 04:44:29 +0000
-Subject: [PATCH 1/7] ARM: shmobile: r8a7790: add Ether DT support
-Message-Id: <d8913c6799ed776d096a7f41d83afce815f93819.1394080829.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:36:34 +0000
+Subject: [PATCH 1/7] ARM: shmobile: r8a7790: add MSTP10 support on DTSI
+Message-Id: <877g7idhdb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1394080829.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
+References: <1369645224-3728-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1369645224-3728-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Define the generic R8A7790 part of the Ether device node.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 14 +++++++++++++-
- 1 file changed, 13 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi            |   29 +++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h |   24 ++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 6eb9613..e22520d 100644
+index da69afc..5e7f23d 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1,7 +1,8 @@
- /*
-  * Device Tree Source for the r8a7790 SoC
-  *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded Inc.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -379,6 +380,17 @@
- 		status = "disabled";
+@@ -768,6 +768,35 @@
+ 			clock-output-names  				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
++		mstp10_clks: mstp10_clks@e6150998 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
++			clocks = <&p_clk>, /* parent of SCU */
++				<&p_clk>,
++				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
++				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>;
++
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7790_CLK_SCU
++				R8A7790_CLK_SSI
++				R8A7790_CLK_SSI9 R8A7790_CLK_SSI8 R8A7790_CLK_SSI7 R8A7790_CLK_SSI6 R8A7790_CLK_SSI5
++				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
++				R8A7790_CLK_SRC9 R8A7790_CLK_SRC8 R8A7790_CLK_SRC7 R8A7790_CLK_SRC6 R8A7790_CLK_SRC5
++				R8A7790_CLK_SRC4 R8A7790_CLK_SRC3 R8A7790_CLK_SRC2 R8A7790_CLK_SRC1 R8A7790_CLK_SRC0
++			>;
++			clock-output-names +				"scu", "ssi",
++				"ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
++				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
++				"src9", "src8", "src7", "src6", "src5",
++				"src4", "src3", "src2", "src1", "src0";
++		};
  	};
  
-+	ether: ethernet@ee700000 {
-+		compatible = "renesas,ether-r8a7790";
-+		reg = <0 0xee700000 0 0x400>;
-+		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7790_CLK_ETHER>;
-+		phy-mode = "rmii";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
+ 	qspi: spi@e6b10000 {
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 6548a5f..f73ccb9 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -104,4 +104,28 @@
+ #define R8A7790_CLK_I2C1		30
+ #define R8A7790_CLK_I2C0		31
+ 
++/* MSTP10 */
++#define R8A7790_CLK_SSI			5
++#define R8A7790_CLK_SSI9		6
++#define R8A7790_CLK_SSI8		7
++#define R8A7790_CLK_SSI7		8
++#define R8A7790_CLK_SSI6		9
++#define R8A7790_CLK_SSI5		10
++#define R8A7790_CLK_SSI4		11
++#define R8A7790_CLK_SSI3		12
++#define R8A7790_CLK_SSI2		13
++#define R8A7790_CLK_SSI1		14
++#define R8A7790_CLK_SSI0		15
++#define R8A7790_CLK_SCU			17
++#define R8A7790_CLK_SRC9		22
++#define R8A7790_CLK_SRC8		23
++#define R8A7790_CLK_SRC7		24
++#define R8A7790_CLK_SRC6		25
++#define R8A7790_CLK_SRC5		26
++#define R8A7790_CLK_SRC4		27
++#define R8A7790_CLK_SRC3		28
++#define R8A7790_CLK_SRC2		29
++#define R8A7790_CLK_SRC1		30
++#define R8A7790_CLK_SRC0		31
 +
- 	sata0: sata@ee300000 {
- 		compatible = "renesas,sata-r8a7790";
- 		reg = <0 0xee300000 0 0x2000>;
+ #endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
 -- 
-1.8.5.2
+1.7.9.5
 
