@@ -1,85 +1,64 @@
-From: Tim Harvey <tharvey@gateworks.com>
-Date: Tue, 04 Mar 2014 15:05:06 +0000
-Subject: Re: [PATCH 6/7] PCI: designware: use new OF interrupt mapping when possible
-Message-Id: <CAJ+vNU1EBFWiX7GLeV7LsaWY9_d_r_RBCu9tz3e-s0nAcAjOfA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:30:04 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7778: remove old style audio clock
+Message-Id: <87fvm6dho6.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
- <1393608523-17509-7-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1393608523-17509-7-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 28, 2014 at 9:28 AM, Lucas Stach <l.stach@pengutronix.de> wrote:
-> This is the recommended method of doing the IRQ
-> mapping. For old devicetrees we fall back to the
-> previous practice.
->
-> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> ---
->  drivers/pci/host/pcie-designware.c | 8 +++++++-
->  1 file changed, 7 insertions(+), 1 deletion(-)
->
-> diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
-> index 17ce88f79d2b..3e0c2af11528 100644
-> --- a/drivers/pci/host/pcie-designware.c
-> +++ b/drivers/pci/host/pcie-designware.c
-> @@ -17,6 +17,7 @@
->  #include <linux/module.h>
->  #include <linux/msi.h>
->  #include <linux/of_address.h>
-> +#include <linux/of_pci.h>
->  #include <linux/pci.h>
->  #include <linux/pci_regs.h>
->  #include <linux/types.h>
-> @@ -738,8 +739,13 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_sys_data *sys)
->  static int dw_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
->  {
->         struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
-> +       int irq;
->
-> -       return pp->irq;
-> +       irq = of_irq_parse_and_map_pci(dev, slot, pin);
-> +       if (!irq)
-> +               irq = pp->irq;
-> +
-> +       return irq;
->  }
->
->  static void dw_pcie_add_bus(struct pci_bus *bus)
-> --
-> 1.8.5.3
->
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Lucas,
+Current sound driver moves to new style clock,
+but is keeping compatiblity at this point.
+Move to new style on r8a7778
 
-Please add the following which are required (at least the second one
-is required) for of_irq_parse_and_map_pci() to work properly for P2P
-bridges.  With the changes below as well as my of/irq fix
-(https://patchwork.kernel.org/patch/3762591/) I can now use devices
-behind a properly connected P2P bridge.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7778.c |   22 +++++++++-------------
+ 1 file changed, 9 insertions(+), 13 deletions(-)
 
-+++ b/drivers/pci/host/pcie-designware.c
-@@ -493,7 +493,7 @@ int __init dw_pcie_host_init(struct pcie_port *pp)
-        dw_pci.nr_controllers = 1;
-        dw_pci.private_data = (void **)&pp;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 2009a9b..201fc48 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -175,10 +175,6 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 
+ static struct clk_lookup lookups[] = {
+ 	/* main */
+-	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
+-	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
+-	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
+-	CLKDEV_CON_ID("audio_clk_internal",	&s1_clk),
+ 	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ 
+@@ -234,15 +230,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP309]),
+ 	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP308]),
+ 	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP307]),
+-	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP531]),
+-	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP530]),
+-	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP529]),
+-	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP528]),
+-	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP527]),
+-	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP526]),
+-	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
+-	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
+-	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
++	CLKDEV_ICK_ID("src.0", "rcar_sound", &mstp_clks[MSTP531]),
++	CLKDEV_ICK_ID("src.1", "rcar_sound", &mstp_clks[MSTP530]),
++	CLKDEV_ICK_ID("src.2", "rcar_sound", &mstp_clks[MSTP529]),
++	CLKDEV_ICK_ID("src.3", "rcar_sound", &mstp_clks[MSTP528]),
++	CLKDEV_ICK_ID("src.4", "rcar_sound", &mstp_clks[MSTP527]),
++	CLKDEV_ICK_ID("src.5", "rcar_sound", &mstp_clks[MSTP526]),
++	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP525]),
++	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP524]),
++	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP523]),
+ };
+ 
+ void __init r8a7778_clock_init(void)
+-- 
+1.7.9.5
 
--       pci_common_init(&dw_pci);
-+       pci_common_init_dev(pp->dev, &dw_pci);
-        pci_assign_unassigned_resources();
- #ifdef CONFIG_PCI_DOMAINS
-        dw_pci.domain++;
-@@ -726,7 +726,7 @@ static struct pci_bus *dw_pcie_scan_bus(int nr, struct pci_s
-
-        if (pp) {
-                pp->root_bus_nr = sys->busnr;
--               bus = pci_scan_root_bus(NULL, sys->busnr, &dw_pcie_ops,
-+               bus = pci_scan_root_bus(pp->dev, sys->busnr, &dw_pcie_ops,
-                                        sys, &sys->resources);
-        } else {
-                bus = NULL;
-
-Thanks,
-
-Tim
