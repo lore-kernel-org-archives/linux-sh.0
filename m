@@ -1,39 +1,67 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 16 Mar 2014 21:35:20 +0000
-Subject: [PATCH 00/06] ARM: shmobile: r8a7790 Core Standby CPUIdle prototype
-Message-Id: <20140316213520.15598.85886.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:30:19 +0000
+Subject: [PATCH 4/6] ARM: shmobile: bockw: remove old style audio clock
+Message-Id: <87d2hadhnr.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ARM: shmobile: r8a7790 Core Standby CPUIdle prototype
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-[PATCH 01/06] ARM: shmobile: Allow non-SMP reset hook usage
-[PATCH 02/06] ARM: shmobile: Install CPUIdle reset vector
-[PATCH 03/06] ARM: shmobile: Setup reset vector for non-SMP r8a7790
-[PATCH 04/06] ARM: shmobile: Also build APMU code for non-SMP r8a7790
-[PATCH 05/06] ARM: shmobile: r8a7790 Core Standby CPUIdle prototype
-[PATCH 06/06] ARM: shmobile: Install clocksource for r8a7790 tickless
+Current audio clock didn't have dependency to device/driver,
+but, it was not good design for DT support.
+To avoid branch merge conflict issue,
+it is using this load map, and this patch is 3) part.
+ 1) add new style clock in platform
+ 2) add new style clock method in driver
+ 3) remove old tyle clock from platform
 
-These prototype patches add CPUIdle handling to the r8a7790 SoC. Most of
-the patches focus on allowing CPUIdle operation both in CONFIG_SMP=n and
-CONFIG_SMP=y. In the latter case "maxcpus=n" can also be passed on the
-kernel command line. The code in [PATCH 05/06] should probably be located
-under drivers/cpuidle instead of under arch/arm/mach-shmobile.
-
-Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/board-bockw.c |   10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
- Written against renesas.git tag renesas-devel-v3.14-rc6-20140313v3
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index b4122f8..1aca107 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -591,6 +591,7 @@ static void __init bockw_init(void)
+ {
+ 	void __iomem *base;
+ 	struct clk *clk;
++	struct platform_device *pdev;
+ 	int i;
+ 
+ 	r8a7778_clock_init();
+@@ -673,9 +674,6 @@ static void __init bockw_init(void)
+ 	}
+ 
+ 	/* for Audio */
+-	clk = clk_get(NULL, "audio_clk_b");
+-	clk_set_rate(clk, 24576000);
+-	clk_put(clk);
+ 	rsnd_codec_power(5, 1); /* enable ak4642 */
+ 
+ 	platform_device_register_simple(
+@@ -684,11 +682,15 @@ static void __init bockw_init(void)
+ 	platform_device_register_simple(
+ 		"ak4554-adc-dac", 1, NULL, 0);
+ 
+-	platform_device_register_resndata(
++	pdev = platform_device_register_resndata(
+ 		&platform_bus, "rcar_sound", -1,
+ 		rsnd_resources, ARRAY_SIZE(rsnd_resources),
+ 		&rsnd_info, sizeof(rsnd_info));
+ 
++	clk = clk_get(&pdev->dev, "clk_b");
++	clk_set_rate(clk, 24576000);
++	clk_put(clk);
++
+ 	for (i = 0; i < ARRAY_SIZE(rsnd_card_info); i++) {
+ 		struct platform_device_info cardinfo = {
+ 			.parent         = &platform_bus,
+-- 
+1.7.9.5
 
- arch/arm/mach-shmobile/Makefile              |    6 +
- arch/arm/mach-shmobile/cpuidle.c             |   27 +++++++
- arch/arm/mach-shmobile/headsmp.S             |   15 +++-
- arch/arm/mach-shmobile/include/mach/common.h |    2 
- arch/arm/mach-shmobile/platsmp-apmu.c        |   42 ++++++++++-
- arch/arm/mach-shmobile/pm-r8a7790.c          |   93 +++++++++++++++++++++++++-
- arch/arm/mach-shmobile/setup-r8a7790.c       |    2 
- arch/arm/mach-shmobile/smp-r8a7790.c         |   30 --------
- 8 files changed, 173 insertions(+), 44 deletions(-)
