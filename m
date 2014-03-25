@@ -1,42 +1,60 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 10 Mar 2014 11:26:59 +0000
-Subject: [PATCH V2 4/5] ARM: shmobile: koelsch: make i2c2-pfc node unique
-Message-Id: <1394450820-8158-4-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:30:34 +0000
+Subject: [PATCH 6/6] ARM: shmobile: lager: switch to use dai info for R-Car sound
+Message-Id: <87a9cedhnb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This node should have a unique name so it can be distinguished when
-other i2c busses are added later.
+Now, R-Car sound driver supports dai info settings.
+switch to use it
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/board-lager.c |   17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
-Changes since V1: added ack
-
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index e24fed9c0462..5e90f18db1fb 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -199,7 +199,7 @@
- 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 18c7e03..05c263b 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -567,20 +567,27 @@ static struct resource rsnd_resources[] __initdata = {
+ };
  
--	i2c2_pins: i2c {
-+	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
- 	};
+ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+-	RSND_SSI_SET(0, 0, gic_spi(370), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, 0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI(0, gic_spi(370), 0),
++	RSND_SSI(0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
+ };
+ 
+-static struct rsnd_scu_platform_info rsnd_scu[2] = {
++static struct rsnd_src_platform_info rsnd_src[2] = {
+ 	/* no member at this point */
+ };
+ 
++static struct rsnd_dai_platform_info rsnd_dai = {
++	.playback = { .ssi = &rsnd_ssi[0], },
++	.capture  = { .ssi = &rsnd_ssi[1], },
++};
++
+ static struct rcar_snd_info rsnd_info = {
+ 	.flags		= RSND_GEN2,
+ 	.ssi_info	= rsnd_ssi,
+ 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
+-	.scu_info	= rsnd_scu,
+-	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
++	.src_info	= rsnd_src,
++	.src_info_nr	= ARRAY_SIZE(rsnd_src),
++	.dai_info	= &rsnd_dai,
++	.dai_info_nr	= 1,
+ };
+ 
+ static struct asoc_simple_card_info rsnd_card_info = {
 -- 
-1.9.0
+1.7.9.5
 
