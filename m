@@ -1,103 +1,58 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 28 Mar 2014 15:19:33 +0000
-Subject: [PATCH 60/75] ARM: l2c: shmobile: remove cache size override
-Message-Id: <E1WTYZB-0007Gv-AO@rmk-PC.arm.linux.org.uk>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Mar 2014 16:56:35 +0000
+Subject: [PATCH v5 0/9] R-Car Gen2 PCIe host driver
+Message-Id: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140328151249.GJ7528@n2100.arm.linux.org.uk>
-In-Reply-To: <20140328151249.GJ7528@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
----
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
- arch/arm/mach-shmobile/board-armadillo800eva.c           | 2 +-
- arch/arm/mach-shmobile/board-kzm9g-reference.c           | 2 +-
- arch/arm/mach-shmobile/board-kzm9g.c                     | 2 +-
- arch/arm/mach-shmobile/setup-r8a7778.c                   | 2 +-
- arch/arm/mach-shmobile/setup-r8a7779.c                   | 2 +-
- 6 files changed, 6 insertions(+), 6 deletions(-)
+This is version 5 of a PCIe Host driver for the R-Car Gen2 devices,
+i.e. R-Car H2 (r8a7790) and R-Car M2 (r8a7791).
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 34e7f3c17dd2..39e11f48e8bc 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -165,7 +165,7 @@ static void __init eva_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00440000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
- 
- 	r8a7740_add_standard_devices_dt();
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 69ec71038ec7..179f455d96c7 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1271,7 +1271,7 @@ static void __init eva_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00440000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
- 
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 85873f186d77..a735a1d80c28 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -37,7 +37,7 @@ static void __init kzm_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*8way */
--	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
- #endif
- }
- 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index bd9931f223ae..4c4cb64e99fe 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -879,7 +879,7 @@ static void __init kzm_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*8way */
--	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
- #endif
- 
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 3a8e5316671e..6dd7ddf88741 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -301,7 +301,7 @@ void __init r8a7778_add_dt_devices(void)
- 		 * Shared attribute override enable, 64K*16way
- 		 * don't call iounmap(base)
- 		 */
--		l2x0_init(base, 0x00470000, 0xc2000fff);
-+		l2x0_init(base, 0x00400000, 0xc20f0fff);
- 	}
- #endif
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 91c90bf0ae83..a6630fccfc45 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -701,7 +701,7 @@ void __init r8a7779_add_standard_devices(void)
- {
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*16way */
--	l2x0_init(IOMEM(0xf0100000), 0x00470000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
- #endif
- 	r8a7779_pm_init();
- 
+v5:
+ - Use module_platform_driver instead of subsys_initcall
+ - Use the of_device_id data field for HW init function
+ - Init hw_pci struct in declaration
+ - Renesas SoC compatible string has peripheral before device name
+ - Add PCIe bus clock reference
+ - Use dma-ranges property to specify inbound memory regions
+ - Support multiple IO windows and correct resources
+ - Return IRQ_NONE from MSI isr when there is no pending MSI
+ - Add additional interrupt bindings
+
+v4:
+ - Use runtime PM properly
+
+Phil Edworthy (9):
+  PCI: host: rcar: Add Renesas R-Car PCIe driver
+  PCI: host: rcar: Add MSI support
+  ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+  ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+  dt-bindings: pci: rcar pcie device tree bindings
+  ARM: shmobile: Add PCIe device tree nodes for R8A7790
+  ARM: shmobile: Add PCIe device tree nodes for R8A7791 Koelsch board
+  ARM: koelsch: Add PCIe to defconfig
+  ARM: koelsch: Add HAVE_ARM_ARCH_TIMER to defconfig
+
+ Documentation/devicetree/bindings/pci/rcar-pci.txt |  44 +
+ arch/arm/boot/dts/r8a7790-lager.dts                |  10 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |  31 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |  14 +
+ arch/arm/boot/dts/r8a7791.dtsi                     |  31 +-
+ arch/arm/configs/koelsch_defconfig                 |   4 +
+ drivers/pci/host/Kconfig                           |   6 +
+ drivers/pci/host/Makefile                          |   1 +
+ drivers/pci/host/pcie-rcar.c                       | 937 +++++++++++++++++++++
+ drivers/pci/host/pcie-rcar.h                       |  87 ++
+ include/dt-bindings/clock/r8a7790-clock.h          |   1 +
+ include/dt-bindings/clock/r8a7791-clock.h          |   1 +
+ 12 files changed, 1162 insertions(+), 5 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+ create mode 100644 drivers/pci/host/pcie-rcar.c
+ create mode 100644 drivers/pci/host/pcie-rcar.h
+
 -- 
-1.8.3.1
+1.9.0
 
