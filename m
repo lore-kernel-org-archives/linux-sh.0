@@ -1,96 +1,59 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:30:26 +0000
-Subject: [PATCH 5/6] ARM: shmobile: bockw: switch to use dai info for R-Car sound
-Message-Id: <87bnwudhnj.wl%kuninori.morimoto.gx@gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Mar 2014 16:56:38 +0000
+Subject: [PATCH v5 3/9] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+Message-Id: <1395766604-30926-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch adds the device tree clock nodes for PCIe
 
-Now, R-Car sound driver supports dai info settings.
-switch to use it
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c |   53 ++++++++++++++++++++++------------
- 1 file changed, 35 insertions(+), 18 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 1aca107..f444be2 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -345,24 +345,39 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
- 	RSND_SSI_UNUSED, /* SSI 0 */
- 	RSND_SSI_UNUSED, /* SSI 1 */
- 	RSND_SSI_UNUSED, /* SSI 2 */
--	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
--	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
--	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
--	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
- };
- 
--static struct rsnd_scu_platform_info rsnd_scu[9] = {
--	{ .flags = 0, }, /* SRU 0 */
--	{ .flags = 0, }, /* SRU 1 */
--	{ .flags = 0, }, /* SRU 2 */
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
-+static struct rsnd_src_platform_info rsnd_src[9] = {
-+	RSND_SRC_UNUSED, /* SRU 0 */
-+	RSND_SRC_UNUSED, /* SRU 1 */
-+	RSND_SRC_UNUSED, /* SRU 2 */
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+};
-+
-+static struct rsnd_dai_platform_info rsnd_dai[] = {
-+	{
-+		.playback = { .ssi = &rsnd_ssi[5], .src = &rsnd_src[5] },
-+		.capture  = { .ssi = &rsnd_ssi[6], .src = &rsnd_src[6] },
-+	}, {
-+		.playback = { .ssi = &rsnd_ssi[3], .src = &rsnd_src[3] },
-+	}, {
-+		.capture  = { .ssi = &rsnd_ssi[4], .src = &rsnd_src[4] },
-+	}, {
-+		.playback = { .ssi = &rsnd_ssi[7], .src = &rsnd_src[7] },
-+	}, {
-+		.capture  = { .ssi = &rsnd_ssi[8], .src = &rsnd_src[8] },
-+	},
- };
- 
- enum {
-@@ -437,8 +452,10 @@ static struct rcar_snd_info rsnd_info = {
- 	.flags		= RSND_GEN1,
- 	.ssi_info	= rsnd_ssi,
- 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
--	.scu_info	= rsnd_scu,
--	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
-+	.src_info	= rsnd_src,
-+	.src_info_nr	= ARRAY_SIZE(rsnd_src),
-+	.dai_info	= rsnd_dai,
-+	.dai_info_nr	= ARRAY_SIZE(rsnd_dai),
- 	.start		= rsnd_start,
- 	.stop		= rsnd_stop,
- };
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index da69afc..df9ec61 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -704,16 +704,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
+ 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
+-				 <&mmc0_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&rclk_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
+-				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
++				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
+ 			>;
+ 			clock-output-names  				"tpu0", "mmcif1", "sdhi3", "sdhi2",
+-				"sdhi1", "sdhi0", "mmcif0", "cmt1";
++				"sdhi1", "sdhi0", "mmcif0", "cmt1",
++				"pcie";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 6548a5f..840dbc8 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -57,6 +57,7 @@
+ #define R8A7790_CLK_SDHI1		13
+ #define R8A7790_CLK_SDHI0		14
+ #define R8A7790_CLK_MMCIF0		15
++#define R8A7790_CLK_PCIE		19
+ #define R8A7790_CLK_SSUSB		28
+ #define R8A7790_CLK_CMT1		29
+ #define R8A7790_CLK_USBDMAC0		30
 -- 
-1.7.9.5
+1.9.0
 
