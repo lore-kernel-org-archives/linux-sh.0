@@ -1,79 +1,95 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 25 Mar 2014 16:56:40 +0000
-Subject: [PATCH v5 5/9] dt-bindings: pci: rcar pcie device tree bindings
-Message-Id: <1395766604-30926-6-git-send-email-phil.edworthy@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 25 Mar 2014 19:22:19 +0000
+Subject: Re: [PATCH v5 5/9] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <5331E576.2000202@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
+ <1395766604-30926-6-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395766604-30926-6-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch adds the bindings for the R-Car PCIe driver. The driver
-resides under drivers/pci/host/pcie-rcar.c
+Hello.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
-v5:
- - Add PCIe bus clock reference
- - Add additional interrupt bindings
- - Use dma-ranges property to specify inbound memory regions
----
- Documentation/devicetree/bindings/pci/rcar-pci.txt | 44 ++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+On 03/25/2014 07:56 PM, Phil Edworthy wrote:
 
-diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-new file mode 100644
-index 0000000..61bf5ef
---- /dev/null
-+++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-@@ -0,0 +1,44 @@
-+* Renesas RCar PCIe interface
-+
-+Required properties:
-+- compatible: should contain one of the following
-+	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
-+- reg: base addresses and lengths of the pcie controller.
-+- #address-cells: set to <3>
-+- #size-cells: set to <2>
-+- device_type: set to "pci"
-+- ranges: ranges for the PCI memory and I/O regions.
-+- dma-ranges: ranges for the inbound memory regions.
-+- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
-+	source for hardware related interrupts (e.g. link speed change).
-+- #interrupt-cells: set to <1>
-+- interrupt-map-mask and interrupt-map: standard PCI properties
-+	to define the mapping of the PCIe interface to interrupt
-+	numbers.
-+- clocks: from common clock binding: handle to pci clock.
-+- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
-+
-+Example:
-+
-+SoC specific DT Entry:
-+
-+	pcie: pcie@fe000000 {
-+		compatible = "renesas,pcie-r8a7791";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
-+			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
-+		interrupts = <0 116 4 0 117 4 0 118 4>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 4>;
-+		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
-+		clock-names = "pcie", "pcie_bus";
-+		status = "disabled";
-+	};
--- 
-1.9.0
+> This patch adds the bindings for the R-Car PCIe driver. The driver
+> resides under drivers/pci/host/pcie-rcar.c
+
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> ---
+> v5:
+>   - Add PCIe bus clock reference
+>   - Add additional interrupt bindings
+>   - Use dma-ranges property to specify inbound memory regions
+> ---
+>   Documentation/devicetree/bindings/pci/rcar-pci.txt | 44 ++++++++++++++++++++++
+>   1 file changed, 44 insertions(+)
+>   create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+>
+> diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+> new file mode 100644
+> index 0000000..61bf5ef
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+> @@ -0,0 +1,44 @@
+> +* Renesas RCar PCIe interface
+> +
+> +Required properties:
+> +- compatible: should contain one of the following
+> +	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
+> +- reg: base addresses and lengths of the pcie controller.
+
+    Hmm, need "registers" at end. And why plural?
+
+> +- #address-cells: set to <3>
+> +- #size-cells: set to <2>
+> +- device_type: set to "pci"
+> +- ranges: ranges for the PCI memory and I/O regions.
+> +- dma-ranges: ranges for the inbound memory regions.
+> +- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
+> +	source for hardware related interrupts (e.g. link speed change).
+> +- #interrupt-cells: set to <1>
+> +- interrupt-map-mask and interrupt-map: standard PCI properties
+> +	to define the mapping of the PCIe interface to interrupt
+> +	numbers.
+> +- clocks: from common clock binding: handle to pci clock.
+
+    s/handle/phandle/, s/pci/PCI/.
+    Actually, it's a clock specifier consisting not only of phandle but also 
+of clock #. Looking at your example, it's even a pair of clock specifiers.
+
+> +- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
+> +
+> +Example:
+> +
+> +SoC specific DT Entry:
+> +
+> +	pcie: pcie@fe000000 {
+> +		compatible = "renesas,pcie-r8a7791";
+> +		reg = <0 0xfe000000 0 0x80000>;
+> +		#address-cells = <3>;
+> +		#size-cells = <2>;
+> +		device_type = "pci";
+> +		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
+> +			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
+> +			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
+> +			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
+> +		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
+> +			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
+
+    Hmm, this prop looks board-dependent...
+
+> +		interrupts = <0 116 4 0 117 4 0 118 4>;
+> +		#interrupt-cells = <1>;
+> +		interrupt-map-mask = <0 0 0 0>;
+> +		interrupt-map = <0 0 0 0 &gic 0 116 4>;
+> +		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
+> +		clock-names = "pcie", "pcie_bus";
+> +		status = "disabled";
+> +	};
+
+WBR, Sergei
 
