@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 25 Mar 2014 18:42:42 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 25 Mar 2014 21:03:19 +0000
 Subject: Re: [PATCH v5 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
-Message-Id: <14997425.EPjrKhVy10@wuerfel>
+Message-Id: <20140325210319.GE27673@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
  <1395766604-30926-7-git-send-email-phil.edworthy@renesas.com>
@@ -11,24 +11,93 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 25 March 2014 16:56:41 Phil Edworthy wrote:
-> +               /* Map all possible DDR as inbound ranges */
-> +               dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
-> +                             0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
+On Tue, Mar 25, 2014 at 04:56:41PM +0000, Phil Edworthy wrote:
+> This patch adds the device tree nodes for R8A7790
+> 
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-Typo: 0x43000000 should be 0x42000000 I guess.
+Please split this patch into two patches.
 
-Since you control the mapping, I wonder if you could also do this as
+1. A patch that updates arch/arm/boot/dts/r8a7790.dtsi
 
-               dma-ranges = <0x42000000 0 0x00000000 0 0x40000000 0 0x80000000
-                             0x43000000 0 0x80000000 1 0x80000000 0 0x80000000>;
+   I suggest calling that patch
+   "ARM: shmobile: r8a7791: Add PCI device nodes"
 
-i.e. map all the RAM into PCI bus addresses below the 32-bit boundary.
-This would be really nice from the perspective that now all PCI
-devices could access all of RAM without using an IOMMU or the
-relying on 64-bit master capability.
+2. A patch that updates arch/arm/boot/dts/r8a7790-lager.dts
 
-The downside of this is that you'd probably need a custom dma_map_ops
-wrapper.
+   I suggest calling that patch
+   "ARM: shmobile: lager: Add PCI device nodes"
 
-	Arnd
+> ---
+> v5:
+>  - Renesas SoCs compatible string has peripheral before device name
+>  - Add PCIe bus clock reference
+>  - Add additional interrupt bindings
+>  - Use dma-ranges property to specify inbound memory regions
+> ---
+>  arch/arm/boot/dts/r8a7790-lager.dts | 10 ++++++++++
+>  arch/arm/boot/dts/r8a7790.dtsi      | 24 ++++++++++++++++++++++++
+>  2 files changed, 34 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+> index a55c5f8..bbbcb63 100644
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -139,6 +139,16 @@
+>  		states = <3300000 1
+>  			  1800000 0>;
+>  	};
+> +
+> +	clocks {
+> +		/* External PCIe bus clock - not used */
+> +		pcie_bus_clk: pcie_bus_clk {
+> +			compatible = "fixed-clock";
+> +			#clock-cells = <0>;
+> +			clock-frequency = <0>;
+> +			clock-output-names = "pcie_bus";
+> +		};
+> +	};
+>  };
+>  
+>  &extal_clk {
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index df9ec61..dbcea57 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -821,4 +821,28 @@
+>  		#size-cells = <0>;
+>  		status = "disabled";
+>  	};
+> +
+> +	pcie: pcie@fe000000 {
+> +		compatible = "renesas,pcie-r8a7790";
+> +		reg = <0 0xfe000000 0 0x80000>;
+> +		#address-cells = <3>;
+> +		#size-cells = <2>;
+> +		device_type = "pci";
+> +		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
+> +			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
+> +			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
+> +			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
+> +		/* Map all possible DDR as inbound ranges */
+> +		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
+> +			      0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
+> +		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH
+> +			      0 117 IRQ_TYPE_LEVEL_HIGH
+> +			      0 118 IRQ_TYPE_LEVEL_HIGH>;
+> +		#interrupt-cells = <1>;
+> +		interrupt-map-mask = <0 0 0 0>;
+> +		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp3_clks R8A7790_CLK_PCIE>, <&pcie_bus_clk>;
+> +		clock-names = "pcie", "pcie_bus";
+> +		status = "disabled";
+> +	};
+>  };
+> -- 
+> 1.9.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
