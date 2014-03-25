@@ -1,26 +1,83 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Mar 2014 00:09:09 +0000
-Subject: Re: [PATCH v3 07/20] ARM: shmobile: marzen: Reference clocks
-Message-Id: <20140313000909.GH25813@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 25 Mar 2014 16:56:41 +0000
+Subject: [PATCH v5 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
+Message-Id: <1395766604-30926-7-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393400016-23433-1-git-send-email-horms+renesas@verge.net.au>
- <1393400016-23433-8-git-send-email-horms+renesas@verge.net.au>
- <530E06E3.9070901@cogentembedded.com>
-In-Reply-To: <530E06E3.9070901@cogentembedded.com>
+References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 26, 2014 at 06:23:15PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 02/26/2014 10:33 AM, Simon Horman wrote:
-> 
-> >Reference clocks using a "clocks" property in all nodes corresponding to
-> >devices that require a clock: that is, the lan0 node.
-> 
->    Simon, "lan0" (should be "ethernet" BTW) is the SMC chip, it
-> can't use Ether clock.
+This patch adds the device tree nodes for R8A7790
 
-Thanks, I will drop this patch.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v5:
+ - Renesas SoCs compatible string has peripheral before device name
+ - Add PCIe bus clock reference
+ - Add additional interrupt bindings
+ - Use dma-ranges property to specify inbound memory regions
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 10 ++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi      | 24 ++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a55c5f8..bbbcb63 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -139,6 +139,16 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	clocks {
++		/* External PCIe bus clock - not used */
++		pcie_bus_clk: pcie_bus_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "pcie_bus";
++		};
++	};
+ };
+ 
+ &extal_clk {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index df9ec61..dbcea57 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -821,4 +821,28 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pcie: pcie@fe000000 {
++		compatible = "renesas,pcie-r8a7790";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		/* Map all possible DDR as inbound ranges */
++		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
++			      0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
++		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH
++			      0 117 IRQ_TYPE_LEVEL_HIGH
++			      0 118 IRQ_TYPE_LEVEL_HIGH>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_PCIE>, <&pcie_bus_clk>;
++		clock-names = "pcie", "pcie_bus";
++		status = "disabled";
++	};
+ };
+-- 
+1.9.0
+
