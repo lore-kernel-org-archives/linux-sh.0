@@ -1,61 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 04 Mar 2014 18:19:34 +0000
-Subject: Re: [PATCH 10/15] irda: sh_irda: Enable driver compilation with COMPILE_TEST
-Message-Id: <4876025.BhmDicoI5K@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:29:56 +0000
+Subject: [PATCH 1/6] ARM: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <87ha6mdhoe.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385515117-23664-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <2434798.8bvsZzgdNb@avalon> <63153015.VK19yFZrrS@avalon>
-In-Reply-To: <63153015.VK19yFZrrS@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Samuel,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tuesday 07 January 2014 16:13:49 Laurent Pinchart wrote:
-> On Wednesday 11 December 2013 13:49:15 Laurent Pinchart wrote:
-> > Hi Samuel,
-> > 
-> > Could you please pick this patch up for v3.14 ?
-> 
-> Ping ?
+SND_SOC_DAIFMT_CBx_CFx means "codec" side master/slave mode.
+Then, rcar will be master mode if it was SND_SOC_DAIFMT_CBS_CFS.
 
-PING ?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-lager.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-> > On Wednesday 27 November 2013 02:18:32 Laurent Pinchart wrote:
-> > > This helps increasing build testing coverage.
-> > > 
-> > > Cc: Samuel Ortiz <samuel@sortiz.org>
-> > > Cc: netdev@vger.kernel.org
-> > > Signed-off-by: Laurent Pinchart
-> > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > Acked-by: Simon Horman <horms@verge.net.au>
-> > > ---
-> > > 
-> > >  drivers/net/irda/Kconfig | 3 ++-
-> > >  1 file changed, 2 insertions(+), 1 deletion(-)
-> > > 
-> > > diff --git a/drivers/net/irda/Kconfig b/drivers/net/irda/Kconfig
-> > > index 2a30193..cae5ee2 100644
-> > > --- a/drivers/net/irda/Kconfig
-> > > +++ b/drivers/net/irda/Kconfig
-> > > @@ -403,7 +403,8 @@ config MCS_FIR
-> > > 
-> > >  config SH_IRDA
-> > >  
-> > >  	tristate "SuperH IrDA driver"
-> > > 
-> > > -	depends on IRDA && ARCH_SHMOBILE
-> > > +	depends on IRDA
-> > > +	depends on ARCH_SHMOBILE || COMPILE_TEST
-> > > 
-> > >  	help
-> > >  	
-> > >  	  Say Y here if your want to enable SuperH IrDA devices.
-
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f0104bf..18c7e03 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -588,14 +588,12 @@ static struct asoc_simple_card_info rsnd_card_info = {
+ 	.card		= "SSI01-AK4643",
+ 	.codec		= "ak4642-codec.2-0012",
+ 	.platform	= "rcar_sound",
+-	.daifmt		= SND_SOC_DAIFMT_LEFT_J,
++	.daifmt		= SND_SOC_DAIFMT_LEFT_J | SND_SOC_DAIFMT_CBM_CFM,
+ 	.cpu_dai = {
+ 		.name	= "rcar_sound",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name	= "ak4642-hifi",
+-		.fmt	= SND_SOC_DAIFMT_CBM_CFM,
+ 		.sysclk	= 11289600,
+ 	},
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
