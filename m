@@ -1,113 +1,105 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 14 Mar 2014 23:31:05 +0000
-Subject: [PATCH 3/3] sh_eth: fold netif_msg_*() and netdev_*() calls into netif_*() invocations
-Message-Id: <201403150330.59864.sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:36:42 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r8a7790: add R-Car sound support on DTSI
+Message-Id: <8761n2dhd3.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201403150321.47674.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201403150321.47674.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, joe@perches.com
+To: linux-sh@vger.kernel.org
 
-Now that we call netdev_*() under netif_msg_*() checks, we can fold these into
-netif_*() macro invocations.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Suggested-by: Joe Perches <joe@perches.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |   33 +++++++++++----------------------
- 1 file changed, 11 insertions(+), 22 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi |   76 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1557,8 +1557,7 @@ ignore_link:
- 		/* Unused write back interrupt */
- 		if (intr_status & EESR_TABT) {	/* Transmit Abort int */
- 			ndev->stats.tx_aborted_errors++;
--			if (netif_msg_tx_err(mdp))
--				netdev_err(ndev, "Transmit Abort\n");
-+			netif_err(mdp, tx_err, ndev, "Transmit Abort\n");
- 		}
- 	}
- 
-@@ -1567,45 +1566,38 @@ ignore_link:
- 		if (intr_status & EESR_RFRMER) {
- 			/* Receive Frame Overflow int */
- 			ndev->stats.rx_frame_errors++;
--			if (netif_msg_rx_err(mdp))
--				netdev_err(ndev, "Receive Abort\n");
-+			netif_err(mdp, rx_err, ndev, "Receive Abort\n");
- 		}
- 	}
- 
- 	if (intr_status & EESR_TDE) {
- 		/* Transmit Descriptor Empty int */
- 		ndev->stats.tx_fifo_errors++;
--		if (netif_msg_tx_err(mdp))
--			netdev_err(ndev, "Transmit Descriptor Empty\n");
-+		netif_err(mdp, tx_err, ndev, "Transmit Descriptor Empty\n");
- 	}
- 
- 	if (intr_status & EESR_TFE) {
- 		/* FIFO under flow */
- 		ndev->stats.tx_fifo_errors++;
--		if (netif_msg_tx_err(mdp))
--			netdev_err(ndev, "Transmit FIFO Under flow\n");
-+		netif_err(mdp, tx_err, ndev, "Transmit FIFO Under flow\n");
- 	}
- 
- 	if (intr_status & EESR_RDE) {
- 		/* Receive Descriptor Empty int */
- 		ndev->stats.rx_over_errors++;
--
--		if (netif_msg_rx_err(mdp))
--			netdev_err(ndev, "Receive Descriptor Empty\n");
-+		netif_err(mdp, rx_err, ndev, "Receive Descriptor Empty\n");
- 	}
- 
- 	if (intr_status & EESR_RFE) {
- 		/* Receive FIFO Overflow int */
- 		ndev->stats.rx_fifo_errors++;
--		if (netif_msg_rx_err(mdp))
--			netdev_err(ndev, "Receive FIFO Overflow\n");
-+		netif_err(mdp, rx_err, ndev, "Receive FIFO Overflow\n");
- 	}
- 
- 	if (!mdp->cd->no_ade && (intr_status & EESR_ADE)) {
- 		/* Address Error */
- 		ndev->stats.tx_fifo_errors++;
--		if (netif_msg_tx_err(mdp))
--			netdev_err(ndev, "Address Error\n");
-+		netif_err(mdp, tx_err, ndev, "Address Error\n");
- 	}
- 
- 	mask = EESR_TWB | EESR_TABT | EESR_ADE | EESR_TDE | EESR_TFE;
-@@ -2064,11 +2056,9 @@ static void sh_eth_tx_timeout(struct net
- 
- 	netif_stop_queue(ndev);
- 
--	if (netif_msg_timer(mdp)) {
--		netdev_err(ndev,
--			   "transmit timed out, status %8.8x, resetting...\n",
--			   (int)sh_eth_read(ndev, EESR));
--	}
-+	netif_err(mdp, timer, ndev,
-+		  "transmit timed out, status %8.8x, resetting...\n",
-+		  (int)sh_eth_read(ndev, EESR));
- 
- 	/* tx_errors count up */
- 	ndev->stats.tx_errors++;
-@@ -2103,8 +2093,7 @@ static int sh_eth_start_xmit(struct sk_b
- 	spin_lock_irqsave(&mdp->lock, flags);
- 	if ((mdp->cur_tx - mdp->dirty_tx) >= (mdp->num_tx_ring - 4)) {
- 		if (!sh_eth_txfree(ndev)) {
--			if (netif_msg_tx_queued(mdp))
--				netdev_warn(ndev, "TxFD exhausted.\n");
-+			netif_warn(mdp, tx_queued, ndev, "TxFD exhausted.\n");
- 			netif_stop_queue(ndev);
- 			spin_unlock_irqrestore(&mdp->lock, flags);
- 			return NETDEV_TX_BUSY;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 5e7f23d..fa7f34e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -849,4 +849,80 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	rcar_sound: rcar_sound@0xec500000 {
++		#sound-dai-cells = <1>;
++		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
++		interrupt-parent = <&gic>;
++		reg =	<0 0xec500000 0 0x1000>, /* SCU */
++			<0 0xec5a0000 0 0x100>,  /* ADG */
++			<0 0xec540000 0 0x1000>, /* SSIU */
++			<0 0xec541000 0 0x1280>; /* SSI */
++		clocks = <&mstp10_clks R8A7790_CLK_SSI>,
++			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
++			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
++			<&mstp10_clks R8A7790_CLK_SSI5>, <&mstp10_clks R8A7790_CLK_SSI4>,
++			<&mstp10_clks R8A7790_CLK_SSI3>, <&mstp10_clks R8A7790_CLK_SSI2>,
++			<&mstp10_clks R8A7790_CLK_SSI1>, <&mstp10_clks R8A7790_CLK_SSI0>,
++			<&mstp10_clks R8A7790_CLK_SRC9>, <&mstp10_clks R8A7790_CLK_SRC8>,
++			<&mstp10_clks R8A7790_CLK_SRC7>, <&mstp10_clks R8A7790_CLK_SRC6>,
++			<&mstp10_clks R8A7790_CLK_SRC5>, <&mstp10_clks R8A7790_CLK_SRC4>,
++			<&mstp10_clks R8A7790_CLK_SRC3>, <&mstp10_clks R8A7790_CLK_SRC2>,
++			<&mstp10_clks R8A7790_CLK_SRC1>, <&mstp10_clks R8A7790_CLK_SRC0>,
++			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
++		clock-names = "ssi",
++				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
++				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
++				"src.9", "src.8", "src.7", "src.6", "src.5",
++				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"clk_a", "clk_b", "clk_c", "clk_i";
++
++		status = "disabled";
++
++		rcar_sound,src {
++			src0: src@0 { };
++			src1: src@1 { };
++			src2: src@2 { };
++			src3: src@3 { };
++			src4: src@4 { };
++			src5: src@5 { };
++			src6: src@6 { };
++			src7: src@7 { };
++			src8: src@8 { };
++			src9: src@9 { };
++		};
++
++		rcar_sound,ssi {
++			ssi0: ssi@0 {
++				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi1: ssi@1 {
++				interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi2: ssi@2 {
++				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi3: ssi@3 {
++				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi4: ssi@4 {
++				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi5: ssi@5 {
++				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi6: ssi@6 {
++				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi7: ssi@7 {
++				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi8: ssi@8 {
++				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++			};
++			ssi9: ssi@9 {
++				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++			};
++		};
++	};
+ };
+-- 
+1.7.9.5
+
