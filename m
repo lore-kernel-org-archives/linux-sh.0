@@ -1,110 +1,88 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Mar 2014 00:24:28 +0000
-Subject: Re: [PATCH v2 00/11] ARM: shmobile: MSIOF integration on r8a7790/lager and r8a7791/koelsch
-Message-Id: <20140307002428.GC11702@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 25 Mar 2014 18:56:29 +0000
+Subject: [PATCH v2 5/5] ARM: shmobile: r8a7790: add IIC(B) cores to dtsi
+Message-Id: <1395773789-17249-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393324219-3317-1-git-send-email-geert@linux-m68k.org>
- <CANqRtoSM-51NRVAtYOOAzZQ-pagC2JteC+M=SKMuBYniLFfhLA@mail.gmail.com>
- <20140306013824.GF13581@verge.net.au>
- <CANqRtoSkHWGRypPymh87ikmcEWqMsn=eRoPkc2JpaSZVqP21Lw@mail.gmail.com>
- <CAMuHMdX16VGZ=MjCj0St9spWGZo-bnQ6EXuiibZENTWKfASxEg@mail.gmail.com>
-In-Reply-To: <CAMuHMdX16VGZ=MjCj0St9spWGZo-bnQ6EXuiibZENTWKfASxEg@mail.gmail.com>
+References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 06, 2014 at 04:28:26PM +0100, Geert Uytterhoeven wrote:
-> Hi Magnus, Simon,
-> 
-> On Thu, Mar 6, 2014 at 3:25 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > On Thu, Mar 6, 2014 at 10:38 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> On Wed, Mar 05, 2014 at 05:31:42PM +0900, Magnus Damm wrote:
-> >>> On Tue, Feb 25, 2014 at 7:30 PM, Geert Uytterhoeven
-> >>> <geert@linux-m68k.org> wrote:
-> >>> >         Hi Simon, Magnus,
-> >>> >
-> >>> > This patch series integrates support for the MSIOF module in the Renesas
-> >>> > R-Car H2 (r8a7790) and M2 (r8a7791) SoCs on the Lager and Koelsch
-> >>> > development boards.
-> >>> >
-> >>> > It was tested on Lager and Koelsch, both legacy and DT, using a dummy
-> >>> > driver for the Renesas r2a11302ft PMIC that reads out the PMIC's version
-> >>> > ID.
-> >>> >
-> >>> >     [01/11] ARM: shmobile: r8a7790: Add MSIOF clocks
-> >>> >     [02/11] ARM: shmobile: r8a7791: Add MSIOF clocks
-> >>> >     [03/11] ARM: shmobile: lager legacy: Add MSIOF support
-> >>> >     [04/11] ARM: shmobile: koelsch legacy: Add MSIOF support
-> >>> >     [05/11] ARM: shmobile: r8a7790/lager dts: Rename label spi to qspi, add
-> >>> >             spi0 alias
-> >>> >     [06/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi,
-> >>> >             add spi0 alias
-> >>> >     [07/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-> >>> >     [08/11] ARM: shmobile: r8a7791 dtsi: Add MSIOF nodes and aliases
-> >>> >     [09/11] ARM: shmobile: lager dts: Add MSIOF nodes
-> >>> >     [10/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
-> >>> >     [11/11] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
-> >>> >
-> >>> > These are (reworked versions of) the remaining patches not taken from v1.
-> >>> > Changelogs are available in the individual patches.
-> >>>
-> >>> Hi Geert,
-> >>>
-> >>> Thanks for your efforts. All these look fine to me.
-> >>>
-> >>> Acked-by: Magnus Damm <damm@opensource.se>
-> >>>
-> >>> Exactly what to merge upstream depends on what the ARM SoC maintainers prefer.
-> >>
-> >> I wonder if for now we could move things forwards by merging the
-> >> non-legacy code. I think that would mean the following:
-> >>
-> >>     [05/11] ARM: shmobile: r8a7790/lager dts: Rename label spi to qspi, add
-> >>             spi0 alias
-> >>     [06/11] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi,
-> >>             add spi0 alias
-> >>     [07/11] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-> >>     [08/11] ARM: shmobile: r8a7791 dtsi: Add MSIOF nodes and aliases
-> >>     [09/11] ARM: shmobile: lager dts: Add MSIOF nodes
-> >>     [10/11] ARM: shmobile: koelsch dts: Add MSIOF nodes
-> >>
-> >> And just the 'multi' portion of:
-> >>
-> >>     [11/11] ARM: shmobile: koelsch/lager/multi defconfig: Enable MSIOF
-> >>
-> >>
-> >> Would that result in working MSIOF support for koelsch and lager
-> >> when using multiplatform?
-> >
-> > I believe so, but I rely on Geert to point out if this assumption is wrong.
-> 
-> Yes, that should work.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Thanks. I have queued things up as described above.
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+Change since V1:
 
-> >> Then later, if appropriate, in accordance with discussions with the
-> >> ARM SoC maintainers, we could merge the remaining changes in
-> >> this series: the legacy code.
-> >
-> > Sure, sounds good.
-> 
-> Indeed.
-> 
-> Thanks a lot!
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+* renamed i2c4-7 to iic0-3
+
+ arch/arm/boot/dts/r8a7790.dtsi | 44 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 21e6602c630b..b78d718479e0 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -24,6 +24,10 @@
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
++		i2c4 = &iic0;
++		i2c5 = &iic1;
++		i2c6 = &iic2;
++		i2c7 = &iic3;
+ 		spi0 = &qspi;
+ 		spi1 = &msiof0;
+ 		spi2 = &msiof1;
+@@ -236,6 +240,46 @@
+ 		status = "disabled";
+ 	};
+ 
++	iic0: i2c@e6500000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
++		reg = <0 0xe6500000 0 0x425>;
++		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
++		status = "disabled";
++	};
++
++	iic1: i2c@e6510000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
++		reg = <0 0xe6510000 0 0x425>;
++		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_IIC1>;
++		status = "disabled";
++	};
++
++	iic2: i2c@e6520000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
++		reg = <0 0xe6520000 0 0x425>;
++		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_IIC2>;
++		status = "disabled";
++	};
++
++	iic3: i2c@e60b0000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
++		reg = <0 0xe60b0000 0 0x425>;
++		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_IICDVFS>;
++		status = "disabled";
++	};
++
+ 	mmcif0: mmcif@ee200000 {
+ 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+-- 
+1.9.0
+
