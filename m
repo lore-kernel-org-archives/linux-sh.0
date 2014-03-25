@@ -1,120 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Mar 2014 19:06:48 +0000
-Subject: [PATCH 3/5] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-Message-Id: <1395256010-12222-4-git-send-email-geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 25 Mar 2014 04:30:12 +0000
+Subject: [PATCH 3/6] ARM: shmobile: r8a7790: remove old style audio clock
+Message-Id: <87eh1qdhny.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-If the kernel is built to support multi-ARM configuration with shmobile
-support built in, then drivers/sh is not built. This contains the PM
-runtime code in drivers/sh/pm_runtime.c, which implicitly enables the bus
-clocks for all devices, and thus is quite essential.
-Without this, the state of clocks depends on implicit reset state, or on
-the bootloader.
+Current sound driver moves to new style clock,
+but is keeping compatiblity at this point.
+Move to new style on r8a7790
 
-If ARCH_SHMOBILE_MULTI then build the drivers/sh directory, but ensure that
-bits that may conflict (drivers/sh/clk if the common clock framework is
-enabled) or are not used (drivers/sh/intc), are not built.
-
-ARCH_SHMOBILE_MULTI was added a while ago by commit
-efacfce5f8a523457e9419a25d52fe39db00b26a ("ARM: shmobile: Introduce
-ARCH_SHMOBILE_MULTI"), but drivers/sh was compiled for both
-ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI until commit
-bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187 ("ARM: Rename ARCH_SHMOBILE to
-ARCH_SHMOBILE_LEGACY").
-
-Note that the PM runtime code is not automatically enabled on
-ARCH_SHMOBILE_MULTI, to protected the code from running on non-shmobile
-platforms.  sh_pm_runtime_init() must be explicitly called from shmobile
-platform code. A temporary check is added to make sure the PM runtime code
-is enabled only once on ARCH_SHMOBILE_LEGACY.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-[geert: Do not compile intc if ARCH_SHMOBILE_MULTI]
-[geert: Do not enable the PM runtime code if ARCH_SHMOBILE_MULTI, based
-        on other patches from Ben]
-[geert: Reword]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/Makefile        |    2 +-
- drivers/sh/Makefile     |   14 ++++++++------
- drivers/sh/pm_runtime.c |   14 ++++++++++++--
- 3 files changed, 21 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c |   24 ++++++++++--------------
+ 1 file changed, 10 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/Makefile b/drivers/Makefile
-index 8e3b8b06c0b2..3cc8214f9b26 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -118,7 +118,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
-+obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
-diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
-index fc67f564f02c..788ed9b59b4e 100644
---- a/drivers/sh/Makefile
-+++ b/drivers/sh/Makefile
-@@ -1,10 +1,12 @@
- #
- # Makefile for the SuperH specific drivers.
- #
--obj-y	:= intc/
-+obj-$(CONFIG_SUPERH)			+= intc/
-+obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= intc/
-+ifneq ($(CONFIG_COMMON_CLK),y)
-+obj-$(CONFIG_HAVE_CLK)			+= clk/
-+endif
-+obj-$(CONFIG_MAPLE)			+= maple/
-+obj-$(CONFIG_SUPERHYWAY)		+= superhyway/
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 3f93503..5f4b6c4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -294,10 +294,6 @@ static struct clk mstp_clks[MSTP_NR] = {
+ static struct clk_lookup lookups[] = {
  
--obj-$(CONFIG_HAVE_CLK)		+= clk/
--obj-$(CONFIG_MAPLE)		+= maple/
--obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
--
--obj-y				+= pm_runtime.o
-+obj-y					+= pm_runtime.o
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 5cfbd825a9c8..58c114464831 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -42,16 +42,26 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
- 	.con_ids = { NULL, },
- };
- 
--static int __init sh_pm_runtime_init(void)
-+static bool default_pm_on;
-+
-+int __init sh_pm_runtime_init(void)
- {
-+	if (default_pm_on)
-+		return 0;
-+
-+	default_pm_on = true;
- 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
- }
-+#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE_LEGACY)
- core_initcall(sh_pm_runtime_init);
-+#endif
- 
- static int __init sh_pm_runtime_late_init(void)
- {
--	pm_genpd_poweroff_unused();
-+	if (default_pm_on)
-+		pm_genpd_poweroff_unused();
- 	return 0;
- }
-+
- late_initcall(sh_pm_runtime_late_init);
+ 	/* main clocks */
+-	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
+-	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
+-	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
+-	CLKDEV_CON_ID("audio_clk_internal",	&m2_clk),
+ 	CLKDEV_CON_ID("extal",		&extal_clk),
+ 	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
+ 	CLKDEV_CON_ID("main",		&main_clk),
+@@ -381,16 +377,16 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
+ 	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
+ 	CLKDEV_ICK_ID("clk_i", "rcar_sound", &m2_clk),
+-	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP1031]),
+-	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP1030]),
+-	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP1029]),
+-	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP1028]),
+-	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP1027]),
+-	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP1026]),
+-	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP1025]),
+-	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP1024]),
+-	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP1023]),
+-	CLKDEV_ICK_ID("scu.9", "rcar_sound", &mstp_clks[MSTP1022]),
++	CLKDEV_ICK_ID("src.0", "rcar_sound", &mstp_clks[MSTP1031]),
++	CLKDEV_ICK_ID("src.1", "rcar_sound", &mstp_clks[MSTP1030]),
++	CLKDEV_ICK_ID("src.2", "rcar_sound", &mstp_clks[MSTP1029]),
++	CLKDEV_ICK_ID("src.3", "rcar_sound", &mstp_clks[MSTP1028]),
++	CLKDEV_ICK_ID("src.4", "rcar_sound", &mstp_clks[MSTP1027]),
++	CLKDEV_ICK_ID("src.5", "rcar_sound", &mstp_clks[MSTP1026]),
++	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP1025]),
++	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP1024]),
++	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP1023]),
++	CLKDEV_ICK_ID("src.9", "rcar_sound", &mstp_clks[MSTP1022]),
+ 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP1015]),
+ 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP1014]),
+ 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP1013]),
 -- 
 1.7.9.5
 
