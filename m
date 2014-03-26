@@ -1,51 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 10 Mar 2014 11:36:12 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 26 Mar 2014 05:09:35 +0000
 Subject: Re: [PATCH V2 1/5] ARM: shmobile: r8a7791: add IIC0/1 clock macros
-Message-Id: <9236675.ot3B0M2rgc@avalon>
+Message-Id: <CANqRtoSYTSZV-wxXBeGWYnPLPGZNL3WEtXgHh1U8CQxAEhx5zQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394450820-8158-1-git-send-email-wsa@the-dreams.de>
+ <9236675.ot3B0M2rgc@avalon>
+In-Reply-To: <9236675.ot3B0M2rgc@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+Hi Simon, Wolfram, Laurent, everyone,
 
-Thank you for the patches.
+On Mon, Mar 10, 2014 at 8:36 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Wolfram,
+>
+> Thank you for the patches.
+>
+> For the whole series,
+>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-For the whole series,
+I've now given the patches in this series a spin on top of
+renesas-devel-v3.14-rc8-20140325v2.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To clarify, I can't seem to find any cover letter for this series, so
+instead I will with this email reply to [1/1]. Here is also a list of
+the patches that I believe are part of this series, please correct me
+if I'm wrong:
 
-On Monday 10 March 2014 12:26:56 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> ---
-> 
-> Changes since V1: kept sorting intact
-> 
->  include/dt-bindings/clock/r8a7791-clock.h | 2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/include/dt-bindings/clock/r8a7791-clock.h
-> b/include/dt-bindings/clock/r8a7791-clock.h index
-> 30f82f286e29..2df1a11faeb3 100644
-> --- a/include/dt-bindings/clock/r8a7791-clock.h
-> +++ b/include/dt-bindings/clock/r8a7791-clock.h
-> @@ -51,6 +51,8 @@
->  #define R8A7791_CLK_SDHI1		12
->  #define R8A7791_CLK_SDHI0		14
->  #define R8A7791_CLK_MMCIF0		15
-> +#define R8A7791_CLK_IIC0		18
-> +#define R8A7791_CLK_IIC1		23
->  #define R8A7791_CLK_SSUSB		28
->  #define R8A7791_CLK_CMT1		29
->  #define R8A7791_CLK_USBDMAC0		30
+[PATCH V2 1/5] ARM: shmobile: r8a7791: add IIC0/1 clock macros
+[PATCH V2 2/5] ARM: shmobile: r8a7791: add IIC(B) clocks to dtsi
+[PATCH V2 3/5] ARM: shmobile: r8a7791: add IIC(B) cores to dtsi
+[PATCH V2 4/5] ARM: shmobile: koelsch: make i2c2-pfc node unique
+[PATCH V2 5/5] ARM: shmobile: koelsch: activate i2c6 bus
 
--- 
-Regards,
+They all look good to me!
 
-Laurent Pinchart
+Acked-by: Magnus Damm <damm@opensource.se>
 
+Simon, can you please pick up these changes? I believe there are no
+special dependencies.
+
+Thanks,
+
+/ magnus
