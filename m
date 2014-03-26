@@ -1,43 +1,53 @@
 From: Phil.Edworthy@renesas.com
-Date: Wed, 26 Mar 2014 08:54:44 +0000
+Date: Wed, 26 Mar 2014 09:55:04 +0000
 Subject: Re: [PATCH v5 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
-Message-Id: <OF088BE275.2B86FE6F-ON80257CA7.0030CD8C-80257CA7.0030F45E@eu.necel.com>
+Message-Id: <OF61E4A09E.4D57F668-ON80257CA7.0035A569-80257CA7.00367A70@eu.necel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
  <1395766604-30926-7-git-send-email-phil.edworthy@renesas.com>
- <20140325210319.GE27673@verge.net.au>
-In-Reply-To: <20140325210319.GE27673@verge.net.au>
+ <14997425.EPjrKhVy10@wuerfel>
+In-Reply-To: <14997425.EPjrKhVy10@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Hi Arnd,
 
-On: 25/03/2014 21:03, Simon wrote:
+On: 25/03/2014 18:42, Arnd wrote:
 > Subject: Re: [PATCH v5 6/9] ARM: shmobile: Add PCIe device tree nodes 
 for R8A7790
 > 
-> On Tue, Mar 25, 2014 at 04:56:41PM +0000, Phil Edworthy wrote:
-> > This patch adds the device tree nodes for R8A7790
-> > 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> On Tuesday 25 March 2014 16:56:41 Phil Edworthy wrote:
+> > +               /* Map all possible DDR as inbound ranges */
+> > +               dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 
+0x80000000
+> > +                             0x43000000 1 0x80000000 1 0x80000000 0 
+0x80000000>;
 > 
-> Please split this patch into two patches.
+> Typo: 0x43000000 should be 0x42000000 I guess.
+I used 0x43000000 as this is a 64-bit type. The OF PCI range code 
+currently treats both 32 and 64-bit types the same way, but I thought it 
+would be good to set this in case we ever need to use it.
+ 
+> Since you control the mapping, I wonder if you could also do this as
 > 
-> 1. A patch that updates arch/arm/boot/dts/r8a7790.dtsi
+>                dma-ranges = <0x42000000 0 0x00000000 0 0x40000000 0 
+0x80000000
+>                              0x43000000 0 0x80000000 1 0x80000000 0 
+0x80000000>;
 > 
->    I suggest calling that patch
->    "ARM: shmobile: r8a7791: Add PCI device nodes"
+> i.e. map all the RAM into PCI bus addresses below the 32-bit boundary.
+> This would be really nice from the perspective that now all PCI
+> devices could access all of RAM without using an IOMMU or the
+> relying on 64-bit master capability.
 > 
-> 2. A patch that updates arch/arm/boot/dts/r8a7790-lager.dts
-> 
->    I suggest calling that patch
->    "ARM: shmobile: lager: Add PCI device nodes"
-> 
-
-For this, and your other comments, will do!
+> The downside of this is that you'd probably need a custom dma_map_ops
+> wrapper.
+Since the OF PCi range code treats both 32 and 64-bit types the same way, 
+my PCIe driver only creates 64-bit mappings. In addition, the PCIe 
+controller has to use a 64-bit mapping for anything over 2GiB. Based on 
+this, I think it's sensible to leave the mappings as 1-to-1.
 
 Thanks
 Phil
-
