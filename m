@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 25 Mar 2014 21:02:04 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 26 Mar 2014 05:39:06 +0000
 Subject: Re: [PATCH v5 9/9] ARM: koelsch: Add HAVE_ARM_ARCH_TIMER to defconfig
-Message-Id: <20140325210204.GD27673@verge.net.au>
+Message-Id: <CANqRtoRCK8rLKDuy9kuyES=Y0Ek00BVnzzTdCeTKpPjrxiP7RQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395766604-30926-1-git-send-email-phil.edworthy@renesas.com>
  <1395766604-30926-10-git-send-email-phil.edworthy@renesas.com>
@@ -11,18 +11,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Please update the subject of this patch to:
-
-ARM: shmobile: koelsch: Add HAVE_ARM_ARCH_TIMER to defconfig
-
-On Tue, Mar 25, 2014 at 04:56:44PM +0000, Phil Edworthy wrote:
+On Wed, Mar 26, 2014 at 1:56 AM, Phil Edworthy
+<phil.edworthy@renesas.com> wrote:
 > This is fixes a boot problem when the R-Car PCIe driver is enabled.
-> 
+>
 > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 > ---
 >  arch/arm/configs/koelsch_defconfig | 1 +
 >  1 file changed, 1 insertion(+)
-> 
+>
 > diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
 > index ec14547..67666b6 100644
 > --- a/arch/arm/configs/koelsch_defconfig
@@ -32,14 +29,22 @@ On Tue, Mar 25, 2014 at 04:56:44PM +0000, Phil Edworthy wrote:
 >  CONFIG_PL310_ERRATA_588369=y
 >  CONFIG_ARM_ERRATA_754322=y
 > +CONFIG_HAVE_ARM_ARCH_TIMER=y
->  CONFIG_PCI=y
->  CONFIG_PCI_MSI=y
->  CONFIG_PCI_RCAR_GEN2_PCIE=y
-> -- 
-> 1.9.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+Hi Phil,
+
+Thanks for your patches! I appreciate that you send out a whole series
+with broken out patches, that makes it easier to see what is going on.
+
+However, regarding this particular patch I'm not so sure if your fix
+is correct. The issue is most likely there, no doubt about that, but
+this "select" does not match well with how we currently handle timers
+for the rest of the SoCs in mach-shmobile. We for instance want to be
+able to boot with CMT only.
+
+So here's a gentle "NAK" on this particular patch. I think this shows
+that either deferred probing or a different init ordering is needed
+somehow.
+
+Thanks,
+
+/ magnus
