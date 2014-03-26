@@ -1,55 +1,44 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 11 Mar 2014 17:43:18 +0000
-Subject: Re: Build regressions/improvements in v3.14-rc6
-Message-Id: <CAMuHMdWvQ3aux_901uoiw4k_YJ37Wbvdaroz3z-3GVxBPzoMWQ@mail.gmail.com>
+Date: Wed, 26 Mar 2014 07:55:37 +0000
+Subject: Re: Build regressions/improvements in v3.14-rc8
+Message-Id: <CAMuHMdWQmAmG8oebHh8SVodAp_TXHX1wLBoEZRfMz=HRxVdQmg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394528182-32013-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394528182-32013-1-git-send-email-geert@linux-m68k.org>
+References: <1395820064-19148-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1395820064-19148-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Cc: the arch/x86 maintainers <x86@kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Cc: "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Mar 11, 2014 at 9:56 AM, Geert Uytterhoeven
+On Wed, Mar 26, 2014 at 8:47 AM, Geert Uytterhoeven
 <geert@linux-m68k.org> wrote:
-> JFYI, when comparing v3.14-rc6[1]  to v3.14-rc5[3], the summaries are:
->   - build errors: +10/-4
+> JFYI, when comparing v3.14-rc8[1]  to v3.14-rc7[3], the summaries are:
+>   - build errors: +6/-1
 
-Only fuzz from the randconfig police:
-
-  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
-implicit declaration of function 'dma_alloc_writecombine'
-[-Werror=implicit-function-declaration]:  => 91:2
-  + /scratch/kisskb/src/drivers/gpu/drm/drm_gem_cma_helper.c: error:
-implicit declaration of function 'dma_free_writecombine'
-[-Werror=implicit-function-declaration]:  => 176:3
-
-sh-randconfig
-
-  + /scratch/kisskb/src/kernel/bounds.c: error: -mcall-aixdesc must be
-big endian:  => 1:0
-  + /scratch/kisskb/src/scripts/mod/devicetable-offsets.c: error:
--mcall-aixdesc must be big endian:  => 1:0
-  + /scratch/kisskb/src/scripts/mod/empty.c: error: -mcall-aixdesc
-must be big endian:  => 1:0
-  + <stdin>: error: -mcall-aixdesc must be big endian:  => 1:0
+  + /scratch/kisskb/src/arch/powerpc/include/asm/io.h: error:
+'virt_phys_offset' undeclared (first use in this function):  =>
+814:16, 807:16, 770:9, 787:17
+  + /scratch/kisskb/src/include/linux/mm.h: error: 'virt_phys_offset'
+undeclared (first use in this function):  => 890:9, 1402:20, 494:22
 
 powerpc-randconfig
 
-  + error: No rule to make target /etc/sound/pndsperm.bin:  => N/A
-  + error: No rule to make target /etc/sound/pndspini.bin:  => N/A
-  + error: No rule to make target /etc/sound/trxpro.hex:  => N/A
+  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
+'CHCR_TS_HIGH_MASK' undeclared (first use in this function):  => 98:12
+  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
+'CHCR_TS_HIGH_SHIFT' undeclared (first use in this function):  =>
+98:34, 145:10
+  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
+'CHCR_TS_LOW_MASK' undeclared (first use in this function):  => 97:21
+  + /scratch/kisskb/src/arch/sh/drivers/dma/dma-sh.c: error:
+'CHCR_TS_LOW_SHIFT' undeclared (first use in this function):  =>
+97:42, 145:10
 
-i386-randconfig
+sh-randconfig
 
-  + error: initramfs.c: undefined reference to `__stack_chk_guard':
-=> .init.text+0x1aef)
-
-x86_64-randconfig
-
-> [1] http://kisskb.ellerman.id.au/kisskb/head/7258/ (all 119 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/7236/ (all 119 configs)
+> [1] http://kisskb.ellerman.id.au/kisskb/head/7303/ (all 119 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/head/7277/ (all 119 configs)
 
 Gr{oetje,eeting}s,
 
