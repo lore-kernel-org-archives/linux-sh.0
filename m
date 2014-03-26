@@ -1,120 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 26 Mar 2014 13:58:46 +0000
-Subject: Re: [PATCH v2 1/5] pinctrl: pfc: r8a7790: add i2c0 muxing
-Message-Id: <3524931.MdjU7RgFNq@avalon>
+From: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Date: Wed, 26 Mar 2014 14:19:23 +0000
+Subject: [PATCH] ata: fix R-Car SATA driver dependencies
+Message-Id: <4494466.bbG3GqUbue@amdc1032>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
- <1395773789-17249-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1395773789-17249-2-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+Make sata_rcar host driver depend on ARCH_SHMOBILE config option as
+Renesas R-Car SATA support is specific to Renesas SoCs and the driver
+to work requires suitable device tree node (or platform device) to be
+defined.  Additionally allow the driver build if COMPILE_TEST config
+option is set.
 
-Thank you for the patch.
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+---
+ drivers/ata/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-On Tuesday 25 March 2014 19:56:25 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Add the muxing for the last missing i2c rcar core. Fix the sorting for
-> SH_PFC_PIN_NAMED while we are here.
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> Change since V1:
-> 
-> * sorted SH_PFC_PIN_NAMED pins
-> 
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 22 +++++++++++++++++++++-
->  1 file changed, 21 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index c381ae63c508..bcb47d138b02
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> @@ -782,6 +782,7 @@ enum {
->  	USB1_PWEN_MARK, AUDIO_CLKOUT_D_MARK, USB1_OVC_MARK,
->  	TCLK1_B_MARK,
-> 
-> +	I2C0_SCL_MARK, I2C0_SDA_MARK,
->  	I2C3_SCL_MARK, I2C3_SDA_MARK,
->  	PINMUX_MARK_END,
->  };
-> @@ -1722,6 +1723,9 @@ static const u16 pinmux_data[] = {
->  	PINMUX_IPSR_DATA(IP16_7, USB1_OVC),
->  	PINMUX_IPSR_MODSEL_DATA(IP16_7, TCLK1_B, SEL_TMU1_1),
-> 
-> +	PINMUX_DATA(I2C0_SCL_MARK, FN_SEL_IIC0_1),
-> +	PINMUX_DATA(I2C0_SDA_MARK, FN_SEL_IIC0_1),
-> +
->  	PINMUX_DATA(I2C3_SCL_MARK, FN_SEL_IICDVFS_1),
->  	PINMUX_DATA(I2C3_SDA_MARK, FN_SEL_IICDVFS_1),
->  };
-> @@ -1735,8 +1739,10 @@ static const struct sh_pfc_pin pinmux_pins[] = {
->  	PINMUX_GPIO_GP_ALL(),
-> 
->  	/* Pins not associated with a GPIO port */
-> -	SH_PFC_PIN_NAMED(ROW_GROUP_A('J'), 15, AJ15),
-> +	SH_PFC_PIN_NAMED(ROW_GROUP_A('F'), 15, AF15),
-> +	SH_PFC_PIN_NAMED(ROW_GROUP_A('G'), 15, AG15),
->  	SH_PFC_PIN_NAMED(ROW_GROUP_A('H'), 15, AH15),
-> +	SH_PFC_PIN_NAMED(ROW_GROUP_A('J'), 15, AJ15),
->  };
-> 
->  /* - AUDIO CLOCK
-> ------------------------------------------------------------ */ @@ -2054,6
-> +2060,14 @@ static const unsigned int hscif1_ctrl_b_pins[] = { static const
-> unsigned int hscif1_ctrl_b_mux[] = {
->  	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
->  };
-> +/* - I2C0
-> ------------------------------------------------------------------- */
-> +static const unsigned int i2c0_pins[] = {
-> +	/* SCL, SDA */
-> +	PIN_A_NUMBER('G', 15), PIN_A_NUMBER('F', 15),
-> +};
-> +static const unsigned int i2c0_mux[] = {
-> +	I2C0_SCL_MARK, I2C0_SDA_MARK,
-> +};
->  /* - I2C1
-> ------------------------------------------------------------------- */
-> static const unsigned int i2c1_pins[] = {
->  	/* SCL, SDA */
-> @@ -3626,6 +3640,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] > { SH_PFC_PIN_GROUP(hscif1_data_b),
->  	SH_PFC_PIN_GROUP(hscif1_clk_b),
->  	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
-> +	SH_PFC_PIN_GROUP(i2c0),
->  	SH_PFC_PIN_GROUP(i2c1),
->  	SH_PFC_PIN_GROUP(i2c1_b),
->  	SH_PFC_PIN_GROUP(i2c1_c),
-> @@ -3895,6 +3910,10 @@ static const char * const hscif1_groups[] = {
->  	"hscif1_ctrl_b",
->  };
-> 
-> +static const char * const i2c0_groups[] = {
-> +	"i2c0",
-> +};
-> +
->  static const char * const i2c1_groups[] = {
->  	"i2c1",
->  	"i2c1_b",
-> @@ -4203,6 +4222,7 @@ static const struct sh_pfc_function pinmux_functions[]
-> = { SH_PFC_FUNCTION(eth),
->  	SH_PFC_FUNCTION(hscif0),
->  	SH_PFC_FUNCTION(hscif1),
-> +	SH_PFC_FUNCTION(i2c0),
->  	SH_PFC_FUNCTION(i2c1),
->  	SH_PFC_FUNCTION(i2c2),
->  	SH_PFC_FUNCTION(i2c3),
-
--- 
-Regards,
-
-Laurent Pinchart
+Index: b/drivers/ata/Kconfig
+=================================--- a/drivers/ata/Kconfig	2014-03-25 20:08:10.220311027 +0100
++++ b/drivers/ata/Kconfig	2014-03-26 15:09:04.259143796 +0100
+@@ -298,6 +298,7 @@ config SATA_PROMISE
+ 
+ config SATA_RCAR
+ 	tristate "Renesas R-Car SATA support"
++	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	help
+ 	  This option enables support for Renesas R-Car Serial ATA.
+ 
 
