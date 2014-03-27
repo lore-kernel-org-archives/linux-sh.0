@@ -1,36 +1,69 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 17 Mar 2014 07:48:09 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Clock Updates for v3.15
-Message-Id: <20140317074809.GJ21917@quad.lixom.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 27 Mar 2014 20:47:38 +0000
+Subject: [PATCH 3/7] gpio: rcar: Add minimal runtime PM support
+Message-Id: <1395953262-4290-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1394082270.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1394082270.git.horms+renesas@verge.net.au>
+References: <1395953262-4290-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1395953262-4290-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-gpio@vger.kernel.org
 
-On Thu, Mar 06, 2014 at 02:05:14PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider this second round of Renesas ARM based SoC clock updates
-> for v3.15.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-clock-for-v3.15,
-> which I have already sent a pull-request for.
-> 
-> 
-> The following changes since commit df55f6685a04a259cf59cd3fde02212b294461cc:
-> 
->   ARM: shmobile: Remove legacy r8a7790 DT clocks (2014-02-24 08:54:44 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock2-for-v3.15
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
+This is just enough to automatically enable the functional clock, if
+present. Clock management during suspend/resume is still to be added.
 
-Merged, thanks!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org
+---
+ drivers/gpio/gpio-rcar.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 03c91482432c..c6995f6c3c40 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -26,6 +26,7 @@
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+ #include <linux/slab.h>
+ 
+@@ -377,6 +378,9 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 
+@@ -460,6 +464,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ err1:
+ 	irq_domain_remove(p->irq_domain);
+ err0:
++	pm_runtime_put_sync(dev);
++	pm_runtime_disable(dev);
+ 	return ret;
+ }
+ 
+@@ -473,6 +479,8 @@ static int gpio_rcar_remove(struct platform_device *pdev)
+ 		return ret;
+ 
+ 	irq_domain_remove(p->irq_domain);
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	return 0;
+ }
+ 
+-- 
+1.7.9.5
 
--Olof
