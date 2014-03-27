@@ -1,105 +1,46 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:36:42 +0000
-Subject: [PATCH 2/7] ARM: shmobile: r8a7790: add R-Car sound support on DTSI
-Message-Id: <8761n2dhd3.wl%kuninori.morimoto.gx@gmail.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Thu, 27 Mar 2014 22:55:42 +0000
+Subject: [PATCH] sound: rcar: use fast_io for bus
+Message-Id: <1395960942-18025-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: alsa-devel@alsa-project.org
+Cc: kuninori.morimoto.gx@renesas.com, broonie@kernel.org, lgirdwood@gmail.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, Ben Dooks <ben.dooks@codethink.co.uk>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The rcar sound driver uses regmap to access registers in various parts
+of the block and uses regmap to manage mappings. The regmap is created
+without fast_io set, which means it locks with a mutex rather than a
+lighter-spinlock.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The use of the mutex lock causes issues when the IRQ handler is entered
+as the code needs to read/write register values and thus with lock
+debugging enabled the system outputs a number of warnings such as:
+
+BUG: sleeping function called from invalid context at rnel/locking/mutex.c:616
+
+The rcar registers are all connected via APB bus and thus not that slow
+to access. The fix is to set the fast_io in the code so that regmap creates
+the regmap structures using the faster spinlock functions.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   76 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ sound/soc/sh/rcar/gen.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 5e7f23d..fa7f34e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -849,4 +849,80 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	rcar_sound: rcar_sound@0xec500000 {
-+		#sound-dai-cells = <1>;
-+		compatible =  "renesas,rcar_sound-r8a7790", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
-+		interrupt-parent = <&gic>;
-+		reg =	<0 0xec500000 0 0x1000>, /* SCU */
-+			<0 0xec5a0000 0 0x100>,  /* ADG */
-+			<0 0xec540000 0 0x1000>, /* SSIU */
-+			<0 0xec541000 0 0x1280>; /* SSI */
-+		clocks = <&mstp10_clks R8A7790_CLK_SSI>,
-+			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
-+			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
-+			<&mstp10_clks R8A7790_CLK_SSI5>, <&mstp10_clks R8A7790_CLK_SSI4>,
-+			<&mstp10_clks R8A7790_CLK_SSI3>, <&mstp10_clks R8A7790_CLK_SSI2>,
-+			<&mstp10_clks R8A7790_CLK_SSI1>, <&mstp10_clks R8A7790_CLK_SSI0>,
-+			<&mstp10_clks R8A7790_CLK_SRC9>, <&mstp10_clks R8A7790_CLK_SRC8>,
-+			<&mstp10_clks R8A7790_CLK_SRC7>, <&mstp10_clks R8A7790_CLK_SRC6>,
-+			<&mstp10_clks R8A7790_CLK_SRC5>, <&mstp10_clks R8A7790_CLK_SRC4>,
-+			<&mstp10_clks R8A7790_CLK_SRC3>, <&mstp10_clks R8A7790_CLK_SRC2>,
-+			<&mstp10_clks R8A7790_CLK_SRC1>, <&mstp10_clks R8A7790_CLK_SRC0>,
-+			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
-+		clock-names = "ssi",
-+				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
-+				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
-+				"src.9", "src.8", "src.7", "src.6", "src.5",
-+				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"clk_a", "clk_b", "clk_c", "clk_i";
-+
-+		status = "disabled";
-+
-+		rcar_sound,src {
-+			src0: src@0 { };
-+			src1: src@1 { };
-+			src2: src@2 { };
-+			src3: src@3 { };
-+			src4: src@4 { };
-+			src5: src@5 { };
-+			src6: src@6 { };
-+			src7: src@7 { };
-+			src8: src@8 { };
-+			src9: src@9 { };
-+		};
-+
-+		rcar_sound,ssi {
-+			ssi0: ssi@0 {
-+				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi1: ssi@1 {
-+				interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi2: ssi@2 {
-+				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi3: ssi@3 {
-+				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi4: ssi@4 {
-+				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi5: ssi@5 {
-+				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi6: ssi@6 {
-+				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi7: ssi@7 {
-+				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi8: ssi@8 {
-+				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+			ssi9: ssi@9 {
-+				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+			};
-+		};
-+	};
- };
+diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
+index 9094970..6468962 100644
+--- a/sound/soc/sh/rcar/gen.c
++++ b/sound/soc/sh/rcar/gen.c
+@@ -66,6 +66,7 @@ static int rsnd_regmap_read32(void *context,
+ }
+ 
+ static struct regmap_bus rsnd_regmap_bus = {
++	.fast_io			= true,
+ 	.write				= rsnd_regmap_write32,
+ 	.read				= rsnd_regmap_read32,
+ 	.reg_format_endian_default	= REGMAP_ENDIAN_NATIVE,
 -- 
-1.7.9.5
+1.9.0
 
