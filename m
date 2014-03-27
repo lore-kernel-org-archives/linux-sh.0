@@ -1,66 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:30:12 +0000
-Subject: [PATCH 3/6] ARM: shmobile: r8a7790: remove old style audio clock
-Message-Id: <87eh1qdhny.wl%kuninori.morimoto.gx@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 27 Mar 2014 20:47:35 +0000
+Subject: [PATCH 0/7] ARM: shmobile: Add rcar-gpio clock support
+Message-Id: <1395953262-4290-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This series adds support to control the MSTP clocks of the GPIO blocks
+on R-Car SoCs. Currently we depend on reset state / the bootloader to
+have the right clocks enabled. If they're not enabled, GPIO will fail,
+but not crash:
+  - No heartbeat LED (if you had it enabled),
+  - Keypad switches don't work,
+  - System doesn't wake-up from suspend when pressing a keypad switch.
 
-Current sound driver moves to new style clock,
-but is keeping compatiblity at this point.
-Move to new style on r8a7790
+After applying this series, the MSTP clocks of the GPIO blocks will be
+enabled automatically by runtime PM (or statically, if CONFIG_PM_RUNTIME=n)
+during boot up.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/clock-r8a7790.c |   24 ++++++++++--------------
- 1 file changed, 10 insertions(+), 14 deletions(-)
+    [1/7] gpio: rcar: Add helper variable dev = &pdev->dev
+    [2/7] gpio: rcar: Add optional functional clock to bindings
+    [3/7] gpio: rcar: Add minimal runtime PM support
+    [4/7] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
+    [5/7] ARM: shmobile: r8a7791 dtsi: Add GPIO clocks
+    [6/7] ARM: shmobile: r8a7790 legacy: Add GPIO clocks
+    [7/7] ARM: shmobile: r8a7791 legacy: Add GPIO clocks
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 3f93503..5f4b6c4 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -294,10 +294,6 @@ static struct clk mstp_clks[MSTP_NR] = {
- static struct clk_lookup lookups[] = {
- 
- 	/* main clocks */
--	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
--	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
--	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
--	CLKDEV_CON_ID("audio_clk_internal",	&m2_clk),
- 	CLKDEV_CON_ID("extal",		&extal_clk),
- 	CLKDEV_CON_ID("extal_div2",	&extal_div2_clk),
- 	CLKDEV_CON_ID("main",		&main_clk),
-@@ -381,16 +377,16 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("clk_b", "rcar_sound", &audio_clk_b),
- 	CLKDEV_ICK_ID("clk_c", "rcar_sound", &audio_clk_c),
- 	CLKDEV_ICK_ID("clk_i", "rcar_sound", &m2_clk),
--	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP1031]),
--	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP1030]),
--	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP1029]),
--	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP1028]),
--	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP1027]),
--	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP1026]),
--	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP1025]),
--	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP1024]),
--	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP1023]),
--	CLKDEV_ICK_ID("scu.9", "rcar_sound", &mstp_clks[MSTP1022]),
-+	CLKDEV_ICK_ID("src.0", "rcar_sound", &mstp_clks[MSTP1031]),
-+	CLKDEV_ICK_ID("src.1", "rcar_sound", &mstp_clks[MSTP1030]),
-+	CLKDEV_ICK_ID("src.2", "rcar_sound", &mstp_clks[MSTP1029]),
-+	CLKDEV_ICK_ID("src.3", "rcar_sound", &mstp_clks[MSTP1028]),
-+	CLKDEV_ICK_ID("src.4", "rcar_sound", &mstp_clks[MSTP1027]),
-+	CLKDEV_ICK_ID("src.5", "rcar_sound", &mstp_clks[MSTP1026]),
-+	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP1025]),
-+	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP1024]),
-+	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP1023]),
-+	CLKDEV_ICK_ID("src.9", "rcar_sound", &mstp_clks[MSTP1022]),
- 	CLKDEV_ICK_ID("ssi.0", "rcar_sound", &mstp_clks[MSTP1015]),
- 	CLKDEV_ICK_ID("ssi.1", "rcar_sound", &mstp_clks[MSTP1014]),
- 	CLKDEV_ICK_ID("ssi.2", "rcar_sound", &mstp_clks[MSTP1013]),
--- 
-1.7.9.5
+For multiplatform, this depends on the series "[PATCH 0/5] ARM: shmobile:
+Enable drivers/sh/pm_runtime.c on multi-platform" (or any other method
+to enable drivers/sh/pm_runtime.c) to actually work.
+
+For legacy, this slightly conflicts with that series, as
+sh_pm_runtime_init() will be called too late to actually work.
+
+However, it should be safe to apply this series, even without the
+prerequisites.
+
+This was tested on r8a7791/Koelsch, both legacy and multiplatform.
+The changes for r8a7790 were straight-forward.
+Similar changes will have to be made for r8a7778 and r8a7779, but I don't
+have datasheets for those.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
 
