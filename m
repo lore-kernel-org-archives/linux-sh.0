@@ -1,101 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 27 Mar 2014 14:43:51 +0000
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Thu, 27 Mar 2014 15:18:29 +0000
 Subject: Re: [RFC] Serial port aliases in DT
-Message-Id: <2149513.dRBgegNNJX@avalon>
+Message-Id: <20140327151829.GX17250@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5448979.WQPtOb56tW@avalon> <9498012.PtNMJ9hipe@avalon> <CAL_Jsq+SWZUz4D+3pdDs5yfi_XbTODC0ytt1S5KpmR_C5vVL=A@mail.gmail.com>
+References: <5448979.WQPtOb56tW@avalon>
+ <2488692.p5nEA6pWSY@wuerfel>
+ <1454965.NzCSO7fLpj@avalon>
+ <9498012.PtNMJ9hipe@avalon>
+ <CAL_Jsq+SWZUz4D+3pdDs5yfi_XbTODC0ytt1S5KpmR_C5vVL=A@mail.gmail.com>
 In-Reply-To: <CAL_Jsq+SWZUz4D+3pdDs5yfi_XbTODC0ytt1S5KpmR_C5vVL=A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Rob Herring <robherring2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-spec-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-spec-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Rob,
-
-On Thursday 27 March 2014 08:54:09 Rob Herring wrote:
-> On Thu, Mar 27, 2014 at 7:50 AM, Laurent Pinchart wrote:
-> > Hello DT maintainers,
-> > 
-> > Ping ? This issue is blocking the merge of serial port DT support on
-> > Renesas platforms, as we need to decide on how to name the ports.
-> 
-> This seems like a topic for devicetree-spec.
-
-Indeed.
-
-> > On Tuesday 11 March 2014 12:57:59 Laurent Pinchart wrote:
-> >> On Monday 10 March 2014 13:57:23 Arnd Bergmann wrote:
-> >> > On Monday 10 March 2014 12:59:03 Laurent Pinchart wrote:
-> >> > > The SoC includes 8 serial ports. They are all disabled in the SoC
-> >> > > .dtsi, and enabled selectively by board DT files. As not all serial
-> >> > > ports are available on all boards, the question was whether to add
-> >> > > aliases for all ports (in the .dtsi in this case) like
-> >> > > 
-> >> > >          serial0 = &scif0;
-> >> > >          serial1 = &scif1;
-> >> > >          serial2 = &scif2;
-> >> > >          serial3 = &scif3;
-> >> > >          serial4 = &scif4;
-> >> > >          serial5 = &scif5;
-> >> > >          serial6 = &scif6;
-> >> > >          serial7 = &scif7;
-> >> > > 
-> >> > > or to just add aliases for the enabled ports (in the board DT file)
-> >> > > like
-> >> > > 
-> >> > >          serial0 = &scif2;
-> >> > >          serial1 = &scif3;
-> >> > > 
-> >> > > Note the numbering in the latter case: as the board doesn't use
-> >> > > serial ports 0 and 1, hardware ports 2 and 3 become logical ports 0
-> >> > > and 1.
-> >> > > 
-> >> > > I considered that having Linux create ttySC0 and ttySC1 devices for
-> >> > > the first two ports of the board, regardless of which hardware ports
-> >> > > are used, is simpler from a user point of view (it allows sharing the
-> >> > > same inittab settings for the console serial port across several
-> >> > > boards for instance). I'd appreciate feedback on that.
-> >> > 
-> >> > I think the traditional interpretation is that we want to use the
-> >> > aliases to reflect the device names in the OS.
-> >> 
-> >> If I interpret this correctly it means that the question boils down to
-> >> whether we want the system to expose ttySC0 and ttySC1 or ttySC2 and
-> >> ttySC3, in case only ports 2 and 3 are enabled.
-> >> 
-> >> Let's note that, despite the above example showing 8 instances of
-> >> identical serial IP cores, the reality is a bit more complex and Renesas
-> >> SoCs usually include different serial IP cores with several instances of
-> >> each of them. Ports of the same time are numbered in the datasheet, but
-> >> there's no standard or natural ordering global to all serial ports.
-> >> 
-> >> This starts to remind me about the whole stable network device name
-> >> changes we went through recently.
-> >> 
+On Thu, Mar 27, 2014 at 08:54:09AM -0500, Rob Herring wrote:
+> >>
 > >> > This however comes back to the more general issue of serial port device
 > >> > naming: Linux traditionally uses separate names per driver (e.g. ttySC0
 > >> > instead of ttyS0).
-> >> > 
+> >> >
 > >> > There has been discussion in the past about changing this to let all
-> >> > drivers use the same namespace, but it's not yet clear to me how we'd
-> >> > do this in a 100% backwards compatible way. Maybe it's best left to
-> >> > udev to figure out the driver independent name, but then we definitely
-> >> > should use the alias for that name.
+> >> > drivers use the same namespace, but it's not yet clear to me how we'd do
+> >> > this in a 100% backwards compatible way. Maybe it's best left to udev to
+> >> > figure out the driver independent name, but then we definitely should use
+> >> > the alias for that name.
 > 
 > This discussion has come up in just the last month or so.
 > 
 > My opinion is device name numbering should start at 0 with 0 being the
-> preferred console device. My main reasoning is giving consistent naming
-> across boards and it is more inline with how other devices are named. The
-> aliases are just to give you consistency in the numbering within the 0 to N.
-> Hopefully this is inline with what other platforms have done as above all I
-> think we should be consistent.
+> preferred console device.
 
-That's my preference as well, but not everybody agreed, hence the RFC.
+That's completely different to everything I've heard and seen so far ;)
+
+For specifying the console we have the linux,stdout-path property in the
+chosen node. My preferred console may not be a serial port at all in
+which case I would end up with a serial0 = &lcd0 alias.  Many
+devicetrees specify aliases for i2c/spi/mmc controllers aswell.  Should
+they order their i2c controllers in the order of preference now?
+
+Most dtsi files in the kernel specify a SoC specific order of aliases
+and I think this makes the most sense.
+
+Sascha
 
 -- 
-Regards,
-
-Laurent Pinchart
-
+Pengutronix e.K.                           |                             |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-0    |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
