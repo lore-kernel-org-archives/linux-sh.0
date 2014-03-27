@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 27 Mar 2014 08:38:06 +0000
+Date: Thu, 27 Mar 2014 08:38:36 +0000
 Subject: Re: [PATCH resend] serial_core: Fix pm imbalance on unbind
-Message-Id: <CAMuHMdW5R=fQLQiiz8YHwn8ZJe3znrtGExRG52haUfUkzWzsyA@mail.gmail.com>
+Message-Id: <CAMuHMdVQBTiZDdY_2Y+uaYUiAA9jVOCOf5okZuKj1QxVSMZVyQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395392905-29569-1-git-send-email-geert@linux-m68k.org>
 	<532C394A.3050408@hurleysoftware.com>
