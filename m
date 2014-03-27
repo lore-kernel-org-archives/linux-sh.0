@@ -1,83 +1,67 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 27 Mar 2014 09:26:51 +0000
-Subject: [PATCH v6 05/10] dt-bindings: pci: rcar pcie device tree bindings
-Message-Id: <1395912416-20087-6-git-send-email-phil.edworthy@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 27 Mar 2014 11:08:00 +0000
+Subject: Re: [PATCH v6 05/10] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <53340690.20006@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
+ <1395912416-20087-6-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395912416-20087-6-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch adds the bindings for the R-Car PCIe driver. The driver
-resides under drivers/pci/host/pcie-rcar.c
+Hello.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+On 27-03-2014 13:26, Phil Edworthy wrote:
 
-v6:
- - Correct DT bindings description for reg and clocks
+> This patch adds the bindings for the R-Car PCIe driver. The driver
+> resides under drivers/pci/host/pcie-rcar.c
 
-v5:
- - Add PCIe bus clock reference
- - Add additional interrupt bindings
- - Use dma-ranges property to specify inbound memory regions
----
- Documentation/devicetree/bindings/pci/rcar-pci.txt | 45 ++++++++++++++++++++++
- 1 file changed, 45 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-new file mode 100644
-index 0000000..a97ebe6
---- /dev/null
-+++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-@@ -0,0 +1,45 @@
-+* Renesas RCar PCIe interface
-+
-+Required properties:
-+- compatible: should contain one of the following
-+	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
-+- reg: base address and length of the pcie controller registers.
-+- #address-cells: set to <3>
-+- #size-cells: set to <2>
-+- device_type: set to "pci"
-+- ranges: ranges for the PCI memory and I/O regions.
-+- dma-ranges: ranges for the inbound memory regions.
-+- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
-+	source for hardware related interrupts (e.g. link speed change).
-+- #interrupt-cells: set to <1>
-+- interrupt-map-mask and interrupt-map: standard PCI properties
-+	to define the mapping of the PCIe interface to interrupt
-+	numbers.
-+- clocks: from common clock binding: phandles to PCIe controller and PCIe bus
-+	clocks.
-+- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
-+
-+Example:
-+
-+SoC specific DT Entry:
-+
-+	pcie: pcie@fe000000 {
-+		compatible = "renesas,pcie-r8a7791";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
-+			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
-+		interrupts = <0 116 4 0 117 4 0 118 4>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 4>;
-+		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
-+		clock-names = "pcie", "pcie_bus";
-+		status = "disabled";
-+	};
--- 
-1.9.0
+> v6:
+>   - Correct DT bindings description for reg and clocks
+
+> v5:
+>   - Add PCIe bus clock reference
+>   - Add additional interrupt bindings
+>   - Use dma-ranges property to specify inbound memory regions
+
+    Put these under --- tear line, please.
+
+> ---
+>   Documentation/devicetree/bindings/pci/rcar-pci.txt | 45 ++++++++++++++++++++++
+>   1 file changed, 45 insertions(+)
+>   create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+
+> diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+> new file mode 100644
+> index 0000000..a97ebe6
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+> @@ -0,0 +1,45 @@
+> +* Renesas RCar PCIe interface
+> +
+> +Required properties:
+> +- compatible: should contain one of the following
+> +	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
+> +- reg: base address and length of the pcie controller registers.
+> +- #address-cells: set to <3>
+> +- #size-cells: set to <2>
+> +- device_type: set to "pci"
+> +- ranges: ranges for the PCI memory and I/O regions.
+> +- dma-ranges: ranges for the inbound memory regions.
+> +- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
+> +	source for hardware related interrupts (e.g. link speed change).
+> +- #interrupt-cells: set to <1>
+> +- interrupt-map-mask and interrupt-map: standard PCI properties
+> +	to define the mapping of the PCIe interface to interrupt
+> +	numbers.
+> +- clocks: from common clock binding: phandles to PCIe controller and PCIe bus
+> +	clocks.
+
+    I told it's not only phandles (e.g. &mstp3_clks) but the clock specifiers.
+
+WBR, Sergei
 
