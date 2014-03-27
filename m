@@ -1,16 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Mar 2014 01:30:25 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7791: Use rcar_gen2_read_mode_pins() helper
-Message-Id: <20140313013024.GL25813@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Thu, 27 Mar 2014 10:45:44 +0000
+Subject: [PATCH] ARM: shmobile: Use r8a7740 suffix for i2c, mmcif, fsi2 compat strings
+Message-Id: <1395917144-402-1-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394649890-23485-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1394649890-23485-2-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 12, 2014 at 07:44:50PM +0100, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Add "renesas,*-r8a7740" to the compatible strings for consistency with other
+devices.
 
-Thanks, I have queued this up.
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 8280884..9f65986 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -126,7 +126,7 @@
+ 	i2c0: i2c@fff20000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a7740", "renesas,rmobile-iic";
+ 		reg = <0xfff20000 0x425>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 201 IRQ_TYPE_LEVEL_HIGH
+@@ -139,7 +139,7 @@
+ 	i2c1: i2c@e6c20000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
++		compatible = "renesas,iic-r8a7740", "renesas,rmobile-iic";
+ 		reg = <0xe6c20000 0x425>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH
+@@ -174,7 +174,7 @@
+ 	};
+ 
+ 	mmcif0: mmc@e6bd0000 {
+-		compatible = "renesas,sh-mmcif";
++		compatible = "renesas,mmcif-r8a7740", "renesas,sh-mmcif";
+ 		reg = <0xe6bd0000 0x100>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
+@@ -220,7 +220,7 @@
+ 
+ 	sh_fsi2: sound@fe1f0000 {
+ 		#sound-dai-cells = <1>;
+-		compatible = "renesas,sh_fsi2";
++		compatible = "renesas,fsi2-r8a7740", "renesas,sh_fsi2";
+ 		reg = <0xfe1f0000 0x400>;
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 9 0x4>;
+-- 
+1.8.4.5
+
