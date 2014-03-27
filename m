@@ -1,122 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 18 Mar 2014 23:25:56 +0000
-Subject: [PATCH/RFC 5/5] sh_eth: Remove goto statements that jump straight to a return
-Message-Id: <1395185156-6681-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 27 Mar 2014 10:40:39 +0000
+Subject: [PATCH v2] serial_core: Fix pm imbalance on unbind
+Message-Id: <1395916839-11502-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>, Peter Hurley <peter@hurleysoftware.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-"goto" is well accepted for error paths in the kernel but should not be
-used unnecessarily. Return the correct value directly instead of using a
-goto when possible.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+When a serial port is closed, uart_close() takes care of shutting down the
+hardware, and powering it down.
+
+When a serial port is unbound while in use, uart_close() bypasses all of
+this, as this is supposed to be done through uart_hangup() (invoked via
+tty_vhangup() in uart_remove_one_port()).
+
+However, uart_hangup() does not set the hardware's power state, leaving it
+powered up.  This may also lead to unbounded nesting counts in clock and
+power management, depending on their internal implementation.
+
+Make sure to power down the port in uart_hangup(), except when the port is
+used as a serial console.
+
+For serial consoles, this operation must be postponed until after the port
+becomes completely unused. This case is not fixed yet, as it depends on a
+(future) fix for the tty->count vs. port->count imbalance on failed
+uart_open().
+
+After this, the module clock used by the sh-sci driver is disabled on
+unbind while the serial port is in use.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/net/ethernet/renesas/sh_eth.c | 30 +++++++++---------------------
- 1 file changed, 9 insertions(+), 21 deletions(-)
+v2:
+  - Drop serial console case, as this needs other fixes first
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index d8cc78c..e31a395 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -872,7 +872,7 @@ static int sh_eth_reset(struct net_device *ndev)
- 
- 		ret = sh_eth_check_reset(ndev);
- 		if (ret)
--			goto out;
-+			return ret;
- 
- 		/* Table Init */
- 		sh_eth_write(ndev, 0x0, TDLAR);
-@@ -899,7 +899,6 @@ static int sh_eth_reset(struct net_device *ndev)
- 			     EDMR);
+ drivers/tty/serial/serial_core.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
+index 2cf5649a6dc0..0cec51ce8902 100644
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -1452,6 +1452,8 @@ static void uart_hangup(struct tty_struct *tty)
+ 		clear_bit(ASYNCB_NORMAL_ACTIVE, &port->flags);
+ 		spin_unlock_irqrestore(&port->lock, flags);
+ 		tty_port_tty_set(port, NULL);
++		if (!uart_console(state->uart_port))
++			uart_change_pm(state, UART_PM_STATE_OFF);
+ 		wake_up_interruptible(&port->open_wait);
+ 		wake_up_interruptible(&port->delta_msr_wait);
  	}
- 
--out:
- 	return ret;
- }
- 
-@@ -1263,7 +1262,7 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
- 	/* Soft Reset */
- 	ret = sh_eth_reset(ndev);
- 	if (ret)
--		goto out;
-+		return ret;
- 
- 	if (mdp->cd->rmiimode)
- 		sh_eth_write(ndev, 0x1, RMIIMODE);
-@@ -1342,7 +1341,6 @@ static int sh_eth_dev_init(struct net_device *ndev, bool start)
- 		netif_start_queue(ndev);
- 	}
- 
--out:
- 	return ret;
- }
- 
-@@ -2613,10 +2611,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp, int id,
- 
- 	/* create bit control struct for PHY */
- 	bitbang = devm_kzalloc(dev, sizeof(struct bb_info), GFP_KERNEL);
--	if (!bitbang) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!bitbang)
-+		return -ENOMEM;
- 
- 	/* bitbang init */
- 	bitbang->addr = mdp->addr + mdp->reg_offset[PIR];
-@@ -2629,10 +2625,8 @@ static int sh_mdio_init(struct sh_eth_private *mdp, int id,
- 
- 	/* MII controller setting */
- 	mdp->mii_bus = alloc_mdio_bitbang(&bitbang->ctrl);
--	if (!mdp->mii_bus) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!mdp->mii_bus)
-+		return -ENOMEM;
- 
- 	/* Hook up MII support for ethtool */
- 	mdp->mii_bus->name = "sh_mii";
-@@ -2667,8 +2661,6 @@ static int sh_mdio_init(struct sh_eth_private *mdp, int id,
- 
- out_free_bus:
- 	free_mdio_bitbang(mdp->mii_bus);
--
--out:
- 	return ret;
- }
- 
-@@ -2782,15 +2774,12 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (unlikely(res = NULL)) {
- 		dev_err(&pdev->dev, "invalid resource\n");
--		ret = -EINVAL;
--		goto out;
-+		return -EINVAL;
- 	}
- 
- 	ndev = alloc_etherdev(sizeof(struct sh_eth_private));
--	if (!ndev) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!ndev)
-+		return -ENOMEM;
- 
- 	/* The sh Ether-specific entries in the device structure. */
- 	ndev->base_addr = res->start;
-@@ -2925,7 +2914,6 @@ out_release:
- 	if (ndev)
- 		free_netdev(ndev);
- 
--out:
- 	return ret;
- }
- 
 -- 
-1.8.3.2
+1.7.9.5
 
