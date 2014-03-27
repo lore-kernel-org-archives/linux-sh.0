@@ -1,35 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Mar 2014 19:06:47 +0000
-Subject: [PATCH 2/5] sh: intc: Restrict INTC_USERIMASK to SH4A
-Message-Id: <1395256010-12222-3-git-send-email-geert@linux-m68k.org>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 27 Mar 2014 09:26:46 +0000
+Subject: [PATCH v6 00/10] R-Car Gen2 PCIe host driver
+Message-Id: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+This is version 6 of a PCIe Host driver for the R-Car Gen2 devices,
+i.e. R-Car H2 (r8a7790) and R-Car M2 (r8a7791).
 
-register_intc_userimask() is called from sh4a code only.
+v6:
+ - Correct DT bindings description for reg and clocks
+ - Split device and board DT changes
+ - Add shmobile to subject for shmobile DT patches
+ - Don't check MSI irq number is valid, as upper level checks this
+ - Change "Unexpected MSI" msg to debug level
+ - Reword "Unexpected MSI" comment so that it's one line
+ - Remove patch that adds HAVE_ARM_ARCH_TIMER to koelsch defconfig as not needed
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
----
- drivers/sh/intc/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v5:
+ - Use module_platform_driver instead of subsys_initcall
+ - Use the of_device_id data field for HW init function
+ - Init hw_pci struct in declaration
+ - Renesas SoC compatible string has peripheral before device name
+ - Add PCIe bus clock reference
+ - Use dma-ranges property to specify inbound memory regions
+ - Support multiple IO windows and correct resources
+ - Return IRQ_NONE from MSI isr when there is no pending MSI
+ - Add additional interrupt bindings
 
-diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-index f7d90617c9d9..60228fae943f 100644
---- a/drivers/sh/intc/Kconfig
-+++ b/drivers/sh/intc/Kconfig
-@@ -6,7 +6,7 @@ comment "Interrupt controller options"
- 
- config INTC_USERIMASK
- 	bool "Userspace interrupt masking support"
--	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-+	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
- 	help
- 	  This enables support for hardware-assisted userspace hardirq
- 	  masking.
+v4:
+ - Use runtime PM properly
+
+
+Phil Edworthy (10):
+  PCI: host: rcar: Add Renesas R-Car PCIe driver
+  PCI: host: rcar: Add MSI support
+  ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+  ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+  dt-bindings: pci: rcar pcie device tree bindings
+  ARM: shmobile: r8a7790: Add PCIe device nodes
+  ARM: shmobile: lager: Add PCIe device nodes
+  ARM: shmobile: r8a7791: Add PCIe device nodes
+  ARM: shmobile: koelsch: Add PCIe device nodes
+  ARM: shmobile: koelsch: Add PCIe to defconfig
+
+ Documentation/devicetree/bindings/pci/rcar-pci.txt |  45 +
+ arch/arm/boot/dts/r8a7790-lager.dts                |  10 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |  31 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |  14 +
+ arch/arm/boot/dts/r8a7791.dtsi                     |  31 +-
+ arch/arm/configs/koelsch_defconfig                 |   3 +
+ drivers/pci/host/Kconfig                           |   6 +
+ drivers/pci/host/Makefile                          |   1 +
+ drivers/pci/host/pcie-rcar.c                       | 929 +++++++++++++++++++++
+ drivers/pci/host/pcie-rcar.h                       |  87 ++
+ include/dt-bindings/clock/r8a7790-clock.h          |   1 +
+ include/dt-bindings/clock/r8a7791-clock.h          |   1 +
+ 12 files changed, 1154 insertions(+), 5 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+ create mode 100644 drivers/pci/host/pcie-rcar.c
+ create mode 100644 drivers/pci/host/pcie-rcar.h
+
 -- 
-1.7.9.5
+1.9.0
 
