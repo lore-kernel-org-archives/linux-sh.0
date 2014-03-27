@@ -1,47 +1,34 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 13 Mar 2014 09:50:06 +0000
-Subject: [PATCH 7/9] ARM: shmobile: Add PCIe device tree nodes for R8A7791 Koelsch board
-Message-Id: <1394704208-7490-8-git-send-email-phil.edworthy@renesas.com>
+Date: Thu, 27 Mar 2014 09:26:52 +0000
+Subject: [PATCH v6 06/10] ARM: shmobile: r8a7790: Add PCIe device nodes
+Message-Id: <1395912416-20087-7-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
-
-This patch adds the device tree nodes for the R8A7791 Koelsch board
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
- arch/arm/boot/dts/r8a7791.dtsi        |   19 +++++++++++++++++++
- 2 files changed, 23 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index e24fed9..17c953f 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -352,3 +352,7 @@
- 		spi-cpha;
- 	};
- };
-+
-+&pcie {
-+	status = "okay";
-+};
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index ccfba57..915a5a6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -836,4 +836,23 @@
+v6:
+ - Split device and board DT changes
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index df9ec61..dbcea57 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -821,4 +821,28 @@
  		#size-cells = <0>;
  		status = "disabled";
  	};
 +
 +	pcie: pcie@fe000000 {
-+		compatible = "renesas,r8a7791-pcie";
++		compatible = "renesas,pcie-r8a7790";
 +		reg = <0 0xfe000000 0 0x80000>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;
@@ -50,15 +37,20 @@ index ccfba57..915a5a6 100644
 +			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
 +			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
 +			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>;
++		/* Map all possible DDR as inbound ranges */
++		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000
++			      0x43000000 1 0x80000000 1 0x80000000 0 0x80000000>;
++		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH
++			      0 117 IRQ_TYPE_LEVEL_HIGH
++			      0 118 IRQ_TYPE_LEVEL_HIGH>;
 +		#interrupt-cells = <1>;
 +		interrupt-map-mask = <0 0 0 0>;
 +		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_PCIE>;
-+		clock-names = "pcie";
++		clocks = <&mstp3_clks R8A7790_CLK_PCIE>, <&pcie_bus_clk>;
++		clock-names = "pcie", "pcie_bus";
 +		status = "disabled";
 +	};
  };
 -- 
-1.7.9.5
+1.9.0
 
