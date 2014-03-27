@@ -1,40 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 20 Mar 2014 13:59:18 +0000
-Subject: [PATCH 2/5] sh_eth: Use the platform device as the MDIO bus parent
-Message-Id: <1395324035-22918-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 27 Mar 2014 09:26:50 +0000
+Subject: [PATCH v6 04/10] ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+Message-Id: <1395912416-20087-5-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1395324035-22918-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1395912416-20087-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-The MDIO bus parent is set to the network device. Beside not reflecting
-the hardware topology, this prevents registering the MDIO bus before
-initializing the network device. Fix it by setting the MDIO bus parent
-to the platform device.
+This patch adds the device tree clock nodes for PCIe
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/net/ethernet/renesas/sh_eth.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi            | 7 +++++--
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index f669e2a..443f14f 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2633,7 +2633,7 @@ static int sh_mdio_init(struct net_device *ndev, int id,
- 
- 	/* Hook up MII support for ethtool */
- 	mdp->mii_bus->name = "sh_mii";
--	mdp->mii_bus->parent = &ndev->dev;
-+	mdp->mii_bus->parent = dev;
- 	snprintf(mdp->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
- 		 mdp->pdev->name, id);
- 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 71bac2c..ccfba57 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -717,14 +717,17 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>,
+-				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>;
++				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>,
++				<&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
+ 				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
++				R8A7791_CLK_PCIE
+ 			>;
+ 			clock-output-names -				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1";
++				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1",
++				"pcie";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 30f82f2..d3e2cf5 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -51,6 +51,7 @@
+ #define R8A7791_CLK_SDHI1		12
+ #define R8A7791_CLK_SDHI0		14
+ #define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_PCIE		19
+ #define R8A7791_CLK_SSUSB		28
+ #define R8A7791_CLK_CMT1		29
+ #define R8A7791_CLK_USBDMAC0		30
 -- 
-1.8.3.2
+1.9.0
 
