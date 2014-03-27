@@ -1,49 +1,80 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 12 Mar 2014 10:45:51 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 27 Mar 2014 12:50:37 +0000
 Subject: Re: [RFC] Serial port aliases in DT
-Message-Id: <20140312104551.GA3298@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ew6BAiZeqk4r7MaW"
+Message-Id: <9498012.PtNMJ9hipe@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5448979.WQPtOb56tW@avalon>
- <1551855.ylN84WQiIN@avalon>
- <20140311124622.GA30394@katana>
- <9554680.Wp7ectfBdb@avalon>
-In-Reply-To: <9554680.Wp7ectfBdb@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+References: <5448979.WQPtOb56tW@avalon> <2488692.p5nEA6pWSY@wuerfel> <1454965.NzCSO7fLpj@avalon>
+In-Reply-To: <1454965.NzCSO7fLpj@avalon>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: devicetree@vger.kernel.org
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>
 
+Hello DT maintainers,
 
---ew6BAiZeqk4r7MaW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Ping ? This issue is blocking the merge of serial port DT support on Renesas 
+platforms, as we need to decide on how to name the ports.
 
+On Tuesday 11 March 2014 12:57:59 Laurent Pinchart wrote:
+> On Monday 10 March 2014 13:57:23 Arnd Bergmann wrote:
+> > On Monday 10 March 2014 12:59:03 Laurent Pinchart wrote:
+> > > The SoC includes 8 serial ports. They are all disabled in the SoC .dtsi,
+> > > and enabled selectively by board DT files. As not all serial ports are
+> > > available on all boards, the question was whether to add aliases for all
+> > > ports (in the .dtsi in this case) like
+> > > 
+> > >          serial0 = &scif0;
+> > >          serial1 = &scif1;
+> > >          serial2 = &scif2;
+> > >          serial3 = &scif3;
+> > >          serial4 = &scif4;
+> > >          serial5 = &scif5;
+> > >          serial6 = &scif6;
+> > >          serial7 = &scif7;
+> > > 
+> > > or to just add aliases for the enabled ports (in the board DT file) like
+> > > 
+> > >          serial0 = &scif2;
+> > >          serial1 = &scif3;
+> > > 
+> > > Note the numbering in the latter case: as the board doesn't use serial
+> > > ports 0 and 1, hardware ports 2 and 3 become logical ports 0 and 1.
+> > > 
+> > > I considered that having Linux create ttySC0 and ttySC1 devices for the
+> > > first two ports of the board, regardless of which hardware ports are
+> > > used, is simpler from a user point of view (it allows sharing the same
+> > > inittab settings for the console serial port across several boards for
+> > > instance). I'd appreciate feedback on that.
+> > 
+> > I think the traditional interpretation is that we want to use the aliases
+> > to reflect the device names in the OS.
+> 
+> If I interpret this correctly it means that the question boils down to
+> whether we want the system to expose ttySC0 and ttySC1 or ttySC2 and
+> ttySC3, in case only ports 2 and 3 are enabled.
+> 
+> Let's note that, despite the above example showing 8 instances of identical
+> serial IP cores, the reality is a bit more complex and Renesas SoCs usually
+> include different serial IP cores with several instances of each of them.
+> Ports of the same time are numbered in the datasheet, but there's no
+> standard or natural ordering global to all serial ports.
+> 
+> This starts to remind me about the whole stable network device name changes
+> we went through recently.
+> 
+> > This however comes back to the more general issue of serial port device
+> > naming: Linux traditionally uses separate names per driver (e.g. ttySC0
+> > instead of ttyS0).
+> > 
+> > There has been discussion in the past about changing this to let all
+> > drivers use the same namespace, but it's not yet clear to me how we'd do
+> > this in a 100% backwards compatible way. Maybe it's best left to udev to
+> > figure out the driver independent name, but then we definitely should use
+> > the alias for that name.
 
-> Maybe we could also let udev create a link to the console serial port.
+-- 
+Regards,
 
-Mabye, yet my minimal initramfs should not have udev/mdev by default.
+Laurent Pinchart
 
-
---ew6BAiZeqk4r7MaW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTIDrfAAoJEBQN5MwUoCm2QnoP/2VnWInyT+FvKORu/6SSAsHm
-YYcczfuLagjjIgx5kxDCOLsL1Nb1Ff7NQiZFJQ0G2+9oNYEIhKHkE5b/WLTclSCt
-g2evCgYEzvCVcXqSFfN6igQlkcbfB5FMm5JViXWP5iN4MzauykXl0A2zY3wb9sBv
-i/7k6cI64VRhQsFTTKwOIhNWlEOiBMmPQuMP5gDtBZhNsuAHYj3nUw8UeBjouSzr
-76qQgwNw46X6ERJho5aoYSHrV/quofRr6tCcdDiAtlPWHOd7l6CxyLCPoRWLRWW0
-5ZrSWpAMVuVebD6KHEbi5tROJTZPQMKoQt+n8WQzBavhQzZ87uUXvUGJuRFiyzan
-yCPvXdTM9Xb0HzxorY5nlkt50nqv4DUF5aSZCltXwfmA048dqd8vlUvVjzrWUBj8
-VsuZMuiSPG8gjwBgsm+W4S1kwkJiD6CKdOJxQ/IEdfQ5EPkMKKXag4cHqhDsUwUS
-7hunXejRb87icuEOcA+Uv5ZbsqXBuk0ekmTx1MKqc3ryxj0eijw+pqreVBGLwc7Z
-zRGbpLrGZvC9TrTQrItOm1fTS+lno4yGyfwd8i4iP/MSqECYdw+FVHaGa1weMovl
-ui9frzuwvtM52z8zXQDhELsAklkFM6JCCx00Rv0ZEOEIjX+LhyWXDWcoS6tpBqN6
-BVZ0ktCBkEUtD795ZKI9
-=XIPY
------END PGP SIGNATURE-----
-
---ew6BAiZeqk4r7MaW--
