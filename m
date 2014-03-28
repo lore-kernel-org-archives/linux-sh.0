@@ -1,60 +1,88 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 28 Mar 2014 11:49:04 +0000
+From: Rob Herring <robherring2@gmail.com>
+Date: Fri, 28 Mar 2014 14:46:36 +0000
 Subject: Re: [RFC] Serial port aliases in DT
-Message-Id: <10140085.kzh1WZQQW2@wuerfel>
+Message-Id: <CAL_JsqLJjEkuhKWwoq_+LgX4E0=VLr-+M2aB9ejLAkKUxSBb4g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5448979.WQPtOb56tW@avalon> <14685448.67FSBAE5nm@wuerfel> <CAMuHMdVJ8Jid=bdWLb7g5MP5dFOwDkvoHEbFH4nQD5bWp-2sxw@mail.gmail.com>
-In-Reply-To: <CAMuHMdVJ8Jid=bdWLb7g5MP5dFOwDkvoHEbFH4nQD5bWp-2sxw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <5448979.WQPtOb56tW@avalon>
+	<CAL_Jsq+SWZUz4D+3pdDs5yfi_XbTODC0ytt1S5KpmR_C5vVL=A@mail.gmail.com>
+	<20140327151829.GX17250@pengutronix.de>
+	<4966076.uASvrV0Iy2@wuerfel>
+	<20140328072827.GY17250@pengutronix.de>
+In-Reply-To: <20140328072827.GY17250-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Sascha Hauer <s.hauer-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>, Rob Herring <robherring2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-spec-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Sascha Hauer <s.hauer-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>
+Cc: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, devicetree-spec-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Friday 28 March 2014 11:40:03 Geert Uytterhoeven wrote:
-> On Fri, Mar 28, 2014 at 11:28 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> > On Friday 28 March 2014 09:39:22 Geert Uytterhoeven wrote:
-> >> On Fri, Mar 28, 2014 at 9:30 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> >> > On Friday 28 March 2014 09:09:23 Geert Uytterhoeven wrote:
-> >> >> On the Renesas SoCs, where this thread started, you also have different
-> >> >> types of IP blocks providing similar functionality on the same SoC.
-> >> >> E.g. 3 types of serial ports, 2 types of i2c, (at least) 2 types of spi...
-> >> >> Hence one more level of confusion (is SoC serial0 the first serial port of
-> >> >> type A, B, or C?).
-> >> >
-> >> > The 'serial' aliases are defined to refer to UARTs only, there is no debate
-> >> > about that.
-> >>
-> >> All 3 serial port types are UARTs.
-> >>
-> >> For the serial ports, they are sufficiently similar to use the same driver.
-> >> For i2c and spi, that's not the case, and they use different drivers.
-> >
-> > Ok, I see. I just misunderstood what you meant.
-> >
-> > The aliases are really meant to put all the uarts into a flat numbering space,
-> > regardless of the driver, and you can mix them them in any possible way. If
-> > a board uses one uart of each type, then serial0 through serial2 should
-> > point to the three that are used, but not the ones that aren't connected.
-> 
-> So we should move all aliases from *.dtsi to <board>.dts.
+On Fri, Mar 28, 2014 at 2:28 AM, Sascha Hauer <s.hauer@pengutronix.de> wrote:
+> On Thu, Mar 27, 2014 at 07:26:27PM +0100, Arnd Bergmann wrote:
+>> On Thursday 27 March 2014 16:18:29 Sascha Hauer wrote:
+>> > On Thu, Mar 27, 2014 at 08:54:09AM -0500, Rob Herring wrote:
+>> > > >>
+>> > > >> > This however comes back to the more general issue of serial port device
+>> > > >> > naming: Linux traditionally uses separate names per driver (e.g. ttySC0
+>> > > >> > instead of ttyS0).
+>> > > >> >
+>> > > >> > There has been discussion in the past about changing this to let all
+>> > > >> > drivers use the same namespace, but it's not yet clear to me how we'd do
+>> > > >> > this in a 100% backwards compatible way. Maybe it's best left to udev to
+>> > > >> > figure out the driver independent name, but then we definitely should use
+>> > > >> > the alias for that name.
+>> > >
+>> > > This discussion has come up in just the last month or so.
+>> > >
+>> > > My opinion is device name numbering should start at 0 with 0 being the
+>> > > preferred console device.
+>> >
+>> > That's completely different to everything I've heard and seen so far
+>> >
+>> > For specifying the console we have the linux,stdout-path property in the
+>> > chosen node. My preferred console may not be a serial port at all in
+>> > which case I would end up with a serial0 = &lcd0 alias.
+>>
+>> Agreed. Also, don't we already have /dev/console for the preferred console
+>> device?
+>>
+>> >  Many
+>> > devicetrees specify aliases for i2c/spi/mmc controllers aswell.  Should
+>> > they order their i2c controllers in the order of preference now?
+>> >
+>> > Most dtsi files in the kernel specify a SoC specific order of aliases
+>> > and I think this makes the most sense.
+>>
+>> I disagree with this one: the aliases should be a board specific
+>> property, if not settable in the boot loader. This is how it traditionally
+>> work on OF, and I think it's the most sensible approach for end users:
+>> If the machine has multiple serial ports coming out the back, they are
+>> normally numbered in some way, and the numbers should match what you
+>> see in the OS, regardless of what the SoC calls them.
+>
+> Freescale starts numbering the devices at 1, Linux normally starts at 0.
+> This leads to enough confusion already. I really don't want to have an
+> additional board vendor specific translation. This would mean when
+> talking about an UART we would not only have to make clear whether we
+> mean freescale numbering or Linux numbering, but also whether we me mean
+> board vendor numbering. Things like earlyprintk would still have the SoC
+> numbering. Bootloaders which still use the SoC numbering would add to
+> the confusion.
 
-Yes. I was originally thinking that it might be good to have a default
-alias list for each SoC, but I'm leaning more towards making it per-board
-only.
+I'm working on a series to support early console from command line or
+DT (linux,stdout-path). This should mostly replace using DEBUG_LL for
+earlyprintk (although they can coexist).
 
-> > Using a separate name space for each driver keeps causing more problems than
-> > it solves, and we really should be addressing this. One way to do this
-> > that I think would handle it nicely is to make it optional for a uart_driver
-> > to provide a major/minor number range and device name for
-> > uart_register_driver, and move the ttyS%d namespace handling from the 8250
-> > driver into serial_core.c. There are a couple of open questions regarding
-> > how to implement backwards compatibility with the existing behavior, but
-> > I think it can be done.
-> 
-> Not serial_core.c. That's deprecated for new drivers, and we want a common
-> namespace across all serial drivers.
+> I really don't think making the numbering board specific is going to
+> improve the situation.
 
-Ah, right. I have a short memory and confused tty_port with uart_port.
+The way I look at is if I pick-up any board with UARTs labeled in some
+way with ordering whether it is 0,1,2; 1,2,3; or A,B,C that I can
+count on connecting to the 1st port and get a console on /dev/ttyS0. I
+really don't care what physical UART that corresponds to and I don't
+want to have to go look it up on every different board. That works on
+any PC ever made no matter what chipset. It should be for ARM as well.
+We should be designing things to just work for an experienced Linux
+user, not someone familiar with particular h/w knowledge. Of course we
+are not there yet with separate namespaces for each UART, but that is
+a kernel problem which we need to fix.
 
-	Arnd
+Rob
