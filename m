@@ -1,68 +1,47 @@
-From: Jingoo Han <jg1.han@samsung.com>
-Date: Thu, 06 Mar 2014 02:38:07 +0000
-Subject: Re: [PATCH v2 4/6] ARM: dts: exynos5440: fix PCIe interrupt mapping
-Message-Id: <000101cf38e5$1b9fd6c0$52df8440$%han@samsung.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 28 Mar 2014 15:03:17 +0000
+Subject: [PATCH] ASoC: rsnd: fix src clock prepare/unprepare
+Message-Id: <1396018997-12390-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
- <1394025951-32438-5-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1394025951-32438-5-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org
+Cc: kuninori.morimoto.gx@renesas.com, broonie@kernel.org, lgirdwood@gmail.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Wednesday, March 05, 2014 10:26 PM, Lucas Stach wrote:
-> 
-> So it actually works.
-> 
-> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
+As with the previous commit, before a clock can be used it must be prepared
+for use. Change from clk_enable() and clk_disable() to the versions of the
+calls which also prepare and un-prepare the clocks.
 
-Acked-by: Jingoo Han <jg1.han@samsung.com>
+Will fix warnings from the clock code when this is used.
 
-It works properly on Exynos platform.
-Thank you.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ sound/soc/sh/rcar/scu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Best regards,
-Jingoo Han
-
-> ---
-> v2: fix build breakage by including arm-gic.h
-> ---
->  arch/arm/boot/dts/exynos5440.dtsi | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/exynos5440.dtsi b/arch/arm/boot/dts/exynos5440.dtsi
-> index 02a0a1226cef..7628e2edf1b6 100644
-> --- a/arch/arm/boot/dts/exynos5440.dtsi
-> +++ b/arch/arm/boot/dts/exynos5440.dtsi
-> @@ -9,6 +9,8 @@
->   * published by the Free Software Foundation.
->  */
-> 
-> +#include <dt-bindings/interrupt-controller/arm-gic.h>
-> +
->  #include "skeleton.dtsi"
-> 
->  / {
-> @@ -274,7 +276,7 @@
->  			  0x82000000 0 0x40011000 0x40011000 0 0x1ffef000>; /* non-prefetchable memory */
->  		#interrupt-cells = <1>;
->  		interrupt-map-mask = <0 0 0 0>;
-> -		interrupt-map = <0x0 0 &gic 53>;
-> +		interrupt-map = <0 0 0 0 &gic GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
->  		num-lanes = <4>;
->  		status = "disabled";
->  	};
-> @@ -295,7 +297,7 @@
->  			  0x82000000 0 0x60011000 0x60011000 0 0x1ffef000>; /* non-prefetchable memory */
->  		#interrupt-cells = <1>;
->  		interrupt-map-mask = <0 0 0 0>;
-> -		interrupt-map = <0x0 0 &gic 56>;
-> +		interrupt-map = <0 0 0 0 &gic GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
->  		num-lanes = <4>;
->  		status = "disabled";
->  	};
-> --
-> 1.9.0
+diff --git a/sound/soc/sh/rcar/scu.c b/sound/soc/sh/rcar/scu.c
+index 9153a11..3b1d1d2 100644
+--- a/sound/soc/sh/rcar/scu.c
++++ b/sound/soc/sh/rcar/scu.c
+@@ -284,7 +284,7 @@ static int rsnd_scu_start(struct rsnd_mod *mod,
+ 		return 0;
+ 	}
+ 
+-	clk_enable(scu->clk);
++	clk_prepare_enable(scu->clk);
+ 
+ 	/* it use DMA transter */
+ 
+@@ -317,7 +317,7 @@ static int rsnd_scu_stop(struct rsnd_mod *mod,
+ 
+ 	rsnd_scu_transfer_stop(priv, mod, rdai, io);
+ 
+-	clk_disable(scu->clk);
++	clk_disable_unprepare(scu->clk);
+ 
+ 	return 0;
+ }
+-- 
+1.9.0
 
