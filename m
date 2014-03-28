@@ -1,38 +1,20 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Fri, 28 Mar 2014 16:54:01 +0000
-Subject: [PATCH] ARM: shmobile: Enable USBHS gadget support in shmobile_defconfig
-Message-Id: <1396025641-30520-1-git-send-email-ulrich.hecht@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 28 Mar 2014 17:00:44 +0000
+Subject: Re: [PATCH] ARM: shmobile: Enable USBHS gadget support in shmobile_defconfig
+Message-Id: <20140328170044.GG3745@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396025641-30520-1-git-send-email-ulrich.hecht@gmail.com>
+In-Reply-To: <1396025641-30520-1-git-send-email-ulrich.hecht@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The renesas_usbhs driver provides USB gadget support for most Renesas
-platforms. To increase hardware support enable the driver in the
-shmobile_defconfig multiplatform configuration.
+On Fri, Mar 28, 2014 at 05:54:01PM +0100, Ulrich Hecht wrote:
+> The renesas_usbhs driver provides USB gadget support for most Renesas
+> platforms. To increase hardware support enable the driver in the
+> shmobile_defconfig multiplatform configuration.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
----
- arch/arm/configs/shmobile_defconfig | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 146ee70..c10e626 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -103,7 +103,11 @@ CONFIG_SOUND=y
- CONFIG_SND=y
- CONFIG_SND_SOC=y
- CONFIG_SND_SOC_RCAR=y
-+CONFIG_USB=y
- CONFIG_USB_RCAR_GEN2_PHY=y
-+CONFIG_USB_RENESAS_USBHS=y
-+CONFIG_USB_GADGET=y
-+CONFIG_USB_RENESAS_USBHS_UDC=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_MMC_SH_MMCIF=y
--- 
-1.8.4.5
-
+Thanks, I will queue this up.
