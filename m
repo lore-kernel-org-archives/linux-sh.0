@@ -1,94 +1,198 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Tue, 25 Mar 2014 04:36:34 +0000
-Subject: [PATCH 1/7] ARM: shmobile: r8a7790: add MSTP10 support on DTSI
-Message-Id: <877g7idhdb.wl%kuninori.morimoto.gx@gmail.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 28 Mar 2014 15:18:47 +0000
+Subject: [PATCH 51/75] ARM: l2c: remove platforms/SoCs setting early BRESP
+Message-Id: <E1WTYYR-0007GJ-Ai@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1369645224-3728-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1369645224-3728-2-git-send-email-horms+renesas@verge.net.au>
+References: <20140328151249.GJ7528@n2100.arm.linux.org.uk>
+In-Reply-To: <20140328151249.GJ7528@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Since we now automatically enable early BRESP in core L2C-310 code when
+we detect a Cortex-A9, we don't need platforms/SoCs to set this bit
+explicitly.  Instead, they should seek to preserve the value of bit 30
+in the auxiliary control register.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            |   29 +++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h |   24 ++++++++++++++++++++++++
- 2 files changed, 53 insertions(+)
+ arch/arm/mach-berlin/berlin.c                            | 2 +-
+ arch/arm/mach-exynos/common.c                            | 4 ++--
+ arch/arm/mach-omap2/omap4-common.c                       | 3 +--
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 4 ++--
+ arch/arm/mach-shmobile/board-armadillo800eva.c           | 4 ++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c           | 4 ++--
+ arch/arm/mach-shmobile/board-kzm9g.c                     | 4 ++--
+ arch/arm/mach-shmobile/setup-r8a7778.c                   | 4 ++--
+ arch/arm/mach-shmobile/setup-r8a7779.c                   | 4 ++--
+ arch/arm/mach-spear/spear13xx.c                          | 2 +-
+ arch/arm/mach-tegra/tegra.c                              | 4 ++--
+ 11 files changed, 19 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..5e7f23d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -768,6 +768,35 @@
- 			clock-output-names  				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
-+		mstp10_clks: mstp10_clks@e6150998 {
-+			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-+			clocks = <&p_clk>, /* parent of SCU */
-+				<&p_clk>,
-+				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				<&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
-+				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
-+				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
-+				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>,
-+				<&mstp10_clks R8A7790_CLK_SCU>, <&mstp10_clks R8A7790_CLK_SCU>;
-+
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				R8A7790_CLK_SCU
-+				R8A7790_CLK_SSI
-+				R8A7790_CLK_SSI9 R8A7790_CLK_SSI8 R8A7790_CLK_SSI7 R8A7790_CLK_SSI6 R8A7790_CLK_SSI5
-+				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
-+				R8A7790_CLK_SRC9 R8A7790_CLK_SRC8 R8A7790_CLK_SRC7 R8A7790_CLK_SRC6 R8A7790_CLK_SRC5
-+				R8A7790_CLK_SRC4 R8A7790_CLK_SRC3 R8A7790_CLK_SRC2 R8A7790_CLK_SRC1 R8A7790_CLK_SRC0
-+			>;
-+			clock-output-names +				"scu", "ssi",
-+				"ssi9", "ssi8", "ssi7", "ssi6", "ssi5",
-+				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
-+				"src9", "src8", "src7", "src6", "src5",
-+				"src4", "src3", "src2", "src1", "src0";
-+		};
- 	};
+diff --git a/arch/arm/mach-berlin/berlin.c b/arch/arm/mach-berlin/berlin.c
+index 025bcb5473eb..6709d2a6bec8 100644
+--- a/arch/arm/mach-berlin/berlin.c
++++ b/arch/arm/mach-berlin/berlin.c
+@@ -24,7 +24,7 @@ static void __init berlin_init_machine(void)
+ 	 * with DT probing for L2CCs, berlin_init_machine can be removed.
+ 	 * Note: 88DE3005 (Armada 1500-mini) uses pl310 l2cc
+ 	 */
+-	l2x0_of_init(0x70c00000, 0xfeffffff);
++	l2x0_of_init(0x30c00000, 0xfeffffff);
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
- 	qspi: spi@e6b10000 {
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5f..f73ccb9 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -104,4 +104,28 @@
- #define R8A7790_CLK_I2C1		30
- #define R8A7790_CLK_I2C0		31
+diff --git a/arch/arm/mach-exynos/common.c b/arch/arm/mach-exynos/common.c
+index f18be40e5b21..cd53b72449a0 100644
+--- a/arch/arm/mach-exynos/common.c
++++ b/arch/arm/mach-exynos/common.c
+@@ -45,8 +45,8 @@
+ #include "common.h"
+ #include "regs-pmu.h"
  
-+/* MSTP10 */
-+#define R8A7790_CLK_SSI			5
-+#define R8A7790_CLK_SSI9		6
-+#define R8A7790_CLK_SSI8		7
-+#define R8A7790_CLK_SSI7		8
-+#define R8A7790_CLK_SSI6		9
-+#define R8A7790_CLK_SSI5		10
-+#define R8A7790_CLK_SSI4		11
-+#define R8A7790_CLK_SSI3		12
-+#define R8A7790_CLK_SSI2		13
-+#define R8A7790_CLK_SSI1		14
-+#define R8A7790_CLK_SSI0		15
-+#define R8A7790_CLK_SCU			17
-+#define R8A7790_CLK_SRC9		22
-+#define R8A7790_CLK_SRC8		23
-+#define R8A7790_CLK_SRC7		24
-+#define R8A7790_CLK_SRC6		25
-+#define R8A7790_CLK_SRC5		26
-+#define R8A7790_CLK_SRC4		27
-+#define R8A7790_CLK_SRC3		28
-+#define R8A7790_CLK_SRC2		29
-+#define R8A7790_CLK_SRC1		30
-+#define R8A7790_CLK_SRC0		31
-+
- #endif /* __DT_BINDINGS_CLOCK_R8A7790_H__ */
+-#define L2_AUX_VAL 0x7C470001
+-#define L2_AUX_MASK 0xC200ffff
++#define L2_AUX_VAL 0x3c470001
++#define L2_AUX_MASK 0xc200ffff
+ 
+ static const char name_exynos4210[] = "EXYNOS4210";
+ static const char name_exynos4212[] = "EXYNOS4212";
+diff --git a/arch/arm/mach-omap2/omap4-common.c b/arch/arm/mach-omap2/omap4-common.c
+index 84e097f5fdf4..ce2fad84a43c 100644
+--- a/arch/arm/mach-omap2/omap4-common.c
++++ b/arch/arm/mach-omap2/omap4-common.c
+@@ -219,8 +219,7 @@ static int __init omap_l2_cache_init(void)
+ 		   L2C_AUX_CTRL_WAY_SIZE(3) |
+ 		   L2C_AUX_CTRL_SHARED_OVERRIDE |
+ 		   L310_AUX_CTRL_DATA_PREFETCH |
+-		   L310_AUX_CTRL_INSTR_PREFETCH |
+-		   L310_AUX_CTRL_EARLY_BRESP;
++		   L310_AUX_CTRL_INSTR_PREFETCH;
+ 
+ 	outer_cache.write_sec = omap4_l2c310_write_sec;
+ 	if (of_have_populated_dt())
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 57d1a78367b6..34e7f3c17dd2 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -164,8 +164,8 @@ static void __init eva_init(void)
+ 	r8a7740_meram_workaround();
+ 
+ #ifdef CONFIG_CACHE_L2X0
+-	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+-	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
++	/* Shared attribute override enable, 32K*8way */
++	l2x0_init(IOMEM(0xf0002000), 0x00440000, 0xc2000fff);
+ #endif
+ 
+ 	r8a7740_add_standard_devices_dt();
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 93533e2710a8..69ec71038ec7 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1270,8 +1270,8 @@ static void __init eva_init(void)
+ 
+ 
+ #ifdef CONFIG_CACHE_L2X0
+-	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+-	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
++	/* Shared attribute override enable, 32K*8way */
++	l2x0_init(IOMEM(0xf0002000), 0x00440000, 0xc2000fff);
+ #endif
+ 
+ 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 598e32488410..85873f186d77 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -36,8 +36,8 @@ static void __init kzm_init(void)
+ 	sh73a0_add_standard_devices_dt();
+ 
+ #ifdef CONFIG_CACHE_L2X0
+-	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+-	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
++	/* Shared attribute override enable, 64K*8way */
++	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
+ #endif
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index bc40b853ffd3..bd9931f223ae 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -878,8 +878,8 @@ static void __init kzm_init(void)
+ 	gpio_request_one(223, GPIOF_IN, NULL); /* IRQ8 */
+ 
+ #ifdef CONFIG_CACHE_L2X0
+-	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+-	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
++	/* Shared attribute override enable, 64K*8way */
++	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
+ #endif
+ 
+ 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 6d694526e4ca..3a8e5316671e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -298,10 +298,10 @@ void __init r8a7778_add_dt_devices(void)
+ 	void __iomem *base = ioremap_nocache(0xf0100000, 0x1000);
+ 	if (base) {
+ 		/*
+-		 * Early BRESP enable, Shared attribute override enable, 64K*16way
++		 * Shared attribute override enable, 64K*16way
+ 		 * don't call iounmap(base)
+ 		 */
+-		l2x0_init(base, 0x40470000, 0x82000fff);
++		l2x0_init(base, 0x00470000, 0xc2000fff);
+ 	}
+ #endif
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8e860b36997a..91c90bf0ae83 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -700,8 +700,8 @@ static struct platform_device *r8a7779_standard_devices[] __initdata = {
+ void __init r8a7779_add_standard_devices(void)
+ {
+ #ifdef CONFIG_CACHE_L2X0
+-	/* Early BRESP enable, Shared attribute override enable, 64K*16way */
+-	l2x0_init(IOMEM(0xf0100000), 0x40470000, 0x82000fff);
++	/* Shared attribute override enable, 64K*16way */
++	l2x0_init(IOMEM(0xf0100000), 0x00470000, 0xc2000fff);
+ #endif
+ 	r8a7779_pm_init();
+ 
+diff --git a/arch/arm/mach-spear/spear13xx.c b/arch/arm/mach-spear/spear13xx.c
+index 92860fa01668..dcb300443b66 100644
+--- a/arch/arm/mach-spear/spear13xx.c
++++ b/arch/arm/mach-spear/spear13xx.c
+@@ -46,7 +46,7 @@ void __init spear13xx_l2x0_init(void)
+ 	 */
+ 	writel_relaxed(0x221, VA_L2CC_BASE + L310_TAG_LATENCY_CTRL);
+ 	writel_relaxed(0x441, VA_L2CC_BASE + L310_DATA_LATENCY_CTRL);
+-	l2x0_init(VA_L2CC_BASE, 0x70A60001, 0xfe00ffff);
++	l2x0_init(VA_L2CC_BASE, 0x30a60001, 0xfe00ffff);
+ }
+ 
+ /*
+diff --git a/arch/arm/mach-tegra/tegra.c b/arch/arm/mach-tegra/tegra.c
+index 6191603379e1..ecbb5411a104 100644
+--- a/arch/arm/mach-tegra/tegra.c
++++ b/arch/arm/mach-tegra/tegra.c
+@@ -89,9 +89,9 @@ static void __init tegra_init_cache(void)
+ 
+ 	cache_type = readl(p + L2X0_CACHE_TYPE);
+ 	aux_ctrl = (cache_type & 0x700) << (17-8);
+-	aux_ctrl |= 0x7C400001;
++	aux_ctrl |= 0x3c400001;
+ 
+-	ret = l2x0_of_init(aux_ctrl, 0x8200c3fe);
++	ret = l2x0_of_init(aux_ctrl, 0xc200c3fe);
+ 	if (!ret)
+ 		l2x0_saved_regs_addr = virt_to_phys(&l2x0_saved_regs);
+ #endif
 -- 
-1.7.9.5
+1.8.3.1
 
