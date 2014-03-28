@@ -1,54 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 19 Mar 2014 12:30:55 +0000
-Subject: Re: [PATCH] ARM: shmobile: Add Lager clock workarounds for SDHI and MMCIF
-Message-Id: <CANqRtoS0YNcEadDz-mVFZWdpaHTHOsXik36WixbCpLT0XH3Aow@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Mar 2014 23:36:20 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7791: Add IPMMU DT nodes
+Message-Id: <1396049781-12941-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140318125247.21670.94176.sendpatchset@w520>
-In-Reply-To: <20140318125247.21670.94176.sendpatchset@w520>
+References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Laurent,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 49 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
-On Wed, Mar 19, 2014 at 7:01 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> On Wednesday 19 March 2014 10:03:32 Magnus Damm wrote:
->> On Tue, Mar 18, 2014 at 10:25 PM, Laurent Pinchart wrote:
->> > On Tuesday 18 March 2014 21:52:47 Magnus Damm wrote:
->> >> From: Magnus Damm <damm@opensource.se>
->> >>
->> >> Add MMCIF1, SDHI0 and SDHI2 to the clock workaround list for
->> >> Lager multiplatform. Without these additional lines wakeup
->> >> from Suspend-to-RAM never happens.
->> >
->> > What about fixing the root cause instead of piling up hacks ?
->>
->> -ENOPATCH? =)
->>
->> Perhaps we need to learn what the root cause is before making a proper
->> patch?
->
-> Sure :-) Could you elaborate a bit on what issue the patch fixes ? Is S2R
-> broken completely, only with multiplatform kernels, only when runtime PM is
-> enabled ? The commit message isn't very explicit about that.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 2e22cb2..bbadf7a 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -909,4 +909,53 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	ipmmu_sy0: mmu@e6280800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6280800 0 0x800>;
++		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	ipmmu_sy1: mmu@e6290800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6290800 0 0x800>;
++		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	ipmmu_ds: mmu@e6740800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6740800 0 0x800>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	ipmmu_mp: mmu@ec680800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xec680800 0 0x800>;
++		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	ipmmu_mx: mmu@fe951800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xfe951800 0 0x800>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	ipmmu_rt: mmu@ffc80800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xffc80800 0 0x800>;
++		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
++
++	ipmmu_gp: mmu@e62a0800 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe62a0800 0 0x800>;
++		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++	};
+ };
+-- 
+1.8.3.2
 
-Suspend-to-RAM is working fine in the legacy case. However it is not
-for Multiplatform, more specifically shmobile_defconfig which includes
-Runtime PM disabled. I tracked it down to SDHI on Koelsch and Lager
-and also MMCIF on Lager.
-
-> Ben mentioned that he was working on a workaround to use
-> drivers/sh/pm_runtime.c as-is with multi-platform kernels. Assuming the S2R
-> problem is limited to multi-platform kernels, I would prefer that workaround
-> if that's fine with you as well.
-
-Please discuss this with Geert. I'm fine with any kind of short term
-solution as long as it is working.
-
-Thanks,
-
-/ magnus
