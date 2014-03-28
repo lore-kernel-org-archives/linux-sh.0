@@ -1,67 +1,65 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 18 Mar 2014 22:15:20 +0000
-Subject: Re: [PATCH] phy: micrel: add of configuration for LED mode
-Message-Id: <5328D382.2020902@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Mar 2014 23:36:18 +0000
+Subject: [PATCH 2/5] iommu/ipmmu-vmsa: Add device tree bindings documentation
+Message-Id: <1396049781-12941-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393415280-10227-1-git-send-email-ben.dooks@codethink.co.uk> <5328AF1A.3090008@cogentembedded.com>
-In-Reply-To: <5328AF1A.3090008@cogentembedded.com>
+References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>, linux-kernel@lists.codethink.co.uk, devicetree@vger.kernel.org, netdev@vger.kernel.org
-Cc: f.fainelli@gmail.com, linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Will Deacon <will.deacon@arm.com>
 
-On 03/18/2014 11:39 PM, Sergei Shtylyov wrote:
+Cc: devicetree@vger.kernel.org
+Cc: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 35 ++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
 
->> Add support for the led-mode property for the following PHYs
->> which have a single LED mode configuration value.
-
->> KSZ8001 and KSZ8041 which both use register 0x1e bits 15,14 and
->> KSZ8021, KSZ8031 and KSZ8051 which use register 0x1f bits 5,4
->> to control the LED configuration.
-
->> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> [...]
-
->     Missed this patch, unfortunately and now it has been merged already... doh.
-
-    Great work, BTW -- looks like you had to browse a lot of datasheets to do 
-this patch.
-
->> diff --git a/drivers/net/phy/micrel.c b/drivers/net/phy/micrel.c
->> index 5a8993b..0c9e434 100644
->> --- a/drivers/net/phy/micrel.c
->> +++ b/drivers/net/phy/micrel.c
->> @@ -148,15 +148,52 @@ static int ks8737_config_intr(struct phy_device *phydev)
->>       return rc < 0 ? rc : 0;
->>   }
->>
->> +static int kszphy_setup_led(struct phy_device *phydev,
->> +                unsigned int reg, unsigned int shift)
->> +{
->> +
->> +    struct device *dev = &phydev->dev;
->> +    struct device_node *of_node = dev->of_node;
->> +    int rc, temp;
->> +    u32 val;
->> +
->> +    if (!of_node && dev->parent->of_node)
->> +        of_node = dev->parent->of_node;
->> +
->> +    if (of_property_read_u32(of_node, "micrel,led-mode", &val))
->> +        return 0;
->> +
->> +    temp = phy_read(phydev, reg);
->> +    if (temp < 0)
->> +        return temp;
->> +
->> +    temp &= 3 << shift;
-
->     Hm, I guess you meant ~(3 << shift), else it wouldn't work as expected if
-> the LED field is currently non-zero. Also, I think you didn't want to mask off
-> unrelated bits. I'm surprised nobody has noticed this before...
-
-    OK, I'll go fix this myself.
-
-WBR, Sergei
+diff --git a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+new file mode 100644
+index 0000000..72e8590
+--- /dev/null
++++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+@@ -0,0 +1,35 @@
++* Renesas VMSA-Compatible IOMMU
++
++The IPMMU is an IOMMU implementation compatible with the ARM VMSA page tables.
++It provides address translation bus masters outside of the CPU, each connected
++to the IPMMU through a port called micro-TLB.
++
++
++Required Properties:
++
++  - compatible: Must contain "renesas,ipmmu-vmsa".
++  - reg: Base address and size of the IPMMU registers.
++  - interrupts: Specifier for the MMU fault interrupt.
++
++
++Each bus master connected to an IPMMU must reference the IPMMU in its device
++node with the following property:
++
++  - iommus: A reference to the IPMMU in two cells. The first cell is a phandle
++    to the IPMMU and the second cell the number of the micro-TLB that the
++    device is connected to.
++
++
++Example: R8A7791 IPMMU-MX and VSP1-D0 bus master
++
++	ipmmu_mx: mmu@fe951800 {
++		compatible = "renasas,ipmmu-vmsa";
++		reg = <0 0xfe951800 0 0x800>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	vsp1@fe928000 {
++		...
++		iommus = <&ipmmu_mx 13>;
++		...
++	};
+-- 
+1.8.3.2
 
