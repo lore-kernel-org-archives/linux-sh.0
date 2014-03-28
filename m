@@ -1,91 +1,66 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 16 Mar 2014 21:35:29 +0000
-Subject: [PATCH 01/06] ARM: shmobile: Allow non-SMP reset hook usage
-Message-Id: <20140316213529.15598.7234.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Mar 2014 23:36:16 +0000
+Subject: [PATCH 0/5] Renesas VMSA-compatible IPMMU DT support
+Message-Id: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Will Deacon <will.deacon@arm.com>
 
-From: Magnus Damm <damm@opensource.se>
+Hello,
 
-Allow use of shmobile_smp_hook() regardless if CONFIG_SMP
-is enabled or not. This to keep same interface for both SMP
-and UP cases.
+This patch set adds DT support to the Renesas VMSA-compatible IPMMU driver.
+The first patch refactors the driver to remove dependencies on platform data,
+the second patch adds the DT bindings documentation and the third patch
+implement them in the driver.
 
-Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+The next two patches show real-life examples for IPMMU DT bindings usage.
+Patch 4/5 adds IPMMU DT nodes to the r8a7791 SoC dtsi file, and patch 5/5
+enables IOMMU support for the VSP1 on the same platform.
 
- arch/arm/mach-shmobile/Makefile  |    5 ++++-
- arch/arm/mach-shmobile/headsmp.S |   15 +++++++++++----
- 2 files changed, 15 insertions(+), 5 deletions(-)
+The patches are based on top of the IPMMU driver previously submitted to the
+iommu mailing list. The last patch additionally requires to VSP1 DT support
+patch series previously submitted to the linux-media mailing list and is thus
+a test patch only at the moment, not meant to be merged yet.
 
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile
-@@ -47,13 +47,15 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.
- 
- # PM objects
- obj-$(CONFIG_SUSPEND)		+= suspend.o
--obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
- obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
- obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
- obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
- 
-+# CPU PM objects
-+cpu-y				:= cpuidle.o platsmp.o headsmp.o
-+
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
-@@ -79,3 +81,4 @@ endif
- 
- # Framework support
- obj-$(CONFIG_SMP)		+= $(smp-y)
-+obj-$(CONFIG_CPU_IDLE)		+= $(cpu-y)
---- 0001/arch/arm/mach-shmobile/headsmp.S
-+++ work/arch/arm/mach-shmobile/headsmp.S
-@@ -14,11 +14,18 @@
- #include <linux/init.h>
- #include <asm/memory.h>
- 
-+#ifdef CONFIG_SMP
-+#define HEADSMP_NR_CPUS CONFIG_NR_CPUS
-+	
- ENTRY(shmobile_invalidate_start)
- 	bl	v7_invalidate_l1
- 	b	secondary_startup
- ENDPROC(shmobile_invalidate_start)
- 
-+#else
-+#define HEADSMP_NR_CPUS 1
-+#endif
-+
- /*
-  * Reset vector for secondary CPUs.
-  * This will be mapped at address 0 by SBAR register.
-@@ -68,7 +75,7 @@ shmobile_smp_boot_find_mpidr:
- 
- shmobile_smp_boot_next:
- 	add	r1, r1, #1
--	cmp	r1, #CONFIG_NR_CPUS
-+	cmp	r1, #HEADSMP_NR_CPUS
- 	blo	shmobile_smp_boot_find_mpidr
- 
- 	b	shmobile_smp_sleep
-@@ -85,10 +92,10 @@ ENDPROC(shmobile_smp_sleep)
- 
- 	.globl	shmobile_smp_mpidr
- shmobile_smp_mpidr:
--1:	.space	CONFIG_NR_CPUS * 4
-+1:	.space	HEADSMP_NR_CPUS * 4
- 	.globl	shmobile_smp_fn
- shmobile_smp_fn:
--2:	.space	CONFIG_NR_CPUS * 4
-+2:	.space	HEADSMP_NR_CPUS * 4
- 	.globl	shmobile_smp_arg
- shmobile_smp_arg:
--3:	.space	CONFIG_NR_CPUS * 4
-+3:	.space	HEADSMP_NR_CPUS * 4
+The DT bindings are pretty simple, with only three standard properties in the
+IPMMU DT node. The device to IOMMU association is represented in the bus master
+device nodes using an iommus property, similarly to interrupts or clocks. This
+model departs from the ARM SMMU DT bindings that represent the same information
+inside the IOMMU DT node. I'm not sure what's best, so I'm open to suggestions.
+
+Every IPMMU instance serves multiple bus master devices and implements four
+independent page tables and TLBs. Each bus master can be freely assigned to one
+of the page tables, lowering the risk of TLB miss when multiple bus masters
+require address translation at the same time. I've decided not to express the
+bus master to page table association in DT as this seems to me to be a software
+configuration decision, not a hardware property. Feel free to disagree.
+
+As a side note, there's no API at the moment to configure that association. My
+plan is to assign bus masters to page tables automatically in the driver in a
+round-robin way. A more configurable solution might be needed later, but I
+believe that's out of scope of DT.
+
+Cc: devicetree@vger.kernel.org
+Cc: Will Deacon <will.deacon@arm.com>
+
+Laurent Pinchart (5):
+  iommu/ipmmu-vmsa: Refactor micro-TLB lookup
+  iommu/ipmmu-vmsa: Add device tree bindings documentation
+  iommu/ipmmu-vmsa: Add device tree support
+  ARM: shmobile: r8a7791: Add IPMMU DT nodes
+  [TEST] ARM: shmobile: r8a7791: Enable IOMMU support for the VSP1
+
+ .../bindings/iommu/renesas,ipmmu-vmsa.txt          |  35 +++++++
+ arch/arm/boot/dts/r8a7791.dtsi                     |  54 ++++++++++
+ drivers/iommu/ipmmu-vmsa.c                         | 115 +++++++++++++--------
+ 3 files changed, 163 insertions(+), 41 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+
+-- 
+Regards,
+
+Laurent Pinchart
+
