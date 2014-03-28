@@ -1,50 +1,56 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:33:35 +0000
-Subject: Re: [PATCH V3 03/12] ARM: shmobile: r7s72100: add essential clock nodes to dtsi
-Message-Id: <20140307163335.GH28943@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="wayzTnRSUXKNfBqd"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 28 Mar 2014 12:27:06 +0000
+Subject: [PATCH] ASoC: rsnd: SSI needs to prepare clocks before enabling
+Message-Id: <1396009626-24699-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
- <1394208048-32495-4-git-send-email-wsa@the-dreams.de>
- <5319F242.70903@codethink.co.uk>
-In-Reply-To: <5319F242.70903@codethink.co.uk>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: alsa-devel@alsa-project.org
+Cc: kuninori.morimoto.gx@renesas.com, broonie@kernel.org, lgirdwood@gmail.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, William Towle <william.towle@codethink.co.uk>
 
+From: William Towle <william.towle@codethink.co.uk>
 
---wayzTnRSUXKNfBqd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The rsnd_ssi_hw_{stop|start} functions need to call clk_prepare_enable()
+and clk_disable_unprepare(), otherwise the following warning occurs on
+attempt to play sound:
 
+WARNING: CPU: 2 PID: 1176 at drivers/clk/clk.c:926 __clk_enable+0x30/0x9c()
 
-> FYI: I'm pushing a patch through to make clock-indices a standard
-> DT property that will allow the of_clk_get_name() function to
-> work properly. With this, the renesas,clock-indices will be
-> replaced with the clock-indices.
+due to drivers/clk/clk.c:
 
-Great, I'll keep an eye on it!
+    926         if (WARN_ON(clk->prepare_count = 0))
+    927                 return -ESHUTDOWN;
 
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
+[ben.dooks@codethink.co.uk: add more bug info to report]
+Tested-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ sound/soc/sh/rcar/ssi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
---wayzTnRSUXKNfBqd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
+index 4b8cf7c..1c07ef7 100644
+--- a/sound/soc/sh/rcar/ssi.c
++++ b/sound/soc/sh/rcar/ssi.c
+@@ -250,7 +250,7 @@ static void rsnd_ssi_hw_start(struct rsnd_ssi *ssi,
+ 	u32 cr;
+ 
+ 	if (0 = ssi->usrcnt) {
+-		clk_enable(ssi->clk);
++		clk_prepare_enable(ssi->clk);
+ 
+ 		if (rsnd_rdai_is_clk_master(rdai)) {
+ 			if (rsnd_ssi_clk_from_parent(ssi))
+@@ -309,7 +309,7 @@ static void rsnd_ssi_hw_stop(struct rsnd_ssi *ssi,
+ 				rsnd_ssi_master_clk_stop(ssi);
+ 		}
+ 
+-		clk_disable(ssi->clk);
++		clk_disable_unprepare(ssi->clk);
+ 	}
+ 
+ 	dev_dbg(dev, "ssi%d hw stopped\n", rsnd_mod_id(&ssi->mod));
+-- 
+1.9.0
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTGfTeAAoJEBQN5MwUoCm2slQP/0YuuYBPYOOoUOM8+cf7XMSU
-oZuZYLb14Hu6AzXVFzDdR12Y5sc0xvupuVjyhz3VT5671qRpONgLNSbDP8B+WmHO
-s5MP+RKxzePZ7QxFqvz1up/niePtXmYwOKLKmYDbQcHpx9NLWu3rNObiunoQ5YNB
-xjfQtZGU9hlmOjoORHnA9DZKjtXzDnwVk4ygrvCI+DWOJiVszmb/OULXAkH5oUUr
-TFyYQCHhVLbLgQVsftD75rFy3aeCXOKpZf+Khn+wZDGaj6dMW+P723iNmQF2qkxU
-wt9Zuk3vTWBUCDj5RPd5y/27LBDs4coRBk2o5E+br4cpClQsUjDEhcoByp7J9C7Y
-qNdy+SJjGq5bD5Z62MIQT4V6WM2COv7DQFIlx7kXrbqgyBPIFejSdRojf2HlWAJJ
-FkYBQ0TSRlRj75qiNKiCfh7IVMYDM0XEsz1J4u7BxKoALWBszw4IIBOFpnpJs9lJ
-BU5lW42g20sLjzrrDWDk9yNY05Bv1xCLvsitCKe4tNjWZPSgCt9LN97vfmdg1v7w
-e8/P6se+rhbwAq2556UGSB1dUEuMm33KUbRkua2ZnRDDVx4hDb+kr7EclfsQwUZF
-MYMu1qM+Ta8VcluIhdUYiDRlbrf3zwZHZdarMjsuzT7oHHgOVbYE+nNs0KtgCaPa
-oxLrFXLS6VD27PzM8kni
-=Sfx6
------END PGP SIGNATURE-----
-
---wayzTnRSUXKNfBqd--
