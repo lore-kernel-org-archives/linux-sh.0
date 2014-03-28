@@ -1,52 +1,100 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 20 Mar 2014 07:57:42 +0000
-Subject: Re: [RFC 1/1] thermal: rcar-thermal: add cpu cooling
-Message-Id: <87lhw5nvyq.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Mar 2014 23:36:19 +0000
+Subject: [PATCH 3/5] iommu/ipmmu-vmsa: Add device tree support
+Message-Id: <1396049781-12941-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393599758-17315-1-git-send-email-ptitiano@baylibre.com>
-	<1393599758-17315-2-git-send-email-ptitiano@baylibre.com>
-	<1395294944.3571.9.camel@rzhang1-mobl4>
-In-Reply-To: <1395294944.3571.9.camel@rzhang1-mobl4>
+References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>
-Cc: Patrick Titiano <ptitiano@baylibre.com>, magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, eduardo.valentin@ti.com, bcousson@baylibre.com, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
+Make platform data optional when the device is instantiated from DT and
+look up the micro-TLB number in the bus master DT node.
 
-Hi Zhang, Partez:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/iommu/ipmmu-vmsa.c | 37 +++++++++++++++++++++++++++++--------
+ 1 file changed, 29 insertions(+), 8 deletions(-)
 
-> On Fri, 2014-02-28 at 16:02 +0100, Patrick Titiano wrote:
-> > Renesas RCar platforms only register a thermal zone, but do not implement
-> > any thermal management.
-> > Use CPU cooling (CPUFreq DVFS driver) to implement thermal management.
-> > Register cpufreq cooling device, add passive trip point and bind it
-> > to thermal zone 0.
-> > Passive trip point temperature is set to 70C, but is adjustable
-> > via sysfs to facilitate experimentation and platform tuning.
-> > 
-> > Signed-off-by: Patrick Titiano <ptitiano@baylibre.com>
-> 
-> Kuninori,
-> 
-> what do you think of this patch?
-(snip)
-> > +		priv->cpucooldev = cpufreq_cooling_register(&clip_cpus);
-> > +		if (IS_ERR(priv->cpucooldev)) {
-> > +			ret = PTR_ERR(priv->cpucooldev);
-> > +			dev_err(dev, "failed to register cpufreq cooling device (%d)\n",
-> > +				ret);
-> > +			goto error_unpm;
-> > +		}
-(snip)
-> Then why you make the rcar-thermal depends on the success of
-> cpufreq_cooling_register()?
-> IMO, you can just register two trip points first, and bind the cpu
-> cooling device to passive trip point only if cpufreq_cooling_register()
-> succeeds.
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index ef03191..b56a05d 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -16,6 +16,7 @@
+ #include <linux/io.h>
+ #include <linux/iommu.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_data/ipmmu-vmsa.h>
+ #include <linux/platform_device.h>
+ #include <linux/sizes.h>
+@@ -828,16 +829,31 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
+ 
+ static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
+ {
+-	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
+-	const char *devname = dev_name(dev);
+-	unsigned int i;
++	struct of_phandle_args args;
++	int ret;
++
++	if (mmu->pdata) {
++		const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
++		const char *devname = dev_name(dev);
++		unsigned int i;
++
++		for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
++			if (strcmp(master->name, devname) = 0)
++				return master->utlb;
++		}
+ 
+-	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
+-		if (strcmp(master->name, devname) = 0)
+-			return master->utlb;
++		return -1;
+ 	}
+ 
+-	return -1;
++	ret = of_parse_phandle_with_fixed_args(dev->of_node, "iommus",
++					       1, 0, &args);
++	if (ret < 0)
++		return -1;
++
++	if (args.np != mmu->dev->of_node)
++		return -1;
++
++	return args.args[0];
+ }
+ 
+ static int ipmmu_add_device(struct device *dev)
+@@ -980,7 +996,7 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	int irq;
+ 	int ret;
+ 
+-	if (!pdev->dev.platform_data) {
++	if (!IS_ENABLED(CONFIG_OF) && !pdev->dev.platform_data) {
+ 		dev_err(&pdev->dev, "missing platform data\n");
+ 		return -EINVAL;
+ 	}
+@@ -1046,10 +1062,15 @@ static int ipmmu_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct of_device_id ipmmu_of_ids[] = {
++	{ .compatible = "renesas,ipmmu-vmsa", },
++};
++
+ static struct platform_driver ipmmu_driver = {
+ 	.driver = {
+ 		.owner = THIS_MODULE,
+ 		.name = "ipmmu-vmsa",
++		.of_match_table = of_match_ptr(ipmmu_of_ids),
+ 	},
+ 	.probe = ipmmu_probe,
+ 	.remove	= ipmmu_remove,
+-- 
+1.8.3.2
 
-I agree to Zhang's opinion.
-It is better not to break the existing environment. 
-
-But, I guess this patch is still under "not-yet-ready-to-merge patch" ?
-(this patch has "Signed-off-by" thought... :)
