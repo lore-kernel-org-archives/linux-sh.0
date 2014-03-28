@@ -1,73 +1,46 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Mon, 03 Mar 2014 09:26:23 +0000
-Subject: Re: [PATCH 4/7] ARM: dts: exynos5440: fix PCIe interrupt mapping
-Message-Id: <1393838783.4714.0.camel@weser.hi.pengutronix.de>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 28 Mar 2014 16:46:25 +0000
+Subject: [RFC] sh_eth: use RNC mode for R8A7790
+Message-Id: <1396025185-7911-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393608523-17509-1-git-send-email-l.stach@pengutronix.de>
- <1393608523-17509-5-git-send-email-l.stach@pengutronix.de>
- <000401cf36b3$e4aa0fb0$adfe2f10$%han@samsung.com>
- <000501cf36b5$b0a27110$11e75330$%han@samsung.com>
-In-Reply-To: <000501cf36b5$b0a27110$11e75330$%han@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, magnus.damm@opensource.se, nobuhiro.iwamatsu.yj@renesas.com, sergei.shtylyov@cogentembedded.com, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Am Montag, den 03.03.2014, 16:53 +0900 schrieb Jingoo Han:
-> On Monday, March 03, 2014 4:41 PM, Jingoo Han wrote:
-> > On Saturday, March 01, 2014 2:29 AM, Lucas Stach wrote:
-> > >
-> > > So it actually works.
-> > >
-> > > Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> > > ---
-> > >  arch/arm/boot/dts/exynos5440.dtsi | 4 ++--
-> > >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > >
-> > > diff --git a/arch/arm/boot/dts/exynos5440.dtsi b/arch/arm/boot/dts/exynos5440.dtsi
-> > > index 02a0a1226cef..65d425d9ec27 100644
-> > > --- a/arch/arm/boot/dts/exynos5440.dtsi
-> > > +++ b/arch/arm/boot/dts/exynos5440.dtsi
-> > > @@ -274,7 +274,7 @@
-> > >  			  0x82000000 0 0x40011000 0x40011000 0 0x1ffef000>; /* non-prefetchable memory */
-> > >  		#interrupt-cells = <1>;
-> > >  		interrupt-map-mask = <0 0 0 0>;
-> > > -		interrupt-map = <0x0 0 &gic 53>;
-> > > +		interrupt-map = <0 0 0 0 &gic GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
-> > 
-> > It makes build errors as below:
-> > 
-> > DTC     arch/arm/boot/dts/exynos5440-ssdk5440.dtb
-> > Error: arch/arm/boot/dts/exynos5440.dtsi:289.33-34 syntax error
-> > FATAL ERROR: Unable to parse input tree
-> > make[1]: *** [arch/arm/boot/dts/exynos5440-ssdk5440.dtb] Error 1
-> > make: *** [exynos5440-ssdk5440.dtb] Error 2
-> > 
-> > Would you fix it?
-> 
-> I fixed build errors after including 'arm-gic.h' as below:
-> 
-> --- a/arch/arm/boot/dts/exynos5440.dtsi
-> +++ b/arch/arm/boot/dts/exynos5440.dtsi
-> @@ -9,6 +9,8 @@
->   * published by the Free Software Foundation.
->  */
-> 
-> +#include <dt-bindings/interrupt-controller/arm-gic.h>
-> +
->  #include "skeleton.dtsi"
-> 
-> Would you confirm this?
+The current behaviour of the sh_eth driver is not to use the RNC bit
+for the receive ring. This means that every packet recieved is not only
+generating an IRQ but it also stops the receive ring DMA as well until
+the driver re-enables it after unloading the packet.
 
-That's the right fix, I'll include this (together with the other
-feedback I received) in v2 of the series.
+This means that a number of the following errors are generated due to
+the receive packet FIFO overflowing due to nowhere to put packets:
 
-Regards,
-Lucas
+	net eth0: Receive FIFO Overflow
 
+Setting the RMCR_RNC configuration has so far been tested with an NFS
+root filesystem and the driver has not failed yet. It is not yet known
+why this is not set for R8A779x operation (Feedback on this issue or
+other testing is welcome)
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 942f1a9..7b02b70 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -467,6 +467,7 @@ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.ecsr_value	= ECSR_PSRTO | ECSR_LCHNG | ECSR_ICD,
+ 	.ecsipr_value	= ECSIPR_PSRTOIP | ECSIPR_LCHNGIP | ECSIPR_ICDIP,
+ 	.eesipr_value	= 0x01ff009f,
++	.rmcr_value	= RMCR_RNC,
+ 
+ 	.tx_check	= EESR_FTC | EESR_CND | EESR_DLC | EESR_CD | EESR_RTO,
+ 	.eesr_err_check	= EESR_TWB | EESR_TABT | EESR_RABT | EESR_RFE |
 -- 
-Pengutronix e.K.                           | Lucas Stach                 |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+1.9.0
 
