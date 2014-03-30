@@ -1,132 +1,165 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:50 +0000
-Subject: [PATCH v4 07/19] ARM: shmobile: r8a7779: Reference clocks
-Message-Id: <1394701202-25823-8-git-send-email-horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 30 Mar 2014 21:54:31 +0000
+Subject: [RFCv3 3/3] soc_camera: initial of code
+Message-Id: <1396216471-11532-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+References: <1396216471-11532-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396216471-11532-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: g.liakhovetski@gmx.de, linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+Add initial support for OF based soc-camera devices that may be used
+by any of the soc-camera drivers. The driver itself will need converting
+to use OF.
 
-Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoC.
+These changes allow the soc-camera driver to do the connecting of any
+async capable v4l2 device to the soc-camera driver. This has currently
+been tested on the Renesas Lager board.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
-v3
-* Also update the following nodes which are now present
-  - hspi{0,1,2}
-  - sata: Suggested by Laurent Pinchart
----
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ drivers/media/platform/soc_camera/soc_camera.c | 111 ++++++++++++++++++++++++-
+ 1 file changed, 110 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index c0802aa..dbdc92d 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -166,6 +166,7 @@
- 		reg = <0xffc70000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
- 		status = "disabled";
- 	};
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index 4b8c024..afe22d4 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -36,6 +36,7 @@
+ #include <media/v4l2-common.h>
+ #include <media/v4l2-ioctl.h>
+ #include <media/v4l2-dev.h>
++#include <media/v4l2-of.h>
+ #include <media/videobuf-core.h>
+ #include <media/videobuf2-core.h>
  
-@@ -176,6 +177,7 @@
- 		reg = <0xffc71000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
- 		status = "disabled";
- 	};
+@@ -1579,6 +1580,112 @@ static void scan_async_host(struct soc_camera_host *ici)
+ #define scan_async_host(ici)		do {} while (0)
+ #endif
  
-@@ -186,6 +188,7 @@
- 		reg = <0xffc72000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
- 		status = "disabled";
- 	};
++#ifdef CONFIG_OF
++static int soc_of_bind(struct soc_camera_host *ici,
++		       struct device_node *ep,
++		       struct device_node *remote)
++{
++	struct soc_camera_device *icd;
++	struct soc_camera_desc sdesc = {.host_desc.bus_id = ici->nr,};
++	struct soc_camera_async_client *sasc;
++	struct soc_camera_async_subdev *sasd;
++	struct v4l2_async_subdev **asd_array;
++	char clk_name[V4L2_SUBDEV_NAME_SIZE];
++	int ret;
++
++	/* alloacte a new subdev and add match info to it */
++	sasd = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasd), GFP_KERNEL);
++	if (!sasd)
++		return -ENOMEM;
++
++	asd_array = devm_kzalloc(ici->v4l2_dev.dev,
++				 sizeof(struct v4l2_async_subdev **),
++				 GFP_KERNEL);
++	if (!asd_array)
++		return -ENOMEM;
++
++	sasd->asd.match.of.node = remote;
++	sasd->asd.match_type = V4L2_ASYNC_MATCH_OF;
++	asd_array[0] = &sasd->asd;
++
++	/* Or shall this be managed by the soc-camera device? */
++	sasc = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasc), GFP_KERNEL);
++	if (!sasc)
++		return -ENOMEM;
++
++	/* HACK: just need a != NULL */
++	sdesc.host_desc.board_info = ERR_PTR(-ENODATA);
++
++	ret = soc_camera_dyn_pdev(&sdesc, sasc);
++	if (ret < 0)
++		return ret;
++
++	sasc->sensor = &sasd->asd;
++
++	icd = soc_camera_add_pdev(sasc);
++	if (!icd) {
++		platform_device_put(sasc->pdev);
++		return -ENOMEM;
++	}
++
++	//sasc->notifier.subdevs = asd;
++	sasc->notifier.subdevs = asd_array;
++	sasc->notifier.num_subdevs = 1;
++	sasc->notifier.bound = soc_camera_async_bound;
++	sasc->notifier.unbind = soc_camera_async_unbind;
++	sasc->notifier.complete = soc_camera_async_complete;
++
++	icd->sasc = sasc;
++	icd->parent = ici->v4l2_dev.dev;
++
++	snprintf(clk_name, sizeof(clk_name), "of-%s",
++		 of_node_full_name(remote));
++
++	icd->clk = v4l2_clk_register(&soc_camera_clk_ops, clk_name, "mclk", icd);
++	if (IS_ERR(icd->clk)) {
++		ret = PTR_ERR(icd->clk);
++		goto eclkreg;
++	}
++
++	ret = v4l2_async_notifier_register(&ici->v4l2_dev, &sasc->notifier);
++	if (!ret)
++		return 0;
++
++eclkreg:
++	icd->clk = NULL;
++	platform_device_unregister(sasc->pdev);
++	dev_err(ici->v4l2_dev.dev, "group probe failed: %d\n", ret);
++
++	return ret;
++}
++
++static inline void scan_of_host(struct soc_camera_host *ici)
++{
++	struct device_node *np = ici->v4l2_dev.dev->of_node;
++	struct device_node *epn = NULL;
++	struct device_node *ren;
++
++	while (true) {
++		epn = v4l2_of_get_next_endpoint(np, epn);
++		if (!epn)
++			break;
++
++		ren = v4l2_of_get_remote_port(epn);
++		if (!ren) {
++			pr_info("%s: no remote for %s\n",
++				__func__,  of_node_full_name(epn));
++			continue;
++		}
++
++		/* so we now have a remote node to connect */
++		soc_of_bind(ici, epn, ren->parent);
++	}
++}
++
++#else
++static inline void scan_of_host(struct soc_camera_host *ici) { }
++#endif
++
+ /* Called during host-driver probe */
+ static int soc_camera_probe(struct soc_camera_host *ici,
+ 			    struct soc_camera_device *icd)
+@@ -1830,7 +1937,9 @@ int soc_camera_host_register(struct soc_camera_host *ici)
+ 	mutex_init(&ici->host_lock);
+ 	mutex_init(&ici->clk_lock);
  
-@@ -196,6 +199,7 @@
- 		reg = <0xffc73000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
- 		status = "disabled";
- 	};
- 
-@@ -214,6 +218,7 @@
- 		reg = <0xfc600000 0x2000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
- 	};
- 
- 	sdhi0: sd@ffe4c000 {
-@@ -221,6 +226,7 @@
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -231,6 +237,7 @@
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -241,6 +248,7 @@
- 		reg = <0xffe4e000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -251,6 +259,7 @@
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -261,6 +270,7 @@
- 		reg = <0xfffc7000 0x18>;
- 		interrupt-controller = <&gic>;
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -269,6 +279,7 @@
- 		reg = <0xfffc8000 0x18>;
- 		interrupt-controller = <&gic>;
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -277,6 +288,7 @@
- 		reg = <0xfffc6000 0x18>;
- 		interrupt-controller = <&gic>;
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
+-	if (ici->asd_sizes)
++	if (ici->v4l2_dev.dev->of_node)
++		scan_of_host(ici);
++	else if (ici->asd_sizes)
+ 		/*
+ 		 * No OF, host with a list of subdevices. Don't try to mix
+ 		 * modes by initialising some groups statically and some
 -- 
-1.8.5.2
+1.9.0
 
