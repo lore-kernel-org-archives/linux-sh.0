@@ -1,104 +1,87 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:00:47 +0000
-Subject: [PATCH V3 11/12] ARM: shmobile: r7s72100: add spi clocks to dtsi
-Message-Id: <1394208048-32495-12-git-send-email-wsa@the-dreams.de>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Sun, 30 Mar 2014 21:51:37 +0000
+Subject: [RFCv2] rcar_vin: copy flags from pdata
+Message-Id: <1396216297-10981-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: g.liakhovetski@gmx.de, linux-sh@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+The platform data is a single word, so simply copy
+it into the device's private data structure than
+keeping a copy of the pointer.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+This will make changing to device-tree binding
+easier as it is one allocation instead of two.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 18 ++++++++++++++++++
- include/dt-bindings/clock/r7s72100-clock.h |  7 +++++++
- 2 files changed, 25 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 9f7a06dc5e30..3575c0f86eda 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -129,6 +129,19 @@
- 			>;
- 			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
- 		};
-+
-+		mstp10_clks: mstp10_clks@fcfe043c {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe043c 4>;
-+			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
-+				 <&p1_clk>;
-+			renesas,clock-indices = <
-+				R7S72100_CLK_SPI0 R7S72100_CLK_SPI1 R7S72100_CLK_SPI2 R7S72100_CLK_SPI3
-+				R7S72100_CLK_SPI4
-+			>;
-+			clock-output-names = "spi0", "spi1", "spi2", "spi3", "spi4";
-+		};
- 	};
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 702dc47..47516df 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -126,13 +126,13 @@ struct rcar_vin_priv {
+ 	int				sequence;
+ 	/* State of the VIN module in capturing mode */
+ 	enum rcar_vin_state		state;
+-	struct rcar_vin_platform_data	*pdata;
+ 	struct soc_camera_host		ici;
+ 	struct list_head		capture;
+ #define MAX_BUFFER_NUM			3
+ 	struct vb2_buffer		*queue_buf[MAX_BUFFER_NUM];
+ 	struct vb2_alloc_ctx		*alloc_ctx;
+ 	enum v4l2_field			field;
++	unsigned int			pdata_flags;
+ 	unsigned int			vb_count;
+ 	unsigned int			nr_hw_slots;
+ 	bool				request_to_stop;
+@@ -275,12 +275,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
+ 		break;
+ 	case V4L2_MBUS_FMT_YUYV8_2X8:
+ 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
+-		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
+ 		break;
+ 	case V4L2_MBUS_FMT_YUYV10_2X10:
+ 		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
+-		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
++		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
+ 			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
+ 		break;
+ 	default:
+@@ -799,7 +799,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
+ 	/* Make choises, based on platform preferences */
+ 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
+-		if (priv->pdata->flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
++		if (priv->pdata_flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
+@@ -807,7 +807,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
  
- 	cpus {
-@@ -326,6 +339,7 @@
- 			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI0>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -339,6 +353,7 @@
- 			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI1>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -352,6 +367,7 @@
- 			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI2>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -365,6 +381,7 @@
- 			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI3>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -378,6 +395,7 @@
- 			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI4>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-index b412bb2c93b1..5cb969fa4931 100644
---- a/include/dt-bindings/clock/r7s72100-clock.h
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -30,4 +30,11 @@
- #define R7S72100_CLK_I2C2	5
- #define R7S72100_CLK_I2C3	4
+ 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
+ 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
+-		if (priv->pdata->flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
++		if (priv->pdata_flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
+ 		else
+ 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
+@@ -1447,7 +1447,7 @@ static int rcar_vin_probe(struct platform_device *pdev)
+ 	priv->ici.drv_name = dev_name(&pdev->dev);
+ 	priv->ici.ops = &rcar_vin_host_ops;
  
-+/* MSTP10 */
-+#define R7S72100_CLK_SPI0	7
-+#define R7S72100_CLK_SPI1	6
-+#define R7S72100_CLK_SPI2	5
-+#define R7S72100_CLK_SPI3	4
-+#define R7S72100_CLK_SPI4	3
-+
- #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+-	priv->pdata = pdata;
++	priv->pdata_flags = pdata->flags;
+ 	priv->chip = pdev->id_entry->driver_data;
+ 	spin_lock_init(&priv->lock);
+ 	INIT_LIST_HEAD(&priv->capture);
 -- 
 1.9.0
 
