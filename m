@@ -1,30 +1,40 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 30 Mar 2014 21:13:46 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 30 Mar 2014 21:17:34 +0000
 Subject: Re: [PATCH 5/5] rcar_vin: add devicetree support
-Message-Id: <5338890A.2050607@codethink.co.uk>
+Message-Id: <Pine.LNX.4.64.1403302316480.12008@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk> <1394197299-17528-6-git-send-email-ben.dooks@codethink.co.uk> <Pine.LNX.4.64.1403081148050.18310@axis700.grange> <Pine.LNX.4.64.1403302303490.12008@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1403302303490.12008@axis700.grange>
+References: <1394197299-17528-1-git-send-email-ben.dooks@codethink.co.uk>
+ <1394197299-17528-6-git-send-email-ben.dooks@codethink.co.uk>
+ <Pine.LNX.4.64.1403081148050.18310@axis700.grange>
+ <Pine.LNX.4.64.1403302303490.12008@axis700.grange> <5338890A.2050607@codethink.co.uk>
+In-Reply-To: <5338890A.2050607@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Ben Dooks <ben.dooks@codethink.co.uk>
 Cc: linux-media@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>, linux-kernel@vger.kernel.org, magnus.damm@opensource.se, linux-sh@vger.kernel.org, linux-kernel@lists.codethink.co.uk
 
-On 30/03/14 22:04, Guennadi Liakhovetski wrote:
-> Hi Ben,
->
-> Since I never received a reply to this my query, I consider this your
-> patch series suspended.
->
-> Thanks
-> Guennadi
+On Sun, 30 Mar 2014, Ben Dooks wrote:
 
-I meant to send out a patch series for the of probe for soc_camera.
-The actual rcar_vin does not need much to support async probe, it is
-just the soc_camera that needs sorting.
+> On 30/03/14 22:04, Guennadi Liakhovetski wrote:
+> > Hi Ben,
+> > 
+> > Since I never received a reply to this my query, I consider this your
+> > patch series suspended.
+> > 
+> > Thanks
+> > Guennadi
+> 
+> I meant to send out a patch series for the of probe for soc_camera.
+> The actual rcar_vin does not need much to support async probe, it is
+> just the soc_camera that needs sorting.
 
+But without that soc-camera DT support your patches are non-functional, 
+right?
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
