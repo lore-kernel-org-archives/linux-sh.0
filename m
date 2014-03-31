@@ -1,49 +1,71 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 23 Mar 2014 10:05:20 +0000
-Subject: Re: [PATCH v4 1/9] PCI: host: rcar: Add Renesas R-Car PCIe driver
-Message-Id: <CAMuHMdWWujnkYvMp3f30oBGD6XyDrNj0kNwmjmVr+ko-9ktXuQ@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 31 Mar 2014 10:30:45 +0000
+Subject: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
+Message-Id: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395397968-6242-1-git-send-email-phil.edworthy@renesas.com>
- <27671657.LuGQtNBfqX@wuerfel>
- <OF038A7DC3.59E6288A-ON80257CA2.004AF404-80257CA2.004CDD76@eu.necel.com>
- <4337701.rbRMDOA6lL@wuerfel>
-In-Reply-To: <4337701.rbRMDOA6lL@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 21, 2014 at 4:07 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Friday 21 March 2014 13:59:35 Phil.Edworthy@renesas.com wrote:
->> > From: Arnd Bergmann <arnd@arndb.de>
->> > static const struct of_device_id rcar_pcie_of_match[] = {
->> >    { .compatible = "renesas,r8a7779-pcie", .data >> rcar_pcie_phy_init_rcar_h1},
->> >    { .compatible = "renesas,r8a7790-pcie", .data =  rcar_pcie_hw_init},
->> >    { .compatible = "renesas,r8a7791-pcie", .data =  rcar_pcie_hw_init},
->> >    {},
->> > };
->> >
->> > If you need other differences in the future, you can extend this
->> > to use a pointer to a struct containing the init function pointer.
->>
->> Ok, I understand what you mean, though the rcar_pcie_phy_init_rcar_h1
->> function is an extra call for r8a7779 devices to setup the PHY, not an
->> alternative to rcar_pcie_hw_init.
->
-> I assumed that would be trivial to change, by calling rcar_pcie_hw_init
-> at the end of rcar_pcie_phy_init_rcar_h1 rather than the other way round.
+This is version 7 of a PCIe Host driver for the R-Car Gen2 devices,
+i.e. R-Car H2 (r8a7790) and R-Car M2 (r8a7791).
 
-And this would allow to propagate the error code from
-rcar_pcie_phy_init_rcar_h1(), as currently rcar_pcie_hw_init() ignores it,
-and returns void.
+v7:
+ - Change binding description of clocks to 'clock specifiers'
 
-Gr{oetje,eeting}s,
+v6:
+ - Correct DT bindings description for reg and clocks
+ - Split device and board DT changes
+ - Add shmobile to subject for shmobile DT patches
+ - Don't check MSI irq number is valid, as upper level checks this
+ - Change "Unexpected MSI" msg to debug level
+ - Reword "Unexpected MSI" comment so that it's one line
+ - Remove patch that adds HAVE_ARM_ARCH_TIMER to koelsch defconfig as not needed
 
-                        Geert
+v5:
+ - Use module_platform_driver instead of subsys_initcall
+ - Use the of_device_id data field for HW init function
+ - Init hw_pci struct in declaration
+ - Renesas SoC compatible string has peripheral before device name
+ - Add PCIe bus clock reference
+ - Use dma-ranges property to specify inbound memory regions
+ - Support multiple IO windows and correct resources
+ - Return IRQ_NONE from MSI isr when there is no pending MSI
+ - Add additional interrupt bindings
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+v4:
+ - Use runtime PM properly
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Phil Edworthy (10):
+  PCI: host: rcar: Add Renesas R-Car PCIe driver
+  PCI: host: rcar: Add MSI support
+  ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+  ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+  dt-bindings: pci: rcar pcie device tree bindings
+  ARM: shmobile: r8a7790: Add PCIe device nodes
+  ARM: shmobile: lager: Add PCIe device nodes
+  ARM: shmobile: r8a7791: Add PCIe device nodes
+  ARM: shmobile: koelsch: Add PCIe device nodes
+  ARM: shmobile: koelsch: Add PCIe to defconfig
+
+ Documentation/devicetree/bindings/pci/rcar-pci.txt |  45 +
+ arch/arm/boot/dts/r8a7790-lager.dts                |  10 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |  31 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |  14 +
+ arch/arm/boot/dts/r8a7791.dtsi                     |  31 +-
+ arch/arm/configs/koelsch_defconfig                 |   3 +
+ drivers/pci/host/Kconfig                           |   6 +
+ drivers/pci/host/Makefile                          |   1 +
+ drivers/pci/host/pcie-rcar.c                       | 929 +++++++++++++++++++++
+ drivers/pci/host/pcie-rcar.h                       |  87 ++
+ include/dt-bindings/clock/r8a7790-clock.h          |   1 +
+ include/dt-bindings/clock/r8a7791-clock.h          |   1 +
+ 12 files changed, 1154 insertions(+), 5 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+ create mode 100644 drivers/pci/host/pcie-rcar.c
+ create mode 100644 drivers/pci/host/pcie-rcar.h
+
+-- 
+1.9.0
+
