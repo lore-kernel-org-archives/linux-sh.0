@@ -1,39 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 31 Mar 2014 08:39:48 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 31 Mar 2014 10:18:04 +0000
 Subject: Re: [PATCH 2/5] iommu/ipmmu-vmsa: Add device tree bindings documentation
-Message-Id: <CAMuHMdUF6MmH_eK=SbG-q6Kai_q+5ufm-Vsd8z-bYKGj7Z-Spw@mail.gmail.com>
+Message-Id: <2135036.3YMfppXtgo@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1396049781-12941-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396049781-12941-3-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1396049781-12941-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdUF6MmH_eK=SbG-q6Kai_q+5ufm-Vsd8z-bYKGj7Z-Spw@mail.gmail.com>
+In-Reply-To: <CAMuHMdUF6MmH_eK=SbG-q6Kai_q+5ufm-Vsd8z-bYKGj7Z-Spw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
-Cc: "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Will Deacon <will.deacon-5wv7dgnIgG8@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Will Deacon <will.deacon@arm.com>
 
-Hi Laurent,
+Hi Geert,
 
-On Sat, Mar 29, 2014 at 12:36 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> +Required Properties:
-> +
-> +  - compatible: Must contain "renesas,ipmmu-vmsa".
-> +  - reg: Base address and size of the IPMMU registers.
-> +  - interrupts: Specifier for the MMU fault interrupt.
+On Monday 31 March 2014 10:39:48 Geert Uytterhoeven wrote:
+> On Sat, Mar 29, 2014 at 12:36 AM, Laurent Pinchart wrote:
+> > +Required Properties:
+> > +
+> > +  - compatible: Must contain "renesas,ipmmu-vmsa".
+> > +  - reg: Base address and size of the IPMMU registers.
+> > +  - interrupts: Specifier for the MMU fault interrupt.
+> 
+> Does it make sense to have a property for the number of micro-TLBs,
+> or is this handled transparently?
+> 
+> E.g. ipmmu_mx has 24 micro-TLBs, but ipmmu_mp has 30.
 
-Does it make sense to have a property for the number of micro-TLBs,
-or is this handled transparently?
+The IPMMU driver doesn't need to know the number of micro-TLBs, so we should 
+be fine without specifying it in DT. The micro-TLBs are configured when a bus 
+master device is attached or detached, and at that point the device provides 
+its micro-TLB number.
 
-E.g. ipmmu_mx has 24 micro-TLBs, but ipmmu_mp has 30.
+The only reason I can foresee why the number of micro-TLBs would be useful is 
+to iterate over micro-TLBs when the driver probes the device to disable them 
+all. A mask would probably be better than a number in that case, and I think 
+we can always add that later if we find a need for it.
 
-Gr{oetje,eeting}s,
+-- 
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
