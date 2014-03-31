@@ -1,117 +1,58 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 30 Mar 2014 20:28:53 +0000
+Date: Mon, 31 Mar 2014 21:23:50 +0000
 Subject: Re: [PATCH 1/9] pci-rcar-gen2: add devicetree support
-Message-Id: <53387E85.8000207@cogentembedded.com>
+Message-Id: <5339DCE6.70505@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394128887-4197-1-git-send-email-ben.dooks@codethink.co.uk> <1394128887-4197-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1394128887-4197-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <1394128887-4197-1-git-send-email-ben.dooks@codethink.co.uk> <1394128887-4197-2-git-send-email-ben.dooks@codethink.co.uk> <5318BCAE.7000108@codethink.co.uk> <53386C2F.1090508@cogentembedded.com> <53386E9D.70803@codethink.co.uk> <53386FE1.5000002@cogentembedded.com> <53387336.2000306@codethink.co.uk>
+In-Reply-To: <53387336.2000306@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
-Cc: linux-kernel@lists.codethink.co.uk, magnus.damn@opensource.se, horms@verge.net.au, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, devicetree@vger.kernel.org
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-sh@vger.kernel.org, linux-usb@vger.kernel.org, linux-kernel@lists.codethink.co.uk, magnus.damn@opensource.se, horms@verge.net.au, Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, devicetree@vger.kernel.org
 
-On 03/06/2014 09:01 PM, Ben Dooks wrote:
+Hello.
 
-> Add OF match table for pci-rcar-gen2 driver for device tree support.
+On 03/30/2014 11:40 PM, Ben Dooks wrote:
 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
-> Updates since v1:
-> 	- moved documentation into patch
-> 	- moved to using bus-range parsing
-> 	- ensured usb phy can be linked to usb devices
+>>>>>> Add OF match table for pci-rcar-gen2 driver for device tree support.
+>>>> [...]
 
-> Cc: Bjorn Helgaas <bhelgaas@google.com>
-> Cc: Simon Horman <horms@verge.net.au>
-> Cc: linux-pci@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: devicetree@vger.kernel.org
-> ---
->   .../bindings/pci/renessas,pci-rcar-gen2.txt        | 52 ++++++++++++++++++++++
->   drivers/pci/host/pci-rcar-gen2.c                   | 33 +++++++++++++-
->   2 files changed, 83 insertions(+), 2 deletions(-)
->   create mode 100644 Documentation/devicetree/bindings/pci/renessas,pci-rcar-gen2.txt
+>>>>>> diff --git a/drivers/pci/host/pci-rcar-gen2.c
+>>>>>> b/drivers/pci/host/pci-rcar-gen2.c
+>>>>>> index fd3e3ab..1216784 100644
+>>>>>> --- a/drivers/pci/host/pci-rcar-gen2.c
+>>>>>> +++ b/drivers/pci/host/pci-rcar-gen2.c
+>>>>>> @@ -16,6 +16,7 @@
+>>>>>>   #include <linux/kernel.h>
+>>>>>>   #include <linux/module.h>
+>>>>>>   #include <linux/pci.h>
+>>>>>> +#include <linux/of_pci.h>
+>>>>>>   #include <linux/platform_device.h>
+>>>>>>   #include <linux/pm_runtime.h>
+>>>>>>   #include <linux/sizes.h>
 
-> diff --git a/Documentation/devicetree/bindings/pci/renessas,pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/renessas,pci-rcar-gen2.txt
-> new file mode 100644
-> index 0000000..bd6d291
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/pci/renessas,pci-rcar-gen2.txt
-> @@ -0,0 +1,52 @@
-> +Renesas AHB to PCI bridge
-> +-------------------------
+>>>>> Apologies all, there's a missing include of <linux/of.h> which should
+>>>>> have been added here
 
-    Perhaps it makes sense to describe PCIe bindings in the same file...
+>>>>     Have you ever re-posted this patch fixed? If not, it's not going to
+>>>> be merged for 3.15 I guess...
 
-[...]
+>>> I thought I did.
 
-> +Example SoC configuration:
-> +
-> +	pci0: pci@ee090000  {
-> +		compatible = "renesas,pci-r8a7790";
-> +		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-> +		reg = <0x0 0xee090000 0x0 0xc00>,
-> +		      <0x0 0xee080000 0x0 0x1100>;
-> +		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-> +		status = "disabled";
-> +
-> +		bus-range = <0 0>;
-> +		#address-cells = <3>;
-> +		#size-cells = <2>;
-> +	};
-> +
-> +Example board setup:
-> +
-> +&pci1 {
-> +	status = "okay";
-> +	pinctrl-0 = <&usb1_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	pci@0,1 {
-> +		reg = <0x800 0 0 0 0>;
-> +		device_type = "pci";
-> +		usb-phy = <&usbphy>;
-> +	};
-> +
-> +	pci@0,2 {
-> +		reg = <0x1000 0 0 0 0>;
-> +		device_type = "pci";
-> +		usb-phy = <&usbphy>;
-> +	};
-> +};
+>>     I don't see such repost in 'linux-sh'.
 
-    As I said, these PCI sub-nodes belong to the SoC file.
+>>> I can have a look a reposting it.
 
-> diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-> index fd3e3ab..1216784 100644
-> --- a/drivers/pci/host/pci-rcar-gen2.c
-> +++ b/drivers/pci/host/pci-rcar-gen2.c
-[...]
-> @@ -377,11 +396,21 @@ static int rcar_pci_probe(struct platform_device *pdev)
->   	return 0;
->   }
->
-> +#ifdef CONFIG_OF
+>>     It doesn't apply to the current renesas.git devel branch. What tree
+>> it was against?
 
-    I don't think it's really worth it.
+>  From my records it was against the -rc3 release of Horms' development
+> tree. I know Simon's tree has been closed for the board bits, but I
+> could re-send the rcar-pci code.
 
-> +static struct of_device_id rcar_pci_of_match[] = {
-> +	{ .compatible = "renesas,pci-r8a7790", },
-> +	{ },
-> +};
-> +
-> +MODULE_DEVICE_TABLE(of, rcar_pci_of_match);
-> +#endif
-> +
->   static struct platform_driver rcar_pci_driver = {
->   	.driver = {
->   		.name = "pci-rcar-gen2",
->   		.owner = THIS_MODULE,
->   		.suppress_bind_attrs = true,
-> +		.of_match_table = of_match_ptr(rcar_pci_of_match),
-
-    And so, of_match_ptr() is not needed.
+    Could you address my comments and re-send? Or if you don't have time, 
+would you mind that I take this patch into my hands?
 
 WBR, Sergei
 
