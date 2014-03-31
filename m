@@ -1,76 +1,102 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 13 Mar 2014 11:30:50 +0000
-Subject: Re: [PATCH 5/9] dt-bindings: pci: rcar pcie device tree bindings
-Message-Id: <25998973.9XJTBOSo8s@wuerfel>
+From: Josh Wu <josh.wu@atmel.com>
+Date: Mon, 31 Mar 2014 09:28:34 +0000
+Subject: Re: [RFCv3,3/3] soc_camera: initial of code
+Message-Id: <1396258114-30124-1-git-send-email-josh.wu@atmel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com> <33747243.K5i7Ah8L7o@wuerfel> <OFF61489EE.B9ED2F88-ON80257C9A.00386B74-80257C9A.00398025@eu.necel.com>
-In-Reply-To: <OFF61489EE.B9ED2F88-ON80257C9A.00386B74-80257C9A.00398025@eu.necel.com>
+References: <1396216471-11532-3-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396216471-11532-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil.Edworthy@renesas.com
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, Bjorn Helgaas <bhelgaas@google.com>, devicetree@vger.kernel.org, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>
+To: ben.dooks@codethink.co.uk
+Cc: josh.wu@atmel.com, g.liakhovetski@gmx.de, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thursday 13 March 2014 10:28:03 Phil.Edworthy@renesas.com wrote:
-> On 13/03/2014 10:00, Arnd wrote:
-> > On Thursday 13 March 2014 09:50:04 Phil Edworthy wrote:
-> > 
-> > I see your description and example includes I/O regions, but the driver
-> > claims in a comment that these don't work. Do you also have a patch to
-> > make them work?
-> Are you referring to the comment "The controller does not support/use port 
-> I/O" in the driver for the internal PCI controller (pci-rcar-gen2.c)?
-> This is a separate block of hardware, it's a PCIe controller with external 
-> pins, for which we do support I/O regions.
+Hi, Ben 
 
-Ok, thanks for the clarification.
+Thanks for the patch, I just test atmel-isi with the your patch,
+I find the "mclk" registered in soc-camera driver cannot be find
+by the soc-camera sensors. See comment in below:
 
-> > > +- interrupts: interrupt values for MSI interrupt
-> > > +- #interrupt-cells: set to <1>
-> > > +- interrupt-map-mask and interrupt-map: standard PCI properties
-> > > +   to define the mapping of the PCIe interface to interrupt
-> > > +   numbers.
-> > > +- clocks: from common clock binding: handle to pci clock.
-> > > +- clock-names: from common clock binding: should be "pcie"
-> > > +
-> > > +Example:
-> > > +
-> > > +SoC specific DT Entry:
-> > > +
-> > > +   pcie: pcie@0x01000000 {
-> > > +      compatible = "renesas,r8a7790-pcie";
-> > > +      reg = <0 0xfe000000 0 0x80000>;
-> > > +      #address-cells = <3>;
-> > > +      #size-cells = <2>;
-> > > +      device_type = "pci";
-> > > +      ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-> > > +           0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-> > > +           0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-> > > +           0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-> > 
-> > I'm curious about why there are two non-prefetchable regions. What is
-> > the significance of this?
->
-> The devices that have this PCIe controller both have a number of fixed, 
-> non-contiguous memory regions that can be used as PCIe windows. The ranges 
-> here map onto those fixed windows, i.e. if the CPU addresses of the ranges 
-> change it won't work. The first couple of windows are small, we use the 
-> first one for I/O, we decided that we may as well use the next small 
-> window for memory - otherwise we need to figure out a way to tell the 
-> driver to skip a window.
+> [snip]
 
-Ok, makes sense. Good to know that this actually works. An idea that
-may be helpful in some corner cases: if you can set up the small window as
+> ... ...
 
-           0x02000000 0 0 0 0xfe200000 0 0x00200000
+> +#ifdef CONFIG_OF
+> +static int soc_of_bind(struct soc_camera_host *ici,
+> +		       struct device_node *ep,
+> +		       struct device_node *remote)
+> +{
+> +	struct soc_camera_device *icd;
+> +	struct soc_camera_desc sdesc = {.host_desc.bus_id = ici->nr,};
+> +	struct soc_camera_async_client *sasc;
+> +	struct soc_camera_async_subdev *sasd;
+> +	struct v4l2_async_subdev **asd_array;
+> +	char clk_name[V4L2_SUBDEV_NAME_SIZE];
+> +	int ret;
+> +
+> +	/* alloacte a new subdev and add match info to it */
+> +	sasd = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasd), GFP_KERNEL);
+> +	if (!sasd)
+> +		return -ENOMEM;
+> +
+> +	asd_array = devm_kzalloc(ici->v4l2_dev.dev,
+> +				 sizeof(struct v4l2_async_subdev **),
+> +				 GFP_KERNEL);
+> +	if (!asd_array)
+> +		return -ENOMEM;
+> +
+> +	sasd->asd.match.of.node = remote;
+> +	sasd->asd.match_type = V4L2_ASYNC_MATCH_OF;
+> +	asd_array[0] = &sasd->asd;
+> +
+> +	/* Or shall this be managed by the soc-camera device? */
+> +	sasc = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasc), GFP_KERNEL);
+> +	if (!sasc)
+> +		return -ENOMEM;
+> +
+> +	/* HACK: just need a != NULL */
+> +	sdesc.host_desc.board_info = ERR_PTR(-ENODATA);
+> +
+> +	ret = soc_camera_dyn_pdev(&sdesc, sasc);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	sasc->sensor = &sasd->asd;
+> +
+> +	icd = soc_camera_add_pdev(sasc);
+> +	if (!icd) {
+> +		platform_device_put(sasc->pdev);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	//sasc->notifier.subdevs = asd;
+> +	sasc->notifier.subdevs = asd_array;
+> +	sasc->notifier.num_subdevs = 1;
+> +	sasc->notifier.bound = soc_camera_async_bound;
+> +	sasc->notifier.unbind = soc_camera_async_unbind;
+> +	sasc->notifier.complete = soc_camera_async_complete;
+> +
+> +	icd->sasc = sasc;
+> +	icd->parent = ici->v4l2_dev.dev;
+> +
+> +	snprintf(clk_name, sizeof(clk_name), "of-%s",
+> +		 of_node_full_name(remote));
 
-or even
+The clk_name you register here is a OF string, but for the i2c sensors, which
+call the v4l2_clk_get by using dev_name(&client->dev). It is format like:
+"1-0030", combined i2c adaptor ID and addr.
+So the i2c sensor can not find this registered mclk as the name is not match.
 
-           0x02000000 0 0 0 0xfe200000 0 0x00100000
-           0x02000000 0 0x00f00000 0 0xfe200000 0 0x00100000
+Best Regards,
+Josh Wu
 
-then you will be able to map devices with legacy nonrelocatable ISA
-memory BARs such as VGA cards that have PCI resources in the first MB
-of bus space, and in the end of the first 16MB.
+> +
+> +	icd->clk = v4l2_clk_register(&soc_camera_clk_ops, clk_name, "mclk", icd);
+> +	if (IS_ERR(icd->clk)) {
+> +		ret = PTR_ERR(icd->clk);
+> +		goto eclkreg;
+> +	}
+> +
 
-	Arnd
+
+> [snip]
