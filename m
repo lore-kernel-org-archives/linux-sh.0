@@ -1,121 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 13 Mar 2014 08:59:55 +0000
-Subject: [PATCH v4 12/19] ARM: shmobile: r8a7779: Initial multiplatform support
-Message-Id: <1394701202-25823-13-git-send-email-horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 31 Mar 2014 10:30:50 +0000
+Subject: [PATCH v7 05/10] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <1396261856-22465-6-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1394701202-25823-1-git-send-email-horms+renesas@verge.net.au>
+References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add Marzen and r8a7779 to CONFIG_SHMOBILE_MULTI. At this
-point CCF is not yet supported so you cannot run this code
-yet. For CCF support to happen several different components
-are needed, and this is one simple portion that moves us
-forward. Other patches need to build on top of this one.
+This patch adds the bindings for the R-Car PCIe driver. The driver
+resides under drivers/pci/host/pcie-rcar.c
 
-Marzen board support exists in 3 flavours:
-1) SHMOBILE_MULTI, MACH_MARZEN - board-marzen-reference.c (CCF + DT)
-2) SHMOBILE, MACH_MARZEN_REFERENCE - board-marzen-reference.c (DT)
-3) SHMOBILE, MACH_MARZEN - board-marzen.c (legacy C code)
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-When CCF is done then 2) will be removed. When 1) includes same features
-as 3) then 3) will be removed.
+v7:
+ - Change binding description of clocks to 'clock specifiers'
 
-Based on work for the Koelsch and r8a7791 by Magnus Damm.
+v6:
+ - Correct DT bindings description for reg and clocks
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+v5:
+ - Add PCIe bus clock reference
+ - Add additional interrupt bindings
+ - Use dma-ranges property to specify inbound memory regions
 ---
-v3
-* Select RENESAS_INTC_IRQPIN
----
- arch/arm/boot/dts/Makefile                      | 3 ++-
- arch/arm/mach-shmobile/Kconfig                  | 9 +++++++++
- arch/arm/mach-shmobile/Makefile                 | 1 +
- arch/arm/mach-shmobile/board-marzen-reference.c | 5 +++++
- 4 files changed, 17 insertions(+), 1 deletion(-)
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 45 ++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 41927cc..f56e594 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -262,7 +262,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
- 	r8a7791-koelsch.dtb \
--	r8a7790-lager.dtb
-+	r8a7790-lager.dtb \
-+	r8a7779-marzen-reference.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
- 	socfpga_cyclone5_socdk.dtb \
- 	socfpga_cyclone5_sockit.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f7465a3..215c742 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -23,6 +23,10 @@ if ARCH_SHMOBILE_MULTI
- 
- comment "Renesas ARM SoCs System Type"
- 
-+config ARCH_R8A7779
-+	bool "R-Car H1 (R8A77790)"
-+	select RENESAS_INTC_IRQPIN
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+new file mode 100644
+index 0000000..789bd46
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -0,0 +1,45 @@
++* Renesas RCar PCIe interface
 +
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
- 
-@@ -53,6 +57,11 @@ config MACH_LAGER
- 	depends on ARCH_R8A7790
- 	select MICREL_PHY if SH_ETH
- 
-+config MACH_MARZEN
-+	bool "MARZEN board"
-+	depends on ARCH_R8A7779
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++Required properties:
++- compatible: should contain one of the following
++	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
++- reg: base address and length of the pcie controller registers.
++- #address-cells: set to <3>
++- #size-cells: set to <2>
++- device_type: set to "pci"
++- ranges: ranges for the PCI memory and I/O regions.
++- dma-ranges: ranges for the inbound memory regions.
++- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
++	source for hardware related interrupts (e.g. link speed change).
++- #interrupt-cells: set to <1>
++- interrupt-map-mask and interrupt-map: standard PCI properties
++	to define the mapping of the PCIe interface to interrupt
++	numbers.
++- clocks: from common clock binding: clock specifiers for the PCIe controller
++	and PCIe bus clocks.
++- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
 +
- comment "Renesas ARM SoCs System Configuration"
- endif
- 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 9c5cd8c..ed49315 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
-+obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
- else
- obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index c22e5c2..d3e8319 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/clk-provider.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -28,7 +29,11 @@
- 
- static void __init marzen_init(void)
- {
-+#ifdef CONFIG_COMMON_CLK
-+	of_clk_init(NULL);
-+#else
- 	r8a7779_clock_init();
-+#endif
- 	r8a7779_add_standard_devices_dt();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
++Example:
++
++SoC specific DT Entry:
++
++	pcie: pcie@fe000000 {
++		compatible = "renesas,pcie-r8a7791";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
++			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
++		interrupts = <0 116 4 0 117 4 0 118 4>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 4>;
++		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
++		clock-names = "pcie", "pcie_bus";
++		status = "disabled";
++	};
 -- 
-1.8.5.2
+1.9.0
 
