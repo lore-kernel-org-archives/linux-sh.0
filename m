@@ -1,51 +1,36 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 14 Mar 2014 19:31:28 +0000
-Subject: Re: [PATCH 1/2 v2] ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <20140314193128.GE366@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Mpco6AjI66RzYq4w"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 31 Mar 2014 17:47:27 +0000
+Subject: [PATCH] clk: shmobile: fix setting paretn clock rate
+Message-Id: <1396288047-6647-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txb3rjzw.wl%kuninori.morimoto.gx@gmail.com>
- <87d2hpppk3.wl%kuninori.morimoto.gx@gmail.com>
- <87bnx9pphk.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87bnx9pphk.wl%kuninori.morimoto.gx@gmail.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Simon <horms@verge.net.au>, Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+If the driver needs to change a clock rate, then it must be propogated
+through the MSTP clock to the parent clock (such as shdi0 -> sd0). Without
+this we cannot up-rate default clocks which are really slow (such as the
+mmcif1 which defaults to 12MHz where it could be running at 97MHz)
 
---Mpco6AjI66RzYq4w
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/clk/shmobile/clk-mstp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-On Thu, Mar 13, 2014 at 05:56:25PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> SND_SOC_DAIFMT_CBx_CFx means "codec" side master/slave mode.
-> Then, FSI will be master mode if it was SND_SOC_DAIFMT_CBS_CFS.
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 7bfdcfc..9fc754b 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -139,7 +139,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
+ 
+ 	init.name = name;
+ 	init.ops = &cpg_mstp_clock_ops;
+-	init.flags = CLK_IS_BASIC;
++	init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT;
+ 	init.parent_names = &parent_name;
+ 	init.num_parents = 1;
+ 
+-- 
+1.9.0
 
-Applied, thanks.
-
---Mpco6AjI66RzYq4w
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIbBAEBAgAGBQJTI1kNAAoJELSic+t+oim96lwP92HLRuGhtiSxkLwu5vbKd/Kb
-IHCpRoDom1xnys0h4YVxhrrHNfh1lYSnqjQmwwwY4IvUoWzW3qlJ/Es3CNL9P4qs
-eh/ard4iDQaUMck8Lpadfdiy83ZxypNZr2S+P07MUblWn3/lQKOAuj4oSPetIXzj
-hN24jiPY6WfoDfEt09YvPaL2N/88v8StJxvYvXeo/84Cu6DOpOMCzh0n2M4/PsbX
-Ww4YBLQLzaj8UoxkQ9a7pNRcuGBIjReOFn0tcEwPFRXxmqJ0BRKocZzloCGTYaCJ
-tF/HbuukUvuXG+1ksRP2UOEfpO7jaCcWfts4ckMbxFGXAssdKKhWy8yik19MXYO6
-mD6zdYWb+EPn3gJZVRFG1o1VdHJyiu6atFvwx042VdMJcRCaYYox7CScy/rmCSqb
-TS6r9vs8IaF70ENDkRYjZQcbGyKzhdZ7+8rZYkESPsnvx7fa66qRmYt4t+890XTM
-WdtWCBD9DKfrbOB7v3jA+pzZD6NItD9Vit2PCD4wEBjVrRIUH6P9NRoPQblXFUas
-BWHFXW5liRrLqIr6YqJ/TRZPNKjfBUTyCzm6MPsaN8WICJ9phS1hgJtveNQimE28
-zReLKTNj0mfkPud5o1RE2GQl/ZefnaegpCKJbS3bZzO81Z4r9tcC0KZKkja81bVZ
-sUwjNddNXtOqzVzaNMA=
-=/cbw
------END PGP SIGNATURE-----
-
---Mpco6AjI66RzYq4w--
