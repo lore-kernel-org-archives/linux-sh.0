@@ -1,51 +1,37 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 13 Mar 2014 09:50:05 +0000
-Subject: [PATCH 6/9] ARM: shmobile: Add PCIe device tree nodes for R8A7790
-Message-Id: <1394704208-7490-7-git-send-email-phil.edworthy@renesas.com>
+Date: Mon, 31 Mar 2014 10:30:55 +0000
+Subject: [PATCH v7 10/10] ARM: shmobile: koelsch: Add PCIe to defconfig
+Message-Id: <1396261856-22465-11-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1394704208-7490-1-git-send-email-phil.edworthy@renesas.com>
+References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Phil Edworthy <phil.edworthy@renesas.com>
-
-This patch adds the device tree nodes for R8A7790
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |   19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index df9ec61..e7d498a 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -821,4 +821,23 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	pcie: pcie@fe000000 {
-+		compatible = "renesas,r8a7790-pcie";
-+		reg = <0 0xfe000000 0 0x80000>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		device_type = "pci";
-+		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-+			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-+			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-+			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-+		interrupts = <0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0 0 0 0>;
-+		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_PCIE>;
-+		clock-names = "pcie";
-+		status = "disabled";
-+	};
- };
+v6:
+ - Add shmobile to subject
+---
+ arch/arm/configs/koelsch_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 86faab5..ec14547 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -15,6 +15,9 @@ CONFIG_MACH_KOELSCH=y
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_754322=y
++CONFIG_PCI=y
++CONFIG_PCI_MSI=y
++CONFIG_PCI_RCAR_GEN2_PCIE=y
+ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+ CONFIG_NR_CPUS=8
 -- 
-1.7.9.5
+1.9.0
 
