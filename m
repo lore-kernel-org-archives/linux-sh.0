@@ -1,35 +1,59 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 27 Mar 2014 10:42:58 +0000
-Subject: [PATCH] sh: pci: Remove duplicate SH4A_PCIEPHYCTLR
-Message-Id: <1395916978-14292-1-git-send-email-geert@linux-m68k.org>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 31 Mar 2014 10:30:48 +0000
+Subject: [PATCH v7 03/10] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+Message-Id: <1396261856-22465-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch adds the device tree clock nodes for PCIe
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/sh/drivers/pci/pcie-sh7786.h |    3 ---
- 1 file changed, 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.h b/arch/sh/drivers/pci/pcie-sh7786.h
-index 1ee054e47eae..4a6ff55f759b 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.h
-+++ b/arch/sh/drivers/pci/pcie-sh7786.h
-@@ -145,9 +145,6 @@
- /*	PCIERMSGIER	*/
- #define	SH4A_PCIERMSGIER	(0x004040)	/* R/W - 0x0000 0000 32 */
- 
--/*	PCIEPHYCTLR	*/
--#define SH4A_PCIEPHYCTLR	(0x010000)	/* R/W - 0x0000 0000 32 */
--
- /*	PCIEPHYADRR	*/
- #define	SH4A_PCIEPHYADRR	(0x010004)	/* R/W - 0x0000 0000 32 */
- #define		BITS_ACK	(24)			// Rev1.171
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index da69afc..df9ec61 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -704,16 +704,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
+ 				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>,
+-				 <&mmc0_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&rclk_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
+-				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
++				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
+ 			>;
+ 			clock-output-names  				"tpu0", "mmcif1", "sdhi3", "sdhi2",
+-				"sdhi1", "sdhi0", "mmcif0", "cmt1";
++				"sdhi1", "sdhi0", "mmcif0", "cmt1",
++				"pcie";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 6548a5f..840dbc8 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -57,6 +57,7 @@
+ #define R8A7790_CLK_SDHI1		13
+ #define R8A7790_CLK_SDHI0		14
+ #define R8A7790_CLK_MMCIF0		15
++#define R8A7790_CLK_PCIE		19
+ #define R8A7790_CLK_SSUSB		28
+ #define R8A7790_CLK_CMT1		29
+ #define R8A7790_CLK_USBDMAC0		30
 -- 
-1.7.9.5
+1.9.0
 
