@@ -1,57 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 19 Mar 2014 10:17:37 +0000
-Subject: Re: [PATCH] sh_eth: ensure pm_runtime cannot suspend the device during init
-Message-Id: <7231108.PjP7GBxrsJ@avalon>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Mon, 31 Mar 2014 15:38:20 +0000
+Subject: [PATCH] ARM: shmobile: armadillo-reference dts: enable RTC
+Message-Id: <1396280300-7016-1-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1394823605-31883-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1378900273-10188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1378900273-10188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ben,
+This enables the Seiko real-time clock that is attached to a couple of
+GPIO pins.
 
-On Wednesday 19 March 2014 09:19:44 Ben Dooks wrote:
-> On 17/03/14 14:41, Laurent Pinchart wrote:
-> > On Monday 17 March 2014 13:36:33 Ben Dooks wrote:
-> > 
-> > [snip]
-> > 
-> >>   From pm_runtime.h:
-> >> static inline int pm_runtime_get_sync(struct device *dev)
-> >> {
-> >> 	return __pm_runtime_resume(dev, RPM_GET_PUT);
-> >> }
-> >> 
-> >> static inline int pm_request_resume(struct device *dev)
-> >> {
-> >> 	return __pm_runtime_resume(dev, RPM_ASYNC);
-> >> }
-> >> 
-> >> So it looks like pm_runtime_resume() does not protect against the
-> >> possibility that something else may re-suspend the device.
-> > 
-> > Correct.
-> > 
-> >> I have yet to ascertain how this ends up happening with device probe, it
-> >> seems to be very dependant on the code.
-> > 
-> > We might be doing something wrong in the driver from a runtime PM point of
-> > view that leads to the device being suspended. I'd like to catch that
-> > instead of hiding it by a pm_runtime_get_sync() call. If it turns out
-> > that we're not doing anything wrong then replacing pm_runtime_resume()
-> > with pm_runtime_get_sync() would of course be fine.
-> 
-> My view is the pm_runtime)_resume() is just nasty, as it makes no guarantees
-> that the device cannot be re-suspended.
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+---
+ .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-My point is that requiring such a guarantee at probe time might be a sign that 
-something else is wrong (which was the case with the sh-eth driver). I'm not 
-saying it should never be done of course.
-
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index b79ea51..ac352ef 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -118,6 +118,16 @@
+ 		};
+ 	};
+ 
++	i2c2: i2c@2 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "i2c-gpio";
++		gpios = <&pfc 208 GPIO_ACTIVE_HIGH /* sda */
++			 &pfc 91 GPIO_ACTIVE_HIGH /* scl */
++			>;
++		i2c-gpio,delay-us = <5>;
++	};
++
+ 	backlight {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&tpu 2 33333 PWM_POLARITY_INVERTED>;
+@@ -178,6 +188,14 @@
+ 	};
+ };
+ 
++&i2c2 {
++	status = "okay";
++	rtc@30 {
++		compatible = "seiko,s35390a";
++		reg = <0x30>;
++	};
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scifa1_pins>;
+ 	pinctrl-names = "default";
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.4.5
 
