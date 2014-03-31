@@ -1,36 +1,45 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 31 Mar 2014 17:47:27 +0000
-Subject: [PATCH] clk: shmobile: fix setting paretn clock rate
-Message-Id: <1396288047-6647-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Mike Turquette <mturquette@linaro.org>
+Date: Mon, 31 Mar 2014 23:13:35 +0000
+Subject: Re: [PATCH] clk: shmobile: fix setting paretn clock rate
+Message-Id: <20140331231335.5762.46624@quantum>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396288047-6647-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396288047-6647-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-If the driver needs to change a clock rate, then it must be propogated
-through the MSTP clock to the parent clock (such as shdi0 -> sd0). Without
-this we cannot up-rate default clocks which are really slow (such as the
-mmcif1 which defaults to 12MHz where it could be running at 97MHz)
+Quoting Ben Dooks (2014-03-31 10:47:27)
+> If the driver needs to change a clock rate, then it must be propogated
+> through the MSTP clock to the parent clock (such as shdi0 -> sd0). Without
+> this we cannot up-rate default clocks which are really slow (such as the
+> mmcif1 which defaults to 12MHz where it could be running at 97MHz)
+> 
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- drivers/clk/shmobile/clk-mstp.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Taken into clk-next.
 
-diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
-index 7bfdcfc..9fc754b 100644
---- a/drivers/clk/shmobile/clk-mstp.c
-+++ b/drivers/clk/shmobile/clk-mstp.c
-@@ -139,7 +139,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
- 
- 	init.name = name;
- 	init.ops = &cpg_mstp_clock_ops;
--	init.flags = CLK_IS_BASIC;
-+	init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT;
- 	init.parent_names = &parent_name;
- 	init.num_parents = 1;
- 
--- 
-1.9.0
+Regards,
+Mike
 
+> ---
+>  drivers/clk/shmobile/clk-mstp.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+> index 7bfdcfc..9fc754b 100644
+> --- a/drivers/clk/shmobile/clk-mstp.c
+> +++ b/drivers/clk/shmobile/clk-mstp.c
+> @@ -139,7 +139,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
+>  
+>         init.name = name;
+>         init.ops = &cpg_mstp_clock_ops;
+> -       init.flags = CLK_IS_BASIC;
+> +       init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT;
+>         init.parent_names = &parent_name;
+>         init.num_parents = 1;
+>  
+> -- 
+> 1.9.0
+> 
