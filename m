@@ -1,33 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 30 Apr 2014 22:25:38 +0000
-Subject: Re: [PATCH 2/6] i2c: sh_mobile: improve error handling
-Message-Id: <CAMuHMdWs=FkAgCpBNQcaRtJRanGQjp1erN+=Jqpekioj+9pk1A@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 01 Apr 2014 13:26:00 +0000
+Subject: Re: [PATCH 4/5] ARM: shmobile: r8a7791: Add IPMMU DT nodes
+Message-Id: <4090613.sML6E8lxg2@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
-	<1398896470-24663-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398896470-24663-3-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+	<2517875.vv2t3ch4DC@avalon> <53397BE8.6030707@codethink.co.uk>
+In-Reply-To: <53397BE8.6030707-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
+To: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Hi Wolfram,
+Hi Ben,
 
-On Thu, May 1, 2014 at 12:21 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> Use standard i2c error codes for i2c failures. Also, don't print
-> something on timeout since it happens regularly with i2c. Simplify some,
-> logic, too.
+On Monday 31 March 2014 15:30:00 Ben Dooks wrote:
+> On 31/03/14 15:01, Laurent Pinchart wrote:
+> > On Monday 31 March 2014 10:52:28 Geert Uytterhoeven wrote:
+> >> On Sat, Mar 29, 2014 at 12:36 AM, Laurent Pinchart wrote:
+> >>> +       ipmmu_sy0: mmu@e6280800 {
+> >>> +               compatible = "renesas,ipmmu-vmsa";
+> >>> +               reg = <0 0xe6280800 0 0x800>;
+> >> 
+> >> Shouldn't this be "reg = <0 0xe6280000 0 0x1000>", i.e. expose both
+> >> banks?
+> >> 
+> >> Is there any specific reason you're using the second bank of registers?
+> >> These may read as zero, depending on the SoC mode.
+> > 
+> > That's a very good question, and I have no clear answer. According to the
+> > datasheet the second bank of registers is an alias for the non-secure
+> > IPMMU registers. It looks like we're running in secure mode (that's what I
+> > assume the "CPU: All CPU(s) started in SVC mode." kernel log message
+> > means), and the secure IPMMU didn't seem to be functional when I've tested
+> > it.
+> > 
+> > This requires more investigation, but I'm not familiar with secure mode,
+> > and the IPMMU documentation is really sparse in that area.
+> 
+> The default for the R8A7790 is to start in secure-svc mode.
 
-You may want to keep the timeout messages with dev_dbg()?
+I've tried to boot in non-secure mode by modifying MD5 (DIP switch SW10), but 
+it doesn't seem to have any influence.
 
-Gr{oetje,eeting}s,
+> I would test it in non-secure SVC but the security framework we are using
+> blocks access to the IPMMU blocks :/
 
-                        Geert
+I assume that the reason why I have to program the IPMMU non-secure page table 
+is that the memory requests coming from the DU are considered as non-secure. 
+That's just a guess though. Without a detailed description of how the hardware 
+is supposed to work I can't improve the code and DT bindings.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-- 
+Regards,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Laurent Pinchart
+
