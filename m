@@ -1,57 +1,74 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Apr 2014 22:40:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc
-Message-Id: <20140414224007.GC22518@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 10:25:51 +0000
+Subject: [PATCH 3/6] mmc: sh-mmcif: use devm_ for clock management
+Message-Id: <1396347954-13740-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140414101321.12239.82374.sendpatchset@w520>
-In-Reply-To: <20140414101321.12239.82374.sendpatchset@w520>
+References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Mon, Apr 14, 2014 at 07:13:21PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
->    
-> Fix typo of renesas,groups in the koeslch dt. The kernel has no
-> renesas,gpios but this should match renesas,groups.
-> 
-> Noticed thanks to similar fix for Lager by Rob Taylor and Ben Dooks.        
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
+---
+ drivers/mmc/host/sh_mmcif.c | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
-Thanks, I have queued this up as a fix for v3.15.
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index be6be2b..c006310 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1393,7 +1393,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 
+ 	ret = mmc_of_parse(mmc);
+ 	if (ret < 0)
+-		goto eofparse;
++		goto err_host;
+ 
+ 	host		= mmc_priv(mmc);
+ 	host->mmc	= mmc;
+@@ -1423,19 +1423,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(&pdev->dev);
+ 	host->power = false;
+ 
+-	host->hclk = clk_get(&pdev->dev, NULL);
++	host->hclk = devm_clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(host->hclk)) {
+ 		ret = PTR_ERR(host->hclk);
+ 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+-		goto eclkget;
++		goto err_pm;
+ 	}
+ 	ret = sh_mmcif_clk_update(host);
+ 	if (ret < 0)
+-		goto eclkupdate;
++		goto err_clk;
+ 
+ 	ret = pm_runtime_resume(&pdev->dev);
+ 	if (ret < 0)
+-		goto eresume;
++		goto err_clk;
+ 
+ 	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+ 
+@@ -1486,13 +1486,11 @@ ereqirq1:
+ 	free_irq(irq[0], host);
+ ereqirq0:
+ 	pm_runtime_suspend(&pdev->dev);
+-eresume:
++err_clk:
+ 	clk_disable_unprepare(host->hclk);
+-eclkupdate:
+-	clk_put(host->hclk);
+-eclkget:
++err_pm:
+ 	pm_runtime_disable(&pdev->dev);
+-eofparse:
++err_host:
+ 	mmc_free_host(mmc);
+ 	return ret;
+ }
+-- 
+1.9.0
 
-> 
->  arch/arm/boot/dts/r8a7791-koelsch.dts |    6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> --- 0005/arch/arm/boot/dts/r8a7791-koelsch.dts
-> +++ work/arch/arm/boot/dts/r8a7791-koelsch.dts	2014-04-14 17:47:50.000000000 +0900
-> @@ -264,17 +264,17 @@
->  	};
->  
->  	sdhi0_pins: sd0 {
-> -		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
-> +		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
->  		renesas,function = "sdhi0";
->  	};
->  
->  	sdhi1_pins: sd1 {
-> -		renesas,gpios = "sdhi1_data4", "sdhi1_ctrl";
-> +		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
->  		renesas,function = "sdhi1";
->  	};
->  
->  	sdhi2_pins: sd2 {
-> -		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
-> +		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
->  		renesas,function = "sdhi2";
->  	};
->  
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
