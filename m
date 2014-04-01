@@ -1,38 +1,31 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 01 Apr 2014 10:25:49 +0000
-Subject: [PATCH 1/6] mmc: sh-mmcif: print bus clock rate on probe
-Message-Id: <1396347954-13740-2-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 01 Apr 2014 10:45:04 +0000
+Subject: Re: [PATCH 1/6] mmc: sh-mmcif: print bus clock rate on probe
+Message-Id: <CAMuHMdXSif2ZhiQphW0cMeuRgM7t6fWR2=JVqxL8QQX505wuwg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
+	<1396347954-13740-2-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396347954-13740-2-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk
 
-Add a print to show the host-bus clock rate for mmcif on probe to allow
-easy check on what clock rate the bus clock is at.
+On Tue, Apr 1, 2014 at 12:25 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> -       dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
+> +       dev_info(&pdev->dev, "driver version %s, clock rate %ldMHz\n",
+> +                DRIVER_VERSION, clk_get_rate(host->hclk) / 1000000);
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- drivers/mmc/host/sh_mmcif.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+%lu (soon the clocks won't fit in unsigned 32-bit anymore, though...)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index e8713d7..c48df98 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1477,7 +1477,8 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
--	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
-+	dev_info(&pdev->dev, "driver version %s, clock rate %ldMHz\n",
-+		 DRIVER_VERSION, clk_get_rate(host->hclk) / 1000000);
- 	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
- 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
- 	return ret;
--- 
-1.9.0
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
