@@ -1,97 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:31 +0000
-Subject: [PATCH v5 17/20] ARM: shmobile: Remove non-multiplatform Marzen reference support
-Message-Id: <1397613454-7522-18-git-send-email-horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 12:01:45 +0000
+Subject: [PATCH v2 5/6] mmc: sh-mmcif: no need to call pm_runtime_suspend on error
+Message-Id: <1396353706-31864-6-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+References: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Now that r8a7779 has CCF support remove the legacy Marzen reference
-Kconfig bits CONFIG_MACH_MARZEN_REFERENCE for the non-multiplatform
-case.
+The pm_runtime call should implicitly disable the device once the
+probe is over if there is no explicit reference gained. There is no
+need to call pm_runtime_suspend() before the pm_runtime_disable()
+call.
 
-Starting from this commit Marzen board support is always enabled via
-CONFIG_MACH_MARZEN, and CONFIG_ARCH_MULTIPLATFORM is used to select
-between board-marzen.c and board-marzen-reference.c
-
-The file board-marzen-reference.c can no longer be used together with
-the legacy sh-clk clock framework, instead CCF is used.
-
-Based on work for the Koelsch board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/boot/dts/Makefile           |  1 -
- arch/arm/mach-shmobile/Kconfig       | 13 -------------
- arch/arm/mach-shmobile/Makefile      |  1 -
- arch/arm/mach-shmobile/Makefile.boot |  1 -
- 4 files changed, 16 deletions(-)
+ drivers/mmc/host/sh_mmcif.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 1e0ff95..b1c26e1 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -311,7 +311,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7740-armadillo800eva-reference.dtb \
- 	r8a7779-marzen.dtb \
--	r8a7779-marzen-reference.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb \
- 	sh73a0-kzm9g.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 28d7e86..bcb83dd 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -257,19 +257,6 @@ config MACH_MARZEN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index c536238..33f2365 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1445,7 +1445,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 					sh_mmcif_irqt, 0, name, host);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
+-		goto err_irq;
++		goto err_clk;
+ 	}
+ 	if (irq[1] >= 0) {
+ 		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
+@@ -1453,7 +1453,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 						0, "sh_mmc:int", host);
+ 		if (ret) {
+ 			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
+-			goto err_irq;
++			goto err_clk;
+ 		}
+ 	}
  
--config MACH_MARZEN_REFERENCE
--	bool "MARZEN board - Reference Device Tree Implementation"
--	depends on ARCH_R8A7779
--	select ARCH_REQUIRE_GPIOLIB
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--	---help---
--	   Use reference implementation of Marzen board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- config MACH_LAGER
- 	bool "Lager board"
- 	depends on ARCH_R8A7790
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index ed49315..591966e 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -69,7 +69,6 @@ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
- obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
--obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 99455ec..4200b94 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -14,7 +14,6 @@ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
- loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
- loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
- loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
--loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
+@@ -1480,8 +1480,6 @@ static int sh_mmcif_probe(struct platform_device *pdev)
  
- __ZRELADDR	:= $(sort $(loadaddr-y))
-    zreladdr-y   += $(__ZRELADDR)
+ emmcaddh:
+ erqcd:
+-err_irq:
+-	pm_runtime_suspend(&pdev->dev);
+ err_clk:
+ 	clk_disable_unprepare(host->hclk);
+ err_pm:
 -- 
-1.8.5.2
+1.9.0
 
