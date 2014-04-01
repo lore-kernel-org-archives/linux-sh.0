@@ -1,41 +1,89 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:44:58 +0000
-Subject: [PATCH 09/14] ARM: shmobile: Add Koelsch clock workarounds for SDHI
-Message-Id: <f278ea78beeb17ea07d11fc3372d4f98c94dcf46.1397774191.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 10:25:52 +0000
+Subject: [PATCH 4/6] mmc: sh-mmcif: use devm_ for irq management
+Message-Id: <1396347954-13740-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397774190.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
+References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-From: Magnus Damm <damm@opensource.se>
+Use devm_request_threaded_irq() for the host interrupt handlers so we
+do not have to worry about freeing them on exit or error. Tidies up the
+exit path code for the driver.
 
-Add SDHI0, SDHI1 and SDHI2 to the clock workaround list for
-Koelsch multiplatform. Without these additional lines wakeup
-from Suspend-to-RAM never happens.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/mmc/host/sh_mmcif.c | 26 ++++++++------------------
+ 1 file changed, 8 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 63117d52..941f8b3 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -115,6 +115,9 @@ static const struct clk_name clk_enables[] __initconst = {
- 	{ "i2c2", NULL, "e6530000.i2c" },
- 	{ "msiof0", NULL, "e6e20000.spi" },
- 	{ "qspi_mod", NULL, "e6b10000.spi" },
-+	{ "sdhi0", NULL, "ee100000.sd" },
-+	{ "sdhi1", NULL, "ee140000.sd" },
-+	{ "sdhi2", NULL, "ee160000.sd" },
- 	{ "thermal", NULL, "e61f0000.thermal" },
- };
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index c006310..485db7b 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1443,17 +1443,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
  
+ 	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
+-	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, name, host);
++	ret = devm_request_threaded_irq(&pdev->dev, irq[0], sh_mmcif_intr,
++					sh_mmcif_irqt, 0, name, host);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
+-		goto ereqirq0;
++		goto err_irq;
+ 	}
+ 	if (irq[1] >= 0) {
+-		ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt,
+-					   0, "sh_mmc:int", host);
++		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
++						sh_mmcif_intr, sh_mmcif_irqt,
++						0, "sh_mmc:int", host);
+ 		if (ret) {
+ 			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
+-			goto ereqirq1;
++			goto err_irq;
+ 		}
+ 	}
+ 
+@@ -1480,11 +1482,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 
+ emmcaddh:
+ erqcd:
+-	if (irq[1] >= 0)
+-		free_irq(irq[1], host);
+-ereqirq1:
+-	free_irq(irq[0], host);
+-ereqirq0:
++err_irq:
+ 	pm_runtime_suspend(&pdev->dev);
+ err_clk:
+ 	clk_disable_unprepare(host->hclk);
+@@ -1498,7 +1496,6 @@ err_host:
+ static int sh_mmcif_remove(struct platform_device *pdev)
+ {
+ 	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
+-	int irq[2];
+ 
+ 	host->dying = true;
+ 	clk_prepare_enable(host->hclk);
+@@ -1516,13 +1513,6 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	 */
+ 	cancel_delayed_work_sync(&host->timeout_work);
+ 
+-	irq[0] = platform_get_irq(pdev, 0);
+-	irq[1] = platform_get_irq(pdev, 1);
+-
+-	free_irq(irq[0], host);
+-	if (irq[1] >= 0)
+-		free_irq(irq[1], host);
+-
+ 	clk_disable_unprepare(host->hclk);
+ 	mmc_free_host(host->mmc);
+ 	pm_runtime_put_sync(&pdev->dev);
 -- 
-1.8.4
+1.9.0
 
