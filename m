@@ -1,65 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 30 Apr 2014 01:44:15 +0000
-Subject: Re: [PATCH/RFC v2] serial: sh-sci: Add device tree support for r8a7779
-Message-Id: <20140430014414.GE24989@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 01 Apr 2014 13:57:23 +0000
+Subject: Re: [PATCH 2/5] iommu/ipmmu-vmsa: Add device tree bindings documentation
+Message-Id: <21849566.ZKDm3aBJbz@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398756011-4672-1-git-send-email-horms+renesas@verge.net.au>
- <2737920.PNRvA9nzcM@avalon>
-In-Reply-To: <2737920.PNRvA9nzcM@avalon>
+References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1396049781-12941-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <5336EBB8.8020204@cogentembedded.com>
+In-Reply-To: <5336EBB8.8020204@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Will Deacon <will.deacon@arm.com>
 
-On Wed, Apr 30, 2014 at 03:06:49AM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thank you for the patch.
-> 
-> I've CC'ed the DT list which seems to have been forgotten.
-> 
-> On Tuesday 29 April 2014 16:20:11 Simon Horman wrote:
-> > Simply document a new compat string.
-> > There appears to be no need for a driver updates.
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
+Hi Sergei,
+
+Thank you for the review.
+
+On Saturday 29 March 2014 18:50:16 Sergei Shtylyov wrote:
+> On 03/29/2014 02:36 AM, Laurent Pinchart wrote:
+> > Cc: devicetree@vger.kernel.org
+> > Cc: Will Deacon <will.deacon@arm.com>
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
 > > ---
 > > 
-> > v2
-> > * Do not update the driver to set SCSCR_CKE1.
-> >   Instead DT may provide the P clock as the clock for the SCIF devices.
-> > ---
-> >  Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> > b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt index
-> > 53e6c17..bba86de 100644
-> > --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> > +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> > @@ -12,6 +12,7 @@ Required properties:
-> >      - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
-> >      - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
-> >      - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
-> > +    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
-> 
-> What about moving this at the top of the list to keep it sorted by SoC number 
-> ?
+> >  .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 35 +++++++++++++++++
+> >  1 file changed, 35 insertions(+)
+> >  create mode 100644
+> >  Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt> 
+> > diff --git
+> > a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+> > b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt new file
+> > mode 100644
+> > index 0000000..72e8590
+> > --- /dev/null
+> > +++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+> > @@ -0,0 +1,35 @@
+> > +* Renesas VMSA-Compatible IOMMU
+> > +
+> > +The IPMMU is an IOMMU implementation compatible with the ARM VMSA page
+> > tables.
+> > +It provides address translation bus masters outside of the CPU, each
+> > connected
+>                                    ^ "for" missing?
 
-Sure, will do.
+Of course. I'll fix that.
 
-> 
-> Apart from that,
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> >      - "renesas,scif" for generic SCIF compatible UART.
-> >      - "renesas,scifa" for generic SCIFA compatible UART.
-> >      - "renesas,scifb" for generic SCIFB compatible UART.
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+-- 
+Regards,
+
+Laurent Pinchart
+
