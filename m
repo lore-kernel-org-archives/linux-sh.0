@@ -1,65 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 01 Apr 2014 10:59:24 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 11:25:10 +0000
 Subject: Re: [PATCH 3/6] mmc: sh-mmcif: use devm_ for clock management
-Message-Id: <CAMuHMdU4mcz1u0ghpWduuh1LzsbHGxu7ZkuXses4170rz=g3Sw@mail.gmail.com>
+Message-Id: <533AA216.20504@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
-	<1396347954-13740-4-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396347954-13740-4-git-send-email-ben.dooks@codethink.co.uk>
+References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>	<1396347954-13740-4-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdU4mcz1u0ghpWduuh1LzsbHGxu7ZkuXses4170rz=g3Sw@mail.gmail.com>
+In-Reply-To: <CAMuHMdU4mcz1u0ghpWduuh1LzsbHGxu7ZkuXses4170rz=g3Sw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk
 
-On Tue, Apr 1, 2014 at 12:25 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> -       host->hclk = clk_get(&pdev->dev, NULL);
-> +       host->hclk = devm_clk_get(&pdev->dev, NULL);
->         if (IS_ERR(host->hclk)) {
->                 ret = PTR_ERR(host->hclk);
->                 dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
-> -               goto eclkget;
-> +               goto err_pm;
->         }
->         ret = sh_mmcif_clk_update(host);
->         if (ret < 0)
-> -               goto eclkupdate;
-> +               goto err_clk;
-
-This goto doesn't look correct to me. If sh_mmcif_clk_update() failed,
-the clock was not enabled nor prepared. "goto err_pm"?
-
->         ret = pm_runtime_resume(&pdev->dev);
->         if (ret < 0)
-> -               goto eresume;
-> +               goto err_clk;
+On 01/04/14 11:59, Geert Uytterhoeven wrote:
+> On Tue, Apr 1, 2014 at 12:25 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>> -       host->hclk = clk_get(&pdev->dev, NULL);
+>> +       host->hclk = devm_clk_get(&pdev->dev, NULL);
+>>          if (IS_ERR(host->hclk)) {
+>>                  ret = PTR_ERR(host->hclk);
+>>                  dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+>> -               goto eclkget;
+>> +               goto err_pm;
+>>          }
+>>          ret = sh_mmcif_clk_update(host);
+>>          if (ret < 0)
+>> -               goto eclkupdate;
+>> +               goto err_clk;
 >
->         INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
->
-> @@ -1486,13 +1486,11 @@ ereqirq1:
->         free_irq(irq[0], host);
->  ereqirq0:
->         pm_runtime_suspend(&pdev->dev);
-> -eresume:
-> +err_clk:
->         clk_disable_unprepare(host->hclk);
-> -eclkupdate:
-> -       clk_put(host->hclk);
-> -eclkget:
-> +err_pm:
->         pm_runtime_disable(&pdev->dev);
-> -eofparse:
-> +err_host:
->         mmc_free_host(mmc);
->         return ret;
+> This goto doesn't look correct to me. If sh_mmcif_clk_update() failed,
+> the clock was not enabled nor prepared. "goto err_pm"?
 
-Gr{oetje,eeting}s,
+Yes, I think the clk_prepare_enable() call there is the only failure
+mode.
 
-                        Geert
+As a note, we should probably check all systems that use it and see if
+we can remove the clock management code in here as the pm_runtime will
+also be doing this.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
