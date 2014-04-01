@@ -1,38 +1,75 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 24 Apr 2014 01:00:19 +0000
-Subject: Re: [PATCH 22/33] ARM: shmobile: Use r8a7740 suffix for i2c, mmcif, fsi2 compat strings
-Message-Id: <20140424010019.GC5064@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 10:25:50 +0000
+Subject: [PATCH 2/6] mmc: sh-mmcif: use devm_ for ioremap
+Message-Id: <1396347954-13740-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
- <5c53f50c50badff499568a703467c3c9f23f9bfd.1398216022.git.horms+renesas@verge.net.au>
- <CAL_JsqKOi-mQ=xDDyP72RB1kN3_Ak114kMrbntsizxEehwVXuQ@mail.gmail.com>
-In-Reply-To: <CAL_JsqKOi-mQ=xDDyP72RB1kN3_Ak114kMrbntsizxEehwVXuQ@mail.gmail.com>
+References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Wed, Apr 23, 2014 at 08:12:50AM -0500, Rob Herring wrote:
-> On Tue, Apr 22, 2014 at 8:25 PM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Ulrich Hecht <ulrich.hecht@gmail.com>
-> >
-> > Add "renesas,*-r8a7740" to the compatible strings for consistency with other
-> > devices.
-> 
-> Generally, it is <vendor>,<chip>-<device> as the preferred ordering
-> which is also consistent with your more generic name.
+Start tidying the probe/release code by using devm_ioremap_resource() to
+map the IO registers.
 
-I believe that the naming used by this patch is consistent
-with the naming used by other shmobile-related bindings.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/mmc/host/sh_mmcif.c | 20 +++++---------------
+ 1 file changed, 5 insertions(+), 15 deletions(-)
 
-In particular, the scheme that has been adopted for
-hardware where we do not have documented version (numbers) is:
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index c48df98..be6be2b 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1379,22 +1379,17 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "Get irq error\n");
+ 		return -ENXIO;
+ 	}
++
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!res) {
+-		dev_err(&pdev->dev, "platform_get_resource error.\n");
+-		return -ENXIO;
+-	}
+-	reg = ioremap(res->start, resource_size(res));
+-	if (!reg) {
++	reg = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(reg)) {
+ 		dev_err(&pdev->dev, "ioremap error.\n");
+ 		return -ENOMEM;
+ 	}
+ 
+ 	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), &pdev->dev);
+-	if (!mmc) {
+-		ret = -ENOMEM;
+-		goto ealloch;
+-	}
++	if (!mmc)
++		return -ENOMEM;
+ 
+ 	ret = mmc_of_parse(mmc);
+ 	if (ret < 0)
+@@ -1499,8 +1494,6 @@ eclkget:
+ 	pm_runtime_disable(&pdev->dev);
+ eofparse:
+ 	mmc_free_host(mmc);
+-ealloch:
+-	iounmap(reg);
+ 	return ret;
+ }
+ 
+@@ -1525,9 +1518,6 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	 */
+ 	cancel_delayed_work_sync(&host->timeout_work);
+ 
+-	if (host->addr)
+-		iounmap(host->addr);
+-
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+ 
+-- 
+1.9.0
 
-<vendor>,<ip>-<version>
-
-Where the SoC name as a version.
-
-
-My understanding is that Olof is comfortable with this as per our discussion
-of this topic last August: "[GIT 00/19 v2] Renesas ARM based SoC pinmux"
