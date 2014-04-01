@@ -1,65 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:24 +0000
-Subject: [PATCH v5 10/20] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board
-Message-Id: <1397613454-7522-11-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 01 Apr 2014 11:02:15 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Fix the I2C clocks parents in legacy code
+Message-Id: <1396350138-26850-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Move the clock initialisation and OF device population from
-SoC to board code. This is in keeping with the pattern used by Lager.
-And the clock portion is part of decoupling clock initialisation
-from SoC code in preparation for moving to the common clock framework.
+All I2C clocks derive from the HP clock, not from the P clock. Fix them.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
- arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 2773936..c22e5c2 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,6 +19,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -27,7 +28,9 @@
- 
- static void __init marzen_init(void)
- {
-+	r8a7779_clock_init();
- 	r8a7779_add_standard_devices_dt();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
- }
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index f28b8c7..3471a9b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -784,12 +784,8 @@ void __init r8a7779_init_delay(void)
- 
- void __init r8a7779_add_standard_devices_dt(void)
- {
--	/* clocks are setup late during boot in the case of DT */
--	r8a7779_clock_init();
--
- 	platform_add_devices(r8a7779_devices_dt,
- 			     ARRAY_SIZE(r8a7779_devices_dt));
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
- #define MODEMR		0xffcc0020
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 4ee1ae6..05f92d4 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -249,10 +249,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP1007] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 7, MSTPSR10, 0), /* SSI8 */
+ 	[MSTP1006] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 6, MSTPSR10, 0), /* SSI9 */
+ 	[MSTP1005] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 5, MSTPSR10, 0), /* SSI ALL */
+-	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
+-	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
+-	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
+-	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
++	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+ 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+ 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
+ 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
 -- 
-1.8.5.2
+1.8.3.2
 
