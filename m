@@ -1,57 +1,13 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 29 Apr 2014 10:03:36 +0000
-Subject: [PATCH v5 05/11] ARM: shmobile: r7s72100: genmai: add uart alias and activate scif2 as console
-Message-Id: <1398765822-2314-6-git-send-email-wsa@the-dreams.de>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 10:25:48 +0000
+Subject: cleanups for sh-mmcif driver
+Message-Id: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-We keep the UART naming backwards compatible with the legacy version.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index 941e72ce7c82..ca88458e0706 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -1,7 +1,8 @@
- /*
-  * Device Tree Source for the Genmai board
-  *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-14 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-@@ -15,6 +16,10 @@
- 	model = "Genmai";
- 	compatible = "renesas,genmai-reference", "renesas,r7s72100";
- 
-+	aliases {
-+		serial2 = &scif2;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 	};
-@@ -48,3 +53,7 @@
- 		pagesize = <64>;
- 	};
- };
-+
-+&scif2 {
-+	status = "okay";
-+};
--- 
-1.9.2
+Some cleanups and updates for the sh mmcif driver.
 
