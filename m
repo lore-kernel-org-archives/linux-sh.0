@@ -1,124 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:31:38 +0000
-Subject: [PATCH 2/8] ARM: shmobile: Introduce shmobile_clk_workaround()
-Message-Id: <25f5550f5a4b18fd77a2e719ba63cb34931ab66a.1397694178.git.horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 12:01:41 +0000
+Subject: [PATCH v2 1/6] mmc: sh-mmcif: update to print version and bus clock rate on probe
+Message-Id: <1396353706-31864-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694178.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
+References: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-From: Magnus Damm <damm@opensource.se>
+Change the initial print to show chip version and the bus rate it is
+working at instead of the driver version. This is more useful information
+as we already know which driver version from the kernel it is in.
 
-Introduce a new clock workaround function used by DT reference
-code on the mach-shmobile subarchitecture. The new function
-shmobile_clk_workaround() is used to configure clkdev to
-allow DT and platform devices to coexist. It is possible for
-the DT reference board code to also request enabling of the clock
-in case the driver does not implement clock control.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-[horms+renesas@verge.net.au: Removed trailing blank line]
-Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/Makefile             |  2 +-
- arch/arm/mach-shmobile/clock.c              | 28 ++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/clock.h | 16 ++++++++++++++++
- 3 files changed, 45 insertions(+), 1 deletion(-)
+ drivers/mmc/host/sh_mmcif.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 4caffc9..c12a1c5 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -21,8 +21,8 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index e8713d7..738b155 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1470,16 +1470,17 @@ static int sh_mmcif_probe(struct platform_device *pdev)
  
- # Clock objects
--ifndef CONFIG_COMMON_CLK
- obj-y				+= clock.o
-+ifndef CONFIG_COMMON_CLK
- obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
- obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
-diff --git a/arch/arm/mach-shmobile/clock.c b/arch/arm/mach-shmobile/clock.c
-index ad7df62..e7232a0 100644
---- a/arch/arm/mach-shmobile/clock.c
-+++ b/arch/arm/mach-shmobile/clock.c
-@@ -21,6 +21,32 @@
-  */
- #include <linux/kernel.h>
- #include <linux/init.h>
-+
-+#ifdef CONFIG_COMMON_CLK
-+#include <linux/clk.h>
-+#include <linux/clkdev.h>
-+#include <mach/clock.h>
-+
-+void __init shmobile_clk_workaround(const struct clk_name *clks,
-+				    int nr_clks, bool enable)
-+{
-+	const struct clk_name *clkn;
-+	struct clk *clk;
-+	unsigned int i;
-+
-+	for (i = 0; i < nr_clks; ++i) {
-+		clkn = clks + i;
-+		clk = clk_get(NULL, clkn->clk);
-+		if (!IS_ERR(clk)) {
-+			clk_register_clkdev(clk, clkn->con_id, clkn->dev_id);
-+			if (enable)
-+				clk_prepare_enable(clk);
-+			clk_put(clk);
-+		}
-+	}
-+}
-+
-+#else /* CONFIG_COMMON_CLK */
- #include <linux/sh_clk.h>
- #include <linux/export.h>
- #include <mach/clock.h>
-@@ -58,3 +84,5 @@ void __clk_put(struct clk *clk)
- {
- }
- EXPORT_SYMBOL(__clk_put);
-+
-+#endif /* CONFIG_COMMON_CLK */
-diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
-index 03e5607..9a93cf9 100644
---- a/arch/arm/mach-shmobile/include/mach/clock.h
-+++ b/arch/arm/mach-shmobile/include/mach/clock.h
-@@ -1,6 +1,21 @@
- #ifndef CLOCK_H
- #define CLOCK_H
+ 	mutex_init(&host->thread_lock);
  
-+#ifdef CONFIG_COMMON_CLK
-+/* temporary clock configuration helper for platform devices */
-+
-+struct clk_name {
-+	const char *clk;
-+	const char *con_id;
-+	const char *dev_id;
-+};
-+
-+void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
-+			     bool enable);
-+
-+#else /* CONFIG_COMMON_CLK */
-+/* legacy clock implementation */
-+
- unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
- extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
+-	clk_disable_unprepare(host->hclk);
+ 	ret = mmc_add_host(mmc);
+ 	if (ret < 0)
+ 		goto emmcaddh;
  
-@@ -36,4 +51,5 @@ do {			\
- 	(p)->div = d;	\
- } while (0)
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
  
-+#endif /* CONFIG_COMMON_CLK */
- #endif
+-	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
+-	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
+-		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
++	dev_info(&pdev->dev, "Chip version 0x%04x, clock rate %luMHz\n",
++		 sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0xffff,
++		 clk_get_rate(host->hclk) / 1000000UL);
++
++	clk_disable_unprepare(host->hclk);
+ 	return ret;
+ 
+ emmcaddh:
 -- 
-1.8.4
+1.9.0
 
