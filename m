@@ -1,103 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 23 Apr 2014 11:15:10 +0000
-Subject: [PATCH v5 03/15] ARM: shmobile: sh73a0: Switch to new style CMT device
-Message-Id: <1398251722-31667-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 10:25:54 +0000
+Subject: [PATCH 6/6] mmc: sh-mmcif: final error path cleanup
+Message-Id: <1396347954-13740-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+Remove the error path items that are no longer needed. The mmc card-detect
+code cleans up after itself (and registers with devm) and the host error
+is the same as the clock disable.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This should also fix a double call to clk_disable_unprepare() if the call
+to mmc_add_host() fails.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |  2 +-
- arch/arm/mach-shmobile/setup-sh73a0.c | 36 ++++++++++++-----------------------
- 2 files changed, 13 insertions(+), 25 deletions(-)
+ drivers/mmc/host/sh_mmcif.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 23edf83..ca03989 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -650,7 +650,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
--	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
-@@ -683,6 +682,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
- };
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index c951760..d63cfa7 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1462,7 +1462,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	if (pd && pd->use_cd_gpio) {
+ 		ret = mmc_gpio_request_cd(mmc, pd->cd_gpio, 0);
+ 		if (ret < 0)
+-			goto erqcd;
++			goto err_clk;
+ 	}
  
- void __init sh73a0_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index f74ab53..71d0e44 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -104,35 +104,23 @@ SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
- SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
- SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+ 	mutex_init(&host->thread_lock);
+@@ -1470,7 +1470,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	clk_disable_unprepare(host->hclk);
+ 	ret = mmc_add_host(mmc);
+ 	if (ret < 0)
+-		goto emmcaddh;
++		goto err_pm;
  
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 80,
--	.clocksource_rating = 125,
-+static struct sh_timer_config cmt1_platform_data = {
-+	.channels_mask = 0x3f,
- };
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
  
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(65),
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource cmt1_resources[] = {
-+	DEFINE_RES_MEM(0xe6138000, 0x200),
-+	DEFINE_RES_IRQ(gic_spi(65)),
- };
+@@ -1480,8 +1480,6 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
+ 	return ret;
  
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
-+static struct platform_device cmt1_device = {
-+	.name		= "sh-cmt-48",
-+	.id		= 1,
- 	.dev = {
--		.platform_data	= &cmt10_platform_data,
-+		.platform_data	= &cmt1_platform_data,
- 	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
-+	.resource	= cmt1_resources,
-+	.num_resources	= ARRAY_SIZE(cmt1_resources),
- };
- 
- /* TMU */
-@@ -746,7 +734,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
--	&cmt10_device,
-+	&cmt1_device,
- };
- 
- static struct platform_device *sh73a0_early_devices[] __initdata = {
+-emmcaddh:
+-erqcd:
+ err_clk:
+ 	clk_disable_unprepare(host->hclk);
+ err_pm:
 -- 
-1.8.3.2
+1.9.0
 
