@@ -1,7 +1,7 @@
-From: Mike Turquette <mturquette@linaro.org>
-Date: Tue, 01 Apr 2014 00:00:43 +0000
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 01 Apr 2014 09:53:51 +0000
 Subject: Re: [PATCH] clk: shmobile: rcar-gen2: fix lb/sd0/sd1/sdh clock parent to pll1
-Message-Id: <20140401000043.5762.96055@quantum>
+Message-Id: <533A8CAF.90200@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1396277434-24925-1-git-send-email-ben.dooks@codethink.co.uk>
 In-Reply-To: <1396277434-24925-1-git-send-email-ben.dooks@codethink.co.uk>
@@ -10,100 +10,39 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Quoting Laurent Pinchart (2014-03-31 16:38:55)
-> Hi Mike,
-> 
-> On Monday 31 March 2014 11:13:10 Mike Turquette wrote:
-> > Quoting Ben Dooks (2014-03-31 07:50:34)
-> > 
-> > > The clock generator for rcar-gen2 has the lb, sdh, sd0 and sd1 clocks
-> > > parented to pll1_div2 where the hardware diagram shows these to be
-> > > directly fed from pll1.
-> > > 
-> > > This fixes the initial rate for sdh0 clock to be 97.5MHz instead of
-> > > the reported 48MHz where the manual says the default register values
-> > > are for 97.5MHz.
-> > > 
-> > > Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> > 
-> > Taken into clk-next.
-> 
-> I'm glad to see the clock patches being applied quickly, but it would make 
-> sense to wait at least a couple of days for acks or nacks :-) In this case the 
-> patch looks good to me, so there's no issue.
+On 01/04/14 01:00, Mike Turquette wrote:
+> Quoting Laurent Pinchart (2014-03-31 16:38:55)
+>> Hi Mike,
+>>
+>> On Monday 31 March 2014 11:13:10 Mike Turquette wrote:
+>>> Quoting Ben Dooks (2014-03-31 07:50:34)
+>>>
+>>>> The clock generator for rcar-gen2 has the lb, sdh, sd0 and sd1 clocks
+>>>> parented to pll1_div2 where the hardware diagram shows these to be
+>>>> directly fed from pll1.
+>>>>
+>>>> This fixes the initial rate for sdh0 clock to be 97.5MHz instead of
+>>>> the reported 48MHz where the manual says the default register values
+>>>> are for 97.5MHz.
+>>>>
+>>>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+>>>
+>>> Taken into clk-next.
+>>
+>> I'm glad to see the clock patches being applied quickly, but it would make
+>> sense to wait at least a couple of days for acks or nacks :-) In this case the
+>> patch looks good to me, so there's no issue.
+>
+> Normally I would, and I did hesitate on the point of waiting for your
+> Ack. However the change is a trivial fix and I wanted to get this into
+> my pull request for 3.15, so it's not an ordinary circumstance. I've
+> added your Ack now.
 
-Normally I would, and I did hesitate on the point of waiting for your
-Ack. However the change is a trivial fix and I wanted to get this into
-my pull request for 3.15, so it's not an ordinary circumstance. I've
-added your Ack now.
+This isn't exactly a trivial fix. I know it works for the R8A7790 but
+it may not work for all rcar-gen2.
 
-Regards,
-Mike
+Thanks for sorting this.
 
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> > > ---
-> > > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > > Cc: Mike Turquette <mturquette@linaro.org>
-> > > Cc: linux-sh@vger.kernel.org
-> > > Cc: Simon Horman <horms+renesas@verge.net.au>
-> > > ---
-> > > 
-> > >  drivers/clk/shmobile/clk-rcar-gen2.c | 8 ++++----
-> > >  1 file changed, 4 insertions(+), 4 deletions(-)
-> > > 
-> > > diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c
-> > > b/drivers/clk/shmobile/clk-rcar-gen2.c index 01cb49c..7c6be44 100644
-> > > --- a/drivers/clk/shmobile/clk-rcar-gen2.c
-> > > +++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-> > > @@ -249,22 +249,22 @@ rcar_gen2_cpg_register_clock(struct device_node *np,
-> > > struct rcar_gen2_cpg *cpg,> 
-> > >                 parent_name = "main";
-> > >                 mult = config->pll3_mult;
-> > >         
-> > >         } else if (!strcmp(name, "lb")) {
-> > > 
-> > > -               parent_name = "pll1_div2";
-> > > +               parent_name = "pll1";
-> > > 
-> > >                 div = cpg_mode & BIT(18) ? 36 : 24;
-> > >         
-> > >         } else if (!strcmp(name, "qspi")) {
-> > >         
-> > >                 parent_name = "pll1_div2";
-> > >                 div = (cpg_mode & (BIT(3) | BIT(2) | BIT(1))) = BIT(2)
-> > >                 
-> > >                     ? 8 : 10;
-> > >         
-> > >         } else if (!strcmp(name, "sdh")) {
-> > > 
-> > > -               parent_name = "pll1_div2";
-> > > +               parent_name = "pll1";
-> > > 
-> > >                 table = cpg_sdh_div_table;
-> > >                 shift = 8;
-> > >         
-> > >         } else if (!strcmp(name, "sd0")) {
-> > > 
-> > > -               parent_name = "pll1_div2";
-> > > +               parent_name = "pll1";
-> > > 
-> > >                 table = cpg_sd01_div_table;
-> > >                 shift = 4;
-> > >         
-> > >         } else if (!strcmp(name, "sd1")) {
-> > > 
-> > > -               parent_name = "pll1_div2";
-> > > +               parent_name = "pll1";
-> > > 
-> > >                 table = cpg_sd01_div_table;
-> > >                 shift = 0;
-> > >         
-> > >         } else if (!strcmp(name, "z")) {
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
