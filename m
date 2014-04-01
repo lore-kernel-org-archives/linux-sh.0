@@ -1,50 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 01 Apr 2014 13:57:23 +0000
-Subject: Re: [PATCH 2/5] iommu/ipmmu-vmsa: Add device tree bindings documentation
-Message-Id: <21849566.ZKDm3aBJbz@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 01 Apr 2014 10:58:06 +0000
+Subject: [PATCH] gpio: rcar: Add support for DT IRQ flags
+Message-Id: <1396349886-26663-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396049781-12941-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1396049781-12941-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <5336EBB8.8020204@cogentembedded.com>
-In-Reply-To: <5336EBB8.8020204@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Will Deacon <will.deacon@arm.com>
+To: linux-gpio@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <damm@opensource.se>
 
-Hi Sergei,
+The gpio-rcar driver has no IRQ domain OF xlate function and thus
+ignores IRQ flags specified in DT. Fix this by using the two-cell xlate
+function.
 
-Thank you for the review.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpio/gpio-rcar.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-On Saturday 29 March 2014 18:50:16 Sergei Shtylyov wrote:
-> On 03/29/2014 02:36 AM, Laurent Pinchart wrote:
-> > Cc: devicetree@vger.kernel.org
-> > Cc: Will Deacon <will.deacon@arm.com>
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 35 +++++++++++++++++
-> >  1 file changed, 35 insertions(+)
-> >  create mode 100644
-> >  Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt> 
-> > diff --git
-> > a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
-> > b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt new file
-> > mode 100644
-> > index 0000000..72e8590
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
-> > @@ -0,0 +1,35 @@
-> > +* Renesas VMSA-Compatible IOMMU
-> > +
-> > +The IPMMU is an IOMMU implementation compatible with the ARM VMSA page
-> > tables.
-> > +It provides address translation bus masters outside of the CPU, each
-> > connected
->                                    ^ "for" missing?
-
-Of course. I'll fix that.
-
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index ca76ce7..c9edcc9 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -283,6 +283,7 @@ static int gpio_rcar_irq_domain_map(struct irq_domain *h, unsigned int irq,
+ 
+ static struct irq_domain_ops gpio_rcar_irq_domain_ops = {
+ 	.map	= gpio_rcar_irq_domain_map,
++	.xlate	= irq_domain_xlate_twocell,
+ };
+ 
+ struct gpio_rcar_info {
 -- 
 Regards,
 
