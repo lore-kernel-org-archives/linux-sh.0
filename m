@@ -1,89 +1,52 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 01 Apr 2014 10:25:52 +0000
-Subject: [PATCH 4/6] mmc: sh-mmcif: use devm_ for irq management
-Message-Id: <1396347954-13740-5-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 14:31:47 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Rename VSP1_SY clocks to VSP1_S
+Message-Id: <1396449107-4732-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-Use devm_request_threaded_irq() for the host interrupt handlers so we
-do not have to worry about freeing them on exit or error. Tidies up the
-exit path code for the driver.
+The r8a7791 has three VSP1 instances, one of them being named VSPS (which
+stands for "VSP Standard"). The clock section in the SoC datasheet
+misunderstood the abbreviation as meaning VSP System, and named the
+corresponding clock VSP1(SY). This mistake has been carried over to the
+kernel code.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Fix this by renaming the VSP1_SY clock to VSP1_S.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mmcif.c | 26 ++++++++------------------
- 1 file changed, 8 insertions(+), 18 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi            | 2 +-
+ include/dt-bindings/clock/r8a7791-clock.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index c006310..485db7b 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1443,17 +1443,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index f71670a..5f8bcd4 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -728,7 +728,7 @@
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
+ 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
+-				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_SY
++				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
+ 			>;
+ 			clock-output-names  				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 2df1a11f..729dc5f 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -32,7 +32,7 @@
+ #define R8A7791_CLK_TMU0		25
+ #define R8A7791_CLK_VSP1_DU1		27
+ #define R8A7791_CLK_VSP1_DU0		28
+-#define R8A7791_CLK_VSP1_SY		31
++#define R8A7791_CLK_VSP1_S		31
  
- 	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
--	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, name, host);
-+	ret = devm_request_threaded_irq(&pdev->dev, irq[0], sh_mmcif_intr,
-+					sh_mmcif_irqt, 0, name, host);
- 	if (ret) {
- 		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
--		goto ereqirq0;
-+		goto err_irq;
- 	}
- 	if (irq[1] >= 0) {
--		ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt,
--					   0, "sh_mmc:int", host);
-+		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
-+						sh_mmcif_intr, sh_mmcif_irqt,
-+						0, "sh_mmc:int", host);
- 		if (ret) {
- 			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
--			goto ereqirq1;
-+			goto err_irq;
- 		}
- 	}
- 
-@@ -1480,11 +1482,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 
- emmcaddh:
- erqcd:
--	if (irq[1] >= 0)
--		free_irq(irq[1], host);
--ereqirq1:
--	free_irq(irq[0], host);
--ereqirq0:
-+err_irq:
- 	pm_runtime_suspend(&pdev->dev);
- err_clk:
- 	clk_disable_unprepare(host->hclk);
-@@ -1498,7 +1496,6 @@ err_host:
- static int sh_mmcif_remove(struct platform_device *pdev)
- {
- 	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
--	int irq[2];
- 
- 	host->dying = true;
- 	clk_prepare_enable(host->hclk);
-@@ -1516,13 +1513,6 @@ static int sh_mmcif_remove(struct platform_device *pdev)
- 	 */
- 	cancel_delayed_work_sync(&host->timeout_work);
- 
--	irq[0] = platform_get_irq(pdev, 0);
--	irq[1] = platform_get_irq(pdev, 1);
--
--	free_irq(irq[0], host);
--	if (irq[1] >= 0)
--		free_irq(irq[1], host);
--
- 	clk_disable_unprepare(host->hclk);
- 	mmc_free_host(host->mmc);
- 	pm_runtime_put_sync(&pdev->dev);
+ /* MSTP2 */
+ #define R8A7791_CLK_SCIFA2		2
 -- 
-1.9.0
+1.8.3.2
 
