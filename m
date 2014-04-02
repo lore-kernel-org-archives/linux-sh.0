@@ -1,52 +1,134 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 14:31:47 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Rename VSP1_SY clocks to VSP1_S
-Message-Id: <1396449107-4732-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 11:46:41 +0000
+Subject: [WIP 3/7] drm/rcar-du: Replace direct DRM encoder access with cast macro
+Message-Id: <1396439205-26199-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The r8a7791 has three VSP1 instances, one of them being named VSPS (which
-stands for "VSP Standard"). The clock section in the SoC datasheet
-misunderstood the abbreviation as meaning VSP System, and named the
-corresponding clock VSP1(SY). This mistake has been carried over to the
-kernel code.
-
-Fix this by renaming the VSP1_SY clock to VSP1_S.
+Add a new macro to downcast an rcar_du_encoder pointer to a drm_encoder
+pointer and use it. This prepares for the replacement of the
+rcar_drm_encoder encoder field with a drm_slave_encoder.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 2 +-
- include/dt-bindings/clock/r8a7791-clock.h | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 8 +++++---
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 5 +++--
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 5 +++--
+ 4 files changed, 13 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index f71670a..5f8bcd4 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -728,7 +728,7 @@
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
- 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
--				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_SY
-+				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
- 			>;
- 			clock-output-names  				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 2df1a11f..729dc5f 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -32,7 +32,7 @@
- #define R8A7791_CLK_TMU0		25
- #define R8A7791_CLK_VSP1_DU1		27
- #define R8A7791_CLK_VSP1_DU0		28
--#define R8A7791_CLK_VSP1_SY		31
-+#define R8A7791_CLK_VSP1_S		31
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index 3daa7a1..0de9967 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -33,7 +33,7 @@ rcar_du_connector_best_encoder(struct drm_connector *connector)
+ {
+ 	struct rcar_du_connector *rcon = to_rcar_connector(connector);
  
- /* MSTP2 */
- #define R8A7791_CLK_SCIFA2		2
+-	return &rcon->encoder->encoder;
++	return rcar_encoder_to_drm_encoder(rcon->encoder);
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -145,6 +145,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 			 const struct rcar_du_encoder_data *data)
+ {
+ 	struct rcar_du_encoder *renc;
++	struct drm_encoder *encoder;
+ 	unsigned int encoder_type;
+ 	int ret;
+ 
+@@ -153,6 +154,7 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		return -ENOMEM;
+ 
+ 	renc->output = output;
++	encoder = rcar_encoder_to_drm_encoder(renc);
+ 
+ 	switch (output) {
+ 	case RCAR_DU_OUTPUT_LVDS0:
+@@ -181,12 +183,12 @@ int rcar_du_encoder_init(struct rcar_du_device *rcdu,
+ 		break;
+ 	}
+ 
+-	ret = drm_encoder_init(rcdu->ddev, &renc->encoder, &encoder_funcs,
++	ret = drm_encoder_init(rcdu->ddev, encoder, &encoder_funcs,
+ 			       encoder_type);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	drm_encoder_helper_add(&renc->encoder, &encoder_helper_funcs);
++	drm_encoder_helper_add(encoder, &encoder_helper_funcs);
+ 
+ 	switch (encoder_type) {
+ 	case DRM_MODE_ENCODER_LVDS:
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index 0e5a65e..4165a25 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -30,6 +30,8 @@ struct rcar_du_encoder {
+ #define to_rcar_encoder(e) \
+ 	container_of(e, struct rcar_du_encoder, encoder)
+ 
++#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
++
+ struct rcar_du_connector {
+ 	struct drm_connector connector;
+ 	struct rcar_du_encoder *encoder;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+index 4f3ba93..017f97f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+@@ -92,6 +92,7 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 				struct rcar_du_encoder *renc,
+ 				const struct rcar_du_panel_data *panel)
+ {
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
+ 	struct rcar_du_lvds_connector *lvdscon;
+ 	struct drm_connector *connector;
+ 	int ret;
+@@ -120,11 +121,11 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 	drm_object_property_set_value(&connector->base,
+ 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	ret = drm_mode_connector_attach_encoder(connector, encoder);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = &renc->encoder;
++	connector->encoder = encoder;
+ 	lvdscon->connector.encoder = renc;
+ 
+ 	return 0;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+index 72312f7..8ca44f2 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+@@ -59,6 +59,7 @@ static const struct drm_connector_funcs connector_funcs = {
+ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 			       struct rcar_du_encoder *renc)
+ {
++	struct drm_encoder *encoder = rcar_encoder_to_drm_encoder(renc);
+ 	struct rcar_du_connector *rcon;
+ 	struct drm_connector *connector;
+ 	int ret;
+@@ -85,11 +86,11 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 	drm_object_property_set_value(&connector->base,
+ 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
+ 
+-	ret = drm_mode_connector_attach_encoder(connector, &renc->encoder);
++	ret = drm_mode_connector_attach_encoder(connector, encoder);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = &renc->encoder;
++	connector->encoder = encoder;
+ 	rcon->encoder = renc;
+ 
+ 	return 0;
 -- 
 1.8.3.2
 
