@@ -1,40 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:07 +0000
-Subject: [PATCH 2/7] ARM: shmobile: Include i2c-shmobile.c in shmobile_defconfig
-Message-Id: <c2e90c4b7c15fbb2215b47a23b446ba53e6dbf59.1397627278.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 23:49:21 +0000
+Subject: [PATCH 2/3] iommu/shmobile: Don't ignore the ipmmu_iommu_init() return value
+Message-Id: <1396482562-1851-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627278.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
+References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The function can fail, don't ignore its error value.
 
-Many SoCs include I2C controller instances compatible with
-the i2c-shmobile.c driver. To increase hardware support enable
-the driver in the shmobile_defconfig multiplatform configuration.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/iommu/shmobile-ipmmu.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 2a27d46..d96133a 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -75,6 +75,7 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS 
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_I2C_GPIO=y
-+CONFIG_I2C_SH_MOBILE=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
+diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
+index e3bc2e1..6ba6110 100644
+--- a/drivers/iommu/shmobile-ipmmu.c
++++ b/drivers/iommu/shmobile-ipmmu.c
+@@ -117,8 +117,7 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, ipmmu);
+ 	ipmmu_reg_write(ipmmu, IMCTR1, 0x0); /* disable TLB */
+ 	ipmmu_reg_write(ipmmu, IMCTR2, 0x0); /* disable PMB */
+-	ipmmu_iommu_init(ipmmu);
+-	return 0;
++	return ipmmu_iommu_init(ipmmu);
+ }
+ 
+ static struct platform_driver ipmmu_driver = {
 -- 
-1.8.5.2
+1.8.3.2
 
