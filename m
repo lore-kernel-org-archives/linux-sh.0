@@ -1,78 +1,76 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 01 Apr 2014 12:01:43 +0000
-Subject: [PATCH v2 3/6] mmc: sh-mmcif: use devm_ for clock management
-Message-Id: <1396353706-31864-4-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 11:46:38 +0000
+Subject: [WIP 0/7] Koelsch HDMI output support
+Message-Id: <1396439205-26199-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-Use the devm_clk_get() code to get the clock and allow it to be freed
-automatically on release.
+Hello,
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- drivers/mmc/host/sh_mmcif.c | 18 ++++++++----------
- 1 file changed, 8 insertions(+), 10 deletions(-)
+This work in progress patch series adds support for the HDMI output on the
+Koelsch board. I'm not happy with the result yet, but as several people are
+eager to test HDMI output on Koelsch, I've decided to already provide the
+patches, with a 'WIP' status.
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index bb8e4e6..fbd7364 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1391,7 +1391,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 
- 	ret = mmc_of_parse(mmc);
- 	if (ret < 0)
--		goto eofparse;
-+		goto err_host;
- 
- 	host		= mmc_priv(mmc);
- 	host->mmc	= mmc;
-@@ -1421,19 +1421,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	host->power = false;
- 
--	host->hclk = clk_get(&pdev->dev, NULL);
-+	host->hclk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(host->hclk)) {
- 		ret = PTR_ERR(host->hclk);
- 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
--		goto eclkget;
-+		goto err_pm;
- 	}
- 	ret = sh_mmcif_clk_update(host);
- 	if (ret < 0)
--		goto eclkupdate;
-+		goto err_pm;
- 
- 	ret = pm_runtime_resume(&pdev->dev);
- 	if (ret < 0)
--		goto eresume;
-+		goto err_clk;
- 
- 	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
- 
-@@ -1484,13 +1484,11 @@ ereqirq1:
- 	free_irq(irq[0], host);
- ereqirq0:
- 	pm_runtime_suspend(&pdev->dev);
--eresume:
-+err_clk:
- 	clk_disable_unprepare(host->hclk);
--eclkupdate:
--	clk_put(host->hclk);
--eclkget:
-+err_pm:
- 	pm_runtime_disable(&pdev->dev);
--eofparse:
-+err_host:
- 	mmc_free_host(mmc);
- 	return ret;
- }
+Points that still need to be fixed before submitting patches for inclusion in
+mainline are:
+
+- Document (and probably rework) the ADV7511 DT bindings
+- Use a proper abstraction API instead of drm_slave_encoder
+- Use the component framework for asynchronous probing
+- Go full DT on the DU side
+
+The patches are based on top of the latest devel branch from Simon's tree,
+plus a mix of patches that I've have previously submitted to the mailing list.
+For convenience I've pushed the result to
+
+	git://linuxtv.org/pinchartl/fbdev.git drm/du/adv7511
+
+Please note that the branch will be rebased during development.
+
+Lars-Peter Clausen (2):
+  drm: Decouple EDID parsing from I2C adapter
+  DRM: Add adv7511 encoder driver
+
+Laurent Pinchart (5):
+  drm/rcar-du: Replace direct DRM encoder access with cast macro
+  drm/rcar-du: Replace drm_encoder with drm_slave_encoder
+  drm/rcar-du: Add HDMI encoder and connector support
+  ARM: shmobile: koelsch: Add DISP pin group to the DU pins
+  ARM: shmobile: koelsch-reference: Add DU HDMI output support
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts            |  18 +-
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   4 +
+ drivers/gpu/drm/drm_edid.c                       |  24 +-
+ drivers/gpu/drm/i2c/Kconfig                      |   6 +
+ drivers/gpu/drm/i2c/Makefile                     |   3 +
+ drivers/gpu/drm/i2c/adv7511_drv.c                | 995 +++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/Kconfig                  |  11 +-
+ drivers/gpu/drm/rcar-du/Makefile                 |   2 +
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c        |  34 +-
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h        |   9 +-
+ drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c        | 118 +++
+ drivers/gpu/drm/rcar-du/rcar_du_hdmicon.h        |  31 +
+ drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c        | 157 ++++
+ drivers/gpu/drm/rcar-du/rcar_du_hdmienc.h        |  34 +
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c        |   5 +-
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c         |   5 +-
+ include/drm/drm_edid.h                           |   4 +
+ include/drm/i2c/adv7511.h                        | 456 +++++++++++
+ include/linux/platform_data/rcar-du.h            |   5 +
+ 19 files changed, 1894 insertions(+), 27 deletions(-)
+ create mode 100644 drivers/gpu/drm/i2c/adv7511_drv.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmicon.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmienc.h
+ create mode 100644 include/drm/i2c/adv7511.h
+
 -- 
-1.9.0
+Regards,
+
+Laurent Pinchart
 
