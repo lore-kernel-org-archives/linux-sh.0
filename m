@@ -1,85 +1,59 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:20 +0000
-Subject: [PATCH v3 37/52] ARM: shmobile: sh7372: Switch to new style CMT device
-Message-Id: <1397228675-11684-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 23:49:22 +0000
+Subject: [PATCH 3/3] iommu/shmobile: Use devm_ioremap_resource()
+Message-Id: <1396482562-1851-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+Replace the devm_ioremap_nocache() call with devm_ioremap_resource().
+This simplifies error checking.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |  6 +++---
- arch/arm/mach-shmobile/setup-sh7372.c | 20 ++++----------------
- 2 files changed, 7 insertions(+), 19 deletions(-)
+ drivers/iommu/shmobile-ipmmu.c | 17 ++++++-----------
+ 1 file changed, 6 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 2848997..c622b49 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -565,10 +565,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("renesas_usbhs.1", &mstp_clks[MSTP406]), /* USB1 */
--	CLKDEV_DEV_ID("sh_cmt.4", &mstp_clks[MSTP405]), /* CMT4 */
--	CLKDEV_DEV_ID("sh_cmt.3", &mstp_clks[MSTP404]), /* CMT3 */
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
--	CLKDEV_DEV_ID("sh_cmt.2", &mstp_clks[MSTP400]), /* CMT2 */
+diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
+index 6ba6110..bd97ade 100644
+--- a/drivers/iommu/shmobile-ipmmu.c
++++ b/drivers/iommu/shmobile-ipmmu.c
+@@ -94,11 +94,6 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	struct shmobile_ipmmu_platform_data *pdata = pdev->dev.platform_data;
  
- 	/* ICK */
- 	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
-@@ -581,6 +578,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
- 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.4", &mstp_clks[MSTP405]), /* CMT4 */
-+	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.3", &mstp_clks[MSTP404]), /* CMT3 */
-+	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.2", &mstp_clks[MSTP400]), /* CMT2 */
- 	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
- 	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
- 	CLKDEV_ICK_ID("xcka", "sh_fsi2", &fsiack_clk),
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 2730127..4c0e943 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -119,28 +119,16 @@ SH7372_SCIF(PORT_SCIFB, 6, 0xe6c30000, evt2irq(0x0d60));
- 
- /* CMT */
- static struct sh_timer_config cmt2_platform_data = {
--	.name = "CMT2",
--	.channel_offset = 0x40,
--	.timer_bit = 5,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
-+	.channels_mask = 0x20,
- };
- 
- static struct resource cmt2_resources[] = {
--	[0] = {
--		.name	= "CMT2",
--		.start	= 0xe6130040,
--		.end	= 0xe613004b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= evt2irq(0x0b80), /* CMT2 */
--		.flags	= IORESOURCE_IRQ,
--	},
-+	DEFINE_RES_MEM(0xe6130000, 0x50),
-+	DEFINE_RES_IRQ(evt2irq(0x0b80)),
- };
- 
- static struct platform_device cmt2_device = {
--	.name		= "sh_cmt",
-+	.name		= "sh-cmt-32-fast",
- 	.id		= 2,
- 	.dev = {
- 		.platform_data	= &cmt2_platform_data,
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!res) {
+-		dev_err(&pdev->dev, "cannot get platform resources\n");
+-		return -ENOENT;
+-	}
+ 	ipmmu = devm_kzalloc(&pdev->dev, sizeof(*ipmmu), GFP_KERNEL);
+ 	if (!ipmmu) {
+ 		dev_err(&pdev->dev, "cannot allocate device data\n");
+@@ -106,12 +101,12 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	}
+ 	spin_lock_init(&ipmmu->flush_lock);
+ 	ipmmu->dev = &pdev->dev;
+-	ipmmu->ipmmu_base = devm_ioremap_nocache(&pdev->dev, res->start,
+-						resource_size(res));
+-	if (!ipmmu->ipmmu_base) {
+-		dev_err(&pdev->dev, "ioremap_nocache failed\n");
+-		return -ENOMEM;
+-	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	ipmmu->ipmmu_base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(ipmmu->ipmmu_base))
++		return PTR_ERR(ipmmu->ipmmu_base);
++
+ 	ipmmu->dev_names = pdata->dev_names;
+ 	ipmmu->num_dev_names = pdata->num_dev_names;
+ 	platform_set_drvdata(pdev, ipmmu);
 -- 
 1.8.3.2
 
