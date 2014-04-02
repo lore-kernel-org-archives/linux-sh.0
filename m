@@ -1,60 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 02 Apr 2014 11:42:20 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 02 Apr 2014 11:51:31 +0000
 Subject: Re: [PATCH 0/4] r8a779[01] I2C clocks fixes
-Message-Id: <20140402114219.GA4704@katana>
+Message-Id: <1841728.Xx32bYG3og@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ZGiS0Q5IWpPtfppv"
+Content-Type: multipart/mixed; boundary="nextPart1878821.C7CpjfpsBZ"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1396350138-26850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1396350138-26850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 To: linux-sh@vger.kernel.org
 
 
---ZGiS0Q5IWpPtfppv
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart1878821.C7CpjfpsBZ
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-On Tue, Apr 01, 2014 at 01:02:14PM +0200, Laurent Pinchart wrote:
-> Hello,
+Hi Wolfram,
+
+On Wednesday 02 April 2014 13:42:20 Wolfram Sang wrote:
+> On Tue, Apr 01, 2014 at 01:02:14PM +0200, Laurent Pinchart wrote:
+> > Hello,
+> >=20
+> > The I2C clocks select an incorrect parent on r8a7790 and r8a7791, b=
+oth in
+> > the legacy C code and in DT. This patch set fixes that.
+> >=20
+> > Laurent Pinchart (4):
+> >   ARM: shmobile: r8a7790: Fix the I2C clocks parents in legacy code=
+
+> >   ARM: shmobile: r8a7791: Fix the I2C clocks parents in legacy code=
+
+> >   ARM: shmobile: r8a7790: Fix the I2C clocks parents in DT
+> >   ARM: shmobile: r8a7791: Fix the I2C clocks parents in DT
 >=20
-> The I2C clocks select an incorrect parent on r8a7790 and r8a7791, both in=
- the
-> legacy C code and in DT. This patch set fixes that.
->=20
-> Laurent Pinchart (4):
->   ARM: shmobile: r8a7790: Fix the I2C clocks parents in legacy code
->   ARM: shmobile: r8a7791: Fix the I2C clocks parents in legacy code
->   ARM: shmobile: r8a7790: Fix the I2C clocks parents in DT
->   ARM: shmobile: r8a7791: Fix the I2C clocks parents in DT
+> Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
 
-Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
+Thank you.
 
-CC on I2C patches would be appreciated.
+> CC on I2C patches would be appreciated.
 
-Thanks!
+Sure, sorry for having forgotten.
 
+=2D-=20
+Regards,
 
---ZGiS0Q5IWpPtfppv
+Laurent Pinchart
+
+--nextPart1878821.C7CpjfpsBZ
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTO/ebAAoJEBQN5MwUoCm2WIwP/3mtrWimuPHjvBIBfTCfeMAv
-39zgmpdNe2RjQeWAdEfy4uN9VsZU25maVSHc7xMgGTrzFhFznhhK+dysDOz/Qv4e
-+WO/n50JazhHZO8J7EnwZm1LSowVNfXrHIoLBDbil5RAPJvmpmTf8lle0OWGorZm
-heyGegx/3P4PC966E2NijVe+DxGgQc9GB9hc6Q1tTZlPUKUqlxJIyOtxuI/UlmcZ
-pFP2mKdqOC0t/iFj9G5T1tb55bs5cnk/a1RpSsHsjr6bwE2Ph+py4rKYphcRfaE9
-liHLLDNarKRZ7sKBFLAt43ZSXc191rT6eWTAgGhffWsJYujFF9LW5ntUa8ebVjBU
-Cb/k0B4mdpGMWZnvglhTcPES9tizmyaJOA4WNL80tgljWeNaUEttzvKIgUCzlNCC
-sd/EQBtnjn6cFvTh1g07usqJSh8twgV/LVg4r8VWYmYABq9kIT6e9Q4tJfqfr+zy
-EoCDC5zJo/Jr5U6zoRRZ2RFWxEjDQv52W+5sweT3b1SAneVTSgQrS1x/fpOmxoBz
-+THrMtZeQfoeH1Fb236wyFUl2smtpYQG7D8GWj7Lpr36/4RZE1kocCcnGeP52OfM
-ixHXO040zBY9A7R1f1IrcyUDS/w7oS2MTsy5AHNn/Zq7xaYA+Oj4kQoiIW5P8FSL
-fAAuXEujWgqovjD6uYFk
-=5tkp
+iQEcBAABAgAGBQJTO/nZAAoJEIkPb2GL7hl15RAH/ifx2rmDQDqTHcMqNmwhwO0t
+Oy72Zg7vK18IhzDmHBmFsJJ2dXOiP6GBbqDaYGnFtZB5fYI2ZEjLY0YUzlZB+8Ez
+3GUyzZeBr4KBUPKHT7yvnNnpt2Uc0t1sGKVFKi5vb4V+ELO2jspPY/TxaTOEwrH+
+1YPjYlPy35sb1Bqnmqd1OvoBwHehtrLHqQMG6Y07p7Ook7oN9ZrTlyuk+NMBZyzC
+a4XwFFNLx9w6r0Sy+CJd5noRj2IqUeWUUpFORY8xOANHkOoMiMyiVJN2kwh2mj+T
+fQA2JKmme+QGH51RcPRlru0UGe7UbNxkz+OiGgvLPz5sKieMnYI3qM+OR1KZ+5k=
+=Mjee
 -----END PGP SIGNATURE-----
 
---ZGiS0Q5IWpPtfppv--
+--nextPart1878821.C7CpjfpsBZ--
+
