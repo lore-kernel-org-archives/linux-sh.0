@@ -1,130 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 11:46:39 +0000
-Subject: [WIP 1/7] drm: Decouple EDID parsing from I2C adapter
-Message-Id: <1396439205-26199-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 02 Apr 2014 11:54:31 +0000
+Subject: Re: [WIP 1/7] drm: Decouple EDID parsing from I2C adapter
+Message-Id: <CAMuHMdUxvC0kU0wMyqo0Mqqd7uaoh-f08=rLNoG7pk2M3iWCOQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396439205-26199-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396439205-26199-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Lars-Peter Clausen <lars@metafoo.de>
+Hi Laurent, Lars-Peter,
 
-The drm_get_edid() function performs direct I2C accesses to read EDID
-blocks, assuming that the monitor DDC interface is directly connected to
-the I2C bus. It can't thus be used with HDMI encoders that control the
-DDC bus and expose EDID blocks through a different interface.
+On Wed, Apr 2, 2014 at 1:46 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> From: Lars-Peter Clausen <lars@metafoo.de>
 
-Refactor drm_do_get_edid() to take a block read callback function
-instead of an I2C adapter, and export it for direct use by drivers.
+> --- a/drivers/gpu/drm/drm_edid.c
+> +++ b/drivers/gpu/drm/drm_edid.c
+> @@ -1106,9 +1106,10 @@ EXPORT_SYMBOL(drm_edid_is_valid);
+>   * Try to fetch EDID information by calling i2c driver function.
+>   */
+>  static int
+> -drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
+> +drm_do_probe_ddc_edid(void *data, unsigned char *buf,
+>                       int block, int len)
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/drm_edid.c | 24 ++++++++++++------------
- include/drm/drm_edid.h     |  4 ++++
- 2 files changed, 16 insertions(+), 12 deletions(-)
+If you touch the signature, I suggest to also change the buffer pointer
+to "void *", and its size to "unsigned int".
+"block" should also be "unsigned int"?
 
-diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
-index b924306..d331f23 100644
---- a/drivers/gpu/drm/drm_edid.c
-+++ b/drivers/gpu/drm/drm_edid.c
-@@ -1106,9 +1106,10 @@ EXPORT_SYMBOL(drm_edid_is_valid);
-  * Try to fetch EDID information by calling i2c driver function.
-  */
- static int
--drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
-+drm_do_probe_ddc_edid(void *data, unsigned char *buf,
- 		      int block, int len)
- {
-+	struct i2c_adapter *adapter = data;
- 	unsigned char start = block * EDID_LENGTH;
- 	unsigned char segment = block >> 1;
- 	unsigned char xfers = segment ? 3 : 2;
-@@ -1164,8 +1165,8 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
- 	return true;
- }
- 
--static u8 *
--drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
-+struct edid *drm_do_get_edid(struct drm_connector *connector,
-+	int (*get_edid_block)(void *, unsigned char *buf, int, int), void *data)
- {
- 	int i, j = 0, valid_extensions = 0;
- 	u8 *block, *new;
-@@ -1176,7 +1177,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	/* base block fetch */
- 	for (i = 0; i < 4; i++) {
--		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
-+		if (get_edid_block(data, block, 0, EDID_LENGTH))
- 			goto out;
- 		if (drm_edid_block_valid(block, 0, print_bad_edid))
- 			break;
-@@ -1190,7 +1191,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	/* if there's no extensions, we're done */
- 	if (block[0x7e] = 0)
--		return block;
-+		return (struct edid *)block;
- 
- 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
- 	if (!new)
-@@ -1199,7 +1200,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 
- 	for (j = 1; j <= block[0x7e]; j++) {
- 		for (i = 0; i < 4; i++) {
--			if (drm_do_probe_ddc_edid(adapter,
-+			if (get_edid_block(data,
- 				  block + (valid_extensions + 1) * EDID_LENGTH,
- 				  j, EDID_LENGTH))
- 				goto out;
-@@ -1227,7 +1228,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
- 		block = new;
- 	}
- 
--	return block;
-+	return (struct edid *)block;
- 
- carp:
- 	if (print_bad_edid) {
-@@ -1240,6 +1241,7 @@ out:
- 	kfree(block);
- 	return NULL;
- }
-+EXPORT_SYMBOL_GPL(drm_do_get_edid);
- 
- /**
-  * Probe DDC presence.
-@@ -1269,12 +1271,10 @@ EXPORT_SYMBOL(drm_probe_ddc);
- struct edid *drm_get_edid(struct drm_connector *connector,
- 			  struct i2c_adapter *adapter)
- {
--	struct edid *edid = NULL;
--
--	if (drm_probe_ddc(adapter))
--		edid = (struct edid *)drm_do_get_edid(connector, adapter);
-+	if (!drm_probe_ddc(adapter))
-+		return NULL;
- 
--	return edid;
-+	return drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
- }
- EXPORT_SYMBOL(drm_get_edid);
- 
-diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
-index a1441c5..b80a12d 100644
---- a/include/drm/drm_edid.h
-+++ b/include/drm/drm_edid.h
-@@ -274,4 +274,8 @@ int
- drm_hdmi_vendor_infoframe_from_display_mode(struct hdmi_vendor_infoframe *frame,
- 					    const struct drm_display_mode *mode);
- 
-+struct edid *drm_do_get_edid(struct drm_connector *connector,
-+	int (*get_edid_block)(void *, unsigned char *buf, int, int),
-+	void *data);
-+
- #endif /* __DRM_EDID_H__ */
--- 
-1.8.3.2
+> --- a/include/drm/drm_edid.h
+> +++ b/include/drm/drm_edid.h
+> @@ -274,4 +274,8 @@ int
+>  drm_hdmi_vendor_infoframe_from_display_mode(struct hdmi_vendor_infoframe *frame,
+>                                             const struct drm_display_mode *mode);
+>
+> +struct edid *drm_do_get_edid(struct drm_connector *connector,
+> +       int (*get_edid_block)(void *, unsigned char *buf, int, int),
+> +       void *data);
 
+Same here, this is new code, so better get the types right.
+
+> +
+>  #endif /* __DRM_EDID_H__ */
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
