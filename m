@@ -1,95 +1,130 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Apr 2014 05:48:05 +0000
-Subject: Re: [PATCH 00/02] ARM: shmobile: r8a7790 8-core boot prototype
-Message-Id: <20140410054802.GB20455@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 11:46:39 +0000
+Subject: [WIP 1/7] drm: Decouple EDID parsing from I2C adapter
+Message-Id: <1396439205-26199-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140408124758.9773.14458.sendpatchset@w520>
-In-Reply-To: <20140408124758.9773.14458.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Apr 10, 2014 at 08:57:20AM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Apr 9, 2014 at 2:05 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Apr 09, 2014 at 01:11:43PM +0900, Magnus Damm wrote:
-> >> Hi Simon,
-> >>
-> >> On Wed, Apr 9, 2014 at 9:24 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> > On Tue, Apr 08, 2014 at 09:47:58PM +0900, Magnus Damm wrote:
-> >> >> ARM: shmobile: r8a7790 8-core boot prototype
-> >> >>
-> >> >> [PATCH 01/02] ARM: shmobile: Multicluster APMU prototype support
-> >> >> [PATCH 02/02] ARM: shmobile: r8a7790 CCI configuration
-> >> >>
-> >> >> Prototype patches to allow 8-core boot on r8a7790. The first patch
-> >> >> unlocks multicluster support to allo SMP boot of all CPU cores, and
-> >> >> the second initializes the CCI-400 hardware.
-> >> >
-> >> > Hi Magnus,
-> >> >
-> >> > I applied these patches on top of renesas-devel-v3.14-20140408,
-> >> > compiled using the shmobile_defconfig, and booted a Lager board.
-> >> > I was expecting to see 8 cores in /proc/cpuinfo but I only see 4.
-> >> >
-> >> > Are my expectations wrong or am I missing something?
-> >>
-> >> The maximum number of CPUs in the kernel config may be limited to 4 by default?
-> >
-> > The shmobile_defconfig yeilds CONFIG_NR_CPUS=8, which seems fine.
-> >
-> >> Also, to use CA7 with upstream you need to disable the arch timer and
-> >> rely on CMT.
-> >
-> > Thanks I have disabled CONFIG_HAVE_ARM_ARCH_TIMER.
-> >
-> >> To clarify, I don't expect these to be merged upstream. Also, I don't
-> >> believe the standard kernel config needs to work out of the box.
-> >
-> > That is fine. But even with the above tweak I still don't see 8 CPUs
-> > so I do wonder what the trick to seeing them is.
-> >
-> > ...
-> > CPU: Testing write buffer coherency: ok
-> > CPU0: update cpu_power 1535
-> > CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
-> > Setting up static identity map for 0x404141b8 - 0x40414210
-> > CPU1: Booted secondary processor
-> > CPU1: update cpu_power 1535
-> > CPU1: thread -1, cpu 1, socket 0, mpidr 80000001
-> > CPU2: Booted secondary processor
-> > CPU2: update cpu_power 1535
-> > CPU2: thread -1, cpu 2, socket 0, mpidr 80000002
-> > CPU3: Booted secondary processor
-> > CPU3: update cpu_power 1535
-> > CPU3: thread -1, cpu 3, socket 0, mpidr 80000003
-> > CPU4: failed to boot: -22
-> > CPU5: failed to boot: -22
-> > CPU6: failed to boot: -22
-> > CPU7: failed to boot: -22
-> > Brought up 4 CPUs
-> > SMP: Total of 4 processors activated.
-> > CPU: All CPU(s) started in SVC mode.
-> > ...
-> 
-> 
-> Thanks for providing more information. I wonder, perhaps I forgot to
-> tell you to also pass "apmu=multicluster" on the kernel command line
-> to enable all cpus?
+From: Lars-Peter Clausen <lars@metafoo.de>
 
-Thanks, that was the piece that I was missing.
+The drm_get_edid() function performs direct I2C accesses to read EDID
+blocks, assuming that the monitor DDC interface is directly connected to
+the I2C bus. It can't thus be used with HDMI encoders that control the
+DDC bus and expose EDID blocks through a different interface.
 
-> 
-> The unlocking of multiplatform support is implemented in:
-> [PATCH 01/02] ARM: shmobile: Multicluster APMU prototype support
-> 
-> Cheers,
-> 
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Refactor drm_do_get_edid() to take a block read callback function
+instead of an I2C adapter, and export it for direct use by drivers.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/drm_edid.c | 24 ++++++++++++------------
+ include/drm/drm_edid.h     |  4 ++++
+ 2 files changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
+index b924306..d331f23 100644
+--- a/drivers/gpu/drm/drm_edid.c
++++ b/drivers/gpu/drm/drm_edid.c
+@@ -1106,9 +1106,10 @@ EXPORT_SYMBOL(drm_edid_is_valid);
+  * Try to fetch EDID information by calling i2c driver function.
+  */
+ static int
+-drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
++drm_do_probe_ddc_edid(void *data, unsigned char *buf,
+ 		      int block, int len)
+ {
++	struct i2c_adapter *adapter = data;
+ 	unsigned char start = block * EDID_LENGTH;
+ 	unsigned char segment = block >> 1;
+ 	unsigned char xfers = segment ? 3 : 2;
+@@ -1164,8 +1165,8 @@ static bool drm_edid_is_zero(u8 *in_edid, int length)
+ 	return true;
+ }
+ 
+-static u8 *
+-drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *, unsigned char *buf, int, int), void *data)
+ {
+ 	int i, j = 0, valid_extensions = 0;
+ 	u8 *block, *new;
+@@ -1176,7 +1177,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* base block fetch */
+ 	for (i = 0; i < 4; i++) {
+-		if (drm_do_probe_ddc_edid(adapter, block, 0, EDID_LENGTH))
++		if (get_edid_block(data, block, 0, EDID_LENGTH))
+ 			goto out;
+ 		if (drm_edid_block_valid(block, 0, print_bad_edid))
+ 			break;
+@@ -1190,7 +1191,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	/* if there's no extensions, we're done */
+ 	if (block[0x7e] = 0)
+-		return block;
++		return (struct edid *)block;
+ 
+ 	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
+ 	if (!new)
+@@ -1199,7 +1200,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 
+ 	for (j = 1; j <= block[0x7e]; j++) {
+ 		for (i = 0; i < 4; i++) {
+-			if (drm_do_probe_ddc_edid(adapter,
++			if (get_edid_block(data,
+ 				  block + (valid_extensions + 1) * EDID_LENGTH,
+ 				  j, EDID_LENGTH))
+ 				goto out;
+@@ -1227,7 +1228,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+ 		block = new;
+ 	}
+ 
+-	return block;
++	return (struct edid *)block;
+ 
+ carp:
+ 	if (print_bad_edid) {
+@@ -1240,6 +1241,7 @@ out:
+ 	kfree(block);
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(drm_do_get_edid);
+ 
+ /**
+  * Probe DDC presence.
+@@ -1269,12 +1271,10 @@ EXPORT_SYMBOL(drm_probe_ddc);
+ struct edid *drm_get_edid(struct drm_connector *connector,
+ 			  struct i2c_adapter *adapter)
+ {
+-	struct edid *edid = NULL;
+-
+-	if (drm_probe_ddc(adapter))
+-		edid = (struct edid *)drm_do_get_edid(connector, adapter);
++	if (!drm_probe_ddc(adapter))
++		return NULL;
+ 
+-	return edid;
++	return drm_do_get_edid(connector, drm_do_probe_ddc_edid, adapter);
+ }
+ EXPORT_SYMBOL(drm_get_edid);
+ 
+diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
+index a1441c5..b80a12d 100644
+--- a/include/drm/drm_edid.h
++++ b/include/drm/drm_edid.h
+@@ -274,4 +274,8 @@ int
+ drm_hdmi_vendor_infoframe_from_display_mode(struct hdmi_vendor_infoframe *frame,
+ 					    const struct drm_display_mode *mode);
+ 
++struct edid *drm_do_get_edid(struct drm_connector *connector,
++	int (*get_edid_block)(void *, unsigned char *buf, int, int),
++	void *data);
++
+ #endif /* __DRM_EDID_H__ */
+-- 
+1.8.3.2
+
