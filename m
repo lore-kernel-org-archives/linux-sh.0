@@ -1,47 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 24 Apr 2014 06:59:46 +0000
-Subject: Re: [PATCH v6 0/2] clk: shmobile: r8a7779: Add clocks support
-Message-Id: <20140424065946.GC3925@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 02 Apr 2014 23:57:33 +0000
+Subject: Re: [PATCH] drm/cma: Use dma_mmap_writecombine() to mmap buffer
+Message-Id: <3755888.heYZqb6SrS@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
+References: <1393787388-17395-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1393787388-17395-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Dave Airlie <airlied@linux.ie>
+Cc: dri-devel@lists.freedesktop.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org
 
-On Fri, Apr 18, 2014 at 08:05:49AM +0900, Simon Horman wrote:
-> Hi Mike,
-> 
-> please consider applying this series.
-> 
-> It is the first step on the way towards using the common clock framework
-> and in turn multi-platform on the r8a7779 (R-Car H1) SoC.
-> 
-> It has been acked by Laurent Pinchart who did similar work
-> for the R-Car Gen-2 family of SoCs. This work is based on that work.
-> 
-> The bindings added in this series have not been changed since
-> v4 was posted with devicetree@vger.kernel.org CCed on the 13th of March.
+Hi Dave,
 
-Hi Mike,
+Could you please take this patch in your tree ?
 
-if you could take a look at this I would be most grateful.
+On Sunday 02 March 2014 20:09:48 Laurent Pinchart wrote:
+> The GEM CMA helpers uses a custom mmap implementation based on
+> remap_pfn_range(). While this works when the buffer DMA and physical
+> addresses are identical, it fails to take IOMMU into account and tries
+> to mmap the buffer to userspace using the DMA virtual address instead of
+> the physical address. This results in mapping random physical pages when
+> the device is behind an IOMMU.
+> 
+> Use the DMA mapping dma_mmap_writecombine() function instead.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/gpu/drm/drm_gem_cma_helper.c | 13 +++++++++++--
+>  1 file changed, 11 insertions(+), 2 deletions(-)
+> 
+> This patches fixes a problem noticed when enabling IOMMU usage with the
+> Renesas R-Car DU driver. I've tested it both with the IOMMU enabled and
+> disabled.
+> 
+> diff --git a/drivers/gpu/drm/drm_gem_cma_helper.c
+> b/drivers/gpu/drm/drm_gem_cma_helper.c index 6b51bf9..1d4fd34 100644
+> --- a/drivers/gpu/drm/drm_gem_cma_helper.c
+> +++ b/drivers/gpu/drm/drm_gem_cma_helper.c
+> @@ -253,8 +253,17 @@ static int drm_gem_cma_mmap_obj(struct
+> drm_gem_cma_object *cma_obj, {
+>  	int ret;
+> 
+> -	ret = remap_pfn_range(vma, vma->vm_start, cma_obj->paddr >> PAGE_SHIFT,
+> -			vma->vm_end - vma->vm_start, vma->vm_page_prot);
+> +	/*
+> +	 * Clear the VM_PFNMAP flag that was set by drm_gem_mmap(), and set the
+> +	 * vm_pgoff (used as a fake buffer offset by DRM) to 0 as we want to map
+> +	 * the whole buffer.
+> +	 */
+> +	vma->vm_flags &= ~VM_PFNMAP;
+> +	vma->vm_pgoff = 0;
+> +
+> +	ret = dma_mmap_writecombine(cma_obj->base.dev->dev, vma,
+> +				    cma_obj->vaddr, cma_obj->paddr,
+> +				    vma->vm_end - vma->vm_start);
+>  	if (ret)
+>  		drm_gem_vm_close(vma);
 
-> 
-> Simon Horman (2):
->   clk: shmobile: r8a7779: Add clocks support
->   clk: shmobile: r8a7779: Add MSTP clock support
-> 
->  .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
->  .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  27 ++++
->  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-r8a7779.c                 | 180 +++++++++++++++++++++
->  include/linux/clk/shmobile.h                       |   3 +
->  5 files changed, 212 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
->  create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
-> 
-> -- 
-> 1.8.4
-> 
+-- 
+Regards,
+
+Laurent Pinchart
+
