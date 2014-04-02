@@ -1,135 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:21 +0000
-Subject: [PATCH v5 07/20] ARM: shmobile: r8a7779: Reference clocks
-Message-Id: <1397613454-7522-8-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 23:49:20 +0000
+Subject: [PATCH 1/3] iommu/shmobile: Depend on ARCH_SHMOBILE
+Message-Id: <1396482562-1851-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Paul Bolle <pebolle@tiscali.nl>
 
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+From: Paul Bolle <pebolle@tiscali.nl>
 
-Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoC.
+Commit 78a2e12f51d9 ("iommu: shmobile: Enable driver compilation with
+COMPILE_TEST") added an optional dependency on SH_MOBILE. But that
+Kconfig symbol doesn't exist. It seems ARCH_SHMOBILE was intended. Use
+that.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v4 - v5
-* No change
+ drivers/iommu/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v3
-* Also update the following nodes which are now present
-  - hspi{0,1,2}
-  - sata: Suggested by Laurent Pinchart
----
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 1eccd7c..e924f96 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -166,6 +166,7 @@
- 		reg = <0xffc70000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
- 		status = "disabled";
- 	};
- 
-@@ -176,6 +177,7 @@
- 		reg = <0xffc71000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
- 		status = "disabled";
- 	};
- 
-@@ -186,6 +188,7 @@
- 		reg = <0xffc72000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
- 		status = "disabled";
- 	};
- 
-@@ -196,6 +199,7 @@
- 		reg = <0xffc73000 0x1000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
- 		status = "disabled";
- 	};
- 
-@@ -214,6 +218,7 @@
- 		reg = <0xfc600000 0x2000>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
- 	};
- 
- 	sdhi0: sd@ffe4c000 {
-@@ -221,6 +226,7 @@
- 		reg = <0xffe4c000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -231,6 +237,7 @@
- 		reg = <0xffe4d000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -241,6 +248,7 @@
- 		reg = <0xffe4e000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -251,6 +259,7 @@
- 		reg = <0xffe4f000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -263,6 +272,7 @@
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -273,6 +283,7 @@
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -283,6 +294,7 @@
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
+diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
+index 79bbc21..df56e4c 100644
+--- a/drivers/iommu/Kconfig
++++ b/drivers/iommu/Kconfig
+@@ -207,7 +207,7 @@ config SHMOBILE_IOMMU
+ 	bool "IOMMU for Renesas IPMMU/IPMMUI"
+ 	default n
+ 	depends on ARM
+-	depends on SH_MOBILE || COMPILE_TEST
++	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select IOMMU_API
+ 	select ARM_DMA_USE_IOMMU
+ 	select SHMOBILE_IPMMU
 -- 
-1.8.5.2
+1.8.3.2
 
