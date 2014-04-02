@@ -1,76 +1,58 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:22 +0000
-Subject: [PATCH v3 39/52] ARM: shmobile: r8a73a4: Switch to new style CMT device
-Message-Id: <1397228675-11684-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 11:46:42 +0000
+Subject: [WIP 4/7] drm/rcar-du: Replace drm_encoder with drm_slave_encoder
+Message-Id: <1396439205-26199-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+DRM slave encoders require their associated struct drm_encoder instance
+to be embedded in a struct drm_slave_encoder. This makes processing
+encoders regardless of their types needlessly and painfully complex in
+drivers that use a mix of slave encoders and custom encoders. Such a
+driver will need to either create drm_slave_encoder instances that fake
+their embedded encoder instance, or to turn all drm_encoder instances
+into drm_slave_encoder instances.
+
+Between the two evils, one must choose the lesser. Use drm_slave_encoder
+everywhere.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a73a4.c |  2 +-
- arch/arm/mach-shmobile/setup-r8a73a4.c | 17 +++++++----------
- 2 files changed, 8 insertions(+), 11 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 7348d58..b5bc22c 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -597,7 +597,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
- 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
--	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index cd36f80..9333770 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -169,20 +169,17 @@ static const struct resource thermal0_resources[] = {
- 					thermal0_resources,		\
- 					ARRAY_SIZE(thermal0_resources))
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+index 4165a25..a008498 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
+@@ -17,20 +17,21 @@
+ #include <linux/platform_data/rcar-du.h>
  
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_config cmt1_platform_data = {
-+	.channels_mask = 0xff,
+ #include <drm/drm_crtc.h>
++#include <drm/drm_encoder_slave.h>
+ 
+ struct rcar_du_device;
+ struct rcar_du_lvdsenc;
+ 
+ struct rcar_du_encoder {
+-	struct drm_encoder encoder;
++	struct drm_encoder_slave slave;
+ 	enum rcar_du_output output;
+ 	struct rcar_du_lvdsenc *lvds;
  };
  
--static struct resource cmt10_resources[] = {
--	DEFINE_RES_MEM(0xe6130010, 0x0c),
--	DEFINE_RES_MEM(0xe6130000, 0x04),
--	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
-+static struct resource cmt1_resources[] = {
-+	DEFINE_RES_MEM(0xe6130000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(120)),
- };
+ #define to_rcar_encoder(e) \
+-	container_of(e, struct rcar_du_encoder, encoder)
++	container_of(e, struct rcar_du_encoder, slave.base)
  
- #define r8a7790_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -196,7 +193,7 @@ void __init r8a73a4_add_dt_devices(void)
- 	r8a73a4_register_scif(3);
- 	r8a73a4_register_scif(4);
- 	r8a73a4_register_scif(5);
--	r8a7790_register_cmt(10);
-+	r8a7790_register_cmt(1);
- }
+-#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
++#define rcar_encoder_to_drm_encoder(e)	(&(e)->slave.base)
  
- /* DMA */
+ struct rcar_du_connector {
+ 	struct drm_connector connector;
 -- 
 1.8.3.2
 
