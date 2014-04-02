@@ -1,47 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:45:03 +0000
-Subject: [PATCH 14/14] ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <a09b2f0ba170dc89a67d6c4c4f027b37a085dad9.1397774191.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 02 Apr 2014 14:31:46 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Rename VSP1_(SY|RT) clocks to VSP1_(S|R)
+Message-Id: <1396449107-4732-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397774190.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The r8a7790 has four VSP1 instances, two of them being named VSPS (which
+stands for "VSP Standard") and VSPR (which stands for "VSP for
+Resizing"). The clock section in the SoC datasheet misunderstood the
+abbreviations as meaning VSP System and VSP Realtime, and named the
+corresponding clocks VSP1(SY) and VSP1(RT). This mistake has been
+carried over to the kernel code.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Fix this by renaming the VSP1_SY and VSP1_RT clocks to VSP1_S and VSP1_R.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 2 +-
+ include/dt-bindings/clock/r8a7790-clock.h | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index 6af09e1..6c4fcfe 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -325,12 +325,12 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index da69afc..da665fa 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -678,7 +678,7 @@
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
+ 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
+-				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_RT R8A7790_CLK_VSP1_SY
++				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
+ 			>;
+ 			clock-output-names  				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 6548a5f..9a7c4c5 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -33,8 +33,8 @@
+ #define R8A7790_CLK_TMU0		25
+ #define R8A7790_CLK_VSP1_DU1		27
+ #define R8A7790_CLK_VSP1_DU0		28
+-#define R8A7790_CLK_VSP1_RT		30
+-#define R8A7790_CLK_VSP1_SY		31
++#define R8A7790_CLK_VSP1_R		30
++#define R8A7790_CLK_VSP1_S		31
  
- static const struct spi_board_info spi_info[] __initconst = {
- 	{
--		.modalias               = "m25p80",
--		.platform_data          = &spi_flash_data,
--		.mode                   = SPI_MODE_0,
--		.max_speed_hz           = 30000000,
--		.bus_num                = 0,
--		.chip_select            = 0,
-+		.modalias	= "m25p80",
-+		.platform_data	= &spi_flash_data,
-+		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
-+		.max_speed_hz	= 30000000,
-+		.bus_num	= 0,
-+		.chip_select	= 0,
- 	},
- };
- 
+ /* MSTP2 */
+ #define R8A7790_CLK_SCIFA2		2
 -- 
-1.8.4
+1.8.3.2
 
