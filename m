@@ -1,48 +1,74 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 23 Apr 2014 07:13:30 +0000
-Subject: Re: [PATCH v2 2/6] gpio: rcar: Add minimal runtime PM support
-Message-Id: <CAMuHMdX9oQwjtJi2KYYj8D7KjHh_y5OVOYmgN8K1mOnYQLon-A@mail.gmail.com>
+From: Alexei Starovoitov <ast@plumgrid.com>
+Date: Wed, 02 Apr 2014 02:54:04 +0000
+Subject: [PATCH net-next] sh: add missing fpscr_values
+Message-Id: <1396407244-26771-1-git-send-email-ast@plumgrid.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397500397-12607-1-git-send-email-geert@linux-m68k.org>
-	<1397500397-12607-3-git-send-email-geert@linux-m68k.org>
-	<CACRpkdbfKmpykqZGj64QzZ-FAq+vXC5DbhOiL=iDvbt6U8U8yw@mail.gmail.com>
-In-Reply-To: <CACRpkdbfKmpykqZGj64QzZ-FAq+vXC5DbhOiL=iDvbt6U8U8yw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Daniel Borkmann <dborkman@redhat.com>, Paul Mundt <lethal@linux-sh.org>, Fengguang Wu <fengguang.wu@intel.com>, linux-sh@vger.kernel.org, netdev@vger.kernel.org
 
-Hi Linus,
+GCC on SuperH for the following program:
+int foo(int i)
+{
+	static const void *table[2] = {
+		[0] = &&label1,
+		[1] = &&label2,
+	};
+	goto *table[i & 1];
 
-On Wed, Apr 23, 2014 at 9:03 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Mon, Apr 14, 2014 at 8:33 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> From: Geert Uytterhoeven <geert+renesas@glider.be>
->>
->> This is just enough to automatically enable the functional clock, if
->> present. Clock management during suspend/resume is still to be added.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> Cc: Linus Walleij <linus.walleij@linaro.org>
->> Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>
->> Cc: linux-gpio@vger.kernel.org
->> ---
->> v2:
->>   - Use pm_runtime_put() instead of pm_runtime_put_sync()
->
-> This v2 version applied with Laurent's ACK. I guess you wanted it
-> applied to the GPIO tree, I don't see the other patches.
+	label1:
+		return 1;
+	label2:
+		return 2;
+}
+generates code:
+	mov.l   .L9,r1
+	mov     #1,r0
+	rts
+	lds.l   @r1+,fpscr
+.L9:
+	.long   __fpscr_values+4
 
-Thanks, yes that was the idea.
+so kernel has to provide body of fpscr_values just like glibc does
 
-Gr{oetje,eeting}s,
+Fixes: bd4cf0ed331a ("net: filter: rework/optimize internal BPF interpreter's instruction set")
+Reported-by: Fengguang Wu <fengguang.wu@intel.com>
+Signed-off-by: Alexei Starovoitov <ast@plumgrid.com>
+Cc: Daniel Borkmann <dborkman@redhat.com>
+---
 
-                        Geert
+kernel modules can hit the same problem, so export it
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ arch/sh/lib/Makefile       |    2 +-
+ arch/sh/lib/fpscr_values.c |    4 ++++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+ create mode 100644 arch/sh/lib/fpscr_values.c
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
+index 3baff31e58cf..0d0c7ae21cfe 100644
+--- a/arch/sh/lib/Makefile
++++ b/arch/sh/lib/Makefile
+@@ -8,7 +8,7 @@ lib-y  = delay.o memmove.o memchr.o \
+ # Extracted from libgcc
+ obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
+ 	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
+-	 udiv_qrnnd.o
++	 udiv_qrnnd.o fpscr_values.o
+ 
+ udivsi3-y			:= udivsi3_i4i-Os.o
+ 
+diff --git a/arch/sh/lib/fpscr_values.c b/arch/sh/lib/fpscr_values.c
+new file mode 100644
+index 000000000000..58153272aba1
+--- /dev/null
++++ b/arch/sh/lib/fpscr_values.c
+@@ -0,0 +1,4 @@
++#include <linux/module.h>
++
++long __fpscr_values[2] = { 0L, 0x80000L };
++EXPORT_SYMBOL(__fpscr_values);
+-- 
+1.7.9.5
+
