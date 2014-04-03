@@ -1,99 +1,172 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 23 Apr 2014 08:25:27 +0000
-Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
-Message-Id: <1398241528-7733-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 03 Apr 2014 03:17:00 +0000
+Subject: [PATCH 2/2] DMA: shdma: add cyclic transfer support
+Message-Id: <87ioqrrtjn.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87lhvnrtkw.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87lhvnrtkw.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, dmaengine@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch add cyclic transfer support
+and enables dmaengine_prep_dma_cyclic()
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - Add Acked-by
-  - Bindings have been accepted in
-    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+ drivers/dma/sh/shdma-base.c |   72 ++++++++++++++++++++++++++++++++++++++-----
+ include/linux/shdma-base.h  |    1 +
+ 2 files changed, 66 insertions(+), 7 deletions(-)
 
-v2:
-  - No changes
----
- arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d38d70339149..7ff29601f962 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -117,6 +117,7 @@
- 		gpio-ranges = <&pfc 0 0 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
- 	};
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 6786ecb..974794c 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -304,6 +304,7 @@ static dma_async_tx_callback __ld_cleanup(struct shdma_chan *schan, bool all)
+ 	dma_async_tx_callback callback = NULL;
+ 	void *param = NULL;
+ 	unsigned long flags;
++	LIST_HEAD(cyclic_list);
  
- 	gpio1: gpio@e6051000 {
-@@ -128,6 +129,7 @@
- 		gpio-ranges = <&pfc 0 32 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
- 	};
+ 	spin_lock_irqsave(&schan->chan_lock, flags);
+ 	list_for_each_entry_safe(desc, _desc, &schan->ld_queue, node) {
+@@ -369,10 +370,16 @@ static dma_async_tx_callback __ld_cleanup(struct shdma_chan *schan, bool all)
+ 		if (((desc->mark = DESC_COMPLETED ||
+ 		      desc->mark = DESC_WAITING) &&
+ 		     async_tx_test_ack(&desc->async_tx)) || all) {
+-			/* Remove from ld_queue list */
+-			desc->mark = DESC_IDLE;
  
- 	gpio2: gpio@e6052000 {
-@@ -139,6 +141,7 @@
- 		gpio-ranges = <&pfc 0 64 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
- 	};
+-			list_move(&desc->node, &schan->ld_free);
++			if (all || !desc->cyclic) {
++				/* Remove from ld_queue list */
++				desc->mark = DESC_IDLE;
++				list_move(&desc->node, &schan->ld_free);
++			} else {
++				/* reuse as cyclic */
++				desc->mark = DESC_SUBMITTED;
++				list_move_tail(&desc->node, &cyclic_list);
++			}
  
- 	gpio3: gpio@e6053000 {
-@@ -150,6 +153,7 @@
- 		gpio-ranges = <&pfc 0 96 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
- 	};
+ 			if (list_empty(&schan->ld_queue)) {
+ 				dev_dbg(schan->dev, "Bring down channel %d\n", schan->id);
+@@ -389,6 +396,8 @@ static dma_async_tx_callback __ld_cleanup(struct shdma_chan *schan, bool all)
+ 		 */
+ 		schan->dma_chan.completed_cookie = schan->dma_chan.cookie;
  
- 	gpio4: gpio@e6054000 {
-@@ -161,6 +165,7 @@
- 		gpio-ranges = <&pfc 0 128 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
- 	};
++	list_splice_tail(&cyclic_list, &schan->ld_queue);
++
+ 	spin_unlock_irqrestore(&schan->chan_lock, flags);
  
- 	gpio5: gpio@e6055000 {
-@@ -172,6 +177,7 @@
- 		gpio-ranges = <&pfc 0 160 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
- 	};
+ 	if (callback)
+@@ -521,7 +530,7 @@ static struct shdma_desc *shdma_add_desc(struct shdma_chan *schan,
+  */
+ static struct dma_async_tx_descriptor *shdma_prep_sg(struct shdma_chan *schan,
+ 	struct scatterlist *sgl, unsigned int sg_len, dma_addr_t *addr,
+-	enum dma_transfer_direction direction, unsigned long flags)
++	enum dma_transfer_direction direction, unsigned long flags, bool cyclic)
+ {
+ 	struct scatterlist *sg;
+ 	struct shdma_desc *first = NULL, *new = NULL /* compiler... */;
+@@ -569,7 +578,11 @@ static struct dma_async_tx_descriptor *shdma_prep_sg(struct shdma_chan *schan,
+ 			if (!new)
+ 				goto err_get_desc;
  
- 	thermal@e61f0000 {
-@@ -802,14 +808,19 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
-+			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
- 				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
-+				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
-+				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
- 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
- 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
- 			>;
- 			clock-output-names +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
- 				"rcan1", "rcan0", "qspi_mod", "iic3",
- 				"i2c3", "i2c2", "i2c1", "i2c0";
- 		};
+-			new->chunks = chunks--;
++			new->cyclic = cyclic;
++			if (cyclic)
++				new->chunks = 1;
++			else
++				new->chunks = chunks--;
+ 			list_add_tail(&new->node, &tx_list);
+ 		} while (len);
+ 	}
+@@ -612,7 +625,8 @@ static struct dma_async_tx_descriptor *shdma_prep_memcpy(
+ 	sg_dma_address(&sg) = dma_src;
+ 	sg_dma_len(&sg) = len;
+ 
+-	return shdma_prep_sg(schan, &sg, 1, &dma_dest, DMA_MEM_TO_MEM, flags);
++	return shdma_prep_sg(schan, &sg, 1, &dma_dest, DMA_MEM_TO_MEM,
++			     flags, false);
+ }
+ 
+ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
+@@ -640,7 +654,50 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
+ 	slave_addr = ops->slave_addr(schan);
+ 
+ 	return shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
+-			      direction, flags);
++			     direction, flags, false);
++}
++
++struct dma_async_tx_descriptor *shdma_prep_dma_cyclic(
++	struct dma_chan *chan, dma_addr_t buf_addr, size_t buf_len,
++	size_t period_len, enum dma_transfer_direction direction,
++	unsigned long flags, void *context)
++{
++	struct shdma_chan *schan = to_shdma_chan(chan);
++	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	const struct shdma_ops *ops = sdev->ops;
++	unsigned int sg_len = buf_len / period_len;
++	int slave_id = schan->slave_id;
++	dma_addr_t slave_addr;
++	struct scatterlist sgl[sg_len];
++	int i;
++
++	if (!chan)
++		return NULL;
++
++	BUG_ON(!schan->desc_num);
++
++	/* Someone calling slave DMA on a generic channel? */
++	if (slave_id < 0 || (buf_len < period_len)) {
++		dev_warn(schan->dev,
++			"%s: bad parameter: buf_len=%d, period_len=%d, id=%d\n",
++			__func__, buf_len, period_len, slave_id);
++		return NULL;
++	}
++
++	slave_addr = ops->slave_addr(schan);
++
++	sg_init_table(sgl, sg_len);
++	for (i = 0; i < sg_len; i++) {
++		dma_addr_t src = buf_addr + (period_len * i);
++
++		sg_set_page(&sgl[i], pfn_to_page(PFN_DOWN(src)), period_len,
++			    offset_in_page(src));
++		sg_dma_address(&sgl[i]) = src;
++		sg_dma_len(&sgl[i]) = period_len;
++	}
++
++	return shdma_prep_sg(schan, sgl, sg_len, &slave_addr,
++			     direction, flags, true);
+ }
+ 
+ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+@@ -915,6 +972,7 @@ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 
+ 	/* Compulsory for DMA_SLAVE fields */
+ 	dma_dev->device_prep_slave_sg = shdma_prep_slave_sg;
++	dma_dev->device_prep_dma_cyclic = shdma_prep_dma_cyclic;
+ 	dma_dev->device_control = shdma_control;
+ 
+ 	dma_dev->dev = dev;
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index f92c0a4..abdf1f2 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -54,6 +54,7 @@ struct shdma_desc {
+ 	dma_cookie_t cookie;
+ 	int chunks;
+ 	int mark;
++	bool cyclic;			/* used as cyclic transfer */
+ };
+ 
+ struct shdma_chan {
 -- 
 1.7.9.5
 
