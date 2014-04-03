@@ -1,39 +1,74 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Apr 2014 09:10:50 +0000
-Subject: Re: [PATCH 2/2] clk: shmobile: clk-mstp: add backwards comapt for indices field
-Message-Id: <CAMuHMdUdGQrvxbhNTJ2y1D4hn5Zjfc2780varM6ua5EpdXC13g@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 Apr 2014 06:16:31 +0000
+Subject: Re: [GIT PULL] Fourth Round of Renesas ARM Based SoC DT Updates for v3.15
+Message-Id: <CANqRtoSg8g2vODYaxx7U4BzQxb9piM4Cf_2uBk8O874eopJZsg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
- <1394196400-17112-3-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1394196400-17112-3-git-send-email-ben.dooks@codethink.co.uk>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+ <20140317074611.GH21917@quad.lixom.net>
+In-Reply-To: <20140317074611.GH21917@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ben,
-
-On Fri, Mar 7, 2014 at 1:46 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> Add comaptibiltiy for older device trees by checking to see if
-
-compatibility (also in the subject line).
-
-> the clock-indices property is there and falling back to the
-> older renesas,clock-indices field.
+On Mon, Mar 17, 2014 at 4:46 PM, Olof Johansson <olof@lixom.net> wrote:
+> On Thu, Mar 06, 2014 at 01:44:28PM +0900, Simon Horman wrote:
+>> Hi Olof, Hi Kevin, Hi Arnd,
+>>
+>> Please consider this fourth round of Renesas ARM based SoC DT updates for v3.15.
+>>
+>> This pull request is based on the previous round of
+>> such requests, tagged as renesas-dt3-for-v3.15,
+>> which I have already sent a pull-request for.
+>>
+>>
+>> The following changes since commit 367aaaea1d6c6496695ffd06b49590b8cfcb8aa5:
+>>
+>>   ARM: shmobile: genmai: adapt dts to use native i2c driver (2014-02-18 11:35:30 +0900)
+>>
+>> are available in the git repository at:
+>>
+>>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt4-for-v3.15
 >
-> This can be removed once all device-trees are converted.
+> Hi,
 >
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> I've merged this into next/dt. However, a general comment on these patches:
+>
+>> Sergei Shtylyov (4):
+>>       ARM: shmobile: r8a7790: add Ether DT support
+>>       ARM: shmobile: lager: add Ether DT support
+>>       ARM: shmobile: r8a7791: add Ether DT support
+>>       ARM: shmobile: koelsch: add Ether DT support
+>
+> I think you should consider doing a generic binding for the ethernet
+> controller, that specifies the data that the driver needs as part of the device
+> tree contents. that way you don't have to add a new _data structure for every
+> new SoC that implements things -- from taking a brief look at the driver there
+> seems to be a bit of boiler plate and/or several parts that share common
+> feature sets already.
+>
+> Anyway, given the way the binding is written, this can be done later by adding
+> a generic compatible string that expects more properties, etc -- so it's not
+> something that needs to be done now. But I do recommend that as you add new
+> SoCs in the future (if you do).
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Hi Olof,
 
-Gr{oetje,eeting}s,
+Thanks for your suggestion. If I understand your proposal correctly
+then you recommend us to make the driver more generic and
+configuration driven based on configuration from DT. In general I
+agree about this direction, but in the case of sh-eth this seems
+difficult due to huge differences between different IP variants. And
+to make it worse, the documentation is often of poor quality with no
+real IP version information. Because of this we keep knowledge in the
+driver and adjust behavior using the SoC number as suffix in the
+compatible string. The SoC number is the only "stable id" we have that
+is suitable for DT ABI unfortunately.
 
-                        Geert
+Of course I welcome further data sharing, cleanups and bug fixes for
+this driver. If you can think of anything in particular please let me
+or one of the sh-eth developers know. I will do my best to help you.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Thanks,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
