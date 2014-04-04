@@ -1,7 +1,7 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 04 Apr 2014 08:22:30 +0000
+Date: Fri, 04 Apr 2014 08:30:06 +0000
 Subject: RE: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
-Message-Id: <d0a11d072b1a44829e3e977d643f7087@HKXPR06MB168.apcprd06.prod.outlook.com>
+Message-Id: <3954d4483da94b2baafc9c96812510dc@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
@@ -10,14 +10,20 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd, Ben, Sergei, Simon, Lucas, Geert, Jason,
+Hi Bjorn,
 
-Thank you for all your comments - is there anything else, or can I get your reviewed-by on these patches (or at least those that you have looked at)?
+I assume that you'll take the PCI driver patches (0001, 0002 & 0005) through your tree and that the rest are platform specific patches that will go via Simon Horman. Would you like me to split this into two separate patch sets?
 
 Thanks
 Phil
 
-On: 31 March 2014 11:31, Phil wrote:
+> -----Original Message-----
+> From: linux-sh-owner@vger.kernel.org [mailto:linux-sh-
+> owner@vger.kernel.org] On Behalf Of Phil Edworthy
+> Sent: 31 March 2014 11:31
+> To: linux-pci@vger.kernel.org
+> Cc: linux-sh@vger.kernel.org; LAKML; Bjorn Helgaas; Valentine Barshak;
+> Simon Horman; Magnus Damm; Ben Dooks; Phil Edworthy
 > Subject: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
 > 
 > This is version 7 of a PCIe Host driver for the R-Car Gen2 devices, i.e. R-Car H2
