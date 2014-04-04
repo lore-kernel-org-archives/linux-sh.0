@@ -1,65 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Apr 2014 11:12:21 +0000
-Subject: [PATCH v2 2/5] iommu/ipmmu-vmsa: Add device tree bindings documentation
-Message-Id: <2988506.LxGglp6hxV@avalon>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Fri, 04 Apr 2014 16:55:59 +0000
+Subject: Re: [PATCH v2 2/6] PCI: tegra: use new OF interrupt mapping when possible
+Message-Id: <20140404165559.GE9007@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
+ <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Will Deacon <will.deacon@arm.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Cc: devicetree@vger.kernel.org
-Cc: Will Deacon <will.deacon@arm.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 35 ++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+On Wed, Mar 05, 2014 at 02:25:47PM +0100, Lucas Stach wrote:
+> This is the recommended method of doing the IRQ
+> mapping. For old devicetrees we fall back to the
+> previous practice.
+> 
+> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> Acked-by: Arnd Bergmann <arnd@arndb.de>
 
-diff --git a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
-new file mode 100644
-index 0000000..2b16a75
---- /dev/null
-+++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
-@@ -0,0 +1,35 @@
-+* Renesas VMSA-Compatible IOMMU
-+
-+The IPMMU is an IOMMU implementation compatible with the ARM VMSA page tables.
-+It provides address translation for bus masters outside of the CPU, each
-+connected to the IPMMU through a port called micro-TLB.
-+
-+
-+Required Properties:
-+
-+  - compatible: Must contain "renesas,ipmmu-vmsa".
-+  - reg: Base address and size of the IPMMU registers.
-+  - interrupts: Specifier for the MMU fault interrupt.
-+
-+
-+Each bus master connected to an IPMMU must reference the IPMMU in its device
-+node with the following property:
-+
-+  - iommus: A reference to the IPMMU in two cells. The first cell is a phandle
-+    to the IPMMU and the second cell the number of the micro-TLB that the
-+    device is connected to.
-+
-+
-+Example: R8A7791 IPMMU-MX and VSP1-D0 bus master
-+
-+	ipmmu_mx: mmu@fe951800 {
-+		compatible = "renasas,ipmmu-vmsa";
-+		reg = <0 0xfe951800 0 0x800>;
-+		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	vsp1@fe928000 {
-+		...
-+		iommus = <&ipmmu_mx 13>;
-+		...
-+	};
--- 
-1.8.3.2
+Applied with Stephen's Tested-by to my pending/host-tegra branch.  I'll
+rebase and rename it after v3.15-rc1, and I think we can squeeze it into
+v3.15 shortly after that.  Thanks.
 
+> ---
+>  drivers/pci/host/pci-tegra.c | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/drivers/pci/host/pci-tegra.c b/drivers/pci/host/pci-tegra.c
+> index 330f7e3a32dd..083cf37ca047 100644
+> --- a/drivers/pci/host/pci-tegra.c
+> +++ b/drivers/pci/host/pci-tegra.c
+> @@ -639,10 +639,15 @@ static int tegra_pcie_setup(int nr, struct pci_sys_data *sys)
+>  static int tegra_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
+>  {
+>  	struct tegra_pcie *pcie = sys_to_pcie(pdev->bus->sysdata);
+> +	int irq;
+>  
+>  	tegra_cpuidle_pcie_irqs_in_use();
+>  
+> -	return pcie->irq;
+> +	irq = of_irq_parse_and_map_pci(pdev, slot, pin);
+> +	if (!irq)
+> +		irq = pcie->irq;
+> +
+> +	return irq;
+>  }
+>  
+>  static void tegra_pcie_add_bus(struct pci_bus *bus)
+> -- 
+> 1.9.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-pci" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
