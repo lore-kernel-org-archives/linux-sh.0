@@ -1,45 +1,88 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 15 Apr 2014 09:55:28 +0000
-Subject: Re: [PATCH 21/28] Remove CPU_SUBTYPE_SH7764
-Message-Id: <CAMuHMdXawwgr7x=TFumDUh+c+-KZteHdp+NrnXTFcFcwT6gjRQ@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 04 Apr 2014 08:22:30 +0000
+Subject: RE: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
+Message-Id: <d0a11d072b1a44829e3e977d643f7087@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1391971686-9517-1-git-send-email-richard@nod.at>
-	<1391971686-9517-22-git-send-email-richard@nod.at>
-	<1391981761.25855.58.camel@x220>
-	<1397554747.1985.35.camel@x220>
-In-Reply-To: <1397554747.1985.35.camel@x220>
+References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Bolle <pebolle@tiscali.nl>
-Cc: Richard Weinberger <richard@nod.at>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Paul,
+Hi Arnd, Ben, Sergei, Simon, Lucas, Geert, Jason,
 
-On Tue, Apr 15, 2014 at 11:39 AM, Paul Bolle <pebolle@tiscali.nl> wrote:
-> On Sun, 2014-02-09 at 22:36 +0100, Paul Bolle wrote:
->> On Sun, 2014-02-09 at 19:47 +0100, Richard Weinberger wrote:
->> > The symbol is an orphan, get rid of it.
->> >
->> > Signed-off-by: Richard Weinberger <richard@nod.at>
->>
->> Paul Mundt had something similar queued a year ago:
->> https://lkml.org/lkml/2013/3/11/211 . What happened?
->
-> By now the SuperH port has been orphaned. So what's the current
-> procedure for small SuperH fixes like this one?
+Thank you for all your comments - is there anything else, or can I get your reviewed-by on these patches (or at least those that you have looked at)?
 
-Please submit them to Andrew Morton <akpm@linux-foundation.org>.
+Thanks
+Phil
 
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+On: 31 March 2014 11:31, Phil wrote:
+> Subject: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
+> 
+> This is version 7 of a PCIe Host driver for the R-Car Gen2 devices, i.e. R-Car H2
+> (r8a7790) and R-Car M2 (r8a7791).
+> 
+> v7:
+>  - Change binding description of clocks to 'clock specifiers'
+> 
+> v6:
+>  - Correct DT bindings description for reg and clocks
+>  - Split device and board DT changes
+>  - Add shmobile to subject for shmobile DT patches
+>  - Don't check MSI irq number is valid, as upper level checks this
+>  - Change "Unexpected MSI" msg to debug level
+>  - Reword "Unexpected MSI" comment so that it's one line
+>  - Remove patch that adds HAVE_ARM_ARCH_TIMER to koelsch defconfig as
+> not needed
+> 
+> v5:
+>  - Use module_platform_driver instead of subsys_initcall
+>  - Use the of_device_id data field for HW init function
+>  - Init hw_pci struct in declaration
+>  - Renesas SoC compatible string has peripheral before device name
+>  - Add PCIe bus clock reference
+>  - Use dma-ranges property to specify inbound memory regions
+>  - Support multiple IO windows and correct resources
+>  - Return IRQ_NONE from MSI isr when there is no pending MSI
+>  - Add additional interrupt bindings
+> 
+> v4:
+>  - Use runtime PM properly
+> 
+> Phil Edworthy (10):
+>   PCI: host: rcar: Add Renesas R-Car PCIe driver
+>   PCI: host: rcar: Add MSI support
+>   ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+>   ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+>   dt-bindings: pci: rcar pcie device tree bindings
+>   ARM: shmobile: r8a7790: Add PCIe device nodes
+>   ARM: shmobile: lager: Add PCIe device nodes
+>   ARM: shmobile: r8a7791: Add PCIe device nodes
+>   ARM: shmobile: koelsch: Add PCIe device nodes
+>   ARM: shmobile: koelsch: Add PCIe to defconfig
+> 
+>  Documentation/devicetree/bindings/pci/rcar-pci.txt |  45 +
+>  arch/arm/boot/dts/r8a7790-lager.dts                |  10 +
+>  arch/arm/boot/dts/r8a7790.dtsi                     |  31 +-
+>  arch/arm/boot/dts/r8a7791-koelsch.dts              |  14 +
+>  arch/arm/boot/dts/r8a7791.dtsi                     |  31 +-
+>  arch/arm/configs/koelsch_defconfig                 |   3 +
+>  drivers/pci/host/Kconfig                           |   6 +
+>  drivers/pci/host/Makefile                          |   1 +
+>  drivers/pci/host/pcie-rcar.c                       | 929 +++++++++++++++++++++
+>  drivers/pci/host/pcie-rcar.h                       |  87 ++
+>  include/dt-bindings/clock/r8a7790-clock.h          |   1 +
+>  include/dt-bindings/clock/r8a7791-clock.h          |   1 +
+>  12 files changed, 1154 insertions(+), 5 deletions(-)  create mode 100644
+> Documentation/devicetree/bindings/pci/rcar-pci.txt
+>  create mode 100644 drivers/pci/host/pcie-rcar.c  create mode 100644
+> drivers/pci/host/pcie-rcar.h
+> 
+> --
+> 1.9.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in the body
+> of a message to majordomo@vger.kernel.org More majordomo info at
+> http://vger.kernel.org/majordomo-info.html
