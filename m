@@ -1,71 +1,106 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:35 +0000
-Subject: [PATCH v3 52/52] clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
-Message-Id: <1397228675-11684-53-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Fri, 04 Apr 2014 09:08:12 +0000
+Subject: Re: [PATCH v7 05/10] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <1396602492.5625.4.camel@weser.hi.pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+ <1396261856-22465-6-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1396261856-22465-6-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all TMU channels are handled by a single device instance, use a
-per-device spinlock.
+Am Montag, den 31.03.2014, 11:30 +0100 schrieb Phil Edworthy:
+> This patch adds the bindings for the R-Car PCIe driver. The driver
+> resides under drivers/pci/host/pcie-rcar.c
+> 
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/clocksource/sh_tmu.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+Another nitpick below, otherwise:
+Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 47f5b48..c8250f8 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -61,6 +61,8 @@ struct sh_tmu_device {
- 
- 	enum sh_tmu_model model;
- 
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
-+
- 	struct sh_tmu_channel *channels;
- 	unsigned int num_channels;
- 
-@@ -68,8 +70,6 @@ struct sh_tmu_device {
- 	bool has_clocksource;
- };
- 
--static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
--
- #define TSTR -1 /* shared register */
- #define TCOR  0 /* channel register */
- #define TCNT 1 /* channel register */
-@@ -132,7 +132,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_tmu_lock, flags);
-+	raw_spin_lock_irqsave(&ch->tmu->lock, flags);
- 	value = sh_tmu_read(ch, TSTR);
- 
- 	if (start)
-@@ -141,7 +141,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_tmu_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->tmu->lock, flags);
- }
- 
- static int __sh_tmu_enable(struct sh_tmu_channel *ch)
-@@ -524,6 +524,8 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	tmu->pdev = pdev;
- 	tmu->model = id->driver_data;
- 
-+	raw_spin_lock_init(&tmu->lock);
-+
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
+If you decide to roll another version with just this changed, feel free
+to carry over the my tag.
+> 
+> v7:
+>  - Change binding description of clocks to 'clock specifiers'
+> 
+> v6:
+>  - Correct DT bindings description for reg and clocks
+> 
+> v5:
+>  - Add PCIe bus clock reference
+>  - Add additional interrupt bindings
+>  - Use dma-ranges property to specify inbound memory regions
+> ---
+>  Documentation/devicetree/bindings/pci/rcar-pci.txt | 45 ++++++++++++++++++++++
+>  1 file changed, 45 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
+> 
+> diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+> new file mode 100644
+> index 0000000..789bd46
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+> @@ -0,0 +1,45 @@
+> +* Renesas RCar PCIe interface
+> +
+> +Required properties:
+> +- compatible: should contain one of the following
+> +	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
+> +- reg: base address and length of the pcie controller registers.
+> +- #address-cells: set to <3>
+> +- #size-cells: set to <2>
+> +- device_type: set to "pci"
+> +- ranges: ranges for the PCI memory and I/O regions.
+> +- dma-ranges: ranges for the inbound memory regions.
+> +- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
+> +	source for hardware related interrupts (e.g. link speed change).
+> +- #interrupt-cells: set to <1>
+> +- interrupt-map-mask and interrupt-map: standard PCI properties
+> +	to define the mapping of the PCIe interface to interrupt
+> +	numbers.
+> +- clocks: from common clock binding: clock specifiers for the PCIe controller
+> +	and PCIe bus clocks.
+> +- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
+> +
+> +Example:
+> +
+> +SoC specific DT Entry:
+> +
+> +	pcie: pcie@fe000000 {
+> +		compatible = "renesas,pcie-r8a7791";
+> +		reg = <0 0xfe000000 0 0x80000>;
+> +		#address-cells = <3>;
+> +		#size-cells = <2>;
+> +		device_type = "pci";
+> +		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
+> +			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
+> +			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
+> +			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
+> +		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
+> +			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
+> +		interrupts = <0 116 4 0 117 4 0 118 4>;
+
+I think this is confusing, I would rather like to see them in separate
+cells, like
+	interrupts = <0 116 4>, <0 117 4>, <0 118 4>;
+
+Same would be true for the ranges properties, but there it isn't as
+confusing, so I don't really care.
+
+> +		#interrupt-cells = <1>;
+> +		interrupt-map-mask = <0 0 0 0>;
+> +		interrupt-map = <0 0 0 0 &gic 0 116 4>;
+> +		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
+> +		clock-names = "pcie", "pcie_bus";
+> +		status = "disabled";
+> +	};
+
 -- 
-1.8.3.2
+Pengutronix e.K.                           | Lucas Stach                 |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
+Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
 
