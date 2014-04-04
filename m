@@ -1,40 +1,78 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 07 Mar 2014 16:00:48 +0000
-Subject: [PATCH V3 12/12] ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock support
-Message-Id: <1394208048-32495-13-git-send-email-wsa@the-dreams.de>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Fri, 04 Apr 2014 17:01:03 +0000
+Subject: Re: [PATCH v2 3/6] PCI: rcar: use new OF interrupt mapping when possible
+Message-Id: <20140404170103.GF9007@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1394208048-32495-1-git-send-email-wsa@the-dreams.de>
+References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
+ <1394025951-32438-4-git-send-email-l.stach@pengutronix.de>
+In-Reply-To: <1394025951-32438-4-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+On Wed, Mar 05, 2014 at 02:25:48PM +0100, Lucas Stach wrote:
+> This is the recommended method of doing the IRQ
+> mapping. Still fall back to the old method in order
+> to not break the just submitted board files.
 
-Not used anymore since we switched to CCF.
+Hi Lucas, can you rebase this to Linus' current tree?  This doesn't apply
+anymore because of conflicts with 546cadda3575 ("PCI: rcar: Register each
+instance independently").  Thanks!
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
----
- arch/arm/mach-shmobile/clock-r7s72100.c | 5 -----
- 1 file changed, 5 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 31148c1acc07..b60543ec442b 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -194,11 +194,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
--	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
--	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
--	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
--	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
--	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
- 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
- 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
--- 
-1.9.0
-
+> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> ---
+> v2: pass in parent device to pci_common_init(), to
+>     make DT parsing work.
+> ---
+>  drivers/pci/host/pci-rcar-gen2.c | 12 +++++++++---
+>  1 file changed, 9 insertions(+), 3 deletions(-)
+> 
+> diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+> index ceec147baec3..3a0914163ad0 100644
+> --- a/drivers/pci/host/pci-rcar-gen2.c
+> +++ b/drivers/pci/host/pci-rcar-gen2.c
+> @@ -15,6 +15,7 @@
+>  #include <linux/io.h>
+>  #include <linux/kernel.h>
+>  #include <linux/module.h>
+> +#include <linux/of_pci.h>
+>  #include <linux/pci.h>
+>  #include <linux/platform_device.h>
+>  #include <linux/pm_runtime.h>
+> @@ -160,8 +161,13 @@ static int __init rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+>  {
+>  	struct pci_sys_data *sys = dev->bus->sysdata;
+>  	struct rcar_pci_priv *priv = sys->private_data;
+> +	int irq;
+> +
+> +	irq = of_irq_parse_and_map_pci(dev, slot, pin);
+> +	if (!irq)
+> +		irq = priv->irq;
+>  
+> -	return priv->irq;
+> +	return irq;
+>  }
+>  
+>  /* PCI host controller setup */
+> @@ -249,6 +255,8 @@ static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
+>  	void **private_data;
+>  	int count;
+>  
+> +	pci_common_init_dev(priv->dev, &rcar_hw_pci);
+> +
+>  	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
+>  		goto add_priv;
+>  
+> @@ -322,8 +330,6 @@ static int __init rcar_pci_init(void)
+>  	int retval;
+>  
+>  	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
+> -	if (!retval)
+> -		pci_common_init(&rcar_hw_pci);
+>  
+>  	/* Private data pointer array is not needed any more */
+>  	kfree(rcar_hw_pci.private_data);
+> -- 
+> 1.9.0
+> 
