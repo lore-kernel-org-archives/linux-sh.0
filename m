@@ -1,68 +1,32 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 03 Apr 2014 09:42:46 +0000
+Date: Fri, 04 Apr 2014 10:06:12 +0000
 Subject: Re: [PATCH] ARM: shmobile: armadillo-reference dts: enable RTC
-Message-Id: <CAMuHMdXci6w1eXcs0sDKQqPDSYq531UJLqGmk_+CUM0nNRfX0A@mail.gmail.com>
+Message-Id: <CAMuHMdXPPO250w819=nVRyH2HsU+b6J5DG_V0fki5WehQHSN5Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396280300-7016-1-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1396280300-7016-1-git-send-email-ulrich.hecht@gmail.com>
+References: <1378900273-10188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1378900273-10188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht@gmail.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-(cc devicetree)
+On Thu, Apr 3, 2014 at 11:40 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Thu, Apr 3, 2014 at 10:30 AM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
+>> On Thu, Apr 3, 2014 at 2:11 AM, Simon Horman <horms@verge.net.au> wrote:
+>>> I am a little confused about i2c2 appearing below as
+>>> the documentation that I have only seems to refer to
+>>> the presence of i2c0 and i2c1.
+>>
+>> This thing doesn't use any of the SoC I2C controllers, it's just
+>> hooked up to two GPIO pins. The board docs don't give much detail, but
+>> I found the relevant info in the Android vendor kernel, which is where
+>> this "bus" is called i2c2. The name is arbitrary, though.
+>
+> Table 3.1 does mention "I2C2 (GPIO) For RTC only", and the docs also
+> mention it's a s35390a.
 
-On Mon, Mar 31, 2014 at 5:38 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
-> This enables the Seiko real-time clock that is attached to a couple of
-> GPIO pins.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-> ---
->  .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 18 ++++++++++++++++++
->  1 file changed, 18 insertions(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> index b79ea51..ac352ef 100644
-> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> @@ -118,6 +118,16 @@
->                 };
->         };
->
-> +       i2c2: i2c@2 {
-> +               #address-cells = <1>;
-> +               #size-cells = <0>;
-> +               compatible = "i2c-gpio";
-> +               gpios = <&pfc 208 GPIO_ACTIVE_HIGH /* sda */
-> +                        &pfc 91 GPIO_ACTIVE_HIGH /* scl */
-> +                       >;
-> +               i2c-gpio,delay-us = <5>;
-> +       };
-> +
->         backlight {
->                 compatible = "pwm-backlight";
->                 pwms = <&tpu 2 33333 PWM_POLARITY_INVERTED>;
-> @@ -178,6 +188,14 @@
->         };
->  };
->
-> +&i2c2 {
-> +       status = "okay";
-> +       rtc@30 {
-> +               compatible = "seiko,s35390a";
-
-I think this should be "sii,s35390a", for Seiko Instruments Inc.
-
-> +               reg = <0x30>;
-> +       };
-> +};
-> +
->  &pfc {
->         pinctrl-0 = <&scifa1_pins>;
->         pinctrl-names = "default";
-> --
-> 1.8.4.5
+And board-armadillo800eva.c also contains support for it.
 
 Gr{oetje,eeting}s,
 
