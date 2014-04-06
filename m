@@ -1,70 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:14 +0000
-Subject: [PATCH v2 14/14] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-Message-Id: <1397832494-20607-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yinghai Lu <yinghai@kernel.org>
+Date: Sun, 06 Apr 2014 05:39:23 +0000
+Subject: [RFC PATCH 2/5] sh: Remove irq_reserve_irq calling
+Message-Id: <1396762766-4942-3-git-send-email-yinghai@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1396762766-4942-1-git-send-email-yinghai@kernel.org>
+In-Reply-To: <1396762766-4942-1-git-send-email-yinghai@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Tony Luck <tony.luck@intel.com>
+Cc: linux-kernel@vger.kernel.org, Yinghai Lu <yinghai@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Enable the CMT0 device and configure channel 0 as a clock event
-provider.
+in sh calling path:
+	register_intc_controller
+		=> irq_create_identity_mapping/irq_create_strict_mappins
+			=>irq_alloc_desc: it will set bits on allocate_irq
+		=> intc_register_irq
+			=> irq_reserve_irq: set bits again
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+so we can kill this irq_reserve_irq calling.
+
+Signed-off-by: Yinghai Lu <yinghai@kernel.org>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
- arch/arm/mach-shmobile/board-koelsch-reference.c | 1 -
- arch/arm/mach-shmobile/setup-r8a7791.c           | 2 +-
- 3 files changed, 5 insertions(+), 2 deletions(-)
+ drivers/sh/intc/core.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 0d69813..45334c3 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -290,6 +290,10 @@
- 	};
- };
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index 8f32a13..05118f92 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -81,11 +81,8 @@ static void __init intc_register_irq(struct intc_desc *desc,
+ 	unsigned long flags;
  
-+&cmt0 {
-+	status = "ok";
-+};
-+
- &ether {
- 	pinctrl-0 = <&ether_pins &phy1_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index bd90932..6b3b354 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -86,7 +86,6 @@ static void __init koelsch_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "scifa0", NULL, "sh-sci.0" },
- 	{ "scifa1", NULL, "sh-sci.1" },
- 	{ "scifb0", NULL, "sh-sci.2" },
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 9839dac..e66f777 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -197,12 +197,12 @@ void __init r8a7791_add_dt_devices(void)
- 	r8a7791_register_scif(12);
- 	r8a7791_register_scif(13);
- 	r8a7791_register_scif(14);
--	r8a7791_register_cmt(0);
- }
- 
- void __init r8a7791_add_standard_devices(void)
- {
- 	r8a7791_add_dt_devices();
-+	r8a7791_register_cmt(0);
- 	r8a7791_register_irqc(0);
- 	r8a7791_register_thermal();
- }
+ 	/*
+-	 * Register the IRQ position with the global IRQ map, then insert
+-	 * it in to the radix tree.
++	 * insert it in to the radix tree.
+ 	 */
+-	irq_reserve_irq(irq);
+-
+ 	raw_spin_lock_irqsave(&intc_big_lock, flags);
+ 	radix_tree_insert(&d->tree, enum_id, intc_irq_xlate_get(irq));
+ 	raw_spin_unlock_irqrestore(&intc_big_lock, flags);
 -- 
-1.8.3.2
+1.8.4.5
 
