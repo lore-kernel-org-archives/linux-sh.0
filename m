@@ -1,33 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 17:35:58 +0000
-Subject: [PATCH 2/4] ARM: shmobile: koelsch dts: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <1397496960-27848-3-git-send-email-geert@linux-m68k.org>
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Mon, 07 Apr 2014 09:30:20 +0000
+Subject: [PATCH v2 rebased] PCI: rcar: use new OF interrupt mapping when possible
+Message-Id: <1396863020-21880-1-git-send-email-l.stach@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140404170103.GF9007@google.com>
+In-Reply-To: <20140404170103.GF9007@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This is the recommended method of doing the IRQ
+mapping. Still fall back to the old method in order
+to not break the just submitted board files.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |    2 ++
- 1 file changed, 2 insertions(+)
+v2: pass in parent device to pci_common_init(), to
+    make DT parsing work.
+---
+ drivers/pci/host/pci-rcar-gen2.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index a9149a703601..ad34a5dbc20d 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -354,6 +354,8 @@
- 		compatible = "spansion,s25fl512s";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
-+		spi-tx-bus-width = <4>;
-+		spi-rx-bus-width = <4>;
- 		m25p,fast-read;
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index fd3e3ab56509..4fe349dcaf59 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -15,6 +15,7 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of_pci.h>
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+@@ -180,8 +181,13 @@ static int rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ {
+ 	struct pci_sys_data *sys = dev->bus->sysdata;
+ 	struct rcar_pci_priv *priv = sys->private_data;
++	int irq;
++
++	irq = of_irq_parse_and_map_pci(dev, slot, pin);
++	if (!irq)
++		irq = priv->irq;
  
- 		partition@0 {
+-	return priv->irq;
++	return irq;
+ }
+ 
+ #ifdef CONFIG_PCI_DEBUG
 -- 
-1.7.9.5
+1.9.1
 
