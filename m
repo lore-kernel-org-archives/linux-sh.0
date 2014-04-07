@@ -1,46 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 24 Apr 2014 06:43:49 +0000
-Subject: Re: [PATCH RFC 2/2] ARM: shmobile: armadillo800eva defconfig: Enable REGULATOR_GPIO and LEDS_GPIO
-Message-Id: <CANqRtoRuZrTa-OGt7sB=MLTYyVstgHVsFESg6C=LrL482seaSg@mail.gmail.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 07 Apr 2014 20:07:04 +0000
+Subject: [PATCH 4/9] ARM: shmobile: r8a7790: Add DMA for MMCIF1
+Message-Id: <1396901229-29117-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398171667-24288-1-git-send-email-geert+renesas@glider.be>
-	<1398171667-24288-2-git-send-email-geert+renesas@glider.be>
-	<20140423005043.GF5738@verge.net.au>
-In-Reply-To: <20140423005043.GF5738@verge.net.au>
+References: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Wed, Apr 23, 2014 at 9:50 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Apr 22, 2014 at 03:01:07PM +0200, Geert Uytterhoeven wrote:
->> Refresh armadillo800eva_defconfig, and enable missing options for devices
->> in platform data and/or DT:
->>   - REGULATOR_GPIO
->>   - LEDS_GPIO
->
-> I would prefer if changes were made in a more incremental patch.
->
-> * A patch to enable LEDS_GPIO and REGULATOR_GPIO.
-> * Then a cleanup patch, if you really want to do that: but why?
->
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> Do we want SHMOBILE_IOMMU, too? The help text says "If unsure, say N."
->> If yes, is the default SHMOBILE_IOMMU_ADDRSIZE_2048MB OK?
->
-> I defer to Magnus on that one.
+Updated dtsi file with DMA info for MMCIF1
 
-I think it's best to go with a "N" here. Unless someone can prove to
-me that we need it and that it is working!
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
-In general I'd like to begin by integrating IOMMU support for R-Car
-Gen2 in a controlled manner and once that is in place I think we can
-revisit this older case. At that time hopefully we will be dealing
-with the multiplatform defconfig for r8a7740 and Armadillo.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a005e68..a64bdc6 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -334,6 +334,9 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
++		dmas =  <&dma0 R8A7790_DMA_MMCIF1_RX>,
++			<&dma0 R8A7790_DMA_MMCIF1_TX>;
++		dma-names = "rx", "tx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+-- 
+1.9.1
 
-Cheers,
-
-/ magnus
