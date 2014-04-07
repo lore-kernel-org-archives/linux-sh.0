@@ -1,41 +1,50 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 14 Apr 2014 21:59:51 +0000
-Subject: [PATCHv2 09/11] ARM: pxa: hx4700: use PWM_LOOKUP to initialize struct pwm_lookup
-Message-Id: <1397512793-10325-10-git-send-email-alexandre.belloni@free-electrons.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Apr 2014 06:34:26 +0000
+Subject: [PATCH 05/05] ARM: shmobile: Koelsch DT reference USB pinmux setup
+Message-Id: <20140407063426.26152.24164.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+From: Magnus Damm <damm@opensource.se>
+
+Configure the pinmux on Koelsch for USB ports via the default
+setting. This allows support for USB function on USB0 and
+USB Host for USB1. Not for upstream merge.
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-pxa/hx4700.c | 10 ++--------
- 1 file changed, 2 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-pxa/hx4700.c b/arch/arm/mach-pxa/hx4700.c
-index 0788a1f171fe..c66ad4edc5e3 100644
---- a/arch/arm/mach-pxa/hx4700.c
-+++ b/arch/arm/mach-pxa/hx4700.c
-@@ -574,14 +574,8 @@ static struct platform_device backlight = {
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ work/arch/arm/boot/dts/r8a7791-koelsch.dts	2014-04-07 14:16:57.000000000 +0900
+@@ -230,7 +230,7 @@
  };
  
- static struct pwm_lookup hx4700_pwm_lookup[] = {
--	{
--		.provider = "pxa27x-pwm.1",
--		.index = 0,
--		.dev_id = "pwm-backlight",
--		.con_id = NULL,
--		.period = 30923,
--		.polarity = PWM_POLARITY_NORMAL,
--	},
-+	PWM_LOOKUP("pxa27x-pwm.1", 0, "pwm-backlight", NULL,
-+		   30923, PWM_POLARITY_NORMAL),
+ &pfc {
+-	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins &usb0_pins &usb1_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	i2c2_pins: i2c2 {
+@@ -288,6 +288,16 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
  };
  
- /*
--- 
-1.8.3.2
-
+ &ether {
