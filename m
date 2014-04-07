@@ -1,32 +1,54 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 22 Apr 2014 21:34:18 +0000
-Subject: Re: [PATCH v2 1/6] gpio: rcar: Add optional functional clock to bindings
-Message-Id: <CACRpkda=-nViAw7WYjYHVHGwiYgHYKzmk6-nYvm46E5366GMiA@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 07 Apr 2014 22:49:41 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add internal PCI bridge nodes
+Message-Id: <201404080249.42211.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397500397-12607-1-git-send-email-geert@linux-m68k.org>
-	<1397500397-12607-2-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1397500397-12607-2-git-send-email-geert@linux-m68k.org>
+References: <201404080248.14139.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404080248.14139.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Apr 14, 2014 at 8:33 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
+Add device nodes for the R8A7791 internal PCI bridge devices.
 
-> From: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Linus Walleij <linus.walleij@linaro.org>
-> Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>
-> Cc: linux-gpio@vger.kernel.org
-> Cc: devicetree@vger.kernel.org
-> ---
-> v2:
->   - Functional clock is mandatory depending on hardware (thanks, Laurent)
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This v2 version applied with Laurent's ACK.
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-Yours,
-Linus Walleij
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -875,4 +875,30 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7791";
++		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++	};
++
++	pci1: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7791";
++		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
++		reg = <0x0 0xee0d0000 0x0 0xc00>,
++		      <0x0 0xee0c0000 0x0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++	};
+ };
