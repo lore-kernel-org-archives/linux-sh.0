@@ -1,82 +1,140 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 15 Apr 2014 09:46:17 +0000
-Subject: Re: [PATCH v2 2/9] ARM: shmobile: r8a7790: add dma defines for sys and audio dmacs
-Message-Id: <534CFFE9.2050100@codethink.co.uk>
+Date: Mon, 07 Apr 2014 20:07:03 +0000
+Subject: [PATCH 3/9] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
+Message-Id: <1396901229-29117-4-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk> <1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk> <6876261.h1xXmWF0f3@wuerfel> <20140414225151.GF22518@verge.net.au>
-In-Reply-To: <20140414225151.GF22518@verge.net.au>
+References: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>
-Cc: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On 14/04/14 23:51, Simon Horman wrote:
-> On Tue, Apr 15, 2014 at 12:10:00AM +0200, Arnd Bergmann wrote:
->> On Monday 14 April 2014 22:35:05 Ben Dooks wrote:
->>> Add the DMA resource IDs for the R8A7790 Audio and SYS DMA controllers
->>> for use when specifying DMA handles.
->>>
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>
->> I really hate these lists in bindings:
->>
->>> +#define R8A7790_DMA_SCIFA0_TX	(0x21)
->>> +#define R8A7790_DMA_SCIFA0_RX	(0x22)
->>> +#define R8A7790_DMA_SCIFA1_TX	(0x25)
->>> +#define R8A7790_DMA_SCIFA1_RX	(0x26)
->>> +#define R8A7790_DMA_SCIFA2_TX	(0x27)
->>> +#define R8A7790_DMA_SCIFA2_RX	(0x28)
->>> +
->>> +#define R8A7790_DMA_SCIFB0_TX	(0x3D)
->>> +#define R8A7790_DMA_SCIFB0_RX	(0x3E)
->>> +#define R8A7790_DMA_SCIFB1_TX	(0x19)
->>> +#define R8A7790_DMA_SCIFB1_RX	(0x1A)
->>> +#define R8A7790_DMA_SCIFB2_TX	(0x1D)
->>> +#define R8A7790_DMA_SCIFB2_RX	(0x1E)
->>
->> These are all hardware constants, they should come from the data sheet and
->> get put into the dtsi file. The driver doesn't care what they are, and
->> the binding doesn't care, this only serves to make the binding less
->> generic.
->
-> They serve to make the dts file significantly more readable and
-> give some small level of compile-time checking to the dts file.
->
-> I am entirely in favour of them and its the direction that we
-> have been moving in for shmobile bindings.
+Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
+both share the same device sources, so are wrapped in the shdma-mux
+node to allow both to be used.
 
-I don't really mind either way on these, when we had the
-configuration for each slave in the dma-controller node
-then having defines was very sensible.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
->>> +#define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
->>> +#define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
->>> +#define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
->>> +#define CHCR_TX_256BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
->>
->> For these, it's different: There is nothing wrong putting macros like
->> these into DT, because they will be the same across all SoCs.
->>
->> However, as I mentioned in my reply to patch 8, I don't think that information
->> belongs into DT, and it should be in the device driver instead, because
->> that already knows the direction and transfer width and has to set it
->> through the slave config interface anyway.
+---
+v2:
+	- fix indentation
+	- remove extra channel on dmac1
+v3:
+	- updated to use include files
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 90 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 90 insertions(+)
 
-There are a couple of issues here, firstly is that I have no idea if
-any other SoCs have control bits that are not currently configurable
-from the information supplied by a driver when it is bound.
-
-The second is that the DMA for some peripherals do not match the size
-of the registers, for example the SDHI blocks can do 256bit DMA to
-what is specified to be a 32bit register.
-
-I also prefer these to be in one place, to avoid the following
-
-- Altering every $OS run on the system when you add a new dma peripheral
-- Having to cross merge adding to DTS/DTSI and a driver for the same.
-
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index f98b01d..a005e68 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -8,6 +8,8 @@
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/dma/shdma.h>
++#include <dt-bindings/dma/r8a7790-dma.h>
+ #include <dt-bindings/clock/r8a7790-clock.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+@@ -86,6 +88,94 @@
+ 		};
+ 	};
+ 
++#define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
++#define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
++#define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
++#define CHCR_TX_256BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
++
++	dma0: dma-mux@0 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <1>;
++		dma-channels = <20>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		renesas,slaves = <R8A7790_DMA_SDHI0_RX  CHCR_RX_256BIT>,
++				 <R8A7790_DMA_SDHI0_TX  CHCR_TX_256BIT>,
++				 <R8A7790_DMA_SDHI1_RX  CHCR_RX_256BIT>,
++				 <R8A7790_DMA_SDHI1_TX  CHCR_TX_256BIT>,
++				 <R8A7790_DMA_SDHI2_RX  CHCR_RX_256BIT>,
++				 <R8A7790_DMA_SDHI2_TX  CHCR_TX_256BIT>,
++				 <R8A7790_DMA_MMCIF0_RX CHCR_RX_32BIT>,
++				 <R8A7790_DMA_MMCIF0_TX CHCR_TX_32BIT>,
++				 <R8A7790_DMA_MMCIF1_RX CHCR_RX_32BIT>,
++				 <R8A7790_DMA_MMCIF1_TX CHCR_TX_32BIT>;
++
++		sysdma0: dmac@e6700000 {
++			compatible = "renesas,dma-r8a7790", "renesas,dma-arm";
++			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
++			dma-channels = <15>;
++			status = "disabled";
++			reg = <0 0xe6700020 0 0xffc0>;
++			interrupt-parent = <&gic>;
++
++			interrupts =	<0 197 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 200 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 201 IRQ_TYPE_LEVEL_HIGH>,
++					<0 202 IRQ_TYPE_LEVEL_HIGH>,
++					<0 203 IRQ_TYPE_LEVEL_HIGH>,
++					<0 204 IRQ_TYPE_LEVEL_HIGH>,
++					<0 205 IRQ_TYPE_LEVEL_HIGH>,
++					<0 206 IRQ_TYPE_LEVEL_HIGH>,
++					<0 207 IRQ_TYPE_LEVEL_HIGH>,
++					<0 208 IRQ_TYPE_LEVEL_HIGH>,
++					<0 209 IRQ_TYPE_LEVEL_HIGH>,
++					<0 210 IRQ_TYPE_LEVEL_HIGH>,
++					<0 211 IRQ_TYPE_LEVEL_HIGH>,
++					<0 212 IRQ_TYPE_LEVEL_HIGH>,
++					<0 213 IRQ_TYPE_LEVEL_HIGH>,
++					<0 214 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14";
++		};
++
++		sysdma1: dmac@e6720000 {
++			compatible = "renesas,dma-r8a7790";
++			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
++			dma-channels = <15>;
++			reg = <0 0xe6720020 0 0xffc0>;
++			status = "disabled";
++
++			interrupt-parent = <&gic>;
++			interrupts =  <0 220 IRQ_TYPE_LEVEL_HIGH>,
++					<0 216 IRQ_TYPE_LEVEL_HIGH>,
++					<0 217 IRQ_TYPE_LEVEL_HIGH>,
++					<0 218 IRQ_TYPE_LEVEL_HIGH>,
++					<0 219 IRQ_TYPE_LEVEL_HIGH>,
++					<0 308 IRQ_TYPE_LEVEL_HIGH>,
++					<0 309 IRQ_TYPE_LEVEL_HIGH>,
++					<0 310 IRQ_TYPE_LEVEL_HIGH>,
++					<0 311 IRQ_TYPE_LEVEL_HIGH>,
++					<0 312 IRQ_TYPE_LEVEL_HIGH>,
++					<0 313 IRQ_TYPE_LEVEL_HIGH>,
++					<0 314 IRQ_TYPE_LEVEL_HIGH>,
++					<0 315 IRQ_TYPE_LEVEL_HIGH>,
++					<0 316 IRQ_TYPE_LEVEL_HIGH>,
++					<0 317 IRQ_TYPE_LEVEL_HIGH>,
++					<0 318 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14";
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.9.1
+
