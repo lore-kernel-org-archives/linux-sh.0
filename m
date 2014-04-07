@@ -1,95 +1,26 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 07 Apr 2014 10:30:53 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7791: add EHCI clock DT support
-Message-Id: <1854497.ZhKYzhMEAC@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 07 Apr 2014 11:16:28 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7791: Add EHCI MSTP clock
+Message-Id: <5342890C.8090703@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404050349.56764.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404050349.56764.sergei.shtylyov@cogentembedded.com>
+References: <20140407060421.25826.64819.sendpatchset@w520>
+In-Reply-To: <20140407060421.25826.64819.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hello.
 
-Thank you for the patch.
+On 07-04-2014 10:04, Magnus Damm wrote:
 
-On Saturday 05 April 2014 03:49:55 Sergei Shtylyov wrote:
-> Add the USB EHCI clock to the R8A7791 device tree.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> From: Magnus Damm <damm@opensource.se>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> Add support for EHCI clock gating via the MSTP703 bit on r8a7791.
 
-> 
-> ---
-> The patch is against 'renesas-devel-3.14-20140403' tag of Simon Horman's
-> 'renesas.git' repo.
-> 
->  arch/arm/boot/dts/r8a7791.dtsi            |   25 +++++++++++++++----------
->  include/dt-bindings/clock/r8a7791-clock.h |    1 +
->  2 files changed, 16 insertions(+), 10 deletions(-)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -774,20 +774,25 @@
->  		mstp7_clks: mstp7_clks@e615014c {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-> -			clocks = <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
-> -				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-> -				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
-> +			clocks = <&mp_clk>, <&mp_clk>, <&zs_clk>, <&p_clk>,
-> +			         <&p_clk>, <&zs_clk>, <&zs_clk>, <&p_clk>,
-> +				 <&p_clk>, <&p_clk>, <&p_clk>, <&zx_clk>,
-> +				 <&zx_clk>, <&zx_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> -				R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
-> -				R8A7791_CLK_SCIF4 R8A7791_CLK_HSCIF1 R8A7791_CLK_HSCIF0
-> -				R8A7791_CLK_SCIF3 R8A7791_CLK_SCIF2 R8A7791_CLK_SCIF1
-> -				R8A7791_CLK_SCIF0 R8A7791_CLK_DU1 R8A7791_CLK_DU0
-> -				R8A7791_CLK_LVDS0
-> +				R8A7791_CLK_EHCI R8A7791_CLK_HSUSB
-> +				R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
-> +				R8A7791_CLK_SCIF4 R8A7791_CLK_HSCIF1
-> +				R8A7791_CLK_HSCIF0 R8A7791_CLK_SCIF3
-> +				R8A7791_CLK_SCIF2 R8A7791_CLK_SCIF1
-> +				R8A7791_CLK_SCIF0 R8A7791_CLK_DU1
-> +				R8A7791_CLK_DU0 R8A7791_CLK_LVDS0
-> 
->  			>;
-> 
->  			clock-output-names > -				"hsusb", "hscif2", "scif5", "scif4", "hscif1", "hscif0",
-> -				"scif3", "scif2", "scif1", "scif0", "du1", "du0", "lvds0";
-> +				"ehci", "hsusb", "hscif2", "scif5",
-> +				"scif4", "hscif1", "hscif0", "scif3",
-> +				"scif2", "scif1", "scif0", "du1",
-> +				"du0", "lvds0";
->  		};
->  		mstp8_clks: mstp8_clks@e6150990 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> Index: renesas/include/dt-bindings/clock/r8a7791-clock.h
-> =================================> --- renesas.orig/include/dt-bindings/clock/r8a7791-clock.h
-> +++ renesas/include/dt-bindings/clock/r8a7791-clock.h
-> @@ -63,6 +63,7 @@
->  #define R8A7791_CLK_PWM			23
-> 
->  /* MSTP7 */
-> +#define R8A7791_CLK_EHCI		3
->  #define R8A7791_CLK_HSUSB		4
->  #define R8A7791_CLK_HSCIF2		13
->  #define R8A7791_CLK_SCIF5		14
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
--- 
-Regards,
+    I have already posted such patch at end of the last week.
 
-Laurent Pinchart
+WBR, Sergei
 
