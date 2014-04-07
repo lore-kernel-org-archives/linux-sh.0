@@ -1,58 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Apr 2014 08:58:21 +0000
-Subject: Re: [PATCH v2 3/5] ARM: shmobile: r8a7790: add IIC0-2 clock macros
-Message-Id: <20140410085821.GD16758@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 07 Apr 2014 22:37:44 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+Message-Id: <201404080237.45734.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
- <1395773789-17249-4-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1395773789-17249-4-git-send-email-wsa@the-dreams.de>
+References: <201404080235.22151.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404080235.22151.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 25, 2014 at 07:56:27PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Thanks, I have queued this up.
+Add device nodes for the R8A7790 internal PCI bridge devices.
 
-> ---
-> Change since V1:
-> 
-> * added Ack
-> 
->  include/dt-bindings/clock/r8a7790-clock.h | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-> index 6548a5fbcf4a..4d3e935b3f1b 100644
-> --- a/include/dt-bindings/clock/r8a7790-clock.h
-> +++ b/include/dt-bindings/clock/r8a7790-clock.h
-> @@ -50,6 +50,7 @@
->  #define R8A7790_CLK_SYS_DMAC0		19
->  
->  /* MSTP3 */
-> +#define R8A7790_CLK_IIC2		0
->  #define R8A7790_CLK_TPU0		4
->  #define R8A7790_CLK_MMCIF1		5
->  #define R8A7790_CLK_SDHI3		11
-> @@ -57,6 +58,8 @@
->  #define R8A7790_CLK_SDHI1		13
->  #define R8A7790_CLK_SDHI0		14
->  #define R8A7790_CLK_MMCIF0		15
-> +#define R8A7790_CLK_IIC0		18
-> +#define R8A7790_CLK_IIC1		23
->  #define R8A7790_CLK_SSUSB		28
->  #define R8A7790_CLK_CMT1		29
->  #define R8A7790_CLK_USBDMAC0		30
-> -- 
-> 1.9.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 2:
+- reworded summary (fixing typo) and changelog;
+- removed extra spaces before {;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790.dtsi |   39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -820,4 +820,43 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++	};
++
++	pci1: pci@ee0b0000 {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0b0000 0x0 0xc00>,
++		      <0x0 0xee0a0000 0x0 0x1100>;
++		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++	};
++
++	pci2: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0d0000 0x0 0xc00>,
++		      <0x0 0xee0c0000 0x0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <2 2>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++	};
+ };
