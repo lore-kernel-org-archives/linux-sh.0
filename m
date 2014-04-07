@@ -1,38 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:02 +0000
-Subject: [PATCH v2 06/17] sh: intc: Restrict INTC_USERIMASK to SH4A
-Message-Id: <1397565253-22741-7-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Apr 2014 06:34:08 +0000
+Subject: [PATCH 03/05] ARM: shmobile: Lager DT reference USB pinmux setup
+Message-Id: <20140407063408.26152.4799.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-register_intc_userimask() is called from sh4a code only.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+Configure the pinmux on Lager for USB ports via the default
+setting. This allows support for USB function on USB0 and
+USB Host for USB1 and USB2. Not for upstream merge.
+
+Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-v2:
-  - Add Reviewed-by, Tested-by
 
- drivers/sh/intc/Kconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790-lager.dts |   18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-index f7d90617c9d9..60228fae943f 100644
---- a/drivers/sh/intc/Kconfig
-+++ b/drivers/sh/intc/Kconfig
-@@ -6,7 +6,7 @@ comment "Interrupt controller options"
+--- 0001/arch/arm/boot/dts/r8a7790-lager.dts
++++ work/arch/arm/boot/dts/r8a7790-lager.dts	2014-04-07 13:08:46.000000000 +0900
+@@ -146,7 +146,8 @@
+ };
  
- config INTC_USERIMASK
- 	bool "Userspace interrupt masking support"
--	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-+	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
- 	help
- 	  This enables support for hardware-assisted userspace hardirq
- 	  masking.
--- 
-1.7.9.5
-
+ &pfc {
+-	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins
++		     &usb0_pins &usb1_pins &usb2_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	du_pins: du {
+@@ -199,6 +200,21 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0_ovc_vbus";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
+ };
+ 
+ &ether {
