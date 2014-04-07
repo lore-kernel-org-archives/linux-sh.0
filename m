@@ -1,61 +1,102 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Apr 2014 07:48:24 +0000
-Subject: Re: [PATCH 0/4] r8a779[01] I2C clocks fixes
-Message-Id: <20140410074819.GA16758@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 07 Apr 2014 20:07:06 +0000
+Subject: [PATCH 6/9] ARM: shmobile: r8a7790: add audio dmac node
+Message-Id: <1396901229-29117-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396350138-26850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396350138-26850-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On Thu, Apr 10, 2014 at 03:21:02PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Wed, Apr 2, 2014 at 8:51 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > Hi Wolfram,
-> >
-> > On Wednesday 02 April 2014 13:42:20 Wolfram Sang wrote:
-> >> On Tue, Apr 01, 2014 at 01:02:14PM +0200, Laurent Pinchart wrote:
-> >> > Hello,
-> >> >
-> >> > The I2C clocks select an incorrect parent on r8a7790 and r8a7791, both in
-> >> > the legacy C code and in DT. This patch set fixes that.
-> >> >
-> >> > Laurent Pinchart (4):
-> >> >   ARM: shmobile: r8a7790: Fix the I2C clocks parents in legacy code
-> >> >   ARM: shmobile: r8a7791: Fix the I2C clocks parents in legacy code
-> >> >   ARM: shmobile: r8a7790: Fix the I2C clocks parents in DT
-> >> >   ARM: shmobile: r8a7791: Fix the I2C clocks parents in DT
-> >>
-> >> Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
-> >
-> > Thank you.
-> >
-> >> CC on I2C patches would be appreciated.
-> >
-> > Sure, sorry for having forgotten.
-> 
-> I'm a bit unclear about who is supposed to merge these patches, but
-> based on path it looks to me like Simon is supposed to do that.
+Add initial audio dmac node and resources.
 
-Yes, it seems so.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 68 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 68 insertions(+)
 
-> So Simon, can you please pick up this series and include these?
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2c8cbbd..6032783 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -176,6 +176,74 @@
+ 		};
+ 	};
+ 
++	dma1: dma-mux@1 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <1>;
++		dma-channels = <20>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		audiodma0: dmac@ec700000 {
++			compatible = "renesas,dma-r8a7790", "renesas,dma-arm";
++			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
++			dma-channels = <13>;
++			status = "disabled";
++			reg = <0 0xec700020 0 0xffc0>;
++			interrupt-parent = <&gic>;
++
++			interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 320 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 321 IRQ_TYPE_LEVEL_HIGH>,
++					<0 322 IRQ_TYPE_LEVEL_HIGH>,
++					<0 323 IRQ_TYPE_LEVEL_HIGH>,
++					<0 324 IRQ_TYPE_LEVEL_HIGH>,
++					<0 325 IRQ_TYPE_LEVEL_HIGH>,
++					<0 326 IRQ_TYPE_LEVEL_HIGH>,
++					<0 327 IRQ_TYPE_LEVEL_HIGH>,
++					<0 328 IRQ_TYPE_LEVEL_HIGH>,
++					<0 329 IRQ_TYPE_LEVEL_HIGH>,
++					<0 330 IRQ_TYPE_LEVEL_HIGH>,
++					<0 331 IRQ_TYPE_LEVEL_HIGH>,
++					<0 332 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12";
++		};
++
++		audiodma1: dmac@ec720000 {
++			compatible = "renesas,dma-r8a7790", "renesas,dma-arm";
++			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
++			dma-channels = <13>;
++			status = "disabled";
++			reg = <0 0xec720020 0 0xffc0>;
++			interrupt-parent = <&gic>;
++
++			interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 333 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 334 IRQ_TYPE_LEVEL_HIGH>,
++					<0 335 IRQ_TYPE_LEVEL_HIGH>,
++					<0 336 IRQ_TYPE_LEVEL_HIGH>,
++					<0 337 IRQ_TYPE_LEVEL_HIGH>,
++					<0 338 IRQ_TYPE_LEVEL_HIGH>,
++					<0 339 IRQ_TYPE_LEVEL_HIGH>,
++					<0 340 IRQ_TYPE_LEVEL_HIGH>,
++					<0 341 IRQ_TYPE_LEVEL_HIGH>,
++					<0 342 IRQ_TYPE_LEVEL_HIGH>,
++					<0 343 IRQ_TYPE_LEVEL_HIGH>,
++					<0 344 IRQ_TYPE_LEVEL_HIGH>,
++					<0 345 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12";
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
+-- 
+1.9.1
 
-Sure, will do.
-
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> Thanks,
-> 
-> / magnus
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
