@@ -1,45 +1,38 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 07 Apr 2014 19:16:52 +0000
-Subject: [PATCH] ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc
-Message-Id: <1396898212-7078-1-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 07 Apr 2014 20:35:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc
+Message-Id: <CAMuHMdW+ZD0r+W2BWw8Uusz_LYPmnrsX+Hk5wkvhiEf0f8u4cg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1396898212-7078-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1396898212-7078-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org
-Cc: devicetree@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, Rob Taylor <rob.taylor@codethink.co.uk>, Ben Dooks <ben.dooks@codethink.co.uk>
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-kernel@lists.codethink.co.uk, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, magnus.damm@opensource.se, Simon Horman <horms@verge.net.au>, Rob Taylor <rob.taylor@codethink.co.uk>
 
-From: Rob Taylor <rob.taylor@codethink.co.uk>
+On Mon, Apr 7, 2014 at 9:16 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> From: Rob Taylor <rob.taylor@codethink.co.uk>
+>
+> Fix probable typo of renesas,groups in the lager dt. The kernel has no
+> renesas,gpios but this should match renesas,groups.
+>
+> Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
 
-Fix probable typo of renesas,groups in the lager dt. The kernel has no
-renesas,gpios but this should match renesas,groups.
+Thanks, nice catch!
 
-Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
-[ben.dooks@codethink.co.uk: fixup description]
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+> [ben.dooks@codethink.co.uk: fixup description]
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 6e99eb2..d01048a 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -141,12 +141,12 @@
- 	};
- 
- 	sdhi0_pins: sd0 {
--		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
- 		renesas,function = "sdhi0";
- 	};
- 
- 	sdhi2_pins: sd2 {
--		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
- 	};
- 
--- 
-1.9.1
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
