@@ -1,43 +1,78 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 17 Apr 2014 10:18:21 +0000
-Subject: [GIT PULL FOR v3.16] SH-Mobile IPMMU miscellaneous cleanups
-Message-Id: <2764209.oq6GXMERSj@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 07 Apr 2014 22:40:12 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: lager: enable internal PCI
+Message-Id: <201404080240.13639.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+References: <201404080235.22151.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404080235.22151.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Joerg Roedel <joro-zLv9SwRftAIdnm+yROfE0A@public.gmane.org>
-Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Joerg,
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: enabled PCI0]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-are available in the git repository at:
+---
+Changes in version 2:
+- enabled PCI0 device;
+- reworded summary and changelog;
+- refreshed the patch.
 
-  git://linuxtv.org/pinchartl/fbdev.git iommu/for-v3.16
+ arch/arm/boot/dts/r8a7790-lager.dts |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
-for you to fetch changes up to b11762f8431b3a5cf1c156876e79efab7d7f80c4:
-
-  iommu/shmobile: Use devm_ioremap_resource() (2014-04-17 12:16:12 +0200)
-
-The patches have been sitting on the linux-sh and iommu mailing lists for more 
-than two weeks, I think they should be ripe now.
-
-----------------------------------------------------------------
-Laurent Pinchart (2):
-      iommu/shmobile: Don't ignore the ipmmu_iommu_init() return value
-      iommu/shmobile: Use devm_ioremap_resource()
-
- drivers/iommu/shmobile-ipmmu.c | 20 +++++++-------------
- 1 file changed, 7 insertions(+), 13 deletions(-)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -199,6 +199,21 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
+ };
+ 
+ &ether {
+@@ -297,3 +312,21 @@
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
++&pci2 {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
