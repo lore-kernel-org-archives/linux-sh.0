@@ -1,54 +1,40 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 07 Apr 2014 22:49:41 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-Message-Id: <201404080249.42211.sergei.shtylyov@cogentembedded.com>
+Date: Tue, 08 Apr 2014 22:23:33 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add USB PHY DT support
+Message-Id: <201404090223.33654.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404080248.14139.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404080248.14139.sergei.shtylyov@cogentembedded.com>
+References: <201404090221.53167.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404090221.53167.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add device nodes for the R8A7791 internal PCI bridge devices.
+Define the R8A7791 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
 =================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
 +++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -875,4 +875,30 @@
- 		#size-cells = <0>;
+@@ -502,6 +502,15 @@
  		status = "disabled";
  	};
-+
-+	pci0: pci@ee090000 {
-+		compatible = "renesas,pci-r8a7791";
-+		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+ 
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7791";
++		reg = <0 0xe6590100 0 0x100>;
++		#phy-cells = <2>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
++		clock-names = "usbhs";
 +		status = "disabled";
-+
-+		bus-range = <0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
 +	};
 +
-+	pci1: pci@ee0d0000 {
-+		compatible = "renesas,pci-r8a7791";
-+		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <1 1>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+	};
- };
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
