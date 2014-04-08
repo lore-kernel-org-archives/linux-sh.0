@@ -1,51 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:41 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7740: Remove unused r8a7740_add_early_devices_dt()
-Message-Id: <72dc392ae5bbad3477053ac4c5708dba6706ffa0.1398216284.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Apr 2014 14:10:58 +0000
+Subject: [PATCH v2 03/05] ARM: shmobile: lager: DT reference USB pinmux setup
+Message-Id: <20140408141058.10063.89760.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm@opensource.se>
 
-It was removed in commit 744fdc8dc0e22cc5b61ee1bcde9375f188daa330 ("ARM:
-shmobile: r8a7740: Prepare for reference DT setup"), but accidentally
-resurrected in commit 88378837780166d67a11142cd6f76596c0a2d8c3 ("ARM:
-shmobile: Remove unused r8a7740 auxdata table").
+Configure the pinmux on Lager for USB ports via the default
+setting. This allows support for USB function on USB0 and
+USB Host for USB1 and USB2. Not for upstream merge.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 11 -----------
- 1 file changed, 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 8f3c681..cba3a07 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -869,17 +869,6 @@ void __init r8a7740_add_early_devices(void)
- 
- #ifdef CONFIG_USE_OF
- 
--void __init r8a7740_add_early_devices_dt(void)
--{
--	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
--
--	early_platform_add_devices(r8a7740_early_devices,
--				   ARRAY_SIZE(r8a7740_early_devices));
--
--	/* setup early console here as well */
--	shmobile_setup_console();
--}
--
- void __init r8a7740_add_standard_devices_dt(void)
- {
- 	platform_add_devices(r8a7740_devices_dt,
--- 
-1.8.5.2
+ arch/arm/boot/dts/r8a7790-lager.dts |   18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
 
+--- 0001/arch/arm/boot/dts/r8a7790-lager.dts
++++ work/arch/arm/boot/dts/r8a7790-lager.dts	2014-04-07 13:08:46.000000000 +0900
+@@ -146,7 +146,8 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins
++		     &usb0_pins &usb1_pins &usb2_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	du_pins: du {
+@@ -199,6 +200,21 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0_ovc_vbus";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
+ };
+ 
+ &ether {
