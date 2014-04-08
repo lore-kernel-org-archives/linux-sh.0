@@ -1,40 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 08 Apr 2014 22:23:33 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7791: add USB PHY DT support
-Message-Id: <201404090223.33654.sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Apr 2014 12:37:58 +0000
+Subject: [PATCH] ARM: shmobile: Enable VSP1 in shmobile_defconfig
+Message-Id: <20140408123758.9749.1753.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404090221.53167.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404090221.53167.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the R8A7791 generic part of the USB PHY device node. It is up to the
-board file to enable the device.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Both r8a7790 and r8a7791 have multiple on-chip VSP1 devices, so
+enable the VSP1 driver by default in the shmobile_defconfig.
 
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |    9 +++++++++
- 1 file changed, 9 insertions(+)
 
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -502,6 +502,15 @@
- 		status = "disabled";
- 	};
- 
-+	usbphy: usb-phy@e6590100 {
-+		compatible = "renesas,usb-phy-r8a7791";
-+		reg = <0 0xe6590100 0 0x100>;
-+		#phy-cells = <2>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		clock-names = "usbhs";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ Written on top of renesas-devel-v3.14-20140408
+
+ arch/arm/configs/shmobile_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- 0001/arch/arm/configs/shmobile_defconfig
++++ work/arch/arm/configs/shmobile_defconfig	2014-04-08 19:20:42.000000000 +0900
+@@ -92,10 +92,14 @@ CONFIG_REGULATOR_FIXED_VOLTAGE=y
+ CONFIG_REGULATOR_GPIO=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_MEDIA_CONTROLLER=y
++CONFIG_VIDEO_V4L2_SUBDEV_API=y
+ CONFIG_V4L_PLATFORM_DRIVERS=y
+ CONFIG_SOC_CAMERA=y
+ CONFIG_SOC_CAMERA_PLATFORM=y
+ CONFIG_VIDEO_RCAR_VIN=y
++CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_RENESAS_VSP1=y
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV7180=y
+ CONFIG_DRM=y
