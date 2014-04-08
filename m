@@ -1,111 +1,233 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 30 Apr 2014 00:45:55 +0000
-Subject: Re: [PATCH 3/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
-Message-Id: <22937305.8Aq8zO6ih4@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Tue, 08 Apr 2014 07:15:21 +0000
+Subject: [PATCH][RFC] ARM: shmobile: lager: move res/data into init function
+Message-Id: <87txa4thq0.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
- <1398757406-30920-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1398757406-30920-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thank you for the patch.
+platform_device_register_xxx() uses kmemdup() for res / data.
+This means we can move these codes into init function if
+it was defined.
 
-On Tuesday 29 April 2014 16:43:25 Simon Horman wrote:
-> Initialise SCIF devices using DT when booting marzen
-> using multiplatform.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Simon, Magnus
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This is not exciting patch, but cleanup code.
+This is focusing to lager only at this point.
+Actually, I would like to create board_add_xxx() function
+for all devices, on all board-xxx.c / setup-xxx.c
+Because, board-xxx.c has many global variable, but, almost all are copied
+by kmemdup() and removed by __init.
+It will be more readable if these are inside board_add_xxx() function.
+Yes, not exciting...
 
-> ---
->  arch/arm/boot/dts/r8a7779-marzen.dts   | 22 +++++++++++++++++++---
->  arch/arm/mach-shmobile/setup-r8a7779.c | 10 +++++-----
->  2 files changed, 24 insertions(+), 8 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts
-> b/arch/arm/boot/dts/r8a7779-marzen.dts index 769ae84..6e603db 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-> @@ -18,6 +18,11 @@
->  	model = "marzen";
->  	compatible = "renesas,marzen", "renesas,r8a7779";
-> 
-> +	aliases {
-> +		serial2 = &scif2;
-> +		serial4 = &scif4;
-> +	};
-> +
->  	chosen {
->  		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs 
-ip=on";
->  	};
-> @@ -73,9 +78,6 @@
->  };
-> 
->  &pfc {
-> -	pinctrl-0 = <&scif2_pins &scif4_pins>;
-> -	pinctrl-names = "default";
-> -
->  	lan0_pins: lan0 {
->  		intc {
->  			renesas,groups = "intc_irq1_b";
-> @@ -108,6 +110,20 @@
->  	};
->  };
-> 
-> +&scif2 {
-> +       pinctrl-0 = <&scif2_pins>;
-> +       pinctrl-names = "default";
-> +
-> +       status = "okay";
-> +};
-> +
-> +&scif4 {
-> +       pinctrl-0 = <&scif4_pins>;
-> +       pinctrl-names = "default";
-> +
-> +       status = "okay";
-> +};
-> +
->  &sdhi0 {
->  	pinctrl-0 = <&sdhi0_pins>;
->  	pinctrl-names = "default";
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c
-> b/arch/arm/mach-shmobile/setup-r8a7779.c index 3471a9b..0d2910c 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> @@ -679,17 +679,17 @@ static void __init r8a7779_register_hpb_dmae(void)
->  }
-> 
->  static struct platform_device *r8a7779_devices_dt[] __initdata = {
-> +	&tmu00_device,
-> +	&tmu01_device,
-> +};
-> +
-> +static struct platform_device *r8a7779_standard_devices[] __initdata = {
->  	&scif0_device,
->  	&scif1_device,
->  	&scif2_device,
->  	&scif3_device,
->  	&scif4_device,
->  	&scif5_device,
-> -	&tmu00_device,
-> -	&tmu01_device,
-> -};
-> -
-> -static struct platform_device *r8a7779_standard_devices[] __initdata = {
->  	&i2c0_device,
->  	&i2c1_device,
->  	&i2c2_device,
+ arch/arm/mach-shmobile/board-lager.c |  144 +++++++++++++++++-----------------
+ 1 file changed, 72 insertions(+), 72 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f0104bf..78625ff 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -116,17 +116,17 @@ static const struct rcar_du_platform_data lager_du_pdata __initconst = {
+ 	.num_encoders = ARRAY_SIZE(lager_du_encoders),
+ };
+ 
+-static const struct resource du_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xfeb00000, 0x70000),
+-	DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
+-	DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
+-	DEFINE_RES_IRQ(gic_spi(256)),
+-	DEFINE_RES_IRQ(gic_spi(268)),
+-	DEFINE_RES_IRQ(gic_spi(269)),
+-};
+-
+ static void __init lager_add_du_device(void)
+ {
++	struct resource du_resources[] = {
++		DEFINE_RES_MEM(0xfeb00000, 0x70000),
++		DEFINE_RES_MEM_NAMED(0xfeb90000, 0x1c, "lvds.0"),
++		DEFINE_RES_MEM_NAMED(0xfeb94000, 0x1c, "lvds.1"),
++		DEFINE_RES_IRQ(gic_spi(256)),
++		DEFINE_RES_IRQ(gic_spi(268)),
++		DEFINE_RES_IRQ(gic_spi(269)),
++	};
++
+ 	struct platform_device_info info = {
+ 		.name = "rcar-du-r8a7790",
+ 		.id = -1,
+@@ -341,18 +341,18 @@ static const struct resource qspi_resources[] __initconst = {
+ };
+ 
+ /* VIN */
+-static const struct resource vin_resources[] __initconst = {
+-	/* VIN0 */
+-	DEFINE_RES_MEM(0xe6ef0000, 0x1000),
+-	DEFINE_RES_IRQ(gic_spi(188)),
+-	/* VIN1 */
+-	DEFINE_RES_MEM(0xe6ef1000, 0x1000),
+-	DEFINE_RES_IRQ(gic_spi(189)),
+-};
+-
+ static void __init lager_add_vin_device(unsigned idx,
+ 					struct rcar_vin_platform_data *pdata)
+ {
++	struct resource vin_resources[] = {
++		/* VIN0 */
++		DEFINE_RES_MEM(0xe6ef0000, 0x1000),
++		DEFINE_RES_IRQ(gic_spi(188)),
++		/* VIN1 */
++		DEFINE_RES_MEM(0xe6ef1000, 0x1000),
++		DEFINE_RES_IRQ(gic_spi(189)),
++	};
++
+ 	struct platform_device_info vin_info = {
+ 		.parent		= &platform_bus,
+ 		.name		= "r8a7790-vin",
+@@ -559,13 +559,6 @@ static struct i2c_board_info i2c2_devices[] = {
+ };
+ 
+ /* Sound */
+-static struct resource rsnd_resources[] __initdata = {
+-	[RSND_GEN2_SCU]  = DEFINE_RES_MEM(0xec500000, 0x1000),
+-	[RSND_GEN2_ADG]  = DEFINE_RES_MEM(0xec5a0000, 0x100),
+-	[RSND_GEN2_SSIU] = DEFINE_RES_MEM(0xec540000, 0x1000),
+-	[RSND_GEN2_SSI]  = DEFINE_RES_MEM(0xec541000, 0x1280),
+-};
+-
+ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+ 	RSND_SSI_SET(0, 0, gic_spi(370), RSND_SSI_PLAY),
+ 	RSND_SSI_SET(0, 0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
+@@ -583,25 +576,32 @@ static struct rcar_snd_info rsnd_info = {
+ 	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
+ };
+ 
+-static struct asoc_simple_card_info rsnd_card_info = {
+-	.name		= "AK4643",
+-	.card		= "SSI01-AK4643",
+-	.codec		= "ak4642-codec.2-0012",
+-	.platform	= "rcar_sound",
+-	.daifmt		= SND_SOC_DAIFMT_LEFT_J,
+-	.cpu_dai = {
+-		.name	= "rcar_sound",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+-	},
+-	.codec_dai = {
+-		.name	= "ak4642-hifi",
+-		.fmt	= SND_SOC_DAIFMT_CBM_CFM,
+-		.sysclk	= 11289600,
+-	},
+-};
+-
+ static void __init lager_add_rsnd_device(void)
+ {
++	struct resource rsnd_resources[] = {
++		[RSND_GEN2_SCU]  = DEFINE_RES_MEM(0xec500000, 0x1000),
++		[RSND_GEN2_ADG]  = DEFINE_RES_MEM(0xec5a0000, 0x100),
++		[RSND_GEN2_SSIU] = DEFINE_RES_MEM(0xec540000, 0x1000),
++		[RSND_GEN2_SSI]  = DEFINE_RES_MEM(0xec541000, 0x1280),
++	};
++
++	struct asoc_simple_card_info rsnd_card_info = {
++		.name		= "AK4643",
++		.card		= "SSI01-AK4643",
++		.codec		= "ak4642-codec.2-0012",
++		.platform	= "rcar_sound",
++		.daifmt		= SND_SOC_DAIFMT_LEFT_J,
++		.cpu_dai = {
++			.name	= "rcar_sound",
++			.fmt	= SND_SOC_DAIFMT_CBS_CFS,
++		},
++		.codec_dai = {
++			.name	= "ak4642-hifi",
++			.fmt	= SND_SOC_DAIFMT_CBM_CFM,
++			.sysclk	= 11289600,
++		},
++	};
++
+ 	struct platform_device_info cardinfo = {
+ 		.parent         = &platform_bus,
+ 		.name           = "asoc-simple-card",
+@@ -651,44 +651,44 @@ static struct resource sdhi2_resources[] __initdata = {
+ };
+ 
+ /* Internal PCI1 */
+-static const struct resource pci1_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
+-	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
+-	DEFINE_RES_IRQ(gic_spi(112)),
+-};
+-
+-static const struct platform_device_info pci1_info __initconst = {
+-	.parent		= &platform_bus,
+-	.name		= "pci-rcar-gen2",
+-	.id		= 1,
+-	.res		= pci1_resources,
+-	.num_res	= ARRAY_SIZE(pci1_resources),
+-	.dma_mask	= DMA_BIT_MASK(32),
+-};
+-
+ static void __init lager_add_usb1_device(void)
+ {
++	struct resource pci1_resources[] = {
++		DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
++		DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
++		DEFINE_RES_IRQ(gic_spi(112)),
++	};
++
++	struct platform_device_info pci1_info = {
++		.parent		= &platform_bus,
++		.name		= "pci-rcar-gen2",
++		.id		= 1,
++		.res		= pci1_resources,
++		.num_res	= ARRAY_SIZE(pci1_resources),
++		.dma_mask	= DMA_BIT_MASK(32),
++	};
++
+ 	platform_device_register_full(&pci1_info);
+ }
+ 
+ /* Internal PCI2 */
+-static const struct resource pci2_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
+-	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
+-	DEFINE_RES_IRQ(gic_spi(113)),
+-};
+-
+-static const struct platform_device_info pci2_info __initconst = {
+-	.parent		= &platform_bus,
+-	.name		= "pci-rcar-gen2",
+-	.id		= 2,
+-	.res		= pci2_resources,
+-	.num_res	= ARRAY_SIZE(pci2_resources),
+-	.dma_mask	= DMA_BIT_MASK(32),
+-};
+-
+ static void __init lager_add_usb2_device(void)
+ {
++	struct resource pci2_resources[] = {
++		DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
++		DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
++		DEFINE_RES_IRQ(gic_spi(113)),
++	};
++
++	struct platform_device_info pci2_info = {
++		.parent		= &platform_bus,
++		.name		= "pci-rcar-gen2",
++		.id		= 2,
++		.res		= pci2_resources,
++		.num_res	= ARRAY_SIZE(pci2_resources),
++		.dma_mask	= DMA_BIT_MASK(32),
++	};
++
+ 	platform_device_register_full(&pci2_info);
+ }
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
