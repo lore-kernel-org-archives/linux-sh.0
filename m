@@ -1,82 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 08 Apr 2014 16:35:56 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Add VSP1 devices to DT
-Message-Id: <1396974957-6046-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 08 Apr 2014 22:17:03 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add USB PHY DT support
+Message-Id: <201404090217.04437.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
+References: <201404090211.56867.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404090211.56867.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define the R8A7790 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 51 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da665fa..e0c5a5b 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -412,6 +412,57 @@
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -412,6 +412,15 @@
  		status = "disabled";
  	};
  
-+	vsp1@fe920000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe920000 0 0x8000>;
-+		interrupts = <0 266 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_R>;
-+
-+		renesas,has-sru;
-+		renesas,#rpf = <5>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe928000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe928000 0 0x8000>;
-+		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_S>;
-+
-+		renesas,has-lut;
-+		renesas,has-sru;
-+		renesas,#rpf = <5>;
-+		renesas,#uds = <3>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe930000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe930000 0 0x8000>;
-+		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU0>;
-+
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe938000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe938000 0 0x8000>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU1>;
-+
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7790";
++		reg = <0 0xe6590100 0 0x100>;
++		#phy-cells = <2>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		clock-names = "usbhs";
++		status = "disabled";
 +	};
 +
  	clocks {
  		#address-cells = <2>;
  		#size-cells = <2>;
--- 
-1.8.3.2
-
