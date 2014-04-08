@@ -1,61 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 11:46:45 +0000
-Subject: [WIP 7/7] ARM: shmobile: koelsch-reference: Add DU HDMI output support
-Message-Id: <1396439205-26199-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Apr 2014 14:10:34 +0000
+Subject: [PATCH v2 01/05] gpio: rcar: Per-controller gpios property prototype
+Message-Id: <20140408141034.10063.98454.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
+
+Hack up the R-Car GPIO driver to install a "gpios" property
+per GPIO controller during run time. This allows drivers
+and board code to look up GPIOs from C code using functions
+such as of_get_gpio().
+
+Not for upstream merge.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts            | 16 ++++++++++++++++
- arch/arm/mach-shmobile/board-koelsch-reference.c |  4 ++++
- 2 files changed, 20 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index c3b0ebe..3d313fa 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -222,6 +222,22 @@
- 	status = "okay";
- 	clock-frequency = <400000>;
+ drivers/gpio/gpio-rcar.c |   23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+--- 0001/drivers/gpio/gpio-rcar.c
++++ work/drivers/gpio/gpio-rcar.c	2014-04-07 12:13:13.000000000 +0900
+@@ -30,6 +30,10 @@
+ #include <linux/slab.h>
  
-+	hdmi@39 {
-+		compatible = "adi,adv7511";
-+		reg = <0x39>;
-+		interrupt-parent = <&gpio3>;
-+		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
-+		adi,input-id = <0>;
-+		adi,input-style = <0>;
-+		adi,input-color-depth = <3>;
-+		adi,bit-justification = <0>;
-+		adi,timing-generation-sequence = <0>;
-+		adi,vsync-polarity = <0>;
-+		adi,hsync-polarity = <0>;
-+		adi,clock-delay = <3>;
-+		adi,is-rgb;
-+	};
+ struct gpio_rcar_priv {
++	/* per-gpio-device "gpios" for use with of_get_named_gpiod_flags() */
++	struct property gpios_property;
++	__be32 gpios_phandle_value[32 * 3]; /*  #gpio-cells assumed to be 2 */
 +
- 	eeprom@50 {
- 		compatible = "renesas,24c02";
- 		reg = <0x50>;
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 2edeb64..f124f6a 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -51,6 +51,10 @@ static struct rcar_du_encoder_data koelsch_du_encoders[] = {
- 				.flags = 0,
- 			},
- 		},
-+	}, {
-+		.type = RCAR_DU_ENCODER_HDMI,
-+		.output = RCAR_DU_OUTPUT_DPAD0,
-+		.of_path = "/i2c@e6530000/hdmi@39",
- 	},
- };
+ 	void __iomem *base;
+ 	spinlock_t lock;
+ 	struct gpio_rcar_config config;
+@@ -317,6 +321,7 @@ static int gpio_rcar_parse_pdata(struct
+ 	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
+ 	struct device_node *np = p->pdev->dev.of_node;
+ 	struct of_phandle_args args;
++	unsigned int k;
+ 	int ret;
  
--- 
-1.8.3.2
-
+ 	if (pdata) {
+@@ -337,6 +342,18 @@ static int gpio_rcar_parse_pdata(struct
+ 					 : RCAR_MAX_GPIO_PER_BANK;
+ 		p->config.gpio_base = -1;
+ 		p->config.has_both_edge_trigger = info->has_both_edge_trigger;
++
++		/* initialize "gpios" property for this GPIO controller */
++		for (k = 0; k < RCAR_MAX_GPIO_PER_BANK; k++) {
++			p->gpios_phandle_value[k*3] = cpu_to_be32(np->phandle);
++			p->gpios_phandle_value[(k*3) + 1] = cpu_to_be32(k);
++			p->gpios_phandle_value[(k*3) + 2] = cpu_to_be32(0);
++		}
++
++		p->gpios_property.name = "gpios";
++		p->gpios_property.length = sizeof(p->gpios_phandle_value);
++		p->gpios_property.value = p->gpios_phandle_value;
++		of_add_property(np, &p->gpios_property);
+ 	}
+ 
+ 	if (p->config.number_of_pins = 0 ||
+@@ -466,6 +483,8 @@ err0:
+ static int gpio_rcar_remove(struct platform_device *pdev)
+ {
+ 	struct gpio_rcar_priv *p = platform_get_drvdata(pdev);
++	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
++	struct device_node *np = p->pdev->dev.of_node;
+ 	int ret;
+ 
+ 	ret = gpiochip_remove(&p->gpio_chip);
+@@ -473,6 +492,10 @@ static int gpio_rcar_remove(struct platf
+ 		return ret;
+ 
+ 	irq_domain_remove(p->irq_domain);
++
++	if (!pdata && IS_ENABLED(CONFIG_OF) && np)
++		of_remove_property(np, &p->gpios_property);
++
+ 	return 0;
+ }
+ 
