@@ -1,50 +1,64 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 07 Apr 2014 06:33:42 +0000
-Subject: [PATCH 00/05] ARM: shmobile: Lager and Koelsch USB prototype patches
-Message-Id: <20140407063342.26152.96648.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 08 Apr 2014 03:53:57 +0000
+Subject: Re: [PATCH 00/05] ARM: shmobile: Lager and Koelsch USB prototype patches
+Message-Id: <20140408035354.GB5629@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140407063342.26152.96648.sendpatchset@w520>
+In-Reply-To: <20140407063342.26152.96648.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ARM: shmobile: Lager and Koelsch USB prototype patches
+On Mon, Apr 07, 2014 at 03:33:42PM +0900, Magnus Damm wrote:
+> ARM: shmobile: Lager and Koelsch USB prototype patches
+> 
+> [PATCH 01/05] gpio: rcar: Per-controller gpios property prototype
+> [PATCH 02/05] ARM: shmobile: Lager DT reference USB platform devices
+> [PATCH 03/05] ARM: shmobile: Lager DT reference USB pinmux setup 
 
-[PATCH 01/05] gpio: rcar: Per-controller gpios property prototype
-[PATCH 02/05] ARM: shmobile: Lager DT reference USB platform devices
-[PATCH 03/05] ARM: shmobile: Lager DT reference USB pinmux setup 
-[PATCH 04/05] ARM: shmobile: Koelsch DT reference USB platform devices
-[PATCH 05/05] ARM: shmobile: Koelsch DT reference USB pinmux setup
+For reference I would prefer if the above patches were prefixed with
 
-These patches enable USB functionality for the DT reference
-board support for Lager and Koelsch. With these in place it is
-possible to use a single kernel binary with CCF and MULTIPLATFORM
-on Lager or Koelsch and use USB Host or USB Function even though
-DT bindings are not yet developed for such device drivers.
+ARM: shmobile: lager: 
 
-This is intended as a short term prototype to show that USB
-can be used on R-Car Gen2 hardware such as Lager and Koelsch
-even though DT bindings are not yet in place.
+> [PATCH 04/05] ARM: shmobile: Koelsch DT reference USB platform devices
+> [PATCH 05/05] ARM: shmobile: Koelsch DT reference USB pinmux setup
 
-Based on the legacy Lager and Koelsch board code written by Valentine
-and Vladimir, but slightly reworked to include clock workarounds and
-DT-style GPIO handling. The first patch in this series is a prototype
-to allow board code written in C to access GPIOs on controllers
-described via DT.
+And likewise if the above patches were prefixed with
 
-Not for upstream merge.
+ARM: shmobile: koelsch: 
 
-Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- Written against renesas-devel-v3.14-20140403
-
- The Koelsch code has a run time dependency on:
- [PATCH] ARM: shmobile: r8a7791: Add EHCI MSTP clock
-
- arch/arm/boot/dts/r8a7790-lager.dts              |   18 +
- arch/arm/boot/dts/r8a7791-koelsch.dts            |   12 +
- arch/arm/mach-shmobile/board-koelsch-reference.c |  184 +++++++++++++++++++
- arch/arm/mach-shmobile/board-lager-reference.c   |  211 ++++++++++++++++++++++
- drivers/gpio/gpio-rcar.c                         |   23 ++
- 5 files changed, 446 insertions(+), 2 deletions(-)
+> 
+> These patches enable USB functionality for the DT reference
+> board support for Lager and Koelsch. With these in place it is
+> possible to use a single kernel binary with CCF and MULTIPLATFORM
+> on Lager or Koelsch and use USB Host or USB Function even though
+> DT bindings are not yet developed for such device drivers.
+> 
+> This is intended as a short term prototype to show that USB
+> can be used on R-Car Gen2 hardware such as Lager and Koelsch
+> even though DT bindings are not yet in place.
+> 
+> Based on the legacy Lager and Koelsch board code written by Valentine
+> and Vladimir, but slightly reworked to include clock workarounds and
+> DT-style GPIO handling. The first patch in this series is a prototype
+> to allow board code written in C to access GPIOs on controllers
+> described via DT.
+> 
+> Not for upstream merge.
+> 
+> Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Written against renesas-devel-v3.14-20140403
+> 
+>  The Koelsch code has a run time dependency on:
+>  [PATCH] ARM: shmobile: r8a7791: Add EHCI MSTP clock
+> 
+>  arch/arm/boot/dts/r8a7790-lager.dts              |   18 +
+>  arch/arm/boot/dts/r8a7791-koelsch.dts            |   12 +
+>  arch/arm/mach-shmobile/board-koelsch-reference.c |  184 +++++++++++++++++++
+>  arch/arm/mach-shmobile/board-lager-reference.c   |  211 ++++++++++++++++++++++
+>  drivers/gpio/gpio-rcar.c                         |   23 ++
+>  5 files changed, 446 insertions(+), 2 deletions(-)
+> 
