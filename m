@@ -1,29 +1,31 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 23 Apr 2014 22:25:42 +0000
-Subject: Re: [PATCH v8] can: add Renesas R-Car CAN driver
-Message-Id: <53583DE6.2050908@cogentembedded.com>
+Date: Tue, 08 Apr 2014 22:18:42 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager: enable USB PHY
+Message-Id: <201404090218.43040.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404120152.02366.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404120152.02366.sergei.shtylyov@cogentembedded.com>
+References: <201404090211.56867.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404090211.56867.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Enable USB PHY device for the Lager board. 
 
-On 04/12/2014 01:52 AM, Sergei Shtylyov wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> Add support for the CAN controller found in Renesas R-Car SoCs.
+---
+ arch/arm/boot/dts/r8a7790-lager.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-> ---
-> The patch is against the 'linux-can-next.git' repo.
-> Not posting to netdev@vger.kernel.org this time or DaveM will scold me. :-)
-
-    Marc, Wolfgang, any feedback on the driver?
-
-WBR, Sergei
-
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -330,3 +330,7 @@
+ 	pinctrl-0 = <&usb2_pins>;
+ 	pinctrl-names = "default";
+ };
++
++&usbphy {
++	status = "okay";
++};
