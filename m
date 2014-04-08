@@ -1,68 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 08 Apr 2014 16:35:57 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Add VSP1 devices to DT
-Message-Id: <1396974957-6046-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 08 Apr 2014 00:21:35 +0000
+Subject: [PATCH] ARM: shmobile: lager: Correct setting of ethernet PHY LED mode
+Message-Id: <1396916495-13018-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The correct binding is "micrel,led-mode", not "led-mode".
+
+This corrects an error which was introduced when setting of ethernet PHY
+LED mode was added by 82e62182d59bd1d0 ("ARM: shmobile: lager: Set ethernet
+PHY LED mode").
+
+This makes the lager code consistent with the koelsch code which was added
+by ae00d12a032490b3 ("ARM: shmobile: koelsch: Set ethernet PHY LED mode").
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 5f8bcd4..b94b8af 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -502,6 +502,45 @@
- 		status = "disabled";
+* This is compile tested only (which is of negligible value)
+  as I do not have physical access to a Lager board.
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a55c5f8..265cba1 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -213,7 +213,7 @@
+ 		reg = <1>;
+ 		interrupt-parent = <&irqc0>;
+ 		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
+-		led-mode = <1>;
++		micrel,led-mode = <1>;
  	};
+ };
  
-+	vsp1@fe928000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe928000 0 0x8000>;
-+		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_S>;
-+
-+		renesas,has-lut;
-+		renesas,has-sru;
-+		renesas,#rpf = <5>;
-+		renesas,#uds = <3>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe930000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe930000 0 0x8000>;
-+		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
-+
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
-+
-+	vsp1@fe938000 {
-+		compatible = "renesas,vsp1";
-+		reg = <0 0xfe938000 0 0x8000>;
-+		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
-+
-+		renesas,has-lif;
-+		renesas,has-lut;
-+		renesas,#rpf = <4>;
-+		renesas,#uds = <1>;
-+		renesas,#wpf = <4>;
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
 -- 
-1.8.3.2
+1.8.5.2
 
