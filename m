@@ -1,125 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 23 Apr 2014 11:15:17 +0000
-Subject: [PATCH v5 10/15] ARM: shmobile: sh73a0: Switch to new style TMU device
-Message-Id: <1398251722-31667-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 09 Apr 2014 19:19:30 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791: link PCI USb devices to USB PHY
+Message-Id: <201404092319.31646.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |  3 +-
- arch/arm/mach-shmobile/setup-sh73a0.c | 56 ++++++++---------------------------
- 2 files changed, 14 insertions(+), 45 deletions(-)
+This patch is against 'renesas-devel-v3.14-20140408' tag of Simon Horman's
+'renesas.git' repo plus R8A7791/Koelsch PCI and USB PHY support patches posted
+yesterday and day before. The patch requires the internal PCI and USB PHY
+drivers (also already posted) in order to work...
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index ca03989..0d9cd1f 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -633,8 +633,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-mobile-csi2.1", &mstp_clks[MSTP128]), /* CSI2-RX1 */
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
- 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
--	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
--	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
- 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
-@@ -683,6 +681,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
- 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
- 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
-+	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
- };
- 
- void __init sh73a0_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 71d0e44..ad00724 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -124,54 +124,25 @@ static struct platform_device cmt1_device = {
- };
- 
- /* TMU */
--static struct sh_timer_config tmu00_platform_data = {
--	.name = "TMU00",
--	.channel_offset = 0x4,
--	.timer_bit = 0,
--	.clockevent_rating = 200,
-+static struct sh_timer_config tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct resource tmu00_resources[] = {
--	[0] = DEFINE_RES_MEM(0xfff60008, 0xc),
--	[1] = {
--		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xfff60000, 0x2c),
-+	DEFINE_RES_IRQ(intcs_evt2irq(0xe80)),
-+	DEFINE_RES_IRQ(intcs_evt2irq(0xea0)),
-+	DEFINE_RES_IRQ(intcs_evt2irq(0xec0)),
- };
- 
--static struct platform_device tmu00_device = {
--	.name		= "sh_tmu",
-+static struct platform_device tmu0_device = {
-+	.name		= "sh-tmu",
- 	.id		= 0,
- 	.dev = {
--		.platform_data	= &tmu00_platform_data,
--	},
--	.resource	= tmu00_resources,
--	.num_resources	= ARRAY_SIZE(tmu00_resources),
--};
--
--static struct sh_timer_config tmu01_platform_data = {
--	.name = "TMU01",
--	.channel_offset = 0x10,
--	.timer_bit = 1,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu01_resources[] = {
--	[0] = DEFINE_RES_MEM(0xfff60014, 0xc),
--	[1] = {
--		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu01_device = {
--	.name		= "sh_tmu",
--	.id		= 1,
--	.dev = {
--		.platform_data	= &tmu01_platform_data,
-+		.platform_data	= &tmu0_platform_data,
- 	},
--	.resource	= tmu01_resources,
--	.num_resources	= ARRAY_SIZE(tmu01_resources),
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
- };
- 
- static struct resource i2c0_resources[] = {
-@@ -738,8 +709,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
- };
- 
- static struct platform_device *sh73a0_early_devices[] __initdata = {
--	&tmu00_device,
--	&tmu01_device,
-+	&tmu0_device,
- 	&ipmmu_device,
- };
- 
--- 
-1.8.3.2
+ arch/arm/boot/dts/r8a7791.dtsi |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -891,6 +891,20 @@
+ 		bus-range = <0 0>;
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
++
++		pci@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
++
++		pci@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pci1: pci@ee0d0000 {
+@@ -904,5 +918,19 @@
+ 		bus-range = <1 1>;
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
++
++		pci@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 2 0>;
++			phy-names = "usb";
++		};
++
++		pci@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 2 0>;
++			phy-names = "usb";
++		};
+ 	};
+ };
