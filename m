@@ -1,55 +1,52 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Wed, 09 Apr 2014 18:04:08 +0000
-Subject: [PATCH 1/2] pwm: add period and polarity to struct pwm_lookup
-Message-Id: <1397066649-3767-2-git-send-email-alexandre.belloni@free-electrons.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Wed, 09 Apr 2014 19:37:06 +0000
+Subject: Re: [PATCH 1/2] pwm: add period and polarity to struct pwm_lookup
+Message-Id: <20140409193705.GJ27282@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1397066649-3767-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1397066649-3767-1-git-send-email-alexandre.belloni@free-electrons.com>
+ <1397066649-3767-2-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1397066649-3767-2-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Adds a period and a polarity member to struct pwm_lookup so that when performing
-a lookup using the lookup table instead of device tree, we are able to set the
-period and the polarity accordingly like what is done in
-of_pwm_xlate_with_flags.
+On Wed, Apr 09, 2014 at 08:04:08PM +0200, Alexandre Belloni wrote:
+> Adds a period and a polarity member to struct pwm_lookup so that when performing
+> a lookup using the lookup table instead of device tree, we are able to set the
+> period and the polarity accordingly like what is done in
+> of_pwm_xlate_with_flags.
+> 
+> Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+> ---
+>  drivers/pwm/core.c  | 5 +++++
+>  include/linux/pwm.h | 2 ++
+>  2 files changed, 7 insertions(+)
+> 
+> diff --git a/drivers/pwm/core.c b/drivers/pwm/core.c
+> index a80471399c20..206e5996359c 100644
+> --- a/drivers/pwm/core.c
+> +++ b/drivers/pwm/core.c
+> @@ -663,6 +663,11 @@ struct pwm_device *pwm_get(struct device *dev, const char *con_id)
+>  
+>  	if (chip)
+>  		pwm = pwm_request_from_chip(chip, index, con_id ?: dev_id);
+> +	if (IS_ERR(pwm))
+> +		return pwm;
+> +
+> +	pwm_set_period(pwm, p->period);
+> +	pwm_set_polarity(pwm, p->polarity);
+>  
+>  	mutex_unlock(&pwm_lookup_lock);
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
----
- drivers/pwm/core.c  | 5 +++++
- include/linux/pwm.h | 2 ++
- 2 files changed, 7 insertions(+)
+Clearly, this is not right.  Returning while leaving the mutex locked?
+No.
 
-diff --git a/drivers/pwm/core.c b/drivers/pwm/core.c
-index a80471399c20..206e5996359c 100644
---- a/drivers/pwm/core.c
-+++ b/drivers/pwm/core.c
-@@ -663,6 +663,11 @@ struct pwm_device *pwm_get(struct device *dev, const char *con_id)
- 
- 	if (chip)
- 		pwm = pwm_request_from_chip(chip, index, con_id ?: dev_id);
-+	if (IS_ERR(pwm))
-+		return pwm;
-+
-+	pwm_set_period(pwm, p->period);
-+	pwm_set_polarity(pwm, p->polarity);
- 
- 	mutex_unlock(&pwm_lookup_lock);
- 
-diff --git a/include/linux/pwm.h b/include/linux/pwm.h
-index 4717f54051cb..2f45e2fe5b93 100644
---- a/include/linux/pwm.h
-+++ b/include/linux/pwm.h
-@@ -274,6 +274,8 @@ struct pwm_lookup {
- 	unsigned int index;
- 	const char *dev_id;
- 	const char *con_id;
-+	unsigned int period;
-+	enum pwm_polarity polarity;
- };
- 
- #define PWM_LOOKUP(_provider, _index, _dev_id, _con_id)	\
+The second issue is... with _just_ this patch applied, we end up with
+"period" and "polarity" presumably initialised to zero, which means we
+now end up with the above explicitly setting the period and polarity as
+such.  Isn't that going to change the behaviour of this?
+
 -- 
-1.8.3.2
-
+FTTC broadband for 0.8mile line: now at 9.7Mbps down 460kbps up... slowly
+improving, and getting towards what was expected from it.
