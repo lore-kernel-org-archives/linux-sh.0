@@ -1,24 +1,70 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 23 Apr 2014 14:10:27 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7791: Fix definition of MOD_SEL3
-Message-Id: <CACRpkdZrvvkuGJ0u_eqUP5pD7mHZRHiEq2LwNUnGWyZLxrZVRA@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 09 Apr 2014 19:18:25 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: link PCI USb devices to USB PHY
+Message-Id: <201404092318.26231.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398184685-31670-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1398184685-31670-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 22, 2014 at 6:38 PM, Phil Edworthy
-<phil.edworthy@renesas.com> wrote:
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-> There is a missing 0 entry from the MOD_SEL3 table.
->
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Based on the original work by Ben Dooks <ben.dooks@codethink.co.uk>.
 
-Patch applied for fixes with Laurent's ACK.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Yours,
-Linus Walleij
+---
+This patch is against 'renesas-devel-v3.14-20140408' tag of Simon Horman's
+'renesas.git' repo plus R8A7790/Lager PCI and USB PHY support patches posted
+yesterday and day before. The patch requires the internal PCI and USB PHY
+drivers (also already posted) in order to work...
+
+ arch/arm/boot/dts/r8a7790.dtsi |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -841,6 +841,20 @@
+ 		bus-range = <0 0>;
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
++
++		pci@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
++
++		pci@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pci1: pci@ee0b0000 {
+@@ -867,5 +881,19 @@
+ 		bus-range = <2 2>;
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
++
++		pci@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 2 0>;
++			phy-names = "usb";
++		};
++
++		pci@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 2 0>;
++			phy-names = "usb";
++		};
+ 	};
+ };
