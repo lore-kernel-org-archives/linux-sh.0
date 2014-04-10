@@ -1,47 +1,27 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Apr 2014 07:33:50 +0000
-Subject: [PATCH] ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig
-Message-Id: <1397115230-18437-1-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 10 Apr 2014 07:35:45 +0000
+Subject: Re: [PATCH] ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig
+Message-Id: <CANqRtoQ8-zRY1eCTF9uDzWi+dCaKPBdnmhTrOL8UgztHcVMj7w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397115230-18437-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397115230-18437-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The USB [EO]HCI HCD drivers provide USB host support for Renesas
-R-Car Gen2 platforms. To increase hardware support enable the driver in the
-shmobile_defconfig multiplatform configuration.
+Hi Simon,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On Thu, Apr 10, 2014 at 4:33 PM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> The USB [EO]HCI HCD drivers provide USB host support for Renesas
+> R-Car Gen2 platforms. To increase hardware support enable the driver in the
+> shmobile_defconfig multiplatform configuration.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
----
+Thanks, this configuration is useful for both DT and platform device support.
 
-* Applies on top of renesas-devel-v3.14-20140409v2
+Acked-by: Magnus Damm <damm@opensource.se.>
 
-* Tested with the following patches applied:
-  sh_eth: add device tree support
-  ARM: shmobile: Koelsch DT reference USB pinmux setup
-  ARM: shmobile: Koelsch DT reference USB platform devices
-  ARM: shmobile: Lager DT reference USB pinmux setup
-  ARM: shmobile: Lager DT reference USB platform devices
-  gpio: rcar: Per-controller gpios property prototype
----
- arch/arm/configs/shmobile_defconfig | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 8fb30b0..6d6437c 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -110,6 +110,8 @@ CONFIG_SND_SOC=y
- CONFIG_SND_SOC_RCAR=y
- CONFIG_USB=y
- CONFIG_USB_RCAR_GEN2_PHY=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
- CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_GADGET=y
- CONFIG_USB_RENESAS_USBHS_UDC=y
--- 
-1.8.5.2
-
+/ magnus
