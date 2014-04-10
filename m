@@ -1,43 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Apr 2014 00:15:58 +0000
-Subject: Re: [PATCH] ARM: shmobile: henninger: enable SATA0
-Message-Id: <20140428001558.GN32087@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Thu, 10 Apr 2014 02:39:58 +0000
+Subject: Re: Renesas clock clk-mstp updates for clock-indices
+Message-Id: <87lhvd6h6k.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404260251.28274.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404260251.28274.sergei.shtylyov@cogentembedded.com>
+References: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Apr 26, 2014 at 02:51:27AM +0400, Sergei Shtylyov wrote:
-> Enable SATA0 device for the Henninger board. 
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thanks, I have queued this up.
+Hi all
 
+These patches are very important for me.
+But, could you please teach me currect status of these ??
+Can I find these when -rc1 was released ?
+
+> Mike, following the commit to add the clock-indices field, the following
+> pair of commits updates the shmboile clk-mstp driver to uses these over
+> the local variant.
 > 
-> ---
-> This patch is against 'renesas-devel-v3.15-rc2-20140425v2' tag of Simon Horman's
-> 'renesas.git' repo.
+> Since this is involves two separte trees which are in development, the
+> decision is that we will fixup the renesas trees once they are merged
+> and the development cycle is complete. Once this is done, patch 2/2
+> can be reverted (if people care about three lines of differrence)
 > 
->  arch/arm/boot/dts/r8a7791-henninger.dts |    4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-> +++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-> @@ -74,3 +74,7 @@
->  		micrel,led-mode = <1>;
->  	};
->  };
-> +
-> +&sata0 {
-> +       status = "okay";
-> +};
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
