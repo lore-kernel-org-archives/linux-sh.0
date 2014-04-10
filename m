@@ -1,90 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 23 Apr 2014 11:15:14 +0000
-Subject: [PATCH v5 07/15] ARM: shmobile: r8a7791: Switch to new style CMT device
-Message-Id: <1398251722-31667-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 10 Apr 2014 08:58:21 +0000
+Subject: Re: [PATCH v2 3/5] ARM: shmobile: r8a7790: add IIC0-2 clock macros
+Message-Id: <20140410085821.GD16758@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
+ <1395773789-17249-4-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1395773789-17249-4-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+On Tue, Mar 25, 2014 at 07:56:27PM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa@sang-engineering.com>
+> 
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
- arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
- 3 files changed, 9 insertions(+), 12 deletions(-)
+Thanks, I have queued this up.
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index a3fd302..3b2a498 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -93,7 +93,7 @@ static void __init koelsch_add_standard_devices(void)
- 		const char *con_id;
- 		const char *dev_id;
- 	} clk_names[] = {
--		{ "cmt0", NULL, "sh_cmt.0" },
-+		{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 		{ "scifa0", NULL, "sh-sci.0" },
- 		{ "scifa1", NULL, "sh-sci.1" },
- 		{ "scifb0", NULL, "sh-sci.2" },
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 701383f..f763143 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -266,7 +266,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index e28404e..561653d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -128,20 +128,17 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
- 					  &scif##index##_platform_data,	       \
- 					  sizeof(scif##index##_platform_data))
- 
--static const struct sh_timer_config cmt00_platform_data __initconst = {
--	.name = "CMT00",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_config cmt0_platform_data = {
-+	.channels_mask = 0x60,
- };
- 
--static const struct resource cmt00_resources[] __initconst = {
--	DEFINE_RES_MEM(0xffca0510, 0x0c),
--	DEFINE_RES_MEM(0xffca0500, 0x04),
--	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+static struct resource cmt0_resources[] = {
-+	DEFINE_RES_MEM(0xffca0000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(142)),
- };
- 
- #define r8a7791_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -200,7 +197,7 @@ void __init r8a7791_add_dt_devices(void)
- 	r8a7791_register_scif(12);
- 	r8a7791_register_scif(13);
- 	r8a7791_register_scif(14);
--	r8a7791_register_cmt(00);
-+	r8a7791_register_cmt(0);
- }
- 
- void __init r8a7791_add_standard_devices(void)
--- 
-1.8.3.2
-
+> ---
+> Change since V1:
+> 
+> * added Ack
+> 
+>  include/dt-bindings/clock/r8a7790-clock.h | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+> index 6548a5fbcf4a..4d3e935b3f1b 100644
+> --- a/include/dt-bindings/clock/r8a7790-clock.h
+> +++ b/include/dt-bindings/clock/r8a7790-clock.h
+> @@ -50,6 +50,7 @@
+>  #define R8A7790_CLK_SYS_DMAC0		19
+>  
+>  /* MSTP3 */
+> +#define R8A7790_CLK_IIC2		0
+>  #define R8A7790_CLK_TPU0		4
+>  #define R8A7790_CLK_MMCIF1		5
+>  #define R8A7790_CLK_SDHI3		11
+> @@ -57,6 +58,8 @@
+>  #define R8A7790_CLK_SDHI1		13
+>  #define R8A7790_CLK_SDHI0		14
+>  #define R8A7790_CLK_MMCIF0		15
+> +#define R8A7790_CLK_IIC0		18
+> +#define R8A7790_CLK_IIC1		23
+>  #define R8A7790_CLK_SSUSB		28
+>  #define R8A7790_CLK_CMT1		29
+>  #define R8A7790_CLK_USBDMAC0		30
+> -- 
+> 1.9.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
