@@ -1,30 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 30 Apr 2014 18:17:23 +0000
-Subject: Re: [PATCH v5 10/11] ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock support
-Message-Id: <CAMuHMdWUfwFCk8zWYoEKCpQqr2fDwNDgWL+0OUQ-Xqn2rPQh4Q@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 10 Apr 2014 23:22:00 +0000
+Subject: Re: [PATCH 0/6] ARM: shmobile: r8a7778/r8a7790: sound DT support
+Message-Id: <20140410232157.GD4358@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
- <1398765822-2314-11-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398765822-2314-11-git-send-email-wsa@the-dreams.de>
+References: <87ior2dhp9.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87ior2dhp9.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Apr 29, 2014 at 12:03 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> Not used anymore since we switched to CCF.
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On Mon, Mar 24, 2014 at 09:35:56PM -0700, Kuninori Morimoto wrote:
+> 
+> Hi Simon
+> 
+> These patches adds sound DT support on r8a7778/r8a7790.
+> But, r8a7778 can't use it at this point,
+> since it doesn't support CCF.
+> 
+> These patches are based on...
+> 
+>      1) Simon's renesas-devel-v3.14-rc7-20140324
+>      2) Mark's  asoc/topic/rcar
+>      3) Mark's  asoc/topic/simple
+>      4) Mark's  asoc/fix/rcar
+>      5) my previous patches
+> 
+> Kuninori Morimoto (7):
+>       ARM: shmobile: r8a7790: add MSTP10 support on DTSI
+>       ARM: shmobile: r8a7790: add R-Car sound support on DTSI
+>       ARM: shmobile: r8a7778: add R-Car sound support on DTSI
+>       ARM: shmobile: lager: enable sound codec for DT
+>       ARM: shmobile: bockw: enable sound codec for DT
+>       ARM: shmobile: lager: add R-Car sound support on DTS
+>       ARM: shmobile: bockw: add R-Car sound support on DTS
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Hi Morimoto-san,
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+as usual with DT patches. Please repost these once
+all the dependencies have been merged. If there are
+no-compile time dependencies then its sufficient for
+the maintainer (Mark?) to have accepted them and I
+can merge the DT bits for shmobile in parallel.
