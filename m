@@ -1,57 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Apr 2014 03:47:38 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <20140414034731.GA1948@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 10 Apr 2014 07:33:50 +0000
+Subject: [PATCH] ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig
+Message-Id: <1397115230-18437-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ha5w20b0.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87ha5w20b0.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Apr 13, 2014 at 05:59:34PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> e1508289404ab6ca28e0dc931612600f0441c417
-> (ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags)
-> corrected SND_SOC_DAIFMT_CBx_CFx definition.
-> But then, Lager board was maintenanced other branch.
-> This patch correct SND_SOC_DAIFMT_CBx_CFx flag for lager
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The USB [EO]HCI HCD drivers provide USB host support for Renesas
+R-Car Gen2 platforms. To increase hardware support enable the driver in the
+shmobile_defconfig multiplatform configuration.
 
-Thanks, I will queue this up as a fix for v3.15
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-> ---
->  arch/arm/mach-shmobile/board-lager.c |    4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-> index 6af09e1..05c263b 100644
-> --- a/arch/arm/mach-shmobile/board-lager.c
-> +++ b/arch/arm/mach-shmobile/board-lager.c
-> @@ -595,14 +595,12 @@ static struct asoc_simple_card_info rsnd_card_info = {
->  	.card		= "SSI01-AK4643",
->  	.codec		= "ak4642-codec.2-0012",
->  	.platform	= "rcar_sound",
-> -	.daifmt		= SND_SOC_DAIFMT_LEFT_J,
-> +	.daifmt		= SND_SOC_DAIFMT_LEFT_J | SND_SOC_DAIFMT_CBM_CFM,
->  	.cpu_dai = {
->  		.name	= "rcar_sound",
-> -		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
->  	},
->  	.codec_dai = {
->  		.name	= "ak4642-hifi",
-> -		.fmt	= SND_SOC_DAIFMT_CBM_CFM,
->  		.sysclk	= 11289600,
->  	},
->  };
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+
+* Applies on top of renesas-devel-v3.14-20140409v2
+
+* Tested with the following patches applied:
+  sh_eth: add device tree support
+  ARM: shmobile: Koelsch DT reference USB pinmux setup
+  ARM: shmobile: Koelsch DT reference USB platform devices
+  ARM: shmobile: Lager DT reference USB pinmux setup
+  ARM: shmobile: Lager DT reference USB platform devices
+  gpio: rcar: Per-controller gpios property prototype
+---
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 8fb30b0..6d6437c 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -110,6 +110,8 @@ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_RCAR=y
+ CONFIG_USB=y
+ CONFIG_USB_RCAR_GEN2_PHY=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_GADGET=y
+ CONFIG_USB_RENESAS_USBHS_UDC=y
+-- 
+1.8.5.2
+
