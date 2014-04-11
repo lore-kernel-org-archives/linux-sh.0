@@ -1,78 +1,366 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Fri, 04 Apr 2014 17:01:03 +0000
-Subject: Re: [PATCH v2 3/6] PCI: rcar: use new OF interrupt mapping when possible
-Message-Id: <20140404170103.GF9007@google.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Fri, 11 Apr 2014 01:08:24 +0000
+Subject: [PATCH 1/2] sh-pfc: r8a7791: Add SSI pin support
+Message-Id: <87r454oepb.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
- <1394025951-32438-4-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1394025951-32438-4-git-send-email-l.stach@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 05, 2014 at 02:25:48PM +0100, Lucas Stach wrote:
-> This is the recommended method of doing the IRQ
-> mapping. Still fall back to the old method in order
-> to not break the just submitted board files.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Lucas, can you rebase this to Linus' current tree?  This doesn't apply
-anymore because of conflicts with 546cadda3575 ("PCI: rcar: Register each
-instance independently").  Thanks!
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  314 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 314 insertions(+)
 
-> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> ---
-> v2: pass in parent device to pci_common_init(), to
->     make DT parsing work.
-> ---
->  drivers/pci/host/pci-rcar-gen2.c | 12 +++++++++---
->  1 file changed, 9 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
-> index ceec147baec3..3a0914163ad0 100644
-> --- a/drivers/pci/host/pci-rcar-gen2.c
-> +++ b/drivers/pci/host/pci-rcar-gen2.c
-> @@ -15,6 +15,7 @@
->  #include <linux/io.h>
->  #include <linux/kernel.h>
->  #include <linux/module.h>
-> +#include <linux/of_pci.h>
->  #include <linux/pci.h>
->  #include <linux/platform_device.h>
->  #include <linux/pm_runtime.h>
-> @@ -160,8 +161,13 @@ static int __init rcar_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
->  {
->  	struct pci_sys_data *sys = dev->bus->sysdata;
->  	struct rcar_pci_priv *priv = sys->private_data;
-> +	int irq;
-> +
-> +	irq = of_irq_parse_and_map_pci(dev, slot, pin);
-> +	if (!irq)
-> +		irq = priv->irq;
->  
-> -	return priv->irq;
-> +	return irq;
->  }
->  
->  /* PCI host controller setup */
-> @@ -249,6 +255,8 @@ static int __init rcar_pci_add_controller(struct rcar_pci_priv *priv)
->  	void **private_data;
->  	int count;
->  
-> +	pci_common_init_dev(priv->dev, &rcar_hw_pci);
-> +
->  	if (rcar_hw_pci.nr_controllers < rcar_pci_count)
->  		goto add_priv;
->  
-> @@ -322,8 +330,6 @@ static int __init rcar_pci_init(void)
->  	int retval;
->  
->  	retval = platform_driver_probe(&rcar_pci_driver, rcar_pci_probe);
-> -	if (!retval)
-> -		pci_common_init(&rcar_hw_pci);
->  
->  	/* Private data pointer array is not needed any more */
->  	kfree(rcar_hw_pci.private_data);
-> -- 
-> 1.9.0
-> 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 5186d70..aef5d7f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -3246,6 +3246,260 @@ static const unsigned int sdhi2_wp_pins[] = {
+ static const unsigned int sdhi2_wp_mux[] = {
+ 	SD2_WP_MARK,
+ };
++
++/* - SSI -------------------------------------------------------------------- */
++static const unsigned int ssi0_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 2),
++};
++
++static const unsigned int ssi0_data_mux[] = {
++	SSI_SDATA0_MARK,
++};
++
++static const unsigned int ssi0_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(3, 4),
++};
++
++static const unsigned int ssi0_data_b_mux[] = {
++	SSI_SDATA0_B_MARK,
++};
++
++static const unsigned int ssi0129_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 0), RCAR_GP_PIN(2, 1),
++};
++
++static const unsigned int ssi0129_ctrl_mux[] = {
++	SSI_SCK0129_MARK, SSI_WS0129_MARK,
++};
++
++static const unsigned int ssi0129_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(3, 2), RCAR_GP_PIN(3, 3),
++};
++
++static const unsigned int ssi0129_ctrl_b_mux[] = {
++	SSI_SCK0129_B_MARK, SSI_WS0129_B_MARK,
++};
++
++static const unsigned int ssi1_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 5),
++};
++
++static const unsigned int ssi1_data_mux[] = {
++	SSI_SDATA1_MARK,
++};
++
++static const unsigned int ssi1_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(3, 7),
++};
++
++static const unsigned int ssi1_data_b_mux[] = {
++	SSI_SDATA1_B_MARK,
++};
++
++static const unsigned int ssi1_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 3), RCAR_GP_PIN(2, 4),
++};
++
++static const unsigned int ssi1_ctrl_mux[] = {
++	SSI_SCK1_MARK, SSI_WS1_MARK,
++};
++
++static const unsigned int ssi1_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(3, 5), RCAR_GP_PIN(3, 6),
++};
++
++static const unsigned int ssi1_ctrl_b_mux[] = {
++	SSI_SCK1_B_MARK, SSI_WS1_B_MARK,
++};
++
++static const unsigned int ssi2_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 8),
++};
++
++static const unsigned int ssi2_data_mux[] = {
++	SSI_SDATA2_MARK,
++};
++
++static const unsigned int ssi2_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 6), RCAR_GP_PIN(2, 7),
++};
++
++static const unsigned int ssi2_ctrl_mux[] = {
++	SSI_SCK2_MARK, SSI_WS2_MARK,
++};
++
++static const unsigned int ssi3_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 11),
++};
++
++static const unsigned int ssi3_data_mux[] = {
++	SSI_SDATA3_MARK,
++};
++
++static const unsigned int ssi34_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 9), RCAR_GP_PIN(2, 10),
++};
++
++static const unsigned int ssi34_ctrl_mux[] = {
++	SSI_SCK34_MARK, SSI_WS34_MARK,
++};
++
++static const unsigned int ssi4_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 14),
++};
++
++static const unsigned int ssi4_data_mux[] = {
++	SSI_SDATA4_MARK,
++};
++
++static const unsigned int ssi4_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 12), RCAR_GP_PIN(2, 13),
++};
++
++static const unsigned int ssi4_ctrl_mux[] = {
++	SSI_SCK4_MARK, SSI_WS4_MARK,
++};
++
++static const unsigned int ssi5_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 17),
++};
++
++static const unsigned int ssi5_data_mux[] = {
++	SSI_SDATA5_MARK,
++};
++
++static const unsigned int ssi5_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 15), RCAR_GP_PIN(2, 16),
++};
++
++static const unsigned int ssi5_ctrl_mux[] = {
++	SSI_SCK5_MARK, SSI_WS5_MARK,
++};
++
++static const unsigned int ssi6_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 20),
++};
++
++static const unsigned int ssi6_data_mux[] = {
++	SSI_SDATA6_MARK,
++};
++
++static const unsigned int ssi6_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 18), RCAR_GP_PIN(2, 19),
++};
++
++static const unsigned int ssi6_ctrl_mux[] = {
++	SSI_SCK6_MARK, SSI_WS6_MARK,
++};
++
++static const unsigned int ssi7_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 23),
++};
++
++static const unsigned int ssi7_data_mux[] = {
++	SSI_SDATA7_MARK,
++};
++
++static const unsigned int ssi7_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(3, 12),
++};
++
++static const unsigned int ssi7_data_b_mux[] = {
++	SSI_SDATA7_B_MARK,
++};
++
++static const unsigned int ssi78_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 21), RCAR_GP_PIN(2, 22),
++};
++
++static const unsigned int ssi78_ctrl_mux[] = {
++	SSI_SCK78_MARK, SSI_WS78_MARK,
++};
++
++static const unsigned int ssi78_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(3, 10), RCAR_GP_PIN(3, 11),
++};
++
++static const unsigned int ssi78_ctrl_b_mux[] = {
++	SSI_SCK78_B_MARK, SSI_WS78_B_MARK,
++};
++
++static const unsigned int ssi8_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 24),
++};
++
++static const unsigned int ssi8_data_mux[] = {
++	SSI_SDATA8_MARK,
++};
++
++static const unsigned int ssi8_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(3, 13),
++};
++
++static const unsigned int ssi8_data_b_mux[] = {
++	SSI_SDATA8_B_MARK,
++};
++
++static const unsigned int ssi9_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(2, 27),
++};
++
++static const unsigned int ssi9_data_mux[] = {
++	SSI_SDATA9_MARK,
++};
++
++static const unsigned int ssi9_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(3, 18),
++};
++
++static const unsigned int ssi9_data_b_mux[] = {
++	SSI_SDATA9_B_MARK,
++};
++
++static const unsigned int ssi9_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(2, 25), RCAR_GP_PIN(2, 26),
++};
++
++static const unsigned int ssi9_ctrl_mux[] = {
++	SSI_SCK9_MARK, SSI_WS9_MARK,
++};
++
++static const unsigned int ssi9_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(3, 14), RCAR_GP_PIN(3, 15),
++};
++
++static const unsigned int ssi9_ctrl_b_mux[] = {
++	SSI_SCK9_B_MARK, SSI_WS9_B_MARK,
++};
++
+ /* - USB0 ------------------------------------------------------------------- */
+ static const unsigned int usb0_pins[] = {
+ 	RCAR_GP_PIN(7, 23), /* PWEN */
+@@ -3762,6 +4016,34 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
+ 	SH_PFC_PIN_GROUP(sdhi2_cd),
+ 	SH_PFC_PIN_GROUP(sdhi2_wp),
++	SH_PFC_PIN_GROUP(ssi0_data),
++	SH_PFC_PIN_GROUP(ssi0_data_b),
++	SH_PFC_PIN_GROUP(ssi0129_ctrl),
++	SH_PFC_PIN_GROUP(ssi0129_ctrl_b),
++	SH_PFC_PIN_GROUP(ssi1_data),
++	SH_PFC_PIN_GROUP(ssi1_data_b),
++	SH_PFC_PIN_GROUP(ssi1_ctrl),
++	SH_PFC_PIN_GROUP(ssi1_ctrl_b),
++	SH_PFC_PIN_GROUP(ssi2_data),
++	SH_PFC_PIN_GROUP(ssi2_ctrl),
++	SH_PFC_PIN_GROUP(ssi3_data),
++	SH_PFC_PIN_GROUP(ssi34_ctrl),
++	SH_PFC_PIN_GROUP(ssi4_data),
++	SH_PFC_PIN_GROUP(ssi4_ctrl),
++	SH_PFC_PIN_GROUP(ssi5_data),
++	SH_PFC_PIN_GROUP(ssi5_ctrl),
++	SH_PFC_PIN_GROUP(ssi6_data),
++	SH_PFC_PIN_GROUP(ssi6_ctrl),
++	SH_PFC_PIN_GROUP(ssi7_data),
++	SH_PFC_PIN_GROUP(ssi7_data_b),
++	SH_PFC_PIN_GROUP(ssi78_ctrl),
++	SH_PFC_PIN_GROUP(ssi78_ctrl_b),
++	SH_PFC_PIN_GROUP(ssi8_data),
++	SH_PFC_PIN_GROUP(ssi8_data_b),
++	SH_PFC_PIN_GROUP(ssi9_data),
++	SH_PFC_PIN_GROUP(ssi9_data_b),
++	SH_PFC_PIN_GROUP(ssi9_ctrl),
++	SH_PFC_PIN_GROUP(ssi9_ctrl_b),
+ 	SH_PFC_PIN_GROUP(usb0),
+ 	SH_PFC_PIN_GROUP(usb1),
+ 	VIN_DATA_PIN_GROUP(vin0_data, 24),
+@@ -4103,6 +4385,37 @@ static const char * const sdhi2_groups[] = {
+ 	"sdhi2_wp",
+ };
+ 
++static const char * const ssi_groups[] = {
++	"ssi0_data",
++	"ssi0_data_b",
++	"ssi0129_ctrl",
++	"ssi0129_ctrl_b",
++	"ssi1_data",
++	"ssi1_data_b",
++	"ssi1_ctrl",
++	"ssi1_ctrl_b",
++	"ssi2_data",
++	"ssi2_ctrl",
++	"ssi3_data",
++	"ssi34_ctrl",
++	"ssi4_data",
++	"ssi4_ctrl",
++	"ssi5_data",
++	"ssi5_ctrl",
++	"ssi6_data",
++	"ssi6_ctrl",
++	"ssi7_data",
++	"ssi7_data_b",
++	"ssi78_ctrl",
++	"ssi78_ctrl_b",
++	"ssi8_data",
++	"ssi8_data_b",
++	"ssi9_data",
++	"ssi9_data_b",
++	"ssi9_ctrl",
++	"ssi9_ctrl_b",
++};
++
+ static const char * const usb0_groups[] = {
+ 	"usb0",
+ };
+@@ -4187,6 +4500,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(ssi),
+ 	SH_PFC_FUNCTION(usb0),
+ 	SH_PFC_FUNCTION(usb1),
+ 	SH_PFC_FUNCTION(vin0),
+-- 
+1.7.9.5
+
