@@ -1,47 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Apr 2014 23:31:20 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 11 Apr 2014 11:01:41 +0000
 Subject: Re: [PATCH v2 0/2] spi: sh-hspi: Do not specifically request shyway_clk clock
-Message-Id: <20140410233120.GE4358@verge.net.au>
+Message-Id: <20140411110141.GS6518@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="PEWkPmBCIbC5Tcj0"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394783739-29168-1-git-send-email-horms+renesas@verge.net.au>
  <20140318003254.GB19571@verge.net.au>
-In-Reply-To: <20140318003254.GB19571-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+ <20140410233120.GE4358@verge.net.au>
+In-Reply-To: <20140410233120.GE4358-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-On Tue, Mar 18, 2014 at 09:32:55AM +0900, Simon Horman wrote:
-> On Fri, Mar 14, 2014 at 04:55:37PM +0900, Simon Horman wrote:
-> > Rather than requesting the shyway_clk call clk_get with
-> > the device and a NULL con_id.
-> > 
-> > This is in keeping with the way that clk_get() is called
-> > on other drivers used by Renesas Gen 1 SoCs. And I believe
-> > it is compatible with supplying clocks via DT, unlike the current code.
-> > 
-> > 
-> > This series supplies a fix for the r8a7779, a consumer of the driver,
-> > so that the hspi clocks it supplies have the correct source.
-> > 
-> > And a fix for the sh-hspi driver to address the problem
-> > described above.
-> > 
-> > Simon Horman (2):
-> >   ARM: shmobile: r8a7779: Use clks as MSTP007 parent
-> >   spi: sh-hspi: Do not specifically request shyway_clk clock
-> > 
-> >  arch/arm/mach-shmobile/clock-r8a7778.c | 2 +-
-> >  drivers/spi/spi-sh-hspi.c              | 4 ++--
-> >  2 files changed, 3 insertions(+), 3 deletions(-)
-> 
-> Hi Mark,
-> 
-> as the first mach-shmobile patch is a run-time dependency for the
-> second SPI driver patch could you consider taking both of them?
-> 
-> I have checked and I do not expect any conflicts anywhere beetween
-> v3.14-rc1 and what I have queued up in the devel branch of my renesas tree.
 
-Ping
+--PEWkPmBCIbC5Tcj0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Apr 11, 2014 at 08:31:20AM +0900, Simon Horman wrote:
+
+> Ping
+
+Don't send contentless pings; unfortunately I don't really know what
+this is about as you've sent it to my work address and as a result I
+didn't read the earlier parts of the thread - please use the address
+in MAINTAINERS (broonie@kernel.org).  This helps route mail and when
+there's more than one maintianer it ensures you reach both of them.
+
+Outside of a few patterns where it's expected I mostly just delete
+upstream mail for my work account unread since it's typically copied to
+both work and kernel.org.
+
+Can you resend whatever the original series was please?
+
+--PEWkPmBCIbC5Tcj0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTR8uSAAoJELSic+t+oim9jgQP/0hPtDCgzcuokhrPiihAHQCH
+sfnbhxcKnSgQHLlxee+7feS0WBClxE1JUXp/DORWrhkK00gYDAim3q5JNnkzJldg
+Mg7TY2zpPXNrPdcL5ojsbBrI80DKXFEXCbmuOdOYhGOYN5BBUpVfIi6nMVkhBaLI
+FHE8+4dLufX0xffwOXczWEvd6RS1sbG3/iOzR7W/kSd9AHjGYIswRgRbMOxCuklv
+vfSPyFCMVpk/GniX5zmHTXm4ujvgxh7JDp547FSR+2kVqyyUw73iFB29eIwTry0N
+gzk5pIU510bVrjj0YgvqNvfmO8EwszLcmk0ruv0jwCNZ8QcKQqfr2/Gm13seKcU1
+v7+dyKLQxKIMvsbyV8hChD84qKgoVYp3kbaPtI4qJsko0SAR74+NVI0o0YPwHg6A
+2Nkbzve91PxKh637upHEAU3Qjz25R0uH6zTUbAOqFe5/pvpnBZl9SQFUpcQpB9hu
+IW8qGePqPJ8LO7HJm0OJQ1ho/y9FVnSMDrN02QfSTXhSsl5yOfBYkpodW0MotcN7
+eQBu1eQj0hQDbf6ud0xkRqwYyDWitqz0cu0MxwzTlYRY3kEY0aZDZfY3nhX9hunF
+uZAKeYPRwhKVxAeH4ZgFNiGTF4tYOnMwLfznmdSn5Gk7D6Pe+Ee5g/6yWKSxnqnB
+UcGlbgUCwRwHnNufq+Lo
+=UtVH
+-----END PGP SIGNATURE-----
+
+--PEWkPmBCIbC5Tcj0--
