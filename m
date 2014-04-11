@@ -1,41 +1,80 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 21 Apr 2014 14:13:08 +0000
-Subject: [PATCH 8/9] iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
-Message-Id: <1398089589-9181-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:50 +0000
+Subject: [PATCH v3 07/52] clocksource: sh_cmt: Add memory base to sh_cmt_channel structure
+Message-Id: <1397228675-11684-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-We don't support stage 2 translation yet.
+The channel memory base is channel-specific, add it to the channel
+structure in preparation for support of multiple channels per device.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/iommu/ipmmu-vmsa.c | 8 --------
- 1 file changed, 8 deletions(-)
+ drivers/clocksource/sh_cmt.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 0e4d145..711e5c4 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -202,14 +202,6 @@ static LIST_HEAD(ipmmu_devices);
- #define ARM_VMSA_PTE_ATTRINDX_SHIFT	2
- #define ARM_VMSA_PTE_nG			(((pteval_t)1) << 11)
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index eb93b88..4fcb05d 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -40,6 +40,8 @@ struct sh_cmt_device;
+ struct sh_cmt_channel {
+ 	struct sh_cmt_device *cmt;
  
--/* Stage-2 PTE */
--#define ARM_VMSA_PTE_HAP_FAULT		(((pteval_t)0) << 6)
--#define ARM_VMSA_PTE_HAP_READ		(((pteval_t)1) << 6)
--#define ARM_VMSA_PTE_HAP_WRITE		(((pteval_t)2) << 6)
--#define ARM_VMSA_PTE_MEMATTR_OIWB	(((pteval_t)0xf) << 2)
--#define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
--#define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
--
- #define ARM_VMSA_PTE_CONT_ENTRIES	16
- #define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
++	void __iomem *base;
++
+ 	unsigned long flags;
+ 	unsigned long match_value;
+ 	unsigned long next_match_value;
+@@ -130,12 +132,12 @@ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
  
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
++	return ch->cmt->read_control(ch->base, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
++	return ch->cmt->read_count(ch->base, CMCNT);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+@@ -147,19 +149,19 @@ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
++	ch->cmt->write_control(ch->base, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
++	ch->cmt->write_count(ch->base, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
++	ch->cmt->write_count(ch->base, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+@@ -702,6 +704,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
+ 
+ 	memset(ch, 0, sizeof(*ch));
+ 	ch->cmt = cmt;
++	ch->base = cmt->mapbase_ch;
+ 
+ 	irq = platform_get_irq(cmt->pdev, 0);
+ 	if (irq < 0) {
 -- 
 1.8.3.2
 
