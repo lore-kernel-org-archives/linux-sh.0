@@ -1,80 +1,120 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:03:50 +0000
-Subject: [PATCH v3 07/52] clocksource: sh_cmt: Add memory base to sh_cmt_channel structure
-Message-Id: <1397228675-11684-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:03 +0000
+Subject: [PATCH v3 20/52] clocksource: sh_cmt: Request IRQ for clock event device only
+Message-Id: <1397228675-11684-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The channel memory base is channel-specific, add it to the channel
-structure in preparation for support of multiple channels per device.
+Clock sources don't need an IRQ, request the IRQ only for channels used
+as clock event devices.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ drivers/clocksource/sh_cmt.c | 51 +++++++++++++++++++++++---------------------
+ 1 file changed, 27 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index eb93b88..4fcb05d 100644
+index 9f215e7..bc8d025 100644
 --- a/drivers/clocksource/sh_cmt.c
 +++ b/drivers/clocksource/sh_cmt.c
-@@ -40,6 +40,8 @@ struct sh_cmt_device;
- struct sh_cmt_channel {
- 	struct sh_cmt_device *cmt;
+@@ -785,10 +785,28 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
+ 	pm_genpd_syscore_poweron(&ch->cmt->pdev->dev);
+ }
  
-+	void __iomem *base;
+-static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+-				       const char *name)
++static int sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
++				      const char *name)
+ {
+ 	struct clock_event_device *ced = &ch->ced;
++	int irq;
++	int ret;
 +
- 	unsigned long flags;
- 	unsigned long match_value;
- 	unsigned long next_match_value;
-@@ -130,12 +132,12 @@ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
++	irq = platform_get_irq(ch->cmt->pdev, ch->cmt->legacy ? 0 : ch->index);
++	if (irq < 0) {
++		dev_err(&ch->cmt->pdev->dev, "ch%u: failed to get irq\n",
++			ch->index);
++		return irq;
++	}
++
++	ret = request_irq(irq, sh_cmt_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&ch->cmt->pdev->dev), ch);
++	if (ret) {
++		dev_err(&ch->cmt->pdev->dev, "ch%u: failed to request irq %d\n",
++			ch->index, irq);
++		return ret;
++	}
  
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
-+	return ch->cmt->read_control(ch->base, CMCSR);
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+@@ -803,14 +821,20 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ 	dev_info(&ch->cmt->pdev->dev, "ch%u: used for clock events\n",
+ 		 ch->index);
+ 	clockevents_register_device(ced);
++
++	return 0;
  }
  
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
+ static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
+ 			   bool clockevent, bool clocksource)
  {
--	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
-+	return ch->cmt->read_count(ch->base, CMCNT);
++	int ret;
++
+ 	if (clockevent) {
+ 		ch->cmt->has_clockevent = true;
+-		sh_cmt_register_clockevent(ch, name);
++		ret = sh_cmt_register_clockevent(ch, name);
++		if (ret < 0)
++			return ret;
+ 	}
+ 
+ 	if (clocksource) {
+@@ -825,7 +849,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
+ 				unsigned int hwidx, bool clockevent,
+ 				bool clocksource, struct sh_cmt_device *cmt)
+ {
+-	int irq;
+ 	int ret;
+ 
+ 	/* Skip unused channels. */
+@@ -869,17 +892,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
+ 		}
+ 	}
+ 
+-	if (cmt->legacy)
+-		irq = platform_get_irq(cmt->pdev, 0);
+-	else
+-		irq = platform_get_irq(cmt->pdev, ch->index);
+-
+-	if (irq < 0) {
+-		dev_err(&cmt->pdev->dev, "ch%u: failed to get irq\n",
+-			ch->index);
+-		return irq;
+-	}
+-
+ 	if (cmt->info->width = (sizeof(ch->max_match_value) * 8))
+ 		ch->max_match_value = ~0;
+ 	else
+@@ -904,15 +916,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
+ 	}
+ 	ch->cs_enabled = false;
+ 
+-	ret = request_irq(irq, sh_cmt_interrupt,
+-			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
+-			  dev_name(&cmt->pdev->dev), ch);
+-	if (ret) {
+-		dev_err(&cmt->pdev->dev, "ch%u: failed to request irq %d\n",
+-			ch->index, irq);
+-		return ret;
+-	}
+-
+ 	return 0;
  }
  
- static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
-@@ -147,19 +149,19 @@ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
-+	ch->cmt->write_control(ch->base, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
-+	ch->cmt->write_count(ch->base, CMCNT, value);
- }
- 
- static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
-+	ch->cmt->write_count(ch->base, CMCOR, value);
- }
- 
- static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
-@@ -702,6 +704,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
- 
- 	memset(ch, 0, sizeof(*ch));
- 	ch->cmt = cmt;
-+	ch->base = cmt->mapbase_ch;
- 
- 	irq = platform_get_irq(cmt->pdev, 0);
- 	if (irq < 0) {
 -- 
 1.8.3.2
 
