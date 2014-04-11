@@ -1,43 +1,95 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:09 +0000
-Subject: [PATCH 4/7] ARM: shmobile: Enable USBHS gadget support in shmobile_defconfig
-Message-Id: <41551f3d7d9a37b55a6f84d77200bfe29d42c466.1397627278.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:12 +0000
+Subject: [PATCH v3 29/52] clocksource: sh_tmu: Allocate channels dynamically
+Message-Id: <1397228675-11684-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627278.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+This prepares the driver for multi-channel support.
 
-The renesas_usbhs driver provides USB gadget support for most Renesas
-platforms. To increase hardware support enable the driver in the
-shmobile_defconfig multiplatform configuration.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/shmobile_defconfig | 4 ++++
- 1 file changed, 4 insertions(+)
+ drivers/clocksource/sh_tmu.c | 27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 146ee70..c10e626 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -103,7 +103,11 @@ CONFIG_SOUND=y
- CONFIG_SND=y
- CONFIG_SND_SOC=y
- CONFIG_SND_SOC_RCAR=y
-+CONFIG_USB=y
- CONFIG_USB_RCAR_GEN2_PHY=y
-+CONFIG_USB_RENESAS_USBHS=y
-+CONFIG_USB_GADGET=y
-+CONFIG_USB_RENESAS_USBHS_UDC=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_MMC_SH_MMCIF=y
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 26a9f7d..55b7a37 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -58,7 +58,8 @@ struct sh_tmu_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+ 
+-	struct sh_tmu_channel channel;
++	struct sh_tmu_channel *channels;
++	unsigned int num_channels;
+ };
+ 
+ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+@@ -469,6 +470,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
++	void __iomem *base;
+ 	int ret;
+ 	ret = -ENXIO;
+ 
+@@ -488,16 +490,16 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	}
+ 
+ 	/*
+-	 * Map memory, let channel.base point to our channel and mapbase to the
++	 * Map memory, let base point to our channel and mapbase to the
+ 	 * start/stop shared register.
+ 	 */
+-	tmu->channel.base = ioremap_nocache(res->start, resource_size(res));
+-	if (tmu->channel.base = NULL) {
++	base = ioremap_nocache(res->start, resource_size(res));
++	if (base = NULL) {
+ 		dev_err(&tmu->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+-	tmu->mapbase = tmu->channel.base - cfg->channel_offset;
++	tmu->mapbase = base - cfg->channel_offset;
+ 
+ 	/* get hold of clock */
+ 	tmu->clk = clk_get(&tmu->pdev->dev, "tmu_fck");
+@@ -511,18 +513,29 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err2;
+ 
+-	ret = sh_tmu_channel_setup(&tmu->channel, tmu);
++	tmu->channels = kzalloc(sizeof(*tmu->channels), GFP_KERNEL);
++	if (tmu->channels = NULL) {
++		ret = -ENOMEM;
++		goto err3;
++	}
++
++	tmu->num_channels = 1;
++
++	tmu->channels[0].base = base;
++
++	ret = sh_tmu_channel_setup(&tmu->channels[0], tmu);
+ 	if (ret < 0)
+ 		goto err3;
+ 
+ 	return 0;
+ 
+  err3:
++	kfree(tmu->channels);
+ 	clk_unprepare(tmu->clk);
+  err2:
+ 	clk_put(tmu->clk);
+  err1:
+-	iounmap(tmu->channel.base);
++	iounmap(base);
+  err0:
+ 	return ret;
+ }
 -- 
-1.8.5.2
+1.8.3.2
 
