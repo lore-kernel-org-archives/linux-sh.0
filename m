@@ -1,81 +1,76 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Apr 2014 10:26:37 +0000
-Subject: [PATCH 5/6] drivers: sh: Use generic runtime and clock helpers
-Message-Id: <1398335198-26555-6-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:22 +0000
+Subject: [PATCH v3 39/52] ARM: shmobile: r8a73a4: Switch to new style CMT device
+Message-Id: <1397228675-11684-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-This depends on "drivers: sh: pm_runtime does not need idle callback" and
-"drivers: sh: pm_runtime implementation needs to suspend and resume devices"
----
- drivers/sh/pm_runtime.c |   38 ++------------------------------------
- 1 file changed, 2 insertions(+), 36 deletions(-)
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index f0c4a384d49f..05b719637dd4 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -11,7 +11,6 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
--#include <linux/pm_runtime.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_clock.h>
- #include <linux/platform_device.h>
-@@ -21,43 +20,10 @@
- #include <linux/slab.h>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a73a4.c |  2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c | 17 +++++++----------
+ 2 files changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
+index 7348d58..b5bc22c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
+@@ -597,7 +597,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
+ 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
+ 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
+-	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
+ 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
+ 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index cd36f80..9333770 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -169,20 +169,17 @@ static const struct resource thermal0_resources[] = {
+ 					thermal0_resources,		\
+ 					ARRAY_SIZE(thermal0_resources))
  
- #ifdef CONFIG_PM_RUNTIME
--static int sh_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
--
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret) {
--		dev_err(dev, "failed to suspend device\n");
--		return ret;
--	}
--
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		dev_err(dev, "failed to suspend clock\n");
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int sh_pm_runtime_resume(struct device *dev)
--{
--	int ret;
--
--	ret = pm_clk_resume(dev);
--	if (ret) {
--		dev_err(dev, "failed to resume clock\n");
--		return ret;
--	}
--
--	return pm_generic_runtime_resume(dev);
--}
--
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
--		.runtime_suspend = sh_pm_runtime_suspend,
--		.runtime_resume = sh_pm_runtime_resume,
-+		.runtime_suspend = pm_generic_runtime_clk_suspend,
-+		.runtime_resume = pm_generic_clk_runtime_resume,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_config cmt1_platform_data = {
++	.channels_mask = 0xff,
  };
+ 
+-static struct resource cmt10_resources[] = {
+-	DEFINE_RES_MEM(0xe6130010, 0x0c),
+-	DEFINE_RES_MEM(0xe6130000, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6130000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(120)),
+ };
+ 
+ #define r8a7790_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -196,7 +193,7 @@ void __init r8a73a4_add_dt_devices(void)
+ 	r8a73a4_register_scif(3);
+ 	r8a73a4_register_scif(4);
+ 	r8a73a4_register_scif(5);
+-	r8a7790_register_cmt(10);
++	r8a7790_register_cmt(1);
+ }
+ 
+ /* DMA */
 -- 
-1.7.9.5
+1.8.3.2
 
