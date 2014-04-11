@@ -1,74 +1,82 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 14 Apr 2014 10:36:38 +0000
-Subject: [PATCH v3 3/7] r8a7790.dtsi: add vin[0-3] nodes
-Message-Id: <1397471802-27216-4-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:07 +0000
+Subject: [PATCH v3 24/52] clocksource: sh_tmu: Split channel setup to separate function
+Message-Id: <1397228675-11684-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add nodes for the four video input channels on the R8A7790.
+Move the channel setup code from sh_tmu_setup to a new
+sh_tmu_setup_channel function and call it from sh_tmu_setup.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ drivers/clocksource/sh_tmu.c | 36 +++++++++++++++++++++++-------------
+ 1 file changed, 23 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a1e7c39..de0e53e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -23,6 +23,10 @@
- 		i2c1 = &i2c1;
- 		i2c2 = &i2c2;
- 		i2c3 = &i2c3;
-+		vin0 = &vin0;
-+		vin1 = &vin1;
-+		vin2 = &vin2;
-+		vin3 = &vin3;
- 	};
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 7013790..4779c97 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -436,6 +436,28 @@ static int sh_tmu_register(struct sh_tmu_channel *ch, char *name,
+ 	return 0;
+ }
  
- 	cpus {
-@@ -395,6 +399,38 @@
- 		status = "disabled";
- 	};
++static int sh_tmu_channel_setup(struct sh_tmu_channel *ch,
++				struct sh_tmu_device *tmu)
++{
++	struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
++
++	memset(ch, 0, sizeof(*ch));
++	ch->tmu = tmu;
++
++	ch->irq = platform_get_irq(tmu->pdev, 0);
++	if (ch->irq < 0) {
++		dev_err(&tmu->pdev->dev, "failed to get irq\n");
++		return ch->irq;
++	}
++
++	ch->cs_enabled = false;
++	ch->enable_count = 0;
++
++	return sh_tmu_register(ch, (char *)dev_name(&tmu->pdev->dev),
++			       cfg->clockevent_rating,
++			       cfg->clocksource_rating);
++}
++
+ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+@@ -459,12 +481,6 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 		goto err0;
+ 	}
  
-+	vin0: vin@0xe6ef0000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
-+		reg = <0 0xe6ef0000 0 0x1000>;
-+		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin1: vin@0xe6ef1000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
-+		reg = <0 0xe6ef1000 0 0x1000>;
-+		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin2: vin@0xe6ef2000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
-+		reg = <0 0xe6ef2000 0 0x1000>;
-+		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
-+	vin3: vin@0xe6ef3000 {
-+		compatible = "renesas,vin-r8a7790";
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
-+		reg = <0 0xe6ef3000 0 0x1000>;
-+		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+-	tmu->channel.irq = platform_get_irq(tmu->pdev, 0);
+-	if (tmu->channel.irq < 0) {
+-		dev_err(&tmu->pdev->dev, "failed to get irq\n");
+-		goto err0;
+-	}
+-
+ 	/* map memory, let mapbase point to our channel */
+ 	tmu->mapbase = ioremap_nocache(res->start, resource_size(res));
+ 	if (tmu->mapbase = NULL) {
+@@ -484,13 +500,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err2;
+ 
+-	tmu->channel.cs_enabled = false;
+-	tmu->channel.enable_count = 0;
+-	tmu->channel.tmu = tmu;
+-
+-	ret = sh_tmu_register(&tmu->channel, (char *)dev_name(&tmu->pdev->dev),
+-			      cfg->clockevent_rating,
+-			      cfg->clocksource_rating);
++	ret = sh_tmu_channel_setup(&tmu->channel, tmu);
+ 	if (ret < 0)
+ 		goto err3;
+ 
 -- 
-1.9.1
+1.8.3.2
 
