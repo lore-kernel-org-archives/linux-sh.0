@@ -1,48 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:20 +0000
-Subject: [PATCH v5 06/20] ARM: shmobile: marzen: Specify external clock frequency in DT
-Message-Id: <1397613454-7522-7-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:11 +0000
+Subject: [PATCH v3 28/52] clocksource: sh_tmu: Replace kmalloc + memset with kzalloc
+Message-Id: <1397228675-11684-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The external crystal frequency is 31.25 on the Marzen board.
-Specify it in the device tree.
+One kzalloc a day keeps the bugs away.
 
-Based on work for the Lager board by Laurent Pinchart.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v4 - v5
-* No change
+ drivers/clocksource/sh_tmu.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-v3
-* Update r8a7779-marzen.dts instead of r8a7779-marzen-reference.dts
----
- arch/arm/boot/dts/r8a7779-marzen.dts | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index eda6240..2c727cd 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -68,6 +68,10 @@
- 	status = "okay";
- };
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index e304304..26a9f7d 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -397,8 +397,6 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
+ 	struct clock_event_device *ced = &ch->ced;
+ 	int ret;
  
-+&extal_clk {
-+	clock-frequency = <31250000>;
-+};
-+
- &pfc {
- 	pinctrl-0 = <&scif2_pins &scif4_pins>;
- 	pinctrl-names = "default";
+-	memset(ced, 0, sizeof(*ced));
+-
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
+@@ -441,7 +439,6 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch,
+ {
+ 	struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
+ 
+-	memset(ch, 0, sizeof(*ch));
+ 	ch->tmu = tmu;
+ 
+ 	/*
+@@ -475,7 +472,6 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	int ret;
+ 	ret = -ENXIO;
+ 
+-	memset(tmu, 0, sizeof(*tmu));
+ 	tmu->pdev = pdev;
+ 
+ 	if (!cfg) {
+@@ -547,7 +543,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
+ 		goto out;
+ 	}
+ 
+-	tmu = kmalloc(sizeof(*tmu), GFP_KERNEL);
++	tmu = kzalloc(sizeof(*tmu), GFP_KERNEL);
+ 	if (tmu = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
 -- 
-1.8.5.2
+1.8.3.2
 
