@@ -1,39 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:44 +0000
-Subject: [PATCH 1/8] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in C
-Message-Id: <ce4b6a04c49b0b414d537b45ededd9dfd4e48336.1397627619.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:14 +0000
+Subject: [PATCH v3 31/52] clocksource: sh_tmu: Hardcode TMU clock event and source ratings to 200
+Message-Id: <1397228675-11684-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+All boards use clock event and clock source ratings of 200 for the TMU,
+hardcode it in the driver.
 
-The correct maximum CPU frequency for r8a7791 is 1500 MHz
-so update the r8a7791 SoC C code to reflect this.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/clocksource/sh_tmu.c | 23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index e28404e..a7e4966 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -213,7 +213,7 @@ void __init r8a7791_add_standard_devices(void)
- void __init r8a7791_init_early(void)
- {
- #ifndef CONFIG_ARM_ARCH_TIMER
--	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
-+	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
- #endif
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 63ed92d..fec9bed 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -300,12 +300,12 @@ static void sh_tmu_clocksource_resume(struct clocksource *cs)
  }
  
+ static int sh_tmu_register_clocksource(struct sh_tmu_channel *ch,
+-				       const char *name, unsigned long rating)
++				       const char *name)
+ {
+ 	struct clocksource *cs = &ch->cs;
+ 
+ 	cs->name = name;
+-	cs->rating = rating;
++	cs->rating = 200;
+ 	cs->read = sh_tmu_clocksource_read;
+ 	cs->enable = sh_tmu_clocksource_enable;
+ 	cs->disable = sh_tmu_clocksource_disable;
+@@ -402,7 +402,7 @@ static void sh_tmu_clock_event_resume(struct clock_event_device *ced)
+ }
+ 
+ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
+-				       const char *name, unsigned long rating)
++				       const char *name)
+ {
+ 	struct clock_event_device *ced = &ch->ced;
+ 	int ret;
+@@ -410,7 +410,7 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
+-	ced->rating = rating;
++	ced->rating = 200;
+ 	ced->cpumask = cpumask_of(0);
+ 	ced->set_next_event = sh_tmu_clock_event_next;
+ 	ced->set_mode = sh_tmu_clock_event_mode;
+@@ -433,13 +433,12 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
+ }
+ 
+ static int sh_tmu_register(struct sh_tmu_channel *ch, const char *name,
+-		    unsigned long clockevent_rating,
+-		    unsigned long clocksource_rating)
++			   bool clockevent, bool clocksource)
+ {
+-	if (clockevent_rating)
+-		sh_tmu_register_clockevent(ch, name, clockevent_rating);
+-	else if (clocksource_rating)
+-		sh_tmu_register_clocksource(ch, name, clocksource_rating);
++	if (clockevent)
++		sh_tmu_register_clockevent(ch, name);
++	else if (clocksource)
++		sh_tmu_register_clocksource(ch, name);
+ 
+ 	return 0;
+ }
+@@ -471,8 +470,8 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch,
+ 	ch->enable_count = 0;
+ 
+ 	return sh_tmu_register(ch, dev_name(&tmu->pdev->dev),
+-			       cfg->clockevent_rating,
+-			       cfg->clocksource_rating);
++			       cfg->clockevent_rating != 0,
++			       cfg->clocksource_rating != 0);
+ }
+ 
+ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
 -- 
-1.8.5.2
+1.8.3.2
 
