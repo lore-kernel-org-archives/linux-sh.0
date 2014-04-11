@@ -1,73 +1,59 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:06 +0000
-Subject: [PATCH v2 06/14] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
-Message-Id: <1397832494-20607-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:53 +0000
+Subject: [PATCH v3 10/52] clocksource: sh_cmt: Allocate channels dynamically
+Message-Id: <1397228675-11684-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all MTU2 channels are handled by a single device instance, use
-a per-device spinlock.
+This prepares the driver for multi-channel support.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/clocksource/sh_mtu2.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ drivers/clocksource/sh_cmt.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 2931fea..ebdf9d1 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -47,14 +47,14 @@ struct sh_mtu2_device {
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 0779bf1..f94db32 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -62,7 +62,8 @@ struct sh_cmt_device {
  	void __iomem *mapbase;
  	struct clk *clk;
  
-+	raw_spinlock_t lock; /* Protect the shared registers */
+-	struct sh_cmt_channel channel;
++	struct sh_cmt_channel *channels;
++	unsigned int num_channels;
+ 
+ 	unsigned long width; /* 16 or 32 bit version of hardware block */
+ 	unsigned long overflow_bit;
+@@ -822,7 +823,15 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 		cmt->clear_bits = ~0xc000;
+ 	}
+ 
+-	ret = sh_cmt_setup_channel(&cmt->channel, cfg->timer_bit, cmt);
++	cmt->channels = kzalloc(sizeof(*cmt->channels), GFP_KERNEL);
++	if (cmt->channels = NULL) {
++		ret = -ENOMEM;
++		goto err4;
++	}
 +
- 	struct sh_mtu2_channel *channels;
- 	unsigned int num_channels;
- 
- 	bool has_clockevent;
- };
- 
--static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
--
- #define TSTR -1 /* shared register */
- #define TCR  0 /* channel register */
- #define TMDR 1 /* channel register */
-@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
-+	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
- 	value = sh_mtu2_read(ch, TSTR);
- 
- 	if (start)
-@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_mtu2_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
- }
- 
- static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
-@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
- 
- 	mtu->pdev = pdev;
- 
-+	raw_spin_lock_init(&mtu->lock);
++	cmt->num_channels = 1;
 +
- 	/* Get hold of clock. */
- 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
- 	if (IS_ERR(mtu->clk)) {
++	ret = sh_cmt_setup_channel(&cmt->channels[0], cfg->timer_bit, cmt);
+ 	if (ret < 0)
+ 		goto err4;
+ 
+@@ -830,6 +839,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 
+ 	return 0;
+ err4:
++	kfree(cmt->channels);
+ 	clk_unprepare(cmt->clk);
+ err3:
+ 	clk_put(cmt->clk);
 -- 
 1.8.3.2
 
