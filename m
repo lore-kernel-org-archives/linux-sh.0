@@ -1,58 +1,130 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:07 +0000
-Subject: [PATCH v2 11/17] ARM: shmobile: lager-reference: Remove workarounds for core clock issues
-Message-Id: <1397565253-22741-12-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:47 +0000
+Subject: [PATCH v3 04/52] clocksource: sh_cmt: Split channel setup to separate function
+Message-Id: <1397228675-11684-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Now the core clock issues have been fixed by "ARM: shmobile: Call
-sh_pm_runtime_init() from platform code on all SoCs", revert the following
-2 commits:
-  - f98b55d730492e664fb2649bd7054fec0fe81acd ("ARM: shmobile: Add Lager
-    clock workarounds for SDHI and MMCIF"),
-  - aa5de826afe747c353162bbc116c63ab5335f91c ("ARM: shmobile:
-    lager-reference: Work around core clock issues").
+Move the channel setup code from sh_cmt_setup to a new
+sh_cmt_setup_channel function and call it from sh_cmt_setup.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-  - New
+ drivers/clocksource/sh_cmt.c | 79 ++++++++++++++++++++++++++------------------
+ 1 file changed, 47 insertions(+), 32 deletions(-)
 
- arch/arm/mach-shmobile/board-lager-reference.c |   14 --------------
- 1 file changed, 14 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 0af38a9c390e..ddf62cc86866 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -108,24 +108,10 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
- };
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 604199a..26f73cf 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -693,12 +693,55 @@ static int sh_cmt_register(struct sh_cmt_channel *ch, char *name,
+ 	return 0;
+ }
  
--/*
-- * This is a really crude hack to work around core platform clock issues
-- */
--static const struct clk_name clk_enables[] __initconst = {
--	{ "ether", NULL, "ee700000.ethernet" },
--	{ "msiof1", NULL, "e6e10000.spi" },
--	{ "mmcif1", NULL, "ee220000.mmc" },
--	{ "qspi_mod", NULL, "e6b10000.spi" },
--	{ "sdhi0", NULL, "ee100000.sd" },
--	{ "sdhi2", NULL, "ee140000.sd" },
--	{ "thermal", NULL, "e61f0000.thermal" },
--};
--
- static void __init lager_add_standard_devices(void)
++static int sh_cmt_setup_channel(struct sh_cmt_channel *ch,
++				struct sh_cmt_device *cmt)
++{
++	struct sh_timer_config *cfg = cmt->pdev->dev.platform_data;
++	int irq;
++	int ret;
++
++	memset(ch, 0, sizeof(*ch));
++	ch->cmt = cmt;
++
++	irq = platform_get_irq(cmt->pdev, 0);
++	if (irq < 0) {
++		dev_err(&cmt->pdev->dev, "failed to get irq\n");
++		return irq;
++	}
++
++	if (cmt->width = (sizeof(ch->max_match_value) * 8))
++		ch->max_match_value = ~0;
++	else
++		ch->max_match_value = (1 << cmt->width) - 1;
++
++	ch->match_value = ch->max_match_value;
++	raw_spin_lock_init(&ch->lock);
++
++	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
++			      cfg->clockevent_rating,
++			      cfg->clocksource_rating);
++	if (ret) {
++		dev_err(&cmt->pdev->dev, "registration failed\n");
++		return ret;
++	}
++	ch->cs_enabled = false;
++
++	ret = request_irq(irq, sh_cmt_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&cmt->pdev->dev), ch);
++	if (ret) {
++		dev_err(&cmt->pdev->dev, "failed to request irq %d\n", irq);
++		return ret;
++	}
++
++	return 0;
++}
++
+ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
  {
- 	sh_pm_runtime_init();
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+-	struct sh_cmt_channel *ch = &cmt->channel;
+ 	struct resource *res, *res2;
+-	int irq, ret;
++	int ret;
+ 	ret = -ENXIO;
+ 
+ 	memset(cmt, 0, sizeof(*cmt));
+@@ -718,12 +761,6 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	/* optional resource for the shared timer start/stop register */
+ 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
+ 
+-	irq = platform_get_irq(cmt->pdev, 0);
+-	if (irq < 0) {
+-		dev_err(&cmt->pdev->dev, "failed to get irq\n");
+-		goto err0;
+-	}
+-
+ 	/* map memory, let mapbase point to our channel */
+ 	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
+ 	if (cmt->mapbase = NULL) {
+@@ -775,31 +812,9 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 		cmt->clear_bits = ~0xc000;
+ 	}
+ 
+-	if (cmt->width = (sizeof(ch->max_match_value) * 8))
+-		ch->max_match_value = ~0;
+-	else
+-		ch->max_match_value = (1 << cmt->width) - 1;
+-
+-	ch->cmt = cmt;
+-	ch->match_value = ch->max_match_value;
+-	raw_spin_lock_init(&ch->lock);
+-
+-	ret = sh_cmt_register(ch, (char *)dev_name(&cmt->pdev->dev),
+-			      cfg->clockevent_rating,
+-			      cfg->clocksource_rating);
+-	if (ret) {
+-		dev_err(&cmt->pdev->dev, "registration failed\n");
+-		goto err4;
+-	}
+-	ch->cs_enabled = false;
+-
+-	ret = request_irq(irq, sh_cmt_interrupt,
+-			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
+-			  dev_name(&cmt->pdev->dev), ch);
+-	if (ret) {
+-		dev_err(&cmt->pdev->dev, "failed to request irq %d\n", irq);
++	ret = sh_cmt_setup_channel(&cmt->channel, cmt);
++	if (ret < 0)
+ 		goto err4;
+-	}
+ 
+ 	platform_set_drvdata(pdev, cmt);
  
 -- 
-1.7.9.5
+1.8.3.2
 
