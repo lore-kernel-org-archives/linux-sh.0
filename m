@@ -1,103 +1,58 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 22 Apr 2014 13:19:11 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7740: common clock framework board support
-Message-Id: <1398172752-30567-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:52 +0000
+Subject: [PATCH v3 09/52] clocksource: sh_cmt: Replace kmalloc + memset with kzalloc
+Message-Id: <1397228675-11684-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+One kzalloc a day keeps the bugs away.
 
-Adds support for the common clock framework to the Armadillo800
-reference board and R8A7740 SoC setup code.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../board-armadillo800eva-reference.c              | 25 ++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c             |  2 ++
- 2 files changed, 27 insertions(+)
+ drivers/clocksource/sh_cmt.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 57d1a78..fa05621 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -24,6 +24,7 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r8a7740.h>
- #include <asm/mach/arch.h>
-@@ -118,6 +119,7 @@
-  *	usbhsf_power_ctrl()
-  */
- 
-+#ifndef CONFIG_COMMON_CLK
- static void __init eva_clock_init(void)
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 6b65621..0779bf1 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -672,8 +672,6 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
  {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -152,14 +154,34 @@ clock_error:
- 	if (!IS_ERR(fsibck))
- 		clk_put(fsibck);
- }
-+#else
-+static const struct clk_name clk_names[] __initconst = {
-+	{ "cmt1", NULL, "sh_cmt.10" },
-+	{ "iic0", NULL, "fff20000.i2c" },
-+	{ "mmc", NULL, "e6bd0000.mmc" },
-+	{ "scifa0", NULL, "sh-sci.0" },
-+	{ "scifa1", NULL, "sh-sci.1" },
-+	{ "scifa2", NULL, "sh-sci.2" },
-+	{ "scifa3", NULL, "sh-sci.3" },
-+	{ "scifa4", NULL, "sh-sci.4" },
-+	{ "scifa5", NULL, "sh-sci.5" },
-+	{ "scifa6", NULL, "sh-sci.6" },
-+	{ "scifa7", NULL, "sh-sci.7" },
-+	{ "scifb", NULL, "sh-sci.8" },
-+	{ "sdhi0", NULL, "e6850000.sd" },
-+	{ "tpu0", NULL, "e6600000.pwm" },
-+};
-+#endif
+ 	struct clock_event_device *ced = &ch->ced;
  
- /*
-  * board init
-  */
- static void __init eva_init(void)
- {
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	eva_clock_init();
-+#endif
+-	memset(ced, 0, sizeof(*ced));
+-
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
+@@ -709,7 +707,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
+ 	int irq;
+ 	int ret;
  
- 	r8a7740_meram_workaround();
+-	memset(ch, 0, sizeof(*ch));
+ 	ch->cmt = cmt;
+ 	ch->base = cmt->mapbase_ch;
+ 	ch->index = index;
+@@ -758,7 +755,6 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	int ret;
+ 	ret = -ENXIO;
  
-@@ -167,6 +189,9 @@ static void __init eva_init(void)
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
-+#ifdef CONFIG_COMMON_CLK
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-+#endif
+-	memset(cmt, 0, sizeof(*cmt));
+ 	cmt->pdev = pdev;
  
- 	r8a7740_add_standard_devices_dt();
+ 	if (!cfg) {
+@@ -861,7 +857,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 		goto out;
+ 	}
  
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index a177a7b..8e81c61 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -913,7 +913,9 @@ void __init r8a7740_init_irq_of(void)
- 
- static void __init r8a7740_generic_init(void)
- {
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7740_clock_init(0);
-+#endif
- 	r8a7740_add_standard_devices_dt();
- }
- 
+-	cmt = kmalloc(sizeof(*cmt), GFP_KERNEL);
++	cmt = kzalloc(sizeof(*cmt), GFP_KERNEL);
+ 	if (cmt = NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		return -ENOMEM;
 -- 
-1.8.4.5
+1.8.3.2
 
