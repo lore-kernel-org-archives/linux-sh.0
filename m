@@ -1,68 +1,79 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:33 +0000
-Subject: [PATCH v3 50/52] clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
-Message-Id: <1397228675-11684-51-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:13 +0000
+Subject: [PATCH v3 30/52] clocksource: sh_tmu: Replace hardcoded register values with macros
+Message-Id: <1397228675-11684-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all CMT channels are handled by a single device instance, use a
-per-device spinlock.
+Define symbolic macros for all used registers bits.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ drivers/clocksource/sh_tmu.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index ff1a059..4d00e4b 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -118,6 +118,8 @@ struct sh_cmt_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 55b7a37..63ed92d 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -69,6 +69,15 @@ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+ #define TCNT 1 /* channel register */
+ #define TCR 2 /* channel register */
  
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
++#define TCR_UNF			(1 << 8)
++#define TCR_UNIE		(1 << 5)
++#define TCR_TPSC_CLK4		(0 << 0)
++#define TCR_TPSC_CLK16		(1 << 0)
++#define TCR_TPSC_CLK64		(2 << 0)
++#define TCR_TPSC_CLK256		(3 << 0)
++#define TCR_TPSC_CLK1024	(4 << 0)
++#define TCR_TPSC_MASK		(7 << 0)
 +
- 	struct sh_cmt_channel *channels;
- 	unsigned int num_channels;
- 
-@@ -299,14 +301,12 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
- 	return v2;
- }
- 
--static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
--
- static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
+ static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
  {
- 	unsigned long flags, value;
+ 	unsigned long offs;
+@@ -140,7 +149,7 @@ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
  
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_cmt_lock, flags);
-+	raw_spin_lock_irqsave(&ch->cmt->lock, flags);
- 	value = sh_cmt_read_cmstr(ch);
+ 	/* configure channel to parent clock / 4, irq off */
+ 	ch->rate = clk_get_rate(ch->tmu->clk) / 4;
+-	sh_tmu_write(ch, TCR, 0x0000);
++	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
  
- 	if (start)
-@@ -315,7 +315,7 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
- 		value &= ~(1 << ch->timer_bit);
+ 	/* enable channel */
+ 	sh_tmu_start_stop_ch(ch, 1);
+@@ -165,7 +174,7 @@ static void __sh_tmu_disable(struct sh_tmu_channel *ch)
+ 	sh_tmu_start_stop_ch(ch, 0);
  
- 	sh_cmt_write_cmstr(ch, value);
--	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->cmt->lock, flags);
- }
+ 	/* disable interrupts in TMU block */
+-	sh_tmu_write(ch, TCR, 0x0000);
++	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
  
- static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
-@@ -934,6 +934,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	/* stop clock */
+ 	clk_disable(ch->tmu->clk);
+@@ -195,7 +204,7 @@ static void sh_tmu_set_next(struct sh_tmu_channel *ch, unsigned long delta,
+ 	sh_tmu_read(ch, TCR);
  
- 	memset(cmt, 0, sizeof(*cmt));
- 	cmt->pdev = pdev;
-+	raw_spin_lock_init(&cmt->lock);
+ 	/* enable interrupt */
+-	sh_tmu_write(ch, TCR, 0x0020);
++	sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
  
- 	if (!cfg) {
- 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+ 	/* reload delta value in case of periodic timer */
+ 	if (periodic)
+@@ -215,9 +224,9 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
+ 
+ 	/* disable or acknowledge interrupt */
+ 	if (ch->ced.mode = CLOCK_EVT_MODE_ONESHOT)
+-		sh_tmu_write(ch, TCR, 0x0000);
++		sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
+ 	else
+-		sh_tmu_write(ch, TCR, 0x0020);
++		sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
+ 
+ 	/* notify clockevent layer */
+ 	ch->ced.event_handler(&ch->ced);
 -- 
 1.8.3.2
 
