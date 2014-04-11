@@ -1,55 +1,58 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 14 Apr 2014 10:36:36 +0000
-Subject: [PATCH v3 1/7] adv7180: use async subdev registration
-Message-Id: <1397471802-27216-2-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:18 +0000
+Subject: [PATCH v3 35/52] clocksource: sh_tmu: Sort headers alphabetically
+Message-Id: <1397228675-11684-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Change to using the the async subdev registration API so
-that when soc_camera is using OF to find devices this can
-be found and attached.
+This helps locating duplicates and inserting new headers.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/media/i2c/adv7180.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ drivers/clocksource/sh_tmu.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
-index d7d99f1..215afa0 100644
---- a/drivers/media/i2c/adv7180.c
-+++ b/drivers/media/i2c/adv7180.c
-@@ -29,6 +29,7 @@
- #include <linux/videodev2.h>
- #include <media/v4l2-device.h>
- #include <media/v4l2-ctrls.h>
-+#include <media/v4l2-async.h>
- #include <linux/mutex.h>
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 981f8d3..4ba2c0f 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -13,23 +13,23 @@
+  * GNU General Public License for more details.
+  */
  
- #define ADV7180_INPUT_CONTROL_REG			0x00
-@@ -611,6 +612,11 @@ static int adv7180_probe(struct i2c_client *client,
- 	ret = init_device(client, state);
- 	if (ret)
- 		goto err_free_ctrl;
-+
-+	ret = v4l2_async_register_subdev(sd);
-+	if (ret)
-+		goto err_free_ctrl;
-+
- 	return 0;
++#include <linux/clk.h>
++#include <linux/clockchips.h>
++#include <linux/clocksource.h>
++#include <linux/delay.h>
++#include <linux/err.h>
+ #include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+-#include <linux/ioport.h>
+-#include <linux/delay.h>
+ #include <linux/io.h>
+-#include <linux/clk.h>
++#include <linux/ioport.h>
+ #include <linux/irq.h>
+-#include <linux/err.h>
+-#include <linux/clocksource.h>
+-#include <linux/clockchips.h>
+-#include <linux/sh_timer.h>
+-#include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
++#include <linux/sh_timer.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
  
- err_free_ctrl:
-@@ -641,7 +647,7 @@ static int adv7180_remove(struct i2c_client *client)
- 	}
- 
- 	mutex_destroy(&state->mutex);
--	v4l2_device_unregister_subdev(sd);
-+	v4l2_async_unregister_subdev(sd);
- 	return 0;
- }
- 
+ enum sh_tmu_model {
+ 	SH_TMU_LEGACY,
 -- 
-1.9.1
+1.8.3.2
 
