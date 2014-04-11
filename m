@@ -1,60 +1,183 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 29 Apr 2014 10:03:42 +0000
-Subject: [PATCH v5 11/11] ARM: shmobile: r7s72100: use workaround for non DT-clocks
-Message-Id: <1398765822-2314-12-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:34 +0000
+Subject: [PATCH v3 51/52] clocksource: sh_tmu: Drop support for legacy platform data
+Message-Id: <1397228675-11684-52-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Now that all platforms have switched to the new-style platform data,
+drop support for the legacy version.
 
-MTU2 is not yet prepared for DT usage, so use the common workaround via
-clkdev for now.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-genmai-reference.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ drivers/clocksource/sh_tmu.c | 82 ++++++++------------------------------------
+ 1 file changed, 15 insertions(+), 67 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 7630c1053e32..fde558b66d4e 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -18,18 +18,28 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index 4ba2c0f..47f5b48 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -32,7 +32,6 @@
+ #include <linux/spinlock.h>
  
--#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r7s72100.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+ enum sh_tmu_model {
+-	SH_TMU_LEGACY,
+ 	SH_TMU,
+ 	SH_TMU_SH3,
+ };
+@@ -91,8 +90,6 @@ static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
  
-+#ifdef CONFIG_COMMON_CLK
-+/*
-+ * This is a really crude hack to provide clkdev support to platform
-+ * devices until they get moved to DT.
-+ */
-+static const struct clk_name clk_names[] = {
-+	{ "mtu2", NULL, "sh_mtu2.0" },
-+};
-+#endif
-+
- static void __init genmai_add_standard_devices(void)
+ 	if (reg_nr = TSTR) {
+ 		switch (ch->tmu->model) {
+-		case SH_TMU_LEGACY:
+-			return ioread8(ch->tmu->mapbase);
+ 		case SH_TMU_SH3:
+ 			return ioread8(ch->tmu->mapbase + 2);
+ 		case SH_TMU:
+@@ -115,8 +112,6 @@ static inline void sh_tmu_write(struct sh_tmu_channel *ch, int reg_nr,
+ 
+ 	if (reg_nr = TSTR) {
+ 		switch (ch->tmu->model) {
+-		case SH_TMU_LEGACY:
+-			return iowrite8(value, ch->tmu->mapbase);
+ 		case SH_TMU_SH3:
+ 			return iowrite8(value, ch->tmu->mapbase + 2);
+ 		case SH_TMU:
+@@ -476,27 +471,12 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
+ 		return 0;
+ 
+ 	ch->tmu = tmu;
++	ch->index = index;
+ 
+-	if (tmu->model = SH_TMU_LEGACY) {
+-		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
+-
+-		/*
+-		 * The SH3 variant (SH770x, SH7705, SH7710 and SH7720) maps
+-		 * channel registers blocks at base + 2 + 12 * index, while all
+-		 * other variants map them at base + 4 + 12 * index. We can
+-		 * compute the index by just dividing by 12, the 2 bytes or 4
+-		 * bytes offset being hidden by the integer division.
+-		 */
+-		ch->index = cfg->channel_offset / 12;
+-		ch->base = tmu->mapbase + cfg->channel_offset;
+-	} else {
+-		ch->index = index;
+-
+-		if (tmu->model = SH_TMU_SH3)
+-			ch->base = tmu->mapbase + 4 + ch->index * 12;
+-		else
+-			ch->base = tmu->mapbase + 8 + ch->index * 12;
+-	}
++	if (tmu->model = SH_TMU_SH3)
++		ch->base = tmu->mapbase + 4 + ch->index * 12;
++	else
++		ch->base = tmu->mapbase + 8 + ch->index * 12;
+ 
+ 	ch->irq = platform_get_irq(tmu->pdev, ch->index);
+ 	if (ch->irq < 0) {
+@@ -526,28 +506,9 @@ static int sh_tmu_map_memory(struct sh_tmu_device *tmu)
+ 	if (tmu->mapbase = NULL)
+ 		return -ENXIO;
+ 
+-	/*
+-	 * In legacy platform device configuration (with one device per channel)
+-	 * the resource points to the channel base address.
+-	 */
+-	if (tmu->model = SH_TMU_LEGACY) {
+-		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
+-		tmu->mapbase -= cfg->channel_offset;
+-	}
+-
+ 	return 0;
+ }
+ 
+-static void sh_tmu_unmap_memory(struct sh_tmu_device *tmu)
+-{
+-	if (tmu->model = SH_TMU_LEGACY) {
+-		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
+-		tmu->mapbase += cfg->channel_offset;
+-	}
+-
+-	iounmap(tmu->mapbase);
+-}
+-
+ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
  {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), true);
- #else
- 	r7s72100_clock_init();
- #endif
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+@@ -564,8 +525,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	tmu->model = id->driver_data;
+ 
+ 	/* Get hold of clock. */
+-	tmu->clk = clk_get(&tmu->pdev->dev,
+-			   tmu->model = SH_TMU_LEGACY ? "tmu_fck" : "fck");
++	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
+ 	if (IS_ERR(tmu->clk)) {
+ 		dev_err(&tmu->pdev->dev, "cannot get clock\n");
+ 		return PTR_ERR(tmu->clk);
+@@ -583,10 +543,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 	}
+ 
+ 	/* Allocate and setup the channels. */
+-	if (tmu->model = SH_TMU_LEGACY)
+-		tmu->num_channels = 1;
+-	else
+-		tmu->num_channels = hweight8(cfg->channels_mask);
++	tmu->num_channels = hweight8(cfg->channels_mask);
+ 
+ 	tmu->channels = kzalloc(sizeof(*tmu->channels) * tmu->num_channels,
+ 				GFP_KERNEL);
+@@ -595,23 +552,15 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 		goto err_unmap;
+ 	}
+ 
+-	if (tmu->model = SH_TMU_LEGACY) {
+-		ret = sh_tmu_channel_setup(&tmu->channels[0], 0,
+-					   cfg->clockevent_rating != 0,
+-					   cfg->clocksource_rating != 0, tmu);
++	/*
++	 * Use the first channel as a clock event device and the second channel
++	 * as a clock source.
++	 */
++	for (i = 0; i < tmu->num_channels; ++i) {
++		ret = sh_tmu_channel_setup(&tmu->channels[i], i,
++					   i = 0, i = 1, tmu);
+ 		if (ret < 0)
+ 			goto err_unmap;
+-	} else {
+-		/*
+-		 * Use the first channel as a clock event device and the second
+-		 * channel as a clock source.
+-		 */
+-		for (i = 0; i < tmu->num_channels; ++i) {
+-			ret = sh_tmu_channel_setup(&tmu->channels[i], i,
+-						   i = 0, i = 1, tmu);
+-			if (ret < 0)
+-				goto err_unmap;
+-		}
+ 	}
+ 
+ 	platform_set_drvdata(pdev, tmu);
+@@ -620,7 +569,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ 
+ err_unmap:
+ 	kfree(tmu->channels);
+-	sh_tmu_unmap_memory(tmu);
++	iounmap(tmu->mapbase);
+ err_clk_unprepare:
+ 	clk_unprepare(tmu->clk);
+ err_clk_put:
+@@ -673,7 +622,6 @@ static int sh_tmu_remove(struct platform_device *pdev)
+ }
+ 
+ static const struct platform_device_id sh_tmu_id_table[] = {
+-	{ "sh_tmu", SH_TMU_LEGACY },
+ 	{ "sh-tmu", SH_TMU },
+ 	{ "sh-tmu-sh3", SH_TMU_SH3 },
+ 	{ }
 -- 
-1.9.2
+1.8.3.2
 
