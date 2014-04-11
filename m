@@ -1,115 +1,87 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 30 Apr 2014 00:31:43 +0000
-Subject: [RFC/PATCH 3/6] ARM: shmobile: r8a7790: Rename the serial port clock to fck
-Message-Id: <1398817906-6023-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:04 +0000
+Subject: [PATCH v3 21/52] clocksource: sh_tmu: Use request_irq() instead of setup_irq()
+Message-Id: <1397228675-11684-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+The driver claims it needs to register an interrupt handler too early
+for request_irq(). This might have been true in the past, but the only
+meaningful difference between request_irq() and setup_irq() today is an
+additional kzalloc() call in request_irq(). As the driver calls
+kmalloc() itself we know that the slab allocator is available, we can
+thus switch to request_irq().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ drivers/clocksource/sh_tmu.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d38d703..0684710 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -344,7 +344,7 @@
- 		reg = <0 0xe6c40000 0 64>;
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index ecd7b60..8613cc9 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -38,7 +38,7 @@
+ struct sh_tmu_priv {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
+-	struct irqaction irqaction;
++	int irq;
+ 	struct platform_device *pdev;
+ 	unsigned long rate;
+ 	unsigned long periodic;
+@@ -401,10 +401,11 @@ static void sh_tmu_register_clockevent(struct sh_tmu_priv *p,
  
-@@ -353,7 +353,7 @@
- 		reg = <0 0xe6c50000 0 64>;
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
+ 	clockevents_config_and_register(ced, 1, 0x300, 0xffffffff);
  
-@@ -362,7 +362,7 @@
- 		reg = <0 0xe6c60000 0 64>;
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
+-	ret = setup_irq(p->irqaction.irq, &p->irqaction);
++	ret = request_irq(p->irq, sh_tmu_interrupt,
++			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			  dev_name(&p->pdev->dev), p);
+ 	if (ret) {
+-		dev_err(&p->pdev->dev, "failed to request irq %d\n",
+-			p->irqaction.irq);
++		dev_err(&p->pdev->dev, "failed to request irq %d\n", p->irq);
+ 		return;
+ 	}
+ }
+@@ -425,7 +426,7 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ {
+ 	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+-	int irq, ret;
++	int ret;
+ 	ret = -ENXIO;
  
-@@ -371,7 +371,7 @@
- 		reg = <0 0xe6c20000 0 64>;
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
+ 	memset(p, 0, sizeof(*p));
+@@ -444,8 +445,8 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
  
-@@ -380,7 +380,7 @@
- 		reg = <0 0xe6c30000 0 64>;
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
+-	irq = platform_get_irq(p->pdev, 0);
+-	if (irq < 0) {
++	p->irq = platform_get_irq(p->pdev, 0);
++	if (p->irq < 0) {
+ 		dev_err(&p->pdev->dev, "failed to get irq\n");
+ 		goto err0;
+ 	}
+@@ -457,13 +458,6 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
  
-@@ -389,7 +389,7 @@
- 		reg = <0 0xe6ce0000 0 64>;
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
- 
-@@ -398,7 +398,7 @@
- 		reg = <0 0xe6e60000 0 64>;
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
- 
-@@ -407,7 +407,7 @@
- 		reg = <0 0xe6e68000 0 64>;
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
- 
-@@ -416,7 +416,7 @@
- 		reg = <0 0xe62c0000 0 96>;
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
- 
-@@ -425,7 +425,7 @@
- 		reg = <0 0xe62c8000 0 96>;
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		status = "disabled";
- 	};
- 
+-	/* setup data for setup_irq() (too early for request_irq()) */
+-	p->irqaction.name = dev_name(&p->pdev->dev);
+-	p->irqaction.handler = sh_tmu_interrupt;
+-	p->irqaction.dev_id = p;
+-	p->irqaction.irq = irq;
+-	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
+-
+ 	/* get hold of clock */
+ 	p->clk = clk_get(&p->pdev->dev, "tmu_fck");
+ 	if (IS_ERR(p->clk)) {
 -- 
 1.8.3.2
 
