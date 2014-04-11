@@ -1,48 +1,131 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:11 +0000
-Subject: [PATCH RFC v2 15/17] ARM: shmobile: r8a7778: Populate .init_machine for generic r8a7778
-Message-Id: <1397565253-22741-16-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:55 +0000
+Subject: [PATCH v3 12/52] clocksource: sh_cmt: Replace hardcoded register values with macros
+Message-Id: <1397228675-11684-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Define symbolic macros for all used registers bits.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-  - New
+ drivers/clocksource/sh_cmt.c | 56 ++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 44 insertions(+), 12 deletions(-)
 
- arch/arm/mach-shmobile/setup-r8a7778.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 6d694526e4ca..6d5b5df0407f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -614,6 +614,14 @@ void __init r8a7778_init_irq_dt(void)
- 	iounmap(base);
- }
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 879b8c2..ce00baa 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -114,6 +114,34 @@ struct sh_cmt_device {
+ 	unsigned int num_channels;
+ };
  
-+void __init r8a7778_add_standard_devices_dt(void)
-+{
-+	sh_pm_runtime_init();
-+	r8a7778_clock_init();
-+	r8a7778_add_dt_devices();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
++#define SH_CMT16_CMCSR_CMF		(1 << 7)
++#define SH_CMT16_CMCSR_CMIE		(1 << 6)
++#define SH_CMT16_CMCSR_CKS8		(0 << 0)
++#define SH_CMT16_CMCSR_CKS32		(1 << 0)
++#define SH_CMT16_CMCSR_CKS128		(2 << 0)
++#define SH_CMT16_CMCSR_CKS512		(3 << 0)
++#define SH_CMT16_CMCSR_CKS_MASK		(3 << 0)
 +
- static const char *r8a7778_compat_dt[] __initdata = {
- 	"renesas,r8a7778",
- 	NULL,
-@@ -622,6 +630,7 @@ static const char *r8a7778_compat_dt[] __initdata = {
- DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= r8a7778_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
-+	.init_machine	= r8a7778_add_standard_devices_dt,
- 	.dt_compat	= r8a7778_compat_dt,
- 	.init_late      = r8a7778_init_late,
- MACHINE_END
++#define SH_CMT32_CMCSR_CMF		(1 << 15)
++#define SH_CMT32_CMCSR_OVF		(1 << 14)
++#define SH_CMT32_CMCSR_WRFLG		(1 << 13)
++#define SH_CMT32_CMCSR_STTF		(1 << 12)
++#define SH_CMT32_CMCSR_STPF		(1 << 11)
++#define SH_CMT32_CMCSR_SSIE		(1 << 10)
++#define SH_CMT32_CMCSR_CMS		(1 << 9)
++#define SH_CMT32_CMCSR_CMM		(1 << 8)
++#define SH_CMT32_CMCSR_CMTOUT_IE	(1 << 7)
++#define SH_CMT32_CMCSR_CMR_NONE		(0 << 4)
++#define SH_CMT32_CMCSR_CMR_DMA		(1 << 4)
++#define SH_CMT32_CMCSR_CMR_IRQ		(2 << 4)
++#define SH_CMT32_CMCSR_CMR_MASK		(3 << 4)
++#define SH_CMT32_CMCSR_DBGIVD		(1 << 3)
++#define SH_CMT32_CMCSR_CKS_RCLK8	(4 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK32	(5 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK128	(6 << 0)
++#define SH_CMT32_CMCSR_CKS_RCLK1	(7 << 0)
++#define SH_CMT32_CMCSR_CKS_MASK		(7 << 0)
++
+ static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+ {
+ 	return ioread16(base + (offs << 1));
+@@ -140,8 +168,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_16BIT] = {
+ 		.model = SH_CMT_16BIT,
+ 		.width = 16,
+-		.overflow_bit = 0x80,
+-		.clear_bits = ~0x80,
++		.overflow_bit = SH_CMT16_CMCSR_CMF,
++		.clear_bits = ~SH_CMT16_CMCSR_CMF,
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read16,
+@@ -150,8 +178,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_32BIT] = {
+ 		.model = SH_CMT_32BIT,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read32,
+@@ -160,8 +188,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_32BIT_FAST] = {
+ 		.model = SH_CMT_32BIT_FAST,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read16,
+ 		.write_control = sh_cmt_write16,
+ 		.read_count = sh_cmt_read32,
+@@ -170,8 +198,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_48BIT] = {
+ 		.model = SH_CMT_48BIT,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read32,
+ 		.write_control = sh_cmt_write32,
+ 		.read_count = sh_cmt_read32,
+@@ -180,8 +208,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
+ 	[SH_CMT_48BIT_GEN2] = {
+ 		.model = SH_CMT_48BIT_GEN2,
+ 		.width = 32,
+-		.overflow_bit = 0x8000,
+-		.clear_bits = ~0xc000,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+ 		.read_control = sh_cmt_read32,
+ 		.write_control = sh_cmt_write32,
+ 		.read_count = sh_cmt_read32,
+@@ -295,10 +323,14 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
+ 	/* configure channel, periodic mode and maximum timeout */
+ 	if (ch->cmt->info->width = 16) {
+ 		*rate = clk_get_rate(ch->cmt->clk) / 512;
+-		sh_cmt_write_cmcsr(ch, 0x43);
++		sh_cmt_write_cmcsr(ch, SH_CMT16_CMCSR_CMIE |
++				   SH_CMT16_CMCSR_CKS512);
+ 	} else {
+ 		*rate = clk_get_rate(ch->cmt->clk) / 8;
+-		sh_cmt_write_cmcsr(ch, 0x01a4);
++		sh_cmt_write_cmcsr(ch, SH_CMT32_CMCSR_CMM |
++				   SH_CMT32_CMCSR_CMTOUT_IE |
++				   SH_CMT32_CMCSR_CMR_IRQ |
++				   SH_CMT32_CMCSR_CKS_RCLK8);
+ 	}
+ 
+ 	sh_cmt_write_cmcor(ch, 0xffffffff);
 -- 
-1.7.9.5
+1.8.3.2
 
