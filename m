@@ -1,99 +1,90 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 14 Apr 2014 00:57:05 +0000
-Subject: [PATCH 4/7] ARM: shmobile: bockw: switch to use dai info for R-Car sound
-Message-Id: <87mwfo20f5.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:04:25 +0000
+Subject: [PATCH v3 42/52] ARM: shmobile: r8a7791: Switch to new style CMT device
+Message-Id: <1397228675-11684-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, broonie@kernel.org
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Now, R-Car sound driver supports dai info settings.
-switch to use it
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c |   53 ++++++++++++++++++++++------------
- 1 file changed, 35 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
+ arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
+ 3 files changed, 9 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 1aca107..f444be2 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -345,24 +345,39 @@ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
- 	RSND_SSI_UNUSED, /* SSI 0 */
- 	RSND_SSI_UNUSED, /* SSI 1 */
- 	RSND_SSI_UNUSED, /* SSI 2 */
--	RSND_SSI_SET(1, HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), RSND_SSI_PLAY),
--	RSND_SSI_SET(2, HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
--	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(0, HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
--	RSND_SSI_SET(3, HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), RSND_SSI_PLAY),
--	RSND_SSI_SET(4, HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF3_TX, gic_iid(0x85), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF4_RX, gic_iid(0x85), RSND_SSI_CLK_PIN_SHARE),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF5_TX, gic_iid(0x86), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF6_RX, gic_iid(0x86), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF7_TX, gic_iid(0x86), 0),
-+	RSND_SSI(HPBDMA_SLAVE_HPBIF8_RX, gic_iid(0x86), RSND_SSI_CLK_PIN_SHARE),
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 2edeb64..0b0ce5a 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -86,7 +86,7 @@ static void __init koelsch_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "du0", "du.0", "rcar-du-r8a7791" },
+ 	{ "du1", "du.1", "rcar-du-r8a7791" },
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index d2cb5cf..3e46171 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -264,7 +264,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 617197c..c98c27d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -128,20 +128,17 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+ 					  &scif##index##_platform_data,	       \
+ 					  sizeof(scif##index##_platform_data))
+ 
+-static const struct sh_timer_config cmt00_platform_data __initconst = {
+-	.name = "CMT00",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_config cmt0_platform_data = {
++	.channels_mask = 0x60,
  };
  
--static struct rsnd_scu_platform_info rsnd_scu[9] = {
--	{ .flags = 0, }, /* SRU 0 */
--	{ .flags = 0, }, /* SRU 1 */
--	{ .flags = 0, }, /* SRU 2 */
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
--	{ .flags = RSND_SCU_USE_HPBIF, },
-+static struct rsnd_src_platform_info rsnd_src[9] = {
-+	RSND_SRC_UNUSED, /* SRU 0 */
-+	RSND_SRC_UNUSED, /* SRU 1 */
-+	RSND_SRC_UNUSED, /* SRU 2 */
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+	RSND_SRC(0, 0),
-+};
-+
-+static struct rsnd_dai_platform_info rsnd_dai[] = {
-+	{
-+		.playback = { .ssi = &rsnd_ssi[5], .src = &rsnd_src[5] },
-+		.capture  = { .ssi = &rsnd_ssi[6], .src = &rsnd_src[6] },
-+	}, {
-+		.playback = { .ssi = &rsnd_ssi[3], .src = &rsnd_src[3] },
-+	}, {
-+		.capture  = { .ssi = &rsnd_ssi[4], .src = &rsnd_src[4] },
-+	}, {
-+		.playback = { .ssi = &rsnd_ssi[7], .src = &rsnd_src[7] },
-+	}, {
-+		.capture  = { .ssi = &rsnd_ssi[8], .src = &rsnd_src[8] },
-+	},
+-static const struct resource cmt00_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xffca0510, 0x0c),
+-	DEFINE_RES_MEM(0xffca0500, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++static struct resource cmt0_resources[] = {
++	DEFINE_RES_MEM(0xffca0000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(142)),
  };
  
- enum {
-@@ -437,8 +452,10 @@ static struct rcar_snd_info rsnd_info = {
- 	.flags		= RSND_GEN1,
- 	.ssi_info	= rsnd_ssi,
- 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
--	.scu_info	= rsnd_scu,
--	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
-+	.src_info	= rsnd_src,
-+	.src_info_nr	= ARRAY_SIZE(rsnd_src),
-+	.dai_info	= rsnd_dai,
-+	.dai_info_nr	= ARRAY_SIZE(rsnd_dai),
- 	.start		= rsnd_start,
- 	.stop		= rsnd_stop,
- };
+ #define r8a7791_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -185,7 +182,7 @@ static const struct resource thermal_resources[] __initconst = {
+ 
+ void __init r8a7791_add_dt_devices(void)
+ {
+-	r8a7791_register_cmt(00);
++	r8a7791_register_cmt(0);
+ }
+ 
+ void __init r8a7791_add_standard_devices(void)
 -- 
-1.7.9.5
+1.8.3.2
 
