@@ -1,56 +1,83 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Fri, 04 Apr 2014 16:55:59 +0000
+From: Srikanth Thokala <sriku.linux@gmail.com>
+Date: Fri, 11 Apr 2014 17:52:59 +0000
 Subject: Re: [PATCH v2 2/6] PCI: tegra: use new OF interrupt mapping when possible
-Message-Id: <20140404165559.GE9007@google.com>
+Message-Id: <CA+mB=1JCjDMzTuctvSQgjNhBnkyUPC2ooAzJOX_PC5L1gAau8w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
  <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
-In-Reply-To: <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
+ <5318B232.2020507@wwwdotorg.org>
+ <1394127555.4582.1.camel@weser.hi.pengutronix.de>
+In-Reply-To: <1394127555.4582.1.camel@weser.hi.pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 05, 2014 at 02:25:47PM +0100, Lucas Stach wrote:
-> This is the recommended method of doing the IRQ
-> mapping. For old devicetrees we fall back to the
-> previous practice.
-> 
-> Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
+Hi Lucas/Tanmay,
 
-Applied with Stephen's Tested-by to my pending/host-tegra branch.  I'll
-rebase and rename it after v3.15-rc1, and I think we can squeeze it into
-v3.15 shortly after that.  Thanks.
+On Thu, Mar 6, 2014 at 11:09 PM, Lucas Stach <l.stach@pengutronix.de> wrote:
+> Am Donnerstag, den 06.03.2014, 10:36 -0700 schrieb Stephen Warren:
+>> On 03/05/2014 06:25 AM, Lucas Stach wrote:
+>> > This is the recommended method of doing the IRQ
+>> > mapping. For old devicetrees we fall back to the
+>> > previous practice.
+>>
+>> Tested-by: Stephen Warren <swarren@nvidia.com>
+>>
+>> I tested both with and without patch 1/6, and the PCIe-based NIC on
+>> Beaver worked fine either way. Without patch 1/6, I do see:
+>>
+>> pci 0000:00:01.0: of_irq_parse_pci() failed with rc=-22
+>>
+>> ... but that seems reasonable given that the DT that of_irq_parse_pci()
+>> parses is missing, and did correctly trigger the fallback path, so
+>> everything still worked.
+>
+> Yes, this should be normal. It spits this error for old DTs, but keeps
+> doing the right thing. I'm not sure if we should downgrade this to info
+> or dbg.
 
-> ---
->  drivers/pci/host/pci-tegra.c | 7 ++++++-
->  1 file changed, 6 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/pci/host/pci-tegra.c b/drivers/pci/host/pci-tegra.c
-> index 330f7e3a32dd..083cf37ca047 100644
-> --- a/drivers/pci/host/pci-tegra.c
-> +++ b/drivers/pci/host/pci-tegra.c
-> @@ -639,10 +639,15 @@ static int tegra_pcie_setup(int nr, struct pci_sys_data *sys)
->  static int tegra_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
->  {
->  	struct tegra_pcie *pcie = sys_to_pcie(pdev->bus->sysdata);
-> +	int irq;
->  
->  	tegra_cpuidle_pcie_irqs_in_use();
->  
-> -	return pcie->irq;
-> +	irq = of_irq_parse_and_map_pci(pdev, slot, pin);
-> +	if (!irq)
-> +		irq = pcie->irq;
-> +
-> +	return irq;
->  }
->  
->  static void tegra_pcie_add_bus(struct pci_bus *bus)
-> -- 
-> 1.9.0
-> 
+I see this error too on my setup (Xilinx PCIe Root Complex Driver),
+https://lkml.org/lkml/2014/3/3/183
+
+After digging into it, I see I need to override the API
+pcibios_get_phb_of_node()
+to pass my device node.  Is this the only possible way?
+
+From the discussion in this thread, I feel am missing something in the dt node.
+Below is my dt node, please let me know if you see any issues.
+
++++++++++++++++++++++++
+pcie{
+   reg = <XXXX>;
+   ranges = <YYYY>;
+   interrupts = <0 52 4>;
+
+   pcie_intc: interrupt-controller {
+       interrupt-controller;
+       #address-cells = <0>;
+       #interrupt-cells = <1>;
+   }
+
+   interrupt-map-mask = <0 0 0 7>;
+   interrupt-map = <0 0 0 1 &pcie_intc 1>,
+                          <0 0 0 2 &pcie_intc 2>,
+                          <0 0 0 3 &pcie_intc 3>,
+                          <0 0 0 4 &pcie_intc 4>;
+};
+
+Thanks in advance,
+Srikanth.
+
+>
+> Regards,
+> Lucas
+> --
+> Pengutronix e.K.                           | Lucas Stach                 |
+> Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+> Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
+> Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-pci" in
 > the body of a message to majordomo@vger.kernel.org
