@@ -1,43 +1,123 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 01 Apr 2014 11:02:16 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Fix the I2C clocks parents in legacy code
-Message-Id: <1396350138-26850-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:49 +0000
+Subject: [PATCH v3 06/52] clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
+Message-Id: <1397228675-11684-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All I2C clocks derive from the HP clock, not from the P clock. Fix them.
+The mapbase variable points to the mapped base address of the channel,
+rename it to mapbase_sh. mapbase_str points to the mapped base address
+of the CMT device, rename it to mapbase.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ drivers/clocksource/sh_cmt.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index fc90f97..d2cb5cf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -188,12 +188,12 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP1108] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 8, MSTPSR11, 0), /* SCIFA5 */
- 	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA4 */
- 	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA3 */
--	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
--	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
--	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
--	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
--	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
--	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
-+	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
-+	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
-+	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
-+	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
-+	[MSTP927] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
-+	[MSTP925] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
- 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
- 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
- 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index febd6bf..eb93b88 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -55,8 +55,8 @@ struct sh_cmt_channel {
+ struct sh_cmt_device {
+ 	struct platform_device *pdev;
+ 
++	void __iomem *mapbase_ch;
+ 	void __iomem *mapbase;
+-	void __iomem *mapbase_str;
+ 	struct clk *clk;
+ 
+ 	struct sh_cmt_channel channel;
+@@ -125,41 +125,41 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
+ 
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase_str, 0);
++	return ch->cmt->read_control(ch->cmt->mapbase, 0);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_control(ch->cmt->mapbase, CMCSR);
++	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
+ {
+-	return ch->cmt->read_count(ch->cmt->mapbase, CMCNT);
++	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase_str, 0, value);
++	ch->cmt->write_control(ch->cmt->mapbase, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_control(ch->cmt->mapbase, CMCSR, value);
++	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase, CMCNT, value);
++	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
+ 				      unsigned long value)
+ {
+-	ch->cmt->write_count(ch->cmt->mapbase, CMCOR, value);
++	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
+@@ -761,18 +761,18 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	/* optional resource for the shared timer start/stop register */
+ 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
+ 
+-	/* map memory, let mapbase point to our channel */
+-	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
+-	if (cmt->mapbase = NULL) {
++	/* map memory, let mapbase_ch point to our channel */
++	cmt->mapbase_ch = ioremap_nocache(res->start, resource_size(res));
++	if (cmt->mapbase_ch = NULL) {
+ 		dev_err(&cmt->pdev->dev, "failed to remap I/O memory\n");
+ 		goto err0;
+ 	}
+ 
+ 	/* map second resource for CMSTR */
+-	cmt->mapbase_str = ioremap_nocache(res2 ? res2->start :
+-					   res->start - cfg->channel_offset,
+-					   res2 ? resource_size(res2) : 2);
+-	if (cmt->mapbase_str = NULL) {
++	cmt->mapbase = ioremap_nocache(res2 ? res2->start :
++				       res->start - cfg->channel_offset,
++				       res2 ? resource_size(res2) : 2);
++	if (cmt->mapbase = NULL) {
+ 		dev_err(&cmt->pdev->dev, "failed to remap I/O second memory\n");
+ 		goto err1;
+ 	}
+@@ -824,9 +824,9 @@ err4:
+ err3:
+ 	clk_put(cmt->clk);
+ err2:
+-	iounmap(cmt->mapbase_str);
+-err1:
+ 	iounmap(cmt->mapbase);
++err1:
++	iounmap(cmt->mapbase_ch);
+ err0:
+ 	return ret;
+ }
 -- 
 1.8.3.2
 
