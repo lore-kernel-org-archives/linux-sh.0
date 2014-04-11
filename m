@@ -1,50 +1,69 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 07 Apr 2014 06:34:26 +0000
-Subject: [PATCH 05/05] ARM: shmobile: Koelsch DT reference USB pinmux setup
-Message-Id: <20140407063426.26152.24164.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:56 +0000
+Subject: [PATCH v3 13/52] clocksource: sh_cmt: Set cpumask to cpu_possible_mask
+Message-Id: <1397228675-11684-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The CMT is a global timer not restricted to a single CPU. It has a lower
+rating than the TMU or ARM architected timer, but is still useful on
+systems where the other timers are stopped during CPU sleep.
 
-Configure the pinmux on Koelsch for USB ports via the default
-setting. This allows support for USB function on USB0 and
-USB Host for USB1. Not for upstream merge.
+When multiple timers are available the timers core selects which timer
+to use based on timer ratings.
 
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+On SMP systems where timer broadcasting is required, one dummy timer is
+instantiated per CPU with a rating of 100. On those systems the CMT
+timer has a rating of 80, which makes the dummy timer selected by
+default on all CPUs. The CMT is then available, and will be used as a
+broadcast timer.
+
+On UP systems no dummy timer is instantiated. The CMT timer has a rating
+of 125 on those systems and is used directly as a clock event device for
+CPU0 without broadcasting.
+
+The CMT rating shouldn't depend on whether we boot a UP or SMP system.
+We can't raise the CMT rating to 125 on SMP systems. This would select
+CMT as the clock event device for CPU0 as its rating is higher than the
+dummy timer rating, and would leave the system without a broadcast
+timer. We could instead lower the rating to 80 on all systems, but that
+wouldn't reflect reality as ratings between 1 and 99 are documented as
+"unfit for real use".
+
+We should raise the rating above 99 and still have the CMT selected as a
+broadcast timer. This can be done by changing the cpumask from
+cpumask_of(0) to cpu_possible_mask. In that case the timer selection
+logic will prefer the previously probed and already selected dummy timer
+for all CPUs based on the fact that already selected per-cpu timers are
+preferred over new global timers, regardless of their respective
+ratings. This also better reflects reality, as the CMT is not tied to
+the boot CPU.
+
+Ideally the timer selection logic should realize that the CMT needs to
+be used as a broadcast timer on SMP systems as no other broadcast timer
+is available, regardless of the cpumask and rating.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/clocksource/sh_cmt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |   12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index ce00baa..926abe2 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -776,7 +776,7 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
+ 	ced->rating = rating;
+-	ced->cpumask = cpumask_of(0);
++	ced->cpumask = cpu_possible_mask;
+ 	ced->set_next_event = sh_cmt_clock_event_next;
+ 	ced->set_mode = sh_cmt_clock_event_mode;
+ 	ced->suspend = sh_cmt_clock_event_suspend;
+-- 
+1.8.3.2
 
---- 0001/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ work/arch/arm/boot/dts/r8a7791-koelsch.dts	2014-04-07 14:16:57.000000000 +0900
-@@ -230,7 +230,7 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
-+	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins &usb0_pins &usb1_pins>;
- 	pinctrl-names = "default";
- 
- 	i2c2_pins: i2c2 {
-@@ -288,6 +288,16 @@
- 				 "msiof0_tx";
- 		renesas,function = "msiof0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
- };
- 
- &ether {
