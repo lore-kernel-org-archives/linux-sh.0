@@ -1,67 +1,66 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 14 Apr 2014 00:56:42 +0000
-Subject: [PATCH 1/7] ARM: shmobile: r8a7778: remove old style audio clock
-Message-Id: <87r45020fs.wl%kuninori.morimoto.gx@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 11 Apr 2014 15:03:57 +0000
+Subject: [PATCH v3 14/52] clocksource: sh_cmt: Hardcode CMT clock event rating to 125
+Message-Id: <1397228675-11684-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, broonie@kernel.org
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+All boards use or should use a clock event rating of 125 for the CMT,
+hardcode it in the driver.
 
-Current sound driver moves to new style clock,
-but is keeping compatiblity at this point.
-Move to new style on r8a7778
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |   22 +++++++++-------------
- 1 file changed, 9 insertions(+), 13 deletions(-)
+ drivers/clocksource/sh_cmt.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 2009a9b..201fc48 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -175,10 +175,6 @@ static struct clk mstp_clks[MSTP_NR] = {
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 926abe2..75b1f83 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -768,14 +768,14 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
+ }
  
- static struct clk_lookup lookups[] = {
- 	/* main */
--	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
--	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
--	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
--	CLKDEV_CON_ID("audio_clk_internal",	&s1_clk),
- 	CLKDEV_CON_ID("shyway_clk",	&s_clk),
- 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
+ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+-				       const char *name, unsigned long rating)
++				       const char *name)
+ {
+ 	struct clock_event_device *ced = &ch->ced;
  
-@@ -234,15 +230,15 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP309]),
- 	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP308]),
- 	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP307]),
--	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP531]),
--	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP530]),
--	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP529]),
--	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP528]),
--	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP527]),
--	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP526]),
--	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
--	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
--	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
-+	CLKDEV_ICK_ID("src.0", "rcar_sound", &mstp_clks[MSTP531]),
-+	CLKDEV_ICK_ID("src.1", "rcar_sound", &mstp_clks[MSTP530]),
-+	CLKDEV_ICK_ID("src.2", "rcar_sound", &mstp_clks[MSTP529]),
-+	CLKDEV_ICK_ID("src.3", "rcar_sound", &mstp_clks[MSTP528]),
-+	CLKDEV_ICK_ID("src.4", "rcar_sound", &mstp_clks[MSTP527]),
-+	CLKDEV_ICK_ID("src.5", "rcar_sound", &mstp_clks[MSTP526]),
-+	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP525]),
-+	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP524]),
-+	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP523]),
- };
+ 	ced->name = name;
+ 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
+ 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
+-	ced->rating = rating;
++	ced->rating = 125;
+ 	ced->cpumask = cpu_possible_mask;
+ 	ced->set_next_event = sh_cmt_clock_event_next;
+ 	ced->set_mode = sh_cmt_clock_event_mode;
+@@ -788,11 +788,10 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
+ }
  
- void __init r8a7778_clock_init(void)
+ static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
+-			   unsigned long clockevent_rating,
+-			   unsigned long clocksource_rating)
++			   bool clockevent, unsigned long clocksource_rating)
+ {
+-	if (clockevent_rating)
+-		sh_cmt_register_clockevent(ch, name, clockevent_rating);
++	if (clockevent)
++		sh_cmt_register_clockevent(ch, name);
+ 
+ 	if (clocksource_rating)
+ 		sh_cmt_register_clocksource(ch, name, clocksource_rating);
+@@ -827,7 +826,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
+ 	raw_spin_lock_init(&ch->lock);
+ 
+ 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
+-			      cfg->clockevent_rating,
++			      cfg->clockevent_rating != 0,
+ 			      cfg->clocksource_rating);
+ 	if (ret) {
+ 		dev_err(&cmt->pdev->dev, "ch%u: registration failed\n",
 -- 
-1.7.9.5
+1.8.3.2
 
