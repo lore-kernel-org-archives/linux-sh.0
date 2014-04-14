@@ -1,162 +1,74 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 29 Apr 2014 10:03:37 +0000
-Subject: [PATCH v5 06/11] ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy support
-Message-Id: <1398765822-2314-7-git-send-email-wsa@the-dreams.de>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 14 Apr 2014 21:59:42 +0000
+Subject: [PATCHv2 00/11] improve PWM lookup support without device tree
+Message-Id: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hi,
 
-We have now DT support for SCIF, so use the platform_device
-initialization only for the legacy support.
+A patch set as suggested by Thierry to make lookup with the lookup table
+instead of device tree behave more like when using device tree.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- arch/arm/mach-shmobile/board-genmai.c   | 44 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r7s72100.c | 43 --------------------------------
- 2 files changed, 44 insertions(+), 43 deletions(-)
+The first patch adds a period and a polarity member to the lookup table and use
+those to set period and polarity.
 
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 6c328d63b819..c94201ee8596 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -21,6 +21,7 @@
- 
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/serial_sci.h>
- #include <linux/sh_eth.h>
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
-@@ -89,6 +90,40 @@ static const struct spi_board_info spi_info[] __initconst = {
- 	},
- };
- 
-+/* SCIF */
-+#define R7S72100_SCIF(index, baseaddr, irq)				\
-+static const struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= PORT_SCIF,					\
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
-+			  SCSCR_REIE,					\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq + 1),					\
-+	DEFINE_RES_IRQ(irq + 2),					\
-+	DEFINE_RES_IRQ(irq + 3),					\
-+	DEFINE_RES_IRQ(irq),						\
-+}									\
-+
-+R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
-+R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-+R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
-+R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
-+R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
-+R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
-+R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
-+R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
-+
-+#define r7s72100_register_scif(index)					       \
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
-+
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
-@@ -102,6 +137,15 @@ static void __init genmai_add_standard_devices(void)
- 	r7s72100_register_rspi(3);
- 	r7s72100_register_rspi(4);
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
-+
-+	r7s72100_register_scif(0);
-+	r7s72100_register_scif(1);
-+	r7s72100_register_scif(2);
-+	r7s72100_register_scif(3);
-+	r7s72100_register_scif(4);
-+	r7s72100_register_scif(5);
-+	r7s72100_register_scif(6);
-+	r7s72100_register_scif(7);
- }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 9c0b3a9d5f7a..828842319653 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -21,47 +21,12 @@
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
- 
--#define R7S72100_SCIF(index, baseaddr, irq)				\
--static const struct plat_sci_port scif##index##_platform_data = {	\
--	.type		= PORT_SCIF,					\
--	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
--			  SCSCR_REIE,					\
--};									\
--									\
--static struct resource scif##index##_resources[] = {			\
--	DEFINE_RES_MEM(baseaddr, 0x100),				\
--	DEFINE_RES_IRQ(irq + 1),					\
--	DEFINE_RES_IRQ(irq + 2),					\
--	DEFINE_RES_IRQ(irq + 3),					\
--	DEFINE_RES_IRQ(irq),						\
--}									\
--
--R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
--R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
--R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
--R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
--R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
--R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
--R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
--R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
--
--#define r7s72100_register_scif(index)					       \
--	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
--					  scif##index##_resources,	       \
--					  ARRAY_SIZE(scif##index##_resources), \
--					  &scif##index##_platform_data,	       \
--					  sizeof(scif##index##_platform_data))
--
--
- static struct sh_timer_config mtu2_0_platform_data __initdata = {
- 	.name = "MTU2_0",
- 	.timer_bit = 0,
-@@ -83,14 +48,6 @@ static struct resource mtu2_0_resources[] __initdata = {
- 
- void __init r7s72100_add_dt_devices(void)
- {
--	r7s72100_register_scif(0);
--	r7s72100_register_scif(1);
--	r7s72100_register_scif(2);
--	r7s72100_register_scif(3);
--	r7s72100_register_scif(4);
--	r7s72100_register_scif(5);
--	r7s72100_register_scif(6);
--	r7s72100_register_scif(7);
- 	r7s72100_register_mtu2(0);
- }
- 
+Patch 2, 4 and 5 are making use of those new members from the board files.
+Patch 3 removes useless code since setting the polarity is now handled by the
+PWM core.
+
+I couldn't decide on a good name for the extended PWM_LOOKUP macro and I believe
+we won't have to add members to that structure soon so:
+Patch 6 modifies the PWM_LOOKUP macro to also initialize period and polarity
+and
+Patch 7-9 are making use of the new PWM_LOOKUP macro in the board files
+
+Patch 10 and 11 are making the leds-pwm and pwm_bl drivers get the period from
+the PWM before using pwm_period_ns if it is not already set.
+
+Patch 10 will obviously conflict with the series of Russell reworking the
+leds-pwm probing. I can rebase if necessary
+
+The final goal would be to get rid of .pwm_period_ns in leds-pwm and pwm_bl
+after moving all the remaining users (still around 25) to pwm_lookup.
+
+Changes in v2:
+ - correctly unlock the pwm_lookup_lock mutex before returning.
+ - don't change PWM_LOOKUP atomically
+ - remove tpu_pwm_platform_data and the associated header file
+ - make the leds-pwm and pwm_bl drivers get the period from the PWM
+
+Alexandre Belloni (11):
+  pwm: add period and polarity to struct pwm_lookup
+  ARM: shmobile: Armadillo 800 EVA: initialize all struct pwm_lookup
+    members
+  pwm: renesas-tpu: remove useless struct tpu_pwm_platform_data
+  ARM: OMAP3: Beagle: initialize all the struct pwm_lookup members
+  ARM: pxa: hx4700: initialize all the struct pwm_lookup members
+  pwm: modify PWM_LOOKUP to initialize all struct pwm_lookup members
+  ARM: OMAP3: Beagle: use PWM_LOOKUP to initialize struct pwm_lookup
+  ARM: shmobile: Armadillo 800 EVA: use PWM_LOOKUP to initialize struct
+    pwm_lookup
+  ARM: pxa: hx4700: use PWM_LOOKUP to initialize struct pwm_lookup
+  leds: leds-pwm: retrieve configured pwm period
+  backlight: pwm_bl: retrieve configured pwm period
+
+ Documentation/pwm.txt                          |  3 ++-
+ arch/arm/mach-omap2/board-omap3beagle.c        |  3 ++-
+ arch/arm/mach-pxa/hx4700.c                     |  3 ++-
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 14 +++-----------
+ drivers/leds/leds-pwm.c                        |  5 ++++-
+ drivers/pwm/core.c                             |  8 +++++++-
+ drivers/pwm/pwm-renesas-tpu.c                  | 19 +++----------------
+ drivers/video/backlight/pwm_bl.c               |  8 +++++---
+ include/linux/platform_data/pwm-renesas-tpu.h  | 16 ----------------
+ include/linux/pwm.h                            |  6 +++++-
+ 10 files changed, 33 insertions(+), 52 deletions(-)
+ delete mode 100644 include/linux/platform_data/pwm-renesas-tpu.h
+
 -- 
-1.9.2
+1.8.3.2
 
