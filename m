@@ -1,73 +1,111 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:04 +0000
-Subject: [PATCH v2 04/14] clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
-Message-Id: <1397832494-20607-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 14 Apr 2014 21:59:45 +0000
+Subject: [PATCHv2 03/11] pwm: renesas-tpu: remove useless struct tpu_pwm_platform_data
+Message-Id: <1397512793-10325-4-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all TMU channels are handled by a single device instance, use a
-per-device spinlock.
+The struct tpu_pwm_platform_data is not used anymore and the polarity
+initialization will be taken care of by the PWM core.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
 ---
- drivers/clocksource/sh_tmu.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ drivers/pwm/pwm-renesas-tpu.c                 | 19 +++----------------
+ include/linux/platform_data/pwm-renesas-tpu.h | 16 ----------------
+ 2 files changed, 3 insertions(+), 32 deletions(-)
+ delete mode 100644 include/linux/platform_data/pwm-renesas-tpu.h
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 47f5b48..c8250f8 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -61,6 +61,8 @@ struct sh_tmu_device {
+diff --git a/drivers/pwm/pwm-renesas-tpu.c b/drivers/pwm/pwm-renesas-tpu.c
+index aff6ba9b49e7..9dbcf82b3e6c 100644
+--- a/drivers/pwm/pwm-renesas-tpu.c
++++ b/drivers/pwm/pwm-renesas-tpu.c
+@@ -21,13 +21,14 @@
+ #include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
+-#include <linux/platform_data/pwm-renesas-tpu.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/pwm.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
  
- 	enum sh_tmu_model model;
- 
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
++#define TPU_CHANNEL_MAX		4
 +
- 	struct sh_tmu_channel *channels;
- 	unsigned int num_channels;
+ #define TPU_TSTR		0x00	/* Timer start register (shared) */
  
-@@ -68,8 +70,6 @@ struct sh_tmu_device {
- 	bool has_clocksource;
- };
+ #define TPU_TCRn		0x00	/* Timer control register */
+@@ -87,7 +88,6 @@ struct tpu_pwm_device {
  
--static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+ struct tpu_device {
+ 	struct platform_device *pdev;
+-	enum pwm_polarity polarities[TPU_CHANNEL_MAX];
+ 	struct pwm_chip chip;
+ 	spinlock_t lock;
+ 
+@@ -229,7 +229,7 @@ static int tpu_pwm_request(struct pwm_chip *chip, struct pwm_device *_pwm)
+ 
+ 	pwm->tpu = tpu;
+ 	pwm->channel = _pwm->hwpwm;
+-	pwm->polarity = tpu->polarities[pwm->channel];
++	pwm->polarity = PWM_POLARITY_NORMAL;
+ 	pwm->prescaler = 0;
+ 	pwm->period = 0;
+ 	pwm->duty = 0;
+@@ -388,16 +388,6 @@ static const struct pwm_ops tpu_pwm_ops = {
+  * Probe and remove
+  */
+ 
+-static void tpu_parse_pdata(struct tpu_device *tpu)
+-{
+-	struct tpu_pwm_platform_data *pdata = tpu->pdev->dev.platform_data;
+-	unsigned int i;
 -
- #define TSTR -1 /* shared register */
- #define TCOR  0 /* channel register */
- #define TCNT 1 /* channel register */
-@@ -132,7 +132,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 	unsigned long flags, value;
+-	for (i = 0; i < ARRAY_SIZE(tpu->polarities); ++i)
+-		tpu->polarities[i] = pdata ? pdata->channels[i].polarity
+-				   : PWM_POLARITY_NORMAL;
+-}
+-
+ static int tpu_probe(struct platform_device *pdev)
+ {
+ 	struct tpu_device *tpu;
+@@ -413,9 +403,6 @@ static int tpu_probe(struct platform_device *pdev)
+ 	spin_lock_init(&tpu->lock);
+ 	tpu->pdev = pdev;
  
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_tmu_lock, flags);
-+	raw_spin_lock_irqsave(&ch->tmu->lock, flags);
- 	value = sh_tmu_read(ch, TSTR);
- 
- 	if (start)
-@@ -141,7 +141,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_tmu_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->tmu->lock, flags);
- }
- 
- static int __sh_tmu_enable(struct sh_tmu_channel *ch)
-@@ -524,6 +524,8 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	tmu->pdev = pdev;
- 	tmu->model = id->driver_data;
- 
-+	raw_spin_lock_init(&tmu->lock);
-+
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
+-	/* Initialize device configuration from platform data. */
+-	tpu_parse_pdata(tpu);
+-
+ 	/* Map memory, get clock and pin control. */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	tpu->base = devm_ioremap_resource(&pdev->dev, res);
+diff --git a/include/linux/platform_data/pwm-renesas-tpu.h b/include/linux/platform_data/pwm-renesas-tpu.h
+deleted file mode 100644
+index a7220b10ddab..000000000000
+--- a/include/linux/platform_data/pwm-renesas-tpu.h
++++ /dev/null
+@@ -1,16 +0,0 @@
+-#ifndef __PWM_RENESAS_TPU_H__
+-#define __PWM_RENESAS_TPU_H__
+-
+-#include <linux/pwm.h>
+-
+-#define TPU_CHANNEL_MAX		4
+-
+-struct tpu_pwm_channel_data {
+-	enum pwm_polarity polarity;
+-};
+-
+-struct tpu_pwm_platform_data {
+-	struct tpu_pwm_channel_data channels[TPU_CHANNEL_MAX];
+-};
+-
+-#endif /* __PWM_RENESAS_TPU_H__ */
 -- 
 1.8.3.2
 
