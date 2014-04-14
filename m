@@ -1,41 +1,100 @@
 From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 01 Apr 2014 11:25:10 +0000
-Subject: Re: [PATCH 3/6] mmc: sh-mmcif: use devm_ for clock management
-Message-Id: <533AA216.20504@codethink.co.uk>
+Date: Mon, 14 Apr 2014 21:35:09 +0000
+Subject: [PATCH v2 6/9] ARM: shmobile: r8a7790: add audio dmac node
+Message-Id: <1397511312-4845-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396347954-13740-1-git-send-email-ben.dooks@codethink.co.uk>	<1396347954-13740-4-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdU4mcz1u0ghpWduuh1LzsbHGxu7ZkuXses4170rz=g3Sw@mail.gmail.com>
-In-Reply-To: <CAMuHMdU4mcz1u0ghpWduuh1LzsbHGxu7ZkuXses4170rz=g3Sw@mail.gmail.com>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-On 01/04/14 11:59, Geert Uytterhoeven wrote:
-> On Tue, Apr 1, 2014 at 12:25 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> -       host->hclk = clk_get(&pdev->dev, NULL);
->> +       host->hclk = devm_clk_get(&pdev->dev, NULL);
->>          if (IS_ERR(host->hclk)) {
->>                  ret = PTR_ERR(host->hclk);
->>                  dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
->> -               goto eclkget;
->> +               goto err_pm;
->>          }
->>          ret = sh_mmcif_clk_update(host);
->>          if (ret < 0)
->> -               goto eclkupdate;
->> +               goto err_clk;
->
-> This goto doesn't look correct to me. If sh_mmcif_clk_update() failed,
-> the clock was not enabled nor prepared. "goto err_pm"?
+Add initial audio dmac node and resources.
 
-Yes, I think the clk_prepare_enable() call there is the only failure
-mode.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 66 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 66 insertions(+)
 
-As a note, we should probably check all systems that use it and see if
-we can remove the clock management code in here as the pm_runtime will
-also be doing this.
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index de3ca15..582e687 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -158,6 +158,72 @@
+ 		};
+ 	};
+ 
++	dma1: dma-mux@1 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <2>;
++		dma-channels = <20>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		audiodma0: dma-contorller@ec700000 {
++			compatible = "renesas,shdma-r8a7790";
++			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
++			dma-channels = <13>;
++			status = "disabled";
++			reg = <0 0xec700020 0 0xffc0>;
++
++			interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 320 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 321 IRQ_TYPE_LEVEL_HIGH>,
++					<0 322 IRQ_TYPE_LEVEL_HIGH>,
++					<0 323 IRQ_TYPE_LEVEL_HIGH>,
++					<0 324 IRQ_TYPE_LEVEL_HIGH>,
++					<0 325 IRQ_TYPE_LEVEL_HIGH>,
++					<0 326 IRQ_TYPE_LEVEL_HIGH>,
++					<0 327 IRQ_TYPE_LEVEL_HIGH>,
++					<0 328 IRQ_TYPE_LEVEL_HIGH>,
++					<0 329 IRQ_TYPE_LEVEL_HIGH>,
++					<0 330 IRQ_TYPE_LEVEL_HIGH>,
++					<0 331 IRQ_TYPE_LEVEL_HIGH>,
++					<0 332 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12";
++		};
++
++		audiodma1: dma-controller@ec720000 {
++			compatible = "renesas,shdma-r8a7790";
++			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
++			dma-channels = <13>;
++			status = "disabled";
++			reg = <0 0xec720020 0 0xffc0>;
++
++			interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 333 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 334 IRQ_TYPE_LEVEL_HIGH>,
++					<0 335 IRQ_TYPE_LEVEL_HIGH>,
++					<0 336 IRQ_TYPE_LEVEL_HIGH>,
++					<0 337 IRQ_TYPE_LEVEL_HIGH>,
++					<0 338 IRQ_TYPE_LEVEL_HIGH>,
++					<0 339 IRQ_TYPE_LEVEL_HIGH>,
++					<0 340 IRQ_TYPE_LEVEL_HIGH>,
++					<0 341 IRQ_TYPE_LEVEL_HIGH>,
++					<0 342 IRQ_TYPE_LEVEL_HIGH>,
++					<0 343 IRQ_TYPE_LEVEL_HIGH>,
++					<0 344 IRQ_TYPE_LEVEL_HIGH>,
++					<0 345 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12";
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.9.1
+
