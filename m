@@ -1,45 +1,55 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:45:24 +0000
-Subject: [PATCH 5/5] [DEBUG] r8a7791: show MSTP clock status in /proc/cpuinfo
-Message-Id: <1397565924-23541-6-git-send-email-geert+renesas@glider.be>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 10:36:36 +0000
+Subject: [PATCH v3 1/7] adv7180: use async subdev registration
+Message-Id: <1397471802-27216-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Not-Yet-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/kernel/setup.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+Change to using the the async subdev registration API so
+that when soc_camera is using OF to find devices this can
+be found and attached.
 
-diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-index 50e198c1e9c8..6a0373bc6046 100644
---- a/arch/arm/kernel/setup.c
-+++ b/arch/arm/kernel/setup.c
-@@ -1017,6 +1017,8 @@ static const char *hwcap2_str[] = {
- 	NULL
- };
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ drivers/media/i2c/adv7180.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
+index d7d99f1..215afa0 100644
+--- a/drivers/media/i2c/adv7180.c
++++ b/drivers/media/i2c/adv7180.c
+@@ -29,6 +29,7 @@
+ #include <linux/videodev2.h>
+ #include <media/v4l2-device.h>
+ #include <media/v4l2-ctrls.h>
++#include <media/v4l2-async.h>
+ #include <linux/mutex.h>
  
-+extern void r8a7791_show_mstp_clocks(struct seq_file *m);
+ #define ADV7180_INPUT_CONTROL_REG			0x00
+@@ -611,6 +612,11 @@ static int adv7180_probe(struct i2c_client *client,
+ 	ret = init_device(client, state);
+ 	if (ret)
+ 		goto err_free_ctrl;
 +
- static int c_show(struct seq_file *m, void *v)
- {
- 	int i, j;
-@@ -1072,6 +1074,13 @@ static int c_show(struct seq_file *m, void *v)
- 	seq_printf(m, "Serial\t\t: %08x%08x\n",
- 		   system_serial_high, system_serial_low);
++	ret = v4l2_async_register_subdev(sd);
++	if (ret)
++		goto err_free_ctrl;
++
+ 	return 0;
  
-+#ifdef CONFIG_ARCH_R8A7791
-+#ifdef CONFIG_ARCH_MULTIPLATFORM
-+	if (of_machine_is_compatible("renesas,r8a7791"))
-+#endif
-+		r8a7791_show_mstp_clocks(m);
-+#endif /* CONFIG_ARCH_R8A7791 */
-+
+ err_free_ctrl:
+@@ -641,7 +647,7 @@ static int adv7180_remove(struct i2c_client *client)
+ 	}
+ 
+ 	mutex_destroy(&state->mutex);
+-	v4l2_device_unregister_subdev(sd);
++	v4l2_async_unregister_subdev(sd);
  	return 0;
  }
  
 -- 
-1.7.9.5
+1.9.1
 
