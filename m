@@ -1,96 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 29 Apr 2014 02:15:31 +0000
-Subject: [PATCH 1/3] ARM: shmobile: henninger: initial device tree
-Message-Id: <4b37ab033e6f8c9750f98fefe9bdc341b6943268.1398737464.git.horms+renesas@verge.net.au>
+Date: Mon, 14 Apr 2014 01:41:35 +0000
+Subject: [PATCH v3 0/2] spi: sh-hspi: Do not specifically request shyway_clk clock
+Message-Id: <1397439698-30123-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398737464.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398737464.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Rather than requesting the shyway_clk call clk_get with
+the device and a NULL con_id.
 
-Add the initial device tree for the R8A7791 SoC based Henninger board. SCIF0
-serial port support is included, so that the serial console can work.
+This is in keeping with the way that clk_get() is called
+on other drivers used by Renesas Gen 1 SoCs. And I believe
+it is compatible with supplying clocks via DT, unlike the current code.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/Makefile              |  1 +
- arch/arm/boot/dts/r8a7791-henninger.dts | 50 +++++++++++++++++++++++++++++++++
- 2 files changed, 51 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-henninger.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 35c146f..2e9b6e0 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -322,6 +322,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
-+	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-new file mode 100644
-index 0000000..0053f52
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -0,0 +1,50 @@
-+/*
-+ * Device Tree Source for the Henninger board
-+ *
-+ * Copyright (C) 2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded, Inc.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+#include "r8a7791.dtsi"
-+
-+/ {
-+	model = "Henninger";
-+	compatible = "renesas,henninger", "renesas,r8a7791";
-+
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
-+	chosen {
-+		bootargs = "console=ttySC0,38400 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+
-+	memory@200000000 {
-+		device_type = "memory";
-+		reg = <2 0x00000000 0 0x40000000>;
-+	};
-+};
-+
-+&pfc {
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_d";
-+		renesas,function = "scif0";
-+	};
-+};
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
+This series supplies a fix for the r8a7778, a consumer of the driver,
+so that the hspi clocks it supplies have the correct source.
+
+And a fix for the sh-hspi driver to address the problem
+described above.
+
+
+Mark, as the first mach-shmobile patch is a run-time dependency for the
+second SPI driver patch could you consider taking both of them?
+
+I have checked and I do not expect any conflicts anywhere between
+v3.14-rc1 and what I have queued up in the devel branch of my renesas tree.
+
+
+Simon Horman (2):
+  ARM: shmobile: r8a7778: Use clks as MSTP007 parent
+  spi: sh-hspi: Do not specifically request shyway_clk clock
+
+ arch/arm/mach-shmobile/clock-r8a7778.c | 2 +-
+ drivers/spi/spi-sh-hspi.c              | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
 -- 
 1.8.5.2
 
