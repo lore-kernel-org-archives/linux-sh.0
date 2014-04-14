@@ -1,76 +1,142 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Apr 2014 10:13:20 +0000
-Subject: [PATCH/RFC 1/4] clk: Add CLK_RUNTIME_PM and clk_may_runtime_pm()
-Message-Id: <1398334403-26181-2-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 Apr 2014 10:58:36 +0000
+Subject: [PATCH 01/02] ARM: shmobile: lager: DT reference VSP1 platform devices
+Message-Id: <20140414105836.12530.68878.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add a flag CLK_RUNTIME_PM, to let low-level clock drivers indicate that
-a clock is suitable for Runtime PM.
-Add clk_may_runtime_pm(), to get the status of the flag.
+From: Magnus Damm <damm@opensource.se>
 
-This will allow the device core to enable automatic Runtime PM management
-for devices tied to clocks that are suitable for Runtime PM.
+Add 4 VSP1 devices to the Lager board. Based on BSP code written
+by Yoshifumi Hosoya, but adjusted to use CCF for clocks.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/clk/clk.c            |   12 ++++++++++++
- include/linux/clk-provider.h |    1 +
- include/linux/clk.h          |    1 +
- 3 files changed, 14 insertions(+)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 0b2819551756..a83a2cc0af67 100644
---- a/drivers/clk/clk.c
-+++ b/drivers/clk/clk.c
-@@ -1115,6 +1115,18 @@ long clk_get_accuracy(struct clk *clk)
- EXPORT_SYMBOL_GPL(clk_get_accuracy);
+ Written against renesas-devel-v3.15-rc1-20140414v2 and
+ [PATCH v2 00/05] ARM: shmobile: Lager and Koelsch USB prototype patches
+
+ arch/arm/mach-shmobile/board-lager-reference.c |   88 ++++++++++++++++++++++++
+ 1 file changed, 88 insertions(+)
+
+--- 0002/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-04-14 18:25:48.000000000 +0900
+@@ -25,6 +25,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_data/usb-rcar-gen2-phy.h>
++#include <linux/platform_data/vsp1.h>
+ #include <linux/usb/phy.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <mach/clock.h>
+@@ -112,6 +113,10 @@ static const struct clk_name clk_names[]
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
+ 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+ 	{ "hsusb", NULL, "usb_phy_rcar_gen2" },
++	{ "vsp1-rt", NULL, "vsp1.0" },
++	{ "vsp1-sy", NULL, "vsp1.1" },
++	{ "vsp1-du0", NULL, "vsp1.2" },
++	{ "vsp1-du1", NULL, "vsp1.3" },
+ };
  
- /**
-+ * clk_may_runtime_pm - check if the clock is suitable for Runtime PM
-+ * @clk: the clock to check
-+ *
-+ * Return true if the clock is suitable for Runtime PM
-+ * Return false if clk is NULL, or if the clock is not suitable for Runtime PM.
-+ */
-+bool clk_may_runtime_pm(const struct clk *clk)
+ /*
+@@ -324,6 +329,88 @@ static void __init lager_add_usb2_device
+ 	platform_device_register_full(&pci2_info);
+ }
+ 
++/* VSP1 */
++static const struct vsp1_platform_data lager_vspr_pdata __initconst = {
++	.features = VSP1_HAS_LUT | VSP1_HAS_SRU,
++	.rpf_count = 5,
++	.uds_count = 1,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data lager_vsps_pdata __initconst = {
++	.features = VSP1_HAS_SRU,
++	.rpf_count = 5,
++	.uds_count = 3,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data lager_vspd0_pdata __initconst = {
++	.features = VSP1_HAS_LIF | VSP1_HAS_LUT,
++	.rpf_count = 4,
++	.uds_count = 1,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data lager_vspd1_pdata __initconst = {
++	.features = VSP1_HAS_LIF | VSP1_HAS_LUT,
++	.rpf_count = 4,
++	.uds_count = 1,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data * const lager_vsp1_pdata[4] __initconst = {
++	&lager_vspr_pdata,
++	&lager_vsps_pdata,
++	&lager_vspd0_pdata,
++	&lager_vspd1_pdata,
++};
++
++static const struct resource vspr_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe920000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(266)),
++};
++
++static const struct resource vsps_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe928000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(267)),
++};
++
++static const struct resource vspd0_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe930000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(246)),
++};
++
++static const struct resource vspd1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe938000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(247)),
++};
++
++static const struct resource * const vsp1_resources[4] __initconst = {
++	vspr_resources,
++	vsps_resources,
++	vspd0_resources,
++	vspd1_resources,
++};
++
++static void __init lager_add_vsp1_devices(void)
 +{
-+	return clk && clk->flags & CLK_RUNTIME_PM;
++	struct platform_device_info info = {
++		.name = "vsp1",
++		.size_data = sizeof(*lager_vsp1_pdata[0]),
++		.num_res = 2,
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(vsp1_resources); ++i) {
++		info.id = i;
++		info.data = lager_vsp1_pdata[i];
++		info.res = vsp1_resources[i];
++
++		platform_device_register_full(&info);
++	}
 +}
 +
-+/**
-  * __clk_recalc_rates
-  * @clk: first clk in the subtree
-  * @msg: notification type (see include/linux/clk.h)
-diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
-index 24c8ba4fa6ae..3ca9a7c1f02d 100644
---- a/include/linux/clk-provider.h
-+++ b/include/linux/clk-provider.h
-@@ -30,6 +30,7 @@
- #define CLK_GET_RATE_NOCACHE	BIT(6) /* do not use the cached clk rate */
- #define CLK_SET_RATE_NO_REPARENT BIT(7) /* don't re-parent on rate change */
- #define CLK_GET_ACCURACY_NOCACHE BIT(8) /* do not use the cached clk accuracy */
-+#define CLK_RUNTIME_PM		BIT(9) /* clock is suitable for Runtime PM */
+ static void __init lager_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+@@ -340,6 +427,7 @@ static void __init lager_add_standard_de
+ 	lager_register_usbhs();
+ 	lager_add_usb1_device();
+ 	lager_add_usb2_device();
++	lager_add_vsp1_devices();
+ }
  
- struct clk_hw;
- struct dentry;
-diff --git a/include/linux/clk.h b/include/linux/clk.h
-index d030fce1d77e..07f156580064 100644
---- a/include/linux/clk.h
-+++ b/include/linux/clk.h
-@@ -106,6 +106,7 @@ int clk_notifier_unregister(struct clk *clk, struct notifier_block *nb);
-  */
- long clk_get_accuracy(struct clk *clk);
- 
-+bool clk_may_runtime_pm(const struct clk *clk);
- #else /* !CONFIG_COMMON_CLK */
- 
- static inline long clk_get_accuracy(struct clk *clk)
--- 
-1.7.9.5
-
+ static const char *lager_boards_compat_dt[] __initdata = {
