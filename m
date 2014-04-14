@@ -1,25 +1,64 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 14 Apr 2014 02:08:00 +0000
-Subject: Re: [PATCH][RFC] ARM: shmobile: lager: move res/data into init function
-Message-Id: <87d2gk1x4x.wl%kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 05:10:16 +0000
+Subject: Re: [PATCH 0/5] ARM: shmobile: Enable drivers/sh/pm_runtime.c on multi-platform
+Message-Id: <877g6s1op5.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87txa4thq0.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87txa4thq0.wl%kuninori.morimoto.gx@gmail.com>
+References: <1395256010-12222-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1395256010-12222-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Simon
+Hi
 
-> > Grr, indeed !
-> > This is not needed on board code.
-> > But, how about setup code side which has same issue ?
+I tested these patches with r8a7770 lager on multiplatform DT.
+Sound couldn't works without these patches.
+
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+> This patchset enables the PM runtime code in drivers/sh/pm_runtime.c when
+> running a multi-platform ARM kernel including support for shmobile.
+> Before this code was only enabled for legacy shmobile kernels, leading to
+> disabled clocks in multiplatform kernels, depending on implicit reset state
+> or on the bootloader.
 > 
-> Magnus may have a different opinion, but I feel that the SoC setup code
-> is also legacy code, though likely to hang around longer than board code.
-> So my personal feeling is that it would be better to use your energy
-> on other areas.
-
-Hehe, I see, will do  :)
+>   [1/5] drivers: sh: pm_runtime does not need idle callback
+>   [2/5] sh: intc: Restrict INTC_USERIMASK to SH4A
+>   [3/5] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
+>   [4/5] ARM: shmobile: Call sh_pm_runtime_init() from platform code on all
+>         SoCs
+>   [5/5] drivers: sh: Remove automatic sh_pm_runtime_init() if
+>         ARCH_SHMOBILE_LEGACY
+> 
+> Patches 1 and 3 were authored by Ben Dooks, with some changes made by me
+> (for patch 3). Patch 4 was based on a patch by Ben for r8a7790.
+> 
+> After this it should be safe to revert the various commits to "Work around
+> core clock issues". Note that this is just a port of the existing
+> sh(mobile)-specifc PM runtime code from legacy to multi-platform, so
+> expect more work to fix the core issues.
+> 
+> This was tested on Koelsch, both legacy and multi-platform.
+> 
+> Many thanks to Ben Dooks, Laurent Pinchart, and Magnus Damm for the
+> valuable input, investigations, and discussions.
+> 
+> Thanks for your comments, and test results on other boards/SoCs (esp.
+> SoCs supporting power domains, like sh7372, r8a7740, and r8a7779)!
+> 
+> Gr{oetje,eeting}s,
+> 
+> 						Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+> 							    -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
