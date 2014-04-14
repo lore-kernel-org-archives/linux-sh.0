@@ -1,78 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:25 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Updates for v3.16
-Message-Id: <cover.1397627619.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 17:39:53 +0000
+Subject: [PATCH] spi: core: Ignore unsupported Dual/Quad Transfer Mode bits
+Message-Id: <1397497193-28067-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Please consider these Renesas ARM based SoC updates for v3.16.
+The availability of SPI Dual or Quad Transfer Mode as indicated by the
+"spi-tx-bus-width" and "spi-rx-bus-width" properties in the device tree is
+a hardware property of the SPI master, SPI slave, and board wiring.  Hence
+the SPI core should not reject an SPI slave because an SPI master driver
+doesn't (yet) support Dual or Quad Transfer Mode.
 
+Change the lack of Dual or Quad Transfer Mode support in the SPI master
+driver from an error condition to a warning condition, and ignore the
+unsupported mode bits, falling back to Single Transfer Mode, to avoid
+breakages when running old kernels with new device trees.
 
-The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+I think this should be applied to -stable, for all versions containing
+commit f477b7fb13df2b843997559ff34e87d054ba6538 ("spi: DUAL and QUAD
+support"), i.e. v3.12, v3.13, v3.14.
+---
+ drivers/spi/spi.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 4eb9bf02996c..1534fa1dac34 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -1756,7 +1756,7 @@ EXPORT_SYMBOL_GPL(spi_busnum_to_master);
+  */
+ int spi_setup(struct spi_device *spi)
+ {
+-	unsigned	bad_bits;
++	unsigned	bad_bits, ugly_bits;
+ 	int		status = 0;
+ 
+ 	/* check mode to prevent that DUAL and QUAD set at the same time
+@@ -1776,6 +1776,15 @@ int spi_setup(struct spi_device *spi)
+ 	 * that aren't supported with their current master
+ 	 */
+ 	bad_bits = spi->mode & ~spi->master->mode_bits;
++	ugly_bits = bad_bits &
++		    (SPI_TX_DUAL | SPI_TX_QUAD | SPI_RX_DUAL | SPI_RX_QUAD);
++	if (ugly_bits) {
++		dev_warn(&spi->dev,
++			 "setup: ignoring unsupported mode bits %x\n",
++			 ugly_bits);
++		spi->mode &= ~ugly_bits;
++		bad_bits &= ~ugly_bits;
++	}
+ 	if (bad_bits) {
+ 		dev_err(&spi->dev, "setup: unsupported mode bits %x\n",
+ 			bad_bits);
+-- 
+1.7.9.5
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.16
-
-for you to fetch changes up to e35db38d66d1e4007cfc1bb90a05e11b4aaee2a8:
-
-  ARM: shmobile: r8a7778/bockw: Move "select RENESAS_INTC_IRQPIN" under SoC (2014-04-14 11:28:43 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Updates for v3.16
-
-SH Mobile shared SoC code
-* Add shared shmobile_init_delay()
-
-r8a7791 (R-Car M2) and r8a7790 (R-Car H2) SoCs (R-Car Gen2 shared code)
-* Cache Mode Monitor Register Value
-
-r8a7791 (R-Car M2) SoC
-Check r8a7791 MD21 at SMP boot
-
-r8a7790 (R-Car H2) SoC
-* Make use of r8a7790_add_standard_devices()
-* Update r8a7791 CPU freq to 1500MHz
-
-r8a7778 (R-Car M1) SoC
-* Move "select RENESAS_INTC_IRQPIN" under SoC
-
-emev2 (Emma Mobale EV2) SoC
-*  Remove legacy EMEV2 SoC support
-
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      ARM: shmobile: rcar-gen2: Cache Mode Monitor Register Value
-      ARM: shmobile: r8a7778/bockw: Move "select RENESAS_INTC_IRQPIN" under SoC
-
-Magnus Damm (6):
-      ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in C
-      ARM: shmobile: Add shared shmobile_init_delay()
-      ARM: shmobile: Remove legacy EMEV2 SoC support
-      ARM: shmobile: Remove EMEV2 header file
-      ARM: shmobile: Make use of r8a7790_add_standard_devices()
-      ARM: shmobile: Check r8a7791 MD21 at SMP boot
-
- arch/arm/boot/dts/Makefile                   |   3 +-
- arch/arm/mach-shmobile/Kconfig               |  13 +-
- arch/arm/mach-shmobile/Makefile              |   1 -
- arch/arm/mach-shmobile/clock-emev2.c         | 231 ---------------------------
- arch/arm/mach-shmobile/include/mach/common.h |   1 +
- arch/arm/mach-shmobile/include/mach/emev2.h  |   9 --
- arch/arm/mach-shmobile/setup-emev2.c         |  11 +-
- arch/arm/mach-shmobile/setup-r8a7790.c       |  12 +-
- arch/arm/mach-shmobile/setup-r8a7791.c       |   2 +-
- arch/arm/mach-shmobile/setup-rcar-gen2.c     |  16 +-
- arch/arm/mach-shmobile/smp-emev2.c           |   1 -
- arch/arm/mach-shmobile/smp-r8a7791.c         |  15 +-
- arch/arm/mach-shmobile/timer.c               |  28 ++++
- 13 files changed, 66 insertions(+), 277 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/clock-emev2.c
- delete mode 100644 arch/arm/mach-shmobile/include/mach/emev2.h
