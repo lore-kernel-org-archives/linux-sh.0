@@ -1,99 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:30 +0000
-Subject: [PATCH v3 47/52] ARM: shmobile: r8a7778: Switch to new style TMU device
-Message-Id: <1397228675-11684-48-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 18:15:41 +0000
+Subject: [PATCH v3 5/5] ARM: shmobile: koelsch/lager defconfig: Enable MSIOF
+Message-Id: <1397499341-11964-6-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |  4 ++--
- arch/arm/mach-shmobile/setup-r8a7778.c | 30 ++++++++----------------------
- 2 files changed, 10 insertions(+), 24 deletions(-)
+v3:
+  - Add Acked-by
+  - Separate from shmobile_defconfig update
+v2:
+  - No changes
+---
+ arch/arm/configs/koelsch_defconfig |    1 +
+ arch/arm/configs/lager_defconfig   |    1 +
+ 2 files changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 2009a9b..683bc41 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -211,8 +211,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
--	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
--	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-@@ -243,6 +241,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
- 	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
- 	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
-+	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP016]),
-+	CLKDEV_ICK_ID("fck", "sh-tmu.1", &mstp_clks[MSTP015]),
- };
- 
- void __init r8a7778_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 6d69452..57c8277 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -71,33 +71,20 @@ R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
- 					  sizeof(scif##index##_platform_data))
- 
- /* TMU */
--static struct resource sh_tmu0_resources[] __initdata = {
--	DEFINE_RES_MEM(0xffd80008, 12),
--	DEFINE_RES_IRQ(gic_iid(0x40)),
-+static struct sh_timer_config sh_tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct sh_timer_config sh_tmu0_platform_data __initdata = {
--	.name			= "TMU00",
--	.channel_offset		= 0x4,
--	.timer_bit		= 0,
--	.clockevent_rating	= 200,
--};
--
--static struct resource sh_tmu1_resources[] __initdata = {
--	DEFINE_RES_MEM(0xffd80014, 12),
--	DEFINE_RES_IRQ(gic_iid(0x41)),
--};
--
--static struct sh_timer_config sh_tmu1_platform_data __initdata = {
--	.name			= "TMU01",
--	.channel_offset		= 0x10,
--	.timer_bit		= 1,
--	.clocksource_rating	= 200,
-+static struct resource sh_tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xffd80000, 0x30),
-+	DEFINE_RES_IRQ(gic_spi(0x40)),
-+	DEFINE_RES_IRQ(gic_spi(0x41)),
-+	DEFINE_RES_IRQ(gic_spi(0x42)),
- };
- 
- #define r8a7778_register_tmu(idx)			\
- 	platform_device_register_resndata(		\
--		&platform_bus, "sh_tmu", idx,		\
-+		&platform_bus, "sh-tmu", idx,		\
- 		sh_tmu##idx##_resources,		\
- 		ARRAY_SIZE(sh_tmu##idx##_resources),	\
- 		&sh_tmu##idx##_platform_data,		\
-@@ -312,7 +299,6 @@ void __init r8a7778_add_dt_devices(void)
- 	r8a7778_register_scif(4);
- 	r8a7778_register_scif(5);
- 	r8a7778_register_tmu(0);
--	r8a7778_register_tmu(1);
- }
- 
- /* HPB-DMA */
+diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
+index 86faab565a96..f3f08463e2bc 100644
+--- a/arch/arm/configs/koelsch_defconfig
++++ b/arch/arm/configs/koelsch_defconfig
+@@ -69,6 +69,7 @@ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_RCAR=y
+ # CONFIG_HWMON is not set
+diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
+index 58702440472a..5ba857317ca5 100644
+--- a/arch/arm/configs/lager_defconfig
++++ b/arch/arm/configs/lager_defconfig
+@@ -90,6 +90,7 @@ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
++CONFIG_SPI_SH_MSIOF=y
+ CONFIG_GPIO_SH_PFC=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_RCAR=y
 -- 
-1.8.3.2
+1.7.9.5
 
