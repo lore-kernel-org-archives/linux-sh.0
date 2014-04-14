@@ -1,38 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:33:59 +0000
-Subject: [PATCH v2 03/17] ARM: shmobile: sh7372: Call sh7372_add_early_devices() instead of open coding
-Message-Id: <1397565253-22741-4-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 17:02:55 +0000
+Subject: [PATCH] thermal: rcar: Use pm_runtime_put() i.s.o. pm_runtime_put_sync()
+Message-Id: <1397494975-22489-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <eduardo.valentin@ti.com>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+There's no need for this to be synchronous
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2:
-  - New
+ drivers/thermal/rcar_thermal.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/setup-sh7372.c |    6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 27301278c208..f8176b051be4 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1037,11 +1037,7 @@ void __init sh7372_add_early_devices_dt(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A8 @ 800MHz */
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 5a37940b02c9..a8ed0e0265ae 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -470,7 +470,7 @@ error_unregister:
+ 			rcar_thermal_irq_disable(priv);
+ 	}
  
--	early_platform_add_devices(sh7372_early_devices,
--				   ARRAY_SIZE(sh7372_early_devices));
--
--	/* setup early console here as well */
--	shmobile_setup_console();
-+	sh7372_add_early_devices();
- }
+-	pm_runtime_put_sync(dev);
++	pm_runtime_put(dev);
+ 	pm_runtime_disable(dev);
  
- void __init sh7372_add_standard_devices_dt(void)
+ 	return ret;
+@@ -488,7 +488,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 			rcar_thermal_irq_disable(priv);
+ 	}
+ 
+-	pm_runtime_put_sync(dev);
++	pm_runtime_put(dev);
+ 	pm_runtime_disable(dev);
+ 
+ 	return 0;
 -- 
 1.7.9.5
 
