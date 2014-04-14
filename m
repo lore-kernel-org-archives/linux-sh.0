@@ -1,145 +1,26 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 22 Apr 2014 10:50:50 +0000
-Subject: [PATCH v4 09/15] ARM: shmobile: sh7372: Switch to new style TMU device
-Message-Id: <1398163856-7379-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:22:42 +0000
+Subject: Re: [PATCH 0/2 v2]: sh-pfc: r8a7791: Add sound pin support
+Message-Id: <87wqes220f.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87sipkoeqj.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87sipkoeqj.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/clock-sh7372.c |  3 +-
- arch/arm/mach-shmobile/setup-sh7372.c | 69 +++++++----------------------------
- 2 files changed, 15 insertions(+), 57 deletions(-)
+Hi Linus Walleij
+Cc Simon, Laurent, Geert, Magnus
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index c622b49..d16d9ca 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -515,8 +515,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("uio_pdrv_genirq.1", &mstp_clks[MSTP128]), /* VEU0 */
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU */
- 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2 */
--	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
--	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX0 */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* IIC0 */
-@@ -577,6 +575,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("ick", "sh-mobile-hdmi", &div6_reparent_clks[DIV6_HDMI]),
- 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
-+	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
- 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
- 	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.4", &mstp_clks[MSTP405]), /* CMT4 */
- 	CLKDEV_ICK_ID("fck", "sh-cmt-32-fast.3", &mstp_clks[MSTP404]), /* CMT3 */
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 0995b72..453a0e4 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -138,64 +138,25 @@ static struct platform_device cmt2_device = {
- };
- 
- /* TMU */
--static struct sh_timer_config tmu00_platform_data = {
--	.name = "TMU00",
--	.channel_offset = 0x4,
--	.timer_bit = 0,
--	.clockevent_rating = 200,
-+static struct sh_timer_config tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct resource tmu00_resources[] = {
--	[0] = {
--		.name	= "TMU00",
--		.start	= 0xfff60008,
--		.end	= 0xfff60013,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= intcs_evt2irq(0xe80), /* TMU_TUNI0 */
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xfff60000, 0x2c),
-+	DEFINE_RES_IRQ(evt2irq(0xe80)),
-+	DEFINE_RES_IRQ(evt2irq(0xea0)),
-+	DEFINE_RES_IRQ(evt2irq(0xec0)),
- };
- 
--static struct platform_device tmu00_device = {
--	.name		= "sh_tmu",
-+static struct platform_device tmu0_device = {
-+	.name		= "sh-tmu",
- 	.id		= 0,
- 	.dev = {
--		.platform_data	= &tmu00_platform_data,
--	},
--	.resource	= tmu00_resources,
--	.num_resources	= ARRAY_SIZE(tmu00_resources),
--};
--
--static struct sh_timer_config tmu01_platform_data = {
--	.name = "TMU01",
--	.channel_offset = 0x10,
--	.timer_bit = 1,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu01_resources[] = {
--	[0] = {
--		.name	= "TMU01",
--		.start	= 0xfff60014,
--		.end	= 0xfff6001f,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= intcs_evt2irq(0xea0), /* TMU_TUNI1 */
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu01_device = {
--	.name		= "sh_tmu",
--	.id		= 1,
--	.dev = {
--		.platform_data	= &tmu01_platform_data,
-+		.platform_data	= &tmu0_platform_data,
- 	},
--	.resource	= tmu01_resources,
--	.num_resources	= ARRAY_SIZE(tmu01_resources),
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
- };
- 
- /* I2C */
-@@ -940,8 +901,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif5_device,
- 	&scif6_device,
- 	&cmt2_device,
--	&tmu00_device,
--	&tmu01_device,
-+	&tmu0_device,
- 	&ipmmu_device,
- };
- 
-@@ -988,8 +948,7 @@ void __init sh7372_add_standard_devices(void)
- 		{ "A4R", &veu2_device, },
- 		{ "A4R", &veu3_device, },
- 		{ "A4R", &jpu_device, },
--		{ "A4R", &tmu00_device, },
--		{ "A4R", &tmu01_device, },
-+		{ "A4R", &tmu0_device, },
- 	};
- 
- 	sh7372_init_pm_domains();
--- 
-1.8.3.2
+These are r8a7791 sound pin support patches
+I added To Linus Walleij, Cc linux kernel on V2 patches.
 
+Kuninori Morimoto (2):
+      sh-pfc: r8a7791: Add SSI pin support
+      sh-pfc: r8a7791: Add Audio pin support
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  375 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 375 insertions(+)
