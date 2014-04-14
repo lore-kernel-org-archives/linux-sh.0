@@ -1,60 +1,46 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:10 +0000
-Subject: [PATCH RFC v2 14/17] ARM: shmobile: r8a73a4: Populate .init_machine for generic r8a73a4
-Message-Id: <1397565253-22741-15-git-send-email-geert+renesas@glider.be>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 21:35:04 +0000
+Subject: [PATCH v2 1/9] ARM: shmobile: r8a7790: add dmac0,dmac1 clocks
+Message-Id: <1397511312-4845-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
-v2:
-  - New
+ arch/arm/boot/dts/r8a7790.dtsi | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 +
- arch/arm/mach-shmobile/setup-r8a73a4.c        |    8 ++++++++
- 2 files changed, 9 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-index ce8bdd1d8a8a..c44a1b6d1fea 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-@@ -11,6 +11,7 @@ enum {
- };
- 
- void r8a73a4_add_standard_devices(void);
-+void r8a73a4_add_standard_devices_dt(void);
- void r8a73a4_add_dt_devices(void);
- void r8a73a4_clock_init(void);
- void r8a73a4_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index cd36f8078325..90414b069135 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -304,6 +304,13 @@ void __init r8a73a4_init_early(void)
- }
- 
- #ifdef CONFIG_USE_OF
-+void __init r8a73a4_add_standard_devices_dt(void)
-+{
-+	sh_pm_runtime_init();
-+	r8a73a4_clock_init();
-+	r8a73a4_add_dt_devices();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
- 
- static const char *r8a73a4_boards_compat_dt[] __initdata = {
- 	"renesas,r8a73a4",
-@@ -312,6 +319,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
- 	.init_early	= r8a73a4_init_early,
-+	.init_machine	= r8a73a4_add_standard_devices_dt,
- 	.dt_compat	= r8a73a4_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a1e7c39..f98b01d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -671,16 +671,17 @@
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
+ 				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
+ 				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
++				R8A7790_CLK_SYS_DMAC0 R8A7790_CLK_SYS_DMAC1
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "msiof3", "scifb2";
++				"scifb1", "msiof1", "msiof3", "scifb2", "dmac0", "dmac1";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.7.9.5
+1.9.1
 
