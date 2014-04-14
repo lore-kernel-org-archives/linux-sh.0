@@ -1,50 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Apr 2014 14:11:16 +0000
-Subject: [PATCH v2 05/05] ARM: shmobile: koelsch: DT reference USB pinmux setup
-Message-Id: <20140408141116.10063.6778.sendpatchset@w520>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 14 Apr 2014 21:59:53 +0000
+Subject: [PATCHv2 11/11] backlight: pwm_bl: retrieve configured pwm period
+Message-Id: <1397512793-10325-12-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The PWM core is now able to initialize the PWM period from platform_data. Use it
+and if it is not configured, use the supplied pwm_period_ns.
 
-Configure the pinmux on Koelsch for USB ports via the default
-setting. This allows support for USB function on USB0 and
-USB Host for USB1. Not for upstream merge.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
 ---
+ drivers/video/backlight/pwm_bl.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |   12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index b75201ff46f6..1bb8a69062c5 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -304,12 +304,14 @@ static int pwm_backlight_probe(struct platform_device *pdev)
+ 	/*
+ 	 * The DT case will set the pwm_period_ns field to 0 and store the
+ 	 * period, parsed from the DT, in the PWM device. For the non-DT case,
+-	 * set the period from platform data.
++	 * set the period from platform data if it is not already set.
+ 	 */
+-	if (data->pwm_period_ns > 0)
++	pb->period = pwm_get_period(pb->pwm);
++	if (!pb->period && (data->pwm_period_ns > 0)) {
++		pb->period = data->pwm_period_ns;
+ 		pwm_set_period(pb->pwm, data->pwm_period_ns);
++	}
+ 
+-	pb->period = pwm_get_period(pb->pwm);
+ 	pb->lth_brightness = data->lth_brightness * (pb->period / pb->scale);
+ 
+ 	memset(&props, 0, sizeof(struct backlight_properties));
+-- 
+1.8.3.2
 
---- 0001/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ work/arch/arm/boot/dts/r8a7791-koelsch.dts	2014-04-07 14:16:57.000000000 +0900
-@@ -230,7 +230,7 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
-+	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins &usb0_pins &usb1_pins>;
- 	pinctrl-names = "default";
- 
- 	i2c2_pins: i2c2 {
-@@ -288,6 +288,16 @@
- 				 "msiof0_tx";
- 		renesas,function = "msiof0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
- };
- 
- &ether {
