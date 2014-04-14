@@ -1,68 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:31:37 +0000
-Subject: [PATCH 1/8] ARM: shmobile: r8a7791: Use rcar_gen2_read_mode_pins() helper
-Message-Id: <edcf139081f501b1468ae6665217e8320d4c75e8.1397694178.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:56:57 +0000
+Subject: [PATCH 3/7] ARM: shmobile: bockw: remove old style audio clock
+Message-Id: <87ob0420fc.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694178.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
+References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, broonie@kernel.org
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Current audio clock didn't have dependency to device/driver,
+but, it was not good design for DT support.
+To avoid branch merge conflict issue,
+it is using this load map, and this patch is 3) part.
+ 1) add new style clock in platform
+ 2) add new style clock method in driver
+ 3) remove old tyle clock from platform
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7791.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/board-bockw.c |   10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 701383f..36e5750 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -25,6 +25,7 @@
- #include <linux/clkdev.h>
- #include <mach/clock.h>
- #include <mach/common.h>
-+#include <mach/rcar-gen2.h>
- 
- /*
-  *   MD		EXTAL		PLL0	PLL1	PLL3
-@@ -43,8 +44,6 @@
-  *	see "p1 / 2" on R8A7791_CLOCK_ROOT() below
-  */
- 
--#define MD(nr)	(1 << nr)
--
- #define CPG_BASE 0xe6150000
- #define CPG_LEN 0x1000
- 
-@@ -68,7 +67,6 @@
- #define MSTPSR9		IOMEM(0xe61509a4)
- #define MSTPSR11	IOMEM(0xe61509ac)
- 
--#define MODEMR		0xE6160060
- #define SDCKCR		0xE6150074
- #define SD1CKCR		0xE6150078
- #define SD2CKCR		0xE615026c
-@@ -295,14 +293,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7791_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index b4122f8..1aca107 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -591,6 +591,7 @@ static void __init bockw_init(void)
  {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = rcar_gen2_read_mode_pins();
- 	int k, ret = 0;
+ 	void __iomem *base;
+ 	struct clk *clk;
++	struct platform_device *pdev;
+ 	int i;
  
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	switch (mode & (MD(14) | MD(13))) {
- 	case 0:
- 		R8A7791_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
+ 	r8a7778_clock_init();
+@@ -673,9 +674,6 @@ static void __init bockw_init(void)
+ 	}
+ 
+ 	/* for Audio */
+-	clk = clk_get(NULL, "audio_clk_b");
+-	clk_set_rate(clk, 24576000);
+-	clk_put(clk);
+ 	rsnd_codec_power(5, 1); /* enable ak4642 */
+ 
+ 	platform_device_register_simple(
+@@ -684,11 +682,15 @@ static void __init bockw_init(void)
+ 	platform_device_register_simple(
+ 		"ak4554-adc-dac", 1, NULL, 0);
+ 
+-	platform_device_register_resndata(
++	pdev = platform_device_register_resndata(
+ 		&platform_bus, "rcar_sound", -1,
+ 		rsnd_resources, ARRAY_SIZE(rsnd_resources),
+ 		&rsnd_info, sizeof(rsnd_info));
+ 
++	clk = clk_get(&pdev->dev, "clk_b");
++	clk_set_rate(clk, 24576000);
++	clk_put(clk);
++
+ 	for (i = 0; i < ARRAY_SIZE(rsnd_card_info); i++) {
+ 		struct platform_device_info cardinfo = {
+ 			.parent         = &platform_bus,
 -- 
-1.8.4
+1.7.9.5
 
