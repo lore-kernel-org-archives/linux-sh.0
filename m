@@ -1,37 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 08 Apr 2014 21:30:50 +0000
-Subject: Re: [PATCH] phy: Renesas R-Car Gen2 PHY driver
-Message-Id: <53446A8A.5050001@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 14 Apr 2014 04:02:44 +0000
+Subject: [GIT PULL] Fifth Round of Renesas ARM Based SoC DT Updates for v3.15
+Message-Id: <cover.1397448066.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404090102.03074.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404090102.03074.sergei.shtylyov@cogentembedded.com>
+References: <cover.1380874512.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1380874512.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: devicetree@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, kishon@ti.com
-Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, linux-doc@vger.kernel.org, rdunlap@infradead.org, grant.likely@linaro.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On 04/09/2014 01:02 AM, Sergei Shtylyov wrote:
+Please consider this fifth round of Renesas ARM based SoC DT updates for v3.15.
 
-> This PHY, though formally being a part of Renesas USBHS controller, contains the
-> UGCTRL2 register that controls multiplexing of the USB ports (Renesas calls them
-> channels) to the different USB controllers: channel 0 can be connected to either
-> PCI EHCI/OHCI or USBHS controllers, channel 2 can be connected to PCI EHCI/OHCI
-> or xHCI controllers.
+This pull request is based on the previous round of
+such requests, tagged as renesas-dt4-for-v3.15,
+which I have already sent a pull-request for.
 
-> This is a new driver for this USB PHY currently already supported under drivers/
-> usb/phy/. The reason for writing the new driver was the requirement that the
-> multiplexing of USB channels to the controller be dynamic, depending on what
-> USB drivers are loaded,  rather than static as provided by the old driver.	
-> The infrastructure provided by drivers/phy/phy-core.c seems to fit that purpose
-> ideally. The new driver only supports device tree probing for now.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+I am sending this pull request (long) after the release of v3.14-rc6
+as it contains a single bug-fix.
 
-    Oops, I forgot to rebase it against Kishon's linux-phy.git repo's next 
-branch. I will re-send shortly.
 
-WBR, Sergei
+The following changes since commit 2c60a7df72711fb8b4be1e6aa651ab166a8931bc:
 
+  ARM: shmobile: Add SDHI devices for Koelsch DTS (2014-02-26 15:11:41 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt5-for-v3.15
+
+for you to fetch changes up to b08eed0c4d7d70eae2f4f1ff518cc33643722a07:
+
+  ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc (2014-04-08 09:38:51 +0900)
+
+----------------------------------------------------------------
+Fifth Round of Renesas ARM Based SoC DT Updates for v3.15
+
+Correct renesas,groups in SDHI nodes of for r8a7790 (R-Car H2) based
+Lager board.
+
+----------------------------------------------------------------
+Rob Taylor (1):
+      ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc
+
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
