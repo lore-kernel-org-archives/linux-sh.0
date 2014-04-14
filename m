@@ -1,270 +1,119 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 07 Apr 2014 06:34:00 +0000
-Subject: [PATCH 02/05] ARM: shmobile: Lager DT reference USB platform devices
-Message-Id: <20140407063400.26152.37084.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 18:15:39 +0000
+Subject: [PATCH v3 3/5] ARM: shmobile: lager legacy: Add MSIOF support
+Message-Id: <1397499341-11964-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hook up three USB ports on Lager via the DT reference code
-using platform devices. This adds support for USB function
-on USB0 and USB Host for USB1 and USB2. Not for upstream merge.
+Add MSIOF resources, platform data, platform device, pinctrl, and SPI
+child device.
 
-Based on the Lager legacy code by Valentine Bershak.
+  - Only MSIOF1 is in use, and thus registered. Its bus contains a single
+    device (a Renesas R2A11302FT PMIC).
+  - Platform device numbering is 1-based for compatibility with the BSP,
+    as QSPI uses zero, so MSIOF1's device name is "spi_r8a7790_msiof.2".
 
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm@opensource.se>
 ---
+v3:
+  - Add Acked-by
+v2:
+  - Removed resources for unused MSIOF channels.
+---
+ arch/arm/mach-shmobile/board-lager.c |   46 +++++++++++++++++++++++++++++-----
+ 1 file changed, 40 insertions(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/board-lager-reference.c |  211 ++++++++++++++++++++++++
- 1 file changed, 211 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-04-07 14:08:31.000000000 +0900
-@@ -19,9 +19,14 @@
-  */
- 
- #include <linux/dma-mapping.h>
-+#include <linux/gpio.h>
- #include <linux/init.h>
-+#include <linux/of_gpio.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <linux/platform_data/usb-rcar-gen2-phy.h>
-+#include <linux/usb/phy.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -106,6 +111,7 @@ static const struct clk_name clk_names[]
- 	{ "du2", "du.2", "rcar-du-r8a7790" },
- 	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
- 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
-+	{ "hsusb", NULL, "usb_phy_rcar_gen2" },
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f8b1e05463cc..a7c82ecf1e48 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -55,6 +55,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/spi/flash.h>
+ #include <linux/spi/rspi.h>
++#include <linux/spi/sh_msiof.h>
+ #include <linux/spi/spi.h>
+ #include <sound/rcar_snd.h>
+ #include <sound/simple_card.h>
+@@ -287,6 +288,17 @@ static const struct platform_device_info ether_info __initconst = {
+ 	.dma_mask	= DMA_BIT_MASK(32),
  };
  
- /*
-@@ -119,8 +125,205 @@ static const struct clk_name clk_enables
- 	{ "sdhi0", NULL, "ee100000.sd" },
- 	{ "sdhi2", NULL, "ee140000.sd" },
- 	{ "thermal", NULL, "e61f0000.thermal" },
-+	{ "hsusb", NULL, "renesas_usbhs" },
-+	{ "ehci", NULL, "pci-rcar-gen2.1" },
-+	{ "ehci", NULL, "pci-rcar-gen2.2" },
++/* MSIOF1 */
++static const struct resource sh_msiof1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xe6e10000, 0x0064),
++	DEFINE_RES_IRQ(gic_spi(157)),
++};
++
++static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
++	.rx_fifo_override	= 256,
++	.num_chipselect		= 1,
++};
++
+ /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
+ static struct mtd_partition spi_flash_part[] = {
+ 	/* Reserved for user loader program, read-only */
+@@ -325,12 +337,19 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+ 
+ static const struct spi_board_info spi_info[] __initconst = {
+ 	{
+-		.modalias	= "m25p80",
+-		.platform_data	= &spi_flash_data,
+-		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
+-		.max_speed_hz	= 30000000,
+-		.bus_num	= 0,
+-		.chip_select	= 0,
++		.modalias	 = "m25p80",
++		.platform_data	 = &spi_flash_data,
++		.mode		 = SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
++		.max_speed_hz	 = 30000000,
++		.bus_num	 = 0,
++		.chip_select	 = 0,
++	}, {
++		.modalias	 = "r2a1130x",
++		.max_speed_hz	 = 6000000,
++		.chip_select	 = 0,
++		.bus_num	 = 2,
++		.mode		 = SPI_MODE_3,
++		.controller_data = (void *)-ENOENT, /* HW controlled CS */
+ 	},
  };
  
-+/* USBHS */
-+static const struct resource usbhs_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590000, 0x100),
-+	DEFINE_RES_IRQ(gic_spi(107)),
-+};
+@@ -708,6 +727,15 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
+ 	/* I2C2 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar.2", "pfc-r8a7790",
+ 				  "i2c2", "i2c2"),
++	/* MSIOF1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
++				  "msiof1_clk", "msiof1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
++				  "msiof1_sync", "msiof1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
++				  "msiof1_rx", "msiof1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
++				  "msiof1_tx", "msiof1"),
+ 	/* QSPI */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7790",
+ 				  "qspi_ctrl", "qspi"),
+@@ -816,6 +844,12 @@ static void __init lager_add_standard_devices(void)
+ 					  qspi_resources,
+ 					  ARRAY_SIZE(qspi_resources),
+ 					  &qspi_pdata, sizeof(qspi_pdata));
++	platform_device_register_resndata(&platform_bus, "spi_r8a7790_msiof",
++					  1 + 1, sh_msiof1_resources,
++					  ARRAY_SIZE(sh_msiof1_resources),
++					  &sh_msiof_info,
++					  sizeof(struct sh_msiof_spi_info));
 +
-+struct usbhs_private {
-+	struct renesas_usbhs_platform_info info;
-+	struct usb_phy *phy;
-+	int pwen_gpio;
-+};
-+
-+#define usbhs_get_priv(pdev) \
-+	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
-+
-+static int usbhs_power_ctrl(struct platform_device *pdev,
-+				void __iomem *base, int enable)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return -ENODEV;
-+
-+	if (enable) {
-+		int retval = usb_phy_init(priv->phy);
-+
-+		if (!retval)
-+			retval = usb_phy_set_suspend(priv->phy, 0);
-+		return retval;
-+	}
-+
-+	usb_phy_set_suspend(priv->phy, 1);
-+	usb_phy_shutdown(priv->phy);
-+	return 0;
-+}
-+
-+static int usbhs_hardware_init(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+	struct usb_phy *phy;
-+	int ret;
-+	struct device_node *np;
-+
-+	np = of_find_node_by_path("/gpio@e6055000");
-+	if (np) {
-+		priv->pwen_gpio = of_get_gpio(np, 18);
-+		of_node_put(np);
-+	} else {
-+		pr_warn("Error: Unable to get PWEN GPIO line\n");
-+		ret = -ENOTSUPP;
-+		goto error2;
-+	}
-+
-+	/* USB0 Function - use PWEN as GPIO input to detect DIP Switch SW5
-+	 * setting to avoid VBUS short circuit due to wrong cable.
-+	 * PWEN should be pulled up high if USB Function is selected by SW5
-+	 */
-+	gpio_request_one(priv->pwen_gpio, GPIOF_IN, NULL); /* USB0_PWEN */
-+	if (!gpio_get_value(priv->pwen_gpio)) {
-+		pr_warn("Error: USB Function not selected - check SW5 + SW6\n");
-+		ret = -ENOTSUPP;
-+		goto error;
-+	}
-+
-+	phy = usb_get_phy_dev(&pdev->dev, 0);
-+	if (IS_ERR(phy)) {
-+		ret = PTR_ERR(phy);
-+		goto error;
-+	}
-+
-+	priv->phy = phy;
-+	return 0;
-+ error:
-+	gpio_free(priv->pwen_gpio);
-+ error2:
-+	return ret;
-+}
-+
-+static int usbhs_hardware_exit(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return 0;
-+
-+	usb_put_phy(priv->phy);
-+	priv->phy = NULL;
-+	gpio_free(priv->pwen_gpio);
-+	return 0;
-+}
-+
-+static int usbhs_get_id(struct platform_device *pdev)
-+{
-+	return USBHS_GADGET;
-+}
-+
-+static u32 lager_usbhs_pipe_type[] = {
-+	USB_ENDPOINT_XFER_CONTROL,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+};
-+
-+static struct usbhs_private usbhs_priv __initdata = {
-+	.info = {
-+		.platform_callback = {
-+			.power_ctrl	= usbhs_power_ctrl,
-+			.hardware_init	= usbhs_hardware_init,
-+			.hardware_exit	= usbhs_hardware_exit,
-+			.get_id		= usbhs_get_id,
-+		},
-+		.driver_param = {
-+			.buswait_bwait	= 4,
-+			.pipe_type = lager_usbhs_pipe_type,
-+			.pipe_size = ARRAY_SIZE(lager_usbhs_pipe_type),
-+		},
-+	}
-+};
-+
-+static void __init lager_register_usbhs(void)
-+{
-+	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_resndata(&platform_bus,
-+					  "renesas_usbhs", -1,
-+					  usbhs_resources,
-+					  ARRAY_SIZE(usbhs_resources),
-+					  &usbhs_priv.info,
-+					  sizeof(usbhs_priv.info));
-+}
-+
-+/* USBHS PHY */
-+static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
-+	.chan0_pci = 0,	/* Channel 0 is USBHS */
-+	.chan2_pci = 1,	/* Channel 2 is PCI USB */
-+};
-+
-+static const struct resource usbhs_phy_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590100, 0x100),
-+};
-+
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0b0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0a0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(112)),
-+};
-+
-+static const struct platform_device_info pci1_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "pci-rcar-gen2",
-+	.id		= 1,
-+	.res		= pci1_resources,
-+	.num_res	= ARRAY_SIZE(pci1_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
-+static void __init lager_add_usb1_device(void)
-+{
-+	platform_device_register_full(&pci1_info);
-+}
-+
-+/* Internal PCI2 */
-+static const struct resource pci2_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),	/* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),	/* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static const struct platform_device_info pci2_info __initconst = {
-+	.parent		= &platform_bus,
-+	.name		= "pci-rcar-gen2",
-+	.id		= 2,
-+	.res		= pci2_resources,
-+	.num_res	= ARRAY_SIZE(pci2_resources),
-+	.dma_mask	= DMA_BIT_MASK(32),
-+};
-+
-+static void __init lager_add_usb2_device(void)
-+{
-+	platform_device_register_full(&pci2_info);
-+}
-+
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-@@ -129,6 +332,14 @@ static void __init lager_add_standard_de
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
  
- 	lager_add_du_device();
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	lager_register_usbhs();
-+	lager_add_usb1_device();
-+	lager_add_usb2_device();
- }
- 
- static const char *lager_boards_compat_dt[] __initdata = {
+ 	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
+-- 
+1.7.9.5
+
