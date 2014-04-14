@@ -1,123 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:03:49 +0000
-Subject: [PATCH v3 06/52] clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
-Message-Id: <1397228675-11684-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 18:33:17 +0000
+Subject: [PATCH v2 6/6] ARM: shmobile: r8a7791 legacy: Add GPIO clocks
+Message-Id: <1397500397-12607-7-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The mapbase variable points to the mapped base address of the channel,
-rename it to mapbase_sh. mapbase_str points to the mapped base address
-of the CMT device, rename it to mapbase.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/clocksource/sh_cmt.c | 34 +++++++++++++++++-----------------
- 1 file changed, 17 insertions(+), 17 deletions(-)
+v2:
+  - No changes
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index febd6bf..eb93b88 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -55,8 +55,8 @@ struct sh_cmt_channel {
- struct sh_cmt_device {
- 	struct platform_device *pdev;
- 
-+	void __iomem *mapbase_ch;
- 	void __iomem *mapbase;
--	void __iomem *mapbase_str;
- 	struct clk *clk;
- 
- 	struct sh_cmt_channel channel;
-@@ -125,41 +125,41 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
- 
- static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->cmt->mapbase_str, 0);
-+	return ch->cmt->read_control(ch->cmt->mapbase, 0);
- }
- 
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_control(ch->cmt->mapbase, CMCSR);
-+	return ch->cmt->read_control(ch->cmt->mapbase_ch, CMCSR);
- }
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_channel *ch)
- {
--	return ch->cmt->read_count(ch->cmt->mapbase, CMCNT);
-+	return ch->cmt->read_count(ch->cmt->mapbase_ch, CMCNT);
- }
- 
- static inline void sh_cmt_write_cmstr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->cmt->mapbase_str, 0, value);
-+	ch->cmt->write_control(ch->cmt->mapbase, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_control(ch->cmt->mapbase, CMCSR, value);
-+	ch->cmt->write_control(ch->cmt->mapbase_ch, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->cmt->mapbase, CMCNT, value);
-+	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCNT, value);
- }
- 
- static inline void sh_cmt_write_cmcor(struct sh_cmt_channel *ch,
- 				      unsigned long value)
- {
--	ch->cmt->write_count(ch->cmt->mapbase, CMCOR, value);
-+	ch->cmt->write_count(ch->cmt->mapbase_ch, CMCOR, value);
- }
- 
- static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
-@@ -761,18 +761,18 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 	/* optional resource for the shared timer start/stop register */
- 	res2 = platform_get_resource(cmt->pdev, IORESOURCE_MEM, 1);
- 
--	/* map memory, let mapbase point to our channel */
--	cmt->mapbase = ioremap_nocache(res->start, resource_size(res));
--	if (cmt->mapbase = NULL) {
-+	/* map memory, let mapbase_ch point to our channel */
-+	cmt->mapbase_ch = ioremap_nocache(res->start, resource_size(res));
-+	if (cmt->mapbase_ch = NULL) {
- 		dev_err(&cmt->pdev->dev, "failed to remap I/O memory\n");
- 		goto err0;
- 	}
- 
- 	/* map second resource for CMSTR */
--	cmt->mapbase_str = ioremap_nocache(res2 ? res2->start :
--					   res->start - cfg->channel_offset,
--					   res2 ? resource_size(res2) : 2);
--	if (cmt->mapbase_str = NULL) {
-+	cmt->mapbase = ioremap_nocache(res2 ? res2->start :
-+				       res->start - cfg->channel_offset,
-+				       res2 ? resource_size(res2) : 2);
-+	if (cmt->mapbase = NULL) {
- 		dev_err(&cmt->pdev->dev, "failed to remap I/O second memory\n");
- 		goto err1;
- 	}
-@@ -824,9 +824,9 @@ err4:
- err3:
- 	clk_put(cmt->clk);
- err2:
--	iounmap(cmt->mapbase_str);
--err1:
- 	iounmap(cmt->mapbase);
-+err1:
-+	iounmap(cmt->mapbase_ch);
- err0:
- 	return ret;
- }
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index a6ae7f58ddc1..0e258018d162 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -172,6 +172,7 @@ enum {
+ 	MSTP1108, MSTP1107, MSTP1106,
+ 	MSTP931, MSTP930, MSTP929, MSTP928, MSTP927, MSTP925,
+ 	MSTP917,
++	MSTP912, MSTP911, MSTP910, MSTP909, MSTP908, MSTP907, MSTP905, MSTP904,
+ 	MSTP815, MSTP814,
+ 	MSTP813,
+ 	MSTP811, MSTP810, MSTP809,
+@@ -197,6 +198,14 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP927] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
+ 	[MSTP925] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
+ 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
++	[MSTP912] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 12, MSTPSR9, 0), /* GPIO0 */
++	[MSTP911] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 11, MSTPSR9, 0), /* GPIO1 */
++	[MSTP910] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 10, MSTPSR9, 0), /* GPIO2 */
++	[MSTP909] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 9, MSTPSR9, 0), /* GPIO3 */
++	[MSTP908] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 8, MSTPSR9, 0), /* GPIO4 */
++	[MSTP907] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 7, MSTPSR9, 0), /* GPIO5 */
++	[MSTP905] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 5, MSTPSR9, 0), /* GPIO6 */
++	[MSTP904] = SH_CLK_MSTP32_STS(&cp_clk, SMSTPCR9, 4, MSTPSR9, 0), /* GPIO7 */
+ 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
+ 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+ 	[MSTP813] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR8, 13, MSTPSR8, 0), /* Ether */
+@@ -281,6 +290,14 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.3", &mstp_clks[MSTP928]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.4", &mstp_clks[MSTP927]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.5", &mstp_clks[MSTP925]),
++	CLKDEV_DEV_ID("gpio_rcar.0", &mstp_clks[MSTP912]),
++	CLKDEV_DEV_ID("gpio_rcar.1", &mstp_clks[MSTP911]),
++	CLKDEV_DEV_ID("gpio_rcar.2", &mstp_clks[MSTP910]),
++	CLKDEV_DEV_ID("gpio_rcar.3", &mstp_clks[MSTP909]),
++	CLKDEV_DEV_ID("gpio_rcar.4", &mstp_clks[MSTP908]),
++	CLKDEV_DEV_ID("gpio_rcar.5", &mstp_clks[MSTP907]),
++	CLKDEV_DEV_ID("gpio_rcar.6", &mstp_clks[MSTP905]),
++	CLKDEV_DEV_ID("gpio_rcar.7", &mstp_clks[MSTP904]),
+ 	CLKDEV_DEV_ID("r8a7791-ether", &mstp_clks[MSTP813]), /* Ether */
+ 	CLKDEV_DEV_ID("r8a7791-vin.0", &mstp_clks[MSTP811]),
+ 	CLKDEV_DEV_ID("r8a7791-vin.1", &mstp_clks[MSTP810]),
 -- 
-1.8.3.2
+1.7.9.5
 
