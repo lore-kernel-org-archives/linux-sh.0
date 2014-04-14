@@ -1,33 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Apr 2014 02:03:15 +0000
-Subject: Re: [PATCH 2/2] pwm: use PWM_LOOKUP to set the period and polarity
-Message-Id: <20140414020315.GF22411@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 10:36:39 +0000
+Subject: [PATCH v3 4/7] ARM: lager: add vin1 node
+Message-Id: <1397471802-27216-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397066649-3767-1-git-send-email-alexandre.belloni@free-electrons.com>
- <1397066649-3767-3-git-send-email-alexandre.belloni@free-electrons.com>
- <20140409231549.GD2187@verge.net.au>
- <20140410073702.GF2879@piout.net>
-In-Reply-To: <20140410073702.GF2879@piout.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Apr 10, 2014 at 09:37:03AM +0200, Alexandre Belloni wrote:
-> On 10/04/2014 at 08:15:49 +0900, Simon Horman wrote :
-> > On Wed, Apr 09, 2014 at 08:04:09PM +0200, Alexandre Belloni wrote:
-> > > Now that the PWM core is able to set the period and polarity based on
-> > > the lookup table, add those to PWM_LOOKUP to ease their usage.
-> > 
-> > I would prefer if this change was made in a non-atomic manner.
-> > 
-> > 1. Add new infrastructure
-> > 2. Update users individually
-> > 3. Remove old infrastructure
-> > 
-> 
-> I agree this would be better but I'm not sure how you can modify a macro
-> without renaming it or changing it everywhere at once. Like said, I'm
-> open to creating a new macro.
+Add device-tree for vin1 (composite video in) on the
+lager board.
 
-I for one would prefer the new macro approach.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 38 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index a087421..6888866 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -158,6 +158,11 @@
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
+ 	};
++
++	vin1_pins: vin {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
+ };
+ 
+ &mmcif1 {
+@@ -239,8 +244,41 @@
+ 	status = "ok";
+ 	pinctrl-0 = <&i2c2_pins>;
+ 	pinctrl-names = "default";
++
++	adv7180: composite-in@0x20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin1>;
++
++		port {
++			adv7180_1: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin1ep0>;
++			};
++		};
++	};
++
+ };
+ 
+ &i2c3	{
+ 	status = "ok";
+ };
++
++/* composite video input */
++&vin1 {
++	pinctrl-0 = <&vin1_pins>;
++	pinctrl-names = "default";
++
++	status = "ok";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin1ep0: endpoint {
++			remote-endpoint = <&adv7180_1>;
++			bus-width = <8>;
++		};
++	};
++};
++
+-- 
+1.9.1
+
