@@ -1,86 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:44 +0000
-Subject: [PATCH 16/33] ARM: shmobile: kzm9g-reference dts: Use KEY_* macros for gpio-keys
-Message-Id: <39f0163098d136411538060fd53c8b8c255cda05.1398216022.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 18:15:36 +0000
+Subject: [PATCH v3 0/5] ARM: shmobile: MSIOF integration on koelsch/lager legacy
+Message-Id: <1397499341-11964-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+	Hi Simon,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
+This patch series integrates legacy support for the MSIOF module in the
+Renesas R-Car H2 (r8a7790) and M2 (r8a7791) SoCs on the Lager and Koelsch
+development boards.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index eb8886b..a99171c 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -14,6 +14,7 @@
- /dts-v1/;
- #include "sh73a0.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
-@@ -112,43 +113,43 @@
- 
- 		back-key {
- 			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
--			linux,code = <158>;
-+			linux,code = <KEY_BACK>;
- 			label = "SW3";
- 		};
- 
- 		right-key {
- 			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
--			linux,code = <106>;
-+			linux,code = <KEY_RIGHT>;
- 			label = "SW2-R";
- 		};
- 
- 		left-key {
- 			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
--			linux,code = <105>;
-+			linux,code = <KEY_LEFT>;
- 			label = "SW2-L";
- 		};
- 
- 		enter-key {
- 			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
--			linux,code = <28>;
-+			linux,code = <KEY_ENTER>;
- 			label = "SW2-P";
- 		};
- 
- 		up-key {
- 			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
--			linux,code = <103>;
-+			linux,code = <KEY_UP>;
- 			label = "SW2-U";
- 		};
- 
- 		down-key {
- 			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
--			linux,code = <108>;
-+			linux,code = <KEY_DOWN>;
- 			label = "SW2-D";
- 		};
- 
- 		home-key {
- 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
--			linux,code = <102>;
-+			linux,code = <KEY_HOME>;
- 			label = "SW1";
- 		};
- 	};
--- 
-1.8.5.2
+  - [1/5] ARM: shmobile: r8a7790: Add MSIOF clocks
+  - [2/5] ARM: shmobile: r8a7791: Add MSIOF clocks
+  - [3/5] ARM: shmobile: lager legacy: Add MSIOF support
+  - [4/5] ARM: shmobile: koelsch legacy: Add MSIOF support
+  - [5/5] ARM: shmobile: koelsch/lager defconfig: Enable MSIOF
 
+These are the remaining patches not taken from v2.
+Changelogs are available in the individual patches.
+
+Thanks for applying!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
