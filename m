@@ -1,68 +1,46 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 30 Apr 2014 22:21:05 +0000
-Subject: [PATCH 1/6] i2c: sh_mobile: replace magic hex values with constants
-Message-Id: <1398896470-24663-2-git-send-email-wsa@the-dreams.de>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 14 Apr 2014 21:59:52 +0000
+Subject: [PATCHv2 10/11] leds: leds-pwm: retrieve configured pwm period
+Message-Id: <1397512793-10325-11-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
+References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The PWM core is now able to initialize the PWM period. Use it and if it is not
+configured, use the supplied pwm_period_ns.
 
-No functional change, binaries are identical.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ drivers/leds/leds-pwm.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 1d79585ba4b3..d91625eea6bb 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -316,7 +316,7 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
+diff --git a/drivers/leds/leds-pwm.c b/drivers/leds/leds-pwm.c
+index 7d0aaed1e23a..aa770ec1e892 100644
+--- a/drivers/leds/leds-pwm.c
++++ b/drivers/leds/leds-pwm.c
+@@ -181,7 +181,6 @@ static int led_pwm_probe(struct platform_device *pdev)
+ 			led_dat->cdev.name = cur_led->name;
+ 			led_dat->cdev.default_trigger = cur_led->default_trigger;
+ 			led_dat->active_low = cur_led->active_low;
+-			led_dat->period = cur_led->pwm_period_ns;
+ 			led_dat->cdev.brightness_set = led_pwm_set;
+ 			led_dat->cdev.brightness = LED_OFF;
+ 			led_dat->cdev.max_brightness = cur_led->max_brightness;
+@@ -191,6 +190,10 @@ static int led_pwm_probe(struct platform_device *pdev)
+ 			if (led_dat->can_sleep)
+ 				INIT_WORK(&led_dat->work, led_pwm_work);
  
- 	switch (op) {
- 	case OP_START: /* issue start and trigger DTE interrupt */
--		iic_wr(pd, ICCR, 0x94);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_TRS | ICCR_BBSY);
- 		break;
- 	case OP_TX_FIRST: /* disable DTE interrupt and write data */
- 		iic_wr(pd, ICIC, ICIC_WAITE | ICIC_ALE | ICIC_TACKE);
-@@ -327,10 +327,11 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
- 		break;
- 	case OP_TX_STOP: /* write data and issue a stop afterwards */
- 		iic_wr(pd, ICDR, data);
--		iic_wr(pd, ICCR, pd->send_stop ? 0x90 : 0x94);
-+		iic_wr(pd, ICCR, pd->send_stop ? ICCR_ICE | ICCR_TRS
-+					       : ICCR_ICE | ICCR_TRS | ICCR_BBSY);
- 		break;
- 	case OP_TX_TO_RX: /* select read mode */
--		iic_wr(pd, ICCR, 0x81);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_SCP);
- 		break;
- 	case OP_RX: /* just read data */
- 		ret = iic_rd(pd, ICDR);
-@@ -338,13 +339,13 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
- 	case OP_RX_STOP: /* enable DTE interrupt, issue stop */
- 		iic_wr(pd, ICIC,
- 		       ICIC_DTEE | ICIC_WAITE | ICIC_ALE | ICIC_TACKE);
--		iic_wr(pd, ICCR, 0xc0);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_RACK);
- 		break;
- 	case OP_RX_STOP_DATA: /* enable DTE interrupt, read data, issue stop */
- 		iic_wr(pd, ICIC,
- 		       ICIC_DTEE | ICIC_WAITE | ICIC_ALE | ICIC_TACKE);
- 		ret = iic_rd(pd, ICDR);
--		iic_wr(pd, ICCR, 0xc0);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_RACK);
- 		break;
- 	}
- 
++			led_dat->period = pwm_get_period(led_dat->pwm);
++			if (!led_dat->period && (cur_led->pwm_period_ns > 0))
++				led_dat->period = cur_led->pwm_period_ns;
++
+ 			ret = led_classdev_register(&pdev->dev, &led_dat->cdev);
+ 			if (ret < 0)
+ 				goto err;
 -- 
-1.9.2
+1.8.3.2
 
