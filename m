@@ -1,74 +1,95 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 11 Apr 2014 12:10:28 +0000
-Subject: Re: [PATCH v2] phy: Renesas R-Car Gen2 PHY driver
-Message-Id: <5347DBB4.3070401@cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 14 Apr 2014 18:33:14 +0000
+Subject: [PATCH v2 3/6] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
+Message-Id: <1397500397-12607-4-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404090144.26769.sergei.shtylyov@cogentembedded.com> <53466C07.4080409@ti.com> <5346F6B6.8000901@cogentembedded.com>
-In-Reply-To: <5346F6B6.8000901@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kishon Vijay Abraham I <kishon@ti.com>, devicetree@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, linux-doc@vger.kernel.org, rdunlap@infradead.org, grant.likely@linaro.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 10-04-2014 23:53, Sergei Shtylyov wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - No changes
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
->> On Wednesday 09 April 2014 03:14 AM, Sergei Shtylyov wrote:
->>> This PHY, though formally being a part of Renesas USBHS controller,
->>> contains the
->>> UGCTRL2 register that controls multiplexing of the USB ports (Renesas calls
->>> them
->>> channels) to the different USB controllers: channel 0 can be connected to
->>> either
->>> PCI EHCI/OHCI or USBHS controllers, channel 2 can be connected to PCI
->>> EHCI/OHCI
->>> or xHCI controllers.
-
->>> This is a new driver for this USB PHY currently already supported under
->>> drivers/
->>> usb/phy/. The reason for writing the new driver was the requirement that the
->>> multiplexing of USB channels to the controller be dynamic, depending on what
->>> USB drivers are loaded,  rather than static as provided by the old driver.
-
-[...]
-
->>> The infrastructure provided by drivers/phy/phy-core.c seems to fit that
->>> purpose
->>> ideally. The new driver only supports device tree probing for now.
-
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-[...]
-
->>> Index: linux-phy/drivers/phy/phy-rcar-gen2.c
->>> =================================>>> --- /dev/null
->>> +++ linux-phy/drivers/phy/phy-rcar-gen2.c
->>> @@ -0,0 +1,287 @@
-
-[...]
-
->>> +static struct phy_ops rcar_gen2_phy_ops = {
->>> +    .init        = rcar_gen2_phy_init,
->>> +    .exit        = rcar_gen2_phy_exit,
->>> +    .owner        = THIS_MODULE,
->>> +};
->>> +
->>> +static struct phy_ops rcar_gen2_usbhs_phy_ops = {
->>> +    .init        = rcar_gen2_phy_init,
->>> +    .exit        = rcar_gen2_phy_exit,
->>> +    .power_on    = rcar_gen2_usbhs_phy_power_on,
->>> +    .power_off    = rcar_gen2_usbhs_phy_power_off,
->>> +    .owner        = THIS_MODULE,
->>> +};
-
->> Let's not create multiple phy_ops for a single driver.
-
->     Unfortunately, I have to because not all PHYs are equal.
-
-    OK, actually I can do without extra 'struct phy_ops'. I just figured that 
-out a bit late...
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d38d70339149..7ff29601f962 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -117,6 +117,7 @@
+ 		gpio-ranges = <&pfc 0 0 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
+ 	};
+ 
+ 	gpio1: gpio@e6051000 {
+@@ -128,6 +129,7 @@
+ 		gpio-ranges = <&pfc 0 32 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
+ 	};
+ 
+ 	gpio2: gpio@e6052000 {
+@@ -139,6 +141,7 @@
+ 		gpio-ranges = <&pfc 0 64 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
+ 	};
+ 
+ 	gpio3: gpio@e6053000 {
+@@ -150,6 +153,7 @@
+ 		gpio-ranges = <&pfc 0 96 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
+ 	};
+ 
+ 	gpio4: gpio@e6054000 {
+@@ -161,6 +165,7 @@
+ 		gpio-ranges = <&pfc 0 128 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
+ 	};
+ 
+ 	gpio5: gpio@e6055000 {
+@@ -172,6 +177,7 @@
+ 		gpio-ranges = <&pfc 0 160 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
+ 	};
+ 
+ 	thermal@e61f0000 {
+@@ -802,14 +808,19 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
+ 				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
++				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
++				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
+ 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
+ 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
+ 			>;
+ 			clock-output-names +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
+ 				"rcan1", "rcan0", "qspi_mod", "iic3",
+ 				"i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+-- 
+1.7.9.5
 
