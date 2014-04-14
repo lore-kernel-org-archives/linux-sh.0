@@ -1,115 +1,63 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:44:50 +0000
-Subject: [PATCH 01/14] ARM: shmobile: Use shmobile_clk_workaround() on Lager
-Message-Id: <e6597e0e19bbabfdd1983dbe79892d8ba210a180.1397774190.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:57:12 +0000
+Subject: [PATCH 5/7] ARM: shmobile: lager: switch to use dai info for R-Car sound
+Message-Id: <87lhv820ey.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397774190.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
+References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, broonie@kernel.org
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Convert the Lager DT reference code to use the newly introduced
-function shmobile_clk_workaround().
+Now, R-Car sound driver supports dai info settings.
+switch to use it
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 65 ++++++++++----------------
- 1 file changed, 25 insertions(+), 40 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c |   17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 440aac3..c76248b 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -18,12 +18,11 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f0104bf..6af09e1 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -567,20 +567,27 @@ static struct resource rsnd_resources[] __initdata = {
+ };
  
--#include <linux/clk.h>
--#include <linux/clkdev.h>
- #include <linux/dma-mapping.h>
- #include <linux/init.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/rcar-gen2.h>
-@@ -86,46 +85,32 @@ static void __init lager_add_du_device(void)
- 	platform_device_register_full(&info);
- }
+ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+-	RSND_SSI_SET(0, 0, gic_spi(370), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, 0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI(0, gic_spi(370), 0),
++	RSND_SSI(0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
+ };
  
-+/*
-+ * This is a really crude hack to provide clkdev support to platform
-+ * devices until they get moved to DT.
-+ */
-+static const struct clk_name clk_names[] = {
-+	{ "cmt0", NULL, "sh_cmt.0" },
-+	{ "scifa0", NULL, "sh-sci.0" },
-+	{ "scifa1", NULL, "sh-sci.1" },
-+	{ "scifb0", NULL, "sh-sci.2" },
-+	{ "scifb1", NULL, "sh-sci.3" },
-+	{ "scifb2", NULL, "sh-sci.4" },
-+	{ "scifa2", NULL, "sh-sci.5" },
-+	{ "scif0", NULL, "sh-sci.6" },
-+	{ "scif1", NULL, "sh-sci.7" },
-+	{ "hscif0", NULL, "sh-sci.8" },
-+	{ "hscif1", NULL, "sh-sci.9" },
-+	{ "du0", "du.0", "rcar-du-r8a7790" },
-+	{ "du1", "du.1", "rcar-du-r8a7790" },
-+	{ "du2", "du.2", "rcar-du-r8a7790" },
-+	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
-+	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+-static struct rsnd_scu_platform_info rsnd_scu[2] = {
++static struct rsnd_src_platform_info rsnd_src[2] = {
+ 	/* no member at this point */
+ };
+ 
++static struct rsnd_dai_platform_info rsnd_dai = {
++	.playback = { .ssi = &rsnd_ssi[0], },
++	.capture  = { .ssi = &rsnd_ssi[1], },
 +};
 +
- static void __init lager_add_standard_devices(void)
- {
--	/*
--	 * This is a really crude hack to provide clkdev support to platform
--	 * devices until they get moved to DT.
--	 */
--	static const struct clk_name {
--		const char *clk;
--		const char *con_id;
--		const char *dev_id;
--	} clk_names[] = {
--		{ "cmt0", NULL, "sh_cmt.0" },
--		{ "scifa0", NULL, "sh-sci.0" },
--		{ "scifa1", NULL, "sh-sci.1" },
--		{ "scifb0", NULL, "sh-sci.2" },
--		{ "scifb1", NULL, "sh-sci.3" },
--		{ "scifb2", NULL, "sh-sci.4" },
--		{ "scifa2", NULL, "sh-sci.5" },
--		{ "scif0", NULL, "sh-sci.6" },
--		{ "scif1", NULL, "sh-sci.7" },
--		{ "hscif0", NULL, "sh-sci.8" },
--		{ "hscif1", NULL, "sh-sci.9" },
--		{ "du0", "du.0", "rcar-du-r8a7790" },
--		{ "du1", "du.1", "rcar-du-r8a7790" },
--		{ "du2", "du.2", "rcar-du-r8a7790" },
--		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
--		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
--	};
--	struct clk *clk;
--	unsigned int i;
--
--	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
--		clk = clk_get(NULL, clk_names[i].clk);
--		if (!IS_ERR(clk)) {
--			clk_register_clkdev(clk, clk_names[i].con_id,
--					    clk_names[i].dev_id);
--			clk_put(clk);
--		}
--	}
--
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ static struct rcar_snd_info rsnd_info = {
+ 	.flags		= RSND_GEN2,
+ 	.ssi_info	= rsnd_ssi,
+ 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
+-	.scu_info	= rsnd_scu,
+-	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
++	.src_info	= rsnd_src,
++	.src_info_nr	= ARRAY_SIZE(rsnd_src),
++	.dai_info	= &rsnd_dai,
++	.dai_info_nr	= 1,
+ };
  
+ static struct asoc_simple_card_info rsnd_card_info = {
 -- 
-1.8.4
+1.7.9.5
 
