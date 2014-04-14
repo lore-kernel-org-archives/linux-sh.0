@@ -1,154 +1,259 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 23 Apr 2014 13:50:29 +0000
-Subject: Re: [RFC] ARM: shmobile: minimal r8a7740 common clock framework implementation
-Message-Id: <2530393.CCOP17CNyz@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 21:35:05 +0000
+Subject: [PATCH v2 2/9] ARM: shmobile: r8a7790: add dma defines for sys and audio dmacs
+Message-Id: <1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397041484-12552-1-git-send-email-ulrich.hecht@gmail.com>
-In-Reply-To: <1397041484-12552-1-git-send-email-ulrich.hecht@gmail.com>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Hi Ulrich,
+Add the DMA resource IDs for the R8A7790 Audio and SYS DMA controllers
+for use when specifying DMA handles.
 
-On Tuesday 22 April 2014 15:19:15 Ulrich Hecht wrote:
-> Hi!
-> 
-> On Wed, Apr 9, 2014 at 3:30 PM, Laurent Pinchart wrote:
-> > Thank you for the patch.
-> 
-> And thank you for your insights.
-> 
-> > Given that the goal is to get rid of arch/arm/mach-* at some point, I
-> > believe it would make sense to drop r8a7740_clocks_init()
-> 
-> Further research has revealed that the mode bits of the r8a7740 cannot
-> be read from the inside at all,
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ include/dt-bindings/dma/r8a7790-dma.h | 228 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 228 insertions(+)
+ create mode 100644 include/dt-bindings/dma/r8a7790-dma.h
 
-Ouch. 
-
-> so we have to hardcode it in the board file anyway, making
-> r8a7740_clocks_init() unnecessary.
-
-I've been wondering whether the driver couldn't be doing without knowledge of 
-the mode pins at all. MD_CK1 seems to be needed, but let me share my reasoning 
-in case I've missed something that would allow the driver to operate without 
-knowing the MD_CK1 value.
-
-MD_CK0 selects whether the board uses a direct clock input or a crystal 
-oscillator. It only controls a multiplexer that routes the XTAL1 pin or the 
-crystal oscillation circuit output (connected to the XTAL1 and EXTAL1 pins) to 
-the system clock. It thus has no influence on the system clock frequency or 
-parent, and isn't needed by the CPG driver (your patch set doesn't use the 
-bit).
-
-MD_CK2 selects whether the R clock is derived from the system clock or from 
-the optional clock source connected to the EXTALR input. We could control the 
-R clock parent based on the fact that the CPG DT node has or has no EXTALR 
-clock parent specified.
-
-MD_CK1 controls the XTAL1 /2 divisor. When using the restricted external clock 
-frequency range, the XTAL1 frequency must be between 24MHz and 26.67MHz for 
-MD_CK1 = 0 (no division), and between 48 MHz and 50 MHz for MD_CK1 = 1 (divide 
-by 2). We could thus infer the MD_CK1 settings based on the external clock 
-frequency. However, when using the full external clock frequency ranges, 
-that's not possible anymore as the ranges overlap. I thus don't see a good way 
-to avoid explicit knowledge of MD_CK1, but I might have overlooked something.
-
-> > The extal1_clk frequency is board-dependent, I would specify it in DT
-> > board files instead. I think (but might be wrong) that extal2 is optional.
-> > In that case maybe we should set the frequency to 0 here and overwrite it
-> > in DT board files for boards that supply the clock.
-> 
-> OK.
-> 
-> > The SUB divider actually supplies two clocks, sub1 and sub2, that have the
-> > same frequency but can be individually enabled/disabled.
-> 
-> I guess those can be treated like MSTP clocks, with sub as the parent.
-> I suppose there should be a generic "gated clock"...
-
-There's a clk-gate driver that exports a clk_register_gate() function, you can 
-use it in the SUB clock driver.
-
-> > Other clocks that you don't support yet share that characteristic, and
-> > even have sub-dividers (for the HDMI clocks instead).
-> 
-> The HDMI clocks actually seem to be the only ones with that feature,
-> so I'd hide them in cpg_clocks together with the other weirdo stuff.
-> (There seem to be a lot of clocks on other SoCs as well that vaguely
-> resemble DIV6 clocks, but are not really compatible in a manner useful
-> for abstraction.)
-
-Yes, there's lot of small differences that make implementations more painful 
-than they should be :-/ It's not a huge issue though, just a shame that we 
-can't share more code.
-
-> > The sub clocks also have a selectable parent. Have you thought about how
-> > you would like to implement that ?
-> 
-> That'll be dealt with by the "renesas,src-shift" and
-> "renesas,src-width" properties.
-> 
-> > This should be R8A7740_CLK_CMT1.
-> 
-> OK.
-> 
-> >> +#include <linux/math64.h>
-> > 
-> > I don't think this header is needed.
-> 
-> No, it isn't.
-> 
-> >> +#include <linux/of.h>
-> >> +#include <linux/of_address.h>
-> >> +#include <linux/spinlock.h>
-> >> +#include <mach/r8a7740.h>
-> > 
-> > If I'm not mistaken you're including mach/r8a7740.h for the MD_CK*
-> > definitions only. As we're trying to get rid of the mach/ headers, what
-> > about using BIT() directly instead ?
-> 
-> OK.
-> 
-> >> +             u32 value = clk_readl(cpg->reg + CPG_FRQCRC);
-> >> +             parent_name = "system";
-> >> +             mult = ((value >> 24) & 0x7f) + 1;
-> > 
-> > STC is a 6-bits field if I'm not mistaken, the mask should thus be 0x3f.
-> 
-> My docs say that as well, but the legacy clock code doesn't agree, and
-> neither does reality: When I set the mask to 0x3f, the clocks are
-> wrong and the serial console prints a lot of garbage, so I'll leave it
-> as is.
-
-Is bit 30 set then ? What about bit 31 ?
-
-> >> +     cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-> >> +     clks = kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
-> >> +     if (cpg = NULL || clks = NULL) {
-> >> +             /* We're leaking memory on purpose, there's no point in
-> >> cleaning
-> >> +              * up as the system won't boot anyway.
-> >> +              */
-> >> +             pr_err("%s: failed to allocate cpg\n", __func__);
-> > 
-> > kzalloc() prints an OOM message on error, there's no need to duplicate it
-> > here.
-> 
-> OK.
-> 
-> >> +/* MSTP4 */
-> >> +#define R8A7740_CLK_USBHOST  16
-> > 
-> > Should we call this USBH to match the datasheet ?
-> 
-> I'm not particular. :)
-> 
-> I'll post an updated patch next.
-
+diff --git a/include/dt-bindings/dma/r8a7790-dma.h b/include/dt-bindings/dma/r8a7790-dma.h
+new file mode 100644
+index 0000000..732422a
+--- /dev/null
++++ b/include/dt-bindings/dma/r8a7790-dma.h
+@@ -0,0 +1,228 @@
++/*
++ * R8A7790 System and Audio DMA channel resource identifiers
++ *
++ * Copyirght (c) 2014 Codethink Ltd.
++ *	Ben Dooks <ben.dooks@codethink.co.uk>
++ *
++ * Licensed under GPLv2
++*/
++
++/* System DMAC */
++
++#define R8A7790_DMA_SCIFA0_TX	(0x21)
++#define R8A7790_DMA_SCIFA0_RX	(0x22)
++#define R8A7790_DMA_SCIFA1_TX	(0x25)
++#define R8A7790_DMA_SCIFA1_RX	(0x26)
++#define R8A7790_DMA_SCIFA2_TX	(0x27)
++#define R8A7790_DMA_SCIFA2_RX	(0x28)
++
++#define R8A7790_DMA_SCIFB0_TX	(0x3D)
++#define R8A7790_DMA_SCIFB0_RX	(0x3E)
++#define R8A7790_DMA_SCIFB1_TX	(0x19)
++#define R8A7790_DMA_SCIFB1_RX	(0x1A)
++#define R8A7790_DMA_SCIFB2_TX	(0x1D)
++#define R8A7790_DMA_SCIFB2_RX	(0x1E)
++
++#define R8A7790_DMA_HSCIF0_TX	(0x39)
++#define R8A7790_DMA_HSCIF0_RX	(0x3A)
++#define R8A7790_DMA_HSCIF1_TX	(0x4D)
++#define R8A7790_DMA_HSCIF1_RX	(0x4E)
++
++#define R8A7790_DMA_SCIF0_TX	(0x29)
++#define R8A7790_DMA_SCIF0_RX	(0x2A)
++#define R8A7790_DMA_SCIF1_TX	(0x2D)
++#define R8A7790_DMA_SCIF1_RX	(0x2E)
++
++#define R8A7790_DMA_MSIOF0_TX	(0x81)
++#define R8A7790_DMA_MSIOF0_RX	(0x82)
++#define R8A7790_DMA_MSIOF1_TX	(0x85)
++#define R8A7790_DMA_MSIOF1_RX	(0x86)
++#define R8A7790_DMA_MSIOF2_TX	(0x41)
++#define R8A7790_DMA_MSIOF2_RX	(0x42)
++#define R8A7790_DMA_MSIOF3_TX	(0x45)
++#define R8A7790_DMA_MSIOF3_RX	(0x46)
++
++#define R8A7790_DMA_QSPI_TX	(0x17)
++#define R8A7790_DMA_QSPI_RX	(0x18)
++
++#define R8A7790_DMA_SIM_TX	(0xA1)
++#define R8A7790_DMA_SIM_RX	(0xA2)
++
++#define R8A7790_DMA_IIC0_TX	(0x61)
++#define R8A7790_DMA_IIC0_RX	(0x62)
++#define R8A7790_DMA_IIC1_TX	(0x65)
++#define R8A7790_DMA_IIC1_RX	(0x66)
++#define R8A7790_DMA_IIC2_TX	(0x69)
++#define R8A7790_DMA_IIC2_RX	(0x6A)
++#define R8A7790_DMA_IIC3_TX	(0x77)
++#define R8A7790_DMA_IIC3_RX	(0x78)
++
++#define R8A7790_DMA_SDHI0_TX	(0xCD)
++#define R8A7790_DMA_SDHI0_RX	(0xCE)
++#define R8A7790_DMA_SDHI1_TX	(0xC9)
++#define R8A7790_DMA_SDHI1_RX	(0xCA)
++#define R8A7790_DMA_SDHI2_TX	(0xC1)
++#define R8A7790_DMA_SDHI2_RX	(0xC2)
++#define R8A7790_DMA_SDHI2C2_TX	(0xC5)
++#define R8A7790_DMA_SDHI2C2_RX	(0xC6)
++#define R8A7790_DMA_SDHI3_TX	(0xD3)
++#define R8A7790_DMA_SDHI3_RX	(0xD4)
++#define R8A7790_DMA_SDHI3C2_TX	(0xDF)
++#define R8A7790_DMA_SDHI3C2_RX	(0xDE)
++
++#define R8A7790_DMA_TPU0	(0xF1)
++#define R8A7790_DMA_TSIF0	(0xEA)
++#define R8A7790_DMA_TSIF1	(0xF0)
++
++#define R8A7790_DMA_AXISTATR	(0xA6)
++#define R8A7790_DMA_AXISTATS0	(0xAC)
++#define R8A7790_DMA_AXISTATS1	(0xAA)
++#define R8A7790_DMA_AXISTATS2	(0xA8)
++#define R8A7790_DMA_AXISTATS3	(0xA4)
++
++#define R8A7790_DMA_MMCIF0_TX	(0xD1)
++#define R8A7790_DMA_MMCIF0_RX	(0xD2)
++#define R8A7790_DMA_MMCIF1_TX	(0xE1)
++#define R8A7790_DMA_MMCIF1_RX	(0xE2)
++
++/* Audio DMAC */
++
++#define R8A7790_DMA_DTCPC0_TX	(0xD7)
++#define R8A7790_DMA_DTCPC0_RX	(0xD8)
++#define R8A7790_DMA_DTCPC1_TX	(0xD9)
++#define R8A7790_DMA_DTCPC1_RX	(0xDA)
++#define R8A7790_DMA_DTCPP0_TX	(0xBF)
++#define R8A7790_DMA_DTCPP0_RX	(0xC0)
++#define R8A7790_DMA_DTCPP1_TX	(0xD5)
++#define R8A7790_DMA_DTCPP1_RX	(0xD6)
++
++#define R8A7790_DMA_MLM0_TX	(0xDB)
++#define R8A7790_DMA_MLM0_RX	(0xDC)
++#define R8A7790_DMA_MLM1_TX	(0xE3)
++#define R8A7790_DMA_MLM1_RX	(0xE4)
++#define R8A7790_DMA_MLM2_TX	(0xE5)
++#define R8A7790_DMA_MLM2_RX	(0xE6)
++#define R8A7790_DMA_MLM3_TX	(0xE7)
++#define R8A7790_DMA_MLM3_RX	(0xE8)
++#define R8A7790_DMA_MLM4_TX	(0xF3)
++#define R8A7790_DMA_MLM4_RX	(0xF4)
++#define R8A7790_DMA_MLM5_TX	(0xF5)
++#define R8A7790_DMA_MLM5_RX	(0xF6)
++#define R8A7790_DMA_MLM6_TX	(0xF7)
++#define R8A7790_DMA_MLM6_RX	(0xF8)
++#define R8A7790_DMA_MLM7_TX	(0xF9)
++#define R8A7790_DMA_MLM7_RX	(0xFA)
++
++#define R8A7790_DMA_SCU0	(0x85)
++#define R8A7790_DMA_SCU1	(0x87)
++#define R8A7790_DMA_SCU2	(0x89)
++#define R8A7790_DMA_SCU3	(0x8B)
++#define R8A7790_DMA_SCU4	(0x8D)
++#define R8A7790_DMA_SCU5	(0x8F)
++#define R8A7790_DMA_SCU6	(0x91)
++#define R8A7790_DMA_SCU7	(0x93)
++#define R8A7790_DMA_SCU8	(0x95)
++#define R8A7790_DMA_SCU9	(0x97)
++
++#define R8A7790_DMA_SCUCMD0	(0xBC)
++#define R8A7790_DMA_SCUCMD1	(0xBE)
++
++#define R8A7790_DMA_SCUOUT0	(0x9A)
++#define R8A7790_DMA_SCUOUT1	(0x9C)
++#define R8A7790_DMA_SCUOUT2	(0x9E)
++#define R8A7790_DMA_SCUOUT3	(0xA0)
++#define R8A7790_DMA_SCUOUT4	(0xB0)
++#define R8A7790_DMA_SCUOUT5	(0xB2)
++#define R8A7790_DMA_SCUOUT6	(0xB4)
++#define R8A7790_DMA_SCUOUT7	(0xB6)
++#define R8A7790_DMA_SCUOUT8	(0xB8)
++#define R8A7790_DMA_SCUOUT9	(0xBA)
++
++#define R8A7790_DMA_SSCI00_TX	(0x15)
++#define R8A7790_DMA_SSCI00_RX	(0x16)
++#define R8A7790_DMA_SSCI01_TX	(0x35)
++#define R8A7790_DMA_SSCI01_RX	(0x36)
++#define R8A7790_DMA_SSCI02_TX	(0x37)
++#define R8A7790_DMA_SSCI02_RX	(0x38)
++#define R8A7790_DMA_SSCI03_TX	(0x47)
++#define R8A7790_DMA_SSCI03_RX	(0x48)
++
++#define R8A7790_DMA_SSCI10_TX	(0x49)
++#define R8A7790_DMA_SSCI10_RX	(0x4A)
++#define R8A7790_DMA_SSCI11_TX	(0x4B)
++#define R8A7790_DMA_SSCI11_RX	(0x4C)
++#define R8A7790_DMA_SSCI12_TX	(0x57)
++#define R8A7790_DMA_SSCI12_RX	(0x58)
++#define R8A7790_DMA_SSCI13_TX	(0x59)
++#define R8A7790_DMA_SSCI13_RX	(0x5A)
++
++#define R8A7790_DMA_SSCI20_TX	(0x63)
++#define R8A7790_DMA_SSCI20_RX	(0x64)
++#define R8A7790_DMA_SSCI21_TX	(0x67)
++#define R8A7790_DMA_SSCI21_RX	(0x68)
++#define R8A7790_DMA_SSCI22_TX	(0x6B)
++#define R8A7790_DMA_SSCI22_RX	(0x6C)
++#define R8A7790_DMA_SSCI23_TX	(0x6D)
++#define R8A7790_DMA_SSCI23_RX	(0x6E)
++
++#define R8A7790_DMA_SSCI20_TX	(0x63)
++#define R8A7790_DMA_SSCI20_RX	(0x64)
++#define R8A7790_DMA_SSCI21_TX	(0x67)
++#define R8A7790_DMA_SSCI21_RX	(0x68)
++#define R8A7790_DMA_SSCI22_TX	(0x6B)
++#define R8A7790_DMA_SSCI22_RX	(0x6C)
++#define R8A7790_DMA_SSCI23_TX	(0x6D)
++#define R8A7790_DMA_SSCI23_RX	(0x6E)
++
++#define R8A7790_DMA_SSCI3_TX	(0x6F)
++#define R8A7790_DMA_SSCI3_RX	(0x70)
++
++#define R8A7790_DMA_SSCI4_TX	(0x71)
++#define R8A7790_DMA_SSCI4_RX	(0x72)
++
++#define R8A7790_DMA_SSCI5_TX	(0x73)
++#define R8A7790_DMA_SSCI5_RX	(0x74)
++
++#define R8A7790_DMA_SSCI6_TX	(0x75)
++#define R8A7790_DMA_SSCI6_RX	(0x76)
++
++#define R8A7790_DMA_SSCI7_TX	(0x79)
++#define R8A7790_DMA_SSCI7_RX	(0x7A)
++
++#define R8A7790_DMA_SSCI8_TX	(0x7B)
++#define R8A7790_DMA_SSCI8_RX	(0x7C)
++
++#define R8A7790_DMA_SSCI90_TX	(0x7D)
++#define R8A7790_DMA_SSCI90_RX	(0x7E)
++#define R8A7790_DMA_SSCI91_TX	(0x7F)
++#define R8A7790_DMA_SSCI91_RX	(0x80)
++#define R8A7790_DMA_SSCI92_TX	(0x81)
++#define R8A7790_DMA_SSCI92_RX	(0x82)
++#define R8A7790_DMA_SSCI93_TX	(0x83)
++#define R8A7790_DMA_SSCI93_RX	(0x84)
++
++#define R8A7790_DMA_SSIND0_TX	(0x01)
++#define R8A7790_DMA_SSIND0_RX	(0x02)
++#define R8A7790_DMA_SSIND1_TX	(0x03)
++#define R8A7790_DMA_SSIND1_RX	(0x04)
++#define R8A7790_DMA_SSIND2_TX	(0x05)
++#define R8A7790_DMA_SSIND2_RX	(0x06)
++#define R8A7790_DMA_SSIND3_TX	(0x07)
++#define R8A7790_DMA_SSIND3_RX	(0x08)
++#define R8A7790_DMA_SSIND4_TX	(0x09)
++#define R8A7790_DMA_SSIND4_RX	(0x0A)
++#define R8A7790_DMA_SSIND5_TX	(0x0B)
++#define R8A7790_DMA_SSIND5_RX	(0x0C)
++#define R8A7790_DMA_SSIND6_TX	(0x0D)
++#define R8A7790_DMA_SSIND6_RX	(0x0E)
++#define R8A7790_DMA_SSIND7_TX	(0x0F)
++#define R8A7790_DMA_SSIND7_RX	(0x10)
++#define R8A7790_DMA_SSIND8_TX	(0x11)
++#define R8A7790_DMA_SSIND8_RX	(0x12)
++#define R8A7790_DMA_SSIND9_TX	(0x13)
++#define R8A7790_DMA_SSIND9_RX	(0x14)
++
++#define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
++#define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
++#define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
++#define CHCR_TX_256BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
 -- 
-Regards,
+1.9.1
 
-Laurent Pinchart
