@@ -1,436 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 14 Apr 2014 00:57:27 +0000
-Subject: [PATCH 7/7] ASoC: rsnd: remove compatibility code
-Message-Id: <87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 14 Apr 2014 19:03:27 +0000
+Subject: Re: [PATCH 7/7] ASoC: rsnd: remove compatibility code
+Message-Id: <20140414190327.GE25182@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="CGDBiGfvSTbxKZlW"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, broonie@kernel.org
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
+ <87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Now, all platform is using new style rsnd_dai_platform_info.
-Keeping compatibility is no longer needed.
-We can cleanup code.
+--CGDBiGfvSTbxKZlW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- include/sound/rcar_snd.h |   22 ++-------------
- sound/soc/sh/rcar/core.c |   54 ++++++++----------------------------
- sound/soc/sh/rcar/rsnd.h |    3 --
- sound/soc/sh/rcar/src.c  |   69 ++++++++++++++--------------------------------
- sound/soc/sh/rcar/ssi.c  |   51 +---------------------------------
- 5 files changed, 36 insertions(+), 163 deletions(-)
+On Sun, Apr 13, 2014 at 05:57:27PM -0700, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>=20
+> Now, all platform is using new style rsnd_dai_platform_info.
+> Keeping compatibility is no longer needed.
+> We can cleanup code.
 
-diff --git a/include/sound/rcar_snd.h b/include/sound/rcar_snd.h
-index 34a3c02..a03268e 100644
---- a/include/sound/rcar_snd.h
-+++ b/include/sound/rcar_snd.h
-@@ -34,40 +34,24 @@
-  * B : SSI direction
-  */
- #define RSND_SSI_CLK_PIN_SHARE		(1 << 31)
--#define RSND_SSI_PLAY			(1 << 24)
- 
- #define RSND_SSI(_dma_id, _pio_irq, _flags)		\
- { .dma_id = _dma_id, .pio_irq = _pio_irq, .flags = _flags }
--#define RSND_SSI_SET(_dai_id, _dma_id, _pio_irq, _flags)	\
--{ .dai_id = _dai_id, .dma_id = _dma_id, .pio_irq = _pio_irq, .flags = _flags }
- #define RSND_SSI_UNUSED \
--{ .dai_id = -1, .dma_id = -1, .pio_irq = -1, .flags = 0 }
-+{ .dma_id = -1, .pio_irq = -1, .flags = 0 }
- 
- struct rsnd_ssi_platform_info {
--	int dai_id;	/* will be removed */
- 	int dma_id;
- 	int pio_irq;
- 	u32 flags;
- };
- 
--/*
-- * flags
-- */
--#define RSND_SCU_USE_HPBIF		(1 << 31) /* it needs RSND_SSI_DEPENDENT */
--
- #define RSND_SRC(rate, _dma_id)						\
--{ .flags = RSND_SCU_USE_HPBIF, .convert_rate = rate, .dma_id = _dma_id, }
--#define RSND_SRC_SET(rate, _dma_id)		\
--	{ .flags = RSND_SCU_USE_HPBIF, .convert_rate = rate, .dma_id = _dma_id, }
-+{ .convert_rate = rate, .dma_id = _dma_id, }
- #define RSND_SRC_UNUSED				\
--	{ .flags = 0, .convert_rate = 0, .dma_id = 0, }
--
--#define rsnd_scu_platform_info	rsnd_src_platform_info
--#define src_info		scu_info
--#define src_info_nr		scu_info_nr
-+{ .convert_rate = 0, .dma_id = -1, }
- 
- struct rsnd_src_platform_info {
--	u32 flags;
- 	u32 convert_rate; /* sampling rate convert */
- 	int dma_id; /* for Gen2 SCU */
- };
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 215b668..8ed8470 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -468,10 +468,7 @@ static int rsnd_soc_dai_trigger(struct snd_pcm_substream *substream, int cmd,
- 	struct rsnd_priv *priv = snd_soc_dai_get_drvdata(dai);
- 	struct rsnd_dai *rdai = rsnd_dai_to_rdai(dai);
- 	struct rsnd_dai_stream *io = rsnd_rdai_to_io(rdai, substream);
--	struct rsnd_mod *mod = rsnd_ssi_mod_get_frm_dai(priv,
--						rsnd_dai_id(priv, rdai),
--						rsnd_dai_is_play(rdai, io));
--	int ssi_id = rsnd_mod_id(mod);
-+	int ssi_id = rsnd_mod_id(rsnd_io_to_mod_ssi(io));
- 	int ret;
- 	unsigned long flags;
- 
-@@ -584,7 +581,6 @@ static int rsnd_path_init(struct rsnd_priv *priv,
- 			  struct rsnd_dai_stream *io)
- {
- 	struct rsnd_mod *mod;
--	struct rsnd_dai_platform_info *dai_info = rdai->info;
- 	int ret;
- 	int ssi_id = -1;
- 	int src_id = -1;
-@@ -599,20 +595,10 @@ static int rsnd_path_init(struct rsnd_priv *priv,
- 	 * Gen2 SCU path is very flexible, but, Gen1 SRU (SCU parts) is
- 	 * using fixed path.
- 	 */
--	if (dai_info) {
--		if (rsnd_is_enable_path(io, ssi))
--			ssi_id = rsnd_info_id(priv, io, ssi);
--		if (rsnd_is_enable_path(io, src))
--			src_id = rsnd_info_id(priv, io, src);
--	} else {
--		/* get SSI's ID */
--		mod = rsnd_ssi_mod_get_frm_dai(priv,
--					       rsnd_dai_id(priv, rdai),
--					       rsnd_dai_is_play(rdai, io));
--		if (!mod)
--			return 0;
--		ssi_id = src_id = rsnd_mod_id(mod);
--	}
-+	if (rsnd_is_enable_path(io, ssi))
-+		ssi_id = rsnd_info_id(priv, io, ssi);
-+	if (rsnd_is_enable_path(io, src))
-+		src_id = rsnd_info_id(priv, io, src);
- 
- 	ret = 0;
- 
-@@ -726,30 +712,15 @@ static int rsnd_dai_probe(struct platform_device *pdev,
- 	struct snd_soc_dai_driver *drv;
- 	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
- 	struct rsnd_dai *rdai;
--	struct rsnd_mod *pmod, *cmod;
-+	struct rsnd_ssi_platform_info *pmod, *cmod;
- 	struct device *dev = rsnd_priv_to_dev(priv);
- 	int dai_nr;
- 	int i;
- 
- 	rsnd_of_parse_dai(pdev, of_data, priv);
- 
--	/*
--	 * dai_nr should be set via dai_info_nr,
--	 * but allow it to keeping compatible
--	 */
- 	dai_nr = info->dai_info_nr;
- 	if (!dai_nr) {
--		/* get max dai nr */
--		for (dai_nr = 0; dai_nr < 32; dai_nr++) {
--			pmod = rsnd_ssi_mod_get_frm_dai(priv, dai_nr, 1);
--			cmod = rsnd_ssi_mod_get_frm_dai(priv, dai_nr, 0);
--
--			if (!pmod && !cmod)
--				break;
--		}
--	}
--
--	if (!dai_nr) {
- 		dev_err(dev, "no dai\n");
- 		return -EIO;
- 	}
-@@ -766,11 +737,10 @@ static int rsnd_dai_probe(struct platform_device *pdev,
- 	priv->rdai	= rdai;
- 
- 	for (i = 0; i < dai_nr; i++) {
--		if (info->dai_info)
--			rdai[i].info = &info->dai_info[i];
-+		rdai[i].info = &info->dai_info[i];
- 
--		pmod = rsnd_ssi_mod_get_frm_dai(priv, i, 1);
--		cmod = rsnd_ssi_mod_get_frm_dai(priv, i, 0);
-+		pmod = rdai[i].info->playback.ssi;
-+		cmod = rdai[i].info->capture.ssi;
- 
- 		/*
- 		 *	init rsnd_dai
-@@ -788,8 +758,7 @@ static int rsnd_dai_probe(struct platform_device *pdev,
- 			drv[i].playback.channels_min	= 2;
- 			drv[i].playback.channels_max	= 2;
- 
--			if (info->dai_info)
--				rdai[i].playback.info = &info->dai_info[i].playback;
-+			rdai[i].playback.info = &info->dai_info[i].playback;
- 			rsnd_path_init(priv, &rdai[i], &rdai[i].playback);
- 		}
- 		if (cmod) {
-@@ -798,8 +767,7 @@ static int rsnd_dai_probe(struct platform_device *pdev,
- 			drv[i].capture.channels_min	= 2;
- 			drv[i].capture.channels_max	= 2;
- 
--			if (info->dai_info)
--				rdai[i].capture.info = &info->dai_info[i].capture;
-+			rdai[i].capture.info = &info->dai_info[i].capture;
- 			rsnd_path_init(priv, &rdai[i], &rdai[i].capture);
- 		}
- 
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index 619d198..061b04c 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -379,9 +379,6 @@ int rsnd_ssi_probe(struct platform_device *pdev,
- 		   const struct rsnd_of_data *of_data,
- 		   struct rsnd_priv *priv);
- struct rsnd_mod *rsnd_ssi_mod_get(struct rsnd_priv *priv, int id);
--struct rsnd_mod *rsnd_ssi_mod_get_frm_dai(struct rsnd_priv *priv,
--					  int dai_id, int is_play);
- int rsnd_ssi_is_pin_sharing(struct rsnd_mod *mod);
--int rsnd_ssi_is_play(struct rsnd_mod *mod);
- 
- #endif
-diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
-index 6232b7d..d51c59b 100644
---- a/sound/soc/sh/rcar/src.c
-+++ b/sound/soc/sh/rcar/src.c
-@@ -27,12 +27,9 @@ struct rsnd_src {
- #define OTBL_18		(6 << 16)
- #define OTBL_16		(8 << 16)
- 
--#define rsnd_src_mode_flags(p) ((p)->info->flags)
- #define rsnd_src_convert_rate(p) ((p)->info->convert_rate)
- #define rsnd_mod_to_src(_mod)				\
- 	container_of((_mod), struct rsnd_src, mod)
--#define rsnd_src_hpbif_is_enable(src)	\
--	(rsnd_src_mode_flags(src) & RSND_SCU_USE_HPBIF)
- #define rsnd_src_dma_available(src) \
- 	rsnd_dma_available(rsnd_mod_to_dma(&(src)->mod))
- 
-@@ -80,34 +77,35 @@ struct rsnd_src {
-  *
-  * This driver request
-  * struct rsnd_src_platform_info {
-- *	u32 flags;
-  *	u32 convert_rate;
-+ *	int dma_id;
-  * }
-  *
-- * rsnd_src_hpbif_is_enable() will be true
-- * if flags had RSND_SRC_USE_HPBIF,
-- * and it controls whether SSIU is used or not.
-- *
-  * rsnd_src_convert_rate() indicates
-  * above convert_rate, and it controls
-  * whether SRC is used or not.
-  *
-  * ex) doesn't use SRC
-- * struct rsnd_src_platform_info info = {
-- *	.flags = 0,
-- *	.convert_rate = 0,
-+ * static struct rsnd_dai_platform_info rsnd_dai = {
-+ *	.playback = { .ssi = &rsnd_ssi[0], },
-  * };
-  *
-  * ex) uses SRC
-- * struct rsnd_src_platform_info info = {
-- *	.flags = RSND_SRC_USE_HPBIF,
-- *	.convert_rate = 48000,
-+ * static struct rsnd_src_platform_info rsnd_src[] = {
-+ *	RSND_SCU(48000, 0),
-+ *	...
-+ * };
-+ * static struct rsnd_dai_platform_info rsnd_dai = {
-+ *	.playback = { .ssi = &rsnd_ssi[0], .src = &rsnd_src[0] },
-  * };
-  *
-  * ex) uses SRC bypass mode
-- * struct rsnd_src_platform_info info = {
-- *	.flags = RSND_SRC_USE_HPBIF,
-- *	.convert_rate = 0,
-+ * static struct rsnd_src_platform_info rsnd_src[] = {
-+ *	RSND_SCU(0, 0),
-+ *	...
-+ * };
-+ * static struct rsnd_dai_platform_info rsnd_dai = {
-+ *	.playback = { .ssi = &rsnd_ssi[0], .src = &rsnd_src[0] },
-  * };
-  *
-  */
-@@ -119,24 +117,14 @@ int rsnd_src_ssi_mode_init(struct rsnd_mod *ssi_mod,
- 			   struct rsnd_dai *rdai,
- 			   struct rsnd_dai_stream *io)
- {
--	struct rsnd_priv *priv = rsnd_mod_to_priv(ssi_mod);
- 	struct rsnd_mod *src_mod = rsnd_io_to_mod_src(io);
--	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
- 	int ssi_id = rsnd_mod_id(ssi_mod);
--	int has_src = 0;
- 
- 	/*
- 	 * SSI_MODE0
- 	 */
--	if (info->dai_info) {
--		has_src = !!src_mod;
--	} else {
--		struct rsnd_src *src = rsnd_mod_to_src(src_mod);
--		has_src = rsnd_src_hpbif_is_enable(src);
--	}
--
- 	rsnd_mod_bset(ssi_mod, SSI_MODE0, (1 << ssi_id),
--		      has_src ? 0 : (1 << ssi_id));
-+		      src_mod ? 0 : (1 << ssi_id));
- 
- 	/*
- 	 * SSI_MODE1
-@@ -534,21 +522,13 @@ static int rsnd_src_probe_gen2(struct rsnd_mod *mod,
- 			       struct rsnd_dai_stream *io)
- {
- 	struct rsnd_priv *priv = rsnd_mod_to_priv(mod);
--	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
- 	struct rsnd_src *src = rsnd_mod_to_src(mod);
--	struct rsnd_mod *ssi = rsnd_ssi_mod_get(priv, rsnd_mod_id(mod));
- 	struct device *dev = rsnd_priv_to_dev(priv);
- 	int ret;
--	int is_play;
--
--	if (info->dai_info)
--		is_play = rsnd_info_is_playback(priv, src);
--	else
--		is_play = rsnd_ssi_is_play(ssi);
- 
- 	ret = rsnd_dma_init(priv,
- 			    rsnd_mod_to_dma(mod),
--			    is_play,
-+			    rsnd_info_is_playback(priv, src),
- 			    src->info->dma_id);
- 	if (ret < 0)
- 		dev_err(dev, "SRC DMA failed\n");
-@@ -699,11 +679,6 @@ int rsnd_src_probe(struct platform_device *pdev,
- 		snprintf(name, RSND_SRC_NAME_SIZE, "src.%d", i);
- 
- 		clk = devm_clk_get(dev, name);
--		if (IS_ERR(clk)) {
--			snprintf(name, RSND_SRC_NAME_SIZE, "scu.%d", i);
--			clk = devm_clk_get(dev, name);
--		}
--
- 		if (IS_ERR(clk))
- 			return PTR_ERR(clk);
- 
-@@ -711,12 +686,10 @@ int rsnd_src_probe(struct platform_device *pdev,
- 		src->clk = clk;
- 
- 		ops = &rsnd_src_non_ops;
--		if (rsnd_src_hpbif_is_enable(src)) {
--			if (rsnd_is_gen1(priv))
--				ops = &rsnd_src_gen1_ops;
--			if (rsnd_is_gen2(priv))
--				ops = &rsnd_src_gen2_ops;
--		}
-+		if (rsnd_is_gen1(priv))
-+			ops = &rsnd_src_gen1_ops;
-+		if (rsnd_is_gen2(priv))
-+			ops = &rsnd_src_gen2_ops;
- 
- 		rsnd_mod_init(priv, &src->mod, ops, RSND_MOD_SRC, i);
- 
-diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
-index 4b7e206..77b7b60 100644
---- a/sound/soc/sh/rcar/ssi.c
-+++ b/sound/soc/sh/rcar/ssi.c
-@@ -422,20 +422,13 @@ static int rsnd_ssi_dma_probe(struct rsnd_mod *mod,
- {
- 	struct rsnd_priv *priv = rsnd_mod_to_priv(mod);
- 	struct rsnd_ssi *ssi = rsnd_mod_to_ssi(mod);
--	struct rcar_snd_info *info = rsnd_priv_to_info(priv);
- 	struct device *dev = rsnd_priv_to_dev(priv);
- 	int dma_id = ssi->info->dma_id;
--	int is_play;
- 	int ret;
- 
--	if (info->dai_info)
--		is_play = rsnd_info_is_playback(priv, ssi);
--	else
--		is_play = rsnd_ssi_is_play(&ssi->mod);
--
- 	ret = rsnd_dma_init(
- 		priv, rsnd_mod_to_dma(mod),
--		is_play,
-+		rsnd_info_is_playback(priv, ssi),
- 		dma_id);
- 
- 	if (ret < 0)
-@@ -512,41 +505,6 @@ static struct rsnd_mod_ops rsnd_ssi_non_ops = {
- /*
-  *		ssi mod function
-  */
--struct rsnd_mod *rsnd_ssi_mod_get_frm_dai(struct rsnd_priv *priv,
--					  int dai_id, int is_play)
--{
--	struct rsnd_dai_platform_info *dai_info = NULL;
--	struct rsnd_dai_path_info *path_info = NULL;
--	struct rsnd_ssi_platform_info *target_info = NULL;
--	struct rsnd_ssi *ssi;
--	int i, has_play;
--
--	if (priv->rdai)
--		dai_info = priv->rdai[dai_id].info;
--	if (dai_info)
--		path_info = (is_play) ? &dai_info->playback : &dai_info->capture;
--	if (path_info)
--		target_info = path_info->ssi;
--
--	is_play = !!is_play;
--
--	for_each_rsnd_ssi(ssi, priv, i) {
--		if (target_info = ssi->info)
--			return &ssi->mod;
--
--		/* for compatible */
--		if (rsnd_ssi_dai_id(ssi) != dai_id)
--			continue;
--
--		has_play = rsnd_ssi_is_play(&ssi->mod);
--
--		if (is_play = has_play)
--			return &ssi->mod;
--	}
--
--	return NULL;
--}
--
- struct rsnd_mod *rsnd_ssi_mod_get(struct rsnd_priv *priv, int id)
- {
- 	if (WARN_ON(id < 0 || id >= rsnd_ssi_nr(priv)))
-@@ -562,13 +520,6 @@ int rsnd_ssi_is_pin_sharing(struct rsnd_mod *mod)
- 	return !!(rsnd_ssi_mode_flags(ssi) & RSND_SSI_CLK_PIN_SHARE);
- }
- 
--int rsnd_ssi_is_play(struct rsnd_mod *mod)
--{
--	struct rsnd_ssi *ssi = rsnd_mod_to_ssi(mod);
--
--	return !!(rsnd_ssi_mode_flags(ssi) & RSND_SSI_PLAY);
--}
--
- static void rsnd_ssi_parent_clk_setup(struct rsnd_priv *priv, struct rsnd_ssi *ssi)
- {
- 	if (!rsnd_ssi_is_pin_sharing(&ssi->mod))
--- 
-1.7.9.5
+This and the previous patch both look good.
 
+--CGDBiGfvSTbxKZlW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTTDD8AAoJELSic+t+oim9sI4QAIDgAaBP23UvyxIGo5U2c1Rc
+8u5CbCH3Z6u4EwtNRCT/hhaW3DABTEMfXHbtZnffdhtBYK/htd59dPiCZgontAwq
+iKvbAdMmDgSA0JADX2jXc1aVexvL27YhOnDv/W7kZ5qb+9hGC0cqfHnxrMR7Q5rR
+Jv+F1ZGbJqpXKeHNn4aZJMqwDrO2orBk5FKgDxnaweFbRerd41DAY3k5YBEEXfy1
+G5TSCq58RMlcnQh6g/orpxj07KtWXvrBPIgWhhHp0Lj2P7eJe5a+YakZNohkZtWp
+jk6ek/TzrTOcHML+RnndklH8zkFX4uVfUSZ4EKPkAsATwe8xqrbgj9pwU2sGL5H6
+caB21T7kGBkiRtSZKFkPiGkK13lNu0tHbfQ+fbC8ICblmVXp7Sb1ES8g4/nAxNJC
+0cE4aJ2Xo4q23zVosIAvyzHLSywxRrLoKYo6m1fQC2H3cfrpRyE2kVWCyk0mdyuM
+oKPQGSnHGtgD7ktGSuLqGqhcNwHgz1CPsdSlCF/GkMDlpCJjWVT5uCJ0rtrexFGQ
+o8Zb7CZGXZFhmVyHqt72JuByh5cKTZq8+TVKajxcFOL/boylVPJwdzadaAKA/hY8
+gYPF1+2Venb2VhLV8SHRPHujjAkp7lGg3HzTpvVth2I8iJL66BHBEYPwjmj60zb9
+CwRGSHLLIQeU5e/bD39C
+=lJRI
+-----END PGP SIGNATURE-----
+
+--CGDBiGfvSTbxKZlW--
