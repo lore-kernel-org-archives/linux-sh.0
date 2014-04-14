@@ -1,55 +1,67 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Apr 2014 12:48:15 +0000
-Subject: [PATCH 02/02] ARM: shmobile: r8a7790 CCI configuration
-Message-Id: <20140408124815.9773.87441.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:56:42 +0000
+Subject: [PATCH 1/7] ARM: shmobile: r8a7778: remove old style audio clock
+Message-Id: <87r45020fs.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, broonie@kernel.org
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add the settings of CCI-400 for enabling ca15/ca7 snoop on r8a7790.
-Needed to configure the CCI boot cluster port regardless of MCPM.
+Current sound driver moves to new style clock,
+but is keeping compatiblity at this point.
+Move to new style on r8a7778
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/clock-r8a7778.c |   22 +++++++++-------------
+ 1 file changed, 9 insertions(+), 13 deletions(-)
 
- Applies on top of renesas-devel-v3.14-20140408
-
- arch/arm/mach-shmobile/smp-r8a7790.c |   15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-04-08 18:17:48.000000000 +0900
-@@ -28,6 +28,11 @@
- #define CA15RESCNT	0x0040
- #define CA7RESCNT	0x0044
- #define MERAM		0xe8080000
-+#define CCI_BASE	0xf0090000
-+#define CCI_SLAVE3	0x4000
-+#define CCI_SLAVE4	0x5000
-+#define CCI_SNOOP	0x0000
-+#define CCI_STATUS	0x000c
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 2009a9b..201fc48 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -175,10 +175,6 @@ static struct clk mstp_clks[MSTP_NR] = {
  
- static struct rcar_sysc_ch r8a7790_ca15_scu = {
- 	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
-@@ -71,6 +76,16 @@ static void __init r8a7790_smp_prepare_c
- 	r8a7790_pm_init();
- 	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
-+
-+	/* enable snoop and DVM */
-+	p = ioremap_nocache(CCI_BASE, 0x8000);
-+	writel_relaxed(readl_relaxed(p + CCI_SLAVE3 + CCI_SNOOP) | 0x3,
-+		p + CCI_SLAVE3 + CCI_SNOOP);    /* ca15 */
-+	writel_relaxed(readl_relaxed(p + CCI_SLAVE4 + CCI_SNOOP) | 0x3,
-+		p + CCI_SLAVE4 + CCI_SNOOP);    /* ca7 */
-+	while (__raw_readl(p + CCI_STATUS));
-+	/* wait for pending bit low */
-+	iounmap(p);
- }
+ static struct clk_lookup lookups[] = {
+ 	/* main */
+-	CLKDEV_CON_ID("audio_clk_a",	&audio_clk_a),
+-	CLKDEV_CON_ID("audio_clk_b",	&audio_clk_b),
+-	CLKDEV_CON_ID("audio_clk_c",	&audio_clk_c),
+-	CLKDEV_CON_ID("audio_clk_internal",	&s1_clk),
+ 	CLKDEV_CON_ID("shyway_clk",	&s_clk),
+ 	CLKDEV_CON_ID("peripheral_clk",	&p_clk),
  
- struct smp_operations r8a7790_smp_ops __initdata = {
+@@ -234,15 +230,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("ssi.6", "rcar_sound", &mstp_clks[MSTP309]),
+ 	CLKDEV_ICK_ID("ssi.7", "rcar_sound", &mstp_clks[MSTP308]),
+ 	CLKDEV_ICK_ID("ssi.8", "rcar_sound", &mstp_clks[MSTP307]),
+-	CLKDEV_ICK_ID("scu.0", "rcar_sound", &mstp_clks[MSTP531]),
+-	CLKDEV_ICK_ID("scu.1", "rcar_sound", &mstp_clks[MSTP530]),
+-	CLKDEV_ICK_ID("scu.2", "rcar_sound", &mstp_clks[MSTP529]),
+-	CLKDEV_ICK_ID("scu.3", "rcar_sound", &mstp_clks[MSTP528]),
+-	CLKDEV_ICK_ID("scu.4", "rcar_sound", &mstp_clks[MSTP527]),
+-	CLKDEV_ICK_ID("scu.5", "rcar_sound", &mstp_clks[MSTP526]),
+-	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
+-	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
+-	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
++	CLKDEV_ICK_ID("src.0", "rcar_sound", &mstp_clks[MSTP531]),
++	CLKDEV_ICK_ID("src.1", "rcar_sound", &mstp_clks[MSTP530]),
++	CLKDEV_ICK_ID("src.2", "rcar_sound", &mstp_clks[MSTP529]),
++	CLKDEV_ICK_ID("src.3", "rcar_sound", &mstp_clks[MSTP528]),
++	CLKDEV_ICK_ID("src.4", "rcar_sound", &mstp_clks[MSTP527]),
++	CLKDEV_ICK_ID("src.5", "rcar_sound", &mstp_clks[MSTP526]),
++	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP525]),
++	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP524]),
++	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP523]),
+ };
+ 
+ void __init r8a7778_clock_init(void)
+-- 
+1.7.9.5
+
