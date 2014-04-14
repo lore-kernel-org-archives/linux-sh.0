@@ -1,32 +1,39 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 22 Apr 2014 13:09:01 +0000
-Subject: Re: [PATCH 1/2 v2] sh-pfc: r8a7791: Add SSI pin support
-Message-Id: <CACRpkdaoD-fR8YQCDDjy5f_13h98e2Nygkc2u526TYTJu7y+sg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:59:47 +0000
+Subject: [PATCH] ARM: shmobile: armadillo800eva: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <87fvlg20am.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sipkoeqj.wl%kuninori.morimoto.gx@gmail.com>
-	<87wqes220f.wl%kuninori.morimoto.gx@gmail.com>
-	<87vbuc21yz.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87vbuc21yz.wl%kuninori.morimoto.gx@gmail.com>
+References: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Apr 14, 2014 at 2:23 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@gmail.com> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v1 -> v2
->
->  - To Linus Walleij, Cc Linux kernel
+c7a507eea1db1430476289f525f9c853d5d485e8
+(ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags)
+exchanged sound flags, but armadillo800eva flags needs IB_NF.
+The recorded sound will be noise without this patch.
 
-Patch applied.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 2858f38..486063d 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -992,6 +992,7 @@ static struct asoc_simple_card_info fsi_wm8978_info = {
+ 	.platform	= "sh_fsi2",
+ 	.daifmt		= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBM_CFM,
+ 	.cpu_dai = {
++		.fmt	= SND_SOC_DAIFMT_IB_NF,
+ 		.name	= "fsia-dai",
+ 	},
+ 	.codec_dai = {
+-- 
+1.7.9.5
+
