@@ -1,60 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 22 Apr 2014 11:44:50 +0000
-Subject: Re: [PATCH 0/9] Renesas ipmmu-vmsa: Miscellaneous cleanups and fixes
-Message-Id: <7322154.6fhsyAGbuH@avalon>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 12:47:53 +0000
+Subject: Re: [RFC] sh_eth: use RNC mode for R8A7790
+Message-Id: <534BD8F9.5080105@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20140422113423.GB8389@arm.com>
-In-Reply-To: <20140422113423.GB8389@arm.com>
+References: <1396025185-7911-1-git-send-email-ben.dooks@codethink.co.uk> <5335DDC7.8040400@cogentembedded.com>
+In-Reply-To: <5335DDC7.8040400@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, magnus.damm@opensource.se, nobuhiro.iwamatsu.yj@renesas.com
 
-Hi Will,
+On 28/03/14 20:38, Sergei Shtylyov wrote:
+> Hello.
+>
+> On 03/28/2014 07:46 PM, Ben Dooks wrote:
+>
+>> The current behaviour of the sh_eth driver is not to use the RNC bit
+>> for the receive ring. This means that every packet recieved is not only
+>> generating an IRQ but it also stops the receive ring DMA as well until
+>> the driver re-enables it after unloading the packet.
+>
+>> This means that a number of the following errors are generated due to
+>> the receive packet FIFO overflowing due to nowhere to put packets:
+>
+>>     net eth0: Receive FIFO Overflow
+>
+>> Setting the RMCR_RNC configuration has so far been tested with an NFS
+>> root filesystem and the driver has not failed yet. It is not yet known
+>> why this is not set for R8A779x operation
+>
+>     The reason is simple: it's not set on almost all 100 Mbs devices
+> except SH7757 (and most recently added R7S72100), so this was a matter
+> of copy-paste. I've had setting this bit on at least R-Car devices on my
+> aganda for some time but couldn't get to it yet.
+>
+>> (Feedback on this issue or other testing is welcome)
+>
+>     OK, I'll try it with netperf UDP test known to generate handful of
+> the aforementioned errors, when I have time.
+>
+> WBR, Sergei
 
-On Tuesday 22 April 2014 12:34:23 Will Deacon wrote:
-> On Mon, Apr 21, 2014 at 03:13:00PM +0100, Laurent Pinchart wrote:
-> > Hello,
-> 
-> Hi Laurent,
-> 
-> > This patch set cleans up and fixes small issues in the ipmmu-vmsa driver.
-> > The patches are based on top of "[PATCH v3] iommu: Add driver for Renesas
-> > VMSA-compatible IPMMU" that adds the ipmmu-vmsa driver.
-> > 
-> > The most interesting part of this series is the rewrite of the page table
-> > management code. The IOMMU core guarantees that the map and unmap
-> > operations will always be called only with page sizes advertised by the
-> > driver. We can use that assumption to remove loops of PGD and PMD
-> > entries, simplifying the code.
-> 
-> Hmm, interesting. We still have to handle the case where a mapping created
-> with one page-size could be unmapped with another though (in particular,
-> unmapping part of the range).
+Has anyone had time to look at this?
 
-Correct. I've implemented that in patch 9/9. Note that the patch also frees 
-pages use for page directory entries when they're not needed anymore, instead 
-of just marking them as invalid. That's something you probably should do in 
-the arm-smmu driver as well.
-
-> > Will, would it make sense to perform the same cleanup for the arm-smmu
-> > driver, or is there a reason to keep loops over PGD and PMD entries ?
-> > Removing them makes the implementation of 68kB and 2MB pages easier.
-> 
-> Is this an assumption that's relied on by other IOMMU drivers? It certainly
-> makes mapping of large ranges less efficient than it could be, so I'm more
-> inclined to set all the bits > PAGE_SIZE in pgsize_bitmap if it's only used
-> to determine the granularity at which map/unmap are called (which is
-> unrelated to what the hardware can actually do).
-
-I haven't checked all the other IOMMU drivers, but at least the OMAP IOMMU 
-driver relies on the same assumption. Splitting map/unmap operations in page 
-size chunks inside the IOMMU core might indeed have a negative performance 
-impact due to locking, but I'm not sure it would be noticeable.
 
 -- 
-Regards,
-
-Laurent Pinchart
-
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
