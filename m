@@ -1,119 +1,91 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 18:15:39 +0000
-Subject: [PATCH v3 3/5] ARM: shmobile: lager legacy: Add MSIOF support
-Message-Id: <1397499341-11964-4-git-send-email-geert@linux-m68k.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:57:19 +0000
+Subject: [PATCH 6/7] ASoC: rsnd: remove old clock style support
+Message-Id: <87k3as20er.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, broonie@kernel.org
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add MSIOF resources, platform data, platform device, pinctrl, and SPI
-child device.
+All platform which used old style was
+switched to new style.
+R-Car sound can remove old style clock support,
+use device dependent clock now.
 
-  - Only MSIOF1 is in use, and thus registered. Its bus contains a single
-    device (a Renesas R2A11302FT PMIC).
-  - Platform device numbering is 1-based for compatibility with the BSP,
-    as QSPI uses zero, so MSIOF1's device name is "spi_r8a7790_msiof.2".
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - Add Acked-by
-v2:
-  - Removed resources for unused MSIOF channels.
----
- arch/arm/mach-shmobile/board-lager.c |   46 +++++++++++++++++++++++++++++-----
- 1 file changed, 40 insertions(+), 6 deletions(-)
+ sound/soc/sh/rcar/adg.c |   39 +++------------------------------------
+ 1 file changed, 3 insertions(+), 36 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
-index f8b1e05463cc..a7c82ecf1e48 100644
---- a/arch/arm/mach-shmobile/board-lager.c
-+++ b/arch/arm/mach-shmobile/board-lager.c
-@@ -55,6 +55,7 @@
- #include <linux/mtd/mtd.h>
- #include <linux/spi/flash.h>
- #include <linux/spi/rspi.h>
-+#include <linux/spi/sh_msiof.h>
- #include <linux/spi/spi.h>
- #include <sound/rcar_snd.h>
- #include <sound/simple_card.h>
-@@ -287,6 +288,17 @@ static const struct platform_device_info ether_info __initconst = {
- 	.dma_mask	= DMA_BIT_MASK(32),
- };
+diff --git a/sound/soc/sh/rcar/adg.c b/sound/soc/sh/rcar/adg.c
+index 69c4426..41556b2 100644
+--- a/sound/soc/sh/rcar/adg.c
++++ b/sound/soc/sh/rcar/adg.c
+@@ -397,9 +397,8 @@ int rsnd_adg_probe(struct platform_device *pdev,
+ {
+ 	struct rsnd_adg *adg;
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+-	struct clk *clk, *clk_orig;
++	struct clk *clk;
+ 	int i;
+-	bool use_old_style = false;
  
-+/* MSIOF1 */
-+static const struct resource sh_msiof1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6e10000, 0x0064),
-+	DEFINE_RES_IRQ(gic_spi(157)),
-+};
-+
-+static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
-+	.rx_fifo_override	= 256,
-+	.num_chipselect		= 1,
-+};
-+
- /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64Mb) */
- static struct mtd_partition spi_flash_part[] = {
- 	/* Reserved for user loader program, read-only */
-@@ -325,12 +337,19 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
+ 	adg = devm_kzalloc(dev, sizeof(*adg), GFP_KERNEL);
+ 	if (!adg) {
+@@ -407,45 +406,13 @@ int rsnd_adg_probe(struct platform_device *pdev,
+ 		return -ENOMEM;
+ 	}
  
- static const struct spi_board_info spi_info[] __initconst = {
- 	{
--		.modalias	= "m25p80",
--		.platform_data	= &spi_flash_data,
--		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
--		.max_speed_hz	= 30000000,
--		.bus_num	= 0,
--		.chip_select	= 0,
-+		.modalias	 = "m25p80",
-+		.platform_data	 = &spi_flash_data,
-+		.mode		 = SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
-+		.max_speed_hz	 = 30000000,
-+		.bus_num	 = 0,
-+		.chip_select	 = 0,
-+	}, {
-+		.modalias	 = "r2a1130x",
-+		.max_speed_hz	 = 6000000,
-+		.chip_select	 = 0,
-+		.bus_num	 = 2,
-+		.mode		 = SPI_MODE_3,
-+		.controller_data = (void *)-ENOENT, /* HW controlled CS */
- 	},
- };
+-	clk_orig	= devm_clk_get(dev, NULL);
+ 	adg->clk[CLKA]	= devm_clk_get(dev, "clk_a");
+ 	adg->clk[CLKB]	= devm_clk_get(dev, "clk_b");
+ 	adg->clk[CLKC]	= devm_clk_get(dev, "clk_c");
+ 	adg->clk[CLKI]	= devm_clk_get(dev, "clk_i");
  
-@@ -708,6 +727,15 @@ static const struct pinctrl_map lager_pinctrl_map[] = {
- 	/* I2C2 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-rcar.2", "pfc-r8a7790",
- 				  "i2c2", "i2c2"),
-+	/* MSIOF1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
-+				  "msiof1_clk", "msiof1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
-+				  "msiof1_sync", "msiof1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
-+				  "msiof1_rx", "msiof1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7790_msiof.2", "pfc-r8a7790",
-+				  "msiof1_tx", "msiof1"),
- 	/* QSPI */
- 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7790",
- 				  "qspi_ctrl", "qspi"),
-@@ -816,6 +844,12 @@ static void __init lager_add_standard_devices(void)
- 					  qspi_resources,
- 					  ARRAY_SIZE(qspi_resources),
- 					  &qspi_pdata, sizeof(qspi_pdata));
-+	platform_device_register_resndata(&platform_bus, "spi_r8a7790_msiof",
-+					  1 + 1, sh_msiof1_resources,
-+					  ARRAY_SIZE(sh_msiof1_resources),
-+					  &sh_msiof_info,
-+					  sizeof(struct sh_msiof_spi_info));
-+
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
+-	/*
+-	 * It request device dependent audio clock.
+-	 * But above all clks will indicate rsnd module clock
+-	 * if platform doesn't it
+-	 */
+-	for_each_rsnd_clk(clk, adg, i) {
+-		if (clk_orig = clk) {
+-			dev_warn(dev,
+-				 "doesn't have device dependent clock, use independent clock\n");
+-			use_old_style = true;
+-			break;
+-		}
+-	}
+-
+-	/*
+-	 * note:
+-	 * these exist in order to keep compatible with
+-	 * platform which has device independent audio clock,
+-	 * but will be removed soon
+-	 */
+-	if (use_old_style) {
+-		adg->clk[CLKA] = devm_clk_get(NULL, "audio_clk_a");
+-		adg->clk[CLKB] = devm_clk_get(NULL, "audio_clk_b");
+-		adg->clk[CLKC] = devm_clk_get(NULL, "audio_clk_c");
+-		adg->clk[CLKI] = devm_clk_get(NULL, "audio_clk_internal");
+-	}
+-
+-	for_each_rsnd_clk(clk, adg, i) {
+-		if (IS_ERR(clk)) {
+-			dev_err(dev, "Audio clock failed\n");
+-			return -EIO;
+-		}
+-	}
++	for_each_rsnd_clk(clk, adg, i)
++		dev_dbg(dev, "clk %d : %p\n", i, clk);
  
- 	platform_device_register_data(&platform_bus, "reg-fixed-voltage", fixed_regulator_idx++,
+ 	rsnd_adg_ssi_clk_init(priv, adg);
+ 
 -- 
 1.7.9.5
 
