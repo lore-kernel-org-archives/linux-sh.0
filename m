@@ -1,87 +1,128 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:00 +0000
-Subject: [PATCH v2 00/14] Renesas CMT, MTU2 and TMU timers DT support
-Message-Id: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 Apr 2014 10:58:45 +0000
+Subject: [PATCH 02/02] ARM: shmobile: koelsch: DT reference VSP1 platform devices
+Message-Id: <20140414105845.12530.98920.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello,
+From: Magnus Damm <damm@opensource.se>
 
-This patch set adds DT bindings to the Renesas CMT, MTU2 and TMU timers. The
-CMT patches have been previously posted as part of the "[PATCH 00/27] Renesas
-CMT (Compare Match Timer) DT bindings" series. The MTU2 patches have been
-previously posted as part of the "[PATCH 00/22] SH MTU2 DT support" series.
-The TMU patches are new.
+Add 3 VSP1 devices to the Koelsch board. Based on BSP code written
+by Yoshifumi Hosoya, but adjusted to use CCF for clocks.
 
-The set builds on top of the "[PATCH v3 00/52] Renesas CMT and TMU cleanups"
-series and the cleanup patches of the "[PATCH 00/22] SH MTU2 DT support"
-series. I will thus rebase and resend it when the dependencies will be merged.
-I would however like to get the patches reviewed and acked already.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Compared to v1 I've dropped the channel subnodes from the CMT DT bindings and
-just use a channels mask, as I don't need to specify per-channel properties.
-I'm slightly uncertain about this change though, as I can't easily predict
-whether per-channel properties would be needed later for new hardware. It
-won't be difficult to reintroduce channel subnodes then, so I'd rather not
-clutter the DT bindings with channel subnodes now. Please feel free to
-disagree.
+ Written against renesas-devel-v3.15-rc1-20140414v2 and
+ [PATCH v2 00/05] ARM: shmobile: Lager and Koelsch USB prototype patches
 
-The first 10 patches should go through the timers tree while the last 4
-patches should go through the Renesas SoC tree. Patches 11/14 and 12/14 have
-no build time or run time dependency on the drivers changes, so I plan to ask
-Simon to pick them up when the DT bindings will be approved. Patches 13/14 and
-14/14 have a run time dependency on the drivers changes, but only when
-architected timer support isn't enabled in the kernel. It should thus be
-relatively safe to merge them independently of the drivers changes. Simon,
-Magnus, what's your opinion ?
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   74 ++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
 
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <damm@opensource.se>
-
-Laurent Pinchart (14):
-  clocksource: sh_cmt: Drop support for legacy platform data
-  clocksource: sh_cmt: Replace global spinlock with a per-device
-    spinlock
-  clocksource: sh_tmu: Drop support for legacy platform data
-  clocksource: sh_tmu: Replace global spinlock with a per-device
-    spinlock
-  clocksource: sh_mtu2: Drop support for legacy platform data
-  clocksource: sh_mtu2: Replace global spinlock with a per-device
-    spinlock
-  clocksource: shmobile: Remove unused sh_timer_config members
-  clocksource: sh_cmt: Add DT support
-  clocksource: sh_tmu: Add DT support
-  clocksource: sh_mtu2: Add DT support
-  ARM: shmobile: r8a7790: Add CMT devices to DT
-  ARM: shmobile: r8a7791: Add CMT devices to DT
-  ARM: shmobile: lager-reference: Enable CMT0 in device tree
-  ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
-
- .../devicetree/bindings/timer/renesas,cmt.txt      |  49 +++++
- .../devicetree/bindings/timer/renesas,mtu2.txt     |  40 ++++
- .../devicetree/bindings/timer/renesas,tmu.txt      |  40 ++++
- arch/arm/boot/dts/r8a7790-lager.dts                |   4 +
- arch/arm/boot/dts/r8a7790.dtsi                     |  34 +++
- arch/arm/boot/dts/r8a7791-koelsch.dts              |   4 +
- arch/arm/boot/dts/r8a7791.dtsi                     |  34 +++
- arch/arm/mach-shmobile/board-koelsch-reference.c   |   1 -
- arch/arm/mach-shmobile/board-lager-reference.c     |   1 -
- arch/arm/mach-shmobile/setup-r8a7790.c             |   2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c             |   2 +-
- drivers/clocksource/sh_cmt.c                       | 233 ++++++++-------------
- drivers/clocksource/sh_mtu2.c                      | 146 ++++---------
- drivers/clocksource/sh_tmu.c                       | 123 +++++------
- include/linux/sh_timer.h                           |   5 -
- 15 files changed, 388 insertions(+), 330 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0004/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-04-14 17:36:04.000000000 +0900
+@@ -26,6 +26,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <linux/platform_data/usb-rcar-gen2-phy.h>
++#include <linux/platform_data/vsp1.h>
+ #include <linux/usb/phy.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <mach/clock.h>
+@@ -111,6 +112,9 @@ static const struct clk_name clk_names[]
+ 	{ "du1", "du.1", "rcar-du-r8a7791" },
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+ 	{ "hsusb", NULL, "usb_phy_rcar_gen2" },
++	{ "vsp1-sy", NULL, "vsp1.1" },
++	{ "vsp1-du0", NULL, "vsp1.2" },
++	{ "vsp1-du1", NULL, "vsp1.3" },
+ };
+ 
+ /*
+@@ -303,6 +307,75 @@ static void __init koelsch_add_usb_devic
+ 	koelsch_add_usb0_gadget();
+ 	koelsch_add_usb1_host();
+ }
++ 
++/* VSP1 */
++static const struct vsp1_platform_data koelsch_vsps_pdata __initconst = {
++	.features = 0,
++	.rpf_count = 5,
++	.uds_count = 3,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data koelsch_vspd0_pdata __initconst = {
++	.features = VSP1_HAS_LIF,
++	.rpf_count = 4,
++	.uds_count = 1,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data koelsch_vspd1_pdata __initconst = {
++	.features = VSP1_HAS_LIF,
++	.rpf_count = 4,
++	.uds_count = 1,
++	.wpf_count = 4,
++};
++
++static const struct vsp1_platform_data * const koelsch_vsp1_pdata[] __initconst
++									= {
++	&koelsch_vsps_pdata,
++	&koelsch_vspd0_pdata,
++	&koelsch_vspd1_pdata,
++};
++
++static const struct resource vsp1_1_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe928000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(267)),
++};
++
++static const struct resource vsp1_2_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe930000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(246)),
++};
++
++static const struct resource vsp1_3_resources[] __initconst = {
++	DEFINE_RES_MEM(0xfe938000, 0x8000),
++	DEFINE_RES_IRQ(gic_spi(247)),
++};
++
++static const struct resource * const vsp1_resources[] __initconst = {
++	vsp1_1_resources,
++	vsp1_2_resources,
++	vsp1_3_resources,
++};
++
++static void __init koelsch_add_vsp1_devices(void)
++{
++	struct platform_device_info info = {
++		.name = "vsp1",
++		.size_data = sizeof(*koelsch_vsp1_pdata[0]),
++		.num_res = 2,
++		.dma_mask = DMA_BIT_MASK(32),
++	};
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(vsp1_resources); ++i) {
++		info.id = i + 1;
++		info.data = koelsch_vsp1_pdata[i];
++		info.res = vsp1_resources[i];
++
++		platform_device_register_full(&info);
++	}
++}
+ 
+ static void __init koelsch_add_standard_devices(void)
+ {
+@@ -313,6 +386,7 @@ static void __init koelsch_add_standard_
+ 
+ 	koelsch_add_du_device();
+ 	koelsch_add_usb_devices();
++	koelsch_add_vsp1_devices();
+ }
+ 
+ static const char * const koelsch_boards_compat_dt[] __initconst = {
