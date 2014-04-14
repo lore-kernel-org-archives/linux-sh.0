@@ -1,43 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 14 Apr 2014 03:48:52 +0000
-Subject: Re: [PATCH] ARM: shmobile: armadillo800eva: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <20140414034850.GB1948@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:59:34 +0000
+Subject: [PATCH] ARM: shmobile: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <87ha5w20b0.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Apr 13, 2014 at 05:59:47PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> c7a507eea1db1430476289f525f9c853d5d485e8
-> (ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags)
-> exchanged sound flags, but armadillo800eva flags needs IB_NF.
-> The recorded sound will be noise without this patch.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I will queue this up as a fix for v3.15.
+e1508289404ab6ca28e0dc931612600f0441c417
+(ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags)
+corrected SND_SOC_DAIFMT_CBx_CFx definition.
+But then, Lager board was maintenanced other branch.
+This patch correct SND_SOC_DAIFMT_CBx_CFx flag for lager
 
-> ---
->  arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> index 2858f38..486063d 100644
-> --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-> +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> @@ -992,6 +992,7 @@ static struct asoc_simple_card_info fsi_wm8978_info = {
->  	.platform	= "sh_fsi2",
->  	.daifmt		= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBM_CFM,
->  	.cpu_dai = {
-> +		.fmt	= SND_SOC_DAIFMT_IB_NF,
->  		.name	= "fsia-dai",
->  	},
->  	.codec_dai = {
-> -- 
-> 1.7.9.5
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-lager.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index 6af09e1..05c263b 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -595,14 +595,12 @@ static struct asoc_simple_card_info rsnd_card_info = {
+ 	.card		= "SSI01-AK4643",
+ 	.codec		= "ak4642-codec.2-0012",
+ 	.platform	= "rcar_sound",
+-	.daifmt		= SND_SOC_DAIFMT_LEFT_J,
++	.daifmt		= SND_SOC_DAIFMT_LEFT_J | SND_SOC_DAIFMT_CBM_CFM,
+ 	.cpu_dai = {
+ 		.name	= "rcar_sound",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name	= "ak4642-hifi",
+-		.fmt	= SND_SOC_DAIFMT_CBM_CFM,
+ 		.sysclk	= 11289600,
+ 	},
+ };
+-- 
+1.7.9.5
+
