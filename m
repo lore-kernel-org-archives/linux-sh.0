@@ -1,31 +1,123 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 11 Apr 2014 09:13:18 +0000
-Subject: Re: [PATCH 2/2] sh-pfc: r8a7791: Add Audio pin support
-Message-Id: <CAMuHMdWbpYxCe9+f8Tk0tojmXMNJN7bx-8OqU8aULARoxXOZRw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+Date: Mon, 14 Apr 2014 00:24:04 +0000
+Subject: [PATCH 2/2] sh-pfc: r8a7791: Add Audio pin support
+Message-Id: <87tx9w21y5.wl%kuninori.morimoto.gx@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ppkooep1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87ppkooep1.wl%kuninori.morimoto.gx@gmail.com>
+References: <87sipkoeqj.wl%kuninori.morimoto.gx@gmail.com>
+	<87wqes220f.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <87wqes220f.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Fri, Apr 11, 2014 at 3:08 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@gmail.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
+ - To Linus Walleij, Cc Linux kernel
 
-Gr{oetje,eeting}s,
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |   61 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
-                        Geert
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index aef5d7f..19571c1 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -1680,6 +1680,53 @@ static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ };
+ 
++/* - Audio Clock ------------------------------------------------------------ */
++static const unsigned int audio_clk_a_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 28),
++};
++
++static const unsigned int audio_clk_a_mux[] = {
++	AUDIO_CLKA_MARK,
++};
++
++static const unsigned int audio_clk_b_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 29),
++};
++
++static const unsigned int audio_clk_b_mux[] = {
++	AUDIO_CLKB_MARK,
++};
++
++static const unsigned int audio_clk_b_b_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(7, 20),
++};
++
++static const unsigned int audio_clk_b_b_mux[] = {
++	AUDIO_CLKB_B_MARK,
++};
++
++static const unsigned int audio_clk_c_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 30),
++};
++
++static const unsigned int audio_clk_c_mux[] = {
++	AUDIO_CLKC_MARK,
++};
++
++static const unsigned int audio_clkout_pins[] = {
++	/* CLK */
++	RCAR_GP_PIN(2, 31),
++};
++
++static const unsigned int audio_clkout_mux[] = {
++	AUDIO_CLKOUT_MARK,
++};
++
++
+ /* - DU --------------------------------------------------------------------- */
+ static const unsigned int du_rgb666_pins[] = {
+ 	/* R[7:2], G[7:2], B[7:2] */
+@@ -3804,6 +3851,11 @@ static const unsigned int vin2_clk_mux[] = {
+ };
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(audio_clk_a),
++	SH_PFC_PIN_GROUP(audio_clk_b),
++	SH_PFC_PIN_GROUP(audio_clk_b_b),
++	SH_PFC_PIN_GROUP(audio_clk_c),
++	SH_PFC_PIN_GROUP(audio_clkout),
+ 	SH_PFC_PIN_GROUP(du_rgb666),
+ 	SH_PFC_PIN_GROUP(du_rgb888),
+ 	SH_PFC_PIN_GROUP(du_clk_out_0),
+@@ -4080,6 +4132,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(vin2_clk),
+ };
+ 
++static const char * const audio_clk_groups[] = {
++	"audio_clk_a",
++	"audio_clk_b",
++	"audio_clk_b_b",
++	"audio_clk_c",
++	"audio_clkout",
++};
++
+ static const char * const du_groups[] = {
+ 	"du_rgb666",
+ 	"du_rgb888",
+@@ -4465,6 +4525,7 @@ static const char * const vin2_groups[] = {
+ };
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(audio_clk),
+ 	SH_PFC_FUNCTION(du),
+ 	SH_PFC_FUNCTION(du0),
+ 	SH_PFC_FUNCTION(du1),
+-- 
+1.7.9.5
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
