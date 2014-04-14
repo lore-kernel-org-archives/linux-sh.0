@@ -1,76 +1,20 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:34 +0000
-Subject: [PATCH v5 20/20] ARM: shmobile: marzen-reference: Remove legacy clock support
-Message-Id: <1397613454-7522-21-git-send-email-horms+renesas@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 10:36:35 +0000
+Subject: Updated set for soc_camera/rcar_vin/lager
+Message-Id: <1397471802-27216-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Marzen DT reference is now only built for multiplatform
-which means that CCF comes with the package. Remove unused legacy
-code ifdefs to clean up the code.
+Updated patches for updating soc_camera and the rcar_vin driver for
+device tree working and enable the code for the Renesas Lager board.
 
-Based on similar work for the Koelsch board by Magnus Damm.
+The changes are as follows:
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
----
-v5
-* Rebase
-
-v4
-* As suggested by Geert Uytterhoeven
-  - Remove bogus "these" from changelog
-* Rebase
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
- 1 file changed, 8 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 529c2b4..6d34baf 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -31,13 +31,10 @@
- 
- static void __init marzen_init_timer(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	r8a7779_clocks_init(r8a7779_read_mode_pins());
--#endif
- 	clocksource_of_init();
- }
- 
--#ifdef CONFIG_COMMON_CLK
- /*
-  * This is a really crude hack to provide clkdev support to platform
-  * devices until they get moved to DT.
-@@ -53,7 +50,6 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "tmu1", NULL, "sh_tmu.1" },
- 	{ "tmu2", NULL, "sh_tmu.2" },
- };
--#endif
- 
- /*
-  * This is a really crude hack to work around core platform clock issues
-@@ -65,12 +61,8 @@ static const struct clk_name clk_enables[] __initconst = {
- 
- static void __init marzen_init(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
- 	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
--#else
--	r8a7779_clock_init();
--#endif
- 	r8a7779_add_standard_devices_dt();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
--- 
-1.8.5.2
+	- fix dts for adv7180 name
+	- add compatible string for adi,adv7180
+	- fix mclk for atmel-mci (untested) from on-list feedback
+	- add aliases vin0..vin3
 
