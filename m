@@ -1,33 +1,46 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 08 Apr 2014 13:58:21 +0000
-Subject: Re: [PATCH 3/9] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-Message-Id: <5344007D.3030100@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 Apr 2014 10:13:21 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc
+Message-Id: <20140414101321.12239.82374.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>	<1396901229-29117-4-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdVO0O29fr_GZjaKhWC775aSw2cT6wcsu5s66eRvjV57tA@mail.gmail.com>
-In-Reply-To: <CAMuHMdVO0O29fr_GZjaKhWC775aSw2cT6wcsu5s66eRvjV57tA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 07/04/14 22:05, Geert Uytterhoeven wrote:
-> Hi Ben,
->
-> On Mon, Apr 7, 2014 at 10:07 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
->> both share the same device sources, so are wrapped in the shdma-mux
->
-> Do you mean device REsources?
->
->> node to allow both to be used.
+From: Magnus Damm <damm@opensource.se>
+   
+Fix typo of renesas,groups in the koeslch dt. The kernel has no
+renesas,gpios but this should match renesas,groups.
 
-Thanks.
+Noticed thanks to similar fix for Lager by Rob Taylor and Ben Dooks.        
 
-Looking at it, they share the same device muxes is a better way of
-putting it as the parent node also says.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
--- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+--- 0005/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ work/arch/arm/boot/dts/r8a7791-koelsch.dts	2014-04-14 17:47:50.000000000 +0900
+@@ -264,17 +264,17 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+ 	sdhi1_pins: sd1 {
+-		renesas,gpios = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
+ 		renesas,function = "sdhi1";
+ 	};
+ 
+ 	sdhi2_pins: sd2 {
+-		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
+ 	};
+ 
