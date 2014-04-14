@@ -1,70 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 14 Apr 2014 00:56:57 +0000
-Subject: [PATCH 3/7] ARM: shmobile: bockw: remove old style audio clock
-Message-Id: <87ob0420fc.wl%kuninori.morimoto.gx@gmail.com>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 14 Apr 2014 21:59:48 +0000
+Subject: [PATCHv2 06/11] pwm: modify PWM_LOOKUP to initialize all struct pwm_lookup members
+Message-Id: <1397512793-10325-7-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
+References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, broonie@kernel.org
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Now that PWM_LOOKUP is not used anymore, modify it to initialize all the
+members of struct pwm_lookup.
 
-Current audio clock didn't have dependency to device/driver,
-but, it was not good design for DT support.
-To avoid branch merge conflict issue,
-it is using this load map, and this patch is 3) part.
- 1) add new style clock in platform
- 2) add new style clock method in driver
- 3) remove old tyle clock from platform
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
 ---
- arch/arm/mach-shmobile/board-bockw.c |   10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ Documentation/pwm.txt | 3 ++-
+ include/linux/pwm.h   | 4 +++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index b4122f8..1aca107 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -591,6 +591,7 @@ static void __init bockw_init(void)
- {
- 	void __iomem *base;
- 	struct clk *clk;
-+	struct platform_device *pdev;
- 	int i;
+diff --git a/Documentation/pwm.txt b/Documentation/pwm.txt
+index 93cb97974986..f38f99cda64f 100644
+--- a/Documentation/pwm.txt
++++ b/Documentation/pwm.txt
+@@ -19,7 +19,8 @@ should instead register a static mapping that can be used to match PWM
+ consumers to providers, as given in the following example:
  
- 	r8a7778_clock_init();
-@@ -673,9 +674,6 @@ static void __init bockw_init(void)
+ 	static struct pwm_lookup board_pwm_lookup[] = {
+-		PWM_LOOKUP("tegra-pwm", 0, "pwm-backlight", NULL),
++		PWM_LOOKUP("tegra-pwm", 0, "pwm-backlight", NULL,
++			   50000, PWM_POLARITY_NORMAL),
+ 	};
+ 
+ 	static void __init board_init(void)
+diff --git a/include/linux/pwm.h b/include/linux/pwm.h
+index 2f45e2fe5b93..e90628cac8fa 100644
+--- a/include/linux/pwm.h
++++ b/include/linux/pwm.h
+@@ -278,12 +278,14 @@ struct pwm_lookup {
+ 	enum pwm_polarity polarity;
+ };
+ 
+-#define PWM_LOOKUP(_provider, _index, _dev_id, _con_id)	\
++#define PWM_LOOKUP(_provider, _index, _dev_id, _con_id, _period, _polarity) \
+ 	{						\
+ 		.provider = _provider,			\
+ 		.index = _index,			\
+ 		.dev_id = _dev_id,			\
+ 		.con_id = _con_id,			\
++		.period = _period,			\
++		.polarity = _polarity			\
  	}
  
- 	/* for Audio */
--	clk = clk_get(NULL, "audio_clk_b");
--	clk_set_rate(clk, 24576000);
--	clk_put(clk);
- 	rsnd_codec_power(5, 1); /* enable ak4642 */
- 
- 	platform_device_register_simple(
-@@ -684,11 +682,15 @@ static void __init bockw_init(void)
- 	platform_device_register_simple(
- 		"ak4554-adc-dac", 1, NULL, 0);
- 
--	platform_device_register_resndata(
-+	pdev = platform_device_register_resndata(
- 		&platform_bus, "rcar_sound", -1,
- 		rsnd_resources, ARRAY_SIZE(rsnd_resources),
- 		&rsnd_info, sizeof(rsnd_info));
- 
-+	clk = clk_get(&pdev->dev, "clk_b");
-+	clk_set_rate(clk, 24576000);
-+	clk_put(clk);
-+
- 	for (i = 0; i < ARRAY_SIZE(rsnd_card_info); i++) {
- 		struct platform_device_info cardinfo = {
- 			.parent         = &platform_bus,
+ #if IS_ENABLED(CONFIG_PWM)
 -- 
-1.7.9.5
+1.8.3.2
 
