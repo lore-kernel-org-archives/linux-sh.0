@@ -1,64 +1,72 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 30 Apr 2014 22:17:39 +0000
-Subject: Re: [PATCH/RFC 0/4] of: Register clocks for Runtime PM with PM core
-Message-Id: <CAMuHMdVyQtJvC0G7i5DTYgW0eO3wuwqnvv0tSVA8BMzDkLG+zg@mail.gmail.com>
+Date: Mon, 14 Apr 2014 18:33:13 +0000
+Subject: [PATCH v2 2/6] gpio: rcar: Add minimal runtime PM support
+Message-Id: <1397500397-12607-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
- <4116377.A5MWbYX2Mh@avalon>
-In-Reply-To: <4116377.A5MWbYX2Mh@avalon>
+References: <1397500397-12607-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1397500397-12607-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <Laurent.pinchart@ideasonboard.com>, linux-gpio@vger.kernel.org
 
-Hi Laurent,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Apr 30, 2014 at 11:29 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Thursday 24 April 2014 12:13:19 Geert Uytterhoeven wrote:
->> On SoCs like ARM/SH-mobile, gate clocks are available for modules, allowing
->> Runtime PM for a device controlled by a gate clock.
->>
->> On legacy shmobile kernels, this is handled by the PM runtime code in
->> drivers/sh/pm_runtime.c, which installs a clock notifier for the platform
->> bus, registering the "NULL" clock of each platform device with the PM core.
->> This approach is also used on davinci, keystone, and omap1.
->
-> This requires the device to have the MSTP clock defined as the first clock in
-> its DT node. I'm not against that, but the requirement should be clearly
-> documented, and we need to check existing DT bindings to make sure they comply
-> with that.
+This is just enough to automatically enable the functional clock, if
+present. Clock management during suspend/resume is still to be added.
 
-Being the first clock is only required for the "NULL" clock. And that
-is only done
-for legacy shmobile kernels, not for multi-platform.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <Laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org
+---
+v2:
+  - Use pm_runtime_put() instead of pm_runtime_put_sync()
+---
+ drivers/gpio/gpio-rcar.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-In this patch series, the clock would be chosen based on the presence of the
-CLK_RUNTIME_PM flag, to be set by the clock driver. I.e. DT is not involved
-directly (for a change... why does everybody think the whole world revolves
- around DT these days ? :-)
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 03c91482432c..bfcfeeefcf78 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -26,6 +26,7 @@
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/spinlock.h>
+ #include <linux/slab.h>
+ 
+@@ -377,6 +378,9 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, p);
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+ 
+@@ -460,6 +464,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ err1:
+ 	irq_domain_remove(p->irq_domain);
+ err0:
++	pm_runtime_put(dev);
++	pm_runtime_disable(dev);
+ 	return ret;
+ }
+ 
+@@ -473,6 +479,8 @@ static int gpio_rcar_remove(struct platform_device *pdev)
+ 		return ret;
+ 
+ 	irq_domain_remove(p->irq_domain);
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	return 0;
+ }
+ 
+-- 
+1.7.9.5
 
-> I'd like to also take this as an opportunity to discuss how we should name
-> clocks in DT bindings for Renesas devices. Most devices have a single MSTP
-> clock, in which case we don't specify a name. Other devices need several
-> clocks. Names for the non-MSTP clocks will obviously be device-dependent, but
-> how should the MSTP clock be called in that time ? Should it have an empty
-> name (a "" string in DT) ? Should it have a standard name ? Maybe "fck" for
-> "functional clock" ?
-
-Empty names should not be used if there can be multiple clocks, right?
-
-Grepping in arch/*/boot/dts/, "fck" seems to be popular (only) for TI SoCs.
-
-Stadardizing across SoCs and architectures would be nice, though.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
