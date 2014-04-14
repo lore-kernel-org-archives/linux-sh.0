@@ -1,31 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Apr 2014 00:39:27 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc
-Message-Id: <20140408003927.GD30496@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 14 Apr 2014 04:02:47 +0000
+Subject: [PATCH] ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc
+Message-Id: <b08eed0c4d7d70eae2f4f1ff518cc33643722a07.1397448066.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396898212-7078-1-git-send-email-ben.dooks@codethink.co.uk>
- <CAMuHMdW+ZD0r+W2BWw8Uusz_LYPmnrsX+Hk5wkvhiEf0f8u4cg@mail.gmail.com>
-In-Reply-To: <CAMuHMdW+ZD0r+W2BWw8Uusz_LYPmnrsX+Hk5wkvhiEf0f8u4cg@mail.gmail.com>
+References: <cover.1397448066.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397448066.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, linux-kernel@lists.codethink.co.uk, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, magnus.damm@opensource.se, Rob Taylor <rob.taylor@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Apr 07, 2014 at 10:35:12PM +0200, Geert Uytterhoeven wrote:
-> On Mon, Apr 7, 2014 at 9:16 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> > From: Rob Taylor <rob.taylor@codethink.co.uk>
-> >
-> > Fix probable typo of renesas,groups in the lager dt. The kernel has no
-> > renesas,gpios but this should match renesas,groups.
-> >
-> > Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
-> 
-> Thanks, nice catch!
-> 
-> > [ben.dooks@codethink.co.uk: fixup description]
-> > Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> 
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+From: Rob Taylor <rob.taylor@codethink.co.uk>
 
-Thanks, I will queue this up as a fix for v3.15.
+Fix probable typo of renesas,groups in the lager dt. The kernel has no
+renesas,gpios but this should match renesas,groups.
+
+Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
+[ben.dooks@codethink.co.uk: fixup description]
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 6e99eb2..d01048a 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -141,12 +141,12 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
+ 
+ 	sdhi2_pins: sd2 {
+-		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
+ 	};
+ 
+-- 
+1.8.5.2
+
