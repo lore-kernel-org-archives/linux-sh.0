@@ -1,106 +1,37 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Fri, 04 Apr 2014 09:08:12 +0000
-Subject: Re: [PATCH v7 05/10] dt-bindings: pci: rcar pcie device tree bindings
-Message-Id: <1396602492.5625.4.camel@weser.hi.pengutronix.de>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Mon, 14 Apr 2014 21:35:07 +0000
+Subject: [PATCH v2 4/9] ARM: shmobile: r8a7790: Add DMA for MMCIF1
+Message-Id: <1397511312-4845-5-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
- <1396261856-22465-6-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1396261856-22465-6-git-send-email-phil.edworthy@renesas.com>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
+Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
 
-Am Montag, den 31.03.2014, 11:30 +0100 schrieb Phil Edworthy:
-> This patch adds the bindings for the R-Car PCIe driver. The driver
-> resides under drivers/pci/host/pcie-rcar.c
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Updated dtsi file with DMA info for MMCIF1
 
-Another nitpick below, otherwise:
-Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
-If you decide to roll another version with just this changed, feel free
-to carry over the my tag.
-> 
-> v7:
->  - Change binding description of clocks to 'clock specifiers'
-> 
-> v6:
->  - Correct DT bindings description for reg and clocks
-> 
-> v5:
->  - Add PCIe bus clock reference
->  - Add additional interrupt bindings
->  - Use dma-ranges property to specify inbound memory regions
-> ---
->  Documentation/devicetree/bindings/pci/rcar-pci.txt | 45 ++++++++++++++++++++++
->  1 file changed, 45 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
-> 
-> diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-> new file mode 100644
-> index 0000000..789bd46
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-> @@ -0,0 +1,45 @@
-> +* Renesas RCar PCIe interface
-> +
-> +Required properties:
-> +- compatible: should contain one of the following
-> +	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
-> +- reg: base address and length of the pcie controller registers.
-> +- #address-cells: set to <3>
-> +- #size-cells: set to <2>
-> +- device_type: set to "pci"
-> +- ranges: ranges for the PCI memory and I/O regions.
-> +- dma-ranges: ranges for the inbound memory regions.
-> +- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
-> +	source for hardware related interrupts (e.g. link speed change).
-> +- #interrupt-cells: set to <1>
-> +- interrupt-map-mask and interrupt-map: standard PCI properties
-> +	to define the mapping of the PCIe interface to interrupt
-> +	numbers.
-> +- clocks: from common clock binding: clock specifiers for the PCIe controller
-> +	and PCIe bus clocks.
-> +- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
-> +
-> +Example:
-> +
-> +SoC specific DT Entry:
-> +
-> +	pcie: pcie@fe000000 {
-> +		compatible = "renesas,pcie-r8a7791";
-> +		reg = <0 0xfe000000 0 0x80000>;
-> +		#address-cells = <3>;
-> +		#size-cells = <2>;
-> +		device_type = "pci";
-> +		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
-> +			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
-> +			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
-> +			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
-> +		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
-> +			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
-> +		interrupts = <0 116 4 0 117 4 0 118 4>;
-
-I think this is confusing, I would rather like to see them in separate
-cells, like
-	interrupts = <0 116 4>, <0 117 4>, <0 118 4>;
-
-Same would be true for the ranges properties, but there it isn't as
-confusing, so I don't really care.
-
-> +		#interrupt-cells = <1>;
-> +		interrupt-map-mask = <0 0 0 0>;
-> +		interrupt-map = <0 0 0 0 &gic 0 116 4>;
-> +		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
-> +		clock-names = "pcie", "pcie_bus";
-> +		status = "disabled";
-> +	};
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e85e354..8b66de8 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -316,6 +316,9 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
++		dmas =  <&dma0 R8A7790_DMA_MMCIF1_RX CHCR_RX_32BIT>,
++			<&dma0 R8A7790_DMA_MMCIF1_TX CHCR_TX_32BIT>;
++		dma-names = "rx", "tx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
 -- 
-Pengutronix e.K.                           | Lucas Stach                 |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
-Peiner Str. 6-8, 31137 Hildesheim, Germany | Phone: +49-5121-206917-5076 |
-Amtsgericht Hildesheim, HRA 2686           | Fax:   +49-5121-206917-5555 |
+1.9.1
 
