@@ -1,53 +1,90 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:32:13 +0000
-Subject: [PATCH 5/5] ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc
-Message-Id: <d5dda0381f826326071b027f288372f682c24d55.1397694064.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:01 +0000
+Subject: [PATCH v2 05/17] drivers: sh: pm_runtime implementation needs to suspend and resume devices
+Message-Id: <1397565253-22741-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694064.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694064.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Fix typo of renesas,groups in the koeslch dt. The kernel has no
-renesas,gpios but this should match renesas,groups.
+If we override the platform bus calls for pm_runtime then we end up
+with the calls to the devices' suspend and resume methods ignored
+in favour of the bus ones.
 
-Noticed thanks to similar fix for Lager by Rob Taylor and Ben Dooks.
+Change to calling the pm_runtime calls to suspend and resume the
+devices specifically in the drivers/sh/pm_runtime.c implementation
+to allow any device that may want to run power management to do so.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Note, all the current sh driver implementations do not use their
+own power management code so this is not a major implementation
+issues.
+
+This also brings the implementation into line with the versions
+used by the Davinci and Keystone PM domain code, so once fully
+tested these implementations could be merged together.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+v2:
+  - New
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index bdd73e6..de1b697 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -230,17 +230,17 @@
- 	};
+ drivers/sh/pm_runtime.c |   37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 5cfbd825a9c8..3a7929246f2f 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,10 +21,43 @@
+ #include <linux/slab.h>
  
- 	sdhi0_pins: sd0 {
--		renesas,gpios = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
- 		renesas,function = "sdhi0";
- 	};
- 
- 	sdhi1_pins: sd1 {
--		renesas,gpios = "sdhi1_data4", "sdhi1_ctrl";
-+		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
- 		renesas,function = "sdhi1";
- 	};
- 
- 	sdhi2_pins: sd2 {
--		renesas,gpios = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
- 	};
- 
+ #ifdef CONFIG_PM_RUNTIME
++static int sh_pm_runtime_suspend(struct device *dev)
++{
++	int ret;
++
++	ret = pm_generic_runtime_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend device\n");
++		return ret;
++	}
++
++	ret = pm_clk_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend clock\n");
++		pm_generic_runtime_resume(dev);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int sh_pm_runtime_resume(struct device *dev)
++{
++	int ret;
++
++	ret = pm_clk_resume(dev);
++	if (ret) {
++		dev_err(dev, "failed to resume clock\n");
++		return ret;
++	}
++
++	return pm_generic_runtime_resume(dev);
++}
++
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = pm_clk_suspend,
+-		.runtime_resume = pm_clk_resume,
++		.runtime_suspend = sh_pm_runtime_suspend,
++		.runtime_resume = sh_pm_runtime_resume,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
 -- 
-1.8.4
+1.7.9.5
 
