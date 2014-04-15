@@ -1,58 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:31:42 +0000
-Subject: [PATCH 6/8] ARM: shmobile: r8a7791: Rename VSP1_SY clocks to VSP1_S
-Message-Id: <58ea1d53ba93620ac50fef9d9720b2323971f243.1397694178.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:02 +0000
+Subject: [PATCH v2 06/17] sh: intc: Restrict INTC_USERIMASK to SH4A
+Message-Id: <1397565253-22741-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694178.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+register_intc_userimask() is called from sh4a code only.
 
-The r8a7791 has three VSP1 instances, one of them being named VSPS (which
-stands for "VSP Standard"). The clock section in the SoC datasheet
-misunderstood the abbreviation as meaning VSP System, and named the
-corresponding clock VSP1(SY). This mistake has been carried over to the
-kernel code.
-
-Fix this by renaming the VSP1_SY clock to VSP1_S.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 2 +-
- include/dt-bindings/clock/r8a7791-clock.h | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+v2:
+  - Add Reviewed-by, Tested-by
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 4618170..aa1cba9 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -688,7 +688,7 @@
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
- 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
--				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_SY
-+				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
- 			>;
- 			clock-output-names  				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 30f82f2..f069bc6 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -32,7 +32,7 @@
- #define R8A7791_CLK_TMU0		25
- #define R8A7791_CLK_VSP1_DU1		27
- #define R8A7791_CLK_VSP1_DU0		28
--#define R8A7791_CLK_VSP1_SY		31
-+#define R8A7791_CLK_VSP1_S		31
+ drivers/sh/intc/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index f7d90617c9d9..60228fae943f 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -6,7 +6,7 @@ comment "Interrupt controller options"
  
- /* MSTP2 */
- #define R8A7791_CLK_SCIFA2		2
+ config INTC_USERIMASK
+ 	bool "Userspace interrupt masking support"
+-	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
++	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
+ 	help
+ 	  This enables support for hardware-assisted userspace hardirq
+ 	  masking.
 -- 
-1.8.4
+1.7.9.5
 
