@@ -1,42 +1,125 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 21 Apr 2014 14:13:01 +0000
-Subject: [PATCH 1/9] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
-Message-Id: <1398089589-9181-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:03 +0000
+Subject: [PATCH v2 07/17] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
+Message-Id: <1397565253-22741-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+
+If the kernel is built to support multi-ARM configuration with shmobile
+support built in, then drivers/sh is not built. This contains the PM
+runtime code in drivers/sh/pm_runtime.c, which implicitly enables the bus
+clocks for all devices, and thus is quite essential.
+Without this, the state of clocks depends on implicit reset state, or on
+the bootloader.
+
+If ARCH_SHMOBILE_MULTI then build the drivers/sh directory, but ensure that
+bits that may conflict (drivers/sh/clk if the common clock framework is
+enabled) or are not used (drivers/sh/intc), are not built.
+
+ARCH_SHMOBILE_MULTI was added a while ago by commit
+efacfce5f8a523457e9419a25d52fe39db00b26a ("ARM: shmobile: Introduce
+ARCH_SHMOBILE_MULTI"), but drivers/sh was compiled for both
+ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI until commit
+bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187 ("ARM: Rename ARCH_SHMOBILE to
+ARCH_SHMOBILE_LEGACY").
+
+Note that the PM runtime code is not automatically enabled on
+ARCH_SHMOBILE_MULTI, to protected the code from running on non-shmobile
+platforms.  sh_pm_runtime_init() must be explicitly called from shmobile
+platform code. A temporary check is added to make sure the PM runtime code
+is enabled only once on ARCH_SHMOBILE_LEGACY.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[geert: Do not compile intc if ARCH_SHMOBILE_MULTI]
+[geert: Do not enable the PM runtime code if ARCH_SHMOBILE_MULTI, based
+        on other patches from Ben]
+[geert: Reword]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
 ---
- drivers/iommu/ipmmu-vmsa.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+v2:
+  - Add Reviewed-by, Tested-by
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index d277bde..1e0a757 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -935,7 +935,8 @@ static int ipmmu_add_device(struct device *dev)
- 							SZ_1G, SZ_2G);
- 		if (IS_ERR(mapping)) {
- 			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
--			return PTR_ERR(mapping);
-+			ret = PTR_ERR(mapping);
-+			goto error;
- 		}
+ drivers/Makefile        |    2 +-
+ drivers/sh/Makefile     |   14 ++++++++------
+ drivers/sh/pm_runtime.c |   14 ++++++++++++--
+ 3 files changed, 21 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index e3ced91b1784..c033798f300a 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -119,7 +119,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
+ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+-obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
++obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+ ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+ obj-y				+= clocksource/
+ endif
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index fc67f564f02c..788ed9b59b4e 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -1,10 +1,12 @@
+ #
+ # Makefile for the SuperH specific drivers.
+ #
+-obj-y	:= intc/
++obj-$(CONFIG_SUPERH)			+= intc/
++obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= intc/
++ifneq ($(CONFIG_COMMON_CLK),y)
++obj-$(CONFIG_HAVE_CLK)			+= clk/
++endif
++obj-$(CONFIG_MAPLE)			+= maple/
++obj-$(CONFIG_SUPERHYWAY)		+= superhyway/
  
- 		mmu->mapping = mapping;
-@@ -951,6 +952,7 @@ static int ipmmu_add_device(struct device *dev)
+-obj-$(CONFIG_HAVE_CLK)		+= clk/
+-obj-$(CONFIG_MAPLE)		+= maple/
+-obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+-
+-obj-y				+= pm_runtime.o
++obj-y					+= pm_runtime.o
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 3a7929246f2f..3ec047ac1ff4 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -75,16 +75,26 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ 	.con_ids = { NULL, },
+ };
+ 
+-static int __init sh_pm_runtime_init(void)
++static bool default_pm_on;
++
++int __init sh_pm_runtime_init(void)
+ {
++	if (default_pm_on)
++		return 0;
++
++	default_pm_on = true;
+ 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
  	return 0;
+ }
++#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE_LEGACY)
+ core_initcall(sh_pm_runtime_init);
++#endif
  
- error:
-+	arm_iommu_release_mapping(mmu->mapping);
- 	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- 	iommu_group_remove_device(dev);
+ static int __init sh_pm_runtime_late_init(void)
+ {
+-	pm_genpd_poweroff_unused();
++	if (default_pm_on)
++		pm_genpd_poweroff_unused();
+ 	return 0;
+ }
++
+ late_initcall(sh_pm_runtime_late_init);
 -- 
-1.8.3.2
+1.7.9.5
 
