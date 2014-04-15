@@ -1,131 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:03:55 +0000
-Subject: [PATCH v3 12/52] clocksource: sh_cmt: Replace hardcoded register values with macros
-Message-Id: <1397228675-11684-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:33:59 +0000
+Subject: [PATCH v2 03/17] ARM: shmobile: sh7372: Call sh7372_add_early_devices() instead of open coding
+Message-Id: <1397565253-22741-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Define symbolic macros for all used registers bits.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/clocksource/sh_cmt.c | 56 ++++++++++++++++++++++++++++++++++----------
- 1 file changed, 44 insertions(+), 12 deletions(-)
+v2:
+  - New
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 879b8c2..ce00baa 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -114,6 +114,34 @@ struct sh_cmt_device {
- 	unsigned int num_channels;
- };
- 
-+#define SH_CMT16_CMCSR_CMF		(1 << 7)
-+#define SH_CMT16_CMCSR_CMIE		(1 << 6)
-+#define SH_CMT16_CMCSR_CKS8		(0 << 0)
-+#define SH_CMT16_CMCSR_CKS32		(1 << 0)
-+#define SH_CMT16_CMCSR_CKS128		(2 << 0)
-+#define SH_CMT16_CMCSR_CKS512		(3 << 0)
-+#define SH_CMT16_CMCSR_CKS_MASK		(3 << 0)
-+
-+#define SH_CMT32_CMCSR_CMF		(1 << 15)
-+#define SH_CMT32_CMCSR_OVF		(1 << 14)
-+#define SH_CMT32_CMCSR_WRFLG		(1 << 13)
-+#define SH_CMT32_CMCSR_STTF		(1 << 12)
-+#define SH_CMT32_CMCSR_STPF		(1 << 11)
-+#define SH_CMT32_CMCSR_SSIE		(1 << 10)
-+#define SH_CMT32_CMCSR_CMS		(1 << 9)
-+#define SH_CMT32_CMCSR_CMM		(1 << 8)
-+#define SH_CMT32_CMCSR_CMTOUT_IE	(1 << 7)
-+#define SH_CMT32_CMCSR_CMR_NONE		(0 << 4)
-+#define SH_CMT32_CMCSR_CMR_DMA		(1 << 4)
-+#define SH_CMT32_CMCSR_CMR_IRQ		(2 << 4)
-+#define SH_CMT32_CMCSR_CMR_MASK		(3 << 4)
-+#define SH_CMT32_CMCSR_DBGIVD		(1 << 3)
-+#define SH_CMT32_CMCSR_CKS_RCLK8	(4 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK32	(5 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK128	(6 << 0)
-+#define SH_CMT32_CMCSR_CKS_RCLK1	(7 << 0)
-+#define SH_CMT32_CMCSR_CKS_MASK		(7 << 0)
-+
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+ arch/arm/mach-shmobile/setup-sh7372.c |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 27301278c208..f8176b051be4 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1037,11 +1037,7 @@ void __init sh7372_add_early_devices_dt(void)
  {
- 	return ioread16(base + (offs << 1));
-@@ -140,8 +168,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_16BIT] = {
- 		.model = SH_CMT_16BIT,
- 		.width = 16,
--		.overflow_bit = 0x80,
--		.clear_bits = ~0x80,
-+		.overflow_bit = SH_CMT16_CMCSR_CMF,
-+		.clear_bits = ~SH_CMT16_CMCSR_CMF,
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read16,
-@@ -150,8 +178,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_32BIT] = {
- 		.model = SH_CMT_32BIT,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read32,
-@@ -160,8 +188,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_32BIT_FAST] = {
- 		.model = SH_CMT_32BIT_FAST,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read16,
- 		.write_control = sh_cmt_write16,
- 		.read_count = sh_cmt_read32,
-@@ -170,8 +198,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_48BIT] = {
- 		.model = SH_CMT_48BIT,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read32,
- 		.write_control = sh_cmt_write32,
- 		.read_count = sh_cmt_read32,
-@@ -180,8 +208,8 @@ static const struct sh_cmt_info sh_cmt_info[] = {
- 	[SH_CMT_48BIT_GEN2] = {
- 		.model = SH_CMT_48BIT_GEN2,
- 		.width = 32,
--		.overflow_bit = 0x8000,
--		.clear_bits = ~0xc000,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
- 		.read_control = sh_cmt_read32,
- 		.write_control = sh_cmt_write32,
- 		.read_count = sh_cmt_read32,
-@@ -295,10 +323,14 @@ static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
- 	/* configure channel, periodic mode and maximum timeout */
- 	if (ch->cmt->info->width = 16) {
- 		*rate = clk_get_rate(ch->cmt->clk) / 512;
--		sh_cmt_write_cmcsr(ch, 0x43);
-+		sh_cmt_write_cmcsr(ch, SH_CMT16_CMCSR_CMIE |
-+				   SH_CMT16_CMCSR_CKS512);
- 	} else {
- 		*rate = clk_get_rate(ch->cmt->clk) / 8;
--		sh_cmt_write_cmcsr(ch, 0x01a4);
-+		sh_cmt_write_cmcsr(ch, SH_CMT32_CMCSR_CMM |
-+				   SH_CMT32_CMCSR_CMTOUT_IE |
-+				   SH_CMT32_CMCSR_CMR_IRQ |
-+				   SH_CMT32_CMCSR_CKS_RCLK8);
- 	}
+ 	shmobile_setup_delay(800, 1, 3); /* Cortex-A8 @ 800MHz */
  
- 	sh_cmt_write_cmcor(ch, 0xffffffff);
+-	early_platform_add_devices(sh7372_early_devices,
+-				   ARRAY_SIZE(sh7372_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
++	sh7372_add_early_devices();
+ }
+ 
+ void __init sh7372_add_standard_devices_dt(void)
 -- 
-1.8.3.2
+1.7.9.5
 
