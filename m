@@ -1,37 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 23:49:21 +0000
-Subject: [PATCH 2/3] iommu/shmobile: Don't ignore the ipmmu_iommu_init() return value
-Message-Id: <1396482562-1851-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:45:19 +0000
+Subject: [DEBUG 0/5] ARM: shmobile: r8a7791: MSTP debug code
+Message-Id: <1397565924-23541-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The function can fail, don't ignore its error value.
+	Hi all,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/shmobile-ipmmu.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+This series contains the MSTP debug code I used for investigation and
+development. It is _not_ meant to be applied!
 
-diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
-index e3bc2e1..6ba6110 100644
---- a/drivers/iommu/shmobile-ipmmu.c
-+++ b/drivers/iommu/shmobile-ipmmu.c
-@@ -117,8 +117,7 @@ static int ipmmu_probe(struct platform_device *pdev)
- 	platform_set_drvdata(pdev, ipmmu);
- 	ipmmu_reg_write(ipmmu, IMCTR1, 0x0); /* disable TLB */
- 	ipmmu_reg_write(ipmmu, IMCTR2, 0x0); /* disable PMB */
--	ipmmu_iommu_init(ipmmu);
--	return 0;
-+	return ipmmu_iommu_init(ipmmu);
- }
- 
- static struct platform_driver ipmmu_driver = {
--- 
-1.8.3.2
+  - [1/5] ARM: shmobile: r8a7791: Disable MSTP clocks
+  - [2/5] r8a7791: show MSTP clock status during boot-up
+  - [3/5] sh/cpg: Monitor MSTP clock enable/disable
+  - [4/5] clk/mstp: Monitor MSTP clock enable/disable
+  - [5/5] r8a7791: show MSTP clock status in /proc/cpuinfo
 
+People working on other drivers (e.g. sound, SDHI, USB, ...) may want to
+apply patch 1, to check if their driver correctly enables all needed clocks.
+If deemed useful, this patch (or a less verbose version) could be applied,
+though.
+
+Patches 2-5 can be used to check which clocks are enabled at kernel start
+time, to check when clocks are enabled/disabled, and to check which clocks
+are enabled at an arbitrary moment in time.
+
+All code should be multi-platform safe. I used it in a kernel that supports
+and runs on both Koelsch and BeagleBone Black.
+
+Have fun! ;-)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
