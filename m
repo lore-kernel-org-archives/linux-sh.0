@@ -1,129 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:31 +0000
-Subject: [PATCH v3 48/52] ARM: shmobile: r8a7779: Switch to new style TMU device
-Message-Id: <1397228675-11684-49-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: isabelle <contact_claude@isabelle.de>
+Date: Tue, 15 Apr 2014 19:47:38 +0000
+Subject: spende /Donation
+Message-Id: <yx4Sef42JyeoopbQKx5pAipXLBt1prSNuXPiRcWu1Nis@isabelle.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-fbdev@vger.kernel.org
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/clock-r8a7779.c |  4 +--
- arch/arm/mach-shmobile/setup-r8a7779.c | 66 +++++++---------------------------
- 2 files changed, 14 insertions(+), 56 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 8e403ae..a13298b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -173,9 +173,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
--	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
--	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
--	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP016]), /* TMU02 */
-+	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP016]), /* TMU0 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 5a640c8..d97c017 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -226,64 +226,25 @@ R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
- R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
- 
- /* TMU */
--static struct sh_timer_config tmu00_platform_data = {
--	.name = "TMU00",
--	.channel_offset = 0x4,
--	.timer_bit = 0,
--	.clockevent_rating = 200,
-+static struct sh_timer_config tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct resource tmu00_resources[] = {
--	[0] = {
--		.name	= "TMU00",
--		.start	= 0xffd80008,
--		.end	= 0xffd80013,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_iid(0x40),
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xffd80000, 0x30),
-+	DEFINE_RES_IRQ(gic_iid(0x40)),
-+	DEFINE_RES_IRQ(gic_iid(0x41)),
-+	DEFINE_RES_IRQ(gic_iid(0x42)),
- };
- 
--static struct platform_device tmu00_device = {
--	.name		= "sh_tmu",
-+static struct platform_device tmu0_device = {
-+	.name		= "sh-tmu",
- 	.id		= 0,
- 	.dev = {
--		.platform_data	= &tmu00_platform_data,
--	},
--	.resource	= tmu00_resources,
--	.num_resources	= ARRAY_SIZE(tmu00_resources),
--};
--
--static struct sh_timer_config tmu01_platform_data = {
--	.name = "TMU01",
--	.channel_offset = 0x10,
--	.timer_bit = 1,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu01_resources[] = {
--	[0] = {
--		.name	= "TMU01",
--		.start	= 0xffd80014,
--		.end	= 0xffd8001f,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_iid(0x41),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu01_device = {
--	.name		= "sh_tmu",
--	.id		= 1,
--	.dev = {
--		.platform_data	= &tmu01_platform_data,
-+		.platform_data	= &tmu0_platform_data,
- 	},
--	.resource	= tmu01_resources,
--	.num_resources	= ARRAY_SIZE(tmu01_resources),
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
- };
- 
- /* I2C */
-@@ -692,8 +653,7 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif3_device,
- 	&scif4_device,
- 	&scif5_device,
--	&tmu00_device,
--	&tmu01_device,
-+	&tmu0_device,
- };
- 
- static struct platform_device *r8a7779_standard_devices[] __initdata = {
--- 
-1.8.3.2
+Hallo
+Wenn ich diese Nachricht zu senden wollte, ist dies nicht einfach Zufall. D=
+ies ist, weil Ihre e-Mail vom elektronischen Roboter gesichert meine WX.7AR=
+ BW ausgew=E4hlt wurde.
+Zun=E4chst m=F6chte ich mich f=FCr dieses Eindringen in Ihr Leben zu entsch=
+uldigen, obwohl ich zugeben, dass es mir sehr wichtig. Ich bin Isabelle Vas=
+udev. Ich leide an Krebs im Hals seit nun mehr als 3 Jahre und eine halbe u=
+nd es leider, mein Arzt hat gerade informiert mich, dass ich bin voller unh=
+eilbar und, dass meine Tage, wegen meinen etwas gez=E4hlt sind abgebaut Zus=
+tand. Ich bin eine Witwe und ich habe keine Kind, das ich beginne zu bedaue=
+rn.
+In der Tat ist der Grund, warum ich Sie kontaktieren bin, m=F6chte ich eine=
+n Teil von meinem Grundst=FCck zu spenden, weil ich niemand, wer die Erben =
+konnte. Ich habe fast mein ganzes Zeug, darunter ein Unternehmen der Export=
+ von Holz, Gummi und Stahl-Industrie in Afrika, wo ich wohne nun mehr 10 Ja=
+hren, verkauft. Ein gro=DFer Teil der Gelder gesammelt wurde mit unterschie=
+dlichen Verb=E4nden humanit=E4ren Charakter =FCberall in der Welt, aber bes=
+onders hier in Afrika bezahlt.
+Im Hinblick auf den Rest der Summe genau in H=F6he von 750.000, 00euros (si=
+eben hundert und f=FCnfzig tausend Euro) auf eine gesperrte Mitarbeiter-Acc=
+ount, meine letzte w=FCnschen w=FCrde Sie es spenden, so dass Sie in Ihrer =
+Branche und vor allem den humanit=E4ren investieren k=F6nnen. Ich bin ganz =
+bewusst was ich zu tun beabsichtigen, und ich denke, trotz der Tatsache, di=
+e wir nicht wissen, werdet ihr diese Summe gut nutzen. Ich bitte Sie, bitte=
+ dieses Erbe zu akzeptieren, ohne jedoch Fragen Sie alles, was in zur=FCckg=
+eben wenn es nicht immer denken, gutes zu tun, um dich herum, was ich nicht=
+ getan habe, in meiner Existenz.
+Das hei=DFt, wird auf einer verantwortlichen Person und besonders gutem Gla=
+uben fallen zu lassen beruhigt, ich m=F6chte bitten, dass Sie bitte mich be=
+i den meisten schnell kontaktieren, um weitere Erkl=E4rung =FCber die Gr=FC=
+nde f=FCr meine Geste und den Verlauf der Dinge zu geben. Bitte kontaktiere=
+n Sie mich so bald wie m=F6glich, wenn Sie mein Angebot akzeptieren.
+Gott m=F6ge mit dir sein!
+Ich fordere Sie auf, mich =FCber meine pers=F6nliche e-Mail-Adresse zu kont=
+aktieren:
+Isabelle.claude654@laposte.net
+Der Frieden und Barmherzigkeit Gottes m=F6ge mit dir sein.
+Mrs Isabelle
 
