@@ -1,37 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Apr 2014 00:50:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: armadillo-reference dts: enable RTC
-Message-Id: <20140408005041.GE30496@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:51:50 +0000
+Subject: [PATCH] ARM: shmobile: armadillo-reference dts: Seiko Instruments, Inc is "sii"
+Message-Id: <1397566310-24055-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1378900273-10188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1378900273-10188-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Ulrich Hecht <ulrich.hecht@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Apr 04, 2014 at 12:06:12PM +0200, Geert Uytterhoeven wrote:
-> On Thu, Apr 3, 2014 at 11:40 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > On Thu, Apr 3, 2014 at 10:30 AM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
-> >> On Thu, Apr 3, 2014 at 2:11 AM, Simon Horman <horms@verge.net.au> wrote:
-> >>> I am a little confused about i2c2 appearing below as
-> >>> the documentation that I have only seems to refer to
-> >>> the presence of i2c0 and i2c1.
-> >>
-> >> This thing doesn't use any of the SoC I2C controllers, it's just
-> >> hooked up to two GPIO pins. The board docs don't give much detail, but
-> >> I found the relevant info in the Android vendor kernel, which is where
-> >> this "bus" is called i2c2. The name is arbitrary, though.
-> >
-> > Table 3.1 does mention "I2C2 (GPIO) For RTC only", and the docs also
-> > mention it's a s35390a.
+Use "sii,s35390a" instead of "seiko,s35390a", cfr.
+Documentation/devicetree/bindings/i2c/trivial-devices.txt and
+Documentation/devicetree/bindings/vendor-prefixes.txt.
 
-I think you may have a different version of the documentation to me.
-But in any case I trust the combined judgement of you and Ulrich.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> And board-armadillo800eva.c also contains support for it.
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 0cb235a450b9..10344e6edd20 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -180,7 +180,7 @@
+ &i2c2 {
+ 	status = "okay";
+ 	rtc@30 {
+-		compatible = "seiko,s35390a";
++		compatible = "sii,s35390a";
+ 		reg = <0x30>;
+ 	};
+ };
+-- 
+1.7.9.5
 
-That I see :)
-
-I will queue up this patch.
