@@ -1,47 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:29 +0000
-Subject: [PATCH 01/33] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in DTS
-Message-Id: <896b79df8d60c01d46be23c10cc0f1a6691cc588.1398216022.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:45:23 +0000
+Subject: [PATCH 4/5] [DEBUG] clk/mstp: Monitor MSTP clock enable/disable
+Message-Id: <1397565924-23541-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-The correct maximum CPU frequency for r8a7791 is 1500 MHz
-so update the r8a7791 SoC DTS to reflect this.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Not-Yet-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/clk/shmobile/clk-mstp.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 4618170..23ae96e 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -37,14 +37,14 @@
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a15";
- 			reg = <0>;
--			clock-frequency = <1300000000>;
-+			clock-frequency = <1500000000>;
- 		};
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 4f5e2c6ec853..2e3c08fff173 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -16,6 +16,7 @@
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/spinlock.h>
++#include <linux/clk-private.h>
  
- 		cpu1: cpu@1 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a15";
- 			reg = <1>;
--			clock-frequency = <1300000000>;
-+			clock-frequency = <1500000000>;
- 		};
- 	};
+ /*
+  * MSTP clocks. We can't use standard gate clocks as we need to poll on the
+@@ -62,6 +63,7 @@ static int cpg_mstp_clock_endisable(struct clk_hw *hw, bool enable)
+ 	unsigned int i;
+ 	u32 value;
  
++pr_info("MSTP %s %s\n", hw->clk->name, enable ? "ON" : "OFF");
+ 	spin_lock_irqsave(&group->lock, flags);
+ 
+ 	value = clk_readl(group->smstpcr);
+@@ -150,6 +152,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
+ 	if (IS_ERR(clk))
+ 		kfree(clock);
+ 
++//pr_info("%s: clk_register %p name %s parent %s\n", __func__, clk, name, parent_name);
+ 	return clk;
+ }
+ 
+@@ -221,6 +224,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 			 * FIXME: Remove this when all devices that require a
+ 			 * clock will be instantiated from DT.
+ 			 */
++//pr_info("%s: clk_register_clkdev %p con_id %s\n", __func__, clks[clkidx], name);
+ 			clk_register_clkdev(clks[clkidx], name, NULL);
+ 		} else {
+ 			pr_err("%s: failed to register %s %s clock (%ld)\n",
 -- 
-1.8.5.2
+1.7.9.5
 
