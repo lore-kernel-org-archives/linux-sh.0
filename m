@@ -1,85 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Apr 2014 14:10:34 +0000
-Subject: [PATCH v2 01/05] gpio: rcar: Per-controller gpios property prototype
-Message-Id: <20140408141034.10063.98454.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:00 +0000
+Subject: [PATCH v2 04/17] drivers: sh: pm_runtime does not need idle callback
+Message-Id: <1397565253-22741-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Hack up the R-Car GPIO driver to install a "gpios" property
-per GPIO controller during run time. This allows drivers
-and board code to look up GPIOs from C code using functions
-such as of_get_gpio().
+In the runtime_pm idle callback the code assumes that a NULL .runtime_idle
+entry is the same as a .runtime_idle entry that returns 0 as a result. This
+means the entry in drivers/sh/pm_runtime can be removed in favour of just
+leaving the entry NULL.
 
-Not for upstream merge.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
 ---
+v2:
+  - Add Reviewed-by, Tested-by
 
- drivers/gpio/gpio-rcar.c |   23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ drivers/sh/pm_runtime.c |    8 --------
+ 1 file changed, 8 deletions(-)
 
---- 0001/drivers/gpio/gpio-rcar.c
-+++ work/drivers/gpio/gpio-rcar.c	2014-04-07 12:13:13.000000000 +0900
-@@ -30,6 +30,10 @@
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 8afa5a4589f2..5cfbd825a9c8 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,18 +21,10 @@
  #include <linux/slab.h>
  
- struct gpio_rcar_priv {
-+	/* per-gpio-device "gpios" for use with of_get_named_gpiod_flags() */
-+	struct property gpios_property;
-+	__be32 gpios_phandle_value[32 * 3]; /*  #gpio-cells assumed to be 2 */
-+
- 	void __iomem *base;
- 	spinlock_t lock;
- 	struct gpio_rcar_config config;
-@@ -317,6 +321,7 @@ static int gpio_rcar_parse_pdata(struct
- 	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
- 	struct device_node *np = p->pdev->dev.of_node;
- 	struct of_phandle_args args;
-+	unsigned int k;
- 	int ret;
- 
- 	if (pdata) {
-@@ -337,6 +342,18 @@ static int gpio_rcar_parse_pdata(struct
- 					 : RCAR_MAX_GPIO_PER_BANK;
- 		p->config.gpio_base = -1;
- 		p->config.has_both_edge_trigger = info->has_both_edge_trigger;
-+
-+		/* initialize "gpios" property for this GPIO controller */
-+		for (k = 0; k < RCAR_MAX_GPIO_PER_BANK; k++) {
-+			p->gpios_phandle_value[k*3] = cpu_to_be32(np->phandle);
-+			p->gpios_phandle_value[(k*3) + 1] = cpu_to_be32(k);
-+			p->gpios_phandle_value[(k*3) + 2] = cpu_to_be32(0);
-+		}
-+
-+		p->gpios_property.name = "gpios";
-+		p->gpios_property.length = sizeof(p->gpios_phandle_value);
-+		p->gpios_property.value = p->gpios_phandle_value;
-+		of_add_property(np, &p->gpios_property);
- 	}
- 
- 	if (p->config.number_of_pins = 0 ||
-@@ -466,6 +483,8 @@ err0:
- static int gpio_rcar_remove(struct platform_device *pdev)
- {
- 	struct gpio_rcar_priv *p = platform_get_drvdata(pdev);
-+	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
-+	struct device_node *np = p->pdev->dev.of_node;
- 	int ret;
- 
- 	ret = gpiochip_remove(&p->gpio_chip);
-@@ -473,6 +492,10 @@ static int gpio_rcar_remove(struct platf
- 		return ret;
- 
- 	irq_domain_remove(p->irq_domain);
-+
-+	if (!pdata && IS_ENABLED(CONFIG_OF) && np)
-+		of_remove_property(np, &p->gpios_property);
-+
- 	return 0;
- }
- 
+ #ifdef CONFIG_PM_RUNTIME
+-
+-static int default_platform_runtime_idle(struct device *dev)
+-{
+-	/* suspend synchronously to disable clocks immediately */
+-	return 0;
+-}
+-
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+ 		.runtime_suspend = pm_clk_suspend,
+ 		.runtime_resume = pm_clk_resume,
+-		.runtime_idle = default_platform_runtime_idle,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+1.7.9.5
+
