@@ -1,59 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:03:53 +0000
-Subject: [PATCH v3 10/52] clocksource: sh_cmt: Allocate channels dynamically
-Message-Id: <1397228675-11684-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:11 +0000
+Subject: [PATCH RFC v2 15/17] ARM: shmobile: r8a7778: Populate .init_machine for generic r8a7778
+Message-Id: <1397565253-22741-16-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This prepares the driver for multi-channel support.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/clocksource/sh_cmt.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+v2:
+  - New
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 0779bf1..f94db32 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -62,7 +62,8 @@ struct sh_cmt_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+ arch/arm/mach-shmobile/setup-r8a7778.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 6d694526e4ca..6d5b5df0407f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -614,6 +614,14 @@ void __init r8a7778_init_irq_dt(void)
+ 	iounmap(base);
+ }
  
--	struct sh_cmt_channel channel;
-+	struct sh_cmt_channel *channels;
-+	unsigned int num_channels;
- 
- 	unsigned long width; /* 16 or 32 bit version of hardware block */
- 	unsigned long overflow_bit;
-@@ -822,7 +823,15 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 		cmt->clear_bits = ~0xc000;
- 	}
- 
--	ret = sh_cmt_setup_channel(&cmt->channel, cfg->timer_bit, cmt);
-+	cmt->channels = kzalloc(sizeof(*cmt->channels), GFP_KERNEL);
-+	if (cmt->channels = NULL) {
-+		ret = -ENOMEM;
-+		goto err4;
-+	}
++void __init r8a7778_add_standard_devices_dt(void)
++{
++	sh_pm_runtime_init();
++	r8a7778_clock_init();
++	r8a7778_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
 +
-+	cmt->num_channels = 1;
-+
-+	ret = sh_cmt_setup_channel(&cmt->channels[0], cfg->timer_bit, cmt);
- 	if (ret < 0)
- 		goto err4;
- 
-@@ -830,6 +839,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
- 
- 	return 0;
- err4:
-+	kfree(cmt->channels);
- 	clk_unprepare(cmt->clk);
- err3:
- 	clk_put(cmt->clk);
+ static const char *r8a7778_compat_dt[] __initdata = {
+ 	"renesas,r8a7778",
+ 	NULL,
+@@ -622,6 +630,7 @@ static const char *r8a7778_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
+ 	.init_early	= r8a7778_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
++	.init_machine	= r8a7778_add_standard_devices_dt,
+ 	.dt_compat	= r8a7778_compat_dt,
+ 	.init_late      = r8a7778_init_late,
+ MACHINE_END
 -- 
-1.8.3.2
+1.7.9.5
 
