@@ -1,99 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 23 Apr 2014 11:15:19 +0000
-Subject: [PATCH v5 12/15] ARM: shmobile: r8a7778: Switch to new style TMU device
-Message-Id: <1398251722-31667-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Stratos Karafotis <stratosk@semaphore.gr>
+Date: Tue, 15 Apr 2014 22:27:04 +0000
+Subject: [PATCH v2 8/8] sh: clk: Use cpufreq_for_each_valid_entry macro for iteration
+Message-Id: <534DB238.5030201@semaphore.gr>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Viresh Kumar <viresh.kumar@linaro.org>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
+The cpufreq core now supports the cpufreq_for_each_valid_entry macro
+helper for iteration over the cpufreq_frequency_table, so use it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+It should have no functional changes.
+
+Signed-off-by: Stratos Karafotis <stratosk@semaphore.gr>
 ---
- arch/arm/mach-shmobile/clock-r8a7778.c |  4 ++--
- arch/arm/mach-shmobile/setup-r8a7778.c | 30 ++++++++----------------------
- 2 files changed, 10 insertions(+), 24 deletions(-)
+ drivers/sh/clk/core.c | 20 +++++---------------
+ 1 file changed, 5 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-index 2009a9b..683bc41 100644
---- a/arch/arm/mach-shmobile/clock-r8a7778.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -211,8 +211,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
--	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
--	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
- 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-@@ -243,6 +241,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("scu.6", "rcar_sound", &mstp_clks[MSTP525]),
- 	CLKDEV_ICK_ID("scu.7", "rcar_sound", &mstp_clks[MSTP524]),
- 	CLKDEV_ICK_ID("scu.8", "rcar_sound", &mstp_clks[MSTP523]),
-+	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP016]),
-+	CLKDEV_ICK_ID("fck", "sh-tmu.1", &mstp_clks[MSTP015]),
- };
- 
- void __init r8a7778_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 6d69452..57c8277 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -71,33 +71,20 @@ R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
- 					  sizeof(scif##index##_platform_data))
- 
- /* TMU */
--static struct resource sh_tmu0_resources[] __initdata = {
--	DEFINE_RES_MEM(0xffd80008, 12),
--	DEFINE_RES_IRQ(gic_iid(0x40)),
-+static struct sh_timer_config sh_tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct sh_timer_config sh_tmu0_platform_data __initdata = {
--	.name			= "TMU00",
--	.channel_offset		= 0x4,
--	.timer_bit		= 0,
--	.clockevent_rating	= 200,
--};
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index 7472785..be56b22 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -196,17 +196,11 @@ int clk_rate_table_find(struct clk *clk,
+ 			struct cpufreq_frequency_table *freq_table,
+ 			unsigned long rate)
+ {
+-	int i;
 -
--static struct resource sh_tmu1_resources[] __initdata = {
--	DEFINE_RES_MEM(0xffd80014, 12),
--	DEFINE_RES_IRQ(gic_iid(0x41)),
--};
--
--static struct sh_timer_config sh_tmu1_platform_data __initdata = {
--	.name			= "TMU01",
--	.channel_offset		= 0x10,
--	.timer_bit		= 1,
--	.clocksource_rating	= 200,
-+static struct resource sh_tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xffd80000, 0x30),
-+	DEFINE_RES_IRQ(gic_spi(0x40)),
-+	DEFINE_RES_IRQ(gic_spi(0x41)),
-+	DEFINE_RES_IRQ(gic_spi(0x42)),
- };
+-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
+-		unsigned long freq = freq_table[i].frequency;
++	struct cpufreq_frequency_table *pos;
  
- #define r8a7778_register_tmu(idx)			\
- 	platform_device_register_resndata(		\
--		&platform_bus, "sh_tmu", idx,		\
-+		&platform_bus, "sh-tmu", idx,		\
- 		sh_tmu##idx##_resources,		\
- 		ARRAY_SIZE(sh_tmu##idx##_resources),	\
- 		&sh_tmu##idx##_platform_data,		\
-@@ -312,7 +299,6 @@ void __init r8a7778_add_dt_devices(void)
- 	r8a7778_register_scif(4);
- 	r8a7778_register_scif(5);
- 	r8a7778_register_tmu(0);
--	r8a7778_register_tmu(1);
+-		if (freq = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
+-		if (freq = rate)
+-			return i;
+-	}
++	cpufreq_for_each_valid_entry(pos, freq_table)
++		if (pos->frequency = rate)
++			return pos - freq_table;
+ 
+ 	return -ENOENT;
  }
+@@ -575,11 +569,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		return abs(target - *best_freq);
+ 	}
  
- /* HPB-DMA */
+-	for (freq = parent->freq_table; freq->frequency != CPUFREQ_TABLE_END;
+-	     freq++) {
+-		if (freq->frequency = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
++	cpufreq_for_each_valid_entry(freq, parent->freq_table) {
+ 		if (unlikely(freq->frequency / target <= div_min - 1)) {
+ 			unsigned long freq_max;
+ 
 -- 
-1.8.3.2
-
+1.9.0
