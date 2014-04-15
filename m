@@ -1,39 +1,49 @@
-From: Lucas Stach <l.stach@pengutronix.de>
-Date: Tue, 15 Apr 2014 10:07:34 +0000
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Tue, 15 Apr 2014 18:30:48 +0000
 Subject: Re: [PATCH v2 2/6] PCI: tegra: use new OF interrupt mapping when possible
-Message-Id: <1397556454.4574.13.camel@weser.hi.pengutronix.de>
+Message-Id: <20140415182651.GA17721@google.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
  <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
  <20140404165559.GE9007@google.com>
-In-Reply-To: <20140404165559.GE9007@google.com>
+ <1397556454.4574.13.camel@weser.hi.pengutronix.de>
+In-Reply-To: <1397556454.4574.13.camel@weser.hi.pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Bjorn,
-
-Am Freitag, den 04.04.2014, 10:55 -0600 schrieb Bjorn Helgaas:
-> On Wed, Mar 05, 2014 at 02:25:47PM +0100, Lucas Stach wrote:
-> > This is the recommended method of doing the IRQ
-> > mapping. For old devicetrees we fall back to the
-> > previous practice.
+On Tue, Apr 15, 2014 at 12:07:34PM +0200, Lucas Stach wrote:
+> Hi Bjorn,
+> 
+> Am Freitag, den 04.04.2014, 10:55 -0600 schrieb Bjorn Helgaas:
+> > On Wed, Mar 05, 2014 at 02:25:47PM +0100, Lucas Stach wrote:
+> > > This is the recommended method of doing the IRQ
+> > > mapping. For old devicetrees we fall back to the
+> > > previous practice.
+> > > 
+> > > Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> > > Acked-by: Arnd Bergmann <arnd@arndb.de>
 > > 
-> > Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-> > Acked-by: Arnd Bergmann <arnd@arndb.de>
+> > Applied with Stephen's Tested-by to my pending/host-tegra branch.  I'll
+> > rebase and rename it after v3.15-rc1, and I think we can squeeze it into
+> > v3.15 shortly after that.  Thanks.
+> > 
 > 
-> Applied with Stephen's Tested-by to my pending/host-tegra branch.  I'll
-> rebase and rename it after v3.15-rc1, and I think we can squeeze it into
-> v3.15 shortly after that.  Thanks.
-> 
+> Are you still planning to push this into 3.15, or has this slipped to
+> 3.16?
 
-Are you still planning to push this into 3.15, or has this slipped to
-3.16?
+Yes, I'm hoping to put them in v3.15.  I assume these actually
+fix something, e.g., we need these changes to boot with new devicetrees, or
+something?
 
-Regards,
-Lucas
--- 
-Pengutronix e.K.             | Lucas Stach                 |
-Industrial Linux Solutions   | http://www.pengutronix.de/  |
+The changelogs don't make it clear that these are fixes, and I want to heed
+Linus' guidance: "Anyway, because -rc1 is already pretty darn big, I do
+*not* want to hear about 'sorry this missed the window, can I still sneak
+in'.  Fixes only."
 
+I should have applied these sooner to make the merge window; I apologize
+for that.  Anyway, if you outline what these fix, I'll update the
+changelogs in my tree.
+
+Bjorn
