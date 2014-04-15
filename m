@@ -1,51 +1,80 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 14 Apr 2014 19:03:27 +0000
-Subject: Re: [PATCH 7/7] ASoC: rsnd: remove compatibility code
-Message-Id: <20140414190327.GE25182@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="CGDBiGfvSTbxKZlW"
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Tue, 15 Apr 2014 09:39:07 +0000
+Subject: Re: [PATCH 21/28] Remove CPU_SUBTYPE_SH7764
+Message-Id: <1397554747.1985.35.camel@x220>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
- <87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
+References: <1391971686-9517-1-git-send-email-richard@nod.at>
+	 <1391971686-9517-22-git-send-email-richard@nod.at>
+	 <1391981761.25855.58.camel@x220>
+In-Reply-To: <1391981761.25855.58.camel@x220>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Richard Weinberger <richard@nod.at>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+
+On Sun, 2014-02-09 at 22:36 +0100, Paul Bolle wrote:
+> On Sun, 2014-02-09 at 19:47 +0100, Richard Weinberger wrote:
+> > The symbol is an orphan, get rid of it.
+> > 
+> > Signed-off-by: Richard Weinberger <richard@nod.at>
+> 
+> Paul Mundt had something similar queued a year ago:
+> https://lkml.org/lkml/2013/3/11/211 . What happened?
+
+By now the SuperH port has been orphaned. So what's the current
+procedure for small SuperH fixes like this one?
 
 
---CGDBiGfvSTbxKZlW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Paul Bolle
 
-On Sun, Apr 13, 2014 at 05:57:27PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> Now, all platform is using new style rsnd_dai_platform_info.
-> Keeping compatibility is no longer needed.
-> We can cleanup code.
+> >  arch/sh/drivers/dma/Kconfig                | 5 ++---
+> >  arch/sh/include/cpu-sh4/cpu/dma-register.h | 1 -
+> >  arch/sh/include/cpu-sh4a/cpu/dma.h         | 3 +--
+> >  3 files changed, 3 insertions(+), 6 deletions(-)
+> > 
+> > diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
+> > index cfd5b90..e07afe8 100644
+> > --- a/arch/sh/drivers/dma/Kconfig
+> > +++ b/arch/sh/drivers/dma/Kconfig
+> > @@ -12,9 +12,8 @@ config SH_DMA_IRQ_MULTI
+> >  	default y if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
+> >  		     CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7750R || \
+> >  		     CPU_SUBTYPE_SH7751R || CPU_SUBTYPE_SH7091  || \
+> > -		     CPU_SUBTYPE_SH7763  || CPU_SUBTYPE_SH7764  || \
+> > -		     CPU_SUBTYPE_SH7780  || CPU_SUBTYPE_SH7785  || \
+> > -		     CPU_SUBTYPE_SH7760
+> > +		     CPU_SUBTYPE_SH7763  || CPU_SUBTYPE_SH7780  || \
+> > +		     CPU_SUBTYPE_SH7785  CPU_SUBTYPE_SH7760
+> >  
+> >  config SH_DMA_API
+> >  	depends on SH_DMA
+> > diff --git a/arch/sh/include/cpu-sh4/cpu/dma-register.h b/arch/sh/include/cpu-sh4/cpu/dma-register.h
+> > index 02788b6..9cd81e5 100644
+> > --- a/arch/sh/include/cpu-sh4/cpu/dma-register.h
+> > +++ b/arch/sh/include/cpu-sh4/cpu/dma-register.h
+> > @@ -32,7 +32,6 @@
+> >  #define CHCR_TS_HIGH_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
+> >  #elif defined(CONFIG_CPU_SUBTYPE_SH7757) || \
+> >  	defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+> > -	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
+> >  	defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+> >  	defined(CONFIG_CPU_SUBTYPE_SH7785)
+> >  #define CHCR_TS_LOW_MASK	0x00000018
+> > diff --git a/arch/sh/include/cpu-sh4a/cpu/dma.h b/arch/sh/include/cpu-sh4a/cpu/dma.h
+> > index 89afb65..8ceccce 100644
+> > --- a/arch/sh/include/cpu-sh4a/cpu/dma.h
+> > +++ b/arch/sh/include/cpu-sh4a/cpu/dma.h
+> > @@ -14,8 +14,7 @@
+> >  #define DMTE4_IRQ	evt2irq(0xb80)
+> >  #define DMAE0_IRQ	evt2irq(0xbc0)	/* DMA Error IRQ*/
+> >  #define SH_DMAC_BASE0	0xFE008020
+> > -#elif defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+> > -	defined(CONFIG_CPU_SUBTYPE_SH7764)
+> > +#elif defined(CONFIG_CPU_SUBTYPE_SH7763)
+> >  #define DMTE0_IRQ	evt2irq(0x640)
+> >  #define DMTE4_IRQ	evt2irq(0x780)
+> >  #define DMAE0_IRQ	evt2irq(0x6c0)
+> 
 
-This and the previous patch both look good.
 
---CGDBiGfvSTbxKZlW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTTDD8AAoJELSic+t+oim9sI4QAIDgAaBP23UvyxIGo5U2c1Rc
-8u5CbCH3Z6u4EwtNRCT/hhaW3DABTEMfXHbtZnffdhtBYK/htd59dPiCZgontAwq
-iKvbAdMmDgSA0JADX2jXc1aVexvL27YhOnDv/W7kZ5qb+9hGC0cqfHnxrMR7Q5rR
-Jv+F1ZGbJqpXKeHNn4aZJMqwDrO2orBk5FKgDxnaweFbRerd41DAY3k5YBEEXfy1
-G5TSCq58RMlcnQh6g/orpxj07KtWXvrBPIgWhhHp0Lj2P7eJe5a+YakZNohkZtWp
-jk6ek/TzrTOcHML+RnndklH8zkFX4uVfUSZ4EKPkAsATwe8xqrbgj9pwU2sGL5H6
-caB21T7kGBkiRtSZKFkPiGkK13lNu0tHbfQ+fbC8ICblmVXp7Sb1ES8g4/nAxNJC
-0cE4aJ2Xo4q23zVosIAvyzHLSywxRrLoKYo6m1fQC2H3cfrpRyE2kVWCyk0mdyuM
-oKPQGSnHGtgD7ktGSuLqGqhcNwHgz1CPsdSlCF/GkMDlpCJjWVT5uCJ0rtrexFGQ
-o8Zb7CZGXZFhmVyHqt72JuByh5cKTZq8+TVKajxcFOL/boylVPJwdzadaAKA/hY8
-gYPF1+2Venb2VhLV8SHRPHujjAkp7lGg3HzTpvVth2I8iJL66BHBEYPwjmj60zb9
-CwRGSHLLIQeU5e/bD39C
-=lJRI
------END PGP SIGNATURE-----
-
---CGDBiGfvSTbxKZlW--
