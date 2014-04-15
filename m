@@ -1,185 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:03 +0000
-Subject: [PATCH v2 03/14] clocksource: sh_tmu: Drop support for legacy platform data
-Message-Id: <1397832494-20607-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:10 +0000
+Subject: [PATCH RFC v2 14/17] ARM: shmobile: r8a73a4: Populate .init_machine for generic r8a73a4
+Message-Id: <1397565253-22741-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Now that all platforms have switched to the new-style platform data,
-drop support for the legacy version.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/clocksource/sh_tmu.c | 82 ++++++++------------------------------------
- 1 file changed, 15 insertions(+), 67 deletions(-)
+v2:
+  - New
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 4ba2c0f..47f5b48 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -32,7 +32,6 @@
- #include <linux/spinlock.h>
- 
- enum sh_tmu_model {
--	SH_TMU_LEGACY,
- 	SH_TMU,
- 	SH_TMU_SH3,
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |    8 ++++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a73a4.h b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+index ce8bdd1d8a8a..c44a1b6d1fea 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a73a4.h
+@@ -11,6 +11,7 @@ enum {
  };
-@@ -91,8 +90,6 @@ static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
  
- 	if (reg_nr = TSTR) {
- 		switch (ch->tmu->model) {
--		case SH_TMU_LEGACY:
--			return ioread8(ch->tmu->mapbase);
- 		case SH_TMU_SH3:
- 			return ioread8(ch->tmu->mapbase + 2);
- 		case SH_TMU:
-@@ -115,8 +112,6 @@ static inline void sh_tmu_write(struct sh_tmu_channel *ch, int reg_nr,
- 
- 	if (reg_nr = TSTR) {
- 		switch (ch->tmu->model) {
--		case SH_TMU_LEGACY:
--			return iowrite8(value, ch->tmu->mapbase);
- 		case SH_TMU_SH3:
- 			return iowrite8(value, ch->tmu->mapbase + 2);
- 		case SH_TMU:
-@@ -476,27 +471,12 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
- 		return 0;
- 
- 	ch->tmu = tmu;
-+	ch->index = index;
- 
--	if (tmu->model = SH_TMU_LEGACY) {
--		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
--
--		/*
--		 * The SH3 variant (SH770x, SH7705, SH7710 and SH7720) maps
--		 * channel registers blocks at base + 2 + 12 * index, while all
--		 * other variants map them at base + 4 + 12 * index. We can
--		 * compute the index by just dividing by 12, the 2 bytes or 4
--		 * bytes offset being hidden by the integer division.
--		 */
--		ch->index = cfg->channel_offset / 12;
--		ch->base = tmu->mapbase + cfg->channel_offset;
--	} else {
--		ch->index = index;
--
--		if (tmu->model = SH_TMU_SH3)
--			ch->base = tmu->mapbase + 4 + ch->index * 12;
--		else
--			ch->base = tmu->mapbase + 8 + ch->index * 12;
--	}
-+	if (tmu->model = SH_TMU_SH3)
-+		ch->base = tmu->mapbase + 4 + ch->index * 12;
-+	else
-+		ch->base = tmu->mapbase + 8 + ch->index * 12;
- 
- 	ch->irq = platform_get_irq(tmu->pdev, ch->index);
- 	if (ch->irq < 0) {
-@@ -526,28 +506,9 @@ static int sh_tmu_map_memory(struct sh_tmu_device *tmu)
- 	if (tmu->mapbase = NULL)
- 		return -ENXIO;
- 
--	/*
--	 * In legacy platform device configuration (with one device per channel)
--	 * the resource points to the channel base address.
--	 */
--	if (tmu->model = SH_TMU_LEGACY) {
--		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
--		tmu->mapbase -= cfg->channel_offset;
--	}
--
- 	return 0;
+ void r8a73a4_add_standard_devices(void);
++void r8a73a4_add_standard_devices_dt(void);
+ void r8a73a4_add_dt_devices(void);
+ void r8a73a4_clock_init(void);
+ void r8a73a4_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
+index cd36f8078325..90414b069135 100644
+--- a/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
+@@ -304,6 +304,13 @@ void __init r8a73a4_init_early(void)
  }
  
--static void sh_tmu_unmap_memory(struct sh_tmu_device *tmu)
--{
--	if (tmu->model = SH_TMU_LEGACY) {
--		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
--		tmu->mapbase += cfg->channel_offset;
--	}
--
--	iounmap(tmu->mapbase);
--}
--
- static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
-@@ -564,8 +525,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	tmu->model = id->driver_data;
+ #ifdef CONFIG_USE_OF
++void __init r8a73a4_add_standard_devices_dt(void)
++{
++	sh_pm_runtime_init();
++	r8a73a4_clock_init();
++	r8a73a4_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
  
- 	/* Get hold of clock. */
--	tmu->clk = clk_get(&tmu->pdev->dev,
--			   tmu->model = SH_TMU_LEGACY ? "tmu_fck" : "fck");
-+	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
- 		dev_err(&tmu->pdev->dev, "cannot get clock\n");
- 		return PTR_ERR(tmu->clk);
-@@ -583,10 +543,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	}
+ static const char *r8a73a4_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a73a4",
+@@ -312,6 +319,7 @@ static const char *r8a73a4_boards_compat_dt[] __initdata = {
  
- 	/* Allocate and setup the channels. */
--	if (tmu->model = SH_TMU_LEGACY)
--		tmu->num_channels = 1;
--	else
--		tmu->num_channels = hweight8(cfg->channels_mask);
-+	tmu->num_channels = hweight8(cfg->channels_mask);
- 
- 	tmu->channels = kzalloc(sizeof(*tmu->channels) * tmu->num_channels,
- 				GFP_KERNEL);
-@@ -595,23 +552,15 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 		goto err_unmap;
- 	}
- 
--	if (tmu->model = SH_TMU_LEGACY) {
--		ret = sh_tmu_channel_setup(&tmu->channels[0], 0,
--					   cfg->clockevent_rating != 0,
--					   cfg->clocksource_rating != 0, tmu);
-+	/*
-+	 * Use the first channel as a clock event device and the second channel
-+	 * as a clock source.
-+	 */
-+	for (i = 0; i < tmu->num_channels; ++i) {
-+		ret = sh_tmu_channel_setup(&tmu->channels[i], i,
-+					   i = 0, i = 1, tmu);
- 		if (ret < 0)
- 			goto err_unmap;
--	} else {
--		/*
--		 * Use the first channel as a clock event device and the second
--		 * channel as a clock source.
--		 */
--		for (i = 0; i < tmu->num_channels; ++i) {
--			ret = sh_tmu_channel_setup(&tmu->channels[i], i,
--						   i = 0, i = 1, tmu);
--			if (ret < 0)
--				goto err_unmap;
--		}
- 	}
- 
- 	platform_set_drvdata(pdev, tmu);
-@@ -620,7 +569,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 
- err_unmap:
- 	kfree(tmu->channels);
--	sh_tmu_unmap_memory(tmu);
-+	iounmap(tmu->mapbase);
- err_clk_unprepare:
- 	clk_unprepare(tmu->clk);
- err_clk_put:
-@@ -673,7 +622,6 @@ static int sh_tmu_remove(struct platform_device *pdev)
- }
- 
- static const struct platform_device_id sh_tmu_id_table[] = {
--	{ "sh_tmu", SH_TMU_LEGACY },
- 	{ "sh-tmu", SH_TMU },
- 	{ "sh-tmu-sh3", SH_TMU_SH3 },
- 	{ }
+ DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
+ 	.init_early	= r8a73a4_init_early,
++	.init_machine	= r8a73a4_add_standard_devices_dt,
+ 	.dt_compat	= r8a73a4_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-1.8.3.2
+1.7.9.5
 
