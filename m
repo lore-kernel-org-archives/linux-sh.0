@@ -1,40 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:32:10 +0000
-Subject: [PATCH 2/5] ARM: shmobile: armadillo800eva: fixup SND_SOC_DAIFMT_CBx_CFx flags
-Message-Id: <7b707277e734c553a8043e9b4d530eb47f4d60c8.1397694064.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:45:24 +0000
+Subject: [PATCH 5/5] [DEBUG] r8a7791: show MSTP clock status in /proc/cpuinfo
+Message-Id: <1397565924-23541-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694064.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694064.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-c7a507eea1db1430476289f525f9c853d5d485e8
-(ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags)
-exchanged sound flags, but armadillo800eva flags needs IB_NF.
-The recorded sound will be noise without this patch.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Not-Yet-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/kernel/setup.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2858f38..486063d 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -992,6 +992,7 @@ static struct asoc_simple_card_info fsi_wm8978_info = {
- 	.platform	= "sh_fsi2",
- 	.daifmt		= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBM_CFM,
- 	.cpu_dai = {
-+		.fmt	= SND_SOC_DAIFMT_IB_NF,
- 		.name	= "fsia-dai",
- 	},
- 	.codec_dai = {
+diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
+index 50e198c1e9c8..6a0373bc6046 100644
+--- a/arch/arm/kernel/setup.c
++++ b/arch/arm/kernel/setup.c
+@@ -1017,6 +1017,8 @@ static const char *hwcap2_str[] = {
+ 	NULL
+ };
+ 
++extern void r8a7791_show_mstp_clocks(struct seq_file *m);
++
+ static int c_show(struct seq_file *m, void *v)
+ {
+ 	int i, j;
+@@ -1072,6 +1074,13 @@ static int c_show(struct seq_file *m, void *v)
+ 	seq_printf(m, "Serial\t\t: %08x%08x\n",
+ 		   system_serial_high, system_serial_low);
+ 
++#ifdef CONFIG_ARCH_R8A7791
++#ifdef CONFIG_ARCH_MULTIPLATFORM
++	if (of_machine_is_compatible("renesas,r8a7791"))
++#endif
++		r8a7791_show_mstp_clocks(m);
++#endif /* CONFIG_ARCH_R8A7791 */
++
+ 	return 0;
+ }
+ 
 -- 
-1.8.4
+1.7.9.5
 
