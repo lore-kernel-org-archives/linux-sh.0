@@ -1,51 +1,39 @@
-From: Srikanth Thokala <sriku.linux@gmail.com>
-Date: Mon, 14 Apr 2014 10:56:42 +0000
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Tue, 15 Apr 2014 10:07:34 +0000
 Subject: Re: [PATCH v2 2/6] PCI: tegra: use new OF interrupt mapping when possible
-Message-Id: <CA+mB=1KTqmTW9=NftNXM9V7Pms7zpMHbsW6oThf=cPJ1qGLriw@mail.gmail.com>
+Message-Id: <1397556454.4574.13.camel@weser.hi.pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1394025951-32438-1-git-send-email-l.stach@pengutronix.de>
  <1394025951-32438-3-git-send-email-l.stach@pengutronix.de>
- <5318B232.2020507@wwwdotorg.org>
- <1394127555.4582.1.camel@weser.hi.pengutronix.de>
- <CA+mB=1JCjDMzTuctvSQgjNhBnkyUPC2ooAzJOX_PC5L1gAau8w@mail.gmail.com>
- <20140411204140.GA8967@obsidianresearch.com>
-In-Reply-To: <20140411204140.GA8967@obsidianresearch.com>
+ <20140404165559.GE9007@google.com>
+In-Reply-To: <20140404165559.GE9007@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Apr 12, 2014 at 2:11 AM, Jason Gunthorpe
-<jgunthorpe@obsidianresearch.com> wrote:
-> On Fri, Apr 11, 2014 at 11:10:59PM +0530, Srikanth Thokala wrote:
->
->> I see this error too on my setup (Xilinx PCIe Root Complex Driver),
->> https://lkml.org/lkml/2014/3/3/183
->
->> After digging into it, I see I need to override the API
->> pcibios_get_phb_of_node()
->
-> No, as I pointed out before, the DT node comes in through
-> pci_scan_root_bus:
+Hi Bjorn,
 
-Thanks Jason for the advice, it is working.
+Am Freitag, den 04.04.2014, 10:55 -0600 schrieb Bjorn Helgaas:
+> On Wed, Mar 05, 2014 at 02:25:47PM +0100, Lucas Stach wrote:
+> > This is the recommended method of doing the IRQ
+> > mapping. For old devicetrees we fall back to the
+> > previous practice.
+> > 
+> > Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+> > Acked-by: Arnd Bergmann <arnd@arndb.de>
+> 
+> Applied with Stephen's Tested-by to my pending/host-tegra branch.  I'll
+> rebase and rename it after v3.15-rc1, and I think we can squeeze it into
+> v3.15 shortly after that.  Thanks.
+> 
 
-Srikanth
+Are you still planning to push this into 3.15, or has this slipped to
+3.16?
 
->
-> +static struct pci_bus __init *xilinx_pcie_scan_bus(int nr,
-> +                               struct pci_sys_data *sys)
-> +{
-> +       struct xilinx_pcie_port *port = sys_to_pcie(sys);
-> +       struct pci_bus *bus;
-> +
-> +       if (port) {
-> +               port->root_busno = sys->busnr;
-> +               bus = pci_scan_root_bus(NULL, sys->busnr, &xilinx_pcie_ops,
->                                        ^^^^^^
->
-> You can't pass NULL here and have DT work properly.
->
-> See http://www.spinics.net/lists/arm-kernel/msg312392.html
->
-> Jason
+Regards,
+Lucas
+-- 
+Pengutronix e.K.             | Lucas Stach                 |
+Industrial Linux Solutions   | http://www.pengutronix.de/  |
+
