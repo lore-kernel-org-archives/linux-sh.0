@@ -1,70 +1,113 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:02 +0000
-Subject: [PATCH v2 02/14] clocksource: sh_cmt: Replace global spinlock with a per-device spinlock
-Message-Id: <1397832494-20607-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:09 +0000
+Subject: [PATCH RFC v2 13/17] ARM: shmobile: r7s72100: Populate .init_machine for generic r7s72100
+Message-Id: <1397565253-22741-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all CMT channels are handled by a single device instance, use a
-per-device spinlock.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/clocksource/sh_cmt.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+v2:
+  - New
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index ff1a059..4d00e4b 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -118,6 +118,8 @@ struct sh_cmt_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+ arch/arm/mach-shmobile/board-genmai-reference.c |   15 +--------------
+ arch/arm/mach-shmobile/include/mach/r7s72100.h  |    1 +
+ arch/arm/mach-shmobile/setup-r7s72100.c         |   14 ++++++++++++++
+ 3 files changed, 16 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
+index fea8fc0a3683..2eaeadfd3a5d 100644
+--- a/arch/arm/mach-shmobile/board-genmai-reference.c
++++ b/arch/arm/mach-shmobile/board-genmai-reference.c
+@@ -18,7 +18,6 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
-+
- 	struct sh_cmt_channel *channels;
- 	unsigned int num_channels;
+-#include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <mach/common.h>
+@@ -26,18 +25,6 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
-@@ -299,14 +301,12 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_channel *ch,
- 	return v2;
- }
- 
--static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
+-static void __init genmai_add_standard_devices(void)
+-{
+-	sh_pm_runtime_init();
+-#ifdef CONFIG_COMMON_CLK
+-	of_clk_init(NULL);
+-#else
+-	r7s72100_clock_init();
+-#endif
+-	r7s72100_add_dt_devices();
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
 -
- static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
- {
- 	unsigned long flags, value;
+ static const char * const genmai_boards_compat_dt[] __initconst = {
+ 	"renesas,genmai-reference",
+ 	NULL,
+@@ -45,6 +32,6 @@ static const char * const genmai_boards_compat_dt[] __initconst = {
  
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_cmt_lock, flags);
-+	raw_spin_lock_irqsave(&ch->cmt->lock, flags);
- 	value = sh_cmt_read_cmstr(ch);
+ DT_MACHINE_START(GENMAI_DT, "genmai")
+ 	.init_early	= r7s72100_init_early,
+-	.init_machine	= genmai_add_standard_devices,
++	.init_machine	= r7s72100_add_standard_devices_dt,
+ 	.dt_compat	= genmai_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/include/mach/r7s72100.h b/arch/arm/mach-shmobile/include/mach/r7s72100.h
+index 5f34b20ecd4a..ba8c5ca8ae60 100644
+--- a/arch/arm/mach-shmobile/include/mach/r7s72100.h
++++ b/arch/arm/mach-shmobile/include/mach/r7s72100.h
+@@ -2,6 +2,7 @@
+ #define __ASM_R7S72100_H__
  
- 	if (start)
-@@ -315,7 +315,7 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_channel *ch, int start)
- 		value &= ~(1 << ch->timer_bit);
+ void r7s72100_add_dt_devices(void);
++void r7s72100_add_standard_devices_dt(void);
+ void r7s72100_clock_init(void);
+ void r7s72100_init_early(void);
  
- 	sh_cmt_write_cmstr(ch, value);
--	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->cmt->lock, flags);
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 9c0b3a9d5f7a..3dc7c591e739 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk-provider.h>
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+@@ -100,6 +101,18 @@ void __init r7s72100_init_early(void)
  }
  
- static int sh_cmt_enable(struct sh_cmt_channel *ch, unsigned long *rate)
-@@ -934,6 +934,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ #ifdef CONFIG_USE_OF
++void __init r7s72100_add_standard_devices_dt(void)
++{
++	sh_pm_runtime_init();
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
++	r7s72100_clock_init();
++#endif
++	r7s72100_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
+ static const char *r7s72100_boards_compat_dt[] __initdata = {
+ 	"renesas,r7s72100",
+ 	NULL,
+@@ -107,6 +120,7 @@ static const char *r7s72100_boards_compat_dt[] __initdata = {
  
- 	memset(cmt, 0, sizeof(*cmt));
- 	cmt->pdev = pdev;
-+	raw_spin_lock_init(&cmt->lock);
- 
- 	if (!cfg) {
- 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+ DT_MACHINE_START(R7S72100_DT, "Generic R7S72100 (Flattened Device Tree)")
+ 	.init_early	= r7s72100_init_early,
++	.init_machine	= r7s72100_add_standard_devices_dt,
+ 	.dt_compat	= r7s72100_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-1.8.3.2
+1.7.9.5
 
