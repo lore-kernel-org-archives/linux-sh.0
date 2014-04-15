@@ -1,46 +1,46 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 07 Apr 2014 20:07:01 +0000
-Subject: [PATCH 1/9] ARM: shmobile: r8a7790: add dmac0,dmac1 clocks
-Message-Id: <1396901229-29117-2-git-send-email-ben.dooks@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:05 +0000
+Subject: [PATCH v2 09/17] drivers: sh: Remove automatic sh_pm_runtime_init() if ARCH_SHMOBILE_LEGACY
+Message-Id: <1397565253-22741-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
-Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
+Now all shmobile SoCs call sh_pm_runtime_init(), remove the core_initcall()
+for ARCH_SHMOBILE_LEGACY, and the check to prevent double enabling.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+v2:
+  - Add Reviewed-by, Tested-by
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a1e7c39..f98b01d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -671,16 +671,17 @@
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
--				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
-+				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
- 				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
- 				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
-+				R8A7790_CLK_SYS_DMAC0 R8A7790_CLK_SYS_DMAC1
- 			>;
- 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
--				"scifb1", "msiof1", "msiof3", "scifb2";
-+				"scifb1", "msiof1", "msiof3", "scifb2", "dmac0", "dmac1";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ drivers/sh/pm_runtime.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 3ec047ac1ff4..f0c4a384d49f 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -79,14 +79,11 @@ static bool default_pm_on;
+ 
+ int __init sh_pm_runtime_init(void)
+ {
+-	if (default_pm_on)
+-		return 0;
+-
+ 	default_pm_on = true;
+ 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
+ 	return 0;
+ }
+-#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE_LEGACY)
++#ifdef CONFIG_SUPERH
+ core_initcall(sh_pm_runtime_init);
+ #endif
+ 
 -- 
-1.9.1
+1.7.9.5
 
