@@ -1,64 +1,59 @@
-From: Stratos Karafotis <stratosk@semaphore.gr>
-Date: Mon, 21 Apr 2014 23:02:37 +0000
-Subject: [PATCH v4 8/8] sh: clk: Use cpufreq_for_each_valid_entry macro for iteration
-Message-Id: <5355A38D.8090503@semaphore.gr>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Apr 2014 12:34:12 +0000
+Subject: [PATCH RFC v2 16/17] ARM: shmobile: r8a7790: Populate .init_machine for generic r8a7790
+Message-Id: <1397565253-22741-17-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <534DB238.5030201@semaphore.gr>
-In-Reply-To: <534DB238.5030201@semaphore.gr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Viresh Kumar <viresh.kumar@linaro.org>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-The cpufreq core now supports the cpufreq_for_each_valid_entry macro
-helper for iteration over the cpufreq_frequency_table, so use it.
-
-It should have no functional changes.
-
-Signed-off-by: Stratos Karafotis <stratosk@semaphore.gr>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/sh/clk/core.c | 20 +++++---------------
- 1 file changed, 5 insertions(+), 15 deletions(-)
+v2:
+  - New
 
-diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
-index 7472785..be56b22 100644
---- a/drivers/sh/clk/core.c
-+++ b/drivers/sh/clk/core.c
-@@ -196,17 +196,11 @@ int clk_rate_table_find(struct clk *clk,
- 			struct cpufreq_frequency_table *freq_table,
- 			unsigned long rate)
- {
--	int i;
--
--	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
--		unsigned long freq = freq_table[i].frequency;
-+	struct cpufreq_frequency_table *pos;
+ arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c        |    7 +++++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+index 0b95babe84ba..92d6ecf0e290 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
+@@ -29,6 +29,7 @@ enum {
+ };
  
--		if (freq = CPUFREQ_ENTRY_INVALID)
--			continue;
--
--		if (freq = rate)
--			return i;
--	}
-+	cpufreq_for_each_valid_entry(pos, freq_table)
-+		if (pos->frequency = rate)
-+			return pos - freq_table;
- 
- 	return -ENOENT;
+ void r8a7790_add_standard_devices(void);
++void r8a7790_add_standard_devices_dt(void);
+ void r8a7790_add_dt_devices(void);
+ void r8a7790_clock_init(void);
+ void r8a7790_pinmux_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index a901d9ef53f6..ad7777674269 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -318,6 +318,12 @@ void __init r8a7790_init_early(void)
  }
-@@ -575,11 +569,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
- 		return abs(target - *best_freq);
- 	}
  
--	for (freq = parent->freq_table; freq->frequency != CPUFREQ_TABLE_END;
--	     freq++) {
--		if (freq->frequency = CPUFREQ_ENTRY_INVALID)
--			continue;
--
-+	cpufreq_for_each_valid_entry(freq, parent->freq_table) {
- 		if (unlikely(freq->frequency / target <= div_min - 1)) {
- 			unsigned long freq_max;
+ #ifdef CONFIG_USE_OF
++void __init r8a7790_add_standard_devices_dt(void)
++{
++	sh_pm_runtime_init();
++	r8a7790_add_dt_devices();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
  
+ static const char * const r8a7790_boards_compat_dt[] __initconst = {
+ 	"renesas,r8a7790",
+@@ -328,6 +334,7 @@ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+ 	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= r8a7790_init_early,
+ 	.init_time	= rcar_gen2_timer_init,
++	.init_machine	= r8a7790_add_standard_devices_dt,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-1.9.0
+1.7.9.5
+
