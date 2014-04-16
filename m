@@ -1,52 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 18:15:41 +0000
-Subject: [PATCH v3 5/5] ARM: shmobile: koelsch/lager defconfig: Enable MSIOF
-Message-Id: <1397499341-11964-6-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:44 +0000
+Subject: [PATCH 1/8] ARM: shmobile: Update r8a7791 CPU freq to 1500MHz in C
+Message-Id: <ce4b6a04c49b0b414d537b45ededd9dfd4e48336.1397627619.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm@opensource.se>
+The correct maximum CPU frequency for r8a7791 is 1500 MHz
+so update the r8a7791 SoC C code to reflect this.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Add Acked-by
-  - Separate from shmobile_defconfig update
-v2:
-  - No changes
----
- arch/arm/configs/koelsch_defconfig |    1 +
- arch/arm/configs/lager_defconfig   |    1 +
- 2 files changed, 2 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 86faab565a96..f3f08463e2bc 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -69,6 +69,7 @@ CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
- # CONFIG_HWMON is not set
-diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-index 58702440472a..5ba857317ca5 100644
---- a/arch/arm/configs/lager_defconfig
-+++ b/arch/arm/configs/lager_defconfig
-@@ -90,6 +90,7 @@ CONFIG_I2C_GPIO=y
- CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH_MSIOF=y
- CONFIG_GPIO_SH_PFC=y
- CONFIG_GPIOLIB=y
- CONFIG_GPIO_RCAR=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index e28404e..a7e4966 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -213,7 +213,7 @@ void __init r8a7791_add_standard_devices(void)
+ void __init r8a7791_init_early(void)
+ {
+ #ifndef CONFIG_ARM_ARCH_TIMER
+-	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
++	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
+ #endif
+ }
+ 
 -- 
-1.7.9.5
+1.8.5.2
 
