@@ -1,33 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 17:35:57 +0000
-Subject: [PATCH 1/4] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <1397496960-27848-2-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:10 +0000
+Subject: [PATCH 5/7] ARM: shmobile: Enable HIGHMEM in shmobile_defconfig
+Message-Id: <667d0f7b0e940bf36e8d12bd7d64aa0f9217b3ac.1397627278.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627278.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Many mach-shmobile hardware platforms include support for more
+than 1GiB of RAM. Enable HIGHMEM by default to allow use of
+larger amounts of memory.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 5a034ff405d0..a12a9d3b4b6e 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -216,7 +216,7 @@ static const struct spi_board_info spi_info[] __initconst = {
- 	{
- 		.modalias	= "m25p80",
- 		.platform_data	= &spi_flash_data,
--		.mode		= SPI_MODE_0,
-+		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
- 		.max_speed_hz	= 30000000,
- 		.bus_num	= 0,
- 		.chip_select	= 0,
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index c10e626..b73a038 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -25,6 +25,7 @@ CONFIG_SCHED_MC=y
+ CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_NR_CPUS=8
+ CONFIG_AEABI=y
++CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
 -- 
-1.7.9.5
+1.8.5.2
 
