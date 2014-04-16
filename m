@@ -1,58 +1,132 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 07 Apr 2014 20:07:09 +0000
-Subject: [PATCH 9/9] DMA: shdma: wire r8a7790
-Message-Id: <1396901229-29117-10-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:26 +0000
+Subject: [PATCH v5 12/20] ARM: shmobile: r8a7779: Initial multiplatform support
+Message-Id: <1397613454-7522-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396901229-29117-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org
-Cc: vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, kuninori.morimoto.gx@renesas.com, devicetree@vger.kernel.org, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Add support for R8A7790 with new device tree code.
+Add Marzen and r8a7779 to CONFIG_SHMOBILE_MULTI. At this
+point CCF is not yet supported so you cannot run this code
+yet. For CCF support to happen several different components
+are needed, and this is one simple portion that moves us
+forward. Other patches need to build on top of this one.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Marzen board support exists in 3 flavours:
+1) SHMOBILE_MULTI, MACH_MARZEN - board-marzen-reference.c (CCF + DT)
+2) SHMOBILE, MACH_MARZEN_REFERENCE - board-marzen-reference.c (DT)
+3) SHMOBILE, MACH_MARZEN - board-marzen.c (legacy C code)
+
+When CCF is done then 2) will be removed. When 1) includes same features
+as 3) then 3) will be removed.
+
+Based on work for the Koelsch and r8a7791 by Magnus Damm.
+
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/dma/sh/shdmac.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+v5
+* Select SYS_SUPPORTS_SH_TMU
 
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 0d765c0..84ba8d1 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -677,7 +677,8 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
- };
+v4
+* No change
+
+v3
+* Select RENESAS_INTC_IRQPIN
+
+fix ARCH_R8A7779
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/Makefile                      |  3 ++-
+ arch/arm/mach-shmobile/Kconfig                  | 10 ++++++++++
+ arch/arm/mach-shmobile/Makefile                 |  1 +
+ arch/arm/mach-shmobile/board-marzen-reference.c |  5 +++++
+ 4 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 178aa08..1e0ff95 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -322,7 +322,8 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
+ 	r8a7791-koelsch.dtb \
+-	r8a7790-lager.dtb
++	r8a7790-lager.dtb \
++	r8a7779-marzen-reference.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 037c006..28d7e86 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -26,6 +26,11 @@ config ARCH_R7S72100
+ 	bool "RZ/A1H (R7S72100)"
+ 	select SYS_SUPPORTS_SH_MTU2
  
- static const struct of_device_id sh_dmae_of_match[] = {
--	{.compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid,},
-+	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
-+	{ .compatible = "renesas,dma-r8a7790", .data = &shdma_arm_info },
- 	{}
- };
- MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
-@@ -693,10 +694,17 @@ static int sh_dmae_probe(struct platform_device *pdev)
- 	struct dma_device *dma_dev;
- 	struct resource *chan, *dmars, *errirq_res, *chanirq_res;
- 
--	if (pdev->dev.of_node)
--		pdata = of_match_device(sh_dmae_of_match, &pdev->dev)->data;
--	else
-+	if (pdev->dev.of_node) {
-+		const struct of_device_id *match;
++config ARCH_R8A7779
++	bool "R-Car H1 (R8A77790)"
++	select RENESAS_INTC_IRQPIN
++	select SYS_SUPPORTS_SH_TMU
 +
-+		match = of_match_device(sh_dmae_of_match, &pdev->dev);
-+		if (match->data = r8a73a4_shdma_devid)
-+			pdata = match->data;
-+		else
-+			pdata = sh_dma_probe_of(pdev, match);
-+	} else {
- 		pdata = dev_get_platdata(&pdev->dev);
-+	}
+ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+ 	select RENESAS_IRQC
+@@ -52,6 +57,11 @@ config MACH_LAGER
+ 	depends on ARCH_R8A7790
+ 	select MICREL_PHY if SH_ETH
  
- 	/* get platform data */
- 	if (!pdata || !pdata->channel_num)
++config MACH_MARZEN
++	bool "MARZEN board"
++	depends on ARCH_R8A7779
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 9c5cd8c..ed49315 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -59,6 +59,7 @@ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_KOELSCH)	+= board-koelsch-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager-reference.o
++obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+ obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_APE6EVM_REFERENCE)	+= board-ape6evm-reference.o
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index c22e5c2..d3e8319 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/clk-provider.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -28,7 +29,11 @@
+ 
+ static void __init marzen_init(void)
+ {
++#ifdef CONFIG_COMMON_CLK
++	of_clk_init(NULL);
++#else
+ 	r8a7779_clock_init();
++#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
 -- 
-1.9.1
+1.8.5.2
 
