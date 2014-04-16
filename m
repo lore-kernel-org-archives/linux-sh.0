@@ -1,121 +1,97 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 18:15:40 +0000
-Subject: [PATCH v3 4/5] ARM: shmobile: koelsch legacy: Add MSIOF support
-Message-Id: <1397499341-11964-5-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:31 +0000
+Subject: [PATCH v5 17/20] ARM: shmobile: Remove non-multiplatform Marzen reference support
+Message-Id: <1397613454-7522-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Now that r8a7779 has CCF support remove the legacy Marzen reference
+Kconfig bits CONFIG_MACH_MARZEN_REFERENCE for the non-multiplatform
+case.
 
-Add MSIOF resources, platform data, platform device, pinctrl, and SPI
-child device.
+Starting from this commit Marzen board support is always enabled via
+CONFIG_MACH_MARZEN, and CONFIG_ARCH_MULTIPLATFORM is used to select
+between board-marzen.c and board-marzen-reference.c
 
-  - Only MSIOF0 is in use, and thus registered. Its bus contains a single
-    device (a Renesas R2A11302FT PMIC).
-  - Platform device numbering is 1-based for compatibility with the BSP,
-    as QSPI uses zero, so MSIOF0's device name is "spi_r8a7791_msiof.1".
+The file board-marzen-reference.c can no longer be used together with
+the legacy sh-clk clock framework, instead CCF is used.
 
-Based on patches from Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+Based on work for the Koelsch board by Laurent Pinchart.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Add Acked-by
-v2:
-  - Removed resources for unused MSIOF channels.
----
- arch/arm/mach-shmobile/board-koelsch.c |   46 +++++++++++++++++++++++++++-----
- 1 file changed, 40 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/Makefile           |  1 -
+ arch/arm/mach-shmobile/Kconfig       | 13 -------------
+ arch/arm/mach-shmobile/Makefile      |  1 -
+ arch/arm/mach-shmobile/Makefile.boot |  1 -
+ 4 files changed, 16 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index a12a9d3b4b6e..7f32f5d02d38 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -44,6 +44,7 @@
- #include <linux/sh_eth.h>
- #include <linux/spi/flash.h>
- #include <linux/spi/rspi.h>
-+#include <linux/spi/sh_msiof.h>
- #include <linux/spi/spi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -184,6 +185,17 @@ static const struct rspi_plat_data qspi_pdata __initconst = {
- 	.num_chipselect = 1,
- };
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 1e0ff95..b1c26e1 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -311,7 +311,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7740-armadillo800eva-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	r8a7779-marzen-reference.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
+ 	sh73a0-kzm9g.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 28d7e86..bcb83dd 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -257,19 +257,6 @@ config MACH_MARZEN
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select USE_OF
  
-+/* MSIOF0 */
-+static const struct resource sh_msiof0_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6e20000, 0x0064),
-+	DEFINE_RES_IRQ(gic_spi(156)),
-+};
-+
-+static const struct sh_msiof_spi_info sh_msiof_info __initconst = {
-+	.rx_fifo_override	= 256,
-+	.num_chipselect		= 1,
-+};
-+
- /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
- static struct mtd_partition spi_flash_part[] = {
- 	{
-@@ -214,12 +226,19 @@ static const struct flash_platform_data spi_flash_data = {
+-config MACH_MARZEN_REFERENCE
+-	bool "MARZEN board - Reference Device Tree Implementation"
+-	depends on ARCH_R8A7779
+-	select ARCH_REQUIRE_GPIOLIB
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of Marzen board support
+-	   which makes use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_LAGER
+ 	bool "Lager board"
+ 	depends on ARCH_R8A7790
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index ed49315..591966e 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -69,7 +69,6 @@ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
+ obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+-obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE)	+= board-armadillo800eva-reference.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 99455ec..4200b94 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -14,7 +14,6 @@ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+ loadaddr-$(CONFIG_MACH_LAGER) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MACKEREL) += 0x40008000
+ loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
+-loadaddr-$(CONFIG_MACH_MARZEN_REFERENCE) += 0x60008000
  
- static const struct spi_board_info spi_info[] __initconst = {
- 	{
--		.modalias	= "m25p80",
--		.platform_data	= &spi_flash_data,
--		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
--		.max_speed_hz	= 30000000,
--		.bus_num	= 0,
--		.chip_select	= 0,
-+		.modalias	 = "m25p80",
-+		.platform_data	 = &spi_flash_data,
-+		.mode		 = SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
-+		.max_speed_hz	 = 30000000,
-+		.bus_num	 = 0,
-+		.chip_select	 = 0,
-+	}, {
-+		.modalias	 = "r2a1130x",
-+		.max_speed_hz	 = 6000000,
-+		.chip_select	 = 0,
-+		.bus_num	 = 1,
-+		.mode		 = SPI_MODE_3,
-+		.controller_data = (void *)-ENOENT, /* HW controlled CS */
- 	},
- };
- 
-@@ -384,6 +403,15 @@ static const struct pinctrl_map koelsch_pinctrl_map[] = {
- 				  "eth_rmii", "eth"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("r8a7791-ether", "pfc-r8a7791",
- 				  "intc_irq0", "intc"),
-+	/* MSIOF0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_clk", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_sync", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_rx", "msiof0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("spi_r8a7791_msiof.1", "pfc-r8a7791",
-+				  "msiof0_tx", "msiof0"),
- 	/* QSPI */
- 	PIN_MAP_MUX_GROUP_DEFAULT("qspi.0", "pfc-r8a7791",
- 				  "qspi_ctrl", "qspi"),
-@@ -449,6 +477,12 @@ static void __init koelsch_add_standard_devices(void)
- 					  qspi_resources,
- 					  ARRAY_SIZE(qspi_resources),
- 					  &qspi_pdata, sizeof(qspi_pdata));
-+	platform_device_register_resndata(&platform_bus, "spi_r8a7791_msiof",
-+					  1 + 0, sh_msiof0_resources,
-+					  ARRAY_SIZE(sh_msiof0_resources),
-+					  &sh_msiof_info,
-+					  sizeof(struct sh_msiof_spi_info));
-+
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
- 
- 	koelsch_add_du_device();
+ __ZRELADDR	:= $(sort $(loadaddr-y))
+    zreladdr-y   += $(__ZRELADDR)
 -- 
-1.7.9.5
+1.8.5.2
 
