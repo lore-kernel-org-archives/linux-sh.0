@@ -1,230 +1,97 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 16 Apr 2014 09:26:55 +0000
-Subject: Re: [PATCH v5 04/20] ARM: shmobile: r8a7779: Add clocks
-Message-Id: <279550352.xZBozqZzpf@avalon>
+Date: Wed, 16 Apr 2014 10:47:35 +0000
+Subject: [GIT PULL FOR v3.16] Renesas CMT, MTU2 and TMU cleanups
+Message-Id: <1445533.Y5IyOam9aF@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
- <1397613454-7522-5-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-5-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hi Daniel,
 
-Thank you for the patch.
+Please pull the latest version of the CMT, MTU2 and TMU clocksource drivers 
+cleanups. All patches have previously been posted in the two separate "[PATCH 
+v3 00/52] Renesas CMT and TMU cleanups" and "[PATCH 00/22] SH MTU2 DT support" 
+series.
 
-On Wednesday 16 April 2014 10:57:18 Simon Horman wrote:
-> Declare all core and MSTP clocks currently used by r8a7779-based boards.
-> 
-> Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoCs.
-> 
-> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+I've only included the driver patches, the arch/ changes will go through 
+Simon's tree. Could you please provide a stable branch that Simon can pull in 
+his repository to base the arch/ changes on ?
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
 
-> 
-> ---
-> v5
-> * As suggested by Laurent Pinchart
->   - Do not add duplicate HSPI or USB clocks
->   - Add TMU1 and TMU2 clocks instead of duplicate TMU0 clocks
-> 
-> v4
-> * As suggested by Laurent Pinchart
->   - Do not duplicate clocks
->   - Use TMU2 and TMU1 instead of TMU0 three times.
->   - Correct order of tmu clock output names
->   - Use usb01 and usb2 as clock output names instead
->     of ehci0 and ehci1.
-> * As suggested by Geert Uytterhoeven
->   - Wrap lines at < 80columns
->   - Beef-up short lines towards 80 columns
-> * As suggested by Laurent Pinchart
->   - Add HSCIF clocks
->   - Correct many clock sources
->   - Correct reg of cpg_clocks
-> * Add CPG clock "b" which is now part of the binding
-> 
-> v3
-> * As suggested by Laurent Pinchart
->   - Add and use extal_clk
->   - Fix bogus status register use for MSTP clocks
->   - Fix bogus mstp3_cls to use its own entries rather than
->     that of mstp1_clks
-> 
-> * Update to use "main" in cpg_clocks as per updated
->   binding in previous patch
-> * Update for new, consolidated and renamed index macros
->   - R8A7779_CLK_ETHER
->   - R8A7779_CLK_HSCIF
->   - R8A7779_CLK_HSPI
->   - R8A7779_CLK_MMC0,1
->   - R8A7779_CLK_PCIE
->   - R8A7779_CLK_USB01,2
-> ---
->  arch/arm/boot/dts/r8a7779.dtsi | 144
-> +++++++++++++++++++++++++++++++++++++++++ 1 file changed, 144 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index 8b1a336..1eccd7c 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -11,6 +11,7 @@
-> 
->  /include/ "skeleton.dtsi"
-> 
-> +#include <dt-bindings/clock/r8a7779-clock.h>
->  #include <dt-bindings/interrupt-controller/irq.h>
-> 
->  / {
-> @@ -284,4 +285,147 @@
->  		#size-cells = <0>;
->  		status = "disabled";
->  	};
-> +
-> +	clocks {
-> +		#address-cells = <2>;
-> +		#size-cells = <2>;
-> +		ranges;
-> +
-> +		/* External root clock */
-> +		extal_clk: extal_clk {
-> +			compatible = "fixed-clock";
-> +			#clock-cells = <0>;
-> +			/* This value must be overriden by the board. */
-> +			clock-frequency = <0>;
-> +			clock-output-names = "extal";
-> +		};
-> +
-> +		/* Special CPG clocks */
-> +		cpg_clocks: cpg_clocks@0xe6150000 {
-> +			compatible = "renesas,r8a7779-cpg-clocks";
-> +			reg = <0 0xffc80000 0 0x30>;
-> +			clocks = <&extal_clk>;
-> +			#clock-cells = <1>;
-> +			clock-output-names = "plla", "z", "zs", "s",
-> +					     "s1", "p", "b", "out";
-> +		};
-> +
-> +		/* Fixed factor clocks */
-> +		i_clk: i_clk {
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> +			#clock-cells = <0>;
-> +			clock-div = <2>;
-> +			clock-mult = <1>;
-> +			clock-output-names = "i";
-> +		};
-> +		s3_clk: s3_clk {
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> +			#clock-cells = <0>;
-> +			clock-div = <8>;
-> +			clock-mult = <1>;
-> +			clock-output-names = "s3";
-> +		};
-> +		s4_clk: s4_clk {
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> +			#clock-cells = <0>;
-> +			clock-div = <16>;
-> +			clock-mult = <1>;
-> +			clock-output-names = "s4";
-> +		};
-> +		g_clk: g_clk {
-> +			compatible = "fixed-factor-clock";
-> +			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-> +			#clock-cells = <0>;
-> +			clock-div = <24>;
-> +			clock-mult = <1>;
-> +			clock-output-names = "g";
-> +		};
-> +
-> +		/* Gate clocks */
-> +		mstp0_clks: mstp0_clks {
-> +			compatible = "renesas,r8a7779-mstp-clocks",
-> +			             "renesas,cpg-mstp-clocks";
-> +			reg = <0 0xffc80030 0 4>;
-> +			clocks = <&cpg_clocks R8A7779_CLK_S>,
-> +			         <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_S>,
-> +				 <&cpg_clocks R8A7779_CLK_S>,
-> +				 <&cpg_clocks R8A7779_CLK_S1>,
-> +				 <&cpg_clocks R8A7779_CLK_S1>,
-> +				 <&cpg_clocks R8A7779_CLK_S1>,
-> +				 <&cpg_clocks R8A7779_CLK_S1>,
-> +				 <&cpg_clocks R8A7779_CLK_S1>,
-> +				 <&cpg_clocks R8A7779_CLK_S1>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>;
-> +			#clock-cells = <1>;
-> +			renesas,clock-indices = <
-> +				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
-> +				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
-> +				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
-> +				R8A7779_CLK_SCIF5 R8A7779_CLK_SCIF4
-> +				R8A7779_CLK_SCIF3 R8A7779_CLK_SCIF2
-> +				R8A7779_CLK_SCIF1 R8A7779_CLK_SCIF0
-> +				R8A7779_CLK_I2C3 R8A7779_CLK_I2C2
-> +				R8A7779_CLK_I2C1 R8A7779_CLK_I2C0
-> +			>;
-> +			clock-output-names > +				"hspi", "tmu2", "tmu1", "tmu0", "hscif1",
-> +				"hscif0", "scif5", "scif4", "scif3", "scif2",
-> +				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
-> +				"i2c0";
-> +		};
-> +		mstp1_clks: mstp1_clks {
-> +			compatible = "renesas,r8a7779-mstp-clocks",
-> +			             "renesas,cpg-mstp-clocks";
-> +			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
-> +			clocks = <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_S>,
-> +				 <&cpg_clocks R8A7779_CLK_S>,
-> +				 <&cpg_clocks R8A7779_CLK_S>,
-> +				 <&cpg_clocks R8A7779_CLK_S>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_P>,
-> +				 <&cpg_clocks R8A7779_CLK_S>;
-> +			#clock-cells = <1>;
-> +			renesas,clock-indices = <
-> +				R8A7779_CLK_USB01 R8A7779_CLK_USB2
-> +				R8A7779_CLK_DU R8A7779_CLK_VIN2
-> +				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
-> +				R8A7779_CLK_ETHER R8A7779_CLK_SATA
-> +				R8A7779_CLK_PCIE R8A7779_CLK_VIN3
-> +			>;
-> +			clock-output-names > +				"usb01", "usb2",
-> +				"du", "vin2",
-> +				"vin1", "vin0",
-> +				"ether", "sata",
-> +				"pcie", "vin3";
-> +		};
-> +		mstp3_clks: mstp3_clks {
-> +			compatible = "renesas,r8a7779-mstp-clocks",
-> +			             "renesas,cpg-mstp-clocks";
-> +			reg = <0 0xffc8003c 0 4>;
-> +			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
-> +				 <&s4_clk>, <&s4_clk>;
-> +			#clock-cells = <1>;
-> +			renesas,clock-indices = <
-> +				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
-> +				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
-> +				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
-> +			>;
-> +			clock-output-names > +				"sdhi3", "sdhi2", "sdhi1", "sdhi0",
-> +				"mmc1", "mmc0";
-> +		};
-> +	};
->  };
+  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
+
+are available in the git repository at:
+
+  git://linuxtv.org/pinchartl/fbdev.git timers/for-v3.16
+
+for you to fetch changes up to 346f5e76b3822a2530a03f33b00ee89dfc463326:
+
+  clocksource: sh_mtu2: Sort headers alphabetically (2014-04-16 12:03:34 
++0200)
+
+----------------------------------------------------------------
+Laurent Pinchart (52):
+      clocksource: sh_cmt: Use request_irq() instead of setup_irq()
+      clocksource: sh_cmt: Split channel fields from sh_cmt_priv
+      clocksource: sh_cmt: Rename struct sh_cmt_priv to sh_cmt_device
+      clocksource: sh_cmt: Split channel setup to separate function
+      clocksource: sh_cmt: Constify name argument to sh_cmt_register()
+      clocksource: sh_cmt: Rename mapbase/mapbase_str to mapbase_ch/mapbase
+      clocksource: sh_cmt: Add memory base to sh_cmt_channel structure
+      clocksource: sh_cmt: Add index to struct sh_cmt_channel
+      clocksource: sh_cmt: Replace kmalloc + memset with kzalloc
+      clocksource: sh_cmt: Allocate channels dynamically
+      clocksource: sh_cmt: Split static information from sh_cmt_device
+      clocksource: sh_cmt: Replace hardcoded register values with macros
+      clocksource: sh_cmt: Set cpumask to cpu_possible_mask
+      clocksource: sh_cmt: Hardcode CMT clock event rating to 125
+      clocksource: sh_cmt: Hardcode CMT clock source rating to 125
+      clocksource: sh_cmt: Add support for multiple channels per device
+      clocksource: sh_cmt: Rename clock to "fck" in the non-legacy case
+      clocksource: sh_cmt: Remove FSF mail address from GPL notice
+      clocksource: sh_cmt: Sort headers alphabetically
+      clocksource: sh_cmt: Request IRQ for clock event device only
+      clocksource: sh_tmu: Use request_irq() instead of setup_irq()
+      clocksource: sh_tmu: Split channel fields from sh_tmu_priv
+      clocksource: sh_tmu: Rename struct sh_tmu_priv to sh_tmu_device
+      clocksource: sh_tmu: Split channel setup to separate function
+      clocksource: sh_tmu: Constify name argument to sh_tmu_register()
+      clocksource: sh_tmu: Add memory base to sh_tmu_channel structure
+      clocksource: sh_tmu: Add index to struct sh_tmu_channel
+      clocksource: sh_tmu: Replace kmalloc + memset with kzalloc
+      clocksource: sh_tmu: Allocate channels dynamically
+      clocksource: sh_tmu: Replace hardcoded register values with macros
+      clocksource: sh_tmu: Hardcode TMU clock event and source ratings to 200
+      clocksource: sh_tmu: Add support for multiple channels per device
+      clocksource: sh_tmu: Rename clock to "fck" in the non-legacy case
+      clocksource: sh_tmu: Remove FSF mail address from GPL notice
+      clocksource: sh_tmu: Sort headers alphabetically
+      clocksource: sh_mtu2: Use request_irq() instead of setup_irq()
+      clocksource: sh_mtu2: Turn sh_mtu2_priv fields into local variables
+      clocksource: sh_mtu2: Split channel fields from sh_mtu2_priv
+      clocksource: sh_mtu2: Rename struct sh_mtu2_priv to sh_mtu2_device
+      clocksource: sh_mtu2: Split channel setup to separate function
+      clocksource: sh_mtu2: Constify name argument to sh_mtu2_register()
+      clocksource: sh_mtu2: Add memory base to sh_mtu2_channel structure
+      clocksource: sh_mtu2: Add index to struct sh_mtu2_channel
+      clocksource: sh_mtu2: Replace kmalloc + memset with kzalloc
+      clocksource: sh_mtu2: Allocate channels dynamically
+      clocksource: sh_mtu2: Replace hardcoded register values with macros
+      clocksource: sh_mtu2: Set cpumask to cpu_possible_mask
+      clocksource: sh_mtu2: Hardcode MTU2 clock event rating to 200
+      clocksource: sh_mtu2: Add support for multiple channels per device
+      clocksource: sh_mtu2: Rename clock to "fck" in the non-legacy case
+      clocksource: sh_mtu2: Remove FSF mail address from GPL notice
+      clocksource: sh_mtu2: Sort headers alphabetically
+
+ drivers/clocksource/sh_cmt.c  | 956 +++++++++++++++++++++++++++--------------
+ drivers/clocksource/sh_mtu2.c | 488 ++++++++++++++++++--------
+ drivers/clocksource/sh_tmu.c  | 541 +++++++++++++++++-----------
+ include/linux/sh_timer.h      |   1 +
+ 4 files changed, 1306 insertions(+), 680 deletions(-)
 
 -- 
 Regards,
