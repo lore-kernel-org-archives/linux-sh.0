@@ -1,95 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:12 +0000
-Subject: [PATCH v3 29/52] clocksource: sh_tmu: Allocate channels dynamically
-Message-Id: <1397228675-11684-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:45 +0000
+Subject: [PATCH 2/8] ARM: shmobile: Add shared shmobile_init_delay()
+Message-Id: <c39dae380b4a11f1050a2ef6607598dcbe0541be.1397627619.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This prepares the driver for multi-channel support.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Introduce shmobile_init_delay() that gets CPU specific
+parameters from DT and sets up the early delay from
+there. This allows us to both remove frequency information
+from the C code and consolidate existing code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_tmu.c | 27 ++++++++++++++++++++-------
- 1 file changed, 20 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h |  1 +
+ arch/arm/mach-shmobile/timer.c               | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 29 insertions(+)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 26a9f7d..55b7a37 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -58,7 +58,8 @@ struct sh_tmu_device {
- 	void __iomem *mapbase;
- 	struct clk *clk;
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index cb8e32d..f7a360e 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -4,6 +4,7 @@
+ extern void shmobile_earlytimer_init(void);
+ extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ 			 unsigned int mult, unsigned int div);
++extern void shmobile_init_delay(void);
+ struct twd_local_timer;
+ extern void shmobile_setup_console(void);
+ extern void shmobile_boot_vector(void);
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index 62d7052..ccecde9 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -21,6 +21,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/clocksource.h>
+ #include <linux/delay.h>
++#include <linux/of_address.h>
  
--	struct sh_tmu_channel channel;
-+	struct sh_tmu_channel *channels;
-+	unsigned int num_channels;
- };
+ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ 				 unsigned int mult, unsigned int div)
+@@ -39,6 +40,33 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
+ 		preset_lpj = max_cpu_core_mhz * value;
+ }
  
- static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
-@@ -469,6 +470,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	struct resource *res;
-+	void __iomem *base;
- 	int ret;
- 	ret = -ENXIO;
- 
-@@ -488,16 +490,16 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	}
- 
- 	/*
--	 * Map memory, let channel.base point to our channel and mapbase to the
-+	 * Map memory, let base point to our channel and mapbase to the
- 	 * start/stop shared register.
- 	 */
--	tmu->channel.base = ioremap_nocache(res->start, resource_size(res));
--	if (tmu->channel.base = NULL) {
-+	base = ioremap_nocache(res->start, resource_size(res));
-+	if (base = NULL) {
- 		dev_err(&tmu->pdev->dev, "failed to remap I/O memory\n");
- 		goto err0;
- 	}
- 
--	tmu->mapbase = tmu->channel.base - cfg->channel_offset;
-+	tmu->mapbase = base - cfg->channel_offset;
- 
- 	/* get hold of clock */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "tmu_fck");
-@@ -511,18 +513,29 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	if (ret < 0)
- 		goto err2;
- 
--	ret = sh_tmu_channel_setup(&tmu->channel, tmu);
-+	tmu->channels = kzalloc(sizeof(*tmu->channels), GFP_KERNEL);
-+	if (tmu->channels = NULL) {
-+		ret = -ENOMEM;
-+		goto err3;
++void __init shmobile_init_delay(void)
++{
++	struct device_node *np, *parent;
++	u32 max_freq, freq;
++
++	max_freq = 0;
++
++	parent = of_find_node_by_path("/cpus");
++	if (parent) {
++		for_each_child_of_node(parent, np) {
++			if (!of_property_read_u32(np, "clock-frequency", &freq))
++				max_freq = max(max_freq, freq);
++		}
++		of_node_put(parent);
 +	}
 +
-+	tmu->num_channels = 1;
++	if (max_freq) {
++		if (of_find_compatible_node(NULL, NULL, "arm,cortex-a8"))
++			shmobile_setup_delay(max_freq, 1, 3);
++		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a9"))
++			shmobile_setup_delay(max_freq, 1, 3);
++		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a15"))
++			if (!IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
++				shmobile_setup_delay(max_freq, 2, 4);
++	}
++}
 +
-+	tmu->channels[0].base = base;
-+
-+	ret = sh_tmu_channel_setup(&tmu->channels[0], tmu);
- 	if (ret < 0)
- 		goto err3;
- 
- 	return 0;
- 
-  err3:
-+	kfree(tmu->channels);
- 	clk_unprepare(tmu->clk);
-  err2:
- 	clk_put(tmu->clk);
-  err1:
--	iounmap(tmu->channel.base);
-+	iounmap(base);
-  err0:
- 	return ret;
- }
+ static void __init shmobile_late_time_init(void)
+ {
+ 	/*
 -- 
-1.8.3.2
+1.8.5.2
 
