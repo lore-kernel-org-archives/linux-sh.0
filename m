@@ -1,34 +1,65 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:44:55 +0000
-Subject: [PATCH 06/14] ARM: shmobile: koelsch-reference: Annotate clk_enables as __initconst
-Message-Id: <9e7b83c221cc257f4dc37acc82bbcb80627c0ab9.1397774191.git.horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:24 +0000
+Subject: [PATCH v5 10/20] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board
+Message-Id: <1397613454-7522-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397774190.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
----
- arch/arm/mach-shmobile/board-koelsch-reference.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Move the clock initialisation and OF device population from
+SoC to board code. This is in keeping with the pattern used by Lager.
+And the clock portion is part of decoupling clock initialisation
+from SoC code in preparation for moving to the common clock framework.
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index a39114a..63117d52 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -110,7 +110,7 @@ static const struct clk_name clk_names[] __initconst = {
- /*
-  * This is a really crude hack to work around core platform clock issues
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 2773936..c22e5c2 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   */
--static const struct clk_name clk_enables[] = {
-+static const struct clk_name clk_enables[] __initconst = {
- 	{ "ether", NULL, "ee700000.ethernet" },
- 	{ "i2c2", NULL, "e6530000.i2c" },
- 	{ "msiof0", NULL, "e6e20000.spi" },
+ 
++#include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -27,7 +28,9 @@
+ 
+ static void __init marzen_init(void)
+ {
++	r8a7779_clock_init();
+ 	r8a7779_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index f28b8c7..3471a9b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -784,12 +784,8 @@ void __init r8a7779_init_delay(void)
+ 
+ void __init r8a7779_add_standard_devices_dt(void)
+ {
+-	/* clocks are setup late during boot in the case of DT */
+-	r8a7779_clock_init();
+-
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			     ARRAY_SIZE(r8a7779_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ #define MODEMR		0xffcc0020
 -- 
-1.8.4
+1.8.5.2
 
