@@ -1,95 +1,114 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 18:33:14 +0000
-Subject: [PATCH v2 3/6] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
-Message-Id: <1397500397-12607-4-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 16 Apr 2014 13:28:31 +0000
+Subject: Re: [PATCH v2 3/6] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
+Message-Id: <9401906.R8JLgOcyrS@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397500397-12607-4-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1397500397-12607-4-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Geert,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - No changes
----
- arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+Thank you for the patch.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d38d70339149..7ff29601f962 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -117,6 +117,7 @@
- 		gpio-ranges = <&pfc 0 0 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
- 	};
- 
- 	gpio1: gpio@e6051000 {
-@@ -128,6 +129,7 @@
- 		gpio-ranges = <&pfc 0 32 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
- 	};
- 
- 	gpio2: gpio@e6052000 {
-@@ -139,6 +141,7 @@
- 		gpio-ranges = <&pfc 0 64 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
- 	};
- 
- 	gpio3: gpio@e6053000 {
-@@ -150,6 +153,7 @@
- 		gpio-ranges = <&pfc 0 96 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
- 	};
- 
- 	gpio4: gpio@e6054000 {
-@@ -161,6 +165,7 @@
- 		gpio-ranges = <&pfc 0 128 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
- 	};
- 
- 	gpio5: gpio@e6055000 {
-@@ -172,6 +177,7 @@
- 		gpio-ranges = <&pfc 0 160 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
- 	};
- 
- 	thermal@e61f0000 {
-@@ -802,14 +808,19 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
-+			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
- 				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
-+				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
-+				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
- 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
- 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
- 			>;
- 			clock-output-names +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
- 				"rcan1", "rcan0", "qspi_mod", "iic3",
- 				"i2c3", "i2c2", "i2c1", "i2c0";
- 		};
+
+On Monday 14 April 2014 20:33:14 Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+> v2:
+>   - No changes
+> ---
+>  arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index d38d70339149..7ff29601f962 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -117,6 +117,7 @@
+>  		gpio-ranges = <&pfc 0 0 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
+>  	};
+> 
+>  	gpio1: gpio@e6051000 {
+> @@ -128,6 +129,7 @@
+>  		gpio-ranges = <&pfc 0 32 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
+>  	};
+> 
+>  	gpio2: gpio@e6052000 {
+> @@ -139,6 +141,7 @@
+>  		gpio-ranges = <&pfc 0 64 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
+>  	};
+> 
+>  	gpio3: gpio@e6053000 {
+> @@ -150,6 +153,7 @@
+>  		gpio-ranges = <&pfc 0 96 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
+>  	};
+> 
+>  	gpio4: gpio@e6054000 {
+> @@ -161,6 +165,7 @@
+>  		gpio-ranges = <&pfc 0 128 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
+>  	};
+> 
+>  	gpio5: gpio@e6055000 {
+> @@ -172,6 +177,7 @@
+>  		gpio-ranges = <&pfc 0 160 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
+>  	};
+> 
+>  	thermal@e61f0000 {
+> @@ -802,14 +808,19 @@
+>  		mstp9_clks: mstp9_clks@e6150994 {
+>  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
+clocks";
+>  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, 
+<&cp_clk>,
+> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, 
+<&cp_clk>,
+>  				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+>  			#clock-cells = <1>;
+>  			renesas,clock-indices = <
+> +				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
+> +				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
+>  				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
+> R8A7790_CLK_IICDVFS R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
+> R8A7790_CLK_I2C0
+>  			>;
+> 
+>  			clock-output-names > +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
+>  				"rcan1", "rcan0", "qspi_mod", "iic3",
+>  				"i2c3", "i2c2", "i2c1", "i2c0";
+>  		};
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
