@@ -1,47 +1,65 @@
-From: Ben Dooks <ben@trinity.fluff.org>
-Date: Fri, 04 Apr 2014 11:42:50 +0000
-Subject: Re: [alsa-devel] [PATCH] ASoC: rsnd: SSI needs to prepare clocks before enabling
-Message-Id: <20140404114250.GS4400@trinity.fluff.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:50 +0000
+Subject: [PATCH 7/8] ARM: shmobile: Check r8a7791 MD21 at SMP boot
+Message-Id: <277efd30cfc72ec2f44a9bc95d93807b867bd9e9.1397627619.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396009626-24699-1-git-send-email-ben.dooks@codethink.co.uk>
- <20140329100906.GE21628@sirena.org.uk>
-In-Reply-To: <20140329100906.GE21628@sirena.org.uk>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-kernel@lists.codethink.co.uk, alsa-devel@alsa-project.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, lgirdwood@gmail.com, Ben Dooks <ben.dooks@codethink.co.uk>, magnus.damm@opensource.se, William Towle <william.towle@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Mar 29, 2014 at 10:09:06AM +0000, Mark Brown wrote:
-> On Fri, Mar 28, 2014 at 12:27:06PM +0000, Ben Dooks wrote:
-> > From: William Towle <william.towle@codethink.co.uk>
-> > 
-> > The rsnd_ssi_hw_{stop|start} functions need to call clk_prepare_enable()
-> > and clk_disable_unprepare(), otherwise the following warning occurs on
-> > attempt to play sound:
-> 
-> This doesn't apply cleanly against current code, can you please check and
-> resend - I can't apply this anyway since...
-> 
-> > Signed-off-by: William Towle <william.towle@codethink.co.uk>
-> > [ben.dooks@codethink.co.uk: add more bug info to report]
-> > Tested-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> > ---
-> 
-> ...you forgot to sign off.  I'm also not seeing the debug info you
-> mention in the changelog, indeed there's no error checking.
+From: Magnus Damm <damm@opensource.se>
 
-Ooops. 
+On r8a7791 the hardware boot mode bit MD21 indicates if hardware
+debug mode is enabled or not. In case hardware debug mode is enabled
+print a warning and refrain from booting secondary CPU cores.
 
-I need to re-do this anyway as we need to prepare the clock separately
-from the enable, as the enable code is occasionally being called from
-an interrupt context.
+Without this patch Koelsch with SW8-4 set to OFF will hang at SMP boot.
 
-I anm not sure what you mean by debug info... there is the log from
-the WARN_ON() which is trigger from the clock driver.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7791.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 2df5bd1..ec97952 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -20,6 +20,7 @@
+ #include <asm/smp_plat.h>
+ #include <mach/common.h>
+ #include <mach/r8a7791.h>
++#include <mach/rcar-gen2.h>
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
+@@ -51,9 +52,21 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	iounmap(p);
+ }
+ 
++static int r8a7791_smp_boot_secondary(unsigned int cpu,
++				      struct task_struct *idle)
++{
++	/* Error out when hardware debug mode is enabled */
++	if (rcar_gen2_read_mode_pins() & BIT(21)) {
++		pr_warn("Unable to boot CPU%u when MD21 is set\n", cpu);
++		return -ENOTSUPP;
++	}
++
++	return shmobile_smp_apmu_boot_secondary(cpu, idle);
++}
++
+ struct smp_operations r8a7791_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= r8a7791_smp_prepare_cpus,
+-	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
++	.smp_boot_secondary	= r8a7791_smp_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_disable		= shmobile_smp_cpu_disable,
+ 	.cpu_die		= shmobile_smp_apmu_cpu_die,
 -- 
-Ben Dooks, ben@fluff.org, http://www.fluff.org/ben/
-
-Large Hadron Colada: A large Pina Colada that makes the universe disappear.
+1.8.5.2
 
