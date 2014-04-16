@@ -1,120 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:03 +0000
-Subject: [PATCH v3 20/52] clocksource: sh_cmt: Request IRQ for clock event device only
-Message-Id: <1397228675-11684-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:09 +0000
+Subject: [PATCH 4/7] ARM: shmobile: Enable USBHS gadget support in shmobile_defconfig
+Message-Id: <41551f3d7d9a37b55a6f84d77200bfe29d42c466.1397627278.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627278.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Clock sources don't need an IRQ, request the IRQ only for channels used
-as clock event devices.
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The renesas_usbhs driver provides USB gadget support for most Renesas
+platforms. To increase hardware support enable the driver in the
+shmobile_defconfig multiplatform configuration.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 51 +++++++++++++++++++++++---------------------
- 1 file changed, 27 insertions(+), 24 deletions(-)
+ arch/arm/configs/shmobile_defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 9f215e7..bc8d025 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -785,10 +785,28 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
- 	pm_genpd_syscore_poweron(&ch->cmt->pdev->dev);
- }
- 
--static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
--				       const char *name)
-+static int sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
-+				      const char *name)
- {
- 	struct clock_event_device *ced = &ch->ced;
-+	int irq;
-+	int ret;
-+
-+	irq = platform_get_irq(ch->cmt->pdev, ch->cmt->legacy ? 0 : ch->index);
-+	if (irq < 0) {
-+		dev_err(&ch->cmt->pdev->dev, "ch%u: failed to get irq\n",
-+			ch->index);
-+		return irq;
-+	}
-+
-+	ret = request_irq(irq, sh_cmt_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&ch->cmt->pdev->dev), ch);
-+	if (ret) {
-+		dev_err(&ch->cmt->pdev->dev, "ch%u: failed to request irq %d\n",
-+			ch->index, irq);
-+		return ret;
-+	}
- 
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
-@@ -803,14 +821,20 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
- 	dev_info(&ch->cmt->pdev->dev, "ch%u: used for clock events\n",
- 		 ch->index);
- 	clockevents_register_device(ced);
-+
-+	return 0;
- }
- 
- static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
- 			   bool clockevent, bool clocksource)
- {
-+	int ret;
-+
- 	if (clockevent) {
- 		ch->cmt->has_clockevent = true;
--		sh_cmt_register_clockevent(ch, name);
-+		ret = sh_cmt_register_clockevent(ch, name);
-+		if (ret < 0)
-+			return ret;
- 	}
- 
- 	if (clocksource) {
-@@ -825,7 +849,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 				unsigned int hwidx, bool clockevent,
- 				bool clocksource, struct sh_cmt_device *cmt)
- {
--	int irq;
- 	int ret;
- 
- 	/* Skip unused channels. */
-@@ -869,17 +892,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 		}
- 	}
- 
--	if (cmt->legacy)
--		irq = platform_get_irq(cmt->pdev, 0);
--	else
--		irq = platform_get_irq(cmt->pdev, ch->index);
--
--	if (irq < 0) {
--		dev_err(&cmt->pdev->dev, "ch%u: failed to get irq\n",
--			ch->index);
--		return irq;
--	}
--
- 	if (cmt->info->width = (sizeof(ch->max_match_value) * 8))
- 		ch->max_match_value = ~0;
- 	else
-@@ -904,15 +916,6 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 	}
- 	ch->cs_enabled = false;
- 
--	ret = request_irq(irq, sh_cmt_interrupt,
--			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
--			  dev_name(&cmt->pdev->dev), ch);
--	if (ret) {
--		dev_err(&cmt->pdev->dev, "ch%u: failed to request irq %d\n",
--			ch->index, irq);
--		return ret;
--	}
--
- 	return 0;
- }
- 
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 146ee70..c10e626 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -103,7 +103,11 @@ CONFIG_SOUND=y
+ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_RCAR=y
++CONFIG_USB=y
+ CONFIG_USB_RCAR_GEN2_PHY=y
++CONFIG_USB_RENESAS_USBHS=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_RENESAS_USBHS_UDC=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
 -- 
-1.8.3.2
+1.8.5.2
 
