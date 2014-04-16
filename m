@@ -1,46 +1,76 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:31:39 +0000
-Subject: [PATCH 3/8] ARM: shmobile: r8a7790: Fix the I2C clocks parents in legacy code
-Message-Id: <ab077bfdc4eaffa5328a9843d4d7970718ac0b8a.1397694178.git.horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:34 +0000
+Subject: [PATCH v5 20/20] ARM: shmobile: marzen-reference: Remove legacy clock support
+Message-Id: <1397613454-7522-21-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694178.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Marzen DT reference is now only built for multiplatform
+which means that CCF comes with the package. Remove unused legacy
+code ifdefs to clean up the code.
 
-All I2C clocks derive from the HP clock, not from the P clock. Fix them.
+Based on similar work for the Koelsch board by Magnus Damm.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 3f93503..3310139 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -249,10 +249,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP1007] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 7, MSTPSR10, 0), /* SSI8 */
- 	[MSTP1006] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 6, MSTPSR10, 0), /* SSI9 */
- 	[MSTP1005] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 5, MSTPSR10, 0), /* SSI ALL */
--	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
--	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
--	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
--	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
-+	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
-+	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
-+	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
-+	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
- 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
- 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
- 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
+---
+v5
+* Rebase
+
+v4
+* As suggested by Geert Uytterhoeven
+  - Remove bogus "these" from changelog
+* Rebase
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 529c2b4..6d34baf 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -31,13 +31,10 @@
+ 
+ static void __init marzen_init_timer(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-#endif
+ 	clocksource_of_init();
+ }
+ 
+-#ifdef CONFIG_COMMON_CLK
+ /*
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+@@ -53,7 +50,6 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "tmu1", NULL, "sh_tmu.1" },
+ 	{ "tmu2", NULL, "sh_tmu.2" },
+ };
+-#endif
+ 
+ /*
+  * This is a really crude hack to work around core platform clock issues
+@@ -65,12 +61,8 @@ static const struct clk_name clk_enables[] __initconst = {
+ 
+ static void __init marzen_init(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
+-#else
+-	r8a7779_clock_init();
+-#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
 -- 
-1.8.4
+1.8.5.2
 
