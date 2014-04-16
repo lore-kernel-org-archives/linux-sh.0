@@ -1,55 +1,145 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 14:31:46 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Rename VSP1_(SY|RT) clocks to VSP1_(S|R)
-Message-Id: <1396449107-4732-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:19 +0000
+Subject: [PATCH v5 05/20] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+Message-Id: <1397613454-7522-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The r8a7790 has four VSP1 instances, two of them being named VSPS (which
-stands for "VSP Standard") and VSPR (which stands for "VSP for
-Resizing"). The clock section in the SoC datasheet misunderstood the
-abbreviations as meaning VSP System and VSP Realtime, and named the
-corresponding clocks VSP1(SY) and VSP1(RT). This mistake has been
-carried over to the kernel code.
+Copy the device nodes from Marzen reference into the Marzen device tree
+file. This will allow us to use a single DTS file regardless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+will be used.
 
-Fix this by renaming the VSP1_SY and VSP1_RT clocks to VSP1_S and VSP1_R.
+Based on a similar change for the Lager board by Laurent Pinchart.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 2 +-
- include/dt-bindings/clock/r8a7790-clock.h | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+v4 - v5
+* No change
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..da665fa 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -678,7 +678,7 @@
- 			renesas,clock-indices = <
- 				R8A7790_CLK_TMU1 R8A7790_CLK_TMU3 R8A7790_CLK_TMU2
- 				R8A7790_CLK_CMT0 R8A7790_CLK_TMU0 R8A7790_CLK_VSP1_DU1
--				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_RT R8A7790_CLK_VSP1_SY
-+				R8A7790_CLK_VSP1_DU0 R8A7790_CLK_VSP1_R R8A7790_CLK_VSP1_S
- 			>;
- 			clock-output-names  				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 6548a5f..9a7c4c5 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -33,8 +33,8 @@
- #define R8A7790_CLK_TMU0		25
- #define R8A7790_CLK_VSP1_DU1		27
- #define R8A7790_CLK_VSP1_DU0		28
--#define R8A7790_CLK_VSP1_RT		30
--#define R8A7790_CLK_VSP1_SY		31
-+#define R8A7790_CLK_VSP1_R		30
-+#define R8A7790_CLK_VSP1_S		31
+v3
+* Updated for recent changes to Marzen reference DTS
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 93 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index a7af2c2..eda6240 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -11,6 +11,8 @@
  
- /* MSTP2 */
- #define R8A7790_CLK_SCIFA2		2
+ /dts-v1/;
+ #include "r8a7779.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "marzen";
+@@ -24,4 +26,95 @@
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x40000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	lan0@18000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18000000 0x100>;
++		pinctrl-0 = <&lan0_pins>;
++		pinctrl-names = "default";
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&irqpin0 {
++	status = "okay";
++};
++
++&pfc {
++	pinctrl-0 = <&scif2_pins &scif4_pins>;
++	pinctrl-names = "default";
++
++	lan0_pins: lan0 {
++		intc {
++			renesas,groups = "intc_irq1_b";
++			renesas,function = "intc";
++		};
++		lbsc {
++			renesas,groups = "lbsc_ex_cs0";
++			renesas,function = "lbsc";
++		};
++	};
++
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data_c";
++		renesas,function = "scif2";
++	};
++
++	scif4_pins: serial4 {
++		renesas,groups = "scif4_data";
++		renesas,function = "scif4";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
+ };
 -- 
-1.8.3.2
+1.8.5.2
 
