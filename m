@@ -1,56 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 29 Apr 2014 07:43:22 +0000
-Subject: [PATCH/RFC 0/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
-Message-Id: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:49 +0000
+Subject: [PATCH 6/8] ARM: shmobile: rcar-gen2: Cache Mode Monitor Register Value
+Message-Id: <835d737d664650d7f164a5b688271a424db4434c.1397627619.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The aim of this series is to provide a working prototype for enabling
-SCIF devices using DT on the marzen board when booting using multiplatform.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-This series aims to be in keeping with the discussion both online
-and offline relating to "[PATCH/RFC] ARM: shmobile: Koelsch DT serial
-integration prototype" (Magnus Damm, 21st April 2014).
+The MD pins are sampled at reset time, hence the read value will always be
+the same, and we can avoid the overhead of ioremapping the register on
+every read.
 
-Other relevant work in this area includes:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
 
-* "[PATCH v4 0/2] [RESEND] Lager and Koelsch reference serial port support"
-  (Laurent Pinchart, 11th February 2014).
-  Deprecated by the above mentioned discussion.
-
-* "[PATCH v4 00/11] CCF support for Renesas r7s72100"
-  (Wolfram Sang, 28th April 2014).
-  I believe the approach of Wolfram's r7s72100 work and
-  my marzen work are quite similar if not the same.
-
-
-This series depends on:
-[PATCH v5 00/20] ARM: shmobile: r8a7779, marzen: CCF and multiplatform
-
-This series was created and tested with the above mentioned series applied
-on top of the renesas-next-v3.15-rc1-20140416 tag of my renesas tree.
-
-This series works in conjunction with but does not have a run or compile
-time dependency on:
-[PATCH/RFC v2] serial: sh-sci: Add device tree support for r8a7779
-
-
-Simon Horman (4):
-  ARM: shmobile: r8a7779: Add scif nodes to dtsi
-  ARM: shmobile: marzen: Remove early_printk from command line
-  ARM: shmobile: marzen: Initialise SCIF devices using DT
-  ARM: shmobile: marzen: Use disabled variant of clock workaround for
-    scif devices
-
- arch/arm/boot/dts/r8a7779-marzen.dts            | 24 ++++++++--
- arch/arm/boot/dts/r8a7779.dtsi                  | 60 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-marzen-reference.c | 12 ++---
- arch/arm/mach-shmobile/setup-r8a7779.c          | 10 ++---
- 4 files changed, 91 insertions(+), 15 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 1060448..542c5a4 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -30,12 +30,16 @@
+ 
+ u32 rcar_gen2_read_mode_pins(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
+-	u32 mode;
+-
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
++	static u32 mode;
++	static bool mode_valid;
++
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
+ 
+ 	return mode;
+ }
 -- 
 1.8.5.2
 
