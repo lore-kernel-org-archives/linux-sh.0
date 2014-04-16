@@ -1,244 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Apr 2014 14:11:08 +0000
-Subject: [PATCH v2 04/05] ARM: shmobile: koelsch: DT reference USB platform devices
-Message-Id: <20140408141108.10063.90966.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:48 +0000
+Subject: [PATCH 5/8] ARM: shmobile: Make use of r8a7790_add_standard_devices()
+Message-Id: <f05b4b52845a18e833644eb3a820a55e3278d2b4.1397627619.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Hook up two USB ports on Koelsch via the DT reference code
-using platform devices. This adds support for USB function
-on USB0 and USB Host on USB1. Not for upstream merge.
-
-Based on the following patch by Vladimir Barinov:
-"[PATCH V5 3/4] ARM: shmobile: koelsch: Add USBHS and internal PCI USB support"
+Move non-PFC and non-GPIO devices off from r8a7790_pinmux_init()
+and into r8a7790_add_standard_devices() which is the normal place
+to keep regular devices in the legacy case.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7790.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/board-koelsch-reference.c |  184 ++++++++++++++++++++++
- 1 file changed, 184 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-04-07 14:31:37.000000000 +0900
-@@ -20,9 +20,14 @@
-  */
- 
- #include <linux/dma-mapping.h>
-+#include <linux/gpio.h>
- #include <linux/kernel.h>
-+#include <linux/of_gpio.h>
- #include <linux/of_platform.h>
- #include <linux/platform_data/rcar-du.h>
-+#include <linux/platform_data/usb-rcar-gen2-phy.h>
-+#include <linux/usb/phy.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -105,6 +110,7 @@ static const struct clk_name clk_names[]
- 	{ "du0", "du.0", "rcar-du-r8a7791" },
- 	{ "du1", "du.1", "rcar-du-r8a7791" },
- 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
-+	{ "hsusb", NULL, "usb_phy_rcar_gen2" },
- };
- 
- /*
-@@ -119,8 +125,185 @@ static const struct clk_name clk_enables
- 	{ "sdhi1", NULL, "ee140000.sd" },
- 	{ "sdhi2", NULL, "ee160000.sd" },
- 	{ "thermal", NULL, "e61f0000.thermal" },
-+	{ "hsusb", NULL, "renesas_usbhs" },
-+	{ "ehci", NULL, "pci-rcar-gen2.1" },
- };
- 
-+/* USBHS */
-+static const struct resource usbhs_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590000, 0x100),
-+	DEFINE_RES_IRQ(gic_spi(107)),
-+};
-+
-+struct usbhs_private {
-+	struct renesas_usbhs_platform_info info;
-+	struct usb_phy *phy;
-+	int id_gpio;
-+};
-+
-+#define usbhs_get_priv(pdev) \
-+	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
-+
-+static int usbhs_power_ctrl(struct platform_device *pdev,
-+                               void __iomem *base, int enable)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return -ENODEV;
-+
-+	if (enable) {
-+		int retval = usb_phy_init(priv->phy);
-+
-+		if (!retval)
-+			retval = usb_phy_set_suspend(priv->phy, 0);
-+		return retval;
-+	}
-+
-+	usb_phy_set_suspend(priv->phy, 1);
-+	usb_phy_shutdown(priv->phy);
-+	return 0;
-+}
-+
-+static int usbhs_hardware_init(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+	struct usb_phy *phy;
-+	int ret;
-+	struct device_node *np;
-+
-+	np = of_find_node_by_path("/gpio@e6055000");
-+	if (np) {
-+		priv->id_gpio = of_get_gpio(np, 31);
-+		of_node_put(np);
-+	} else {
-+		pr_warn("Error: Unable to get MAX3355 ID input\n");
-+		ret = -ENOTSUPP;
-+		goto error2;
-+	}
-+
-+	/* Check MAX3355E ID pin */
-+	gpio_request_one(priv->id_gpio, GPIOF_IN, NULL);
-+	if (!gpio_get_value(priv->id_gpio)) {
-+		pr_warn("Error: USB0 cable selects host mode\n");
-+		ret = -ENOTSUPP;
-+		goto error;
-+	}
-+
-+	phy = usb_get_phy_dev(&pdev->dev, 0);
-+	if (IS_ERR(phy))
-+		return PTR_ERR(phy);
-+
-+	priv->phy = phy;
-+	return 0;
-+
-+error:
-+	gpio_free(priv->id_gpio);
-+error2:
-+	return ret;
-+}
-+
-+static int usbhs_hardware_exit(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	if (!priv->phy)
-+		return 0;
-+
-+	usb_put_phy(priv->phy);
-+	priv->phy = NULL;
-+
-+	gpio_free(priv->id_gpio);
-+	return 0;
-+}
-+
-+static int usbhs_get_id(struct platform_device *pdev)
-+{
-+	return USBHS_GADGET;
-+}
-+
-+static u32 koelsch_usbhs_pipe_type[] = {
-+	USB_ENDPOINT_XFER_CONTROL,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+};
-+
-+static struct usbhs_private usbhs_priv __initdata = {
-+	.info = {
-+		.platform_callback = {
-+			.power_ctrl	= usbhs_power_ctrl,
-+			.hardware_init	= usbhs_hardware_init,
-+			.hardware_exit	= usbhs_hardware_exit,
-+			.get_id		= usbhs_get_id,
-+		},
-+		.driver_param = {
-+			.buswait_bwait	= 4,
-+			.pipe_type	= koelsch_usbhs_pipe_type,
-+			.pipe_size	= ARRAY_SIZE(koelsch_usbhs_pipe_type),
-+		},
-+	}
-+};
-+
-+static void __init koelsch_add_usb0_gadget(void)
-+{
-+	usb_bind_phy("renesas_usbhs", 0, "usb_phy_rcar_gen2");
-+	platform_device_register_resndata(&platform_bus,
-+					  "renesas_usbhs", -1,
-+					  usbhs_resources,
-+					  ARRAY_SIZE(usbhs_resources),
-+					  &usbhs_priv.info,
-+					  sizeof(usbhs_priv.info));
-+}
-+
-+/* Internal PCI1 */
-+static const struct resource pci1_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xee0d0000, 0x10000),    /* CFG */
-+	DEFINE_RES_MEM(0xee0c0000, 0x10000),    /* MEM */
-+	DEFINE_RES_IRQ(gic_spi(113)),
-+};
-+
-+static void __init koelsch_add_usb1_host(void)
-+{
-+	platform_device_register_simple("pci-rcar-gen2",
-+					1, pci1_resources,
-+					ARRAY_SIZE(pci1_resources));
-+}
-+
-+/* USBHS PHY */
-+static const struct rcar_gen2_phy_platform_data usbhs_phy_pdata __initconst = {
-+	.chan0_pci = 0, /* Channel 0 is USBHS */
-+	.chan2_pci = 1, /* Channel 2 is PCI USB host */
-+};
-+
-+static const struct resource usbhs_phy_resources[] __initconst = {
-+	DEFINE_RES_MEM(0xe6590100, 0x100),
-+};
-+
-+/* Add all available USB devices */
-+static void __init koelsch_add_usb_devices(void)
-+{
-+	platform_device_register_resndata(&platform_bus, "usb_phy_rcar_gen2",
-+					  -1, usbhs_phy_resources,
-+					  ARRAY_SIZE(usbhs_phy_resources),
-+					  &usbhs_phy_pdata,
-+					  sizeof(usbhs_phy_pdata));
-+	koelsch_add_usb0_gadget();
-+	koelsch_add_usb1_host();
-+}
-+
- static void __init koelsch_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-@@ -129,6 +312,7 @@ static void __init koelsch_add_standard_
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	koelsch_add_du_device();
-+	koelsch_add_usb_devices();
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index c4616f0..a901d9e 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -185,12 +185,6 @@ void __init r8a7790_pinmux_init(void)
+ 	r8a7790_register_gpio(3);
+ 	r8a7790_register_gpio(4);
+ 	r8a7790_register_gpio(5);
+-	r8a7790_register_i2c(0);
+-	r8a7790_register_i2c(1);
+-	r8a7790_register_i2c(2);
+-	r8a7790_register_i2c(3);
+-	r8a7790_register_audio_dmac(0);
+-	r8a7790_register_audio_dmac(1);
  }
  
- static const char * const koelsch_boards_compat_dt[] __initconst = {
+ #define __R8A7790_SCIF(scif_type, _scscr, index, baseaddr, irq)		\
+@@ -308,6 +302,12 @@ void __init r8a7790_add_standard_devices(void)
+ 	r8a7790_add_dt_devices();
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
++	r8a7790_register_i2c(0);
++	r8a7790_register_i2c(1);
++	r8a7790_register_i2c(2);
++	r8a7790_register_i2c(3);
++	r8a7790_register_audio_dmac(0);
++	r8a7790_register_audio_dmac(1);
+ }
+ 
+ void __init r8a7790_init_early(void)
+-- 
+1.8.5.2
+
