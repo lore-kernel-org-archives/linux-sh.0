@@ -1,125 +1,79 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:03 +0000
-Subject: [PATCH v2 07/17] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-Message-Id: <1397565253-22741-8-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:23 +0000
+Subject: [PATCH v5 09/20] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
+Message-Id: <1397613454-7522-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+r8a7779_earlytimer_init() calls r8a7779_clock_init() and
+r8a7779_clock_init() is defined in clock-r8a7779.c.
 
-If the kernel is built to support multi-ARM configuration with shmobile
-support built in, then drivers/sh is not built. This contains the PM
-runtime code in drivers/sh/pm_runtime.c, which implicitly enables the bus
-clocks for all devices, and thus is quite essential.
-Without this, the state of clocks depends on implicit reset state, or on
-the bootloader.
+If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
+as will be the case when marzen-reference moves to use
+the common clock framework, then setup-r8a7779.c is compiled
+but clock-r8a7779.c is not.
 
-If ARCH_SHMOBILE_MULTI then build the drivers/sh directory, but ensure that
-bits that may conflict (drivers/sh/clk if the common clock framework is
-enabled) or are not used (drivers/sh/intc), are not built.
+As r8a7779_earlytimer_init() is not used by marzen-reference
+simply move it to clock-r8a7779.c.
 
-ARCH_SHMOBILE_MULTI was added a while ago by commit
-efacfce5f8a523457e9419a25d52fe39db00b26a ("ARM: shmobile: Introduce
-ARCH_SHMOBILE_MULTI"), but drivers/sh was compiled for both
-ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI until commit
-bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187 ("ARM: Rename ARCH_SHMOBILE to
-ARCH_SHMOBILE_LEGACY").
-
-Note that the PM runtime code is not automatically enabled on
-ARCH_SHMOBILE_MULTI, to protected the code from running on non-shmobile
-platforms.  sh_pm_runtime_init() must be explicitly called from shmobile
-platform code. A temporary check is added to make sure the PM runtime code
-is enabled only once on ARCH_SHMOBILE_LEGACY.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-[geert: Do not compile intc if ARCH_SHMOBILE_MULTI]
-[geert: Do not enable the PM runtime code if ARCH_SHMOBILE_MULTI, based
-        on other patches from Ben]
-[geert: Reword]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Reviewed-by, Tested-by
+ arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
+ 2 files changed, 11 insertions(+), 10 deletions(-)
 
- drivers/Makefile        |    2 +-
- drivers/sh/Makefile     |   14 ++++++++------
- drivers/sh/pm_runtime.c |   14 ++++++++++++--
- 3 files changed, 21 insertions(+), 9 deletions(-)
-
-diff --git a/drivers/Makefile b/drivers/Makefile
-index e3ced91b1784..c033798f300a 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -119,7 +119,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
-+obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
-diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
-index fc67f564f02c..788ed9b59b4e 100644
---- a/drivers/sh/Makefile
-+++ b/drivers/sh/Makefile
-@@ -1,10 +1,12 @@
- #
- # Makefile for the SuperH specific drivers.
- #
--obj-y	:= intc/
-+obj-$(CONFIG_SUPERH)			+= intc/
-+obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= intc/
-+ifneq ($(CONFIG_COMMON_CLK),y)
-+obj-$(CONFIG_HAVE_CLK)			+= clk/
-+endif
-+obj-$(CONFIG_MAPLE)			+= maple/
-+obj-$(CONFIG_SUPERHYWAY)		+= superhyway/
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index b1a5065..e4fc7df 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -23,6 +23,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <linux/sh_timer.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7779.h>
+@@ -263,3 +264,13 @@ void __init r8a7779_clock_init(void)
+ 	else
+ 		panic("failed to setup r8a7779 clocks\n");
+ }
++
++/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
++void __init __weak r8a7779_register_twd(void) { }
++
++void __init r8a7779_earlytimer_init(void)
++{
++	r8a7779_clock_init();
++	r8a7779_register_twd();
++	shmobile_earlytimer_init();
++}
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index f6aeb7f..f28b8c7 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -714,16 +714,6 @@ void __init r8a7779_add_standard_devices(void)
+ 	r8a7779_register_hpb_dmae();
+ }
  
--obj-$(CONFIG_HAVE_CLK)		+= clk/
--obj-$(CONFIG_MAPLE)		+= maple/
--obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+-/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+-void __init __weak r8a7779_register_twd(void) { }
 -
--obj-y				+= pm_runtime.o
-+obj-y					+= pm_runtime.o
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 3a7929246f2f..3ec047ac1ff4 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -75,16 +75,26 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
- 	.con_ids = { NULL, },
- };
- 
--static int __init sh_pm_runtime_init(void)
-+static bool default_pm_on;
-+
-+int __init sh_pm_runtime_init(void)
+-void __init r8a7779_earlytimer_init(void)
+-{
+-	r8a7779_clock_init();
+-	r8a7779_register_twd();
+-	shmobile_earlytimer_init();
+-}
+-
+ void __init r8a7779_add_early_devices(void)
  {
-+	if (default_pm_on)
-+		return 0;
-+
-+	default_pm_on = true;
- 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
- }
-+#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE_LEGACY)
- core_initcall(sh_pm_runtime_init);
-+#endif
- 
- static int __init sh_pm_runtime_late_init(void)
- {
--	pm_genpd_poweroff_unused();
-+	if (default_pm_on)
-+		pm_genpd_poweroff_unused();
- 	return 0;
- }
-+
- late_initcall(sh_pm_runtime_late_init);
+ 	early_platform_add_devices(r8a7779_devices_dt,
 -- 
-1.7.9.5
+1.8.5.2
 
