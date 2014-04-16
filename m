@@ -1,54 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:00 +0000
-Subject: [PATCH v2 04/17] drivers: sh: pm_runtime does not need idle callback
-Message-Id: <1397565253-22741-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:12 +0000
+Subject: [PATCH 7/7] ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig
+Message-Id: <1d59eb190e3dc575c7bbee4a163c3facd0de2ed9.1397627278.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397627278.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+The USB [EO]HCI HCD drivers provide USB host support for Renesas
+R-Car Gen2 platforms. To increase hardware support enable the driver in the
+shmobile_defconfig multiplatform configuration.
 
-In the runtime_pm idle callback the code assumes that a NULL .runtime_idle
-entry is the same as a .runtime_idle entry that returns 0 as a result. This
-means the entry in drivers/sh/pm_runtime can be removed in favour of just
-leaving the entry NULL.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Reviewed-by, Tested-by
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
- drivers/sh/pm_runtime.c |    8 --------
- 1 file changed, 8 deletions(-)
-
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 8afa5a4589f2..5cfbd825a9c8 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -21,18 +21,10 @@
- #include <linux/slab.h>
- 
- #ifdef CONFIG_PM_RUNTIME
--
--static int default_platform_runtime_idle(struct device *dev)
--{
--	/* suspend synchronously to disable clocks immediately */
--	return 0;
--}
--
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
- 		.runtime_suspend = pm_clk_suspend,
- 		.runtime_resume = pm_clk_resume,
--		.runtime_idle = default_platform_runtime_idle,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 8fb30b0..6d6437c 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -110,6 +110,8 @@ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_RCAR=y
+ CONFIG_USB=y
+ CONFIG_USB_RCAR_GEN2_PHY=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_GADGET=y
+ CONFIG_USB_RENESAS_USBHS_UDC=y
 -- 
-1.7.9.5
+1.8.5.2
 
