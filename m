@@ -1,47 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:16 +0000
-Subject: [PATCH v5 02/20] clk: shmobile: r8a7779: Add MSTP clock support
-Message-Id: <1397613454-7522-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 16 Apr 2014 07:19:08 +0000
+Subject: Re: [PATCH v5 02/20] clk: shmobile: r8a7779: Add MSTP clock support
+Message-Id: <CAMuHMdVQ85F-aG+Hg1pitjh3sPPxZ5b2ez95G=g_YkGHA-HTtA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+ <1397613454-7522-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add MSTP clock support for the r8a7779 SoC
+On Wed, Apr 16, 2014 at 3:57 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Add MSTP clock support for the r8a7779 SoC
+>
+> The only change required appears to be to note a new
+> compatibility string in the bindings.
+>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> Cc: devicetree@vger.kernel.org
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-The only change required appears to be to note a new
-compatibility string in the bindings.
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: devicetree@vger.kernel.org
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Gr{oetje,eeting}s,
 
----
-v4 - v5
-* No Change
+                        Geert
 
-v3
-* As suggested by Laurent Pinchart
-  - Add entry in numerical order
----
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 5992dce..0708937 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
- Required Properties:
- 
-   - compatible: Must be one of the following
-+    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
--- 
-1.8.5.2
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
