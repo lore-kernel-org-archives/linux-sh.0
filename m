@@ -1,111 +1,40 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 14 Apr 2014 21:59:45 +0000
-Subject: [PATCHv2 03/11] pwm: renesas-tpu: remove useless struct tpu_pwm_platform_data
-Message-Id: <1397512793-10325-4-git-send-email-alexandre.belloni@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:30 +0000
+Subject: [PATCH v5 16/20] ARM: shmobile: marzen: Add to shmobile defconfig
+Message-Id: <1397613454-7522-17-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The struct tpu_pwm_platform_data is not used anymore and the polarity
-initialization will be taken care of by the PWM core.
+Add marzen to shmobile defconfig now that it supports multiplatform
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pwm/pwm-renesas-tpu.c                 | 19 +++----------------
- include/linux/platform_data/pwm-renesas-tpu.h | 16 ----------------
- 2 files changed, 3 insertions(+), 32 deletions(-)
- delete mode 100644 include/linux/platform_data/pwm-renesas-tpu.h
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/pwm/pwm-renesas-tpu.c b/drivers/pwm/pwm-renesas-tpu.c
-index aff6ba9b49e7..9dbcf82b3e6c 100644
---- a/drivers/pwm/pwm-renesas-tpu.c
-+++ b/drivers/pwm/pwm-renesas-tpu.c
-@@ -21,13 +21,14 @@
- #include <linux/module.h>
- #include <linux/mutex.h>
- #include <linux/of.h>
--#include <linux/platform_data/pwm-renesas-tpu.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/pwm.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- 
-+#define TPU_CHANNEL_MAX		4
-+
- #define TPU_TSTR		0x00	/* Timer start register (shared) */
- 
- #define TPU_TCRn		0x00	/* Timer control register */
-@@ -87,7 +88,6 @@ struct tpu_pwm_device {
- 
- struct tpu_device {
- 	struct platform_device *pdev;
--	enum pwm_polarity polarities[TPU_CHANNEL_MAX];
- 	struct pwm_chip chip;
- 	spinlock_t lock;
- 
-@@ -229,7 +229,7 @@ static int tpu_pwm_request(struct pwm_chip *chip, struct pwm_device *_pwm)
- 
- 	pwm->tpu = tpu;
- 	pwm->channel = _pwm->hwpwm;
--	pwm->polarity = tpu->polarities[pwm->channel];
-+	pwm->polarity = PWM_POLARITY_NORMAL;
- 	pwm->prescaler = 0;
- 	pwm->period = 0;
- 	pwm->duty = 0;
-@@ -388,16 +388,6 @@ static const struct pwm_ops tpu_pwm_ops = {
-  * Probe and remove
-  */
- 
--static void tpu_parse_pdata(struct tpu_device *tpu)
--{
--	struct tpu_pwm_platform_data *pdata = tpu->pdev->dev.platform_data;
--	unsigned int i;
--
--	for (i = 0; i < ARRAY_SIZE(tpu->polarities); ++i)
--		tpu->polarities[i] = pdata ? pdata->channels[i].polarity
--				   : PWM_POLARITY_NORMAL;
--}
--
- static int tpu_probe(struct platform_device *pdev)
- {
- 	struct tpu_device *tpu;
-@@ -413,9 +403,6 @@ static int tpu_probe(struct platform_device *pdev)
- 	spin_lock_init(&tpu->lock);
- 	tpu->pdev = pdev;
- 
--	/* Initialize device configuration from platform data. */
--	tpu_parse_pdata(tpu);
--
- 	/* Map memory, get clock and pin control. */
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	tpu->base = devm_ioremap_resource(&pdev->dev, res);
-diff --git a/include/linux/platform_data/pwm-renesas-tpu.h b/include/linux/platform_data/pwm-renesas-tpu.h
-deleted file mode 100644
-index a7220b10ddab..000000000000
---- a/include/linux/platform_data/pwm-renesas-tpu.h
-+++ /dev/null
-@@ -1,16 +0,0 @@
--#ifndef __PWM_RENESAS_TPU_H__
--#define __PWM_RENESAS_TPU_H__
--
--#include <linux/pwm.h>
--
--#define TPU_CHANNEL_MAX		4
--
--struct tpu_pwm_channel_data {
--	enum pwm_polarity polarity;
--};
--
--struct tpu_pwm_platform_data {
--	struct tpu_pwm_channel_data channels[TPU_CHANNEL_MAX];
--};
--
--#endif /* __PWM_RENESAS_TPU_H__ */
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 6d6437c..ea7673a 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -9,11 +9,13 @@ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_ARCH_SHMOBILE_MULTI=y
++CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_MACH_KOELSCH=y
+ CONFIG_MACH_LAGER=y
++CONFIG_MACH_MARZEN=y
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_PL310_ERRATA_588369=y
 -- 
-1.8.3.2
+1.8.5.2
 
