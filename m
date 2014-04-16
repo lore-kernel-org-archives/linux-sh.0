@@ -1,45 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 30 Apr 2014 06:13:15 +0000
-Subject: Re: [PATCH 51/97] ARM: l2c: remove platforms/SoCs setting early BRESP
-Message-Id: <20140430061315.GA5153@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 06:03:05 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.16
+Message-Id: <cover.1397627278.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140428192419.GV26756@n2100.arm.linux.org.uk>
- <E1WerG4-0001X4-Ic@rmk-PC.arm.linux.org.uk>
- <20140429000224.GA31083@verge.net.au>
- <535FD07D.5070801@wwwdotorg.org>
-In-Reply-To: <535FD07D.5070801@wwwdotorg.org>
+References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 29, 2014 at 10:17:01AM -0600, Stephen Warren wrote:
-> On 04/28/2014 06:02 PM, Simon Horman wrote:
-> > On Mon, Apr 28, 2014 at 08:30:32PM +0100, Russell King wrote:
-> >> Since we now automatically enable early BRESP in core L2C-310 code when
-> >> we detect a Cortex-A9, we don't need platforms/SoCs to set this bit
-> >> explicitly.  Instead, they should seek to preserve the value of bit 30
-> >> in the auxiliary control register.
-> >>
-> >> Acked-by: Tony Lindgren <tony@atomide.com>
-> >> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> > 
-> > I would prefer if this patch was broken out into individual patches
-> > for each board or SoC file and that they were then picked up
-> > by their respective platform maintainers.
-> > 
-> > Likewise for patch 66/97. Although it is only for shmobile
-> > I would prefer it broken out.
-> 
-> There are far too many dependencies in this series to break out the
-> board file patches to be merged separately; it'd take either a whole
-> bunch of kernel releases to merge it all that way, or a twisty maze of
-> tiny topic branches cross-merged all over the place. Neither option is
-> realistic.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Understood, that seems reasonable to me.
+Please consider these Renesas ARM based SoC defconfig updates for v3.16.
 
-For the shmobile portions this patch and 66/97.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
 
+  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.16
+
+for you to fetch changes up to 1d59eb190e3dc575c7bbee4a163c3facd0de2ed9:
+
+  ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig (2014-04-14 11:23:55 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Defconfig Updates for v3.16
+
+SH Mobile Multi-Platform
+* Enable USB [EO]HCI HCD, VSP1, HIGHMEM, USBHS, I2C_SH_MOBILE,
+  EEPROM_AT24 and MSIOF
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: multiplatform: Enable MSIOF in defconfig
+
+Magnus Damm (4):
+      ARM: shmobile: Include i2c-shmobile.c in shmobile_defconfig
+      ARM: shmobile: Include at24.c in shmobile_defconfig
+      ARM: shmobile: Enable HIGHMEM in shmobile_defconfig
+      ARM: shmobile: Enable VSP1 in shmobile_defconfig
+
+Simon Horman (1):
+      ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig
+
+Ulrich Hecht (1):
+      ARM: shmobile: Enable USBHS gadget support in shmobile_defconfig
+
+ arch/arm/configs/shmobile_defconfig | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
