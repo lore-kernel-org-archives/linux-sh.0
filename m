@@ -1,70 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:13 +0000
-Subject: [PATCH v2 13/14] ARM: shmobile: lager-reference: Enable CMT0 in device tree
-Message-Id: <1397832494-20607-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:32 +0000
+Subject: [PATCH v5 18/20] ARM: shmobile: Let Marzen multiplatform boot with Marzen DTB
+Message-Id: <1397613454-7522-19-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable the CMT0 device and configure channel 0 as a clock event
-provider.
+Let the multiplatform Marzen support boot with the legacy DTS for
+Marzen as well as the Marzen reference DTS.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Based on work for the Koelsch board by Laurent Pinchart.
+
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts            | 4 ++++
- arch/arm/mach-shmobile/board-lager-reference.c | 1 -
- arch/arm/mach-shmobile/setup-r8a7790.c         | 2 +-
- 3 files changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile                      | 2 +-
+ arch/arm/mach-shmobile/board-marzen-reference.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 86d676f..68dc594 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -201,6 +201,10 @@
- 	};
- };
- 
-+&cmt0 {
-+	status = "ok";
-+};
-+
- &ether {
- 	pinctrl-0 = <&ether_pins &phy1_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 1bca2748..8873c69 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -90,7 +90,6 @@ static void __init lager_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "scifa0", NULL, "sh-sci.0" },
- 	{ "scifa1", NULL, "sh-sci.1" },
- 	{ "scifb0", NULL, "sh-sci.2" },
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 2a67083..ac00e4b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -291,12 +291,12 @@ void __init r8a7790_add_dt_devices(void)
- 	r8a7790_register_scif(7);
- 	r8a7790_register_scif(8);
- 	r8a7790_register_scif(9);
--	r8a7790_register_cmt(0);
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index b1c26e1..7091646 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -322,7 +322,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai-reference.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7779-marzen-reference.dtb
++	r8a7779-marzen.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_cyclone5_socdk.dtb \
+ 	socfpga_cyclone5_sockit.dtb \
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 1fb5768..529c2b4 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -77,6 +77,7 @@ static void __init marzen_init(void)
  }
  
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_add_dt_devices();
-+	r8a7790_register_cmt(0);
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- 	r8a7790_register_i2c(0);
+ static const char *marzen_boards_compat_dt[] __initdata = {
++	"renesas,marzen",
+ 	"renesas,marzen-reference",
+ 	NULL,
+ };
 -- 
-1.8.3.2
+1.8.5.2
 
