@@ -1,101 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:22 +0000
-Subject: [PATCH v5 08/20] ARM: shmobile: r8a7779: Add helper to read mode pins
-Message-Id: <1397613454-7522-9-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 16 Apr 2014 07:29:33 +0000
+Subject: Re: [PATCH v5 08/20] ARM: shmobile: r8a7779: Add helper to read mode pins
+Message-Id: <CAMuHMdXVAaU=eEBr4hwfbz3TGL+k0NHxGtzh-uuzFwuUqeNA9Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+ <1397613454-7522-9-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-9-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add and use helper to read mode pins.
-This will be re-used when moving marzen-reference to
-the common clock framework.
+On Wed, Apr 16, 2014 at 3:57 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Add and use helper to read mode pins.
+> This will be re-used when moving marzen-reference to
+> the common clock framework.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
- 3 files changed, 17 insertions(+), 9 deletions(-)
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 8e403ae..b1a5065 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -25,6 +25,7 @@
- #include <linux/clkdev.h>
- #include <mach/clock.h>
- #include <mach/common.h>
-+#include <mach/r8a7779.h>
- 
- /*
-  *		MD1 = 1			MD1 = 0
-@@ -52,9 +53,6 @@
- #define MSTPCR3		IOMEM(0xffc8003c)
- #define MSTPSR1		IOMEM(0xffc80044)
- 
--#define MODEMR		0xffcc0020
--
--
- /* ioremap() through clock mapping mandatory to avoid
-  * collision with ARM coherent DMA virtual memory range.
-  */
-@@ -209,14 +207,9 @@ static struct clk_lookup lookups[] = {
- 
- void __init r8a7779_clock_init(void)
- {
--	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
--	u32 mode;
-+	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
- 
--	BUG_ON(!modemr);
--	mode = ioread32(modemr);
--	iounmap(modemr);
--
- 	if (mode & MD(1)) {
- 		plla_clk.rate = 1500000000;
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 88eecea..d5ba2d8 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -32,6 +32,7 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_init_late(void);
-+extern u32 r8a7779_read_mode_pins(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 8e860b3..f6aeb7f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -802,6 +802,20 @@ void __init r8a7779_add_standard_devices_dt(void)
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-+#define MODEMR		0xffcc0020
-+
-+u32 __init r8a7779_read_mode_pins(void)
-+{
-+	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
-+	u32 mode;
-+
-+	BUG_ON(!modemr);
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+
-+	return mode;
-+}
-+
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
--- 
-1.8.5.2
+> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+> @@ -802,6 +802,20 @@ void __init r8a7779_add_standard_devices_dt(void)
+>         of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+>  }
+>
+> +#define MODEMR         0xffcc0020
+> +
+> +u32 __init r8a7779_read_mode_pins(void)
+> +{
+> +       void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+> +       u32 mode;
+> +
+> +       BUG_ON(!modemr);
+> +       mode = ioread32(modemr);
+> +       iounmap(modemr);
+> +
+> +       return mode;
+> +}
 
+No caching, cfr. rcar_gen2_read_mode_pins()?
+
+BTW, I know you don't trust "R-Car Gen1" similarities, but the code for
+r8a7778 is identical. And this is code, not DT, so perhaps this can be
+rcar_gen_read_mode_pins() in arch/arm/mach-shmobile/setup-rcar-gen1.c?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
