@@ -1,48 +1,101 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 14 Apr 2014 04:02:44 +0000
-Subject: [GIT PULL] Fifth Round of Renesas ARM Based SoC DT Updates for v3.15
-Message-Id: <cover.1397448066.git.horms+renesas@verge.net.au>
+Date: Wed, 16 Apr 2014 01:57:22 +0000
+Subject: [PATCH v5 08/20] ARM: shmobile: r8a7779: Add helper to read mode pins
+Message-Id: <1397613454-7522-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1380874512.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1380874512.git.horms+renesas@verge.net.au>
+References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Add and use helper to read mode pins.
+This will be re-used when moving marzen-reference to
+the common clock framework.
 
-Please consider this fifth round of Renesas ARM based SoC DT updates for v3.15.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c        | 14 ++++++++++++++
+ 3 files changed, 17 insertions(+), 9 deletions(-)
 
-This pull request is based on the previous round of
-such requests, tagged as renesas-dt4-for-v3.15,
-which I have already sent a pull-request for.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 8e403ae..b1a5065 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -25,6 +25,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/r8a7779.h>
+ 
+ /*
+  *		MD1 = 1			MD1 = 0
+@@ -52,9 +53,6 @@
+ #define MSTPCR3		IOMEM(0xffc8003c)
+ #define MSTPSR1		IOMEM(0xffc80044)
+ 
+-#define MODEMR		0xffcc0020
+-
+-
+ /* ioremap() through clock mapping mandatory to avoid
+  * collision with ARM coherent DMA virtual memory range.
+  */
+@@ -209,14 +207,9 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7779_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = r8a7779_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	if (mode & MD(1)) {
+ 		plla_clk.rate = 1500000000;
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 88eecea..d5ba2d8 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -32,6 +32,7 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_init_late(void);
++extern u32 r8a7779_read_mode_pins(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8e860b3..f6aeb7f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -802,6 +802,20 @@ void __init r8a7779_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
++#define MODEMR		0xffcc0020
++
++u32 __init r8a7779_read_mode_pins(void)
++{
++	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++	u32 mode;
++
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	return mode;
++}
++
+ static const char *r8a7779_compat_dt[] __initdata = {
+ 	"renesas,r8a7779",
+ 	NULL,
+-- 
+1.8.5.2
 
-I am sending this pull request (long) after the release of v3.14-rc6
-as it contains a single bug-fix.
-
-
-The following changes since commit 2c60a7df72711fb8b4be1e6aa651ab166a8931bc:
-
-  ARM: shmobile: Add SDHI devices for Koelsch DTS (2014-02-26 15:11:41 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt5-for-v3.15
-
-for you to fetch changes up to b08eed0c4d7d70eae2f4f1ff518cc33643722a07:
-
-  ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc (2014-04-08 09:38:51 +0900)
-
-----------------------------------------------------------------
-Fifth Round of Renesas ARM Based SoC DT Updates for v3.15
-
-Correct renesas,groups in SDHI nodes of for r8a7790 (R-Car H2) based
-Lager board.
-
-----------------------------------------------------------------
-Rob Taylor (1):
-      ARM: shmobile: lager: correct renesas,gpios to renesas,groups in sd[02] pfc
-
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
