@@ -1,39 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 01 Apr 2014 11:02:15 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Fix the I2C clocks parents in legacy code
-Message-Id: <1396350138-26850-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 00:32:08 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Fixes Updates for v3.15
+Message-Id: <cover.1397694064.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All I2C clocks derive from the HP clock, not from the P clock. Fix them.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/clock-r8a7790.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+Please consider these Renesas ARM Based SoC Fixes Updates for v3.15.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index 4ee1ae6..05f92d4 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -249,10 +249,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP1007] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 7, MSTPSR10, 0), /* SSI8 */
- 	[MSTP1006] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 6, MSTPSR10, 0), /* SSI9 */
- 	[MSTP1005] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR10, 5, MSTPSR10, 0), /* SSI ALL */
--	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
--	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
--	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
--	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
-+	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
-+	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
-+	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
-+	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
- 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
- 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
- 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
--- 
-1.8.3.2
 
+The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
+
+  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v3.15
+
+for you to fetch changes up to d5dda0381f826326071b027f288372f682c24d55:
+
+  ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc (2014-04-15 07:39:11 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Fixes Updates for v3.15
+
+r8a7791 (R-Car M2) based koelsch board
+* Correct renesas,gpios to renesas,groups in sd[012] pfc
+
+8a7790 (R-Car H2) based lager board
+* Correct SND_SOC_DAIFMT_CBx_CFx flags
+
+r8a7740 (R-Mobile A1) SoC
+* Drop address cells from GIC node
+
+r8a7740 (R-Mobile A1) based Armadillo800 EVA board
+* Correct SND_SOC_DAIFMT_CBx_CFx flags
+
+sh73a0 (SH-Mobile AG5) SoC
+* Drop address cells from GIC node
+
+----------------------------------------------------------------
+Kuninori Morimoto (2):
+      ARM: shmobile: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
+      ARM: shmobile: armadillo800eva: fixup SND_SOC_DAIFMT_CBx_CFx flags
+
+Lucas Stach (2):
+      ARM: shmobile: sh73a0: drop address cells from GIC node
+      ARM: shmobile: r8a7740: drop address cells from GIC node
+
+Magnus Damm (1):
+      ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc
+
+ arch/arm/boot/dts/r8a7740.dtsi                 | 1 -
+ arch/arm/boot/dts/r8a7791-koelsch.dts          | 6 +++---
+ arch/arm/boot/dts/sh73a0.dtsi                  | 1 -
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
+ arch/arm/mach-shmobile/board-lager.c           | 4 +---
+ 5 files changed, 5 insertions(+), 8 deletions(-)
