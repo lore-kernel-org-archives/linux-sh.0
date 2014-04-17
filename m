@@ -1,58 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 11:46:42 +0000
-Subject: [WIP 4/7] drm/rcar-du: Replace drm_encoder with drm_slave_encoder
-Message-Id: <1396439205-26199-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 00:32:09 +0000
+Subject: [PATCH 1/5] ARM: shmobile: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
+Message-Id: <9f85ff849c21b429c1e2137f2646f9cc667d8ded.1397694064.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397694064.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397694064.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-DRM slave encoders require their associated struct drm_encoder instance
-to be embedded in a struct drm_slave_encoder. This makes processing
-encoders regardless of their types needlessly and painfully complex in
-drivers that use a mix of slave encoders and custom encoders. Such a
-driver will need to either create drm_slave_encoder instances that fake
-their embedded encoder instance, or to turn all drm_encoder instances
-into drm_slave_encoder instances.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Between the two evils, one must choose the lesser. Use drm_slave_encoder
-everywhere.
+e1508289404ab6ca28e0dc931612600f0441c417
+(ASoC: rcar: fixup SND_SOC_DAIFMT_CBx_CFx flags)
+corrected SND_SOC_DAIFMT_CBx_CFx definition.
+But then, Lager board was maintenanced other branch.
+This patch correct SND_SOC_DAIFMT_CBx_CFx flag for lager
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-lager.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-index 4165a25..a008498 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.h
-@@ -17,20 +17,21 @@
- #include <linux/platform_data/rcar-du.h>
- 
- #include <drm/drm_crtc.h>
-+#include <drm/drm_encoder_slave.h>
- 
- struct rcar_du_device;
- struct rcar_du_lvdsenc;
- 
- struct rcar_du_encoder {
--	struct drm_encoder encoder;
-+	struct drm_encoder_slave slave;
- 	enum rcar_du_output output;
- 	struct rcar_du_lvdsenc *lvds;
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f0104bf..18c7e03 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -588,14 +588,12 @@ static struct asoc_simple_card_info rsnd_card_info = {
+ 	.card		= "SSI01-AK4643",
+ 	.codec		= "ak4642-codec.2-0012",
+ 	.platform	= "rcar_sound",
+-	.daifmt		= SND_SOC_DAIFMT_LEFT_J,
++	.daifmt		= SND_SOC_DAIFMT_LEFT_J | SND_SOC_DAIFMT_CBM_CFM,
+ 	.cpu_dai = {
+ 		.name	= "rcar_sound",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name	= "ak4642-hifi",
+-		.fmt	= SND_SOC_DAIFMT_CBM_CFM,
+ 		.sysclk	= 11289600,
+ 	},
  };
- 
- #define to_rcar_encoder(e) \
--	container_of(e, struct rcar_du_encoder, encoder)
-+	container_of(e, struct rcar_du_encoder, slave.base)
- 
--#define rcar_encoder_to_drm_encoder(e)	(&(e)->encoder)
-+#define rcar_encoder_to_drm_encoder(e)	(&(e)->slave.base)
- 
- struct rcar_du_connector {
- 	struct drm_connector connector;
 -- 
-1.8.3.2
+1.8.4
 
