@@ -1,53 +1,65 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Wed, 23 Apr 2014 13:08:54 +0000
-Subject: Re: [PATCH v2 9/9] DMA: shdma: wire r8a7790
-Message-Id: <5357BB66.7010707@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Apr 2014 10:33:24 +0000
+Subject: [PATCH v2 2/5] iommu/ipmmu-vmsa: Add device tree bindings documentation
+Message-Id: <1397730807-5993-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>	<1397511312-4845-10-git-send-email-ben.dooks@codethink.co.uk> <87zjjjbewr.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjjjbewr.wl%kuninori.morimoto.gx@renesas.com>
+References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, vinod.koul@intel.com, dan.j.williams@intel.com, linux-sh@vger.kernel.org, magnus.damm@opensource.se, horms@verge.net.au, g.liakhovetski@gmx.d, devicetree@vger.kernel.org
+To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 18/04/14 02:32, Kuninori Morimoto wrote:
->
-> Hi Ben
->
-> Thank you for your patch
->
->> Add support for R8A7790 with new device tree code.
->>
->> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->> ---
-> (snip)
->>   static const struct of_device_id sh_dmae_of_match[] = {
->> -	{.compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid,},
->> +	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
->> +	{ .compatible = "renesas,dma-r8a7790", .data = &shdma_arm_info },
->>   	{}
->>   };
->
-> Here, new compatible name is "renesas,dma-r8a7790"
->                                        ~~~
->
->> +		sysdma0: dma-controller@e6700000 {
->> +			compatible = "renesas,shdma-r8a7790";
-> ..
->> +		sysdma1: dma-controller@e6720000 {
->> +			compatible = "renesas,shdma-r8a7790";
->
-> your [PATCH v2 3/9] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-> is using "renesas,shdma-r8a7790"
->                    ~~~~~
->
-> Is it miss/typo ?
+Cc: devicetree@vger.kernel.org
+Cc: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../bindings/iommu/renesas,ipmmu-vmsa.txt          | 35 ++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
 
-I think it is a missed rebase, I will be away until next week
-so will check this out when I get back.
-
-
+diff --git a/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+new file mode 100644
+index 0000000..2b16a75
+--- /dev/null
++++ b/Documentation/devicetree/bindings/iommu/renesas,ipmmu-vmsa.txt
+@@ -0,0 +1,35 @@
++* Renesas VMSA-Compatible IOMMU
++
++The IPMMU is an IOMMU implementation compatible with the ARM VMSA page tables.
++It provides address translation for bus masters outside of the CPU, each
++connected to the IPMMU through a port called micro-TLB.
++
++
++Required Properties:
++
++  - compatible: Must contain "renesas,ipmmu-vmsa".
++  - reg: Base address and size of the IPMMU registers.
++  - interrupts: Specifier for the MMU fault interrupt.
++
++
++Each bus master connected to an IPMMU must reference the IPMMU in its device
++node with the following property:
++
++  - iommus: A reference to the IPMMU in two cells. The first cell is a phandle
++    to the IPMMU and the second cell the number of the micro-TLB that the
++    device is connected to.
++
++
++Example: R8A7791 IPMMU-MX and VSP1-D0 bus master
++
++	ipmmu_mx: mmu@fe951800 {
++		compatible = "renasas,ipmmu-vmsa";
++		reg = <0 0xfe951800 0 0x800>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	vsp1@fe928000 {
++		...
++		iommus = <&ipmmu_mx 13>;
++		...
++	};
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.8.3.2
+
