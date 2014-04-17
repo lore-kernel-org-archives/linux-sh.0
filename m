@@ -1,59 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 23:49:22 +0000
-Subject: [PATCH 3/3] iommu/shmobile: Use devm_ioremap_resource()
-Message-Id: <1396482562-1851-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 00:31:37 +0000
+Subject: [PATCH 1/8] ARM: shmobile: r8a7791: Use rcar_gen2_read_mode_pins() helper
+Message-Id: <edcf139081f501b1468ae6665217e8320d4c75e8.1397694178.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1397694178.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the devm_ioremap_nocache() call with devm_ioremap_resource().
-This simplifies error checking.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/iommu/shmobile-ipmmu.c | 17 ++++++-----------
- 1 file changed, 6 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
-index 6ba6110..bd97ade 100644
---- a/drivers/iommu/shmobile-ipmmu.c
-+++ b/drivers/iommu/shmobile-ipmmu.c
-@@ -94,11 +94,6 @@ static int ipmmu_probe(struct platform_device *pdev)
- 	struct resource *res;
- 	struct shmobile_ipmmu_platform_data *pdata = pdev->dev.platform_data;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 701383f..36e5750 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -25,6 +25,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/rcar-gen2.h>
  
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!res) {
--		dev_err(&pdev->dev, "cannot get platform resources\n");
--		return -ENOENT;
--	}
- 	ipmmu = devm_kzalloc(&pdev->dev, sizeof(*ipmmu), GFP_KERNEL);
- 	if (!ipmmu) {
- 		dev_err(&pdev->dev, "cannot allocate device data\n");
-@@ -106,12 +101,12 @@ static int ipmmu_probe(struct platform_device *pdev)
- 	}
- 	spin_lock_init(&ipmmu->flush_lock);
- 	ipmmu->dev = &pdev->dev;
--	ipmmu->ipmmu_base = devm_ioremap_nocache(&pdev->dev, res->start,
--						resource_size(res));
--	if (!ipmmu->ipmmu_base) {
--		dev_err(&pdev->dev, "ioremap_nocache failed\n");
--		return -ENOMEM;
--	}
-+
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	ipmmu->ipmmu_base = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(ipmmu->ipmmu_base))
-+		return PTR_ERR(ipmmu->ipmmu_base);
-+
- 	ipmmu->dev_names = pdata->dev_names;
- 	ipmmu->num_dev_names = pdata->num_dev_names;
- 	platform_set_drvdata(pdev, ipmmu);
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+@@ -43,8 +44,6 @@
+  *	see "p1 / 2" on R8A7791_CLOCK_ROOT() below
+  */
+ 
+-#define MD(nr)	(1 << nr)
+-
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x1000
+ 
+@@ -68,7 +67,6 @@
+ #define MSTPSR9		IOMEM(0xe61509a4)
+ #define MSTPSR11	IOMEM(0xe61509ac)
+ 
+-#define MODEMR		0xE6160060
+ #define SDCKCR		0xE6150074
+ #define SD1CKCR		0xE6150078
+ #define SD2CKCR		0xE615026c
+@@ -295,14 +293,9 @@ static struct clk_lookup lookups[] = {
+ 
+ void __init r8a7791_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = rcar_gen2_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	switch (mode & (MD(14) | MD(13))) {
+ 	case 0:
+ 		R8A7791_CLOCK_ROOT(15, &extal_clk, 172, 208, 106, 88);
 -- 
-1.8.3.2
+1.8.4
 
