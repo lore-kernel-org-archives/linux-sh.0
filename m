@@ -1,87 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 21 Apr 2014 14:13:04 +0000
-Subject: [PATCH 4/9] iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
-Message-Id: <1398089589-9181-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:44:57 +0000
+Subject: [PATCH 08/14] ARM: shmobile: Add Lager clock workarounds for SDHI and MMCIF
+Message-Id: <f98b55d730492e664fb2649bd7054fec0fe81acd.1397774191.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1397774190.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The contiguous hint bit signals to the IOMMU that a range of 16 PTEs
-refer to physically contiguous memory. It improves performances by
-dividing the number of TLB lookups by 16, effectively implementing 64kB
-page sizes.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add MMCIF1, SDHI0 and SDHI2 to the clock workaround list for
+Lager multiplatform. Without these additional lines wakeup
+from Suspend-to-RAM never happens.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/iommu/ipmmu-vmsa.c | 43 ++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 40 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-lager-reference.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 7c8c21e..1ce2115 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -210,6 +210,9 @@ static LIST_HEAD(ipmmu_devices);
- #define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
- #define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 313118c..1eb48cf 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -114,7 +114,10 @@ static const struct clk_name clk_names[] __initconst = {
+ static const struct clk_name clk_enables[] __initconst = {
+ 	{ "ether", NULL, "ee700000.ethernet" },
+ 	{ "msiof1", NULL, "e6e10000.spi" },
++	{ "mmcif1", NULL, "ee220000.mmc" },
+ 	{ "qspi_mod", NULL, "e6b10000.spi" },
++	{ "sdhi0", NULL, "ee100000.sd" },
++	{ "sdhi2", NULL, "ee140000.sd" },
+ 	{ "thermal", NULL, "e61f0000.thermal" },
+ };
  
-+#define ARM_VMSA_PTE_CONT_ENTRIES	16
-+#define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
-+
- #define IPMMU_PTRS_PER_PTE		512
- #define IPMMU_PTRS_PER_PMD		512
- #define IPMMU_PTRS_PER_PGD		4
-@@ -569,10 +572,44 @@ static int ipmmu_alloc_init_pte(struct ipmmu_vmsa_device *mmu, pmd_t *pmd,
- 	pteval |= ARM_VMSA_PTE_SH_IS;
- 	start = pte;
- 
--	/* Install the page table entries. */
-+	/*
-+	 * Install the page table entries.
-+	 *
-+	 * Set the contiguous hint in the PTEs where possible. The hint
-+	 * indicates a series of ARM_VMSA_PTE_CONT_ENTRIES PTEs mapping a
-+	 * physically contiguous region with the following constraints:
-+	 *
-+	 * - The region start is aligned to ARM_VMSA_PTE_CONT_SIZE
-+	 * - Each PTE in the region has the contiguous hint bit set
-+	 *
-+	 * We don't support partial unmapping so there's no need to care about
-+	 * clearing the contiguous hint from neighbour PTEs.
-+	 */
- 	do {
--		*pte++ = pfn_pte(pfn++, __pgprot(pteval));
--		addr += PAGE_SIZE;
-+		unsigned long chunk_end;
-+
-+		/*
-+		 * If the address is aligned to a contiguous region size and the
-+		 * mapping size is large enough, process the largest possible
-+		 * number of PTEs multiple of ARM_VMSA_PTE_CONT_ENTRIES.
-+		 * Otherwise process the smallest number of PTEs to align the
-+		 * address to a contiguous region size or to complete the
-+		 * mapping.
-+		 */
-+		if (IS_ALIGNED(addr, ARM_VMSA_PTE_CONT_SIZE) &&
-+		    end - addr >= ARM_VMSA_PTE_CONT_SIZE) {
-+			chunk_end = round_down(end, ARM_VMSA_PTE_CONT_SIZE);
-+			pteval |= ARM_VMSA_PTE_CONT;
-+		} else {
-+			chunk_end = min(ALIGN(addr, ARM_VMSA_PTE_CONT_SIZE),
-+					end);
-+			pteval &= ~ARM_VMSA_PTE_CONT;
-+		}
-+
-+		do {
-+			*pte++ = pfn_pte(pfn++, __pgprot(pteval));
-+			addr += PAGE_SIZE;
-+		} while (addr != chunk_end);
- 	} while (addr != end);
- 
- 	ipmmu_flush_pgtable(mmu, start, sizeof(*pte) * (pte - start));
 -- 
-1.8.3.2
+1.8.4
 
