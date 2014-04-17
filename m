@@ -1,97 +1,102 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 22 Apr 2014 10:50:47 +0000
-Subject: [PATCH v4 06/15] ARM: shmobile: r8a7790: Switch to new style CMT device
-Message-Id: <1398163856-7379-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Apr 2014 10:33:25 +0000
+Subject: [PATCH v2 3/5] iommu/ipmmu-vmsa: Add device tree support
+Message-Id: <1397730807-5993-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+Make platform data optional when the device is instantiated from DT and
+look up the micro-TLB number in the bus master DT node.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c |  2 +-
- arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
- arch/arm/mach-shmobile/setup-r8a7790.c         | 17 +++++++----------
- 3 files changed, 9 insertions(+), 12 deletions(-)
+ drivers/iommu/ipmmu-vmsa.c | 39 +++++++++++++++++++++++++++++++--------
+ 1 file changed, 31 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 1eb48cf..1bca2748 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -90,7 +90,7 @@ static void __init lager_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", NULL, "sh_cmt.0" },
-+	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "scifa0", NULL, "sh-sci.0" },
- 	{ "scifa1", NULL, "sh-sci.1" },
- 	{ "scifb0", NULL, "sh-sci.2" },
-diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
-index a936ae7..296a057 100644
---- a/arch/arm/mach-shmobile/clock-r8a7790.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-@@ -357,7 +357,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
--	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
- 	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-@@ -367,6 +366,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 49e00f7..d277bde 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -16,6 +16,7 @@
+ #include <linux/io.h>
+ #include <linux/iommu.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_data/ipmmu-vmsa.h>
+ #include <linux/platform_device.h>
+ #include <linux/sizes.h>
+@@ -828,16 +829,33 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
  
- 	/* ICK */
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
- 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
- 	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
- 	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index a901d9e..2a67083 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -263,20 +263,17 @@ static const struct resource thermal_resources[] __initconst = {
- 					thermal_resources,		\
- 					ARRAY_SIZE(thermal_resources))
+ static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
+ {
+-	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
+-	const char *devname = dev_name(dev);
+-	unsigned int i;
++	struct of_phandle_args args;
++	int ret;
++
++	if (mmu->pdata) {
++		const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
++		const char *devname = dev_name(dev);
++		unsigned int i;
  
--static const struct sh_timer_config cmt00_platform_data __initconst = {
--	.name = "CMT00",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_config cmt0_platform_data = {
-+	.channels_mask = 0x60,
- };
+-	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
+-		if (strcmp(master->name, devname) = 0)
+-			return master->utlb;
++		for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
++			if (strcmp(master->name, devname) = 0)
++				return master->utlb;
++		}
++
++		return -1;
+ 	}
  
--static const struct resource cmt00_resources[] __initconst = {
--	DEFINE_RES_MEM(0xffca0510, 0x0c),
--	DEFINE_RES_MEM(0xffca0500, 0x04),
--	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+static struct resource cmt0_resources[] = {
-+	DEFINE_RES_MEM(0xffca0000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(142)),
- };
- 
- #define r8a7790_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -294,7 +291,7 @@ void __init r8a7790_add_dt_devices(void)
- 	r8a7790_register_scif(7);
- 	r8a7790_register_scif(8);
- 	r8a7790_register_scif(9);
--	r8a7790_register_cmt(00);
-+	r8a7790_register_cmt(0);
+-	return -1;
++	ret = of_parse_phandle_with_fixed_args(dev->of_node, "iommus",
++					       1, 0, &args);
++	if (ret < 0)
++		return -1;
++
++	of_node_put(args.np);
++
++	if (args.np != mmu->dev->of_node)
++		return -1;
++
++	return args.args[0];
  }
  
- void __init r8a7790_add_standard_devices(void)
+ static int ipmmu_add_device(struct device *dev)
+@@ -980,7 +998,7 @@ static int ipmmu_probe(struct platform_device *pdev)
+ 	int irq;
+ 	int ret;
+ 
+-	if (!pdev->dev.platform_data) {
++	if (!IS_ENABLED(CONFIG_OF) && !pdev->dev.platform_data) {
+ 		dev_err(&pdev->dev, "missing platform data\n");
+ 		return -EINVAL;
+ 	}
+@@ -1046,10 +1064,15 @@ static int ipmmu_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct of_device_id ipmmu_of_ids[] = {
++	{ .compatible = "renesas,ipmmu-vmsa", },
++};
++
+ static struct platform_driver ipmmu_driver = {
+ 	.driver = {
+ 		.owner = THIS_MODULE,
+ 		.name = "ipmmu-vmsa",
++		.of_match_table = of_match_ptr(ipmmu_of_ids),
+ 	},
+ 	.probe = ipmmu_probe,
+ 	.remove	= ipmmu_remove,
 -- 
 1.8.3.2
 
