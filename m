@@ -1,53 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:03:44 +0000
-Subject: [PATCH v3 01/52] clocksource: sh_cmt: Use request_irq() instead of setup_irq()
-Message-Id: <1397228675-11684-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:45:02 +0000
+Subject: [PATCH 13/14] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for the SPI FLASH
+Message-Id: <4d4a0ff30c39b82c1dc549f2cc7a62b514431e64.1397774191.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397774190.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The driver claims it needs to register an interrupt handler too early
-for request_irq(). This might have been true in the past, but the only
-meaningful difference between request_irq() and setup_irq() today is an
-additional kzalloc() call in request_irq(). As the driver calls
-kmalloc() itself we know that the slab allocator is available, we can
-thus switch to request_irq().
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 0b1836a..a3103b8 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -728,12 +728,6 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 		goto err1;
- 	}
- 
--	/* request irq using setup_irq() (too early for request_irq()) */
--	p->irqaction.name = dev_name(&p->pdev->dev);
--	p->irqaction.handler = sh_cmt_interrupt;
--	p->irqaction.dev_id = p;
--	p->irqaction.flags = IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING;
--
- 	/* get hold of clock */
- 	p->clk = clk_get(&p->pdev->dev, "cmt_fck");
- 	if (IS_ERR(p->clk)) {
-@@ -786,7 +780,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 	}
- 	p->cs_enabled = false;
- 
--	ret = setup_irq(irq, &p->irqaction);
-+	ret = request_irq(irq, sh_cmt_interrupt,
-+			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
-+			  dev_name(&p->pdev->dev), p);
- 	if (ret) {
- 		dev_err(&p->pdev->dev, "failed to request irq %d\n", irq);
- 		goto err4;
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 5a034ff..a12a9d3 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -216,7 +216,7 @@ static const struct spi_board_info spi_info[] __initconst = {
+ 	{
+ 		.modalias	= "m25p80",
+ 		.platform_data	= &spi_flash_data,
+-		.mode		= SPI_MODE_0,
++		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
+ 		.max_speed_hz	= 30000000,
+ 		.bus_num	= 0,
+ 		.chip_select	= 0,
 -- 
-1.8.3.2
+1.8.4
 
