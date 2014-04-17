@@ -1,53 +1,88 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 11 Apr 2014 05:51:10 +0000
-Subject: Re: [PATCH 01/02] ARM: shmobile: Multicluster APMU prototype support
-Message-Id: <CANqRtoSLv5nR28mZw_Yu_rSHBG4Mu11wZoD5qJwNAbgZ0WQGrQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:44:53 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Boards Updates for v3.16
+Message-Id: <cover.1397774190.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140408124807.9773.97405.sendpatchset@w520>
-In-Reply-To: <20140408124807.9773.97405.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Fri, Apr 11, 2014 at 4:28 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Magnus,
->
-> On Tue, Apr 8, 2014 at 2:48 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> +++ work/arch/arm/mach-shmobile/platsmp-apmu.c  2014-04-08 19:01:55.000000000 +0900
->> @@ -18,6 +18,19 @@
->>  #include <asm/smp_plat.h>
->>  #include <mach/common.h>
->>
->> +/* only enable the cluster that includes the boot CPU by default */
->> +static bool enable_multicluster = false;
->> +
->> +static __init int apmu_setup(char *opt)
->> +{
->> +       if (!opt)
->> +               return -EINVAL;
->> +       if (!strncmp(opt, "multicluster", 12))
->
-> Why do you ignore the characters after "multicluster", i.e. why not
-> simply "!strcmp(opt, "multicluster)"?
+Please consider these Renesas ARM Based SoC Boards Updates for v3.16.
 
-Good point, thanks.
 
->> +               enable_multicluster = true;
->> +       return 0;
->> +}
->> +early_param("apmu", apmu_setup);
->
-> This can use some documentation under Documentation/.
+This pull request is based on
+3984ba10dddc5a10 ("ARM: shmobile: r8a7791: Rename VSP1_SY clocks to VSP1_S").
 
-If this was destined for upstream merge I totally agree, but in this
-particular case it is just prototype-level code. The proper solution
-involves upstream scheduler modifications and perhaps also MCPM once
-we care about cluster-level power management.
+That commit is part of the pull request
+"Renesas ARM Based SoC Clock Updates for v3.16",
+tagged as renesas-clock-for-v3.16, which I have previously sent.
 
-Cheers,
+I have not rebased this pull-request on top of renesas-clock-for-v3.16
+in order to avoid churn in linux-next.
 
-/ magnus
+The reason for basing this pull-request on clock updates is
+that many of its patches depend on shmobile_clk_workaround() which
+is added as part of the clock updates.
+
+
+The following changes since commit 58ea1d53ba93620ac50fef9d9720b2323971f243:
+
+  ARM: shmobile: r8a7791: Rename VSP1_SY clocks to VSP1_S (2014-04-14 11:30:11 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.16
+
+for you to fetch changes up to a09b2f0ba170dc89a67d6c4c4f027b37a085dad9:
+
+  ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI FLASH (2014-04-15 08:13:22 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Boards Updates for v3.16
+
+r8a7791 (R-Car M2) based Koelsch board
+* Enable Quad SPI transfers for the SPI FLASH
+* Clock workarounds for Ether, I2C, MSIOF, Quad SPI and SDHI
+* Use shmobile_clk_workaround()
+
+r8a7790 (R-Car H2) based Lager board
+* Enable Quad SPI transfers for the SPI FLASH
+* Switch to use dai info for R-Car sound
+* Clock workarounds for Ether, MSIOF, MMCIF, Quad SPI and SDHI
+* Use shmobile_clk_workaround()
+
+r8a7778 (R-Car M1) based Bock-W board
+* Switch to use dai info for R-Car sound
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      ARM: shmobile: koelsch-reference: Work around core clock issues
+      ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for the SPI FLASH
+      ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI FLASH
+
+Kuninori Morimoto (3):
+      ARM: shmobile: bockw: remove old style audio clock
+      ARM: shmobile: bockw: switch to use dai info for R-Car sound
+      ARM: shmobile: lager: switch to use dai info for R-Car sound
+
+Magnus Damm (4):
+      ARM: shmobile: Use shmobile_clk_workaround() on Lager
+      ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
+      ARM: shmobile: Add Lager clock workarounds for SDHI and MMCIF
+      ARM: shmobile: Add Koelsch clock workarounds for SDHI
+
+Simon Horman (4):
+      ARM: shmobile: koelsch: Annotate clk_names with __initconst
+      ARM: shmobile: lager: Annotate clk_names with __initconst
+      ARM: shmobile: koelsch-reference: Annotate clk_enables as __initconst
+      ARM: shmobile: lager-reference: Work around core clock issues
+
+ arch/arm/mach-shmobile/board-bockw.c             | 63 +++++++++++------
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 86 ++++++++++++------------
+ arch/arm/mach-shmobile/board-koelsch.c           |  2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   | 79 +++++++++++-----------
+ arch/arm/mach-shmobile/board-lager.c             | 29 +++++---
+ 5 files changed, 142 insertions(+), 117 deletions(-)
