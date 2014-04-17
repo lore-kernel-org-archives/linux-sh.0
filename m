@@ -1,34 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 17:36:00 +0000
-Subject: [PATCH 4/4] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <1397496960-27848-5-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:44:56 +0000
+Subject: [PATCH 07/14] ARM: shmobile: lager-reference: Work around core clock issues
+Message-Id: <aa5de826afe747c353162bbc116c63ab5335f91c.1397774191.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397774190.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Due to issues with runtime PM clock management, clocks not explicitly
+managed by their drivers may not be enabled at all, or be inadvertently
+disabled by the clk_disable_unused() late initcall.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Magnus Damm <damm@opensource.se>
+Until this is fixed, add a temporary workaround, calling
+shmobile_clk_workaround() with enable = true.
+
+For now this enables the clocks for: ether, msiof1, qspi_mod, and
+thermal. More clocks can be added if needed.
+
+Based on work for the koelsch board by Geert Uytterhoeven.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index e0126f015404..86d676f62942 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -243,6 +243,8 @@
- 		compatible = "spansion,s25fl512s";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
-+		spi-tx-bus-width = <4>;
-+		spi-rx-bus-width = <4>;
- 		m25p,fast-read;
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 7ff395e..313118c 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -108,9 +108,20 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+ };
  
- 		partition@0 {
++/*
++ * This is a really crude hack to work around core platform clock issues
++ */
++static const struct clk_name clk_enables[] __initconst = {
++	{ "ether", NULL, "ee700000.ethernet" },
++	{ "msiof1", NULL, "e6e10000.spi" },
++	{ "qspi_mod", NULL, "e6b10000.spi" },
++	{ "thermal", NULL, "e61f0000.thermal" },
++};
++
+ static void __init lager_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
++	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
 -- 
-1.7.9.5
+1.8.4
 
