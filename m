@@ -1,45 +1,34 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:11 +0000
-Subject: [PATCH 6/7] ARM: shmobile: Enable VSP1 in shmobile_defconfig
-Message-Id: <e4224fe8bfd955d1aea5f89f2f3ac38dc4a590fc.1397627278.git.horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:44:53 +0000
+Subject: [PATCH 04/14] ARM: shmobile: lager: Annotate clk_names with __initconst
+Message-Id: <f71c77286b2c1f809a85e8e42df88eb2ec132e5f.1397774191.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627278.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
+References: <cover.1397774190.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Both r8a7790 and r8a7791 have multiple on-chip VSP1 devices, so
-enable the VSP1 driver by default in the shmobile_defconfig.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- arch/arm/configs/shmobile_defconfig | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index b73a038..8fb30b0 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -92,10 +92,14 @@ CONFIG_REGULATOR_FIXED_VOLTAGE=y
- CONFIG_REGULATOR_GPIO=y
- CONFIG_MEDIA_SUPPORT=y
- CONFIG_MEDIA_CAMERA_SUPPORT=y
-+CONFIG_MEDIA_CONTROLLER=y
-+CONFIG_VIDEO_V4L2_SUBDEV_API=y
- CONFIG_V4L_PLATFORM_DRIVERS=y
- CONFIG_SOC_CAMERA=y
- CONFIG_SOC_CAMERA_PLATFORM=y
- CONFIG_VIDEO_RCAR_VIN=y
-+CONFIG_V4L_MEM2MEM_DRIVERS=y
-+CONFIG_VIDEO_RENESAS_VSP1=y
- # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
- CONFIG_VIDEO_ADV7180=y
- CONFIG_DRM=y
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index c76248b..7ff395e 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -89,7 +89,7 @@ static void __init lager_add_du_device(void)
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+  */
+-static const struct clk_name clk_names[] = {
++static const struct clk_name clk_names[] __initconst = {
+ 	{ "cmt0", NULL, "sh_cmt.0" },
+ 	{ "scifa0", NULL, "sh-sci.0" },
+ 	{ "scifa1", NULL, "sh-sci.1" },
 -- 
-1.8.5.2
+1.8.4
 
