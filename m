@@ -1,61 +1,47 @@
-From: Stratos Karafotis <stratosk@semaphore.gr>
-Date: Mon, 14 Apr 2014 21:10:07 +0000
-Subject: [PATCH 13/20] sh: clk: Use cpufreq_for_each_valid_entry macro for iteration
-Message-Id: <534C4EAF.6050307@semaphore.gr>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 23:05:51 +0000
+Subject: [PATCH v6 2/2] clk: shmobile: r8a7779: Add MSTP clock support
+Message-Id: <1397775951-30992-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Viresh Kumar <viresh.kumar@linaro.org>
-Cc: linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-The cpufreq core supports the cpufreq_for_each_valid_entry macro
-helper for iteration over the cpufreq_frequency_table, so use it.
+Add MSTP clock support for the r8a7779 SoC
 
-It should have no functional changes.
+The only change required appears to be to note a new
+compatibility string in the bindings.
 
-Signed-off-by: Stratos Karafotis <stratosk@semaphore.gr>
+Cc: devicetree@vger.kernel.org
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/sh/clk/core.c | 19 +++++--------------
- 1 file changed, 5 insertions(+), 14 deletions(-)
+v4 - v6
+* No Change
 
-diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
-index 7472785..e9d3a13 100644
---- a/drivers/sh/clk/core.c
-+++ b/drivers/sh/clk/core.c
-@@ -196,16 +196,11 @@ int clk_rate_table_find(struct clk *clk,
- 			struct cpufreq_frequency_table *freq_table,
- 			unsigned long rate)
- {
--	int i;
--
--	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
--		unsigned long freq = freq_table[i].frequency;
--
--		if (freq = CPUFREQ_ENTRY_INVALID)
--			continue;
-+	struct cpufreq_frequency_table *pos;
+v3
+* As suggested by Laurent Pinchart
+  - Add entry in numerical order
+---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 5992dce..0708937 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+ Required Properties:
  
--		if (freq = rate)
--			return i;
-+	cpufreq_for_each_valid_entry(pos, freq_table) {
-+		if (pos->frequency = rate)
-+			return pos - freq_table;
- 	}
- 
- 	return -ENOENT;
-@@ -575,11 +570,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
- 		return abs(target - *best_freq);
- 	}
- 
--	for (freq = parent->freq_table; freq->frequency != CPUFREQ_TABLE_END;
--	     freq++) {
--		if (freq->frequency = CPUFREQ_ENTRY_INVALID)
--			continue;
--
-+	cpufreq_for_each_valid_entry(freq, parent->freq_table) {
- 		if (unlikely(freq->frequency / target <= div_min - 1)) {
- 			unsigned long freq_max;
- 
+   - compatible: Must be one of the following
++    - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
 -- 
-1.9.0
+1.8.4
+
