@@ -1,91 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Mon, 14 Apr 2014 00:57:19 +0000
-Subject: [PATCH 6/7] ASoC: rsnd: remove old clock style support
-Message-Id: <87k3as20er.wl%kuninori.morimoto.gx@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 00:31:40 +0000
+Subject: [PATCH 4/8] ARM: shmobile: r8a7791: Fix the I2C clocks parents in legacy code
+Message-Id: <2b1b6e6865aeb236f759ad3f91db27b514e29023.1397694178.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
+References: <cover.1397694178.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, broonie@kernel.org
-Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-All platform which used old style was
-switched to new style.
-R-Car sound can remove old style clock support,
-use device dependent clock now.
+All I2C clocks derive from the HP clock, not from the P clock. Fix them.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- sound/soc/sh/rcar/adg.c |   39 +++------------------------------------
- 1 file changed, 3 insertions(+), 36 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7791.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/sound/soc/sh/rcar/adg.c b/sound/soc/sh/rcar/adg.c
-index 69c4426..41556b2 100644
---- a/sound/soc/sh/rcar/adg.c
-+++ b/sound/soc/sh/rcar/adg.c
-@@ -397,9 +397,8 @@ int rsnd_adg_probe(struct platform_device *pdev,
- {
- 	struct rsnd_adg *adg;
- 	struct device *dev = rsnd_priv_to_dev(priv);
--	struct clk *clk, *clk_orig;
-+	struct clk *clk;
- 	int i;
--	bool use_old_style = false;
- 
- 	adg = devm_kzalloc(dev, sizeof(*adg), GFP_KERNEL);
- 	if (!adg) {
-@@ -407,45 +406,13 @@ int rsnd_adg_probe(struct platform_device *pdev,
- 		return -ENOMEM;
- 	}
- 
--	clk_orig	= devm_clk_get(dev, NULL);
- 	adg->clk[CLKA]	= devm_clk_get(dev, "clk_a");
- 	adg->clk[CLKB]	= devm_clk_get(dev, "clk_b");
- 	adg->clk[CLKC]	= devm_clk_get(dev, "clk_c");
- 	adg->clk[CLKI]	= devm_clk_get(dev, "clk_i");
- 
--	/*
--	 * It request device dependent audio clock.
--	 * But above all clks will indicate rsnd module clock
--	 * if platform doesn't it
--	 */
--	for_each_rsnd_clk(clk, adg, i) {
--		if (clk_orig = clk) {
--			dev_warn(dev,
--				 "doesn't have device dependent clock, use independent clock\n");
--			use_old_style = true;
--			break;
--		}
--	}
--
--	/*
--	 * note:
--	 * these exist in order to keep compatible with
--	 * platform which has device independent audio clock,
--	 * but will be removed soon
--	 */
--	if (use_old_style) {
--		adg->clk[CLKA] = devm_clk_get(NULL, "audio_clk_a");
--		adg->clk[CLKB] = devm_clk_get(NULL, "audio_clk_b");
--		adg->clk[CLKC] = devm_clk_get(NULL, "audio_clk_c");
--		adg->clk[CLKI] = devm_clk_get(NULL, "audio_clk_internal");
--	}
--
--	for_each_rsnd_clk(clk, adg, i) {
--		if (IS_ERR(clk)) {
--			dev_err(dev, "Audio clock failed\n");
--			return -EIO;
--		}
--	}
-+	for_each_rsnd_clk(clk, adg, i)
-+		dev_dbg(dev, "clk %d : %p\n", i, clk);
- 
- 	rsnd_adg_ssi_clk_init(priv, adg);
- 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 36e5750..3b26c7e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -188,12 +188,12 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP1108] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 8, MSTPSR11, 0), /* SCIFA5 */
+ 	[MSTP1107] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 7, MSTPSR11, 0), /* SCIFA4 */
+ 	[MSTP1106] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR11, 6, MSTPSR11, 0), /* SCIFA3 */
+-	[MSTP931] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
+-	[MSTP930] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
+-	[MSTP929] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
+-	[MSTP928] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
+-	[MSTP927] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
+-	[MSTP925] = SH_CLK_MSTP32_STS(&p_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
++	[MSTP931] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 31, MSTPSR9, 0), /* I2C0 */
++	[MSTP930] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 30, MSTPSR9, 0), /* I2C1 */
++	[MSTP929] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 29, MSTPSR9, 0), /* I2C2 */
++	[MSTP928] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 28, MSTPSR9, 0), /* I2C3 */
++	[MSTP927] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 27, MSTPSR9, 0), /* I2C4 */
++	[MSTP925] = SH_CLK_MSTP32_STS(&hp_clk, SMSTPCR9, 25, MSTPSR9, 0), /* I2C5 */
+ 	[MSTP917] = SH_CLK_MSTP32_STS(&qspi_clk, SMSTPCR9, 17, MSTPSR9, 0), /* QSPI */
+ 	[MSTP815] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 15, MSTPSR8, 0), /* SATA0 */
+ 	[MSTP814] = SH_CLK_MSTP32_STS(&zs_clk, SMSTPCR8, 14, MSTPSR8, 0), /* SATA1 */
 -- 
-1.7.9.5
+1.8.4
 
