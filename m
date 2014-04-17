@@ -1,60 +1,63 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:13 +0000
-Subject: [PATCH RFC v2 17/17] ARM: shmobile: r8a7791: Populate .init_machine for generic r8a7791
-Message-Id: <1397565253-22741-18-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:45:01 +0000
+Subject: [PATCH 12/14] ARM: shmobile: lager: switch to use dai info for R-Car sound
+Message-Id: <50f359d7389be354b46d781f3b234d3008d20f2f.1397774191.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397774190.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Now, R-Car sound driver supports dai info settings.
+switch to use it
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - New
+ arch/arm/mach-shmobile/board-lager.c | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7791.c        |    8 ++++++++
- 2 files changed, 9 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 200fa699f730..cb0bb74ee290 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -2,6 +2,7 @@
- #define __ASM_R8A7791_H__
+diff --git a/arch/arm/mach-shmobile/board-lager.c b/arch/arm/mach-shmobile/board-lager.c
+index f0104bf..6af09e1 100644
+--- a/arch/arm/mach-shmobile/board-lager.c
++++ b/arch/arm/mach-shmobile/board-lager.c
+@@ -567,20 +567,27 @@ static struct resource rsnd_resources[] __initdata = {
+ };
  
- void r8a7791_add_standard_devices(void);
-+void r8a7791_add_standard_devices_dt(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index a7e4966f5e18..74271c622475 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -218,6 +218,13 @@ void __init r8a7791_init_early(void)
- }
+ static struct rsnd_ssi_platform_info rsnd_ssi[] = {
+-	RSND_SSI_SET(0, 0, gic_spi(370), RSND_SSI_PLAY),
+-	RSND_SSI_SET(0, 0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
++	RSND_SSI(0, gic_spi(370), 0),
++	RSND_SSI(0, gic_spi(371), RSND_SSI_CLK_PIN_SHARE),
+ };
  
- #ifdef CONFIG_USE_OF
-+void __init r8a7791_add_standard_devices_dt(void)
-+{
-+	sh_pm_runtime_init();
-+	r8a7791_add_dt_devices();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+}
+-static struct rsnd_scu_platform_info rsnd_scu[2] = {
++static struct rsnd_src_platform_info rsnd_src[2] = {
+ 	/* no member at this point */
+ };
+ 
++static struct rsnd_dai_platform_info rsnd_dai = {
++	.playback = { .ssi = &rsnd_ssi[0], },
++	.capture  = { .ssi = &rsnd_ssi[1], },
++};
 +
- static const char *r8a7791_boards_compat_dt[] __initdata = {
- 	"renesas,r8a7791",
- 	NULL,
-@@ -227,6 +234,7 @@ DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= r8a7791_init_early,
- 	.init_time	= rcar_gen2_timer_init,
-+	.init_machine	= r8a7791_add_standard_devices_dt,
- 	.dt_compat	= r8a7791_boards_compat_dt,
- MACHINE_END
- #endif /* CONFIG_USE_OF */
+ static struct rcar_snd_info rsnd_info = {
+ 	.flags		= RSND_GEN2,
+ 	.ssi_info	= rsnd_ssi,
+ 	.ssi_info_nr	= ARRAY_SIZE(rsnd_ssi),
+-	.scu_info	= rsnd_scu,
+-	.scu_info_nr	= ARRAY_SIZE(rsnd_scu),
++	.src_info	= rsnd_src,
++	.src_info_nr	= ARRAY_SIZE(rsnd_src),
++	.dai_info	= &rsnd_dai,
++	.dai_info_nr	= 1,
+ };
+ 
+ static struct asoc_simple_card_info rsnd_card_info = {
 -- 
-1.7.9.5
+1.8.4
 
