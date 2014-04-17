@@ -1,47 +1,43 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 14 Apr 2014 20:14:47 +0000
-Subject: Re: [PATCH v3 1/2] ARM: shmobile: r8a7778: Use clks as MSTP007 parent
-Message-Id: <20140414201447.GY25182@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Cou6PmgoyP0+llr2"
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 17 Apr 2014 10:18:21 +0000
+Subject: [GIT PULL FOR v3.16] SH-Mobile IPMMU miscellaneous cleanups
+Message-Id: <2764209.oq6GXMERSj@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397439698-30123-1-git-send-email-horms+renesas@verge.net.au>
- <1397439698-30123-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397439698-30123-2-git-send-email-horms+renesas@verge.net.au>
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+References: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396482562-1851-1-git-send-email-laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Joerg Roedel <joro-zLv9SwRftAIdnm+yROfE0A@public.gmane.org>
+Cc: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Hi Joerg,
 
---Cou6PmgoyP0+llr2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
 
-On Mon, Apr 14, 2014 at 10:41:36AM +0900, Simon Horman wrote:
-> According to the documentation the parent clock of
-> MSTP007 should be clks not clkp.
+  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
 
-Applied, thanks.
+are available in the git repository at:
 
---Cou6PmgoyP0+llr2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  git://linuxtv.org/pinchartl/fbdev.git iommu/for-v3.16
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+for you to fetch changes up to b11762f8431b3a5cf1c156876e79efab7d7f80c4:
 
-iQIcBAEBAgAGBQJTTEG0AAoJELSic+t+oim99FMP/0Lv+UZ2ALwKPYfvMUsGRbk4
-2DIzgsQg4uEnln+wUdZ0IrQr8vOxUIYiam0jjQbPm0y0YPHHEI8mfsynOPyqabSP
-8I6xI1aOaA0dHJ1G6J+HEzjCatEWrhi0ZAix71n3l0qLC0q0ZRSsOve1aDyJxEjY
-Fp99CKEr+PsGLtuZiwztvuuTb24gMxuOZUZF2+RstnoplrPs3ivccqzI9yOiO6rX
-J247a2ZG8rKppS9Ec2elVCNz3JPRhTWN1sYfc9AEGdkMfMyrOlzf2O1XA0i1OZPz
-EisUFSAjvfCPUSH83eQVqjvdGnce45O185e8ICiI0nO+i9j+KXm7yAWh6eOZHPD7
-5Qesqg+1A75OO08XLrr28yn2ACAGLIXt/KiHV/KPV3pECG8eYMkQOHW8j46c5CDb
-NsbikqCSZXA9c0SnQGm6IDZUVRBY1Vtz5J6szVmVKkS3xNY+PO3W9thHoTcNHeTs
-htgYnqU04W1rtuw44fYNrFCl76P+kXA2s7NyTgEPzgzM9nLzmOltF4nG5tZGGtyy
-jhTfM/tt4MmmoGsOlgvK6B2rdoofIclq8KYtZcI2bpU7q5MqcLe2ATZoxPpDA7Mg
-JNkj2Dbw+GrnpPisvxTq+dTtlz2/Yqdrg0+8P4LwqIXMhs0UqS2K4q/QLDAN7SRH
-pKgEdX09nQSdXm+v9Kd2
-=iDbx
------END PGP SIGNATURE-----
+  iommu/shmobile: Use devm_ioremap_resource() (2014-04-17 12:16:12 +0200)
 
---Cou6PmgoyP0+llr2--
+The patches have been sitting on the linux-sh and iommu mailing lists for more 
+than two weeks, I think they should be ripe now.
+
+----------------------------------------------------------------
+Laurent Pinchart (2):
+      iommu/shmobile: Don't ignore the ipmmu_iommu_init() return value
+      iommu/shmobile: Use devm_ioremap_resource()
+
+ drivers/iommu/shmobile-ipmmu.c | 20 +++++++-------------
+ 1 file changed, 7 insertions(+), 13 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
