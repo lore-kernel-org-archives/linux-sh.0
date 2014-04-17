@@ -1,13 +1,15 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Apr 2014 10:33:22 +0000
+Date: Thu, 17 Apr 2014 11:12:57 +0000
 Subject: [PATCH v2 0/5] Renesas VMSA-compatible IPMMU DT support
-Message-Id: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Message-Id: <6626224.o7l75GClE1@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Will Deacon <will.deacon-5wv7dgnIgG8@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 Hello,
 
