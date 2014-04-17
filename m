@@ -1,41 +1,115 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 29 Apr 2014 10:03:34 +0000
-Subject: [PATCH v5 03/11] ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
-Message-Id: <1398765822-2314-4-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:44:50 +0000
+Subject: [PATCH 01/14] ARM: shmobile: Use shmobile_clk_workaround() on Lager
+Message-Id: <e6597e0e19bbabfdd1983dbe79892d8ba210a180.1397774190.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1397774190.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Convert the Lager DT reference code to use the newly introduced
+function shmobile_clk_workaround().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/mach-shmobile/board-lager-reference.c | 65 ++++++++++----------------
+ 1 file changed, 25 insertions(+), 40 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index e664611a47c8..941e72ce7c82 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -30,6 +30,14 @@
- 	};
- };
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 440aac3..c76248b 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -18,12 +18,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
  
-+&extal_clk {
-+	clock-frequency = <13330000>;
+-#include <linux/clk.h>
+-#include <linux/clkdev.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+@@ -86,46 +85,32 @@ static void __init lager_add_du_device(void)
+ 	platform_device_register_full(&info);
+ }
+ 
++/*
++ * This is a really crude hack to provide clkdev support to platform
++ * devices until they get moved to DT.
++ */
++static const struct clk_name clk_names[] = {
++	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifb0", NULL, "sh-sci.2" },
++	{ "scifb1", NULL, "sh-sci.3" },
++	{ "scifb2", NULL, "sh-sci.4" },
++	{ "scifa2", NULL, "sh-sci.5" },
++	{ "scif0", NULL, "sh-sci.6" },
++	{ "scif1", NULL, "sh-sci.7" },
++	{ "hscif0", NULL, "sh-sci.8" },
++	{ "hscif1", NULL, "sh-sci.9" },
++	{ "du0", "du.0", "rcar-du-r8a7790" },
++	{ "du1", "du.1", "rcar-du-r8a7790" },
++	{ "du2", "du.2", "rcar-du-r8a7790" },
++	{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
++	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
 +};
 +
-+&usb_x1_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c2 {
- 	status = "okay";
- 	clock-frequency = <400000>;
+ static void __init lager_add_standard_devices(void)
+ {
+-	/*
+-	 * This is a really crude hack to provide clkdev support to platform
+-	 * devices until they get moved to DT.
+-	 */
+-	static const struct clk_name {
+-		const char *clk;
+-		const char *con_id;
+-		const char *dev_id;
+-	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
+-		{ "scifa0", NULL, "sh-sci.0" },
+-		{ "scifa1", NULL, "sh-sci.1" },
+-		{ "scifb0", NULL, "sh-sci.2" },
+-		{ "scifb1", NULL, "sh-sci.3" },
+-		{ "scifb2", NULL, "sh-sci.4" },
+-		{ "scifa2", NULL, "sh-sci.5" },
+-		{ "scif0", NULL, "sh-sci.6" },
+-		{ "scif1", NULL, "sh-sci.7" },
+-		{ "hscif0", NULL, "sh-sci.8" },
+-		{ "hscif1", NULL, "sh-sci.9" },
+-		{ "du0", "du.0", "rcar-du-r8a7790" },
+-		{ "du1", "du.1", "rcar-du-r8a7790" },
+-		{ "du2", "du.2", "rcar-du-r8a7790" },
+-		{ "lvds0", "lvds.0", "rcar-du-r8a7790" },
+-		{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+-	};
+-	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
+-		clk = clk_get(NULL, clk_names[i].clk);
+-		if (!IS_ERR(clk)) {
+-			clk_register_clkdev(clk, clk_names[i].con_id,
+-					    clk_names[i].dev_id);
+-			clk_put(clk);
+-		}
+-	}
+-
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
 -- 
-1.9.2
+1.8.4
 
