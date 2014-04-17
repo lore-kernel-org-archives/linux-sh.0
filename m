@@ -1,66 +1,124 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:03:57 +0000
-Subject: [PATCH v3 14/52] clocksource: sh_cmt: Hardcode CMT clock event rating to 125
-Message-Id: <1397228675-11684-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 00:31:38 +0000
+Subject: [PATCH 2/8] ARM: shmobile: Introduce shmobile_clk_workaround()
+Message-Id: <25f5550f5a4b18fd77a2e719ba63cb34931ab66a.1397694178.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397694178.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All boards use or should use a clock event rating of 125 for the CMT,
-hardcode it in the driver.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Introduce a new clock workaround function used by DT reference
+code on the mach-shmobile subarchitecture. The new function
+shmobile_clk_workaround() is used to configure clkdev to
+allow DT and platform devices to coexist. It is possible for
+the DT reference board code to also request enabling of the clock
+in case the driver does not implement clock control.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+[horms+renesas@verge.net.au: Removed trailing blank line]
+Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/Makefile             |  2 +-
+ arch/arm/mach-shmobile/clock.c              | 28 ++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/clock.h | 16 ++++++++++++++++
+ 3 files changed, 45 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index 926abe2..75b1f83 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -768,14 +768,14 @@ static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
- }
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 4caffc9..c12a1c5 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -21,8 +21,8 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
  
- static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
--				       const char *name, unsigned long rating)
-+				       const char *name)
+ # Clock objects
+-ifndef CONFIG_COMMON_CLK
+ obj-y				+= clock.o
++ifndef CONFIG_COMMON_CLK
+ obj-$(CONFIG_ARCH_SH7372)	+= clock-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= clock-r8a73a4.o
+diff --git a/arch/arm/mach-shmobile/clock.c b/arch/arm/mach-shmobile/clock.c
+index ad7df62..e7232a0 100644
+--- a/arch/arm/mach-shmobile/clock.c
++++ b/arch/arm/mach-shmobile/clock.c
+@@ -21,6 +21,32 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++
++#ifdef CONFIG_COMMON_CLK
++#include <linux/clk.h>
++#include <linux/clkdev.h>
++#include <mach/clock.h>
++
++void __init shmobile_clk_workaround(const struct clk_name *clks,
++				    int nr_clks, bool enable)
++{
++	const struct clk_name *clkn;
++	struct clk *clk;
++	unsigned int i;
++
++	for (i = 0; i < nr_clks; ++i) {
++		clkn = clks + i;
++		clk = clk_get(NULL, clkn->clk);
++		if (!IS_ERR(clk)) {
++			clk_register_clkdev(clk, clkn->con_id, clkn->dev_id);
++			if (enable)
++				clk_prepare_enable(clk);
++			clk_put(clk);
++		}
++	}
++}
++
++#else /* CONFIG_COMMON_CLK */
+ #include <linux/sh_clk.h>
+ #include <linux/export.h>
+ #include <mach/clock.h>
+@@ -58,3 +84,5 @@ void __clk_put(struct clk *clk)
  {
- 	struct clock_event_device *ced = &ch->ced;
- 
- 	ced->name = name;
- 	ced->features = CLOCK_EVT_FEAT_PERIODIC;
- 	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
--	ced->rating = rating;
-+	ced->rating = 125;
- 	ced->cpumask = cpu_possible_mask;
- 	ced->set_next_event = sh_cmt_clock_event_next;
- 	ced->set_mode = sh_cmt_clock_event_mode;
-@@ -788,11 +788,10 @@ static void sh_cmt_register_clockevent(struct sh_cmt_channel *ch,
  }
+ EXPORT_SYMBOL(__clk_put);
++
++#endif /* CONFIG_COMMON_CLK */
+diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
+index 03e5607..9a93cf9 100644
+--- a/arch/arm/mach-shmobile/include/mach/clock.h
++++ b/arch/arm/mach-shmobile/include/mach/clock.h
+@@ -1,6 +1,21 @@
+ #ifndef CLOCK_H
+ #define CLOCK_H
  
- static int sh_cmt_register(struct sh_cmt_channel *ch, const char *name,
--			   unsigned long clockevent_rating,
--			   unsigned long clocksource_rating)
-+			   bool clockevent, unsigned long clocksource_rating)
- {
--	if (clockevent_rating)
--		sh_cmt_register_clockevent(ch, name, clockevent_rating);
-+	if (clockevent)
-+		sh_cmt_register_clockevent(ch, name);
++#ifdef CONFIG_COMMON_CLK
++/* temporary clock configuration helper for platform devices */
++
++struct clk_name {
++	const char *clk;
++	const char *con_id;
++	const char *dev_id;
++};
++
++void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
++			     bool enable);
++
++#else /* CONFIG_COMMON_CLK */
++/* legacy clock implementation */
++
+ unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
+ extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
  
- 	if (clocksource_rating)
- 		sh_cmt_register_clocksource(ch, name, clocksource_rating);
-@@ -827,7 +826,7 @@ static int sh_cmt_setup_channel(struct sh_cmt_channel *ch, unsigned int index,
- 	raw_spin_lock_init(&ch->lock);
+@@ -36,4 +51,5 @@ do {			\
+ 	(p)->div = d;	\
+ } while (0)
  
- 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
--			      cfg->clockevent_rating,
-+			      cfg->clockevent_rating != 0,
- 			      cfg->clocksource_rating);
- 	if (ret) {
- 		dev_err(&cmt->pdev->dev, "ch%u: registration failed\n",
++#endif /* CONFIG_COMMON_CLK */
+ #endif
 -- 
-1.8.3.2
+1.8.4
 
