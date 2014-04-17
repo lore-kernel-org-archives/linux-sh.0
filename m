@@ -1,45 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 17:02:55 +0000
-Subject: [PATCH] thermal: rcar: Use pm_runtime_put() i.s.o. pm_runtime_put_sync()
-Message-Id: <1397494975-22489-1-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 00:31:42 +0000
+Subject: [PATCH 6/8] ARM: shmobile: r8a7791: Rename VSP1_SY clocks to VSP1_S
+Message-Id: <58ea1d53ba93620ac50fef9d9720b2323971f243.1397694178.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1397694178.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397694178.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <eduardo.valentin@ti.com>
-Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-There's no need for this to be synchronous
+The r8a7791 has three VSP1 instances, one of them being named VSPS (which
+stands for "VSP Standard"). The clock section in the SoC datasheet
+misunderstood the abbreviation as meaning VSP System, and named the
+corresponding clock VSP1(SY). This mistake has been carried over to the
+kernel code.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fix this by renaming the VSP1_SY clock to VSP1_S.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/thermal/rcar_thermal.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi            | 2 +-
+ include/dt-bindings/clock/r8a7791-clock.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index 5a37940b02c9..a8ed0e0265ae 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -470,7 +470,7 @@ error_unregister:
- 			rcar_thermal_irq_disable(priv);
- 	}
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 4618170..aa1cba9 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -688,7 +688,7 @@
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TMU1 R8A7791_CLK_TMU3 R8A7791_CLK_TMU2
+ 				R8A7791_CLK_CMT0 R8A7791_CLK_TMU0 R8A7791_CLK_VSP1_DU1
+-				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_SY
++				R8A7791_CLK_VSP1_DU0 R8A7791_CLK_VSP1_S
+ 			>;
+ 			clock-output-names  				"tmu1", "tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 30f82f2..f069bc6 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -32,7 +32,7 @@
+ #define R8A7791_CLK_TMU0		25
+ #define R8A7791_CLK_VSP1_DU1		27
+ #define R8A7791_CLK_VSP1_DU0		28
+-#define R8A7791_CLK_VSP1_SY		31
++#define R8A7791_CLK_VSP1_S		31
  
--	pm_runtime_put_sync(dev);
-+	pm_runtime_put(dev);
- 	pm_runtime_disable(dev);
- 
- 	return ret;
-@@ -488,7 +488,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 			rcar_thermal_irq_disable(priv);
- 	}
- 
--	pm_runtime_put_sync(dev);
-+	pm_runtime_put(dev);
- 	pm_runtime_disable(dev);
- 
- 	return 0;
+ /* MSTP2 */
+ #define R8A7791_CLK_SCIFA2		2
 -- 
-1.7.9.5
+1.8.4
 
