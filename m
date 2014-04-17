@@ -1,89 +1,231 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 01 Apr 2014 12:01:44 +0000
-Subject: [PATCH v2 4/6] mmc: sh-mmcif: use devm_ for irq management
-Message-Id: <1396353706-31864-5-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 17 Apr 2014 10:33:23 +0000
+Subject: [PATCH v2 1/5] iommu/ipmmu-vmsa: Refactor micro-TLB lookup
+Message-Id: <1397730807-5993-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: iommu@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org
 
-Use devm_request_threaded_irq() for the host interrupt handlers so we
-do not have to worry about freeing them on exit or error. Tidies up the
-exit path code for the driver.
+Cache the micro-TLB number in archdata allocated in the .add_device
+handler instead of looking it up when the deviced is attached and
+detached. This simplifies the .attach_dev and .detach_dev operations and
+prepares for DT support.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mmcif.c | 26 ++++++++------------------
- 1 file changed, 8 insertions(+), 18 deletions(-)
+ drivers/iommu/ipmmu-vmsa.c | 92 ++++++++++++++++++++++++++--------------------
+ 1 file changed, 52 insertions(+), 40 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index fbd7364..c536238 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1441,17 +1441,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index a8a940a..49e00f7 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -44,6 +44,11 @@ struct ipmmu_vmsa_domain {
+ 	pgd_t *pgd;
+ };
  
- 	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
--	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, name, host);
-+	ret = devm_request_threaded_irq(&pdev->dev, irq[0], sh_mmcif_intr,
-+					sh_mmcif_irqt, 0, name, host);
- 	if (ret) {
- 		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
--		goto ereqirq0;
-+		goto err_irq;
- 	}
- 	if (irq[1] >= 0) {
--		ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt,
--					   0, "sh_mmc:int", host);
-+		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
-+						sh_mmcif_intr, sh_mmcif_irqt,
-+						0, "sh_mmc:int", host);
- 		if (ret) {
- 			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
--			goto ereqirq1;
-+			goto err_irq;
- 		}
- 	}
++struct ipmmu_vmsa_archdata {
++	struct ipmmu_vmsa_device *mmu;
++	unsigned int utlb;
++};
++
+ static DEFINE_SPINLOCK(ipmmu_devices_lock);
+ static LIST_HEAD(ipmmu_devices);
  
-@@ -1478,11 +1480,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 
- emmcaddh:
- erqcd:
--	if (irq[1] >= 0)
--		free_irq(irq[1], host);
--ereqirq1:
--	free_irq(irq[0], host);
--ereqirq0:
-+err_irq:
- 	pm_runtime_suspend(&pdev->dev);
- err_clk:
- 	clk_disable_unprepare(host->hclk);
-@@ -1496,7 +1494,6 @@ err_host:
- static int sh_mmcif_remove(struct platform_device *pdev)
+@@ -265,14 +270,19 @@ static void ipmmu_tlb_invalidate(struct ipmmu_vmsa_domain *domain)
+  * Enable MMU translation for the microTLB.
+  */
+ static void ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
+-			      const struct ipmmu_vmsa_master *master)
++			      unsigned int utlb)
  {
- 	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
--	int irq[2];
+ 	struct ipmmu_vmsa_device *mmu = domain->mmu;
  
- 	host->dying = true;
- 	clk_prepare_enable(host->hclk);
-@@ -1514,13 +1511,6 @@ static int sh_mmcif_remove(struct platform_device *pdev)
- 	 */
- 	cancel_delayed_work_sync(&host->timeout_work);
++	/*
++	 * TODO: Reference-count the microTLB as several bus masters can be
++	 * connected to the same microTLB.
++	 */
++
+ 	/* TODO: What should we set the ASID to ? */
+-	ipmmu_write(mmu, IMUASID(master->utlb), 0);
++	ipmmu_write(mmu, IMUASID(utlb), 0);
+ 	/* TODO: Do we need to flush the microTLB ? */
+-	ipmmu_write(mmu, IMUCTR(master->utlb),
++	ipmmu_write(mmu, IMUCTR(utlb),
+ 		    IMUCTR_TTSEL_MMU(domain->context_id) | IMUCTR_FLUSH |
+ 		    IMUCTR_MMUEN);
+ }
+@@ -281,11 +291,11 @@ static void ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
+  * Disable MMU translation for the microTLB.
+  */
+ static void ipmmu_utlb_disable(struct ipmmu_vmsa_domain *domain,
+-			       const struct ipmmu_vmsa_master *master)
++			       unsigned int utlb)
+ {
+ 	struct ipmmu_vmsa_device *mmu = domain->mmu;
  
--	irq[0] = platform_get_irq(pdev, 0);
--	irq[1] = platform_get_irq(pdev, 1);
+-	ipmmu_write(mmu, IMUCTR(master->utlb), 0);
++	ipmmu_write(mmu, IMUCTR(utlb), 0);
+ }
+ 
+ static void ipmmu_flush_pgtable(struct ipmmu_vmsa_device *mmu, void *addr,
+@@ -674,21 +684,6 @@ static int ipmmu_handle_mapping(struct ipmmu_vmsa_domain *domain,
+  * IOMMU Operations
+  */
+ 
+-static const struct ipmmu_vmsa_master *
+-ipmmu_find_master(struct ipmmu_vmsa_device *ipmmu, struct device *dev)
+-{
+-	const struct ipmmu_vmsa_master *master = ipmmu->pdata->masters;
+-	const char *devname = dev_name(dev);
+-	unsigned int i;
 -
--	free_irq(irq[0], host);
--	if (irq[1] >= 0)
--		free_irq(irq[1], host);
+-	for (i = 0; i < ipmmu->pdata->num_masters; ++i, ++master) {
+-		if (strcmp(master->name, devname) = 0)
+-			return master;
+-	}
 -
- 	clk_disable_unprepare(host->hclk);
- 	mmc_free_host(host->mmc);
- 	pm_runtime_put_sync(&pdev->dev);
+-	return NULL;
+-}
+-
+ static int ipmmu_domain_init(struct iommu_domain *io_domain)
+ {
+ 	struct ipmmu_vmsa_domain *domain;
+@@ -727,9 +722,9 @@ static void ipmmu_domain_destroy(struct iommu_domain *io_domain)
+ static int ipmmu_attach_device(struct iommu_domain *io_domain,
+ 			       struct device *dev)
+ {
+-	struct ipmmu_vmsa_device *mmu = dev->archdata.iommu;
++	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
++	struct ipmmu_vmsa_device *mmu = archdata->mmu;
+ 	struct ipmmu_vmsa_domain *domain = io_domain->priv;
+-	const struct ipmmu_vmsa_master *master;
+ 	unsigned long flags;
+ 	int ret = 0;
+ 
+@@ -759,11 +754,7 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	master = ipmmu_find_master(mmu, dev);
+-	if (!master)
+-		return -EINVAL;
+-
+-	ipmmu_utlb_enable(domain, master);
++	ipmmu_utlb_enable(domain, archdata->utlb);
+ 
+ 	return 0;
+ }
+@@ -771,14 +762,10 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
+ static void ipmmu_detach_device(struct iommu_domain *io_domain,
+ 				struct device *dev)
+ {
++	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
+ 	struct ipmmu_vmsa_domain *domain = io_domain->priv;
+-	const struct ipmmu_vmsa_master *master;
+ 
+-	master = ipmmu_find_master(domain->mmu, dev);
+-	if (!master)
+-		return;
+-
+-	ipmmu_utlb_disable(domain, master);
++	ipmmu_utlb_disable(domain, archdata->utlb);
+ 
+ 	/*
+ 	 * TODO: Optimize by disabling the context when no device is attached.
+@@ -839,11 +826,26 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
+ 	return __pfn_to_phys(pte_pfn(pte)) | (iova & ~PAGE_MASK);
+ }
+ 
++static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
++{
++	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
++	const char *devname = dev_name(dev);
++	unsigned int i;
++
++	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
++		if (strcmp(master->name, devname) = 0)
++			return master->utlb;
++	}
++
++	return -1;
++}
++
+ static int ipmmu_add_device(struct device *dev)
+ {
+-	const struct ipmmu_vmsa_master *master = NULL;
++	struct ipmmu_vmsa_archdata *archdata;
+ 	struct ipmmu_vmsa_device *mmu;
+ 	struct iommu_group *group;
++	int utlb = -1;
+ 	int ret;
+ 
+ 	if (dev->archdata.iommu) {
+@@ -856,10 +858,10 @@ static int ipmmu_add_device(struct device *dev)
+ 	spin_lock(&ipmmu_devices_lock);
+ 
+ 	list_for_each_entry(mmu, &ipmmu_devices, list) {
+-		master = ipmmu_find_master(mmu, dev);
+-		if (master) {
++		utlb = ipmmu_find_utlb(mmu, dev);
++		if (utlb >= 0) {
+ 			/*
+-			 * TODO Take a reference to the master to protect
++			 * TODO Take a reference to the MMU to protect
+ 			 * against device removal.
+ 			 */
+ 			break;
+@@ -868,10 +870,10 @@ static int ipmmu_add_device(struct device *dev)
+ 
+ 	spin_unlock(&ipmmu_devices_lock);
+ 
+-	if (!master)
++	if (utlb < 0)
+ 		return -ENODEV;
+ 
+-	if (!master->utlb >= mmu->num_utlbs)
++	if (utlb >= mmu->num_utlbs)
+ 		return -EINVAL;
+ 
+ 	/* Create a device group and add the device to it. */
+@@ -889,7 +891,15 @@ static int ipmmu_add_device(struct device *dev)
+ 		return ret;
+ 	}
+ 
+-	dev->archdata.iommu = mmu;
++	archdata = kzalloc(sizeof(*archdata), GFP_KERNEL);
++	if (!archdata) {
++		ret = -ENOMEM;
++		goto error;
++	}
++
++	archdata->mmu = mmu;
++	archdata->utlb = utlb;
++	dev->archdata.iommu = archdata;
+ 
+ 	/*
+ 	 * Create the ARM mapping, used by the ARM DMA mapping core to allocate
+@@ -923,6 +933,7 @@ static int ipmmu_add_device(struct device *dev)
+ 	return 0;
+ 
+ error:
++	kfree(dev->archdata.iommu);
+ 	dev->archdata.iommu = NULL;
+ 	iommu_group_remove_device(dev);
+ 	return ret;
+@@ -932,6 +943,7 @@ static void ipmmu_remove_device(struct device *dev)
+ {
+ 	arm_iommu_detach_device(dev);
+ 	iommu_group_remove_device(dev);
++	kfree(dev->archdata.iommu);
+ 	dev->archdata.iommu = NULL;
+ }
+ 
 -- 
-1.9.0
+1.8.3.2
 
