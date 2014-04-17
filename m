@@ -1,21 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 08 Apr 2014 23:58:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: Enable VSP1 in shmobile_defconfig
-Message-Id: <20140408235827.GA2694@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 23:05:49 +0000
+Subject: [PATCH v6 0/2] clk: shmobile: r8a7779: Add clocks support
+Message-Id: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140408123758.9749.1753.sendpatchset@w520>
-In-Reply-To: <20140408123758.9749.1753.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 08, 2014 at 09:37:58PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Both r8a7790 and r8a7791 have multiple on-chip VSP1 devices, so
-> enable the VSP1 driver by default in the shmobile_defconfig.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Hi Mike,
 
-Thanks, I will queue this up.
+please consider applying this series.
+
+It is the first step on the way towards using the common clock framework
+and in turn multi-platform on the r8a7779 (R-Car H1) SoC.
+
+It has been acked by Laurent Pinchart who did similar work
+for the R-Car Gen-2 family of SoCs. This work is based on that work.
+
+The bindings added in this series have not been changed since
+v4 was posted with devicetree@vger.kernel.org CCed on the 13th of March.
+
+Simon Horman (2):
+  clk: shmobile: r8a7779: Add clocks support
+  clk: shmobile: r8a7779: Add MSTP clock support
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  27 ++++
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7779.c                 | 180 +++++++++++++++++++++
+ include/linux/clk/shmobile.h                       |   3 +
+ 5 files changed, 212 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
+
+-- 
+1.8.4
+
