@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:44:56 +0000
-Subject: [PATCH 07/14] ARM: shmobile: lager-reference: Work around core clock issues
-Message-Id: <aa5de826afe747c353162bbc116c63ab5335f91c.1397774191.git.horms+renesas@verge.net.au>
+Date: Thu, 17 Apr 2014 22:44:51 +0000
+Subject: [PATCH 02/14] ARM: shmobile: Use shmobile_clk_workaround() on Koelsch
+Message-Id: <89aff406dbc3ea3dfc008e8472181532c0c0f4ea.1397774190.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1397774190.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
@@ -10,47 +10,110 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Due to issues with runtime PM clock management, clocks not explicitly
-managed by their drivers may not be enabled at all, or be inadvertently
-disabled by the clk_disable_unused() late initcall.
+From: Magnus Damm <damm@opensource.se>
 
-Until this is fixed, add a temporary workaround, calling
-shmobile_clk_workaround() with enable = true.
+Convert the Koelsch DT reference code to use the newly introduced
+function shmobile_clk_workaround().
 
-For now this enables the clocks for: ether, msiof1, qspi_mod, and
-thermal. More clocks can be added if needed.
-
-Based on work for the koelsch board by Geert Uytterhoeven.
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 71 ++++++++++--------------
+ 1 file changed, 28 insertions(+), 43 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 7ff395e..313118c 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -108,9 +108,20 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
- };
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a3fd302..a760f7f 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -19,12 +19,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
+-#include <linux/clk.h>
+-#include <linux/clkdev.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+@@ -82,49 +81,35 @@ static void __init koelsch_add_du_device(void)
+ 	platform_device_register_full(&info);
+ }
  
 +/*
-+ * This is a really crude hack to work around core platform clock issues
++ * This is a really crude hack to provide clkdev support to platform
++ * devices until they get moved to DT.
 + */
-+static const struct clk_name clk_enables[] __initconst = {
-+	{ "ether", NULL, "ee700000.ethernet" },
-+	{ "msiof1", NULL, "e6e10000.spi" },
-+	{ "qspi_mod", NULL, "e6b10000.spi" },
-+	{ "thermal", NULL, "e61f0000.thermal" },
++static const struct clk_name clk_names[] = {
++	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifb0", NULL, "sh-sci.2" },
++	{ "scifb1", NULL, "sh-sci.3" },
++	{ "scifb2", NULL, "sh-sci.4" },
++	{ "scifa2", NULL, "sh-sci.5" },
++	{ "scif0", NULL, "sh-sci.6" },
++	{ "scif1", NULL, "sh-sci.7" },
++	{ "scif2", NULL, "sh-sci.8" },
++	{ "scif3", NULL, "sh-sci.9" },
++	{ "scif4", NULL, "sh-sci.10" },
++	{ "scif5", NULL, "sh-sci.11" },
++	{ "scifa3", NULL, "sh-sci.12" },
++	{ "scifa4", NULL, "sh-sci.13" },
++	{ "scifa5", NULL, "sh-sci.14" },
++	{ "du0", "du.0", "rcar-du-r8a7791" },
++	{ "du1", "du.1", "rcar-du-r8a7791" },
++	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
 +};
 +
- static void __init lager_add_standard_devices(void)
+ static void __init koelsch_add_standard_devices(void)
  {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-+	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
- 	r8a7790_add_dt_devices();
+-	/*
+-	 * This is a really crude hack to provide clkdev support to the CMT and
+-	 * DU devices until they get moved to DT.
+-	 */
+-	static const struct clk_name {
+-		const char *clk;
+-		const char *con_id;
+-		const char *dev_id;
+-	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
+-		{ "scifa0", NULL, "sh-sci.0" },
+-		{ "scifa1", NULL, "sh-sci.1" },
+-		{ "scifb0", NULL, "sh-sci.2" },
+-		{ "scifb1", NULL, "sh-sci.3" },
+-		{ "scifb2", NULL, "sh-sci.4" },
+-		{ "scifa2", NULL, "sh-sci.5" },
+-		{ "scif0", NULL, "sh-sci.6" },
+-		{ "scif1", NULL, "sh-sci.7" },
+-		{ "scif2", NULL, "sh-sci.8" },
+-		{ "scif3", NULL, "sh-sci.9" },
+-		{ "scif4", NULL, "sh-sci.10" },
+-		{ "scif5", NULL, "sh-sci.11" },
+-		{ "scifa3", NULL, "sh-sci.12" },
+-		{ "scifa4", NULL, "sh-sci.13" },
+-		{ "scifa5", NULL, "sh-sci.14" },
+-		{ "du0", "du.0", "rcar-du-r8a7791" },
+-		{ "du1", "du.1", "rcar-du-r8a7791" },
+-		{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+-	};
+-	struct clk *clk;
+-	unsigned int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(clk_names); ++i) {
+-		clk = clk_get(NULL, clk_names[i].clk);
+-		if (!IS_ERR(clk)) {
+-			clk_register_clkdev(clk, clk_names[i].con_id,
+-					    clk_names[i].dev_id);
+-			clk_put(clk);
+-		}
+-	}
+-
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+ 	r8a7791_add_dt_devices();
  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  
 -- 
