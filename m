@@ -1,115 +1,104 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 30 Apr 2014 05:31:08 +0000
-Subject: Re: [PATCH 4/4] ARM: shmobile: marzen: Use disabled variant of clock workaround for scif devices
-Message-Id: <20140430053103.GA1673@verge.net.au>
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Thu, 17 Apr 2014 07:21:44 +0000
+Subject: [PATCH 0/5] defconfigs: add MTD_SPI_NOR (dependency for M25P80)
+Message-Id: <1397719309-2022-1-git-send-email-computersforpeace@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoS2p9+2tBWeOQ1K-JME7OrXJDW_afxgbW7YuqSi-WOEVg@mail.gmail.com>
- <20140429235106.GB5289@verge.net.au> <3243856.KKuL7WUL5g@avalon>
- <20140430015045.GG24989@verge.net.au>
- <CANqRtoQkOPj00fBfJ_-vhooiXcE4Li_SAnPgEEfoOGA+FHUEXA@mail.gmail.com>
-In-Reply-To: <CANqRtoQkOPj00fBfJ_-vhooiXcE4Li_SAnPgEEfoOGA+FHUEXA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 30, 2014 at 04:49:57AM +0000, Magnus Damm wrote:
-> On Wed, Apr 30, 2014 at 1:50 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Apr 30, 2014 at 02:47:30AM +0200, Laurent Pinchart wrote:
-> >> Hi Simon,
-> >>
-> >> On Wednesday 30 April 2014 08:51:11 Simon Horman wrote:
-> >> > On Tue, Apr 29, 2014 at 01:40:08PM +0000, Magnus Damm wrote:
-> >> > > On Tue, Apr 29, 2014 at 7:43 AM, Simon Horman wrote:
-> >> > > > Now that SCIF devices are initialised using DT it should
-> >> > > > be sufficient to use the disabled variant of the clock workaround.
-> >> > > >
-> >> > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >> > > > ---
-> >> > > >
-> >> > > >  arch/arm/mach-shmobile/board-marzen-reference.c | 12 ++++++------
-> >> > > >  1 file changed, 6 insertions(+), 6 deletions(-)
-> >> > > >
-> >> > > > diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c
-> >> > > > b/arch/arm/mach-shmobile/board-marzen-reference.c index
-> >> > > > 6d34baf..1f14d80 100644
-> >> > > > --- a/arch/arm/mach-shmobile/board-marzen-reference.c
-> >> > > > +++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-> >> > > > @@ -40,12 +40,6 @@ static void __init marzen_init_timer(void)
-> >> > > >
-> >> > > >   * devices until they get moved to DT.
-> >> > > >   */
-> >> > > >
-> >> > > >  static const struct clk_name clk_names[] __initconst = {
-> >> > > >
-> >> > > > -       { "scif0", NULL, "sh-sci.0" },
-> >> > > > -       { "scif1", NULL, "sh-sci.1" },
-> >> > > > -       { "scif2", NULL, "sh-sci.2" },
-> >> > > > -       { "scif3", NULL, "sh-sci.3" },
-> >> > > > -       { "scif4", NULL, "sh-sci.4" },
-> >> > > > -       { "scif5", NULL, "sh-sci.5" },
-> >> > > >
-> >> > > >         { "tmu0", NULL, "sh_tmu.0" },
-> >> > > >         { "tmu1", NULL, "sh_tmu.1" },
-> >> > > >         { "tmu2", NULL, "sh_tmu.2" },
-> >> > > >
-> >> > > > @@ -55,6 +49,12 @@ static const struct clk_name clk_names[] __initconst
-> >> > > > = {
-> >> > > >
-> >> > > >   * This is a really crude hack to work around core platform clock
-> >> > > >   issues
-> >> > > >   */
-> >> > > >
-> >> > > >  static const struct clk_name clk_enables[] __initconst = {
-> >> > > >
-> >> > > > +       { "scif0", NULL, "sh-sci.0" },
-> >> > > > +       { "scif1", NULL, "sh-sci.1" },
-> >> > > > +       { "scif2", NULL, "sh-sci.2" },
-> >> > > > +       { "scif3", NULL, "sh-sci.3" },
-> >> > > > +       { "scif4", NULL, "sh-sci.4" },
-> >> > > > +       { "scif5", NULL, "sh-sci.5" },
-> >> > > >
-> >> > > >         { "sdhi0", NULL, "ffe4c000.sd" },
-> >> > > >         { "thermal", NULL, "ffc48000.thermal" },
-> >> > > >
-> >> > > >  };
-> >> > >
-> >> > > Hi Simon,
-> >> > >
-> >> > > Thanks for your SCIF DT patches for r8a7779. They look good and clean
-> >> > > in general I think.
-> >> > >
-> >> > > Regarding this specific patch, I'm not sure why you need to perform
-> >> > > this kind of change. Is it following the same style as other SoCs?
-> >> > >
-> >> > > In my mind the SCIF driver at least used to rely on both Runtime PM
-> >> > > and the clock framework for clock control so only relying on clock
-> >> > > framework should be enough for now. The driver may have been updated
-> >> > > though, but if so we should make sure we follow the same pattern on
-> >> > > other SoCs as well.
-> >> >
-> >> > Thanks, I agree this is not needed.
-> >>
-> >> Shouldn't we remove the scif clock entries from the clk_names array completely
-> >> ?
-> >
-> > To be honest I am somewhat confused.
-> >
-> > My understanding was that clk_enables were used for devices
-> > that are initialised using DT but whose clocks need to be forcibly
-> > enabled because the interaction with runtime PM isn't handled properly
-> > yet.
-> >
-> > And my reading of Magnus's email was that SCI devices do not need
-> > to be enabled as the driver interacts with runtime PM correctly.
-> >
-> > So I tend to agree with you that we ought to be able to simply remove
-> > the SCI devices from clk_names now they are initialised via DT
-> > (unlike TMU which is still initialised as a platform device).
-> 
-> I suspect that simply removing the SCIF bits from clk_names makes sense.
+Hi all,
 
-Thanks, I now suspect so too.
+We are introducing a new SPI-NOR library/framework for MTD, to support various
+types of SPI-NOR flash controllers which require (or benefit from) intimate
+knowledge of the flash interface, rather than just the relatively dumb SPI
+interface. This library borrows much of the m25p80 driver for its abstraction
+and moves this code into a spi-nor module.
 
-I'll update this patch accordingly.
+This means CONFIG_M25P80 now has a dependency on CONFIG_MTD_SPI_NOR, which
+should be added to the defconfigs. I'm not sure what is the best process for
+doing this. Should each $ARCH maintainer just take their respective patch, even
+if the MTD_SPI_NOR Kconfig symbol is not defined for them yet? Or should
+maintainers plan on merging the relevant SPI-NOR code into their trees during
+the development cycle? Or some third option?
+
+Anyway, the patches are here. Please keep general comments to the cover letter,
+so all parties can see.
+
+This series is based on the development repo for MTD, in the 'spinor' branch:
+
+  git://git.infradead.org/l2-mtd.git +spinor
+
+This series is available in the same repo at:
+
+  git://git.infradead.org/l2-mtd.git +defconfigs
+
+I tried locally merging this into linux-next and saw a trivial conflict in
+arch/arm/configs/shmobile_defconfig. I can resubmit based on an appropriate
+tree, if requested.
+
+Thanks,
+Brian
+
+P.S. I was going to purely automatically generate this diff as follows, but
+it generated a lot of defconfig noise:
+
+	#!/bin/sh
+	for i in arm blackfin mips powerpc sh
+	do 
+		for j in `git grep -l M25P80 arch/$i/configs`
+		do 
+			echo $j
+			cp $j .config
+			echo CONFIG_MTD_SPI_NOR=y >> .config
+			make ARCH=$i savedefconfig
+			mv defconfig $j
+		done
+	done
+
+So I did a mixed approach, where I filtered most of the noise out of the diff.
+
+Brian Norris (5):
+  ARM: defconfigs: add MTD_SPI_NOR (new dependency for M25P80)
+  blackfin: defconfigs: add MTD_SPI_NOR (new dependency for M25P80)
+  mips: defconfigs: add MTD_SPI_NOR (new dependency for M25P80)
+  powerpc: defconfigs: add MTD_SPI_NOR (new dependency for M25P80)
+  sh: defconfig: add MTD_SPI_NOR (new dependency for M25P80)
+
+ arch/arm/configs/bockw_defconfig               | 2 +-
+ arch/arm/configs/dove_defconfig                | 2 +-
+ arch/arm/configs/imx_v6_v7_defconfig           | 1 +
+ arch/arm/configs/keystone_defconfig            | 1 +
+ arch/arm/configs/kirkwood_defconfig            | 1 +
+ arch/arm/configs/koelsch_defconfig             | 1 +
+ arch/arm/configs/lager_defconfig               | 1 +
+ arch/arm/configs/lpc32xx_defconfig             | 2 +-
+ arch/arm/configs/multi_v5_defconfig            | 1 +
+ arch/arm/configs/multi_v7_defconfig            | 1 +
+ arch/arm/configs/mvebu_v5_defconfig            | 1 +
+ arch/arm/configs/mvebu_v7_defconfig            | 1 +
+ arch/arm/configs/mxs_defconfig                 | 1 +
+ arch/arm/configs/sama5_defconfig               | 2 +-
+ arch/arm/configs/shmobile_defconfig            | 1 +
+ arch/arm/configs/tegra_defconfig               | 1 +
+ arch/blackfin/configs/BF526-EZBRD_defconfig    | 2 +-
+ arch/blackfin/configs/BF527-EZKIT-V2_defconfig | 2 +-
+ arch/blackfin/configs/BF527-EZKIT_defconfig    | 2 +-
+ arch/blackfin/configs/BF548-EZKIT_defconfig    | 2 +-
+ arch/blackfin/configs/BF609-EZKIT_defconfig    | 2 +-
+ arch/blackfin/configs/BlackStamp_defconfig     | 3 +--
+ arch/blackfin/configs/H8606_defconfig          | 3 +--
+ arch/mips/configs/ath79_defconfig              | 3 +--
+ arch/mips/configs/db1xxx_defconfig             | 1 +
+ arch/mips/configs/rt305x_defconfig             | 2 +-
+ arch/powerpc/configs/corenet32_smp_defconfig   | 2 +-
+ arch/powerpc/configs/corenet64_smp_defconfig   | 2 +-
+ arch/powerpc/configs/mpc85xx_defconfig         | 2 +-
+ arch/powerpc/configs/mpc85xx_smp_defconfig     | 2 +-
+ arch/sh/configs/sh7757lcr_defconfig            | 2 +-
+ 31 files changed, 31 insertions(+), 21 deletions(-)
+
+-- 
+1.8.3.2
+
