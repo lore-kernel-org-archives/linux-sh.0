@@ -1,46 +1,73 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 14 Apr 2014 21:59:52 +0000
-Subject: [PATCHv2 10/11] leds: leds-pwm: retrieve configured pwm period
-Message-Id: <1397512793-10325-11-git-send-email-alexandre.belloni@free-electrons.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Apr 2014 14:48:06 +0000
+Subject: [PATCH v2 06/14] clocksource: sh_mtu2: Replace global spinlock with a per-device spinlock
+Message-Id: <1397832494-20607-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The PWM core is now able to initialize the PWM period. Use it and if it is not
-configured, use the supplied pwm_period_ns.
+The global spinlock is used to protect the shared start/stop register.
+Now that all MTU2 channels are handled by a single device instance, use
+a per-device spinlock.
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- drivers/leds/leds-pwm.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ drivers/clocksource/sh_mtu2.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/leds/leds-pwm.c b/drivers/leds/leds-pwm.c
-index 7d0aaed1e23a..aa770ec1e892 100644
---- a/drivers/leds/leds-pwm.c
-+++ b/drivers/leds/leds-pwm.c
-@@ -181,7 +181,6 @@ static int led_pwm_probe(struct platform_device *pdev)
- 			led_dat->cdev.name = cur_led->name;
- 			led_dat->cdev.default_trigger = cur_led->default_trigger;
- 			led_dat->active_low = cur_led->active_low;
--			led_dat->period = cur_led->pwm_period_ns;
- 			led_dat->cdev.brightness_set = led_pwm_set;
- 			led_dat->cdev.brightness = LED_OFF;
- 			led_dat->cdev.max_brightness = cur_led->max_brightness;
-@@ -191,6 +190,10 @@ static int led_pwm_probe(struct platform_device *pdev)
- 			if (led_dat->can_sleep)
- 				INIT_WORK(&led_dat->work, led_pwm_work);
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 2931fea..ebdf9d1 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -47,14 +47,14 @@ struct sh_mtu2_device {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
  
-+			led_dat->period = pwm_get_period(led_dat->pwm);
-+			if (!led_dat->period && (cur_led->pwm_period_ns > 0))
-+				led_dat->period = cur_led->pwm_period_ns;
++	raw_spinlock_t lock; /* Protect the shared registers */
 +
- 			ret = led_classdev_register(&pdev->dev, &led_dat->cdev);
- 			if (ret < 0)
- 				goto err;
+ 	struct sh_mtu2_channel *channels;
+ 	unsigned int num_channels;
+ 
+ 	bool has_clockevent;
+ };
+ 
+-static DEFINE_RAW_SPINLOCK(sh_mtu2_lock);
+-
+ #define TSTR -1 /* shared register */
+ #define TCR  0 /* channel register */
+ #define TMDR 1 /* channel register */
+@@ -192,7 +192,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+-	raw_spin_lock_irqsave(&sh_mtu2_lock, flags);
++	raw_spin_lock_irqsave(&ch->mtu->lock, flags);
+ 	value = sh_mtu2_read(ch, TSTR);
+ 
+ 	if (start)
+@@ -201,7 +201,7 @@ static void sh_mtu2_start_stop_ch(struct sh_mtu2_channel *ch, int start)
+ 		value &= ~(1 << ch->index);
+ 
+ 	sh_mtu2_write(ch, TSTR, value);
+-	raw_spin_unlock_irqrestore(&sh_mtu2_lock, flags);
++	raw_spin_unlock_irqrestore(&ch->mtu->lock, flags);
+ }
+ 
+ static int sh_mtu2_enable(struct sh_mtu2_channel *ch)
+@@ -402,6 +402,8 @@ static int sh_mtu2_setup(struct sh_mtu2_device *mtu,
+ 
+ 	mtu->pdev = pdev;
+ 
++	raw_spin_lock_init(&mtu->lock);
++
+ 	/* Get hold of clock. */
+ 	mtu->clk = clk_get(&mtu->pdev->dev, "fck");
+ 	if (IS_ERR(mtu->clk)) {
 -- 
 1.8.3.2
 
