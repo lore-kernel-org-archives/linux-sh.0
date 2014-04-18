@@ -1,74 +1,101 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:46 +0000
-Subject: [PATCH 18/33] ARM: shmobile: r8a7791: add IIC(B) clocks to dtsi
-Message-Id: <c08691b578338004ee467cfe51850e7ffb523647.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Apr 2014 14:48:10 +0000
+Subject: [PATCH v2 10/14] clocksource: sh_mtu2: Add DT support
+Message-Id: <1397832494-20607-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
-
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 25 +++++++++++++------------
- 1 file changed, 13 insertions(+), 12 deletions(-)
+ .../devicetree/bindings/timer/renesas,mtu2.txt     | 40 ++++++++++++++++++++++
+ drivers/clocksource/sh_mtu2.c                      |  8 +++++
+ 2 files changed, 48 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index a70fb80..dd45e01 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -716,15 +716,16 @@
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
--			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>,
--				<&cpg_clocks R8A7791_CLK_SD0>, <&mmc0_clk>, <&rclk_clk>;
-+			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
-+				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1
--				R8A7791_CLK_SDHI0 R8A7791_CLK_MMCIF0 R8A7791_CLK_CMT1
-+				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
-+				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
- 			>;
- 			clock-output-names -				"tpu0", "sdhi2", "sdhi1", "sdhi0", "mmcif0", "cmt1";
-+				"tpu0", "sdhi2", "sdhi1", "sdhi0",
-+				"mmcif0", "i2c7", "i2c8", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-@@ -768,17 +769,17 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>,
--				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
--				 <&p_clk>;
-+			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&p_clk>,
-+				 <&cp_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				 <&p_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD
--				R8A7791_CLK_I2C5 R8A7791_CLK_I2C4 R8A7791_CLK_I2C3
--				R8A7791_CLK_I2C2 R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
-+				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
-+				R8A7791_CLK_IICDVFS R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
-+				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
- 			>;
- 			clock-output-names -				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c4", "i2c3",
-+				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3",
- 				"i2c2", "i2c1", "i2c0";
- 		};
- 		mstp11_clks: mstp11_clks@e615099c {
+diff --git a/Documentation/devicetree/bindings/timer/renesas,mtu2.txt b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+new file mode 100644
+index 0000000..c5dd032
+--- /dev/null
++++ b/Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+@@ -0,0 +1,40 @@
++* Renesas R-Car Multi-Function Timer Pulse Unit 2 (MTU2)
++
++The MTU2 is a multi-purpose, multi-channel timer/counter with configurable
++clock inputs and programmable compare match.
++
++Channels share hardware resources but their counter and compare match value
++are independent. The MTU2 hardware supports five channels indexed from 0 to 4.
++
++Required Properties:
++
++  - compatible: must contain "renesas,mtu2"
++
++  - reg: base address and length of the registers block for the timer module.
++
++  - interrupt-parent, interrupts: interrupt specifiers for the timer, one for
++    each entry in interrupt-names.
++  - interrupt-names: must contain one entry named "tgi?a" for each enabled
++    channel, where "?" is the channel index expressed as one digit from "0" to
++    "4".
++
++  - clocks: a list of phandle + clock-specifier pairs, one for each entry
++    in clock-names.
++  - clock-names: must contain "fck" for the functional clock.
++
++
++Example: R7S72100 (RZ/A1H) MTU2 node
++
++	mtu2: timer@fcff0000 {
++		compatible = "renesas,mtu2";
++		reg = <0xfcff0000 0x400>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 139 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 146 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 150 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 154 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 159 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "tgi0a", "tgi1a", "tgi2a", "tgi3a", "tgi4a";
++		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
++		clock-names = "fck";
++	};
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index ebdf9d1..79387af 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -23,6 +23,7 @@
+ #include <linux/ioport.h>
+ #include <linux/irq.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+@@ -502,11 +503,18 @@ static const struct platform_device_id sh_mtu2_id_table[] = {
+ };
+ MODULE_DEVICE_TABLE(platform, sh_mtu2_id_table);
+ 
++static const struct of_device_id sh_mtu2_of_table[] = {
++	{ .compatible = "renesas,mtu2" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, sh_mtu2_of_table);
++
+ static struct platform_driver sh_mtu2_device_driver = {
+ 	.probe		= sh_mtu2_probe,
+ 	.remove		= sh_mtu2_remove,
+ 	.driver		= {
+ 		.name	= "sh_mtu2",
++		.of_match_table = of_match_ptr(sh_mtu2_of_table),
+ 	},
+ 	.id_table	= sh_mtu2_id_table,
+ };
 -- 
-1.8.5.2
+1.8.3.2
 
