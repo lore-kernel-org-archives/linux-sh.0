@@ -1,72 +1,216 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Apr 2014 10:26:36 +0000
-Subject: [PATCH 4/6] ARM: omap: Use generic runtime and clock helpers
-Message-Id: <1398335198-26555-5-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Apr 2014 14:48:08 +0000
+Subject: [PATCH v2 08/14] clocksource: sh_cmt: Add DT support
+Message-Id: <1397832494-20607-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-omap1/pm_bus.c |   32 ++------------------------------
- 1 file changed, 2 insertions(+), 30 deletions(-)
+ .../devicetree/bindings/timer/renesas,cmt.txt      | 49 ++++++++++++++++
+ drivers/clocksource/sh_cmt.c                       | 66 ++++++++++++++++------
+ 2 files changed, 97 insertions(+), 18 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
 
-diff --git a/arch/arm/mach-omap1/pm_bus.c b/arch/arm/mach-omap1/pm_bus.c
-index 3f2d39672393..e2d4b93580d1 100644
---- a/arch/arm/mach-omap1/pm_bus.c
-+++ b/arch/arm/mach-omap1/pm_bus.c
-@@ -12,7 +12,6 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
--#include <linux/pm_runtime.h>
- #include <linux/pm_clock.h>
+As explained in the cover letter, compared to v1 I've dropped the channel
+subnodes from the DT bindings and just use a channels mask, as I don't need to
+specify per-channel properties. I'm slightly uncertain about this change
+though, as I can't easily predict whether per-channel properties would be
+needed later for new hardware. It won't be difficult to reintroduce channel
+subnodes then, so I'd rather not clutter the DT bindings with channel subnodes
+now. Please feel free to disagree.
+
+diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+new file mode 100644
+index 0000000..d6a82cd
+--- /dev/null
++++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
+@@ -0,0 +1,49 @@
++* Renesas R-Car Compare Match Timer (CMT)
++
++The CMT is a multi-channel 16/32/48-bit timer/counter with configurable clock
++inputs and programmable compare match.
++
++Channels share hardware resources but their counter and compare match value
++are independent. A particular CMT instance can implement only a subset of the
++channels supported by the CMT model. Channel indices represent the hardware
++position of the channel in the CMT and don't match the channel numbers in the
++datasheets.
++
++Required Properties:
++
++  - compatible: must contain one of the following.
++    - "renesas,cmt-32" for the 32-bit CMT
++		(CMT0 on sh7372, sh73a0 and r8a7740)
++    - "renesas,cmt-32-fast" for the 32-bit CMT with fast clock support
++		(CMT[234] on sh7372, sh73a0 and r8a7740)
++    - "renasas,cmt-48" for the 48-bit CMT
++		(CMT1 on sh7372, sh73a0 and r8a7740)
++    - "renesas,cmt-48-gen2" for the second generation 48-bit CMT
++		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
++
++  - reg: base address and length of the registers block for the timer module.
++  - interrupt-parent, interrupts: interrupt-specifier for the timer, one per
++    channel.
++  - clocks: a list of phandle + clock-specifier pairs, one for each entry
++    in clock-names.
++  - clock-names: must contain "fck" for the functional clock.
++
++  - renesas,channels-mask: bitmask of the available channels.
++
++
++Example: R8A7790 (R-Car H2) CMT0 node
++
++	CMT0 on R8A7790 implements hardware channels 5 and 6 only and names
++	them channels 0 and 1 in the documentation.
++
++	cmt0: timer@ffca0000 {
++		compatible = "renesas,cmt-48-gen2";
++		reg = <0 0xffca0000 0 0x1004>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
++		clock-names = "fck";
++
++		renesas,channels-mask = <0x60>;
++	};
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 4d00e4b..3a27ce3 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -24,6 +24,7 @@
+ #include <linux/ioport.h>
+ #include <linux/irq.h>
+ #include <linux/module.h>
++#include <linux/of.h>
  #include <linux/platform_device.h>
- #include <linux/mutex.h>
-@@ -22,37 +21,10 @@
- #include "soc.h"
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
+@@ -122,6 +123,7 @@ struct sh_cmt_device {
  
- #ifdef CONFIG_PM_RUNTIME
--static int omap1_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
+ 	struct sh_cmt_channel *channels;
+ 	unsigned int num_channels;
++	unsigned int hw_channels;
+ 
+ 	bool has_clockevent;
+ 	bool has_clocksource;
+@@ -924,10 +926,35 @@ static int sh_cmt_map_memory(struct sh_cmt_device *cmt)
+ 	return 0;
+ }
+ 
++static const struct platform_device_id sh_cmt_id_table[] = {
++	{ "sh-cmt-16", (kernel_ulong_t)&sh_cmt_info[SH_CMT_16BIT] },
++	{ "sh-cmt-32", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT] },
++	{ "sh-cmt-32-fast", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT_FAST] },
++	{ "sh-cmt-48", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT] },
++	{ "sh-cmt-48-gen2", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT_GEN2] },
++	{ }
++};
++MODULE_DEVICE_TABLE(platform, sh_cmt_id_table);
++
++static const struct of_device_id sh_cmt_of_table[] = {
++	{ .compatible = "renesas,cmt-32", .data = &sh_cmt_info[SH_CMT_32BIT] },
++	{ .compatible = "renesas,cmt-32-fast", .data = &sh_cmt_info[SH_CMT_32BIT_FAST] },
++	{ .compatible = "renasas,cmt-48", .data = &sh_cmt_info[SH_CMT_48BIT] },
++	{ .compatible = "renesas,cmt-48-gen2", .data = &sh_cmt_info[SH_CMT_48BIT_GEN2] },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, sh_cmt_of_table);
++
++static int sh_cmt_parse_dt(struct sh_cmt_device *cmt)
++{
++	struct device_node *np = cmt->pdev->dev.of_node;
++
++	return of_property_read_u32(np, "renesas,channels-mask",
++				    &cmt->hw_channels);
++}
++
+ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ {
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
+-	const struct platform_device_id *id = pdev->id_entry;
+ 	unsigned int mask;
+ 	unsigned int i;
+ 	int ret;
+@@ -936,13 +963,26 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	cmt->pdev = pdev;
+ 	raw_spin_lock_init(&cmt->lock);
+ 
+-	if (!cfg) {
++	if (IS_ENABLED(CONFIG_OF) && pdev->dev.of_node) {
++		const struct of_device_id *id;
++
++		id = of_match_node(sh_cmt_of_table, pdev->dev.of_node);
++		cmt->info = id->data;
++
++		ret = sh_cmt_parse_dt(cmt);
++		if (ret < 0)
++			return ret;
++	} else if (pdev->dev.platform_data) {
++		struct sh_timer_config *cfg = pdev->dev.platform_data;
++		const struct platform_device_id *id = pdev->id_entry;
++
++		cmt->info = (const struct sh_cmt_info *)id->driver_data;
++		cmt->hw_channels = cfg->channels_mask;
++	} else {
+ 		dev_err(&cmt->pdev->dev, "missing platform data\n");
+ 		return -ENXIO;
+ 	}
+ 
+-	cmt->info = (const struct sh_cmt_info *)id->driver_data;
 -
--	dev_dbg(dev, "%s\n", __func__);
+ 	/* Get hold of clock. */
+ 	cmt->clk = clk_get(&cmt->pdev->dev, "fck");
+ 	if (IS_ERR(cmt->clk)) {
+@@ -960,8 +1000,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 		goto err_clk_unprepare;
+ 
+ 	/* Allocate and setup the channels. */
+-	cmt->num_channels = hweight8(cfg->channels_mask);
 -
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret)
--		return ret;
++	cmt->num_channels = hweight8(cmt->hw_channels);
+ 	cmt->channels = kzalloc(cmt->num_channels * sizeof(*cmt->channels),
+ 				GFP_KERNEL);
+ 	if (cmt->channels = NULL) {
+@@ -973,7 +1012,7 @@ static int sh_cmt_setup(struct sh_cmt_device *cmt, struct platform_device *pdev)
+ 	 * Use the first channel as a clock event device and the second channel
+ 	 * as a clock source. If only one channel is available use it for both.
+ 	 */
+-	for (i = 0, mask = cfg->channels_mask; i < cmt->num_channels; ++i) {
++	for (i = 0, mask = cmt->hw_channels; i < cmt->num_channels; ++i) {
+ 		unsigned int hwidx = ffs(mask) - 1;
+ 		bool clocksource = i = 1 || cmt->num_channels = 1;
+ 		bool clockevent = i = 0;
+@@ -1044,21 +1083,12 @@ static int sh_cmt_remove(struct platform_device *pdev)
+ 	return -EBUSY; /* cannot unregister clockevent and clocksource */
+ }
+ 
+-static const struct platform_device_id sh_cmt_id_table[] = {
+-	{ "sh-cmt-16", (kernel_ulong_t)&sh_cmt_info[SH_CMT_16BIT] },
+-	{ "sh-cmt-32", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT] },
+-	{ "sh-cmt-32-fast", (kernel_ulong_t)&sh_cmt_info[SH_CMT_32BIT_FAST] },
+-	{ "sh-cmt-48", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT] },
+-	{ "sh-cmt-48-gen2", (kernel_ulong_t)&sh_cmt_info[SH_CMT_48BIT_GEN2] },
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(platform, sh_cmt_id_table);
 -
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int omap1_pm_runtime_resume(struct device *dev)
--{
--	dev_dbg(dev, "%s\n", __func__);
--
--	pm_clk_resume(dev);
--	return pm_generic_runtime_resume(dev);
--}
--
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
--		.runtime_suspend = omap1_pm_runtime_suspend,
--		.runtime_resume = omap1_pm_runtime_resume,
-+		.runtime_suspend = pm_generic_runtime_clk_suspend,
-+		.runtime_resume = pm_generic_clk_runtime_resume,
- 		USE_PLATFORM_PM_SLEEP_OPS
+ static struct platform_driver sh_cmt_device_driver = {
+ 	.probe		= sh_cmt_probe,
+ 	.remove		= sh_cmt_remove,
+ 	.driver		= {
+ 		.name	= "sh_cmt",
++		.of_match_table = of_match_ptr(sh_cmt_of_table),
  	},
+ 	.id_table	= sh_cmt_id_table,
  };
 -- 
-1.7.9.5
+1.8.3.2
 
