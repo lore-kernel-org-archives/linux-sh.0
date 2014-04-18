@@ -1,79 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:23 +0000
-Subject: [PATCH v5 09/20] ARM: shmobile: r8a7779: Move r8a7779_earlytimer_init to clock-r8a7779.c
-Message-Id: <1397613454-7522-10-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Apr 2014 14:48:14 +0000
+Subject: [PATCH v2 14/14] ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+Message-Id: <1397832494-20607-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
+References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-r8a7779_earlytimer_init() calls r8a7779_clock_init() and
-r8a7779_clock_init() is defined in clock-r8a7779.c.
+Enable the CMT0 device and configure channel 0 as a clock event
+provider.
 
-If both CONFIG_COMMON_CLK and CONFIG_ARCH_R8A7779 are enabled,
-as will be the case when marzen-reference moves to use
-the common clock framework, then setup-r8a7779.c is compiled
-but clock-r8a7779.c is not.
-
-As r8a7779_earlytimer_init() is not used by marzen-reference
-simply move it to clock-r8a7779.c.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c | 10 ----------
- 2 files changed, 11 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 4 ++++
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 1 -
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 2 +-
+ 3 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index b1a5065..e4fc7df 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -23,6 +23,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <linux/sh_timer.h>
- #include <mach/clock.h>
- #include <mach/common.h>
- #include <mach/r8a7779.h>
-@@ -263,3 +264,13 @@ void __init r8a7779_clock_init(void)
- 	else
- 		panic("failed to setup r8a7779 clocks\n");
- }
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 0d69813..45334c3 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -290,6 +290,10 @@
+ 	};
+ };
+ 
++&cmt0 {
++	status = "ok";
++};
 +
-+/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-+void __init __weak r8a7779_register_twd(void) { }
-+
-+void __init r8a7779_earlytimer_init(void)
-+{
-+	r8a7779_clock_init();
-+	r8a7779_register_twd();
-+	shmobile_earlytimer_init();
-+}
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index f6aeb7f..f28b8c7 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -714,16 +714,6 @@ void __init r8a7779_add_standard_devices(void)
- 	r8a7779_register_hpb_dmae();
+ &ether {
+ 	pinctrl-0 = <&ether_pins &phy1_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index bd90932..6b3b354 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -86,7 +86,6 @@ static void __init koelsch_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "scifa0", NULL, "sh-sci.0" },
+ 	{ "scifa1", NULL, "sh-sci.1" },
+ 	{ "scifb0", NULL, "sh-sci.2" },
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 9839dac..e66f777 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -197,12 +197,12 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_register_cmt(0);
  }
  
--/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
--void __init __weak r8a7779_register_twd(void) { }
--
--void __init r8a7779_earlytimer_init(void)
--{
--	r8a7779_clock_init();
--	r8a7779_register_twd();
--	shmobile_earlytimer_init();
--}
--
- void __init r8a7779_add_early_devices(void)
+ void __init r8a7791_add_standard_devices(void)
  {
- 	early_platform_add_devices(r8a7779_devices_dt,
+ 	r8a7791_add_dt_devices();
++	r8a7791_register_cmt(0);
+ 	r8a7791_register_irqc(0);
+ 	r8a7791_register_thermal();
+ }
 -- 
-1.8.5.2
+1.8.3.2
 
