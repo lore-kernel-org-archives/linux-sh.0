@@ -1,86 +1,87 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:58 +0000
-Subject: [PATCH 30/33] ARM: shmobile: r8a7790: add IIC(B) cores to dtsi
-Message-Id: <05f3991622013692b8ef428a6703663331544248.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 18 Apr 2014 14:48:00 +0000
+Subject: [PATCH v2 00/14] Renesas CMT, MTU2 and TMU timers DT support
+Message-Id: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Hello,
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 44 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+This patch set adds DT bindings to the Renesas CMT, MTU2 and TMU timers. The
+CMT patches have been previously posted as part of the "[PATCH 00/27] Renesas
+CMT (Compare Match Timer) DT bindings" series. The MTU2 patches have been
+previously posted as part of the "[PATCH 00/22] SH MTU2 DT support" series.
+The TMU patches are new.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 79855e3..bf2db38 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -24,6 +24,10 @@
- 		i2c1 = &i2c1;
- 		i2c2 = &i2c2;
- 		i2c3 = &i2c3;
-+		i2c4 = &iic0;
-+		i2c5 = &iic1;
-+		i2c6 = &iic2;
-+		i2c7 = &iic3;
- 		spi0 = &qspi;
- 		spi1 = &msiof0;
- 		spi2 = &msiof1;
-@@ -236,6 +240,46 @@
- 		status = "disabled";
- 	};
- 
-+	iic0: i2c@e6500000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-+		reg = <0 0xe6500000 0 0x425>;
-+		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
-+		status = "disabled";
-+	};
-+
-+	iic1: i2c@e6510000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-+		reg = <0 0xe6510000 0 0x425>;
-+		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_IIC1>;
-+		status = "disabled";
-+	};
-+
-+	iic2: i2c@e6520000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-+		reg = <0 0xe6520000 0 0x425>;
-+		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_IIC2>;
-+		status = "disabled";
-+	};
-+
-+	iic3: i2c@e60b0000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-+		reg = <0 0xe60b0000 0 0x425>;
-+		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7790_CLK_IICDVFS>;
-+		status = "disabled";
-+	};
-+
- 	mmcif0: mmcif@ee200000 {
- 		compatible = "renesas,mmcif-r8a7790", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
+The set builds on top of the "[PATCH v3 00/52] Renesas CMT and TMU cleanups"
+series and the cleanup patches of the "[PATCH 00/22] SH MTU2 DT support"
+series. I will thus rebase and resend it when the dependencies will be merged.
+I would however like to get the patches reviewed and acked already.
+
+Compared to v1 I've dropped the channel subnodes from the CMT DT bindings and
+just use a channels mask, as I don't need to specify per-channel properties.
+I'm slightly uncertain about this change though, as I can't easily predict
+whether per-channel properties would be needed later for new hardware. It
+won't be difficult to reintroduce channel subnodes then, so I'd rather not
+clutter the DT bindings with channel subnodes now. Please feel free to
+disagree.
+
+The first 10 patches should go through the timers tree while the last 4
+patches should go through the Renesas SoC tree. Patches 11/14 and 12/14 have
+no build time or run time dependency on the drivers changes, so I plan to ask
+Simon to pick them up when the DT bindings will be approved. Patches 13/14 and
+14/14 have a run time dependency on the drivers changes, but only when
+architected timer support isn't enabled in the kernel. It should thus be
+relatively safe to merge them independently of the drivers changes. Simon,
+Magnus, what's your opinion ?
+
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <damm@opensource.se>
+
+Laurent Pinchart (14):
+  clocksource: sh_cmt: Drop support for legacy platform data
+  clocksource: sh_cmt: Replace global spinlock with a per-device
+    spinlock
+  clocksource: sh_tmu: Drop support for legacy platform data
+  clocksource: sh_tmu: Replace global spinlock with a per-device
+    spinlock
+  clocksource: sh_mtu2: Drop support for legacy platform data
+  clocksource: sh_mtu2: Replace global spinlock with a per-device
+    spinlock
+  clocksource: shmobile: Remove unused sh_timer_config members
+  clocksource: sh_cmt: Add DT support
+  clocksource: sh_tmu: Add DT support
+  clocksource: sh_mtu2: Add DT support
+  ARM: shmobile: r8a7790: Add CMT devices to DT
+  ARM: shmobile: r8a7791: Add CMT devices to DT
+  ARM: shmobile: lager-reference: Enable CMT0 in device tree
+  ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
+
+ .../devicetree/bindings/timer/renesas,cmt.txt      |  49 +++++
+ .../devicetree/bindings/timer/renesas,mtu2.txt     |  40 ++++
+ .../devicetree/bindings/timer/renesas,tmu.txt      |  40 ++++
+ arch/arm/boot/dts/r8a7790-lager.dts                |   4 +
+ arch/arm/boot/dts/r8a7790.dtsi                     |  34 +++
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |   4 +
+ arch/arm/boot/dts/r8a7791.dtsi                     |  34 +++
+ arch/arm/mach-shmobile/board-koelsch-reference.c   |   1 -
+ arch/arm/mach-shmobile/board-lager-reference.c     |   1 -
+ arch/arm/mach-shmobile/setup-r8a7790.c             |   2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c             |   2 +-
+ drivers/clocksource/sh_cmt.c                       | 233 ++++++++-------------
+ drivers/clocksource/sh_mtu2.c                      | 146 ++++---------
+ drivers/clocksource/sh_tmu.c                       | 123 +++++------
+ include/linux/sh_timer.h                           |   5 -
+ 15 files changed, 388 insertions(+), 330 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
+
 -- 
-1.8.5.2
+Regards,
+
+Laurent Pinchart
 
