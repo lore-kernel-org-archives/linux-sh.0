@@ -1,73 +1,87 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:36 +0000
-Subject: [PATCH 08/33] ARM: shmobile: r8a7778 dtsi: Improve and correct HSPI nodes
-Message-Id: <a34c50d53dc7779b404baab61b290827cb898562.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:04 +0000
+Subject: [PATCH 4/9] iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
+Message-Id: <1398089589-9181-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The contiguous hint bit signals to the IOMMU that a range of 16 PTEs
+refer to physically contiguous memory. It improves performances by
+dividing the number of TLB lookups by 16, effectively implementing 64kB
+page sizes.
 
-  - Add "renesas,hspi-r8a7778" compatible value,
-  - Correct reference to parent interrupt controller
-    (use "interrupt-parent" instead of "interrupt-controller"),
-  - Add missing "#address-cells" and "#size-cells" properties, which are
-    needed when populating the SPI buses.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ drivers/iommu/ipmmu-vmsa.c | 43 ++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 40 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 85c5b3b..3c6fab5 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -204,26 +204,32 @@
- 	};
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 7c8c21e..1ce2115 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -210,6 +210,9 @@ static LIST_HEAD(ipmmu_devices);
+ #define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
+ #define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
  
- 	hspi0: spi@fffc7000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
- 		reg = <0xfffc7000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
++#define ARM_VMSA_PTE_CONT_ENTRIES	16
++#define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
++
+ #define IPMMU_PTRS_PER_PTE		512
+ #define IPMMU_PTRS_PER_PMD		512
+ #define IPMMU_PTRS_PER_PGD		4
+@@ -569,10 +572,44 @@ static int ipmmu_alloc_init_pte(struct ipmmu_vmsa_device *mmu, pmd_t *pmd,
+ 	pteval |= ARM_VMSA_PTE_SH_IS;
+ 	start = pte;
  
- 	hspi1: spi@fffc8000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
- 		reg = <0xfffc8000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
+-	/* Install the page table entries. */
++	/*
++	 * Install the page table entries.
++	 *
++	 * Set the contiguous hint in the PTEs where possible. The hint
++	 * indicates a series of ARM_VMSA_PTE_CONT_ENTRIES PTEs mapping a
++	 * physically contiguous region with the following constraints:
++	 *
++	 * - The region start is aligned to ARM_VMSA_PTE_CONT_SIZE
++	 * - Each PTE in the region has the contiguous hint bit set
++	 *
++	 * We don't support partial unmapping so there's no need to care about
++	 * clearing the contiguous hint from neighbour PTEs.
++	 */
+ 	do {
+-		*pte++ = pfn_pte(pfn++, __pgprot(pteval));
+-		addr += PAGE_SIZE;
++		unsigned long chunk_end;
++
++		/*
++		 * If the address is aligned to a contiguous region size and the
++		 * mapping size is large enough, process the largest possible
++		 * number of PTEs multiple of ARM_VMSA_PTE_CONT_ENTRIES.
++		 * Otherwise process the smallest number of PTEs to align the
++		 * address to a contiguous region size or to complete the
++		 * mapping.
++		 */
++		if (IS_ALIGNED(addr, ARM_VMSA_PTE_CONT_SIZE) &&
++		    end - addr >= ARM_VMSA_PTE_CONT_SIZE) {
++			chunk_end = round_down(end, ARM_VMSA_PTE_CONT_SIZE);
++			pteval |= ARM_VMSA_PTE_CONT;
++		} else {
++			chunk_end = min(ALIGN(addr, ARM_VMSA_PTE_CONT_SIZE),
++					end);
++			pteval &= ~ARM_VMSA_PTE_CONT;
++		}
++
++		do {
++			*pte++ = pfn_pte(pfn++, __pgprot(pteval));
++			addr += PAGE_SIZE;
++		} while (addr != chunk_end);
+ 	} while (addr != end);
  
- 	hspi2: spi@fffc6000 {
--		compatible = "renesas,hspi";
-+		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
- 		reg = <0xfffc6000 0x18>;
--		interrupt-controller = <&gic>;
-+		interrupt-parent = <&gic>;
- 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
- 		status = "disabled";
- 	};
- };
+ 	ipmmu_flush_pgtable(mmu, start, sizeof(*pte) * (pte - start));
 -- 
-1.8.5.2
+1.8.3.2
 
