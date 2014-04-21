@@ -1,43 +1,42 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 14 Apr 2014 21:59:46 +0000
-Subject: [PATCHv2 04/11] ARM: OMAP3: Beagle: initialize all the struct pwm_lookup members
-Message-Id: <1397512793-10325-5-git-send-email-alexandre.belloni@free-electrons.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:01 +0000
+Subject: [PATCH 1/9] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
+Message-Id: <1398089589-9181-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This will allow to get rid of the .pwm_period_ns member of struct led_pwm as the
-period will be set by the PWM core.
-
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-omap2/board-omap3beagle.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ drivers/iommu/ipmmu-vmsa.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-omap2/board-omap3beagle.c b/arch/arm/mach-omap2/board-omap3beagle.c
-index d6ed819ff15c..f27e1ec90b5e 100644
---- a/arch/arm/mach-omap2/board-omap3beagle.c
-+++ b/arch/arm/mach-omap2/board-omap3beagle.c
-@@ -61,7 +61,14 @@
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index d277bde..1e0a757 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -935,7 +935,8 @@ static int ipmmu_add_device(struct device *dev)
+ 							SZ_1G, SZ_2G);
+ 		if (IS_ERR(mapping)) {
+ 			dev_err(mmu->dev, "failed to create ARM IOMMU mapping\n");
+-			return PTR_ERR(mapping);
++			ret = PTR_ERR(mapping);
++			goto error;
+ 		}
  
- static struct pwm_lookup pwm_lookup[] = {
- 	/* LEDB -> PMU_STAT */
--	PWM_LOOKUP("twl-pwmled", 1, "leds_pwm", "beagleboard::pmu_stat"),
-+	{
-+		.provider = "twl-pwmled",
-+		.index = 1,
-+		.dev_id = "leds_pwm",
-+		.con_id = "beagleboard::pmu_stat",
-+		.period = 7812500,
-+		.polarity = PWM_POLARITY_NORMAL,
-+	},
- };
+ 		mmu->mapping = mapping;
+@@ -951,6 +952,7 @@ static int ipmmu_add_device(struct device *dev)
+ 	return 0;
  
- static struct led_pwm pwm_leds[] = {
+ error:
++	arm_iommu_release_mapping(mmu->mapping);
+ 	kfree(dev->archdata.iommu);
+ 	dev->archdata.iommu = NULL;
+ 	iommu_group_remove_device(dev);
 -- 
 1.8.3.2
 
