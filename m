@@ -1,79 +1,35 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:13 +0000
-Subject: [PATCH v3 30/52] clocksource: sh_tmu: Replace hardcoded register values with macros
-Message-Id: <1397228675-11684-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:02 +0000
+Subject: [PATCH 2/9] iommu/ipmmu-vmsa: Fix the supported page sizes
+Message-Id: <1398089589-9181-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Define symbolic macros for all used registers bits.
+The hardware supports 2MB page sizes, not 1MB.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_tmu.c | 19 ++++++++++++++-----
- 1 file changed, 14 insertions(+), 5 deletions(-)
+ drivers/iommu/ipmmu-vmsa.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 55b7a37..63ed92d 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -69,6 +69,15 @@ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
- #define TCNT 1 /* channel register */
- #define TCR 2 /* channel register */
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 1e0a757..1ae97d8 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -977,7 +977,7 @@ static struct iommu_ops ipmmu_ops = {
+ 	.iova_to_phys = ipmmu_iova_to_phys,
+ 	.add_device = ipmmu_add_device,
+ 	.remove_device = ipmmu_remove_device,
+-	.pgsize_bitmap = SZ_1M | SZ_64K | SZ_4K,
++	.pgsize_bitmap = SZ_2M | SZ_64K | SZ_4K,
+ };
  
-+#define TCR_UNF			(1 << 8)
-+#define TCR_UNIE		(1 << 5)
-+#define TCR_TPSC_CLK4		(0 << 0)
-+#define TCR_TPSC_CLK16		(1 << 0)
-+#define TCR_TPSC_CLK64		(2 << 0)
-+#define TCR_TPSC_CLK256		(3 << 0)
-+#define TCR_TPSC_CLK1024	(4 << 0)
-+#define TCR_TPSC_MASK		(7 << 0)
-+
- static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
- {
- 	unsigned long offs;
-@@ -140,7 +149,7 @@ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
- 
- 	/* configure channel to parent clock / 4, irq off */
- 	ch->rate = clk_get_rate(ch->tmu->clk) / 4;
--	sh_tmu_write(ch, TCR, 0x0000);
-+	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
- 
- 	/* enable channel */
- 	sh_tmu_start_stop_ch(ch, 1);
-@@ -165,7 +174,7 @@ static void __sh_tmu_disable(struct sh_tmu_channel *ch)
- 	sh_tmu_start_stop_ch(ch, 0);
- 
- 	/* disable interrupts in TMU block */
--	sh_tmu_write(ch, TCR, 0x0000);
-+	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
- 
- 	/* stop clock */
- 	clk_disable(ch->tmu->clk);
-@@ -195,7 +204,7 @@ static void sh_tmu_set_next(struct sh_tmu_channel *ch, unsigned long delta,
- 	sh_tmu_read(ch, TCR);
- 
- 	/* enable interrupt */
--	sh_tmu_write(ch, TCR, 0x0020);
-+	sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
- 
- 	/* reload delta value in case of periodic timer */
- 	if (periodic)
-@@ -215,9 +224,9 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
- 
- 	/* disable or acknowledge interrupt */
- 	if (ch->ced.mode = CLOCK_EVT_MODE_ONESHOT)
--		sh_tmu_write(ch, TCR, 0x0000);
-+		sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
- 	else
--		sh_tmu_write(ch, TCR, 0x0020);
-+		sh_tmu_write(ch, TCR, TCR_UNIE | TCR_TPSC_CLK4);
- 
- 	/* notify clockevent layer */
- 	ch->ced.event_handler(&ch->ced);
+ /* -----------------------------------------------------------------------------
 -- 
 1.8.3.2
 
