@@ -1,79 +1,46 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 14 Apr 2014 10:36:39 +0000
-Subject: [PATCH v3 4/7] ARM: lager: add vin1 node
-Message-Id: <1397471802-27216-5-git-send-email-ben.dooks@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:00 +0000
+Subject: [PATCH 0/9] Renesas ipmmu-vmsa: Miscellaneous cleanups and fixes
+Message-Id: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add device-tree for vin1 (composite video in) on the
-lager board.
+Hello,
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 38 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+This patch set cleans up and fixes small issues in the ipmmu-vmsa driver. The
+patches are based on top of "[PATCH v3] iommu: Add driver for Renesas
+VMSA-compatible IPMMU" that adds the ipmmu-vmsa driver.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index a087421..6888866 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -158,6 +158,11 @@
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
- 	};
-+
-+	vin1_pins: vin {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
- };
- 
- &mmcif1 {
-@@ -239,8 +244,41 @@
- 	status = "ok";
- 	pinctrl-0 = <&i2c2_pins>;
- 	pinctrl-names = "default";
-+
-+	adv7180: composite-in@0x20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin1>;
-+
-+		port {
-+			adv7180_1: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin1ep0>;
-+			};
-+		};
-+	};
-+
- };
- 
- &i2c3	{
- 	status = "ok";
- };
-+
-+/* composite video input */
-+&vin1 {
-+	pinctrl-0 = <&vin1_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "ok";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin1ep0: endpoint {
-+			remote-endpoint = <&adv7180_1>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
-+
+The most interesting part of this series is the rewrite of the page table
+management code. The IOMMU core guarantees that the map and unmap operations
+will always be called only with page sizes advertised by the driver. We can
+use that assumption to remove loops of PGD and PMD entries, simplifying the
+code.
+
+Will, would it make sense to perform the same cleanup for the arm-smmu driver,
+or is there a reason to keep loops over PGD and PMD entries ? Removing them
+makes the implementation of 68kB and 2MB pages easier.
+
+Laurent Pinchart (9):
+  iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or
+    attachment
+  iommu/ipmmu-vmsa: Fix the supported page sizes
+  iommu/ipmmu-vmsa: Define driver-specific page directory sizes
+  iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
+  iommu/ipmmu-vmsa: PMD is never folded, PUD always is
+  iommu/ipmmu-vmsa: Rewrite page table management
+  iommu/ipmmu-vmsa: Support 2MB mappings
+  iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
+  iommu/ipmmu-vmsa: Support clearing mappings
+
+ drivers/iommu/ipmmu-vmsa.c | 443 +++++++++++++++++++++++++++++++--------------
+ 1 file changed, 309 insertions(+), 134 deletions(-)
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
