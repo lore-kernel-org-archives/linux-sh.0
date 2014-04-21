@@ -1,41 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:26:01 +0000
-Subject: [PATCH 33/33] ARM: shmobile: armadillo-reference dts: Seiko Instruments, Inc is "sii"
-Message-Id: <dd485ab9a88267f4db0d58ace23b19e876ebf8ac.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:07 +0000
+Subject: [PATCH 7/9] iommu/ipmmu-vmsa: Support 2MB mappings
+Message-Id: <1398089589-9181-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add support for 2MB block mappings at the PMD level.
 
-Use "sii,s35390a" instead of "seiko,s35390a", cfr.
-Documentation/devicetree/bindings/i2c/trivial-devices.txt and
-Documentation/devicetree/bindings/vendor-prefixes.txt.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/iommu/ipmmu-vmsa.c | 32 +++++++++++++++++++++++++++++---
+ 1 file changed, 29 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 0cb235a..10344e6 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -180,7 +180,7 @@
- &i2c2 {
- 	status = "okay";
- 	rtc@30 {
--		compatible = "seiko,s35390a";
-+		compatible = "sii,s35390a";
- 		reg = <0x30>;
- 	};
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index de1a440..0e4d145 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -480,7 +480,7 @@ static void ipmmu_free_pmds(pud_t *pud)
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < IPMMU_PTRS_PER_PMD; ++i) {
+-		if (pmd_none(*pmd))
++		if (!pmd_table(*pmd))
+ 			continue;
+ 
+ 		ipmmu_free_ptes(pmd);
+@@ -611,6 +611,18 @@ static int ipmmu_alloc_init_pte(struct ipmmu_vmsa_device *mmu, pmd_t *pmd,
+ 	return 0;
+ }
+ 
++static int ipmmu_alloc_init_pmd(struct ipmmu_vmsa_device *mmu, pmd_t *pmd,
++				unsigned long iova, unsigned long pfn,
++				int prot)
++{
++	pmdval_t pmdval = ipmmu_page_prot(prot, PMD_TYPE_SECT);
++
++	*pmd = pfn_pmd(pfn, __pgprot(pmdval));
++	ipmmu_flush_pgtable(mmu, pmd, sizeof(*pmd));
++
++	return 0;
++}
++
+ static int ipmmu_handle_mapping(struct ipmmu_vmsa_domain *domain,
+ 				unsigned long iova, phys_addr_t paddr,
+ 				size_t size, int prot)
+@@ -643,7 +655,18 @@ static int ipmmu_handle_mapping(struct ipmmu_vmsa_domain *domain,
+ 		goto done;
+ 	}
+ 
+-	ret = ipmmu_alloc_init_pte(mmu, pmd, iova, pfn, size, prot);
++	switch (size) {
++	case SZ_2M:
++		ret = ipmmu_alloc_init_pmd(mmu, pmd, iova, pfn, prot);
++		break;
++	case SZ_64K:
++	case SZ_4K:
++		ret = ipmmu_alloc_init_pte(mmu, pmd, iova, pfn, size, prot);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
+ 
+ done:
+ 	spin_unlock_irqrestore(&domain->lock, flags);
+@@ -793,6 +816,9 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
+ 	if (pmd_none(pmd))
+ 		return 0;
+ 
++	if (pmd_sect(pmd))
++		return __pfn_to_phys(pmd_pfn(pmd)) | (iova & ~PMD_MASK);
++
+ 	pte = *(pmd_page_vaddr(pmd) + pte_index(iova));
+ 	if (pte_none(pte))
+ 		return 0;
+@@ -950,7 +976,7 @@ static struct iommu_ops ipmmu_ops = {
+ 	.iova_to_phys = ipmmu_iova_to_phys,
+ 	.add_device = ipmmu_add_device,
+ 	.remove_device = ipmmu_remove_device,
+-	.pgsize_bitmap = SZ_64K | SZ_4K,
++	.pgsize_bitmap = SZ_2M | SZ_64K | SZ_4K,
  };
+ 
+ /* -----------------------------------------------------------------------------
 -- 
-1.8.5.2
+1.8.3.2
 
