@@ -1,51 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:38 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Cleanup Updates for v3.16
-Message-Id: <cover.1398216284.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:03 +0000
+Subject: [PATCH 3/9] iommu/ipmmu-vmsa: Define driver-specific page directory sizes
+Message-Id: <1398089589-9181-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+The PTRS_PER_(PGD|PMD|PTE) macros evaluate to different values depending
+on whether LPAE is enabled. The IPMMU driver uses a long descriptor
+format regardless of LPAE, making those macros mismatch the IPMMU
+configuration on non-LPAE systems.
 
-Please consider these Renesas ARM based SoC cleanup updates for v3.16.
+Replace the macros by driver-specific versions that always evaluate to
+the right value.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/iommu/ipmmu-vmsa.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
-The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 1ae97d8..7c8c21e 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -210,6 +210,10 @@ static LIST_HEAD(ipmmu_devices);
+ #define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
+ #define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
+ 
++#define IPMMU_PTRS_PER_PTE		512
++#define IPMMU_PTRS_PER_PMD		512
++#define IPMMU_PTRS_PER_PGD		4
++
+ /* -----------------------------------------------------------------------------
+  * Read/Write Access
+  */
+@@ -328,7 +332,7 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
+ 
+ 	/* TTBR0 */
+ 	ipmmu_flush_pgtable(domain->mmu, domain->pgd,
+-			    PTRS_PER_PGD * sizeof(*domain->pgd));
++			    IPMMU_PTRS_PER_PGD * sizeof(*domain->pgd));
+ 	ttbr = __pa(domain->pgd);
+ 	ipmmu_ctx_write(domain, IMTTLBR0, ttbr);
+ 	ipmmu_ctx_write(domain, IMTTUBR0, ttbr >> 32);
+@@ -470,7 +474,7 @@ static void ipmmu_free_pmds(pud_t *pud)
+ 	unsigned int i;
+ 
+ 	pmd = pmd_base;
+-	for (i = 0; i < PTRS_PER_PMD; ++i) {
++	for (i = 0; i < IPMMU_PTRS_PER_PMD; ++i) {
+ 		if (pmd_none(*pmd))
+ 			continue;
+ 
+@@ -487,7 +491,7 @@ static void ipmmu_free_puds(pgd_t *pgd)
+ 	unsigned int i;
+ 
+ 	pud = pud_base;
+-	for (i = 0; i < PTRS_PER_PUD; ++i) {
++	for (i = 0; i < IPMMU_PTRS_PER_PUD; ++i) {
+ 		if (pud_none(*pud))
+ 			continue;
+ 
+@@ -510,7 +514,7 @@ static void ipmmu_free_pgtables(struct ipmmu_vmsa_domain *domain)
+ 	 * tables.
+ 	 */
+ 	pgd = pgd_base;
+-	for (i = 0; i < PTRS_PER_PGD; ++i) {
++	for (i = 0; i < IPMMU_PTRS_PER_PGD; ++i) {
+ 		if (pgd_none(*pgd))
+ 			continue;
+ 		ipmmu_free_puds(pgd);
+@@ -695,7 +699,7 @@ static int ipmmu_domain_init(struct iommu_domain *io_domain)
+ 
+ 	spin_lock_init(&domain->lock);
+ 
+-	domain->pgd = kzalloc(PTRS_PER_PGD * sizeof(pgd_t), GFP_KERNEL);
++	domain->pgd = kzalloc(IPMMU_PTRS_PER_PGD * sizeof(pgd_t), GFP_KERNEL);
+ 	if (!domain->pgd) {
+ 		kfree(domain);
+ 		return -ENOMEM;
+-- 
+1.8.3.2
 
-  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.16
-
-for you to fetch changes up to bb6c3d58c36adb205b4bf233fd1c4079e02a6811:
-
-  ARM: shmobile: r8a7740: Make r8a7740_meram_workaround() __init (2014-04-16 10:01:49 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Cleanup Updates for v3.16
-
-r8a7740 (R-Mobile A1) SoC
-* Make r8a7740_meram_workaround() __init
-* Remove unused r8a7740_add_early_devices_dt()
-
-r8a7740 (R-Mobile A1) based Armadillo800 EVA board
-* Spelling and grammar fixes
-
-sh7372 (SH-Mobile AP4) SoC
-* Call sh7372_add_early_devices() instead of open coding
-
-----------------------------------------------------------------
-Geert Uytterhoeven (4):
-      ARM: shmobile: armadillo800eva: Spelling and grammar
-      ARM: shmobile: r8a7740: Remove unused r8a7740_add_early_devices_dt()
-      ARM: shmobile: sh7372: Call sh7372_add_early_devices() instead of open coding
-      ARM: shmobile: r8a7740: Make r8a7740_meram_workaround() __init
-
- arch/arm/mach-shmobile/Kconfig         |  4 ++--
- arch/arm/mach-shmobile/setup-r8a7740.c | 13 +------------
- arch/arm/mach-shmobile/setup-sh7372.c  |  6 +-----
- 3 files changed, 4 insertions(+), 19 deletions(-)
