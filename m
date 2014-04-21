@@ -1,37 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 01 Apr 2014 11:02:18 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7791: Fix the I2C clocks parents in DT
-Message-Id: <1396350138-26850-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Stratos Karafotis <stratosk@semaphore.gr>
+Date: Mon, 21 Apr 2014 23:02:37 +0000
+Subject: [PATCH v4 8/8] sh: clk: Use cpufreq_for_each_valid_entry macro for iteration
+Message-Id: <5355A38D.8090503@semaphore.gr>
 List-Id: <linux-sh.vger.kernel.org>
+References: <534DB238.5030201@semaphore.gr>
+In-Reply-To: <534DB238.5030201@semaphore.gr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Viresh Kumar <viresh.kumar@linaro.org>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
 
-All I2C clocks derive from the HP clock, not from the P clock. Fix them.
+The cpufreq core now supports the cpufreq_for_each_valid_entry macro
+helper for iteration over the cpufreq_frequency_table, so use it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+It should have no functional changes.
+
+Signed-off-by: Stratos Karafotis <stratosk@semaphore.gr>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/sh/clk/core.c | 20 +++++---------------
+ 1 file changed, 5 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index f71670a..f1e8900 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -805,9 +805,9 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&p_clk>,
--				 <&cp_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
--				 <&p_clk>, <&p_clk>;
-+			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
-+				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
-+				 <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index 7472785..be56b22 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -196,17 +196,11 @@ int clk_rate_table_find(struct clk *clk,
+ 			struct cpufreq_frequency_table *freq_table,
+ 			unsigned long rate)
+ {
+-	int i;
+-
+-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
+-		unsigned long freq = freq_table[i].frequency;
++	struct cpufreq_frequency_table *pos;
+ 
+-		if (freq = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
+-		if (freq = rate)
+-			return i;
+-	}
++	cpufreq_for_each_valid_entry(pos, freq_table)
++		if (pos->frequency = rate)
++			return pos - freq_table;
+ 
+ 	return -ENOENT;
+ }
+@@ -575,11 +569,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		return abs(target - *best_freq);
+ 	}
+ 
+-	for (freq = parent->freq_table; freq->frequency != CPUFREQ_TABLE_END;
+-	     freq++) {
+-		if (freq->frequency = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
++	cpufreq_for_each_valid_entry(freq, parent->freq_table) {
+ 		if (unlikely(freq->frequency / target <= div_min - 1)) {
+ 			unsigned long freq_max;
+ 
 -- 
-1.8.3.2
-
+1.9.0
