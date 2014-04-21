@@ -1,46 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 30 Apr 2014 22:21:07 +0000
-Subject: [PATCH 3/6] i2c: sh_mobile: honor DT bus speed settings
-Message-Id: <1398896470-24663-4-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 21 Apr 2014 14:13:08 +0000
+Subject: [PATCH 8/9] iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
+Message-Id: <1398089589-9181-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
+References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+We don't support stage 2 translation yet.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ drivers/iommu/ipmmu-vmsa.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index d2fa222df3d1..2e481abd50ce 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -657,6 +657,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	struct resource *res;
- 	int size;
- 	int ret;
-+	u32 bus_speed;
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 0e4d145..711e5c4 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -202,14 +202,6 @@ static LIST_HEAD(ipmmu_devices);
+ #define ARM_VMSA_PTE_ATTRINDX_SHIFT	2
+ #define ARM_VMSA_PTE_nG			(((pteval_t)1) << 11)
  
- 	pd = kzalloc(sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
- 	if (pd = NULL) {
-@@ -697,7 +698,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	}
+-/* Stage-2 PTE */
+-#define ARM_VMSA_PTE_HAP_FAULT		(((pteval_t)0) << 6)
+-#define ARM_VMSA_PTE_HAP_READ		(((pteval_t)1) << 6)
+-#define ARM_VMSA_PTE_HAP_WRITE		(((pteval_t)2) << 6)
+-#define ARM_VMSA_PTE_MEMATTR_OIWB	(((pteval_t)0xf) << 2)
+-#define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
+-#define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
+-
+ #define ARM_VMSA_PTE_CONT_ENTRIES	16
+ #define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
  
- 	/* Use platform data bus speed or STANDARD_MODE */
--	pd->bus_speed = STANDARD_MODE;
-+	ret = of_property_read_u32(dev->dev.of_node, "clock-frequency", &bus_speed);
-+	pd->bus_speed = ret ? STANDARD_MODE : bus_speed;
-+
- 	if (pdata && pdata->bus_speed)
- 		pd->bus_speed = pdata->bus_speed;
- 	pd->clks_per_count = 1;
 -- 
-1.9.2
+1.8.3.2
 
