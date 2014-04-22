@@ -1,73 +1,34 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 30 Apr 2014 21:47:16 +0000
-Subject: Re: [RFC/PATCH 5/6] ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
-Message-Id: <6631816.KD3fN9KODo@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 22 Apr 2014 16:38:05 +0000
+Subject: [PATCH] sh-pfc: r8a7791: Fix definition of MOD_SEL3
+Message-Id: <1398184685-31670-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398817906-6023-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398817906-6023-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Phil Edworthy <phil.edworthy@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Hi Simon,
+There is a missing 0 entry from the MOD_SEL3 table.
 
-On Thursday 01 May 2014 07:44:57 Simon Horman wrote:
-> On Wed, Apr 30, 2014 at 06:23:40PM +0200, Laurent Pinchart wrote:
-> > On Wednesday 30 April 2014 10:34:12 Simon Horman wrote:
-> > > On Wed, Apr 30, 2014 at 10:29:23AM +0900, Simon Horman wrote:
-> > > > On Wed, Apr 30, 2014 at 03:02:20AM +0200, Laurent Pinchart wrote:
-> > > > > On Wednesday 30 April 2014 09:59:56 Simon Horman wrote:
-> > > > > > On Wed, Apr 30, 2014 at 02:31:45AM +0200, Laurent Pinchart wrote:
-> > > > > > > SCIF0 and SCIF1 are used as debug serial ports. Enable them and
-> > > > > > > configure pinmuxing appropriately. We can now remove the clkdev
-> > > > > > > registration hack for SCIF devices from the Lager reference
-> > > > > > > board file.
-> > > > > > > 
-> > > > > > > As a side effect of switching to DT-based serial port
-> > > > > > > instantiation, ttySC6 and ttySC7 get renamed to ttySC0 and
-> > > > > > > ttySC1. As the device tree source if now shared between lager
-> > > > > > > and lager-reference, we need to update the serial ports in C
-> > > > > > > code as well.
-> > > > > > 
-> > > > > > I believe the second paragraph is no longer correct.
-> > > > > 
-> > > > > Oops, you're right. If no other problem is found with the series,
-> > > > > could you please just drop that paragraph ?
-> > > > 
-> > > > Yes. But could you look at my other comment below?
-> > > 
-> > > I mean yes with the following caveat.
-> > > 
-> > > It seems to me that each of patch 4 and 5 could applied independently
-> > > of the earlier patches in the series. This seems nice.
-> > 
-> > I suppose you mean patches 5 and 6.
-> 
-> Yes, that is what I meant :)
-> 
-> > > It seems to me that patches 3 and 4 depend on patch 2 which in turn
-> > > depends on patch 1. This is less fun. So I was thinking of waiting
-> > > for at least patch 2 to be accepted (by Greg) before applying
-> > > 3 and 4.
-> > 
-> > That's fine with me.
-> > 
-> > > With regards to patch 1. Perhaps it would be best for Greg to take
-> > > that with patch 2?
-> > 
-> > That's fine with me as well.
-> 
-> I wrote the above asuming that patch 2 maintained compatibility with
-> for existing DT nodes (in particular the ones modified in patches 3 and 4).
-> I'd prefer to finalise the discussion regarding patch 2 that before
-> applying 5 and 6 as I see a chance of regression if we are not careful.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Sure. I'll reply to "RFC/PATCH 2/6] serial: sh-sci: Drop the interface clock", 
-let's discuss that there.
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 56f62dc..a823b5b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -5305,7 +5305,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		/* SEL_SCIF3 [2] */
+ 		FN_SEL_SCIF3_0, FN_SEL_SCIF3_1, FN_SEL_SCIF3_2, FN_SEL_SCIF3_3,
+ 		/* SEL_IEB [2] */
+-		FN_SEL_IEB_0, FN_SEL_IEB_1, FN_SEL_IEB_2,
++		FN_SEL_IEB_0, FN_SEL_IEB_1, FN_SEL_IEB_2, 0,
+ 		/* SEL_MMC [1] */
+ 		FN_SEL_MMC_0, FN_SEL_MMC_1,
+ 		/* SEL_SCIF5 [1] */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
