@@ -1,189 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 30 Apr 2014 06:43:04 +0000
-Subject: Re: [RFC/PATCH 2/6] serial: sh-sci: Drop the interface clock
-Message-Id: <20140430064304.GC5153@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 22 Apr 2014 13:19:09 +0000
+Subject: [PATCH 1/4] clk: shmobile: div6: support selectable-input clocks
+Message-Id: <1398172752-30567-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398817906-6023-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398817906-6023-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-On Wed, Apr 30, 2014 at 02:31:42AM +0200, Laurent Pinchart wrote:
-> As no platform defines an interface clock the SCI driver always fall
-> back to a clock named "peripheral_clk". On SH platform that clock is the
-> base clock for the SCI functional clock and has the same frequency. On
-> ARM platforms that clock doesn't exist, and clk_get() will return the
-> default clock for the device. We can thus make the functional clock
-> mandatory and drop the interface clock.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  .../bindings/serial/renesas,sci-serial.txt         |  4 +-
->  drivers/tty/serial/sh-sci.c                        | 52 ++++++++++++----------
->  2 files changed, 31 insertions(+), 25 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> index 53e6c17..efc9eda 100644
-> --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-> @@ -26,7 +26,7 @@ Required properties:
->  
->    - clocks: Must contain a phandle and clock-specifier pair for each entry
->      in clock-names.
-> -  - clock-names: Must contain "sci_ick" for the SCIx UART interface clock.
-> +  - clock-names: Must contain "fck" for the SCIx UART functional clock.
+Adds support for DIV6 clocks with selectable parents as found in the r8a7740
+and other SoCs.
 
-I have tested that this patch works on the Koelsch and Lager boards
-with the remainder of the series applied and a fixup for the Lager patch,
-as noted in a response to that patch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ .../bindings/clock/renesas,cpg-div6-clocks.txt        |  8 ++++++++
+ drivers/clk/shmobile/clk-div6.c                       | 19 ++++++++++++++++++-
+ 2 files changed, 26 insertions(+), 1 deletion(-)
 
-I have also tested that this patch works on the Marzen board with a
-modified version of my series to enable SCI via DT on that board.
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 952e373..f8302f5 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -7,6 +7,7 @@ to 64.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r8a7740-div6-clock" for R8A7740 DIV6 clocks
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+@@ -15,6 +16,13 @@ Required Properties:
+   - #clock-cells: Must be 0
+   - clock-output-names: The name of the clock as a free-form string
+ 
++Optional Properties:
++
++  - renesas,src-shift: Bit position of the input clock selector (default:
++    fixed input clock)
++  - renesas,src-width: Bit width of the input clock selector (default: fixed
++    input clock)
++
+ 
+ Example
+ -------
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index f065f69..5be8161 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -121,6 +121,7 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 	const char *name;
+ 	struct clk *clk;
+ 	int ret;
++	u32 src_shift, src_width;
+ 
+ 	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
+ 	if (!clock) {
+@@ -150,7 +151,23 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 		goto error;
+ 	}
+ 
+-	parent_name = of_clk_get_parent_name(np, 0);
++	if (!of_property_read_u32(np, "renesas,src-shift", &src_shift)) {
++		if (!of_property_read_u32(np, "renesas,src-width",
++					&src_width)) {
++			unsigned int parent_idx +				(clk_readl(clock->reg) >> src_shift) &
++				(BIT(src_width) - 1);
++			parent_name = of_clk_get_parent_name(np, parent_idx);
++		}
++		else {
++			pr_err("%s: renesas,src-shift without renesas,"
++			       "src-width in %s\n", __func__, np->name);
++			goto error;
++		}
++	}
++	else
++		parent_name = of_clk_get_parent_name(np, 0);
++
+ 	if (parent_name = NULL) {
+ 		pr_err("%s: failed to get %s DIV6 clock parent name\n",
+ 		       __func__, np->name);
+-- 
+1.8.4.5
 
-
-It was my understanding that this patch would not break existing bindings.
-However, if my reading and testing of this patch correct this patch
-modifies an existing binding, included in v3.14, in an incompatible way.
-Requiring all users of "sci_ick" to be updated to "fck".
-
-This includes the DT nodes provided for the r8a7790 and r8a7791 which are
-present in v3.15-rc1 and will also be included in v3.15 unless this patch,
-its dependencies and the patches in this series that update the dtsi for
-those SoCs are submitted as fixes for v3.15. (I am aware the nodes in
-question are "disabled" :)
-
-I would prefer if this change it was done in a way that maintains
-compatibility with the published binding.
-
-Apart from addressing my concern above such an approach would also allow
-patches that enable SCI via DT (using "sci_ick") to be merged independently
-of this driver change. Although I am happy to wait on those if you have a
-strong preference for them to use the updated binding.
-
->  Note: Each enabled SCIx UART should have an alias correctly numbered in the
->  "aliases" node.
-> @@ -42,5 +42,5 @@ Example:
->  		interrupt-parent = <&gic>;
->  		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
->  		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 88236da..ea4255c 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -90,8 +90,6 @@ struct sci_port {
->  	struct timer_list	break_timer;
->  	int			break_flag;
->  
-> -	/* Interface clock */
-> -	struct clk		*iclk;
->  	/* Function clock */
->  	struct clk		*fclk;
->  
-> @@ -442,9 +440,8 @@ static void sci_port_enable(struct sci_port *sci_port)
->  
->  	pm_runtime_get_sync(sci_port->port.dev);
->  
-> -	clk_prepare_enable(sci_port->iclk);
-> -	sci_port->port.uartclk = clk_get_rate(sci_port->iclk);
->  	clk_prepare_enable(sci_port->fclk);
-> +	sci_port->port.uartclk = clk_get_rate(sci_port->fclk);
->  }
->  
->  static void sci_port_disable(struct sci_port *sci_port)
-> @@ -461,7 +458,6 @@ static void sci_port_disable(struct sci_port *sci_port)
->  	sci_port->break_flag = 0;
->  
->  	clk_disable_unprepare(sci_port->fclk);
-> -	clk_disable_unprepare(sci_port->iclk);
->  
->  	pm_runtime_put_sync(sci_port->port.dev);
->  }
-> @@ -1045,7 +1041,7 @@ static int sci_notifier(struct notifier_block *self,
->  		struct uart_port *port = &sci_port->port;
->  
->  		spin_lock_irqsave(&port->lock, flags);
-> -		port->uartclk = clk_get_rate(sci_port->iclk);
-> +		port->uartclk = clk_get_rate(sci_port->fclk);
->  		spin_unlock_irqrestore(&port->lock, flags);
->  	}
->  
-> @@ -2097,6 +2093,30 @@ static struct uart_ops sci_uart_ops = {
->  #endif
->  };
->  
-> +static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
-> +{
-> +	/* Get the SCI functional clock. It's called "fck" on ARM. */
-> +	sci_port->fclk = clk_get(dev, "fck");
-> +	if (!IS_ERR(sci_port->fclk))
-> +		return 0;
-> +
-> +	/* SH has historically named the clock "sci_fck". */
-> +	sci_port->fclk = clk_get(dev, "sci_fck");
-> +	if (!IS_ERR(sci_port->fclk))
-> +		return 0;
-> +
-> +	/*
-> +	 * Not all SH platforms declare a clock lookup entry for SCI devices, in
-> +	 * which case we need to get the global "peripheral_clk" clock.
-> +	 */
-> +	sci_port->fclk = clk_get(dev, "peripheral_clk");
-> +	if (!IS_ERR(sci_port->fclk))
-> +		return 0;
-> +
-> +	dev_err(dev, "failed to can't get fclk\n");
-> +	return PTR_ERR(sci_port->fclk);
-> +}
-> +
->  static int sci_init_single(struct platform_device *dev,
->  			   struct sci_port *sci_port, unsigned int index,
->  			   struct plat_sci_port *p, bool early)
-> @@ -2183,22 +2203,9 @@ static int sci_init_single(struct platform_device *dev,
->  				: sampling_rate;
->  
->  	if (!early) {
-> -		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
-> -		if (IS_ERR(sci_port->iclk)) {
-> -			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
-> -			if (IS_ERR(sci_port->iclk)) {
-> -				dev_err(&dev->dev, "can't get iclk\n");
-> -				return PTR_ERR(sci_port->iclk);
-> -			}
-> -		}
-> -
-> -		/*
-> -		 * The function clock is optional, ignore it if we can't
-> -		 * find it.
-> -		 */
-> -		sci_port->fclk = clk_get(&dev->dev, "sci_fck");
-> -		if (IS_ERR(sci_port->fclk))
-> -			sci_port->fclk = NULL;
-> +		ret = sci_init_clocks(sci_port, &dev->dev);
-> +		if (ret < 0)
-> +			return ret;
->  
->  		port->dev = &dev->dev;
->  
-> @@ -2252,7 +2259,6 @@ static int sci_init_single(struct platform_device *dev,
->  
->  static void sci_cleanup_single(struct sci_port *port)
->  {
-> -	clk_put(port->iclk);
->  	clk_put(port->fclk);
->  
->  	pm_runtime_disable(port->port.dev);
-> -- 
-> 1.8.3.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
