@@ -1,36 +1,103 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:45:02 +0000
-Subject: [PATCH 13/14] ARM: shmobile: koelsch legacy: Enable Quad SPI transfers for the SPI FLASH
-Message-Id: <4d4a0ff30c39b82c1dc549f2cc7a62b514431e64.1397774191.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 22 Apr 2014 10:50:46 +0000
+Subject: [PATCH v4 05/15] ARM: shmobile: r8a7740: Switch to new style CMT device
+Message-Id: <1398163856-7379-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397774190.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-koelsch.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c | 36 ++++++++++++----------------------
+ 2 files changed, 13 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
-index 5a034ff..a12a9d3 100644
---- a/arch/arm/mach-shmobile/board-koelsch.c
-+++ b/arch/arm/mach-shmobile/board-koelsch.c
-@@ -216,7 +216,7 @@ static const struct spi_board_info spi_info[] __initconst = {
- 	{
- 		.modalias	= "m25p80",
- 		.platform_data	= &spi_flash_data,
--		.mode		= SPI_MODE_0,
-+		.mode		= SPI_MODE_0 | SPI_TX_QUAD | SPI_RX_QUAD,
- 		.max_speed_hz	= 30000000,
- 		.bus_num	= 0,
- 		.chip_select	= 0,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index dd989f9..cdb303c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -583,7 +583,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
+ 
+-	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+@@ -604,6 +603,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
+ 
+ 	/* ICK */
++	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+ 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
+ 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index a177a7b..236ac3c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -237,35 +237,23 @@ R8A7740_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(107));
+ R8A7740_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(108));
+ 
+ /* CMT */
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
++static struct sh_timer_config cmt1_platform_data = {
++	.channels_mask = 0x3f,
+ };
+ 
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(58),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6138000, 0x170),
++	DEFINE_RES_IRQ(gic_spi(58)),
+ };
+ 
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
++static struct platform_device cmt1_device = {
++	.name		= "sh-cmt-48",
++	.id		= 1,
+ 	.dev = {
+-		.platform_data	= &cmt10_platform_data,
++		.platform_data	= &cmt1_platform_data,
+ 	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
++	.resource	= cmt1_resources,
++	.num_resources	= ARRAY_SIZE(cmt1_resources),
+ };
+ 
+ /* TMU */
+@@ -400,7 +388,7 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
 -- 
-1.8.4
+1.8.3.2
 
