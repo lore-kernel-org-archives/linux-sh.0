@@ -1,93 +1,91 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:47 +0000
-Subject: [PATCH 19/33] ARM: shmobile: r8a7791: add IIC(B) cores to dtsi
-Message-Id: <36408d9dd0c398fc3efe87231a4c847601878c97.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 22 Apr 2014 10:50:56 +0000
+Subject: [PATCH v4 15/15] ARM: shmobile: r7s72100: Switch to new style MTU2 device
+Message-Id: <1398163856-7379-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
+style of platform data that handles the timer as a single device with
+multiple channel. Switch from the old-style platform data to the
+new-style platform data.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ arch/arm/mach-shmobile/clock-r7s72100.c |  2 +-
+ arch/arm/mach-shmobile/setup-r7s72100.c | 26 +++++++++-----------------
+ 2 files changed, 10 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index dd45e01..1004355 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -27,6 +27,9 @@
- 		i2c3 = &i2c3;
- 		i2c4 = &i2c4;
- 		i2c5 = &i2c5;
-+		i2c6 = &i2c6;
-+		i2c7 = &i2c7;
-+		i2c8 = &i2c8;
- 		spi0 = &qspi;
- 		spi1 = &msiof0;
- 		spi2 = &msiof1;
-@@ -184,6 +187,7 @@
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index bee0073..644f1c2 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -204,7 +204,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+ 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+-	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
  
-+	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -235,6 +239,7 @@
- 	};
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
+@@ -215,6 +214,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
++	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP33]),
+ };
  
- 	i2c5: i2c@e6528000 {
-+		/* doesn't need pinmux */
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		compatible = "renesas,i2c-r8a7791";
-@@ -244,6 +249,37 @@
- 		status = "disabled";
- 	};
+ void __init r7s72100_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 9c0b3a9..545db15 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -62,24 +62,16 @@ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
+ 					  sizeof(scif##index##_platform_data))
  
-+	i2c6: i2c@e60b0000 {
-+		/* doesn't need pinmux */
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
-+		reg = <0 0xe60b0000 0 0x425>;
-+		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
-+		status = "disabled";
-+	};
-+
-+	i2c7: i2c@e6500000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
-+		reg = <0 0xe6500000 0 0x425>;
-+		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
-+		status = "disabled";
-+	};
-+
-+	i2c8: i2c@e6510000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
-+		reg = <0 0xe6510000 0 0x425>;
-+		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@e6060000 {
- 		compatible = "renesas,pfc-r8a7791";
- 		reg = <0 0xe6060000 0 0x250>;
+ 
+-static struct sh_timer_config mtu2_0_platform_data __initdata = {
+-	.name = "MTU2_0",
+-	.timer_bit = 0,
+-	.channel_offset = -0x80,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfcff0000, 0x400),
++	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] __initdata = {
+-	DEFINE_RES_MEM(0xfcff0300, 0x27),
+-	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
+-};
+-
+-#define r7s72100_register_mtu2(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
+-					  idx, mtu2_##idx##_resources,	\
+-					  ARRAY_SIZE(mtu2_##idx##_resources), \
+-					  &mtu2_##idx##_platform_data,	\
+-					  sizeof(struct sh_timer_config))
++#define r7s72100_register_mtu2()					\
++	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
++					  -1, mtu2_resources,		\
++					  ARRAY_SIZE(mtu2_resources),	\
++					  NULL, 0)
+ 
+ void __init r7s72100_add_dt_devices(void)
+ {
+@@ -91,7 +83,7 @@ void __init r7s72100_add_dt_devices(void)
+ 	r7s72100_register_scif(5);
+ 	r7s72100_register_scif(6);
+ 	r7s72100_register_scif(7);
+-	r7s72100_register_mtu2(0);
++	r7s72100_register_mtu2();
+ }
+ 
+ void __init r7s72100_init_early(void)
 -- 
-1.8.5.2
+1.8.3.2
 
