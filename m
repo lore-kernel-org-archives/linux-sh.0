@@ -1,92 +1,103 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 29 Apr 2014 10:03:38 +0000
-Subject: [PATCH v5 07/11] ARM: shmobile: r7s72100: add i2c clocks to dtsi
-Message-Id: <1398765822-2314-8-git-send-email-wsa@the-dreams.de>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 22 Apr 2014 13:19:11 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7740: common clock framework board support
+Message-Id: <1398172752-30567-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Adds support for the common clock framework to the Armadillo800
+reference board and R8A7740 SoC setup code.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 15 +++++++++++++++
- include/dt-bindings/clock/r7s72100-clock.h |  6 ++++++
- 2 files changed, 21 insertions(+)
+ .../board-armadillo800eva-reference.c              | 25 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c             |  2 ++
+ 2 files changed, 27 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index a4a67380b0a2..afce2e344c7a 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -110,6 +110,17 @@
- 			>;
- 			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
- 		};
-+
-+		mstp9_clks: mstp9_clks@fcfe0438 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0438 4>;
-+			clocks = <&p0_clk>, <&p0_clk>, <&p0_clk>, <&p0_clk>;
-+			clock-indices = <
-+				R7S72100_CLK_I2C0 R7S72100_CLK_I2C1 R7S72100_CLK_I2C2 R7S72100_CLK_I2C3
-+			>;
-+			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
-+		};
- 	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 57d1a78..fa05621 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
++#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7740.h>
+ #include <asm/mach/arch.h>
+@@ -118,6 +119,7 @@
+  *	usbhsf_power_ctrl()
+  */
  
- 	cpus {
-@@ -145,6 +156,7 @@
- 			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -162,6 +174,7 @@
- 			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -179,6 +192,7 @@
- 			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -196,6 +210,7 @@
- 			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-index c756f1cf0d52..ff84e0bafd7b 100644
---- a/include/dt-bindings/clock/r7s72100-clock.h
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -25,4 +25,10 @@
- #define R7S72100_CLK_SCIF6	1
- #define R7S72100_CLK_SCIF7	0
++#ifndef CONFIG_COMMON_CLK
+ static void __init eva_clock_init(void)
+ {
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+@@ -152,14 +154,34 @@ clock_error:
+ 	if (!IS_ERR(fsibck))
+ 		clk_put(fsibck);
+ }
++#else
++static const struct clk_name clk_names[] __initconst = {
++	{ "cmt1", NULL, "sh_cmt.10" },
++	{ "iic0", NULL, "fff20000.i2c" },
++	{ "mmc", NULL, "e6bd0000.mmc" },
++	{ "scifa0", NULL, "sh-sci.0" },
++	{ "scifa1", NULL, "sh-sci.1" },
++	{ "scifa2", NULL, "sh-sci.2" },
++	{ "scifa3", NULL, "sh-sci.3" },
++	{ "scifa4", NULL, "sh-sci.4" },
++	{ "scifa5", NULL, "sh-sci.5" },
++	{ "scifa6", NULL, "sh-sci.6" },
++	{ "scifa7", NULL, "sh-sci.7" },
++	{ "scifb", NULL, "sh-sci.8" },
++	{ "sdhi0", NULL, "e6850000.sd" },
++	{ "tpu0", NULL, "e6600000.pwm" },
++};
++#endif
  
-+/* MSTP9 */
-+#define R7S72100_CLK_I2C0	7
-+#define R7S72100_CLK_I2C1	6
-+#define R7S72100_CLK_I2C2	5
-+#define R7S72100_CLK_I2C3	4
-+
- #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+ /*
+  * board init
+  */
+ static void __init eva_init(void)
+ {
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	eva_clock_init();
++#endif
+ 
+ 	r8a7740_meram_workaround();
+ 
+@@ -167,6 +189,9 @@ static void __init eva_init(void)
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
++#ifdef CONFIG_COMMON_CLK
++	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
++#endif
+ 
+ 	r8a7740_add_standard_devices_dt();
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index a177a7b..8e81c61 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -913,7 +913,9 @@ void __init r8a7740_init_irq_of(void)
+ 
+ static void __init r8a7740_generic_init(void)
+ {
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7740_clock_init(0);
++#endif
+ 	r8a7740_add_standard_devices_dt();
+ }
+ 
 -- 
-1.9.2
+1.8.4.5
 
