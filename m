@@ -1,65 +1,103 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:51 +0000
-Subject: [PATCH 23/33] ARM: shmobile: r8a7791: Add EHCI MSTP clock
-Message-Id: <6225b99aa620d6e260228a30cc5d24cde60cb1e7.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 22 Apr 2014 10:50:44 +0000
+Subject: [PATCH v4 03/15] ARM: shmobile: sh73a0: Switch to new style CMT device
+Message-Id: <1398163856-7379-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Add support for EHCI clock gating via the MSTP703 bit on r8a7791.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 6 +++---
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c |  2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c | 36 ++++++++++++-----------------------
+ 2 files changed, 13 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1004355..3b28c8f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -774,19 +774,19 @@
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
--			clocks = <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
-+			clocks = <&mp_clk>,  <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
- 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
- 				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
--				R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
-+				R8A7791_CLK_EHCI R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
- 				R8A7791_CLK_SCIF4 R8A7791_CLK_HSCIF1 R8A7791_CLK_HSCIF0
- 				R8A7791_CLK_SCIF3 R8A7791_CLK_SCIF2 R8A7791_CLK_SCIF1
- 				R8A7791_CLK_SCIF0 R8A7791_CLK_DU1 R8A7791_CLK_DU0
- 				R8A7791_CLK_LVDS0
- 			>;
- 			clock-output-names -				"hsusb", "hscif2", "scif5", "scif4", "hscif1", "hscif0",
-+				"ehci", "hsusb", "hscif2", "scif5", "scif4", "hscif1", "hscif0",
- 				"scif3", "scif2", "scif1", "scif0", "du1", "du0", "lvds0";
- 		};
- 		mstp8_clks: mstp8_clks@e6150990 {
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 2df1a11f..6023543 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -63,6 +63,7 @@
- #define R8A7791_CLK_PWM			23
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 23edf83..ca03989 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -650,7 +650,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+-	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+@@ -683,6 +682,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
+ };
  
- /* MSTP7 */
-+#define R8A7791_CLK_EHCI		3
- #define R8A7791_CLK_HSUSB		4
- #define R8A7791_CLK_HSCIF2		13
- #define R8A7791_CLK_SCIF5		14
+ void __init sh73a0_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index f74ab53..71d0e44 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -104,35 +104,23 @@ SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
+ SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
+ SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+ 
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
+-	.clocksource_rating = 125,
++static struct sh_timer_config cmt1_platform_data = {
++	.channels_mask = 0x3f,
+ };
+ 
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(65),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6138000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(65)),
+ };
+ 
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
++static struct platform_device cmt1_device = {
++	.name		= "sh-cmt-48",
++	.id		= 1,
+ 	.dev = {
+-		.platform_data	= &cmt10_platform_data,
++		.platform_data	= &cmt1_platform_data,
+ 	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
++	.resource	= cmt1_resources,
++	.num_resources	= ARRAY_SIZE(cmt1_resources),
+ };
+ 
+ /* TMU */
+@@ -746,7 +734,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
 -- 
-1.8.5.2
+1.8.3.2
 
