@@ -1,63 +1,732 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:32:08 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Fixes Updates for v3.15
-Message-Id: <cover.1397694064.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 23 Apr 2014 11:15:21 +0000
+Subject: [PATCH v5 14/15] sh: Switch to new style MTU2 device
+Message-Id: <1398251722-31667-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
+style of platform data that handles the timer as a single device with
+multiple channel. Switch from the old-style platform data to the
+new-style platform data.
 
-Please consider these Renesas ARM Based SoC Fixes Updates for v3.15.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+---
+ arch/sh/kernel/cpu/clock-cpg.c         |  2 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7264.c |  2 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7269.c |  2 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    | 98 +++++-----------------------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c | 98 +++++-----------------------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c | 67 ++++-------------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c | 98 +++++-----------------------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c | 71 ++++--------------------
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c | 67 ++++-------------------
+ 9 files changed, 72 insertions(+), 433 deletions(-)
 
+diff --git a/arch/sh/kernel/cpu/clock-cpg.c b/arch/sh/kernel/cpu/clock-cpg.c
+index 121ef69..8525a67 100644
+--- a/arch/sh/kernel/cpu/clock-cpg.c
++++ b/arch/sh/kernel/cpu/clock-cpg.c
+@@ -60,7 +60,7 @@ int __init __deprecated cpg_clk_init(void)
+ 	clk_add_alias("fck", "sh-tmu.0", "peripheral_clk", NULL);
+ 	clk_add_alias("fck", "sh-tmu.1", "peripheral_clk", NULL);
+ 	clk_add_alias("fck", "sh-tmu.2", "peripheral_clk", NULL);
+-	clk_add_alias("mtu2_fck", NULL, "peripheral_clk", NULL);
++	clk_add_alias("fck", "sh-mtu2", "peripheral_clk", NULL);
+ 	clk_add_alias("fck", "sh-cmt-16.0", "peripheral_clk", NULL);
+ 	clk_add_alias("fck", "sh-cmt-32.0", "peripheral_clk", NULL);
+ 	clk_add_alias("sci_ick", NULL, "peripheral_clk", NULL);
+diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
+index c7f3c66..8638fba 100644
+--- a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
+@@ -119,7 +119,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("vdc3", &mstp_clks[MSTP74]),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-16.0", &mstp_clks[MSTP72]),
+ 	CLKDEV_CON_ID("usb0", &mstp_clks[MSTP60]),
+-	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP35]),
++	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP35]),
+ 	CLKDEV_CON_ID("sdhi0", &mstp_clks[MSTP34]),
+ 	CLKDEV_CON_ID("sdhi1", &mstp_clks[MSTP33]),
+ 	CLKDEV_CON_ID("adc0", &mstp_clks[MSTP32]),
+diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7269.c b/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
+index 4f47464..f8a5c2a 100644
+--- a/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/clock-sh7269.c
+@@ -160,7 +160,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-16.0", &mstp_clks[MSTP72]),
+ 	CLKDEV_CON_ID("usb0", &mstp_clks[MSTP60]),
+-	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP35]),
++	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP35]),
+ 	CLKDEV_CON_ID("adc0", &mstp_clks[MSTP32]),
+ 	CLKDEV_CON_ID("rtc0", &mstp_clks[MSTP30]),
+ };
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-mxg.c b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
+index 63e996f..26fcdbd 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-mxg.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
+@@ -114,88 +114,18 @@ static struct intc_mask_reg mask_registers[] __initdata = {
+ static DECLARE_INTC_DESC(intc_desc, "mxg", vectors, groups,
+ 			 mask_registers, prio_registers, NULL);
+ 
+-static struct sh_timer_config mtu2_0_platform_data = {
+-	.channel_offset = -0x80,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] = {
++	DEFINE_RES_MEM(0xff801000, 0x400),
++	DEFINE_RES_IRQ_NAMED(228, "tgi0a"),
++	DEFINE_RES_IRQ_NAMED(234, "tgi1a"),
++	DEFINE_RES_IRQ_NAMED(240, "tgi2a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] = {
+-	[0] = {
+-		.start	= 0xff801300,
+-		.end	= 0xff801326,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 228,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_0_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &mtu2_0_platform_data,
+-	},
+-	.resource	= mtu2_0_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_0_resources),
+-};
+-
+-static struct sh_timer_config mtu2_1_platform_data = {
+-	.channel_offset = -0x100,
+-	.timer_bit = 1,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_1_resources[] = {
+-	[0] = {
+-		.start	= 0xff801380,
+-		.end	= 0xff801390,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 234,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_1_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &mtu2_1_platform_data,
+-	},
+-	.resource	= mtu2_1_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_1_resources),
+-};
+-
+-static struct sh_timer_config mtu2_2_platform_data = {
+-	.channel_offset = 0x80,
+-	.timer_bit = 2,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_2_resources[] = {
+-	[0] = {
+-		.start	= 0xff801000,
+-		.end	= 0xff80100a,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 240,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_2_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 2,
+-	.dev = {
+-		.platform_data	= &mtu2_2_platform_data,
+-	},
+-	.resource	= mtu2_2_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_2_resources),
++static struct platform_device mtu2_device = {
++	.name		= "sh-mtu2",
++	.id		= -1,
++	.resource	= mtu2_resources,
++	.num_resources	= ARRAY_SIZE(mtu2_resources),
+ };
+ 
+ static struct plat_sci_port scif0_platform_data = {
+@@ -221,9 +151,7 @@ static struct platform_device scif0_device = {
+ 
+ static struct platform_device *mxg_devices[] __initdata = {
+ 	&scif0_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
+-	&mtu2_2_device,
++	&mtu2_device,
+ };
+ 
+ static int __init mxg_devices_setup(void)
+@@ -240,9 +168,7 @@ void __init plat_irq_setup(void)
+ 
+ static struct platform_device *mxg_early_devices[] __initdata = {
+ 	&scif0_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
+-	&mtu2_2_device,
++	&mtu2_device,
+ };
+ 
+ void __init plat_early_device_setup(void)
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
+index 2c68744..abc0ce9 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
+@@ -365,88 +365,18 @@ static struct platform_device rtc_device = {
+ 	.resource	= rtc_resources,
+ };
+ 
+-static struct sh_timer_config mtu2_0_platform_data = {
+-	.channel_offset = -0x80,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] = {
++	DEFINE_RES_MEM(0xfffe4000, 0x400),
++	DEFINE_RES_IRQ_NAMED(108, "tgi0a"),
++	DEFINE_RES_IRQ_NAMED(116, "tgi1a"),
++	DEFINE_RES_IRQ_NAMED(124, "tgi1b"),
+ };
+ 
+-static struct resource mtu2_0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4300,
+-		.end	= 0xfffe4326,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 108,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_0_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &mtu2_0_platform_data,
+-	},
+-	.resource	= mtu2_0_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_0_resources),
+-};
+-
+-static struct sh_timer_config mtu2_1_platform_data = {
+-	.channel_offset = -0x100,
+-	.timer_bit = 1,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4380,
+-		.end	= 0xfffe4390,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 116,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_1_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &mtu2_1_platform_data,
+-	},
+-	.resource	= mtu2_1_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_1_resources),
+-};
+-
+-static struct sh_timer_config mtu2_2_platform_data = {
+-	.channel_offset = 0x80,
+-	.timer_bit = 2,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_2_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4000,
+-		.end	= 0xfffe400a,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 124,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_2_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 2,
+-	.dev = {
+-		.platform_data	= &mtu2_2_platform_data,
+-	},
+-	.resource	= mtu2_2_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_2_resources),
++static struct platform_device mtu2_device = {
++	.name		= "sh-mtu2",
++	.id		= -1,
++	.resource	= mtu2_resources,
++	.num_resources	= ARRAY_SIZE(mtu2_resources),
+ };
+ 
+ static struct platform_device *sh7201_devices[] __initdata = {
+@@ -459,9 +389,7 @@ static struct platform_device *sh7201_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&rtc_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
+-	&mtu2_2_device,
++	&mtu2_device,
+ };
+ 
+ static int __init sh7201_devices_setup(void)
+@@ -485,9 +413,7 @@ static struct platform_device *sh7201_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&scif6_device,
+ 	&scif7_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
+-	&mtu2_2_device,
++	&mtu2_device,
+ };
+ 
+ #define STBCR3 0xfffe0408
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+index 374f8c0..3b4894c 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+@@ -285,60 +285,17 @@ static struct platform_device cmt_device = {
+ 	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+-static struct sh_timer_config mtu2_0_platform_data = {
+-	.channel_offset = -0x80,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] = {
++	DEFINE_RES_MEM(0xfffe4000, 0x400),
++	DEFINE_RES_IRQ_NAMED(146, "tgi0a"),
++	DEFINE_RES_IRQ_NAMED(153, "tgi1a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4300,
+-		.end	= 0xfffe4326,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 146,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_0_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &mtu2_0_platform_data,
+-	},
+-	.resource	= mtu2_0_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_0_resources),
+-};
+-
+-static struct sh_timer_config mtu2_1_platform_data = {
+-	.channel_offset = -0x100,
+-	.timer_bit = 1,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4380,
+-		.end	= 0xfffe4390,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 153,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_1_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &mtu2_1_platform_data,
+-	},
+-	.resource	= mtu2_1_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_1_resources),
++static struct platform_device mtu2_device = {
++	.name		= "sh-mtu2",
++	.id		= -1,
++	.resource	= mtu2_resources,
++	.num_resources	= ARRAY_SIZE(mtu2_resources),
+ };
+ 
+ static struct resource rtc_resources[] = {
+@@ -367,8 +324,7 @@ static struct platform_device *sh7203_devices[] __initdata = {
+ 	&scif2_device,
+ 	&scif3_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
++	&mtu2_device,
+ 	&rtc_device,
+ };
+ 
+@@ -390,8 +346,7 @@ static struct platform_device *sh7203_early_devices[] __initdata = {
+ 	&scif2_device,
+ 	&scif3_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
++	&mtu2_device,
+ };
+ 
+ #define STBCR3 0xfffe0408
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+index d00e6fd..49bc5a3 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+@@ -237,88 +237,18 @@ static struct platform_device cmt_device = {
+ 	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+-static struct sh_timer_config mtu2_0_platform_data = {
+-	.channel_offset = -0x80,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] = {
++	DEFINE_RES_MEM(0xfffe4000, 0x400),
++	DEFINE_RES_IRQ_NAMED(156, "tgi0a"),
++	DEFINE_RES_IRQ_NAMED(164, "tgi1a"),
++	DEFINE_RES_IRQ_NAMED(180, "tgi2a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4300,
+-		.end	= 0xfffe4326,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 156,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_0_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &mtu2_0_platform_data,
+-	},
+-	.resource	= mtu2_0_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_0_resources),
+-};
+-
+-static struct sh_timer_config mtu2_1_platform_data = {
+-	.channel_offset = -0x100,
+-	.timer_bit = 1,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4380,
+-		.end	= 0xfffe4390,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 164,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_1_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &mtu2_1_platform_data,
+-	},
+-	.resource	= mtu2_1_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_1_resources),
+-};
+-
+-static struct sh_timer_config mtu2_2_platform_data = {
+-	.channel_offset = 0x80,
+-	.timer_bit = 2,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_2_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4000,
+-		.end	= 0xfffe400a,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 180,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_2_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 2,
+-	.dev = {
+-		.platform_data	= &mtu2_2_platform_data,
+-	},
+-	.resource	= mtu2_2_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_2_resources),
++static struct platform_device mtu2_device = {
++	.name		= "sh-mtu2s",
++	.id		= -1,
++	.resource	= mtu2_resources,
++	.num_resources	= ARRAY_SIZE(mtu2_resources),
+ };
+ 
+ static struct platform_device *sh7206_devices[] __initdata = {
+@@ -327,9 +257,7 @@ static struct platform_device *sh7206_devices[] __initdata = {
+ 	&scif2_device,
+ 	&scif3_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
+-	&mtu2_2_device,
++	&mtu2_device,
+ };
+ 
+ static int __init sh7206_devices_setup(void)
+@@ -350,9 +278,7 @@ static struct platform_device *sh7206_early_devices[] __initdata = {
+ 	&scif2_device,
+ 	&scif3_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
+-	&mtu2_2_device,
++	&mtu2_device,
+ };
+ 
+ #define STBCR3 0xfffe0408
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+index e95250e..6081464 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7264.c
+@@ -453,64 +453,17 @@ static struct platform_device cmt_device = {
+ 	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+-static struct sh_timer_config mtu2_0_platform_data = {
+-	.name = "MTU2_0",
+-	.channel_offset = -0x80,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] = {
++	DEFINE_RES_MEM(0xfffe4000, 0x400),
++	DEFINE_RES_IRQ_NAMED(179, "tgi0a"),
++	DEFINE_RES_IRQ_NAMED(186, "tgi1a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] = {
+-	[0] = {
+-		.name	= "MTU2_0",
+-		.start	= 0xfffe4300,
+-		.end	= 0xfffe4326,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 179,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_0_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &mtu2_0_platform_data,
+-	},
+-	.resource	= mtu2_0_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_0_resources),
+-};
+-
+-static struct sh_timer_config mtu2_1_platform_data = {
+-	.name = "MTU2_1",
+-	.channel_offset = -0x100,
+-	.timer_bit = 1,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_1_resources[] = {
+-	[0] = {
+-		.name	= "MTU2_1",
+-		.start	= 0xfffe4380,
+-		.end	= 0xfffe4390,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 186,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_1_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &mtu2_1_platform_data,
+-	},
+-	.resource	= mtu2_1_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_1_resources),
++static struct platform_device mtu2_device = {
++	.name		= "sh-mtu2",
++	.id		= -1,
++	.resource	= mtu2_resources,
++	.num_resources	= ARRAY_SIZE(mtu2_resources),
+ };
+ 
+ static struct resource rtc_resources[] = {
+@@ -580,8 +533,7 @@ static struct platform_device *sh7264_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
++	&mtu2_device,
+ 	&rtc_device,
+ 	&r8a66597_usb_host_device,
+ };
+@@ -608,8 +560,7 @@ static struct platform_device *sh7264_early_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
++	&mtu2_device,
+ };
+ 
+ void __init plat_early_device_setup(void)
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+index 0191e1a..16ce5aa 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7269.c
+@@ -475,60 +475,17 @@ static struct platform_device cmt_device = {
+ 	.num_resources	= ARRAY_SIZE(cmt_resources),
+ };
+ 
+-static struct sh_timer_config mtu2_0_platform_data = {
+-	.channel_offset = -0x80,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] = {
++	DEFINE_RES_MEM(0xfffe4000, 0x400),
++	DEFINE_RES_IRQ_NAMED(192, "tgi0a"),
++	DEFINE_RES_IRQ_NAMED(203, "tgi1a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4300,
+-		.end	= 0xfffe4326,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 192,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_0_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &mtu2_0_platform_data,
+-	},
+-	.resource	= mtu2_0_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_0_resources),
+-};
+-
+-static struct sh_timer_config mtu2_1_platform_data = {
+-	.channel_offset = -0x100,
+-	.timer_bit = 1,
+-	.clockevent_rating = 200,
+-};
+-
+-static struct resource mtu2_1_resources[] = {
+-	[0] = {
+-		.start	= 0xfffe4380,
+-		.end	= 0xfffe4390,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= 203,
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mtu2_1_device = {
+-	.name		= "sh_mtu2",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &mtu2_1_platform_data,
+-	},
+-	.resource	= mtu2_1_resources,
+-	.num_resources	= ARRAY_SIZE(mtu2_1_resources),
++static struct platform_device mtu2_device = {
++	.name		= "sh-mtu2",
++	.id		= -1,
++	.resource	= mtu2_resources,
++	.num_resources	= ARRAY_SIZE(mtu2_resources),
+ };
+ 
+ static struct resource rtc_resources[] = {
+@@ -592,8 +549,7 @@ static struct platform_device *sh7269_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
++	&mtu2_device,
+ 	&rtc_device,
+ 	&r8a66597_usb_host_device,
+ };
+@@ -620,8 +576,7 @@ static struct platform_device *sh7269_early_devices[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&cmt_device,
+-	&mtu2_0_device,
+-	&mtu2_1_device,
++	&mtu2_device,
+ };
+ 
+ void __init plat_early_device_setup(void)
+-- 
+1.8.3.2
 
-The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
-
-  Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v3.15
-
-for you to fetch changes up to d5dda0381f826326071b027f288372f682c24d55:
-
-  ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc (2014-04-15 07:39:11 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Fixes Updates for v3.15
-
-r8a7791 (R-Car M2) based koelsch board
-* Correct renesas,gpios to renesas,groups in sd[012] pfc
-
-8a7790 (R-Car H2) based lager board
-* Correct SND_SOC_DAIFMT_CBx_CFx flags
-
-r8a7740 (R-Mobile A1) SoC
-* Drop address cells from GIC node
-
-r8a7740 (R-Mobile A1) based Armadillo800 EVA board
-* Correct SND_SOC_DAIFMT_CBx_CFx flags
-
-sh73a0 (SH-Mobile AG5) SoC
-* Drop address cells from GIC node
-
-----------------------------------------------------------------
-Kuninori Morimoto (2):
-      ARM: shmobile: lager: fixup SND_SOC_DAIFMT_CBx_CFx flags
-      ARM: shmobile: armadillo800eva: fixup SND_SOC_DAIFMT_CBx_CFx flags
-
-Lucas Stach (2):
-      ARM: shmobile: sh73a0: drop address cells from GIC node
-      ARM: shmobile: r8a7740: drop address cells from GIC node
-
-Magnus Damm (1):
-      ARM: shmobile: koelsch: correct renesas,gpios to renesas,groups in sd[012] pfc
-
- arch/arm/boot/dts/r8a7740.dtsi                 | 1 -
- arch/arm/boot/dts/r8a7791-koelsch.dts          | 6 +++---
- arch/arm/boot/dts/sh73a0.dtsi                  | 1 -
- arch/arm/mach-shmobile/board-armadillo800eva.c | 1 +
- arch/arm/mach-shmobile/board-lager.c           | 4 +---
- 5 files changed, 5 insertions(+), 8 deletions(-)
