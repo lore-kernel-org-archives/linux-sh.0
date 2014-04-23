@@ -1,62 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Apr 2014 10:33:27 +0000
-Subject: [PATCH v2 5/5] [TEST] ARM: shmobile: r8a7791: Enable IOMMU support for the VSP1
-Message-Id: <1397730807-5993-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:26:01 +0000
+Subject: [PATCH 33/33] ARM: shmobile: armadillo-reference dts: Seiko Instruments, Inc is "sii"
+Message-Id: <dd485ab9a88267f4db0d58ace23b19e876ebf8ac.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Not for merge yet.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use "sii,s35390a" instead of "seiko,s35390a", cfr.
+Documentation/devicetree/bindings/i2c/trivial-devices.txt and
+Documentation/devicetree/bindings/vendor-prefixes.txt.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d1e446c..e024602 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -508,6 +508,8 @@
- 		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_S>;
- 
-+		iommus = <&ipmmu_mx 10>;
-+
- 		renesas,has-lut;
- 		renesas,has-sru;
- 		renesas,#rpf = <5>;
-@@ -521,6 +523,8 @@
- 		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU0>;
- 
-+		iommus = <&ipmmu_mx 13>;
-+
- 		renesas,has-lif;
- 		renesas,has-lut;
- 		renesas,#rpf = <4>;
-@@ -534,6 +538,8 @@
- 		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_DU1>;
- 
-+		iommus = <&ipmmu_mx 14>;
-+
- 		renesas,has-lif;
- 		renesas,has-lut;
- 		renesas,#rpf = <4>;
-@@ -942,7 +948,6 @@
- 		compatible = "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951800 0 0x800>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>;
--		status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 0cb235a..10344e6 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -180,7 +180,7 @@
+ &i2c2 {
+ 	status = "okay";
+ 	rtc@30 {
+-		compatible = "seiko,s35390a";
++		compatible = "sii,s35390a";
+ 		reg = <0x30>;
  	};
- 
- 	ipmmu_rt: mmu@ffc80800 {
+ };
 -- 
-1.8.3.2
+1.8.5.2
 
