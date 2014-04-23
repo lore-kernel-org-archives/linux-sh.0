@@ -1,58 +1,41 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 14 Apr 2014 21:59:48 +0000
-Subject: [PATCHv2 06/11] pwm: modify PWM_LOOKUP to initialize all struct pwm_lookup members
-Message-Id: <1397512793-10325-7-git-send-email-alexandre.belloni@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:48 +0000
+Subject: [PATCH 20/33] ARM: shmobile: koelsch: make i2c2-pfc node unique
+Message-Id: <e6a4c001116ca28a3c5698168a2a1fe274fa6d2c.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that PWM_LOOKUP is not used anymore, modify it to initialize all the
-members of struct pwm_lookup.
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+This node should have a unique name so it can be distinguished when
+other i2c busses are added later.
+
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/pwm.txt | 3 ++-
- include/linux/pwm.h   | 4 +++-
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/pwm.txt b/Documentation/pwm.txt
-index 93cb97974986..f38f99cda64f 100644
---- a/Documentation/pwm.txt
-+++ b/Documentation/pwm.txt
-@@ -19,7 +19,8 @@ should instead register a static mapping that can be used to match PWM
- consumers to providers, as given in the following example:
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index ee23b7b..fc6c94a 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -228,7 +228,7 @@
+ 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
  
- 	static struct pwm_lookup board_pwm_lookup[] = {
--		PWM_LOOKUP("tegra-pwm", 0, "pwm-backlight", NULL),
-+		PWM_LOOKUP("tegra-pwm", 0, "pwm-backlight", NULL,
-+			   50000, PWM_POLARITY_NORMAL),
+-	i2c2_pins: i2c {
++	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
  	};
- 
- 	static void __init board_init(void)
-diff --git a/include/linux/pwm.h b/include/linux/pwm.h
-index 2f45e2fe5b93..e90628cac8fa 100644
---- a/include/linux/pwm.h
-+++ b/include/linux/pwm.h
-@@ -278,12 +278,14 @@ struct pwm_lookup {
- 	enum pwm_polarity polarity;
- };
- 
--#define PWM_LOOKUP(_provider, _index, _dev_id, _con_id)	\
-+#define PWM_LOOKUP(_provider, _index, _dev_id, _con_id, _period, _polarity) \
- 	{						\
- 		.provider = _provider,			\
- 		.index = _index,			\
- 		.dev_id = _dev_id,			\
- 		.con_id = _con_id,			\
-+		.period = _period,			\
-+		.polarity = _polarity			\
- 	}
- 
- #if IS_ENABLED(CONFIG_PWM)
 -- 
-1.8.3.2
+1.8.5.2
 
