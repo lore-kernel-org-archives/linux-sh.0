@@ -1,87 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 24 Apr 2014 22:42:41 +0000
-Subject: [PATCH 1/2] ARM: shmobile: henninger: initial device tree
-Message-Id: <201404250242.42725.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:43 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7740: Make r8a7740_meram_workaround() __init
+Message-Id: <bb6c3d58c36adb205b4bf233fd1c4079e02a6811.1398216284.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the initial device tree for the R8A7791 SoC based Henninger board. SCIF0
-serial port support is included, so that the serial console can work. 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+It's called from eva_init() only, which is __init
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile              |    1 
- arch/arm/boot/dts/r8a7791-henninger.dts |   50 ++++++++++++++++++++++++++++++++
- 2 files changed, 51 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: renesas/arch/arm/boot/dts/Makefile
-=================================--- renesas.orig/arch/arm/boot/dts/Makefile
-+++ renesas/arch/arm/boot/dts/Makefile
-@@ -321,6 +321,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
- 	r7s72100-genmai-reference.dtb \
-+	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
-Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-=================================--- /dev/null
-+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -0,0 +1,50 @@
-+/*
-+ * Device Tree Source for the Henninger board
-+ *
-+ * Copyright (C) 2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded, Inc.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+#include "r8a7791.dtsi"
-+
-+/ {
-+	model = "Henninger";
-+	compatible = "renesas,henninger", "renesas,r8a7791";
-+
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
-+	chosen {
-+		bootargs = "console=ttySC0,38400 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+
-+	memory@200000000 {
-+		device_type = "memory";
-+		reg = <2 0x00000000 0 0x40000000>;
-+	};
-+};
-+
-+&pfc {
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_d";
-+		renesas,function = "scif0";
-+	};
-+};
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index cba3a07..a177a7b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -765,7 +765,7 @@ static struct platform_device *r8a7740_late_devices[] __initdata = {
+  *	"Media RAM (MERAM)" on r8a7740 documentation
+  */
+ #define MEBUFCNTR	0xFE950098
+-void r8a7740_meram_workaround(void)
++void __init r8a7740_meram_workaround(void)
+ {
+ 	void __iomem *reg;
+ 
+-- 
+1.8.5.2
+
