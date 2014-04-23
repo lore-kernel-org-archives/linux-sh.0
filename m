@@ -1,82 +1,84 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 18:15:38 +0000
-Subject: [PATCH v3 2/5] ARM: shmobile: r8a7791: Add MSIOF clocks
-Message-Id: <1397499341-11964-3-git-send-email-geert@linux-m68k.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:32 +0000
+Subject: [PATCH 04/33] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
+Message-Id: <ae8a6146afc9dddbbf342b3a77b9bf44618511dd.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Add clocks for MSIOF0, 1, and 2.
-DEV_ID is 1-based for compatibility with the BSP, as QSPI uses zero.
-
-Signed-off-by: Takashi Yoshii <takasi-y@ops.dti.ne.jp>
-[geert] Updated for change from SH_CLK_MSTP32() to SH_CLK_MSTP32_STS()
-[geert] Updated for new platform device name
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Add Acked-by
-v2:
-  - No changes
----
- arch/arm/mach-shmobile/clock-r8a7791.c |   10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 44 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index 3b26c7eee873..a6ae7f58ddc1 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -58,6 +58,7 @@
- #define SMSTPCR10	0xE6150998
- #define SMSTPCR11	0xE615099C
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 9383b84..da69afc 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -25,6 +25,10 @@
+ 		i2c2 = &i2c2;
+ 		i2c3 = &i2c3;
+ 		spi0 = &qspi;
++		spi1 = &msiof0;
++		spi2 = &msiof1;
++		spi3 = &msiof2;
++		spi4 = &msiof3;
+ 	};
  
-+#define MSTPSR0		IOMEM(0xe6150030)
- #define MSTPSR1		IOMEM(0xe6150038)
- #define MSTPSR2		IOMEM(0xe6150040)
- #define MSTPSR3		IOMEM(0xe6150048)
-@@ -178,9 +179,10 @@ enum {
- 	MSTP719, MSTP718, MSTP715, MSTP714,
- 	MSTP522,
- 	MSTP314, MSTP312, MSTP311,
--	MSTP216, MSTP207, MSTP206,
-+	MSTP216, MSTP208, MSTP207, MSTP206, MSTP205,
- 	MSTP204, MSTP203, MSTP202,
- 	MSTP124,
-+	MSTP000,
- 	MSTP_NR
+ 	cpus {
+@@ -776,4 +780,44 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	msiof0: spi@e6e20000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6e20000 0 0x0064>;
++		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof1: spi@e6e10000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6e10000 0 0x0064>;
++		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof2: spi@e6e00000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6e00000 0 0x0064>;
++		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof3: spi@e6c90000 {
++		compatible = "renesas,msiof-r8a7790";
++		reg = <0 0xe6c90000 0 0x0064>;
++		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
  };
- 
-@@ -215,12 +217,15 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
- 	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
- 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
-+	[MSTP208] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 8, MSTPSR2, 0), /* MSIOF1 */
- 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
- 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
-+	[MSTP205] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 5, MSTPSR2, 0), /* MSIOF2 */
- 	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
- 	[MSTP203] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 3, MSTPSR2, 0), /* SCIFA1 */
- 	[MSTP202] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 2, MSTPSR2, 0), /* SCIFA2 */
- 	[MSTP124] = SH_CLK_MSTP32_STS(&rclk_clk, SMSTPCR1, 24, MSTPSR1, 0), /* CMT0 */
-+	[MSTP000] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR0, 0, MSTPSR0, 0), /* MSIOF0 */
- };
- 
- static struct clk_lookup lookups[] = {
-@@ -266,6 +271,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
- 	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
-+	CLKDEV_DEV_ID("spi_r8a7791_msiof.1", &mstp_clks[MSTP000]),
-+	CLKDEV_DEV_ID("spi_r8a7791_msiof.2", &mstp_clks[MSTP208]),
-+	CLKDEV_DEV_ID("spi_r8a7791_msiof.3", &mstp_clks[MSTP205]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
 -- 
-1.7.9.5
+1.8.5.2
 
