@@ -1,65 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:12 +0000
-Subject: [PATCH v2 12/14] ARM: shmobile: r8a7791: Add CMT devices to DT
-Message-Id: <1397832494-20607-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:43 +0000
+Subject: [PATCH 15/33] ARM: shmobile: armadillo-reference dts: Use KEY_* macros for gpio-keys
+Message-Id: <c9b60e922c7551ff1c477a121ad09f3790c1a575.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7791.dtsi | 34 ++++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 44f0344..6eff2dc 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -170,6 +170,40 @@
- 			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
- 	};
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 95a849b..97342a4 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -11,6 +11,7 @@
+ /dts-v1/;
+ #include "r8a7740.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pwm/pwm.h>
  
-+	cmt0: timer@ffca0000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xffca0000 0 0x1004>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7791_CLK_CMT0>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0x60>;
-+
-+		status = "disabled";
-+	};
-+
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt-48-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7791_CLK_CMT1>;
-+		clock-names = "fck";
-+
-+		renesas,channels-mask = <0xff>;
-+
-+		status = "disabled";
-+	};
-+
- 	irqc0: interrupt-controller@e61c0000 {
- 		compatible = "renesas,irqc-r8a7791", "renesas,irqc";
- 		#interrupt-cells = <2>;
+@@ -77,26 +78,26 @@
+ 
+ 		power-key {
+ 			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
+-			linux,code = <116>;
++			linux,code = <KEY_POWER>;
+ 			label = "SW3";
+ 			gpio-key,wakeup;
+ 		};
+ 
+ 		back-key {
+ 			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
+-			linux,code = <158>;
++			linux,code = <KEY_BACK>;
+ 			label = "SW4";
+ 		};
+ 
+ 		menu-key {
+ 			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
+-			linux,code = <139>;
++			linux,code = <KEY_MENU>;
+ 			label = "SW5";
+ 		};
+ 
+ 		home-key {
+ 			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
+-			linux,code = <102>;
++			linux,code = <KEY_HOME>;
+ 			label = "SW6";
+ 		};
+ 	};
 -- 
-1.8.3.2
+1.8.5.2
 
