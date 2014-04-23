@@ -1,38 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:01 +0000
-Subject: [PATCH v3 18/52] clocksource: sh_cmt: Remove FSF mail address from GPL notice
-Message-Id: <1397228675-11684-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:26:00 +0000
+Subject: [PATCH 32/33] ARM: shmobile: lager dts: Enable Quad SPI transfers for the SPI FLASH
+Message-Id: <9909d2cb41a9c752cbbef5d9fb57d80a7196e951.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Do not include the paragraph about writing to the Free Software
-Foundation's mailing address from the sample GPL notice. The FSF has
-changed addresses in the past, and may do so again. Linux already
-includes a copy of the GPL.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/sh_cmt.c | 4 ----
- 1 file changed, 4 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index a5ea9ae..399e952 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -11,10 +11,6 @@
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-  */
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 265cba1..d350d7c 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -243,6 +243,8 @@
+ 		compatible = "spansion,s25fl512s";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
+ 		m25p,fast-read;
  
- #include <linux/init.h>
+ 		partition@0 {
 -- 
-1.8.3.2
+1.8.5.2
 
