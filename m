@@ -1,47 +1,99 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 22 Apr 2014 13:19:08 +0000
-Subject: [PATCH 0/4] ARM: shmobile: r8a7740 CCF implementation
-Message-Id: <1398172752-30567-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 23 Apr 2014 08:25:27 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
+Message-Id: <1398241528-7733-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v3:
+  - Add Acked-by
+  - Bindings have been accepted in
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
 
-Here's an updated version of the r8a7740 CCF RFC. Changes include:
+v2:
+  - No changes
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-- added switchable input clocks to DIV6 driver
-- added all clocks supported by the legacy clock framework
-- moved board-specific stuff out of the dtsi
-- added DT bindings documentation
-- dumped r8a7740_clocks_init() in favor of a DT property
-- worked in various other suggestions by Laurent
-
-CU
-Uli
-
-Ulrich Hecht (4):
-  clk: shmobile: div6: support selectable-input clocks
-  ARM: shmobile: r8a7740: Add clocks to DTS
-  ARM: shmobile: r8a7740: common clock framework board support
-  clk: shmobile: Add R8A7740-specific clock support
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |   8 +
- .../bindings/clock/renesas,r8a7740-cpg-clocks.txt  |  39 ++++
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |  13 ++
- arch/arm/boot/dts/r8a7740.dtsi                     | 229 +++++++++++++++++++++
- .../board-armadillo800eva-reference.c              |  25 +++
- arch/arm/mach-shmobile/setup-r8a7740.c             |   2 +
- drivers/clk/shmobile/clk-div6.c                    |  19 +-
- drivers/clk/shmobile/clk-r8a7740.c                 | 196 ++++++++++++++++++
- include/dt-bindings/clock/r8a7740-clock.h          |  77 +++++++
- 9 files changed, 607 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7740-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-r8a7740.c
- create mode 100644 include/dt-bindings/clock/r8a7740-clock.h
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d38d70339149..7ff29601f962 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -117,6 +117,7 @@
+ 		gpio-ranges = <&pfc 0 0 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
+ 	};
+ 
+ 	gpio1: gpio@e6051000 {
+@@ -128,6 +129,7 @@
+ 		gpio-ranges = <&pfc 0 32 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
+ 	};
+ 
+ 	gpio2: gpio@e6052000 {
+@@ -139,6 +141,7 @@
+ 		gpio-ranges = <&pfc 0 64 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
+ 	};
+ 
+ 	gpio3: gpio@e6053000 {
+@@ -150,6 +153,7 @@
+ 		gpio-ranges = <&pfc 0 96 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
+ 	};
+ 
+ 	gpio4: gpio@e6054000 {
+@@ -161,6 +165,7 @@
+ 		gpio-ranges = <&pfc 0 128 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
+ 	};
+ 
+ 	gpio5: gpio@e6055000 {
+@@ -172,6 +177,7 @@
+ 		gpio-ranges = <&pfc 0 160 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
+ 	};
+ 
+ 	thermal@e61f0000 {
+@@ -802,14 +808,19 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
+ 				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
++				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
++				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
+ 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
+ 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
+ 			>;
+ 			clock-output-names +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
+ 				"rcan1", "rcan0", "qspi_mod", "iic3",
+ 				"i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
 -- 
-1.8.4.5
+1.7.9.5
 
