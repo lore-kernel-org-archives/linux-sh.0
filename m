@@ -1,46 +1,50 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:05 +0000
-Subject: [PATCH v2 09/17] drivers: sh: Remove automatic sh_pm_runtime_init() if ARCH_SHMOBILE_LEGACY
-Message-Id: <1397565253-22741-10-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:38 +0000
+Subject: [PATCH 10/33] ARM: shmobile: bockw reference dts: Add SPI FLASH
+Message-Id: <6d879a097acaeaa9deba6d4949b466886b18652e.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now all shmobile SoCs call sh_pm_runtime_init(), remove the core_initcall()
-for ARCH_SHMOBILE_LEGACY, and the check to prevent double enabling.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
+board code.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Reviewed-by, Tested-by
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
- drivers/sh/pm_runtime.c |    5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
-
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 3ec047ac1ff4..f0c4a384d49f 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -79,14 +79,11 @@ static bool default_pm_on;
- 
- int __init sh_pm_runtime_init(void)
- {
--	if (default_pm_on)
--		return 0;
--
- 	default_pm_on = true;
- 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
- }
--#if defined(CONFIG_SUPERH) || defined(CONFIG_ARCH_SHMOBILE_LEGACY)
-+#ifdef CONFIG_SUPERH
- core_initcall(sh_pm_runtime_init);
- #endif
- 
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 06cda19..f76f6ec 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -109,4 +109,18 @@
+ 	pinctrl-0 = <&hspi0_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
+ };
 -- 
-1.7.9.5
+1.8.5.2
 
