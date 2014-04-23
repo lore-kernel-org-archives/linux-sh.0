@@ -1,76 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 02 Apr 2014 11:46:38 +0000
-Subject: [WIP 0/7] Koelsch HDMI output support
-Message-Id: <1396439205-26199-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:52 +0000
+Subject: [PATCH 24/33] ARM: shmobile: armadillo-reference dts: enable RTC
+Message-Id: <584b23db5beb3bd3a3c0767248a4843cac848a58.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-This work in progress patch series adds support for the HDMI output on the
-Koelsch board. I'm not happy with the result yet, but as several people are
-eager to test HDMI output on Koelsch, I've decided to already provide the
-patches, with a 'WIP' status.
+This enables the Seiko real-time clock that is attached to a couple of
+GPIO pins.
 
-Points that still need to be fixed before submitting patches for inclusion in
-mainline are:
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ .../arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-- Document (and probably rework) the ADV7511 DT bindings
-- Use a proper abstraction API instead of drm_slave_encoder
-- Use the component framework for asynchronous probing
-- Go full DT on the DU side
-
-The patches are based on top of the latest devel branch from Simon's tree,
-plus a mix of patches that I've have previously submitted to the mailing list.
-For convenience I've pushed the result to
-
-	git://linuxtv.org/pinchartl/fbdev.git drm/du/adv7511
-
-Please note that the branch will be rebased during development.
-
-Lars-Peter Clausen (2):
-  drm: Decouple EDID parsing from I2C adapter
-  DRM: Add adv7511 encoder driver
-
-Laurent Pinchart (5):
-  drm/rcar-du: Replace direct DRM encoder access with cast macro
-  drm/rcar-du: Replace drm_encoder with drm_slave_encoder
-  drm/rcar-du: Add HDMI encoder and connector support
-  ARM: shmobile: koelsch: Add DISP pin group to the DU pins
-  ARM: shmobile: koelsch-reference: Add DU HDMI output support
-
- arch/arm/boot/dts/r8a7791-koelsch.dts            |  18 +-
- arch/arm/mach-shmobile/board-koelsch-reference.c |   4 +
- drivers/gpu/drm/drm_edid.c                       |  24 +-
- drivers/gpu/drm/i2c/Kconfig                      |   6 +
- drivers/gpu/drm/i2c/Makefile                     |   3 +
- drivers/gpu/drm/i2c/adv7511_drv.c                | 995 +++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/Kconfig                  |  11 +-
- drivers/gpu/drm/rcar-du/Makefile                 |   2 +
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c        |  34 +-
- drivers/gpu/drm/rcar-du/rcar_du_encoder.h        |   9 +-
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c        | 118 +++
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.h        |  31 +
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c        | 157 ++++
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.h        |  34 +
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c        |   5 +-
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c         |   5 +-
- include/drm/drm_edid.h                           |   4 +
- include/drm/i2c/adv7511.h                        | 456 +++++++++++
- include/linux/platform_data/rcar-du.h            |   5 +
- 19 files changed, 1894 insertions(+), 27 deletions(-)
- create mode 100644 drivers/gpu/drm/i2c/adv7511_drv.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmicon.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_hdmienc.h
- create mode 100644 include/drm/i2c/adv7511.h
-
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 97342a4..0cb235a 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -118,6 +118,16 @@
+ 		};
+ 	};
+ 
++	i2c2: i2c@2 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "i2c-gpio";
++		gpios = <&pfc 208 GPIO_ACTIVE_HIGH /* sda */
++			 &pfc 91 GPIO_ACTIVE_HIGH /* scl */
++			>;
++		i2c-gpio,delay-us = <5>;
++	};
++
+ 	backlight {
+ 		compatible = "pwm-backlight";
+ 		pwms = <&tpu 2 33333 PWM_POLARITY_INVERTED>;
+@@ -167,6 +177,14 @@
+ 	};
+ };
+ 
++&i2c2 {
++	status = "okay";
++	rtc@30 {
++		compatible = "seiko,s35390a";
++		reg = <0x30>;
++	};
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scifa1_pins>;
+ 	pinctrl-names = "default";
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
