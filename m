@@ -1,51 +1,97 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 16 Apr 2014 07:52:33 +0000
-Subject: Re: Renesas clock clk-mstp updates for clock-indices
-Message-Id: <20140416075232.GC12344@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 23 Apr 2014 11:15:13 +0000
+Subject: [PATCH v5 06/15] ARM: shmobile: r8a7790: Switch to new style CMT device
+Message-Id: <1398251722-31667-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1394196400-17112-1-git-send-email-ben.dooks@codethink.co.uk>
- <CAMuHMdVVc-9n4mQSj6qVyP5k9xzSstSw==nfYcFSOXtb895QUw@mail.gmail.com>
- <20140415235851.GA9817@verge.net.au>
- <CAMuHMdXRbaO0obMRvRXTOQGUDOgnMzGATWHiVbQN0Huhn5bMiQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXRbaO0obMRvRXTOQGUDOgnMzGATWHiVbQN0Huhn5bMiQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Apr 16, 2014 at 09:12:15AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Wed, Apr 16, 2014 at 1:58 AM, Simon Horman <horms@verge.net.au> wrote:
-> >> As we now have "renesas,clock-indices" in v3.14, the question about backwards
-> >> compatibility became moot.
-> >>
-> >> Can you please combine your two patches
-> >>
-> >> [PATCH 1/2] clk: shmobile: clk-mstp: change to using clock-indices
-> >> [PATCH 2/2] clk: shmobile: clk-mstp: add backwards comapt for indices field
-> >>
-> >> into a single patch, and submit to Mike?
-> >>
-> >> Once it's in Mike's clk-next, we can do the following to get everything in
-> >> v3.15:
-> >>   1. Simon cherry-picks Mike's commit into his fixes-for-v3.15 branch,
-> >>   2. we fix arch/arm/boot/dts/r8a7790.dtsi and .../r8a7791.dtsi there,
-> >>   3. fixes-for-v3.15 gets into mainline through arm-soc.
-> >>
-> >> Does that sound like plan?
-> >
-> > I think a better approach would be for me to use a branch of Mike's
-> > or an rc release as a basis for steps 2. and 3. Once such a branch
-> > or rc release is available.
-> 
-> That would also work.
-> 
-> The reasons I proposed cherry-picking were:
->   1. A branch may be overkill for just one small commit, putting some
->     burden on Mike,
->   2. An rc release assumes Mike plans to send another pull request soon.
-> 
-> Anyway, the goal is to get this fixed in v3.15, whatever approach ;-)
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Yes, that much we can all agree on :)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-lager-reference.c |  2 +-
+ arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 17 +++++++----------
+ 3 files changed, 9 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 440aac3..d9f146c 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -97,7 +97,7 @@ static void __init lager_add_standard_devices(void)
+ 		const char *con_id;
+ 		const char *dev_id;
+ 	} clk_names[] = {
+-		{ "cmt0", NULL, "sh_cmt.0" },
++		{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 		{ "scifa0", NULL, "sh-sci.0" },
+ 		{ "scifa1", NULL, "sh-sci.1" },
+ 		{ "scifb0", NULL, "sh-sci.2" },
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index 3f93503..411302e 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -361,7 +361,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+-	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
+@@ -371,6 +370,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
+ 
+ 	/* ICK */
++	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
+ 	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index c4616f0..87327f3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -269,20 +269,17 @@ static const struct resource thermal_resources[] __initconst = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
+-static const struct sh_timer_config cmt00_platform_data __initconst = {
+-	.name = "CMT00",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_config cmt0_platform_data = {
++	.channels_mask = 0x60,
+ };
+ 
+-static const struct resource cmt00_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xffca0510, 0x0c),
+-	DEFINE_RES_MEM(0xffca0500, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++static struct resource cmt0_resources[] = {
++	DEFINE_RES_MEM(0xffca0000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(142)),
+ };
+ 
+ #define r8a7790_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -300,7 +297,7 @@ void __init r8a7790_add_dt_devices(void)
+ 	r8a7790_register_scif(7);
+ 	r8a7790_register_scif(8);
+ 	r8a7790_register_scif(9);
+-	r8a7790_register_cmt(00);
++	r8a7790_register_cmt(0);
+ }
+ 
+ void __init r8a7790_add_standard_devices(void)
+-- 
+1.8.3.2
+
