@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:38 +0000
-Subject: [PATCH 10/33] ARM: shmobile: bockw reference dts: Add SPI FLASH
-Message-Id: <6d879a097acaeaa9deba6d4949b466886b18652e.1398216022.git.horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:45 +0000
+Subject: [PATCH 17/33] ARM: shmobile: r8a7791: add IIC0/1 clock macros
+Message-Id: <c6e8f325e769aabd059f8ff7d29e406345f83929.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1398216022.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
@@ -10,41 +10,29 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-Add Spansion s25fl008k SPI FLASH and MTD partition, based on bockw legacy
-board code.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ include/dt-bindings/clock/r8a7791-clock.h | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 06cda19..f76f6ec 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -109,4 +109,18 @@
- 	pinctrl-0 = <&hspi0_pins>;
- 	pinctrl-names = "default";
- 	status = "okay";
-+
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl008k";
-+		reg = <0>;
-+		spi-max-frequency = <104000000>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "data(spi)";
-+			reg = <0x00000000 0x00100000>;
-+		};
-+	};
- };
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 30f82f2..2df1a11f 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -51,6 +51,8 @@
+ #define R8A7791_CLK_SDHI1		12
+ #define R8A7791_CLK_SDHI0		14
+ #define R8A7791_CLK_MMCIF0		15
++#define R8A7791_CLK_IIC0		18
++#define R8A7791_CLK_IIC1		23
+ #define R8A7791_CLK_SSUSB		28
+ #define R8A7791_CLK_CMT1		29
+ #define R8A7791_CLK_USBDMAC0		30
 -- 
 1.8.5.2
 
