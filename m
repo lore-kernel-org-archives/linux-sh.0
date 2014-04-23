@@ -1,73 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Apr 2014 10:26:35 +0000
-Subject: [PATCH 3/6] ARM: keystone: Use generic runtime and clock helpers
-Message-Id: <1398335198-26555-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:49 +0000
+Subject: [PATCH 21/33] ARM: shmobile: koelsch: activate i2c6 bus
+Message-Id: <aa28e55dd9b6832a56b1a37fbe65c34ddcd32bdf.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-keystone/pm_domain.c |   35 ++---------------------------------
- 1 file changed, 2 insertions(+), 33 deletions(-)
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-diff --git a/arch/arm/mach-keystone/pm_domain.c b/arch/arm/mach-keystone/pm_domain.c
-index ca79ddac38bc..f9e36c73b6fc 100644
---- a/arch/arm/mach-keystone/pm_domain.c
-+++ b/arch/arm/mach-keystone/pm_domain.c
-@@ -13,46 +13,15 @@
-  */
- 
- #include <linux/init.h>
--#include <linux/pm_runtime.h>
- #include <linux/pm_clock.h>
- #include <linux/platform_device.h>
- #include <linux/clk-provider.h>
- #include <linux/of.h>
- 
--#ifdef CONFIG_PM_RUNTIME
--static int keystone_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret)
--		return ret;
--
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int keystone_pm_runtime_resume(struct device *dev)
--{
--	dev_dbg(dev, "%s\n", __func__);
--
--	pm_clk_resume(dev);
--
--	return pm_generic_runtime_resume(dev);
--}
--#endif
--
- static struct dev_pm_domain keystone_pm_domain = {
- 	.ops = {
--		SET_RUNTIME_PM_OPS(keystone_pm_runtime_suspend,
--				   keystone_pm_runtime_resume, NULL)
-+		SET_RUNTIME_PM_OPS(pm_generic_runtime_clk_suspend,
-+				   pm_generic_clk_runtime_resume, NULL)
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index fc6c94a..2a0569d 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -224,6 +224,11 @@
+ 	};
  };
+ 
++&i2c6 {
++	status = "okay";
++	clock-frequency = <100000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.7.9.5
+1.8.5.2
 
