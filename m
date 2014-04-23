@@ -1,70 +1,121 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:31 +0000
-Subject: [PATCH 03/33] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi, add spi0 alias
-Message-Id: <6f3e4ee340ea11d9aba39c5beaa80f0d3f368428.1398216022.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 23 Apr 2014 08:25:28 +0000
+Subject: [PATCH v3 2/2] ARM: shmobile: r8a7791 dtsi: Add GPIO clocks
+Message-Id: <1398241528-7733-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-
-Prepare for the advent of MSIOF SPI, which will be spi1 to spi3.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++--
- arch/arm/boot/dts/r8a7791.dtsi        | 3 ++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+v3:
+  - Add Acked-by
+  - Bindings have been accepted in
+    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index bdd73e6..bf9555b 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -244,7 +244,7 @@
- 		renesas,function = "sdhi2";
- 	};
- 
--	qspi_pins: spi {
-+	qspi_pins: spi0 {
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-@@ -301,7 +301,7 @@
- 	status = "okay";
- };
- 
--&spi {
-+&qspi {
- 	pinctrl-0 = <&qspi_pins>;
- 	pinctrl-names = "default";
- 
+v2:
+  - No changes
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
 diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 23ae96e..6cda188 100644
+index 44f03444ef74..81f27a35b19f 100644
 --- a/arch/arm/boot/dts/r8a7791.dtsi
 +++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -27,6 +27,7 @@
- 		i2c3 = &i2c3;
- 		i2c4 = &i2c4;
- 		i2c5 = &i2c5;
-+		spi0 = &qspi;
+@@ -76,6 +76,7 @@
+ 		gpio-ranges = <&pfc 0 0 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO0>;
  	};
  
- 	cpus {
-@@ -789,7 +790,7 @@
+ 	gpio1: gpio@e6051000 {
+@@ -87,6 +88,7 @@
+ 		gpio-ranges = <&pfc 0 32 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO1>;
+ 	};
+ 
+ 	gpio2: gpio@e6052000 {
+@@ -98,6 +100,7 @@
+ 		gpio-ranges = <&pfc 0 64 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO2>;
+ 	};
+ 
+ 	gpio3: gpio@e6053000 {
+@@ -109,6 +112,7 @@
+ 		gpio-ranges = <&pfc 0 96 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO3>;
+ 	};
+ 
+ 	gpio4: gpio@e6054000 {
+@@ -120,6 +124,7 @@
+ 		gpio-ranges = <&pfc 0 128 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO4>;
+ 	};
+ 
+ 	gpio5: gpio@e6055000 {
+@@ -131,6 +136,7 @@
+ 		gpio-ranges = <&pfc 0 160 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO5>;
+ 	};
+ 
+ 	gpio6: gpio@e6055400 {
+@@ -142,6 +148,7 @@
+ 		gpio-ranges = <&pfc 0 192 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO6>;
+ 	};
+ 
+ 	gpio7: gpio@e6055800 {
+@@ -153,6 +160,7 @@
+ 		gpio-ranges = <&pfc 0 224 26>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7791_CLK_GPIO7>;
+ 	};
+ 
+ 	thermal@e61f0000 {
+@@ -805,18 +813,23 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
+ 				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
+ 				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
++				R8A7791_CLK_GPIO7 R8A7791_CLK_GPIO6 R8A7791_CLK_GPIO5 R8A7791_CLK_GPIO4
++				R8A7791_CLK_GPIO3 R8A7791_CLK_GPIO2 R8A7791_CLK_GPIO1 R8A7791_CLK_GPIO0
+ 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
+ 				R8A7791_CLK_IICDVFS R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
+ 				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+ 			>;
+ 			clock-output-names -				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3",
+-				"i2c2", "i2c1", "i2c0";
++				"gpio7", "gpio6", "gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
++				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
++				"i2c1", "i2c0";
  		};
- 	};
- 
--	spi: spi@e6b10000 {
-+	qspi: spi@e6b10000 {
- 		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
- 		reg = <0 0xe6b10000 0 0x2c>;
- 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.8.5.2
+1.7.9.5
 
