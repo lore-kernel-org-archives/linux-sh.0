@@ -1,90 +1,125 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:01 +0000
-Subject: [PATCH v2 05/17] drivers: sh: pm_runtime implementation needs to suspend and resume devices
-Message-Id: <1397565253-22741-6-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 23 Apr 2014 11:15:17 +0000
+Subject: [PATCH v5 10/15] ARM: shmobile: sh73a0: Switch to new style TMU device
+Message-Id: <1398251722-31667-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+The TMU (Timer Unit) driver implements a new style of platform data that
+handles the timer as a single device with multiple channel. Switch from
+the old-style platform data to the new-style platform data.
 
-If we override the platform bus calls for pm_runtime then we end up
-with the calls to the devices' suspend and resume methods ignored
-in favour of the bus ones.
-
-Change to calling the pm_runtime calls to suspend and resume the
-devices specifically in the drivers/sh/pm_runtime.c implementation
-to allow any device that may want to run power management to do so.
-
-Note, all the current sh driver implementations do not use their
-own power management code so this is not a major implementation
-issues.
-
-This also brings the implementation into line with the versions
-used by the Davinci and Keystone PM domain code, so once fully
-tested these implementations could be merged together.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-  - New
+ arch/arm/mach-shmobile/clock-sh73a0.c |  3 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c | 56 ++++++++---------------------------
+ 2 files changed, 14 insertions(+), 45 deletions(-)
 
- drivers/sh/pm_runtime.c |   37 +++++++++++++++++++++++++++++++++++--
- 1 file changed, 35 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 5cfbd825a9c8..3a7929246f2f 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -21,10 +21,43 @@
- #include <linux/slab.h>
- 
- #ifdef CONFIG_PM_RUNTIME
-+static int sh_pm_runtime_suspend(struct device *dev)
-+{
-+	int ret;
-+
-+	ret = pm_generic_runtime_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend device\n");
-+		return ret;
-+	}
-+
-+	ret = pm_clk_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend clock\n");
-+		pm_generic_runtime_resume(dev);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static int sh_pm_runtime_resume(struct device *dev)
-+{
-+	int ret;
-+
-+	ret = pm_clk_resume(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to resume clock\n");
-+		return ret;
-+	}
-+
-+	return pm_generic_runtime_resume(dev);
-+}
-+
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
--		.runtime_suspend = pm_clk_suspend,
--		.runtime_resume = pm_clk_resume,
-+		.runtime_suspend = sh_pm_runtime_suspend,
-+		.runtime_resume = sh_pm_runtime_resume,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index ca03989..0d9cd1f 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -633,8 +633,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.1", &mstp_clks[MSTP128]), /* CSI2-RX1 */
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
+-	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
+-	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+@@ -683,6 +681,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
++	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
  };
+ 
+ void __init sh73a0_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 71d0e44..ad00724 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -124,54 +124,25 @@ static struct platform_device cmt1_device = {
+ };
+ 
+ /* TMU */
+-static struct sh_timer_config tmu00_platform_data = {
+-	.name = "TMU00",
+-	.channel_offset = 0x4,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct sh_timer_config tmu0_platform_data = {
++	.channels_mask = 7,
+ };
+ 
+-static struct resource tmu00_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xfff60008, 0xc),
+-	[1] = {
+-		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource tmu0_resources[] = {
++	DEFINE_RES_MEM(0xfff60000, 0x2c),
++	DEFINE_RES_IRQ(intcs_evt2irq(0xe80)),
++	DEFINE_RES_IRQ(intcs_evt2irq(0xea0)),
++	DEFINE_RES_IRQ(intcs_evt2irq(0xec0)),
+ };
+ 
+-static struct platform_device tmu00_device = {
+-	.name		= "sh_tmu",
++static struct platform_device tmu0_device = {
++	.name		= "sh-tmu",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &tmu00_platform_data,
+-	},
+-	.resource	= tmu00_resources,
+-	.num_resources	= ARRAY_SIZE(tmu00_resources),
+-};
+-
+-static struct sh_timer_config tmu01_platform_data = {
+-	.name = "TMU01",
+-	.channel_offset = 0x10,
+-	.timer_bit = 1,
+-	.clocksource_rating = 200,
+-};
+-
+-static struct resource tmu01_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xfff60014, 0xc),
+-	[1] = {
+-		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device tmu01_device = {
+-	.name		= "sh_tmu",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &tmu01_platform_data,
++		.platform_data	= &tmu0_platform_data,
+ 	},
+-	.resource	= tmu01_resources,
+-	.num_resources	= ARRAY_SIZE(tmu01_resources),
++	.resource	= tmu0_resources,
++	.num_resources	= ARRAY_SIZE(tmu0_resources),
+ };
+ 
+ static struct resource i2c0_resources[] = {
+@@ -738,8 +709,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+-	&tmu00_device,
+-	&tmu01_device,
++	&tmu0_device,
+ 	&ipmmu_device,
+ };
+ 
 -- 
-1.7.9.5
+1.8.3.2
 
