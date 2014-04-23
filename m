@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 22 Apr 2014 16:39:29 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 23 Apr 2014 14:10:27 +0000
 Subject: Re: [PATCH] sh-pfc: r8a7791: Fix definition of MOD_SEL3
-Message-Id: <5799320.HL6Fc0SWev@avalon>
+Message-Id: <CACRpkdZrvvkuGJ0u_eqUP5pD7mHZRHiEq2LwNUnGWyZLxrZVRA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398184685-31670-1-git-send-email-phil.edworthy@renesas.com>
 In-Reply-To: <1398184685-31670-1-git-send-email-phil.edworthy@renesas.com>
@@ -9,39 +9,16 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms+renesas@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
 
-Hi Phil,
+On Tue, Apr 22, 2014 at 6:38 PM, Phil Edworthy
+<phil.edworthy@renesas.com> wrote:
 
-Thank you for the patch.
-
-On Tuesday 22 April 2014 17:38:05 Phil Edworthy wrote:
 > There is a missing 0 entry from the MOD_SEL3 table.
-> 
+>
 > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Patch applied for fixes with Laurent's ACK.
 
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c index 56f62dc..a823b5b 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> @@ -5305,7 +5305,7 @@ static const struct pinmux_cfg_reg
-> pinmux_config_regs[] = { /* SEL_SCIF3 [2] */
->  		FN_SEL_SCIF3_0, FN_SEL_SCIF3_1, FN_SEL_SCIF3_2, FN_SEL_SCIF3_3,
->  		/* SEL_IEB [2] */
-> -		FN_SEL_IEB_0, FN_SEL_IEB_1, FN_SEL_IEB_2,
-> +		FN_SEL_IEB_0, FN_SEL_IEB_1, FN_SEL_IEB_2, 0,
->  		/* SEL_MMC [1] */
->  		FN_SEL_MMC_0, FN_SEL_MMC_1,
->  		/* SEL_SCIF5 [1] */
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Yours,
+Linus Walleij
