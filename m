@@ -1,39 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:43 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7740: Make r8a7740_meram_workaround() __init
-Message-Id: <bb6c3d58c36adb205b4bf233fd1c4079e02a6811.1398216284.git.horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:55 +0000
+Subject: [PATCH 27/33] ARM: shmobile: r8a7791: Fix the I2C clocks parents in DT
+Message-Id: <11b48db9321d11c623155a1c82544988508f9aca.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-It's called from eva_init() only, which is __init
+All I2C clocks derive from the HP clock, not from the P clock. Fix them.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index cba3a07..a177a7b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -765,7 +765,7 @@ static struct platform_device *r8a7740_late_devices[] __initdata = {
-  *	"Media RAM (MERAM)" on r8a7740 documentation
-  */
- #define MEBUFCNTR	0xFE950098
--void r8a7740_meram_workaround(void)
-+void __init r8a7740_meram_workaround(void)
- {
- 	void __iomem *reg;
- 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3b28c8f..98baff4 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -805,9 +805,9 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&p_clk>,
+-				 <&cp_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+-				 <&p_clk>, <&p_clk>;
++			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
++				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
++				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
 -- 
 1.8.5.2
 
