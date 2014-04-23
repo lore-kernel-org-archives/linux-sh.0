@@ -1,57 +1,110 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Thu, 24 Apr 2014 13:26:53 +0000
-Subject: Re: [PATCH 0/6] PM / clock_ops: Add helpers combining generic runtime and generic clock PM
-Message-Id: <CAPDyKFqi_6L48je_0cazHHDtQGzuvSPfocZT5+eLzd1egUVYXw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 23 Apr 2014 11:15:07 +0000
+Subject: [PATCH v5 00/15] Renesas CMT, MTU2 and TMU platform cleanups
+Message-Id: <1398251722-31667-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 24 April 2014 12:26, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> Several platform support codes combine pm_generic_runtime_suspend() and
-> pm_clk_suspend(), resp. pm_clk_resume() and pm_generic_runtime_resume() in
-> their .runtime_suspend resp. .runtime_resume callbacks.
->
-> Create helpers to consolidate.
->
->   - [1/6] PM / clock_ops: Add helpers combining generic runtime and generic
->           clock PM
+Hello,
 
-How about adding the code from the above patch into the generic power
-domain instead?
+This patch set switches all Renesas platforms to the new style CMT, MTU2 and
+TMU device platform data. All patches have been previously posted as part of
+the "[PATCH v3 00/52] Renesas CMT and TMU cleanups" and "[PATCH 00/22] SH MTU2
+DT support" patch series.
 
->   - [2/6] ARM: davinci: Use generic runtime and clock helpers
->   - [3/6] ARM: keystone: Use generic runtime and clock helpers
->   - [4/6] ARM: omap: Use generic runtime and clock helpers
->   - [5/6] drivers: sh: Use generic runtime and clock helpers
+This new version fixes an interrupt-related bug introduced when switching the
+sh7372 and sh73a0 platforms to the new style TMU device, caused by mistakenly
+using evt2irq instead of intcs_evt2irq for the IRQ resources.
 
-Then convert the above power domains implementations to the generic
-power domain? Would that work?
+Simon, I've tested this on Mackerel and the board now boots correctly. Could
+you please assist me in debugging the Bock-W boot hang issue, as I don't have
+access to that board ?
 
-Kind regards
-Ulf Hansson
+Laurent Pinchart (15):
+  sh: Switch to new style CMT device
+  ARM: shmobile: sh7372: Switch to new style CMT device
+  ARM: shmobile: sh73a0: Switch to new style CMT device
+  ARM: shmobile: r8a73a4: Switch to new style CMT device
+  ARM: shmobile: r8a7740: Switch to new style CMT device
+  ARM: shmobile: r8a7790: Switch to new style CMT device
+  ARM: shmobile: r8a7791: Switch to new style CMT device
+  sh: Switch to new style TMU device
+  ARM: shmobile: sh7372: Switch to new style TMU device
+  ARM: shmobile: sh73a0: Switch to new style TMU device
+  ARM: shmobile: r8a7740: Switch to new style TMU device
+  ARM: shmobile: r8a7778: Switch to new style TMU device
+  ARM: shmobile: r8a7779: Switch to new style TMU device
+  sh: Switch to new style MTU2 device
+  ARM: shmobile: r7s72100: Switch to new style MTU2 device
 
->   - [6/6] of/clk: Use generic runtime and clock helpers
->
-> Patches 5 and 6 have dependencies (listed in the individual patches),
-> but they can be postponed and handled later.
->
-> Thanks!
->
-> Gr{oetje,eeting}s,
->
->                                                 Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                                             -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-pm" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ arch/arm/mach-shmobile/board-koelsch-reference.c |   2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   |   2 +-
+ arch/arm/mach-shmobile/clock-r7s72100.c          |   2 +-
+ arch/arm/mach-shmobile/clock-r8a73a4.c           |   2 +-
+ arch/arm/mach-shmobile/clock-r8a7740.c           |  10 +-
+ arch/arm/mach-shmobile/clock-r8a7778.c           |   4 +-
+ arch/arm/mach-shmobile/clock-r8a7779.c           |   4 +-
+ arch/arm/mach-shmobile/clock-r8a7790.c           |   2 +-
+ arch/arm/mach-shmobile/clock-r8a7791.c           |   2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c            |   9 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c            |   5 +-
+ arch/arm/mach-shmobile/setup-r7s72100.c          |  26 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |  17 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c           | 133 ++--------
+ arch/arm/mach-shmobile/setup-r8a7778.c           |  30 +--
+ arch/arm/mach-shmobile/setup-r8a7779.c           |  66 +----
+ arch/arm/mach-shmobile/setup-r8a7790.c           |  17 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c           |  17 +-
+ arch/arm/mach-shmobile/setup-sh7372.c            |  89 ++-----
+ arch/arm/mach-shmobile/setup-sh73a0.c            |  92 ++-----
+ arch/sh/kernel/cpu/clock-cpg.c                   |  10 +-
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c            |  66 +----
+ arch/sh/kernel/cpu/sh2a/clock-sh7264.c           |   4 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7269.c           |   4 +-
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c              |  98 +-------
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c           |  98 +-------
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c           | 133 ++--------
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c           | 164 ++-----------
+ arch/sh/kernel/cpu/sh2a/setup-sh7264.c           | 140 ++---------
+ arch/sh/kernel/cpu/sh2a/setup-sh7269.c           | 133 ++--------
+ arch/sh/kernel/cpu/sh3/setup-sh7705.c            |  78 +-----
+ arch/sh/kernel/cpu/sh3/setup-sh770x.c            |  78 +-----
+ arch/sh/kernel/cpu/sh3/setup-sh7710.c            |  78 +-----
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c            | 228 ++---------------
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c           |  78 +-----
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c            | 138 ++---------
+ arch/sh/kernel/cpu/sh4/setup-sh7760.c            |  78 +-----
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c           |   2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7366.c           |   2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c           |   6 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c           |  10 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c           |  10 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7734.c           |  12 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c           |   4 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c           |   8 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c           |  16 +-
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c             |   8 +-
+ arch/sh/kernel/cpu/sh4a/setup-sh7343.c           |  96 +-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7366.c           |  96 +-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c           |  96 +-------
+ arch/sh/kernel/cpu/sh4a/setup-sh7723.c           | 172 ++-----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c           | 173 ++-----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7734.c           | 235 ++----------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c           |  48 +---
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c           | 154 +-----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7770.c           | 230 ++---------------
+ arch/sh/kernel/cpu/sh4a/setup-sh7780.c           | 154 +-----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7785.c           | 154 +-----------
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c           | 299 ++---------------------
+ arch/sh/kernel/cpu/sh4a/setup-shx3.c             | 150 +-----------
+ arch/sh/kernel/cpu/sh5/setup-sh5.c               |  79 +-----
+ 61 files changed, 554 insertions(+), 3797 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
