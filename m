@@ -1,103 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:23 +0000
-Subject: [PATCH v3 40/52] ARM: shmobile: r8a7740: Switch to new style CMT device
-Message-Id: <1397228675-11684-41-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:41 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7740: Remove unused r8a7740_add_early_devices_dt()
+Message-Id: <72dc392ae5bbad3477053ac4c5708dba6706ffa0.1398216284.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+It was removed in commit 744fdc8dc0e22cc5b61ee1bcde9375f188daa330 ("ARM:
+shmobile: r8a7740: Prepare for reference DT setup"), but accidentally
+resurrected in commit 88378837780166d67a11142cd6f76596c0a2d8c3 ("ARM:
+shmobile: Remove unused r8a7740 auxdata table").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |  2 +-
- arch/arm/mach-shmobile/setup-r8a7740.c | 36 ++++++++++++----------------------
- 2 files changed, 13 insertions(+), 25 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 11 -----------
+ 1 file changed, 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index dd989f9..cdb303c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -583,7 +583,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
- 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
- 
--	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("fe1f0000.sound",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
-@@ -604,6 +603,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
- 
- 	/* ICK */
-+	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
- 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
- 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
 diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 8f3c681..495e9bd 100644
+index 8f3c681..cba3a07 100644
 --- a/arch/arm/mach-shmobile/setup-r8a7740.c
 +++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -237,35 +237,23 @@ R8A7740_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(107));
- R8A7740_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(108));
+@@ -869,17 +869,6 @@ void __init r8a7740_add_early_devices(void)
  
- /* CMT */
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
-+static struct sh_timer_config cmt1_platform_data = {
-+	.channels_mask = 0x3f,
- };
+ #ifdef CONFIG_USE_OF
  
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(58),
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource cmt1_resources[] = {
-+	DEFINE_RES_MEM(0xe6138000, 0x170),
-+	DEFINE_RES_IRQ(gic_spi(58)),
- };
- 
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
-+static struct platform_device cmt1_device = {
-+	.name		= "sh-cmt-48",
-+	.id		= 1,
- 	.dev = {
--		.platform_data	= &cmt10_platform_data,
-+		.platform_data	= &cmt1_platform_data,
- 	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
-+	.resource	= cmt1_resources,
-+	.num_resources	= ARRAY_SIZE(cmt1_resources),
- };
- 
- /* TMU */
-@@ -400,7 +388,7 @@ static struct platform_device *r8a7740_devices_dt[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
--	&cmt10_device,
-+	&cmt1_device,
- };
- 
- static struct platform_device *r8a7740_early_devices[] __initdata = {
+-void __init r8a7740_add_early_devices_dt(void)
+-{
+-	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+-
+-	early_platform_add_devices(r8a7740_early_devices,
+-				   ARRAY_SIZE(r8a7740_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
+-}
+-
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+ 	platform_add_devices(r8a7740_devices_dt,
 -- 
-1.8.3.2
+1.8.5.2
 
