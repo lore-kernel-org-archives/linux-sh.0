@@ -1,67 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:50 +0000
-Subject: [PATCH 22/33] ARM: shmobile: Use r8a7740 suffix for i2c, mmcif, fsi2 compat strings
-Message-Id: <5c53f50c50badff499568a703467c3c9f23f9bfd.1398216022.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 23 Apr 2014 07:09:49 +0000
+Subject: Re: [PATCH 22/33] ARM: shmobile: Use r8a7740 suffix for i2c, mmcif, fsi2 compat strings
+Message-Id: <CAMuHMdUA+wJmgn0P_q38ri7_TAq7zha-ekSUrvdpntG5gFv56Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+ <5c53f50c50badff499568a703467c3c9f23f9bfd.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <5c53f50c50badff499568a703467c3c9f23f9bfd.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+On Wed, Apr 23, 2014 at 3:25 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> From: Ulrich Hecht <ulrich.hecht@gmail.com>
+>
+> Add "renesas,*-r8a7740" to the compatible strings for consistency with other
+> devices.
 
-Add "renesas,*-r8a7740" to the compatible strings for consistency with other
-devices.
+> diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+> index 8280884..9f65986 100644
+> --- a/arch/arm/boot/dts/r8a7740.dtsi
+> +++ b/arch/arm/boot/dts/r8a7740.dtsi
+> @@ -126,7 +126,7 @@
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+> -               compatible = "renesas,rmobile-iic";
+> +               compatible = "renesas,iic-r8a7740", "renesas,rmobile-iic";
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 8280884..9f65986 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -126,7 +126,7 @@
- 	i2c0: i2c@fff20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a7740", "renesas,rmobile-iic";
- 		reg = <0xfff20000 0x425>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 201 IRQ_TYPE_LEVEL_HIGH
-@@ -139,7 +139,7 @@
- 	i2c1: i2c@e6c20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
--		compatible = "renesas,rmobile-iic";
-+		compatible = "renesas,iic-r8a7740", "renesas,rmobile-iic";
- 		reg = <0xe6c20000 0x425>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH
-@@ -174,7 +174,7 @@
- 	};
- 
- 	mmcif0: mmc@e6bd0000 {
--		compatible = "renesas,sh-mmcif";
-+		compatible = "renesas,mmcif-r8a7740", "renesas,sh-mmcif";
- 		reg = <0xe6bd0000 0x100>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 56 IRQ_TYPE_LEVEL_HIGH
-@@ -220,7 +220,7 @@
- 
- 	sh_fsi2: sound@fe1f0000 {
- 		#sound-dai-cells = <1>;
--		compatible = "renesas,sh_fsi2";
-+		compatible = "renesas,fsi2-r8a7740", "renesas,sh_fsi2";
- 		reg = <0xfe1f0000 0x400>;
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 9 0x4>;
--- 
-1.8.5.2
+I see an opportunity for improvement here: this driver doesn't seem to have
+any bindings documented under Documentation/devicetree/bindings/?
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
