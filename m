@@ -1,90 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 11 Apr 2014 15:04:25 +0000
-Subject: [PATCH v3 42/52] ARM: shmobile: r8a7791: Switch to new style CMT device
-Message-Id: <1397228675-11684-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:44 +0000
+Subject: [PATCH 16/33] ARM: shmobile: kzm9g-reference dts: Use KEY_* macros for gpio-keys
+Message-Id: <39f0163098d136411538060fd53c8b8c255cda05.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
- arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
- arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
- 3 files changed, 9 insertions(+), 12 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
-index 2edeb64..0b0ce5a 100644
---- a/arch/arm/mach-shmobile/board-koelsch-reference.c
-+++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
-@@ -86,7 +86,7 @@ static void __init koelsch_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", NULL, "sh_cmt.0" },
-+	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "du0", "du.0", "rcar-du-r8a7791" },
- 	{ "du1", "du.1", "rcar-du-r8a7791" },
- 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
-diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
-index d2cb5cf..3e46171 100644
---- a/arch/arm/mach-shmobile/clock-r8a7791.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7791.c
-@@ -264,7 +264,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
--	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
- 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
- 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
- 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 617197c..c98c27d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -128,20 +128,17 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
- 					  &scif##index##_platform_data,	       \
- 					  sizeof(scif##index##_platform_data))
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index eb8886b..a99171c 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -14,6 +14,7 @@
+ /dts-v1/;
+ #include "sh73a0.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
  
--static const struct sh_timer_config cmt00_platform_data __initconst = {
--	.name = "CMT00",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_config cmt0_platform_data = {
-+	.channels_mask = 0x60,
- };
+ / {
+@@ -112,43 +113,43 @@
  
--static const struct resource cmt00_resources[] __initconst = {
--	DEFINE_RES_MEM(0xffca0510, 0x0c),
--	DEFINE_RES_MEM(0xffca0500, 0x04),
--	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-+static struct resource cmt0_resources[] = {
-+	DEFINE_RES_MEM(0xffca0000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(142)),
- };
+ 		back-key {
+ 			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
+-			linux,code = <158>;
++			linux,code = <KEY_BACK>;
+ 			label = "SW3";
+ 		};
  
- #define r8a7791_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -185,7 +182,7 @@ static const struct resource thermal_resources[] __initconst = {
+ 		right-key {
+ 			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
+-			linux,code = <106>;
++			linux,code = <KEY_RIGHT>;
+ 			label = "SW2-R";
+ 		};
  
- void __init r8a7791_add_dt_devices(void)
- {
--	r8a7791_register_cmt(00);
-+	r8a7791_register_cmt(0);
- }
+ 		left-key {
+ 			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
+-			linux,code = <105>;
++			linux,code = <KEY_LEFT>;
+ 			label = "SW2-L";
+ 		};
  
- void __init r8a7791_add_standard_devices(void)
+ 		enter-key {
+ 			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
+-			linux,code = <28>;
++			linux,code = <KEY_ENTER>;
+ 			label = "SW2-P";
+ 		};
+ 
+ 		up-key {
+ 			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
+-			linux,code = <103>;
++			linux,code = <KEY_UP>;
+ 			label = "SW2-U";
+ 		};
+ 
+ 		down-key {
+ 			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
+-			linux,code = <108>;
++			linux,code = <KEY_DOWN>;
+ 			label = "SW2-D";
+ 		};
+ 
+ 		home-key {
+ 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
+-			linux,code = <102>;
++			linux,code = <KEY_HOME>;
+ 			label = "SW1";
+ 		};
+ 	};
 -- 
-1.8.3.2
+1.8.5.2
 
