@@ -1,103 +1,127 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Mon, 28 Apr 2014 19:31:49 +0000
-Subject: [PATCH 66/97] ARM: l2c: shmobile: remove cache size override
-Message-Id: <E1WerHJ-0001YC-5x@rmk-PC.arm.linux.org.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:40 +0000
+Subject: [PATCH 12/33] ARM: shmobile: Add DTS gpio-keys support for SW2 on Koelsch
+Message-Id: <7f168b1e921f137db4f323428819f4c86ede4320.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140428192419.GV26756@n2100.arm.linux.org.uk>
-In-Reply-To: <20140428192419.GV26756@n2100.arm.linux.org.uk>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
----
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
- arch/arm/mach-shmobile/board-armadillo800eva.c           | 2 +-
- arch/arm/mach-shmobile/board-kzm9g-reference.c           | 2 +-
- arch/arm/mach-shmobile/board-kzm9g.c                     | 2 +-
- arch/arm/mach-shmobile/setup-r8a7778.c                   | 2 +-
- arch/arm/mach-shmobile/setup-r8a7779.c                   | 2 +-
- 6 files changed, 6 insertions(+), 6 deletions(-)
+From: Magnus Damm <damm@opensource.se>
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 34e7f3c17dd2..39e11f48e8bc 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -165,7 +165,7 @@ static void __init eva_init(void)
+Add DTS gpio-keys support for SW2 on the Koelsch board.
+This makes the DT code match the legacy board code. Also
+update the existing gpio-keys nodes to make use of KEY_n.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 43 +++++++++++++++++++++++++++++------
+ 1 file changed, 36 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index e24fed9..fd1d6ee 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -13,6 +13,7 @@
+ /dts-v1/;
+ #include "r8a7791.dtsi"
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
  
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00440000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
+ / {
+ 	model = "Koelsch";
+@@ -40,51 +41,79 @@
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
  
- 	r8a7740_add_standard_devices_dt();
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 7688990edd3a..b0b9435a71ff 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1271,7 +1271,7 @@ static void __init eva_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00440000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
- #endif
- 
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 85873f186d77..a735a1d80c28 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -37,7 +37,7 @@ static void __init kzm_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*8way */
--	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
- #endif
- }
- 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index ea9bf39fdc10..f94ec8ca42c1 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -877,7 +877,7 @@ static void __init kzm_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*8way */
--	l2x0_init(IOMEM(0xf0100000), 0x00460000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
- #endif
- 
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 3a8e5316671e..6dd7ddf88741 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -301,7 +301,7 @@ void __init r8a7778_add_dt_devices(void)
- 		 * Shared attribute override enable, 64K*16way
- 		 * don't call iounmap(base)
- 		 */
--		l2x0_init(base, 0x00470000, 0xc2000fff);
-+		l2x0_init(base, 0x00400000, 0xc20f0fff);
- 	}
- #endif
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 91c90bf0ae83..a6630fccfc45 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -701,7 +701,7 @@ void __init r8a7779_add_standard_devices(void)
- {
- #ifdef CONFIG_CACHE_L2X0
- 	/* Shared attribute override enable, 64K*16way */
--	l2x0_init(IOMEM(0xf0100000), 0x00470000, 0xc2000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
- #endif
- 	r8a7779_pm_init();
- 
++		key-1 {
++			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_1>;
++			label = "SW2-1";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-2 {
++			gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_2>;
++			label = "SW2-2";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-3 {
++			gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_3>;
++			label = "SW2-3";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-4 {
++			gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_4>;
++			label = "SW2-4";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
+ 		key-a {
+ 			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+-			linux,code = <30>;
++			linux,code = <KEY_A>;
+ 			label = "SW30";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-b {
+ 			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
+-			linux,code = <48>;
++			linux,code = <KEY_B>;
+ 			label = "SW31";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-c {
+ 			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
+-			linux,code = <46>;
++			linux,code = <KEY_C>;
+ 			label = "SW32";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-d {
+ 			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
+-			linux,code = <32>;
++			linux,code = <KEY_D>;
+ 			label = "SW33";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-e {
+ 			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
+-			linux,code = <18>;
++			linux,code = <KEY_E>;
+ 			label = "SW34";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-f {
+ 			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
+-			linux,code = <33>;
++			linux,code = <KEY_F>;
+ 			label = "SW35";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-g {
+ 			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
+-			linux,code = <34>;
++			linux,code = <KEY_G>;
+ 			label = "SW36";
+ 			gpio-key,wakeup;
+ 			debounce-interval = <20>;
 -- 
-1.8.3.1
+1.8.5.2
 
