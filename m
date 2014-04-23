@@ -1,43 +1,93 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 00:32:12 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a7740: drop address cells from GIC node
-Message-Id: <64c04a79c377e23449c59060727fcd34cc798eb6.1397694064.git.horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:47 +0000
+Subject: [PATCH 19/33] ARM: shmobile: r8a7791: add IIC(B) cores to dtsi
+Message-Id: <36408d9dd0c398fc3efe87231a4c847601878c97.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397694064.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397694064.git.horms+renesas@verge.net.au>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Lucas Stach <l.stach@pengutronix.de>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-This is likely a copy-and-paste error from the
-ARM GIC documentation, that has already been fixed.
-
-address-cells should have been set to 0, as with the size
-cells. As having those properties set to 0 is the
-same thing as not specifying them, drop them completely.
-
-Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 8280884..2551e94 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -28,7 +28,6 @@
- 	gic: interrupt-controller@c2800000 {
- 		compatible = "arm,cortex-a9-gic";
- 		#interrupt-cells = <3>;
--		#address-cells = <1>;
- 		interrupt-controller;
- 		reg = <0xc2800000 0x1000>,
- 		      <0xc2000000 0x1000>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index dd45e01..1004355 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -27,6 +27,9 @@
+ 		i2c3 = &i2c3;
+ 		i2c4 = &i2c4;
+ 		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++		i2c7 = &i2c7;
++		i2c8 = &i2c8;
+ 		spi0 = &qspi;
+ 		spi1 = &msiof0;
+ 		spi2 = &msiof1;
+@@ -184,6 +187,7 @@
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	/* The memory map in the User's Manual maps the cores to bus numbers */
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -235,6 +239,7 @@
+ 	};
+ 
+ 	i2c5: i2c@e6528000 {
++		/* doesn't need pinmux */
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		compatible = "renesas,i2c-r8a7791";
+@@ -244,6 +249,37 @@
+ 		status = "disabled";
+ 	};
+ 
++	i2c6: i2c@e60b0000 {
++		/* doesn't need pinmux */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
++		reg = <0 0xe60b0000 0 0x425>;
++		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7791_CLK_IICDVFS>;
++		status = "disabled";
++	};
++
++	i2c7: i2c@e6500000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
++		reg = <0 0xe6500000 0 0x425>;
++		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_IIC0>;
++		status = "disabled";
++	};
++
++	i2c8: i2c@e6510000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-r8a7791", "renesas,rmobile-iic";
++		reg = <0 0xe6510000 0 0x425>;
++		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7791_CLK_IIC1>;
++		status = "disabled";
++	};
++
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7791";
+ 		reg = <0 0xe6060000 0 0x250>;
 -- 
-1.8.4
+1.8.5.2
 
