@@ -1,38 +1,70 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Apr 2014 10:13:23 +0000
-Subject: [PATCH/RFC 4/4] clk: shmobile: mstp: Set CLK_RUNTIME_PM flag
-Message-Id: <1398334403-26181-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:31 +0000
+Subject: [PATCH 03/33] ARM: shmobile: r8a7791/koelsch dts: Rename label spi to qspi, add spi0 alias
+Message-Id: <6f3e4ee340ea11d9aba39c5beaa80f0d3f368428.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1398216022.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Renesas MSTP (Module Stop) clocks are suitable for Runtime PM.
+From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
 
-Hence set the CLK_RUNTIME_PM flag, to make of_clk enable automatic Runtime
-PM management for DT devices that are tied to an MSTP clock.
+Prepare for the advent of MSIOF SPI, which will be spi1 to spi3.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clk/shmobile/clk-mstp.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 4 ++--
+ arch/arm/boot/dts/r8a7791.dtsi        | 3 ++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
-index 2e3c08fff173..6f860bad551e 100644
---- a/drivers/clk/shmobile/clk-mstp.c
-+++ b/drivers/clk/shmobile/clk-mstp.c
-@@ -139,7 +139,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index bdd73e6..bf9555b 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -244,7 +244,7 @@
+ 		renesas,function = "sdhi2";
+ 	};
  
- 	init.name = name;
- 	init.ops = &cpg_mstp_clock_ops;
--	init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT;
-+	init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT | CLK_RUNTIME_PM;
- 	init.parent_names = &parent_name;
- 	init.num_parents = 1;
+-	qspi_pins: spi {
++	qspi_pins: spi0 {
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
+@@ -301,7 +301,7 @@
+ 	status = "okay";
+ };
  
+-&spi {
++&qspi {
+ 	pinctrl-0 = <&qspi_pins>;
+ 	pinctrl-names = "default";
+ 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 23ae96e..6cda188 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -27,6 +27,7 @@
+ 		i2c3 = &i2c3;
+ 		i2c4 = &i2c4;
+ 		i2c5 = &i2c5;
++		spi0 = &qspi;
+ 	};
+ 
+ 	cpus {
+@@ -789,7 +790,7 @@
+ 		};
+ 	};
+ 
+-	spi: spi@e6b10000 {
++	qspi: spi@e6b10000 {
+ 		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-1.7.9.5
+1.8.5.2
 
