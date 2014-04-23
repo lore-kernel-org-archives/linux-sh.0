@@ -1,121 +1,129 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 23 Apr 2014 08:25:28 +0000
-Subject: [PATCH v3 2/2] ARM: shmobile: r8a7791 dtsi: Add GPIO clocks
-Message-Id: <1398241528-7733-2-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 23 Apr 2014 11:15:20 +0000
+Subject: [PATCH v5 13/15] ARM: shmobile: r8a7779: Switch to new style TMU device
+Message-Id: <1398251722-31667-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
-v3:
-  - Add Acked-by
-  - Bindings have been accepted in
-    git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+The TMU (Timer Unit) driver implements a new style of platform data that
+handles the timer as a single device with multiple channel. Switch from
+the old-style platform data to the new-style platform data.
 
-v2:
-  - No changes
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   19 ++++++++++++++++---
- 1 file changed, 16 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |  4 +--
+ arch/arm/mach-shmobile/setup-r8a7779.c | 66 +++++++---------------------------
+ 2 files changed, 14 insertions(+), 56 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 44f03444ef74..81f27a35b19f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -76,6 +76,7 @@
- 		gpio-ranges = <&pfc 0 0 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO0>;
- 	};
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 8e403ae..a13298b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -173,9 +173,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+-	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+-	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+-	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP016]), /* TMU02 */
++	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP016]), /* TMU0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("ffc70000.i2c", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 8e860b3..d197b5a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -219,64 +219,25 @@ R8A7779_SCIF(4, 0xffe44000, gic_iid(0x7c));
+ R8A7779_SCIF(5, 0xffe45000, gic_iid(0x7d));
  
- 	gpio1: gpio@e6051000 {
-@@ -87,6 +88,7 @@
- 		gpio-ranges = <&pfc 0 32 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO1>;
- 	};
+ /* TMU */
+-static struct sh_timer_config tmu00_platform_data = {
+-	.name = "TMU00",
+-	.channel_offset = 0x4,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct sh_timer_config tmu0_platform_data = {
++	.channels_mask = 7,
+ };
  
- 	gpio2: gpio@e6052000 {
-@@ -98,6 +100,7 @@
- 		gpio-ranges = <&pfc 0 64 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO2>;
- 	};
+-static struct resource tmu00_resources[] = {
+-	[0] = {
+-		.name	= "TMU00",
+-		.start	= 0xffd80008,
+-		.end	= 0xffd80013,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_iid(0x40),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource tmu0_resources[] = {
++	DEFINE_RES_MEM(0xffd80000, 0x30),
++	DEFINE_RES_IRQ(gic_iid(0x40)),
++	DEFINE_RES_IRQ(gic_iid(0x41)),
++	DEFINE_RES_IRQ(gic_iid(0x42)),
+ };
  
- 	gpio3: gpio@e6053000 {
-@@ -109,6 +112,7 @@
- 		gpio-ranges = <&pfc 0 96 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO3>;
- 	};
+-static struct platform_device tmu00_device = {
+-	.name		= "sh_tmu",
++static struct platform_device tmu0_device = {
++	.name		= "sh-tmu",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &tmu00_platform_data,
+-	},
+-	.resource	= tmu00_resources,
+-	.num_resources	= ARRAY_SIZE(tmu00_resources),
+-};
+-
+-static struct sh_timer_config tmu01_platform_data = {
+-	.name = "TMU01",
+-	.channel_offset = 0x10,
+-	.timer_bit = 1,
+-	.clocksource_rating = 200,
+-};
+-
+-static struct resource tmu01_resources[] = {
+-	[0] = {
+-		.name	= "TMU01",
+-		.start	= 0xffd80014,
+-		.end	= 0xffd8001f,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_iid(0x41),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device tmu01_device = {
+-	.name		= "sh_tmu",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &tmu01_platform_data,
++		.platform_data	= &tmu0_platform_data,
+ 	},
+-	.resource	= tmu01_resources,
+-	.num_resources	= ARRAY_SIZE(tmu01_resources),
++	.resource	= tmu0_resources,
++	.num_resources	= ARRAY_SIZE(tmu0_resources),
+ };
  
- 	gpio4: gpio@e6054000 {
-@@ -120,6 +124,7 @@
- 		gpio-ranges = <&pfc 0 128 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO4>;
- 	};
+ /* I2C */
+@@ -685,8 +646,7 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif3_device,
+ 	&scif4_device,
+ 	&scif5_device,
+-	&tmu00_device,
+-	&tmu01_device,
++	&tmu0_device,
+ };
  
- 	gpio5: gpio@e6055000 {
-@@ -131,6 +136,7 @@
- 		gpio-ranges = <&pfc 0 160 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO5>;
- 	};
- 
- 	gpio6: gpio@e6055400 {
-@@ -142,6 +148,7 @@
- 		gpio-ranges = <&pfc 0 192 32>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO6>;
- 	};
- 
- 	gpio7: gpio@e6055800 {
-@@ -153,6 +160,7 @@
- 		gpio-ranges = <&pfc 0 224 26>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7791_CLK_GPIO7>;
- 	};
- 
- 	thermal@e61f0000 {
-@@ -805,18 +813,23 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
-+			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
- 				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
- 				 <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
-+				R8A7791_CLK_GPIO7 R8A7791_CLK_GPIO6 R8A7791_CLK_GPIO5 R8A7791_CLK_GPIO4
-+				R8A7791_CLK_GPIO3 R8A7791_CLK_GPIO2 R8A7791_CLK_GPIO1 R8A7791_CLK_GPIO0
- 				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
- 				R8A7791_CLK_IICDVFS R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
- 				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
- 			>;
- 			clock-output-names -				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3",
--				"i2c2", "i2c1", "i2c0";
-+				"gpio7", "gpio6", "gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
-+				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
-+				"i2c1", "i2c0";
- 		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ static struct platform_device *r8a7779_standard_devices[] __initdata = {
 -- 
-1.7.9.5
+1.8.3.2
 
