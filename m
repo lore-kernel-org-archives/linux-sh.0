@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:32 +0000
-Subject: [PATCH 04/33] ARM: shmobile: r8a7790 dtsi: Add MSIOF nodes and aliases
-Message-Id: <ae8a6146afc9dddbbf342b3a77b9bf44618511dd.1398216022.git.horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:51 +0000
+Subject: [PATCH 23/33] ARM: shmobile: r8a7791: Add EHCI MSTP clock
+Message-Id: <6225b99aa620d6e260228a30cc5d24cde60cb1e7.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1398216022.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
@@ -10,75 +10,56 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-Acked-by: Magnus Damm <damm@opensource.se>
+Add support for EHCI clock gating via the MSTP703 bit on r8a7791.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 44 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 9383b84..da69afc 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -25,6 +25,10 @@
- 		i2c2 = &i2c2;
- 		i2c3 = &i2c3;
- 		spi0 = &qspi;
-+		spi1 = &msiof0;
-+		spi2 = &msiof1;
-+		spi3 = &msiof2;
-+		spi4 = &msiof3;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 1004355..3b28c8f 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -774,19 +774,19 @@
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+-			clocks = <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
++			clocks = <&mp_clk>,  <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+ 				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+-				R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
++				R8A7791_CLK_EHCI R8A7791_CLK_HSUSB R8A7791_CLK_HSCIF2 R8A7791_CLK_SCIF5
+ 				R8A7791_CLK_SCIF4 R8A7791_CLK_HSCIF1 R8A7791_CLK_HSCIF0
+ 				R8A7791_CLK_SCIF3 R8A7791_CLK_SCIF2 R8A7791_CLK_SCIF1
+ 				R8A7791_CLK_SCIF0 R8A7791_CLK_DU1 R8A7791_CLK_DU0
+ 				R8A7791_CLK_LVDS0
+ 			>;
+ 			clock-output-names -				"hsusb", "hscif2", "scif5", "scif4", "hscif1", "hscif0",
++				"ehci", "hsusb", "hscif2", "scif5", "scif4", "hscif1", "hscif0",
+ 				"scif3", "scif2", "scif1", "scif0", "du1", "du0", "lvds0";
+ 		};
+ 		mstp8_clks: mstp8_clks@e6150990 {
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 2df1a11f..6023543 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -63,6 +63,7 @@
+ #define R8A7791_CLK_PWM			23
  
- 	cpus {
-@@ -776,4 +780,44 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	msiof0: spi@e6e20000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e20000 0 0x0064>;
-+		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof1: spi@e6e10000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e10000 0 0x0064>;
-+		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof2: spi@e6e00000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6e00000 0 0x0064>;
-+		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	msiof3: spi@e6c90000 {
-+		compatible = "renesas,msiof-r8a7790";
-+		reg = <0 0xe6c90000 0 0x0064>;
-+		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
- };
+ /* MSTP7 */
++#define R8A7791_CLK_EHCI		3
+ #define R8A7791_CLK_HSUSB		4
+ #define R8A7791_CLK_HSCIF2		13
+ #define R8A7791_CLK_SCIF5		14
 -- 
 1.8.5.2
 
