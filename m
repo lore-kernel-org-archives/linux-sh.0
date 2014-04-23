@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:43 +0000
-Subject: [PATCH 15/33] ARM: shmobile: armadillo-reference dts: Use KEY_* macros for gpio-keys
-Message-Id: <c9b60e922c7551ff1c477a121ad09f3790c1a575.1398216022.git.horms+renesas@verge.net.au>
+Date: Wed, 23 Apr 2014 01:25:42 +0000
+Subject: [PATCH 14/33] ARM: shmobile: koelsch: Set ethernet PHY LED mode
+Message-Id: <19f647cbd432eff181777bbe0f302c62af4a180d.1398216022.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1398216022.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
@@ -10,57 +10,30 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
+The Koelsch board uses the ethernet PHY LED0 as a link signal connected
+to the ethernet controller. Specify the corresponding LED mode for the
+PHY.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 95a849b..97342a4 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -11,6 +11,7 @@
- /dts-v1/;
- #include "r8a7740.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- #include <dt-bindings/pwm/pwm.h>
- 
-@@ -77,26 +78,26 @@
- 
- 		power-key {
- 			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
--			linux,code = <116>;
-+			linux,code = <KEY_POWER>;
- 			label = "SW3";
- 			gpio-key,wakeup;
- 		};
- 
- 		back-key {
- 			gpios = <&pfc 100 GPIO_ACTIVE_LOW>;
--			linux,code = <158>;
-+			linux,code = <KEY_BACK>;
- 			label = "SW4";
- 		};
- 
- 		menu-key {
- 			gpios = <&pfc 97 GPIO_ACTIVE_LOW>;
--			linux,code = <139>;
-+			linux,code = <KEY_MENU>;
- 			label = "SW5";
- 		};
- 
- 		home-key {
- 			gpios = <&pfc 98 GPIO_ACTIVE_LOW>;
--			linux,code = <102>;
-+			linux,code = <KEY_HOME>;
- 			label = "SW6";
- 		};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index fd1d6ee..ee23b7b 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -297,6 +297,7 @@
+ 		reg = <1>;
+ 		interrupt-parent = <&irqc0>;
+ 		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
  	};
+ };
+ 
 -- 
 1.8.5.2
 
