@@ -1,91 +1,103 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 23 Apr 2014 11:15:22 +0000
-Subject: [PATCH v5 15/15] ARM: shmobile: r7s72100: Switch to new style MTU2 device
-Message-Id: <1398251722-31667-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 23 Apr 2014 11:15:10 +0000
+Subject: [PATCH v5 03/15] ARM: shmobile: sh73a0: Switch to new style CMT device
+Message-Id: <1398251722-31667-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
-style of platform data that handles the timer as a single device with
-multiple channel. Switch from the old-style platform data to the
-new-style platform data.
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c |  2 +-
- arch/arm/mach-shmobile/setup-r7s72100.c | 26 +++++++++-----------------
- 2 files changed, 10 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c |  2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c | 36 ++++++++++++-----------------------
+ 2 files changed, 13 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index bee0073..644f1c2 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -204,7 +204,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
- 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
- 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
--	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
- 
- 	/* ICK */
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
-@@ -215,6 +214,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
-+	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP33]),
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 23edf83..ca03989 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -650,7 +650,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+-	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+@@ -683,6 +682,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
  };
  
- void __init r7s72100_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 9c0b3a9..545db15 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -62,24 +62,16 @@ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 					  sizeof(scif##index##_platform_data))
+ void __init sh73a0_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index f74ab53..71d0e44 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -104,35 +104,23 @@ SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
+ SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
+ SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
  
- 
--static struct sh_timer_config mtu2_0_platform_data __initdata = {
--	.name = "MTU2_0",
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
 -	.timer_bit = 0,
--	.channel_offset = -0x80,
--	.clockevent_rating = 200,
-+static struct resource mtu2_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xfcff0000, 0x400),
-+	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
+-	.clockevent_rating = 80,
+-	.clocksource_rating = 125,
++static struct sh_timer_config cmt1_platform_data = {
++	.channels_mask = 0x3f,
  };
  
--static struct resource mtu2_0_resources[] __initdata = {
--	DEFINE_RES_MEM(0xfcff0300, 0x27),
--	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
--};
--
--#define r7s72100_register_mtu2(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
--					  idx, mtu2_##idx##_resources,	\
--					  ARRAY_SIZE(mtu2_##idx##_resources), \
--					  &mtu2_##idx##_platform_data,	\
--					  sizeof(struct sh_timer_config))
-+#define r7s72100_register_mtu2()					\
-+	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
-+					  -1, mtu2_resources,		\
-+					  ARRAY_SIZE(mtu2_resources),	\
-+					  NULL, 0)
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(65),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6138000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(65)),
+ };
  
- void __init r7s72100_add_dt_devices(void)
- {
-@@ -91,7 +83,7 @@ void __init r7s72100_add_dt_devices(void)
- 	r7s72100_register_scif(5);
- 	r7s72100_register_scif(6);
- 	r7s72100_register_scif(7);
--	r7s72100_register_mtu2(0);
-+	r7s72100_register_mtu2();
- }
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
++static struct platform_device cmt1_device = {
++	.name		= "sh-cmt-48",
++	.id		= 1,
+ 	.dev = {
+-		.platform_data	= &cmt10_platform_data,
++		.platform_data	= &cmt1_platform_data,
+ 	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
++	.resource	= cmt1_resources,
++	.num_resources	= ARRAY_SIZE(cmt1_resources),
+ };
  
- void __init r7s72100_init_early(void)
+ /* TMU */
+@@ -746,7 +734,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
 -- 
 1.8.3.2
 
