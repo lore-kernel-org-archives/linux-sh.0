@@ -1,56 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 07 Apr 2014 06:34:08 +0000
-Subject: [PATCH 03/05] ARM: shmobile: Lager DT reference USB pinmux setup
-Message-Id: <20140407063408.26152.4799.sendpatchset@w520>
+From: Peter Griffin <peter.griffin@linaro.org>
+Date: Thu, 24 Apr 2014 12:28:17 +0000
+Subject: [PATCH 01/13] video: sh_mobile_lcdcfb depends on meram
+Message-Id: <1398342509-10243-2-git-send-email-peter.griffin@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1398342509-10243-1-git-send-email-peter.griffin@linaro.org>
+In-Reply-To: <1398342509-10243-1-git-send-email-peter.griffin@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linaro-kernel@lists.linaro.org, Arnd Bergmann <arnd@arndb.de>, Peter Griffin <peter.griffin@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>, Tomi Valkeinen <tomi.valkeinen@ti.com>, linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Arnd Bergmann <arnd@arndb.de>
 
-Configure the pinmux on Lager for USB ports via the default
-setting. This allows support for USB function on USB0 and
-USB Host for USB1 and USB2. Not for upstream merge.
+The sh_mobile_lcdcfb driver calls interfaces provided
+by the corresponding "meram" helper. This fails if meram
+is a module but lcdcfb is built-in.
 
-Not-yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+To work around it, this uses special Kconfig magic to
+only allow lcdcfb to be built if
+a) both are modules,
+b) meram is built-in, or
+c) meram is disabled and the helpers stubbed out
+
+Changing meram from 'y' to 'm' now forces clcd to
+be a module as well, which seems to be the desired
+behavior.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Peter Griffin <peter.griffin@linaro.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org
+Cc: Jean-Christophe Plagniol-Villard <plagnioj@jcrosoft.com>
+Cc: Tomi Valkeinen <tomi.valkeinen@ti.com>
+Cc: linux-fbdev@vger.kernel.org
 ---
+ drivers/video/fbdev/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
- arch/arm/boot/dts/r8a7790-lager.dts |   18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
+diff --git a/drivers/video/fbdev/Kconfig b/drivers/video/fbdev/Kconfig
+index e1f4727..a4116bf 100644
+--- a/drivers/video/fbdev/Kconfig
++++ b/drivers/video/fbdev/Kconfig
+@@ -1971,6 +1971,7 @@ config FB_W100
+ config FB_SH_MOBILE_LCDC
+ 	tristate "SuperH Mobile LCDC framebuffer support"
+ 	depends on FB && (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
++	depends on FB_SH_MOBILE_MERAM || !FB_SH_MOBILE_MERAM
+ 	select FB_SYS_FILLRECT
+ 	select FB_SYS_COPYAREA
+ 	select FB_SYS_IMAGEBLIT
+-- 
+1.7.9.5
 
---- 0001/arch/arm/boot/dts/r8a7790-lager.dts
-+++ work/arch/arm/boot/dts/r8a7790-lager.dts	2014-04-07 13:08:46.000000000 +0900
-@@ -146,7 +146,8 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
-+	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins
-+		     &usb0_pins &usb1_pins &usb2_pins>;
- 	pinctrl-names = "default";
- 
- 	du_pins: du {
-@@ -199,6 +200,21 @@
- 				 "msiof1_tx";
- 		renesas,function = "msiof1";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0_ovc_vbus";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	usb2_pins: usb2 {
-+		renesas,groups = "usb2";
-+		renesas,function = "usb2";
-+	};
- };
- 
- &ether {
