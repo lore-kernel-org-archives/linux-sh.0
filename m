@@ -1,40 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:54 +0000
-Subject: [PATCH 26/33] ARM: shmobile: r8a7790: Fix the I2C clocks parents in DT
-Message-Id: <3672b059e3a8582171863e1c588059a37aa56b75.1398216022.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:26:38 +0000
+Subject: [PATCH 6/6] of/clk: Use generic runtime and clock helpers
+Message-Id: <1398335198-26555-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-All I2C clocks derive from the HP clock, not from the P clock. Fix them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Reviewed-by: Wolfram Sang <wsa@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This depends on "of/clk: Register clocks suitable for Runtime PM with the
+PM core"
+---
+ drivers/of/of_clk.c |   28 ++--------------------------
+ 1 file changed, 2 insertions(+), 26 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index da69afc..c4b9ff7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -758,7 +758,7 @@
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
- 			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
--				 <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
-+				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
+diff --git a/drivers/of/of_clk.c b/drivers/of/of_clk.c
+index 35f5e9f3dd42..3e8561dce998 100644
+--- a/drivers/of/of_clk.c
++++ b/drivers/of/of_clk.c
+@@ -8,38 +8,14 @@
+ #include <linux/of_clk.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_clock.h>
+-#include <linux/pm_runtime.h>
+ 
+ 
+ #ifdef CONFIG_PM_RUNTIME
+ 
+-static int of_clk_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int of_clk_pm_runtime_resume(struct device *dev)
+-{
+-	pm_clk_resume(dev);
+-	return pm_generic_runtime_resume(dev);
+-}
+-
+ static struct dev_pm_domain of_clk_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = of_clk_pm_runtime_suspend,
+-		.runtime_resume = of_clk_pm_runtime_resume,
++		.runtime_suspend = pm_generic_runtime_clk_suspend,
++		.runtime_resume = pm_generic_clk_runtime_resume,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
 -- 
-1.8.5.2
+1.7.9.5
 
