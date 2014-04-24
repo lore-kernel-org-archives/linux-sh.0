@@ -1,39 +1,57 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 24 Apr 2014 10:26:32 +0000
-Subject: [PATCH 0/6] PM / clock_ops: Add helpers combining generic runtime and generic clock PM
-Message-Id: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 24 Apr 2014 13:26:53 +0000
+Subject: Re: [PATCH 0/6] PM / clock_ops: Add helpers combining generic runtime and generic clock PM
+Message-Id: <CAPDyKFqi_6L48je_0cazHHDtQGzuvSPfocZT5+eLzd1egUVYXw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Several platform support codes combine pm_generic_runtime_suspend() and
-pm_clk_suspend(), resp. pm_clk_resume() and pm_generic_runtime_resume() in
-their .runtime_suspend resp. .runtime_resume callbacks.
+On 24 April 2014 12:26, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+> Several platform support codes combine pm_generic_runtime_suspend() and
+> pm_clk_suspend(), resp. pm_clk_resume() and pm_generic_runtime_resume() in
+> their .runtime_suspend resp. .runtime_resume callbacks.
+>
+> Create helpers to consolidate.
+>
+>   - [1/6] PM / clock_ops: Add helpers combining generic runtime and generic
+>           clock PM
 
-Create helpers to consolidate.
+How about adding the code from the above patch into the generic power
+domain instead?
 
-  - [1/6] PM / clock_ops: Add helpers combining generic runtime and generic
-	  clock PM
-  - [2/6] ARM: davinci: Use generic runtime and clock helpers
-  - [3/6] ARM: keystone: Use generic runtime and clock helpers
-  - [4/6] ARM: omap: Use generic runtime and clock helpers
-  - [5/6] drivers: sh: Use generic runtime and clock helpers
-  - [6/6] of/clk: Use generic runtime and clock helpers
+>   - [2/6] ARM: davinci: Use generic runtime and clock helpers
+>   - [3/6] ARM: keystone: Use generic runtime and clock helpers
+>   - [4/6] ARM: omap: Use generic runtime and clock helpers
+>   - [5/6] drivers: sh: Use generic runtime and clock helpers
 
-Patches 5 and 6 have dependencies (listed in the individual patches),
-but they can be postponed and handled later.
+Then convert the above power domains implementations to the generic
+power domain? Would that work?
 
-Thanks!
+Kind regards
+Ulf Hansson
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+>   - [6/6] of/clk: Use generic runtime and clock helpers
+>
+> Patches 5 and 6 have dependencies (listed in the individual patches),
+> but they can be postponed and handled later.
+>
+> Thanks!
+>
+> Gr{oetje,eeting}s,
+>
+>                                                 Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                                             -- Linus Torvalds
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-pm" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
