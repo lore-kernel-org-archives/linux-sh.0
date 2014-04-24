@@ -1,55 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:51 +0000
-Subject: [PATCH 8/8] ARM: shmobile: r8a7778/bockw: Move "select RENESAS_INTC_IRQPIN" under SoC
-Message-Id: <e35db38d66d1e4007cfc1bb90a05e11b4aaee2a8.1397627619.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:26:34 +0000
+Subject: [PATCH 2/6] ARM: davinci: Use generic runtime and clock helpers
+Message-Id: <1398335198-26555-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
+References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-
-Move the "select RENESAS_INTC_IRQPIN" from the two bockw-specific sections
-to the one r8a7778-specific section, like is done for the other SoCs.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@linux-m68k.org>
-[horms+renesas@verge.net.au: Resolved conflict]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/Kconfig | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ arch/arm/mach-davinci/pm_domain.c |   34 ++--------------------------------
+ 1 file changed, 2 insertions(+), 32 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index ad0c6bc..58bc6db 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -108,6 +108,7 @@ config ARCH_R8A7778
- 	select SH_CLK_CPG
- 	select ARM_GIC
- 	select SYS_SUPPORTS_SH_TMU
-+	select RENESAS_INTC_IRQPIN
+diff --git a/arch/arm/mach-davinci/pm_domain.c b/arch/arm/mach-davinci/pm_domain.c
+index 6b98413cebd6..eb2eb126fdc0 100644
+--- a/arch/arm/mach-davinci/pm_domain.c
++++ b/arch/arm/mach-davinci/pm_domain.c
+@@ -10,43 +10,13 @@
+  * warranty of any kind, whether express or implied.
+  */
+ #include <linux/init.h>
+-#include <linux/pm_runtime.h>
+ #include <linux/pm_clock.h>
+ #include <linux/platform_device.h>
  
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
-@@ -206,7 +207,6 @@ config MACH_BOCKW
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select RENESAS_INTC_IRQPIN
- 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	select USE_OF
-@@ -215,7 +215,6 @@ config MACH_BOCKW_REFERENCE
- 	bool "BOCK-W  - Reference Device Tree Implementation"
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
--	select RENESAS_INTC_IRQPIN
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select USE_OF
- 	---help---
+-#ifdef CONFIG_PM_RUNTIME
+-static int davinci_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int davinci_pm_runtime_resume(struct device *dev)
+-{
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	pm_clk_resume(dev);
+-	return pm_generic_runtime_resume(dev);
+-}
+-#endif
+-
+ static struct dev_pm_domain davinci_pm_domain = {
+ 	.ops = {
+-		SET_RUNTIME_PM_OPS(davinci_pm_runtime_suspend,
+-				   davinci_pm_runtime_resume, NULL)
++		SET_RUNTIME_PM_OPS(pm_generic_runtime_clk_suspend,
++				   pm_generic_clk_runtime_resume, NULL)
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
 -- 
-1.8.5.2
+1.7.9.5
 
