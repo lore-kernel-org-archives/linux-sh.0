@@ -1,105 +1,195 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 17 Apr 2014 22:50:14 +0000
-Subject: Re: [PATCH v2 0/5] Renesas VMSA-compatible IPMMU DT support
-Message-Id: <2308571.W3LBJprK1V@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:13:22 +0000
+Subject: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
+Message-Id: <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6626224.o7l75GClE1@avalon> <20140417155519.GE30553@arm.com>
-In-Reply-To: <20140417155519.GE30553@arm.com>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Will Deacon <will.deacon@arm.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "iommu@lists.linux-foundation.org" <iommu@lists.linux-foundation.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Will,
+When adding a device from DT, check if its clocks are suitable for Runtime
+PM, and register them with the PM core.
+If Runtime PM is disabled, just enable the clock.
 
-On Thursday 17 April 2014 16:55:19 Will Deacon wrote:
-> On Thu, Apr 17, 2014 at 12:12:57PM +0100, Laurent Pinchart wrote:
-> > Hello,
-> 
-> Hi Laurent,
-> 
-> > This patch set adds DT support to the Renesas VMSA-compatible IPMMU
-> > driver. The first patch refactors the driver to remove dependencies on
-> > platform data, the second patch adds the DT bindings documentation and the
-> > third patch implement them in the driver.
-> > 
-> > The next two patches show real-life examples for IPMMU DT bindings usage.
-> > Patch 4/5 adds IPMMU DT nodes to the r8a7791 SoC dtsi file, and patch 5/5
-> > enables IOMMU support for the VSP1 on the same platform.
-> > 
-> > The patches are based on top of the IPMMU driver previously submitted to
-> > the iommu mailing list. The last patch additionally requires to VSP1 DT
-> > support patch series previously submitted to the linux-media mailing list
-> > and is thus a test patch only at the moment, not meant to be merged yet.
-> > 
-> > The DT bindings are pretty simple, with only three standard properties in
-> > the IPMMU DT node. The driver doesn't need to know the number of
-> > micro-TLBs (a micro-TLB being a port to which a bus master device is
-> > attached, identified by a number similar in purpose to a stream ID), so
-> > I've decided not to specify it in DT. The micro-TLBs are configured when
-> > a bus master device is attached or detached, and at that point the device
-> > provides its micro-TLB number.
-> > 
-> > The only reason I can foresee why the number of micro-TLBs would be useful
-> > is to iterate over micro-TLBs when the driver probes the device to
-> > disable them all. A mask would probably be better than a number in that
-> > case, and I think we can always add that later if we find a need for it.
-> > 
-> > The device to IOMMU association is represented in the bus master device
-> > nodes using an iommus property, similarly to interrupts or clocks. This
-> > model departs from the ARM SMMU DT bindings that represent the same
-> > information inside the IOMMU DT node. Will, please feel free to tell me
-> > if you believe this model isn't good.
-> 
-> If this model works for you, then I'm also fine with it. The only complaint
-> is that we now have a needless difference between the ARM SMMU driver and
-> your driver in the way that the device <-> smmu topology is described. I'd
-> be happy to try and move my driver over to your binding, but that would
-> break all existing users and, whilst there aren't any in-tree .dts files
-> using the ARM SMMU, I doubt it would be a popular move.
+This allows the PM core to automatically manage gate clocks of devices for
+Runtime PM.
 
-I'm also slightly unhappy with having two different models. Of course, if I 
-had thought that the two models were equally good, I would have followed yours 
-:-) It seems more natural to me to express the association with an IOMMU as a 
-resource, similarly to clocks, GPIOs or interrupts. It would also allow easier 
-support for devices that use multiple IOMMUs (which should be pretty uncommon, 
-in my case devices can have several independent bus master ports, but they all 
-go through the same IOMMU, with different micro-TLBs/stream IDs).
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/of/Makefile    |    1 +
+ drivers/of/of_clk.c    |  103 ++++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/of/platform.c  |    3 ++
+ include/linux/of_clk.h |   18 +++++++++
+ 4 files changed, 125 insertions(+)
+ create mode 100644 drivers/of/of_clk.c
+ create mode 100644 include/linux/of_clk.h
 
-There's no other mainline IOMMU driver that model the bus masters to IOMMU 
-relationship in DT, so it's probably a good time to discuss this issue as 
-broadly as possible and decide on sane rules. If we have to live with 
-different models, so be it, but I think we should establish a default model at 
-least for new drivers. It would especially be useful if we want to handle 
-device to domain association in common code, which I believe would be a good 
-target.
-
-> > Every IPMMU instance serves multiple bus master devices and implements
-> > four independent page tables and TLBs. Each bus master can be freely
-> > assigned to one of the page tables, lowering the risk of TLB miss when
-> > multiple bus masters require address translation at the same time. I've
-> > decided not to express the bus master to page table association in DT as
-> > this seems to me to be a software configuration decision, not a hardware
-> > property. Feel free to disagree.
->
-> Isn't the master -> page table association a dynamic property, defined by
-> the (runtime) configuration of IOMMU domains? That is, you have one page
-> table per domain and the act of attaching a device to a domain associates
-> it with that page table?
-
-That's correct. The IPMMU has four domains and handles more than four devices. 
-I thus need to decide to which domain to attach each device. Doing so in a 
-round-robin fashion is an acceptable first implementation, but fine-tuning 
-might be needed at some point for performance reasons.
-
-> Or do you need an identity-mapped page table in order to pass-through
-> transactions when no translation is configured?
-
-Fortunately I don't need that.
-
+diff --git a/drivers/of/Makefile b/drivers/of/Makefile
+index ed9660adad77..49bcd413906f 100644
+--- a/drivers/of/Makefile
++++ b/drivers/of/Makefile
+@@ -10,3 +10,4 @@ obj-$(CONFIG_OF_PCI)	+= of_pci.o
+ obj-$(CONFIG_OF_PCI_IRQ)  += of_pci_irq.o
+ obj-$(CONFIG_OF_MTD)	+= of_mtd.o
+ obj-$(CONFIG_OF_RESERVED_MEM) += of_reserved_mem.o
++obj-$(CONFIG_COMMON_CLK) += of_clk.o
+diff --git a/drivers/of/of_clk.c b/drivers/of/of_clk.c
+new file mode 100644
+index 000000000000..35f5e9f3dd42
+--- /dev/null
++++ b/drivers/of/of_clk.c
+@@ -0,0 +1,103 @@
++/*
++ *  Copyright (C) 2014 Glider bvba
++ */
++
++#include <linux/clk.h>
++#include <linux/err.h>
++#include <linux/of.h>
++#include <linux/of_clk.h>
++#include <linux/platform_device.h>
++#include <linux/pm_clock.h>
++#include <linux/pm_runtime.h>
++
++
++#ifdef CONFIG_PM_RUNTIME
++
++static int of_clk_pm_runtime_suspend(struct device *dev)
++{
++	int ret;
++
++	ret = pm_generic_runtime_suspend(dev);
++	if (ret)
++		return ret;
++
++	ret = pm_clk_suspend(dev);
++	if (ret) {
++		pm_generic_runtime_resume(dev);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int of_clk_pm_runtime_resume(struct device *dev)
++{
++	pm_clk_resume(dev);
++	return pm_generic_runtime_resume(dev);
++}
++
++static struct dev_pm_domain of_clk_pm_domain = {
++	.ops = {
++		.runtime_suspend = of_clk_pm_runtime_suspend,
++		.runtime_resume = of_clk_pm_runtime_resume,
++		USE_PLATFORM_PM_SLEEP_OPS
++	},
++};
++
++static int of_clk_register(struct device *dev, struct clk *clk)
++{
++	int error;
++
++	if (!dev->pm_domain) {
++		error = pm_clk_create(dev);
++		if (error)
++			return error;
++
++		dev->pm_domain = &of_clk_pm_domain;
++	}
++
++	dev_dbg(dev, "Setting up clock for runtime PM management\n");
++	return pm_clk_add_clk(dev, clk);
++}
++
++#else /* !CONFIG_PM_RUNTIME */
++
++static int of_clk_register(struct device *dev, struct clk *clk)
++{
++	dev_dbg(dev, "Runtime PM disabled, enabling clock\n");
++	return clk_prepare_enable(clk);
++}
++
++#endif /* !CONFIG_PM_RUNTIME */
++
++
++/**
++ * of_clk_register_runtime_pm_clocks - Register clocks suitable for Runtime PM
++ *                                     with the PM core
++ * @np: pointer to device tree node
++ * @pdev: pointer to corresponding device to register suitable clocks for
++ *
++ * Returns an error code
++ */
++int of_clk_register_runtime_pm_clocks(struct device_node *np,
++				      struct device *dev)
++{
++	unsigned int i;
++	struct clk *clk;
++	int error;
++
++	for (i = 0; (clk = of_clk_get(np, i)) && !IS_ERR(clk); i++) {
++		if (!clk_may_runtime_pm(clk)) {
++			clk_put(clk);
++			continue;
++		}
++
++		error = of_clk_register(dev, clk);
++		if (error) {
++			clk_put(clk);
++			return error;
++		}
++	}
++
++	return 0;
++}
+diff --git a/drivers/of/platform.c b/drivers/of/platform.c
+index 404d1daebefa..29145302b6f8 100644
+--- a/drivers/of/platform.c
++++ b/drivers/of/platform.c
+@@ -18,6 +18,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/slab.h>
+ #include <linux/of_address.h>
++#include <linux/of_clk.h>
+ #include <linux/of_device.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_platform.h>
+@@ -182,6 +183,8 @@ struct platform_device *of_device_alloc(struct device_node *np,
+ 	else
+ 		of_device_make_bus_id(&dev->dev);
+ 
++	of_clk_register_runtime_pm_clocks(np, &dev->dev);
++
+ 	return dev;
+ }
+ EXPORT_SYMBOL(of_device_alloc);
+diff --git a/include/linux/of_clk.h b/include/linux/of_clk.h
+new file mode 100644
+index 000000000000..b9b15614e39b
+--- /dev/null
++++ b/include/linux/of_clk.h
+@@ -0,0 +1,18 @@
++#ifndef _LINUX_OF_CLK_H
++#define _LINUX_OF_CLK_H
++
++struct device_node;
++struct device;
++
++#if defined(CONFIG_OF) && defined(CONFIG_COMMON_CLK)
++int of_clk_register_runtime_pm_clocks(struct device_node *np,
++				      struct device *dev);
++#else
++static inline int of_clk_register_runtime_pm_clocks(struct device_node *np,
++						    struct device *dev)
++{
++	return 0;
++}
++#endif /* CONFIG_OF && CONFIG_COMMON_CLK */
++
++#endif /* _LINUX_OF_CLK_H */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
