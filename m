@@ -1,49 +1,72 @@
-From: isabelle <contact_claude@isabelle.de>
-Date: Tue, 15 Apr 2014 19:47:38 +0000
-Subject: spende /Donation
-Message-Id: <yx4Sef42JyeoopbQKx5pAipXLBt1prSNuXPiRcWu1Nis@isabelle.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:26:36 +0000
+Subject: [PATCH 4/6] ARM: omap: Use generic runtime and clock helpers
+Message-Id: <1398335198-26555-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-fbdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hallo
-Wenn ich diese Nachricht zu senden wollte, ist dies nicht einfach Zufall. D=
-ies ist, weil Ihre e-Mail vom elektronischen Roboter gesichert meine WX.7AR=
- BW ausgew=E4hlt wurde.
-Zun=E4chst m=F6chte ich mich f=FCr dieses Eindringen in Ihr Leben zu entsch=
-uldigen, obwohl ich zugeben, dass es mir sehr wichtig. Ich bin Isabelle Vas=
-udev. Ich leide an Krebs im Hals seit nun mehr als 3 Jahre und eine halbe u=
-nd es leider, mein Arzt hat gerade informiert mich, dass ich bin voller unh=
-eilbar und, dass meine Tage, wegen meinen etwas gez=E4hlt sind abgebaut Zus=
-tand. Ich bin eine Witwe und ich habe keine Kind, das ich beginne zu bedaue=
-rn.
-In der Tat ist der Grund, warum ich Sie kontaktieren bin, m=F6chte ich eine=
-n Teil von meinem Grundst=FCck zu spenden, weil ich niemand, wer die Erben =
-konnte. Ich habe fast mein ganzes Zeug, darunter ein Unternehmen der Export=
- von Holz, Gummi und Stahl-Industrie in Afrika, wo ich wohne nun mehr 10 Ja=
-hren, verkauft. Ein gro=DFer Teil der Gelder gesammelt wurde mit unterschie=
-dlichen Verb=E4nden humanit=E4ren Charakter =FCberall in der Welt, aber bes=
-onders hier in Afrika bezahlt.
-Im Hinblick auf den Rest der Summe genau in H=F6he von 750.000, 00euros (si=
-eben hundert und f=FCnfzig tausend Euro) auf eine gesperrte Mitarbeiter-Acc=
-ount, meine letzte w=FCnschen w=FCrde Sie es spenden, so dass Sie in Ihrer =
-Branche und vor allem den humanit=E4ren investieren k=F6nnen. Ich bin ganz =
-bewusst was ich zu tun beabsichtigen, und ich denke, trotz der Tatsache, di=
-e wir nicht wissen, werdet ihr diese Summe gut nutzen. Ich bitte Sie, bitte=
- dieses Erbe zu akzeptieren, ohne jedoch Fragen Sie alles, was in zur=FCckg=
-eben wenn es nicht immer denken, gutes zu tun, um dich herum, was ich nicht=
- getan habe, in meiner Existenz.
-Das hei=DFt, wird auf einer verantwortlichen Person und besonders gutem Gla=
-uben fallen zu lassen beruhigt, ich m=F6chte bitten, dass Sie bitte mich be=
-i den meisten schnell kontaktieren, um weitere Erkl=E4rung =FCber die Gr=FC=
-nde f=FCr meine Geste und den Verlauf der Dinge zu geben. Bitte kontaktiere=
-n Sie mich so bald wie m=F6glich, wenn Sie mein Angebot akzeptieren.
-Gott m=F6ge mit dir sein!
-Ich fordere Sie auf, mich =FCber meine pers=F6nliche e-Mail-Adresse zu kont=
-aktieren:
-Isabelle.claude654@laposte.net
-Der Frieden und Barmherzigkeit Gottes m=F6ge mit dir sein.
-Mrs Isabelle
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-omap1/pm_bus.c |   32 ++------------------------------
+ 1 file changed, 2 insertions(+), 30 deletions(-)
+
+diff --git a/arch/arm/mach-omap1/pm_bus.c b/arch/arm/mach-omap1/pm_bus.c
+index 3f2d39672393..e2d4b93580d1 100644
+--- a/arch/arm/mach-omap1/pm_bus.c
++++ b/arch/arm/mach-omap1/pm_bus.c
+@@ -12,7 +12,6 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/io.h>
+-#include <linux/pm_runtime.h>
+ #include <linux/pm_clock.h>
+ #include <linux/platform_device.h>
+ #include <linux/mutex.h>
+@@ -22,37 +21,10 @@
+ #include "soc.h"
+ 
+ #ifdef CONFIG_PM_RUNTIME
+-static int omap1_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int omap1_pm_runtime_resume(struct device *dev)
+-{
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	pm_clk_resume(dev);
+-	return pm_generic_runtime_resume(dev);
+-}
+-
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = omap1_pm_runtime_suspend,
+-		.runtime_resume = omap1_pm_runtime_resume,
++		.runtime_suspend = pm_generic_runtime_clk_suspend,
++		.runtime_resume = pm_generic_clk_runtime_resume,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+1.7.9.5
 
