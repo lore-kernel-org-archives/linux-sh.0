@@ -1,41 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:48 +0000
-Subject: [PATCH 20/33] ARM: shmobile: koelsch: make i2c2-pfc node unique
-Message-Id: <e6a4c001116ca28a3c5698168a2a1fe274fa6d2c.1398216022.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:13:23 +0000
+Subject: [PATCH/RFC 4/4] clk: shmobile: mstp: Set CLK_RUNTIME_PM flag
+Message-Id: <1398334403-26181-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+Renesas MSTP (Module Stop) clocks are suitable for Runtime PM.
 
-This node should have a unique name so it can be distinguished when
-other i2c busses are added later.
+Hence set the CLK_RUNTIME_PM flag, to make of_clk enable automatic Runtime
+PM management for DT devices that are tied to an MSTP clock.
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ drivers/clk/shmobile/clk-mstp.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index ee23b7b..fc6c94a 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -228,7 +228,7 @@
- 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
- 	pinctrl-names = "default";
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 2e3c08fff173..6f860bad551e 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -139,7 +139,7 @@ cpg_mstp_clock_register(const char *name, const char *parent_name,
  
--	i2c2_pins: i2c {
-+	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
- 	};
+ 	init.name = name;
+ 	init.ops = &cpg_mstp_clock_ops;
+-	init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT;
++	init.flags = CLK_IS_BASIC | CLK_SET_RATE_PARENT | CLK_RUNTIME_PM;
+ 	init.parent_names = &parent_name;
+ 	init.num_parents = 1;
+ 
 -- 
-1.8.5.2
+1.7.9.5
 
