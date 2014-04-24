@@ -1,44 +1,77 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 15 Apr 2014 12:34:08 +0000
-Subject: [PATCH v2 12/17] clk: shmobile: mstp: Fix the is_enabled() operation
-Message-Id: <1397565253-22741-13-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Apr 2014 06:54:44 +0000
+Subject: [PATCH/RFC] serial: sh-sci: Add device tree support for r8a7779
+Message-Id: <1398322484-3630-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+According to the platform data for the legacy-C initialisation of sh-sci
+for the r8a7779 SoC and my own testing the SCIx_SH4_SCIF_REGTYPE bit of
+scscr needs to be set.
 
-The MSTP[SC]R registers have clock stop bits, not clock enable bits. The
-bit value should thus be inverted in the is_enabled() operation.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mike Turquette <mturquette@linaro.org>
 ---
-This depends on the actual fixes, so either we need Mike's ack, or this has
-to wait until the fixes have landed in mainline.
 
-v2:
-  - New
+With the approach taken by this patch sh-sci may be initialised using the
+"renesas,scif-r8a7779" compat string but not the generic "renesas,scif"
+compat string.  An alternate approach would be to add a binding to allow
+setting of this bit to be controlled directly from DT.
+---
+ .../devicetree/bindings/serial/renesas,sci-serial.txt          |  1 +
+ drivers/tty/serial/sh-sci.c                                    | 10 +++++++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
- drivers/clk/shmobile/clk-mstp.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
-index 2e5810c88d11..4f5e2c6ec853 100644
---- a/drivers/clk/shmobile/clk-mstp.c
-+++ b/drivers/clk/shmobile/clk-mstp.c
-@@ -112,7 +112,7 @@ static int cpg_mstp_clock_is_enabled(struct clk_hw *hw)
- 	else
- 		value = clk_readl(group->smstpcr);
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 53e6c17..bba86de 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -12,6 +12,7 @@ Required properties:
+     - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
+     - "renesas,scif" for generic SCIF compatible UART.
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 88236da..3b5d2f6 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2419,6 +2419,7 @@ static int sci_remove(struct platform_device *dev)
+ struct sci_port_info {
+ 	unsigned int type;
+ 	unsigned int regtype;
++	unsigned int scscr_extra;
+ };
  
--	return !!(value & BIT(clock->bit_index));
-+	return !(value & BIT(clock->bit_index));
+ static const struct of_device_id of_sci_match[] = {
+@@ -2429,6 +2430,13 @@ static const struct of_device_id of_sci_match[] = {
+ 			.regtype = SCIx_SH4_SCIF_REGTYPE,
+ 		},
+ 	}, {
++		.compatible = "renesas,scif-r8a7779",
++		.data = (void *)&(const struct sci_port_info) {
++			.type = PORT_SCIF,
++			.regtype = SCIx_SH4_SCIF_REGTYPE,
++			.scscr_extra = SCSCR_CKE1,
++		},
++	}, {
+ 		.compatible = "renesas,scifa",
+ 		.data = &(const struct sci_port_info) {
+ 			.type = PORT_SCIFA,
+@@ -2488,7 +2496,7 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	p->flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
+ 	p->type = info->type;
+ 	p->regtype = info->regtype;
+-	p->scscr = SCSCR_RE | SCSCR_TE;
++	p->scscr = SCSCR_RE | SCSCR_TE | info->scscr_extra;
+ 
+ 	return p;
  }
- 
- static const struct clk_ops cpg_mstp_clock_ops = {
 -- 
-1.7.9.5
+1.8.5.2
 
