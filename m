@@ -1,40 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 08 Apr 2014 22:17:03 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add USB PHY DT support
-Message-Id: <201404090217.04437.sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:26:32 +0000
+Subject: [PATCH 0/6] PM / clock_ops: Add helpers combining generic runtime and generic clock PM
+Message-Id: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404090211.56867.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404090211.56867.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the R8A7790 generic part of the USB PHY device node. It is up to the
-board file to enable the device.
+Several platform support codes combine pm_generic_runtime_suspend() and
+pm_clk_suspend(), resp. pm_clk_resume() and pm_generic_runtime_resume() in
+their .runtime_suspend resp. .runtime_resume callbacks.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Create helpers to consolidate.
 
----
- arch/arm/boot/dts/r8a7790.dtsi |    9 +++++++++
- 1 file changed, 9 insertions(+)
+  - [1/6] PM / clock_ops: Add helpers combining generic runtime and generic
+	  clock PM
+  - [2/6] ARM: davinci: Use generic runtime and clock helpers
+  - [3/6] ARM: keystone: Use generic runtime and clock helpers
+  - [4/6] ARM: omap: Use generic runtime and clock helpers
+  - [5/6] drivers: sh: Use generic runtime and clock helpers
+  - [6/6] of/clk: Use generic runtime and clock helpers
 
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -412,6 +412,15 @@
- 		status = "disabled";
- 	};
- 
-+	usbphy: usb-phy@e6590100 {
-+		compatible = "renesas,usb-phy-r8a7790";
-+		reg = <0 0xe6590100 0 0x100>;
-+		#phy-cells = <2>;
-+		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-+		clock-names = "usbhs";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+Patches 5 and 6 have dependencies (listed in the individual patches),
+but they can be postponed and handled later.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
