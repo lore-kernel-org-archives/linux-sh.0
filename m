@@ -1,39 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:07 +0000
-Subject: [PATCH v2 07/14] clocksource: shmobile: Remove unused sh_timer_config members
-Message-Id: <1397832494-20607-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 24 Apr 2014 10:13:20 +0000
+Subject: [PATCH/RFC 1/4] clk: Add CLK_RUNTIME_PM and clk_may_runtime_pm()
+Message-Id: <1398334403-26181-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The name, channel_offset, timer_bit, clockevent_rating and
-clocksource_rating members are unused. Remove them.
+Add a flag CLK_RUNTIME_PM, to let low-level clock drivers indicate that
+a clock is suitable for Runtime PM.
+Add clk_may_runtime_pm(), to get the status of the flag.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This will allow the device core to enable automatic Runtime PM management
+for devices tied to clocks that are suitable for Runtime PM.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- include/linux/sh_timer.h | 5 -----
- 1 file changed, 5 deletions(-)
+ drivers/clk/clk.c            |   12 ++++++++++++
+ include/linux/clk-provider.h |    1 +
+ include/linux/clk.h          |    1 +
+ 3 files changed, 14 insertions(+)
 
-diff --git a/include/linux/sh_timer.h b/include/linux/sh_timer.h
-index 8e1e036..64638b0 100644
---- a/include/linux/sh_timer.h
-+++ b/include/linux/sh_timer.h
-@@ -2,11 +2,6 @@
- #define __SH_TIMER_H__
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 0b2819551756..a83a2cc0af67 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -1115,6 +1115,18 @@ long clk_get_accuracy(struct clk *clk)
+ EXPORT_SYMBOL_GPL(clk_get_accuracy);
  
- struct sh_timer_config {
--	char *name;
--	long channel_offset;
--	int timer_bit;
--	unsigned long clockevent_rating;
--	unsigned long clocksource_rating;
- 	unsigned int channels_mask;
- };
+ /**
++ * clk_may_runtime_pm - check if the clock is suitable for Runtime PM
++ * @clk: the clock to check
++ *
++ * Return true if the clock is suitable for Runtime PM
++ * Return false if clk is NULL, or if the clock is not suitable for Runtime PM.
++ */
++bool clk_may_runtime_pm(const struct clk *clk)
++{
++	return clk && clk->flags & CLK_RUNTIME_PM;
++}
++
++/**
+  * __clk_recalc_rates
+  * @clk: first clk in the subtree
+  * @msg: notification type (see include/linux/clk.h)
+diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
+index 24c8ba4fa6ae..3ca9a7c1f02d 100644
+--- a/include/linux/clk-provider.h
++++ b/include/linux/clk-provider.h
+@@ -30,6 +30,7 @@
+ #define CLK_GET_RATE_NOCACHE	BIT(6) /* do not use the cached clk rate */
+ #define CLK_SET_RATE_NO_REPARENT BIT(7) /* don't re-parent on rate change */
+ #define CLK_GET_ACCURACY_NOCACHE BIT(8) /* do not use the cached clk accuracy */
++#define CLK_RUNTIME_PM		BIT(9) /* clock is suitable for Runtime PM */
  
+ struct clk_hw;
+ struct dentry;
+diff --git a/include/linux/clk.h b/include/linux/clk.h
+index d030fce1d77e..07f156580064 100644
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
+@@ -106,6 +106,7 @@ int clk_notifier_unregister(struct clk *clk, struct notifier_block *nb);
+  */
+ long clk_get_accuracy(struct clk *clk);
+ 
++bool clk_may_runtime_pm(const struct clk *clk);
+ #else /* !CONFIG_COMMON_CLK */
+ 
+ static inline long clk_get_accuracy(struct clk *clk)
 -- 
-1.8.3.2
+1.7.9.5
 
