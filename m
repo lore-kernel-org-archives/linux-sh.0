@@ -1,145 +1,62 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 01:57:19 +0000
-Subject: [PATCH v5 05/20] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
-Message-Id: <1397613454-7522-6-git-send-email-horms+renesas@verge.net.au>
+From: Stratos Karafotis <stratosk@semaphore.gr>
+Date: Fri, 25 Apr 2014 20:16:58 +0000
+Subject: [PATCH v5 8/8] sh: clk: Use cpufreq_for_each_valid_entry macro for iteration
+Message-Id: <535AC2BA.4070909@semaphore.gr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1397613454-7522-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Viresh Kumar <viresh.kumar@linaro.org>, linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
 
-Copy the device nodes from Marzen reference into the Marzen device tree
-file. This will allow us to use a single DTS file regardless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-will be used.
+The cpufreq core now supports the cpufreq_for_each_valid_entry macro
+helper for iteration over the cpufreq_frequency_table, so use it.
 
-Based on a similar change for the Lager board by Laurent Pinchart.
+It should have no functional changes.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Stratos Karafotis <stratosk@semaphore.gr>
 ---
-v4 - v5
-* No change
+ drivers/sh/clk/core.c | 20 +++++---------------
+ 1 file changed, 5 insertions(+), 15 deletions(-)
 
-v3
-* Updated for recent changes to Marzen reference DTS
----
- arch/arm/boot/dts/r8a7779-marzen.dts | 93 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 93 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index a7af2c2..eda6240 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -11,6 +11,8 @@
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index 7472785..be56b22 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -196,17 +196,11 @@ int clk_rate_table_find(struct clk *clk,
+ 			struct cpufreq_frequency_table *freq_table,
+ 			unsigned long rate)
+ {
+-	int i;
+-
+-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
+-		unsigned long freq = freq_table[i].frequency;
++	struct cpufreq_frequency_table *pos;
  
- /dts-v1/;
- #include "r8a7779.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/interrupt-controller/irq.h>
+-		if (freq = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
+-		if (freq = rate)
+-			return i;
+-	}
++	cpufreq_for_each_valid_entry(pos, freq_table)
++		if (pos->frequency = rate)
++			return pos - freq_table;
  
- / {
- 	model = "marzen";
-@@ -24,4 +26,95 @@
- 		device_type = "memory";
- 		reg = <0x60000000 0x40000000>;
- 	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+
-+	lan0@18000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+};
-+
-+&irqpin0 {
-+	status = "okay";
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: serial4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	hspi0_pins: hspi0 {
-+		renesas,groups = "hspi0";
-+		renesas,function = "hspi0";
-+	};
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
-+};
-+
-+&hspi0 {
-+	pinctrl-0 = <&hspi0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
- };
+ 	return -ENOENT;
+ }
+@@ -575,11 +569,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 		return abs(target - *best_freq);
+ 	}
+ 
+-	for (freq = parent->freq_table; freq->frequency != CPUFREQ_TABLE_END;
+-	     freq++) {
+-		if (freq->frequency = CPUFREQ_ENTRY_INVALID)
+-			continue;
+-
++	cpufreq_for_each_valid_entry(freq, parent->freq_table) {
+ 		if (unlikely(freq->frequency / target <= div_min - 1)) {
+ 			unsigned long freq_max;
+ 
 -- 
-1.8.5.2
-
+1.9.0
