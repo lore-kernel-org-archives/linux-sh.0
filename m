@@ -1,61 +1,78 @@
-From: Alexei Starovoitov <ast@plumgrid.com>
-Date: Wed, 02 Apr 2014 16:09:56 +0000
-Subject: Re: [PATCH net-next] sh: add missing fpscr_values
-Message-Id: <CAMEtUuy_KZXmWAs6GkZe2HdJ_i0Go+FpJ09rA0AVg=dpWCevig@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 25 Apr 2014 16:18:37 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: armadillo800eva: Add LED support
+Message-Id: <1398442718-31476-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396407244-26771-1-git-send-email-ast@plumgrid.com>
-	<20140402.084713.204716153605145333.davem@davemloft.net>
-In-Reply-To: <20140402.084713.204716153605145333.davem@davemloft.net>
+References: <1362074410-2960-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362074410-2960-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Daniel Borkmann <dborkman@redhat.com>, Paul Mundt <lethal@linux-sh.org>, kbuild test robot <fengguang.wu@intel.com>, linux-sh <linux-sh@vger.kernel.org>, Network Development <netdev@vger.kernel.org>, Kaz Kojima <kkojima@rr.iij4u.or.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-next@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Apr 2, 2014 at 5:47 AM, David Miller <davem@davemloft.net> wrote:
-> From: Alexei Starovoitov <ast@plumgrid.com>
-> Date: Tue,  1 Apr 2014 19:54:04 -0700
->
->> GCC on SuperH for the following program:
->> int foo(int i)
->> {
->>       static const void *table[2] = {
->>               [0] = &&label1,
->>               [1] = &&label2,
->>       };
->>       goto *table[i & 1];
->>
->>       label1:
->>               return 1;
->>       label2:
->>               return 2;
->> }
->> generates code:
->>       mov.l   .L9,r1
->>       mov     #1,r0
->>       rts
->>       lds.l   @r1+,fpscr
->> .L9:
->>       .long   __fpscr_values+4
->>
->> so kernel has to provide body of fpscr_values just like glibc does
->>
->> Fixes: bd4cf0ed331a ("net: filter: rework/optimize internal BPF interpreter's instruction set")
->> Reported-by: Fengguang Wu <fengguang.wu@intel.com>
->> Signed-off-by: Alexei Starovoitov <ast@plumgrid.com>
->
-> You guys really need to just fix the compiler, sorry.
+Cfr. r8a7740-armadillo800eva-reference.dts
 
-agree.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - No changes
 
-To summarize:
-according to Kaz:
-"For sh2a, configuring gcc with --with-multilib-list=m2a,m2a-nofpu
- and specifying -m2a-nofpu during compiling kernel would work."
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   35 ++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
-and as Geert pointed out we already have:
-arch/sh/Makefile:
-cflags-$(CONFIG_CPU_SH2A)               += $(call cc-option,-m2a,) \
-                                           $(call cc-option,-m2a-nofpu,)
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 276d713f0ee9..688a69c7e5fc 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -586,6 +586,40 @@ static struct platform_device hdmi_lcdc_device = {
+ 	},
+ };
+ 
++/* LEDS */
++static struct gpio_led gpio_leds[] = {
++	{
++		.name		= "led1",
++		.gpio		= 102,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led2",
++		.gpio		= 111,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led3",
++		.gpio		= 110,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led4",
++		.gpio		= 177,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++};
++
++static struct gpio_led_platform_data leds_gpio_info = {
++	.leds		= gpio_leds,
++	.num_leds	= ARRAY_SIZE(gpio_leds),
++};
++
++static struct platform_device leds_gpio_device = {
++	.name   = "leds-gpio",
++	.id     = -1,
++	.dev    = {
++		.platform_data  = &leds_gpio_info,
++	},
++};
++
+ /* GPIO KEY */
+ #define GPIO_KEY(c, g, d, ...) \
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
+@@ -1077,6 +1111,7 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
+ 	&pwm_device,
+ 	&pwm_backlight_device,
++	&leds_gpio_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&vcc_sdhi0,
+-- 
+1.7.9.5
 
-so no kernel changes needed and gcc just needs to be reconfigured.
