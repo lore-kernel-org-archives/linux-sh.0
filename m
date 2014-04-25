@@ -1,63 +1,57 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Apr 2014 16:48:34 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 25 Apr 2014 23:54:08 +0000
 Subject: Re: [RFC] sh_eth: use RNC mode for R8A7790
-Message-Id: <CAMuHMdUwDxb5K+Q335isLE-+HLwbwGSksp0KYmGoaXGYQmSiug@mail.gmail.com>
+Message-Id: <535AF5A0.6010206@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396025185-7911-1-git-send-email-ben.dooks@codethink.co.uk>
-	<5335DDC7.8040400@cogentembedded.com>
-	<534BD8F9.5080105@codethink.co.uk>
-	<CAMuHMdX_7eX1F7PkO4WAkUdeNgPjkY_LozGZFeAROEN=K0Jp2w@mail.gmail.com>
-In-Reply-To: <CAMuHMdX_7eX1F7PkO4WAkUdeNgPjkY_LozGZFeAROEN=K0Jp2w@mail.gmail.com>
+References: <1396025185-7911-1-git-send-email-ben.dooks@codethink.co.uk>	<5335DDC7.8040400@cogentembedded.com>	<534BD8F9.5080105@codethink.co.uk>	<CAMuHMdX_7eX1F7PkO4WAkUdeNgPjkY_LozGZFeAROEN=K0Jp2w@mail.gmail.com> <CAMuHMdUwDxb5K+Q335isLE-+HLwbwGSksp0KYmGoaXGYQmSiug@mail.gmail.com>
+In-Reply-To: <CAMuHMdUwDxb5K+Q335isLE-+HLwbwGSksp0KYmGoaXGYQmSiug@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-On Mon, Apr 14, 2014 at 6:35 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Mon, Apr 14, 2014 at 2:47 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> On 28/03/14 20:38, Sergei Shtylyov wrote:
->>> On 03/28/2014 07:46 PM, Ben Dooks wrote:
->>>> The current behaviour of the sh_eth driver is not to use the RNC bit
->>>> for the receive ring. This means that every packet recieved is not only
->>>> generating an IRQ but it also stops the receive ring DMA as well until
->>>> the driver re-enables it after unloading the packet.
->>>
->>>> This means that a number of the following errors are generated due to
->>>> the receive packet FIFO overflowing due to nowhere to put packets:
->>>
->>>>     net eth0: Receive FIFO Overflow
->>>
->>>> Setting the RMCR_RNC configuration has so far been tested with an NFS
->>>> root filesystem and the driver has not failed yet. It is not yet known
->>>> why this is not set for R8A779x operation
->>>
->>>     The reason is simple: it's not set on almost all 100 Mbs devices
->>> except SH7757 (and most recently added R7S72100), so this was a matter
->>> of copy-paste. I've had setting this bit on at least R-Car devices on my
->>> aganda for some time but couldn't get to it yet.
->>>
->>>> (Feedback on this issue or other testing is welcome)
->>>
->>>     OK, I'll try it with netperf UDP test known to generate handful of
->>> the aforementioned errors, when I have time.
->>
->> Has anyone had time to look at this?
->
-> I gave it a try on Koelsch (it does apply to r8a7791, too, right?), and didn't
-> see any good or ill effects. Just using NFS root and generating some I/O,
-> so nothing fancy.
+Hello.
 
-FWIW, I still have "renesas,no-ether-link" in the ethernet node in DT.
+On 04/14/2014 08:48 PM, Geert Uytterhoeven wrote:
 
-Gr{oetje,eeting}s,
+>>>>> The current behaviour of the sh_eth driver is not to use the RNC bit
+>>>>> for the receive ring. This means that every packet recieved is not only
+>>>>> generating an IRQ but it also stops the receive ring DMA as well until
+>>>>> the driver re-enables it after unloading the packet.
 
-                        Geert
+>>>>> This means that a number of the following errors are generated due to
+>>>>> the receive packet FIFO overflowing due to nowhere to put packets:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>>>>>      net eth0: Receive FIFO Overflow
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>>>>> Setting the RMCR_RNC configuration has so far been tested with an NFS
+>>>>> root filesystem and the driver has not failed yet. It is not yet known
+>>>>> why this is not set for R8A779x operation
+
+>>>>      The reason is simple: it's not set on almost all 100 Mbs devices
+>>>> except SH7757 (and most recently added R7S72100), so this was a matter
+>>>> of copy-paste. I've had setting this bit on at least R-Car devices on my
+>>>> aganda for some time but couldn't get to it yet.
+
+>>>>> (Feedback on this issue or other testing is welcome)
+
+>>>>      OK, I'll try it with netperf UDP test known to generate handful of
+>>>> the aforementioned errors, when I have time.
+
+>>> Has anyone had time to look at this?
+
+>> I gave it a try on Koelsch (it does apply to r8a7791, too, right?), and didn't
+>> see any good or ill effects. Just using NFS root and generating some I/O,
+>> so nothing fancy.
+
+> FWIW, I still have "renesas,no-ether-link" in the ethernet node in DT.
+
+    You shouldn't need it anymore if you're using recent devel branch of the 
+renesas.git repo: it already has the necessary PHY driver and device tree 
+changes to avoid the issue which specifying that prop fixed.
+
+> Gr{oetje,eeting}s,
+
+WBR, Sergei
+
