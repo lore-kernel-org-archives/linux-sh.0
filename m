@@ -1,57 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 24 Apr 2014 14:09:00 +0000
+From: Kevin Hilman <khilman@linaro.org>
+Date: Fri, 25 Apr 2014 23:44:58 +0000
 Subject: Re: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
-Message-Id: <CAMuHMdV=g13MnhhUDk9CFT+J5QPEryzO9HRSJFALJMfKi1Dn8w@mail.gmail.com>
+Message-Id: <7hoazpdldx.fsf@paris.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
  <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
- <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
-In-Reply-To: <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
+In-Reply-To: <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
+ (Geert Uytterhoeven's message of "Thu, 24 Apr 2014 12:13:22 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulf,
+Geert Uytterhoeven <geert+renesas@glider.be> writes:
 
-On Thu, Apr 24, 2014 at 3:11 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
->> +static int of_clk_register(struct device *dev, struct clk *clk)
->> +{
->> +       int error;
->> +
->> +       if (!dev->pm_domain) {
->> +               error = pm_clk_create(dev);
->> +               if (error)
->> +                       return error;
->> +
->> +               dev->pm_domain = &of_clk_pm_domain;
+> When adding a device from DT, check if its clocks are suitable for Runtime
+> PM, and register them with the PM core.
+> If Runtime PM is disabled, just enable the clock.
 >
-> I am concerned about how this will work in conjunction with the
-> generic power domain.
->
-> A device can't reside in more than one pm_domain; thus I think it
-> would be better to always use the generic power domain and not have a
-> specific one for clocks. Typically the genpd should invoke
-> pm_clk_resume|suspend from it's runtime PM callbacks.
+> This allows the PM core to automatically manage gate clocks of devices for
+> Runtime PM.
 
-On shmobile SoCs supporting power domains, the power domain is
-overridden later by calling rmobile_add_devices_to_domains() and friends.
+...unless the device is already in an existing pm_domain, right?
 
-My patch doesn't change that: the code behaved the same in the
-non-multi-platform case before: dev->pm_domain as set from
-drivers/sh/pm_runtime.c was overridden later.
+I like this approach, and it extends nicely what we already do on
+platforms using drivers/base/power/clock_ops.c into DT land.
 
-I'll have a deeper look into the power domain code later anyway.
+My only concern is how this will interact if it's used along with
+devices that have existing pm_domains.  I don't have any specific
+concerns (yet, because it's Friday, and my brain is turing off), but it
+just made me wonder if this will be potentially confusing.
+ 
+Also...
 
-Thanks!
+[...]
 
-Gr{oetje,eeting}s,
+> +static int of_clk_register(struct device *dev, struct clk *clk)
+> +{
+> +	int error;
+> +
+> +	if (!dev->pm_domain) {
+> +		error = pm_clk_create(dev);
+> +		if (error)
+> +			return error;
+> +
+> +		dev->pm_domain = &of_clk_pm_domain;
+> +	}
+> +
+> +	dev_dbg(dev, "Setting up clock for runtime PM management\n");
+> +	return pm_clk_add_clk(dev, clk);
 
-                        Geert
+I would've expected these 2 lines to be inside the pm_domain check.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+What's the reason for doing the pm_clk_add() when the pm_domain isn't
+going to be used?  I suppose it's harmless, but it's a bit confusing.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Kevin
