@@ -1,94 +1,49 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 04 Apr 2014 08:30:06 +0000
-Subject: RE: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
-Message-Id: <3954d4483da94b2baafc9c96812510dc@HKXPR06MB168.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 25 Apr 2014 16:18:38 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: armadillo800eva defconfig: Enable REGULATOR_GPIO and LEDS_GPIO
+Message-Id: <1398442718-31476-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
+References: <1365425547-10391-2-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1365425547-10391-2-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Bjorn,
+Enable missing options for devices in platform data and/or DT:
+  - REGULATOR_GPIO
+  - LEDS_GPIO (and its dependencies)
 
-I assume that you'll take the PCI driver patches (0001, 0002 & 0005) through your tree and that the rest are platform specific patches that will go via Simon Horman. Would you like me to split this into two separate patch sets?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Drop config refresh
 
-Thanks
-Phil
+ arch/arm/configs/armadillo800eva_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-> -----Original Message-----
-> From: linux-sh-owner@vger.kernel.org [mailto:linux-sh-
-> owner@vger.kernel.org] On Behalf Of Phil Edworthy
-> Sent: 31 March 2014 11:31
-> To: linux-pci@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org; LAKML; Bjorn Helgaas; Valentine Barshak;
-> Simon Horman; Magnus Damm; Ben Dooks; Phil Edworthy
-> Subject: [PATCH v7 00/10] R-Car Gen2 PCIe host driver
-> 
-> This is version 7 of a PCIe Host driver for the R-Car Gen2 devices, i.e. R-Car H2
-> (r8a7790) and R-Car M2 (r8a7791).
-> 
-> v7:
->  - Change binding description of clocks to 'clock specifiers'
-> 
-> v6:
->  - Correct DT bindings description for reg and clocks
->  - Split device and board DT changes
->  - Add shmobile to subject for shmobile DT patches
->  - Don't check MSI irq number is valid, as upper level checks this
->  - Change "Unexpected MSI" msg to debug level
->  - Reword "Unexpected MSI" comment so that it's one line
->  - Remove patch that adds HAVE_ARM_ARCH_TIMER to koelsch defconfig as
-> not needed
-> 
-> v5:
->  - Use module_platform_driver instead of subsys_initcall
->  - Use the of_device_id data field for HW init function
->  - Init hw_pci struct in declaration
->  - Renesas SoC compatible string has peripheral before device name
->  - Add PCIe bus clock reference
->  - Use dma-ranges property to specify inbound memory regions
->  - Support multiple IO windows and correct resources
->  - Return IRQ_NONE from MSI isr when there is no pending MSI
->  - Add additional interrupt bindings
-> 
-> v4:
->  - Use runtime PM properly
-> 
-> Phil Edworthy (10):
->   PCI: host: rcar: Add Renesas R-Car PCIe driver
->   PCI: host: rcar: Add MSI support
->   ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
->   ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
->   dt-bindings: pci: rcar pcie device tree bindings
->   ARM: shmobile: r8a7790: Add PCIe device nodes
->   ARM: shmobile: lager: Add PCIe device nodes
->   ARM: shmobile: r8a7791: Add PCIe device nodes
->   ARM: shmobile: koelsch: Add PCIe device nodes
->   ARM: shmobile: koelsch: Add PCIe to defconfig
-> 
->  Documentation/devicetree/bindings/pci/rcar-pci.txt |  45 +
->  arch/arm/boot/dts/r8a7790-lager.dts                |  10 +
->  arch/arm/boot/dts/r8a7790.dtsi                     |  31 +-
->  arch/arm/boot/dts/r8a7791-koelsch.dts              |  14 +
->  arch/arm/boot/dts/r8a7791.dtsi                     |  31 +-
->  arch/arm/configs/koelsch_defconfig                 |   3 +
->  drivers/pci/host/Kconfig                           |   6 +
->  drivers/pci/host/Makefile                          |   1 +
->  drivers/pci/host/pcie-rcar.c                       | 929 +++++++++++++++++++++
->  drivers/pci/host/pcie-rcar.h                       |  87 ++
->  include/dt-bindings/clock/r8a7790-clock.h          |   1 +
->  include/dt-bindings/clock/r8a7791-clock.h          |   1 +
->  12 files changed, 1154 insertions(+), 5 deletions(-)  create mode 100644
-> Documentation/devicetree/bindings/pci/rcar-pci.txt
->  create mode 100644 drivers/pci/host/pcie-rcar.c  create mode 100644
-> drivers/pci/host/pcie-rcar.h
-> 
-> --
-> 1.9.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in the body
-> of a message to majordomo@vger.kernel.org More majordomo info at
-> http://vger.kernel.org/majordomo-info.html
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 065adddeee3e..d9675c68a399 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -96,6 +96,7 @@ CONFIG_I2C_GPIO=y
+ CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ CONFIG_REGULATOR=y
++CONFIG_REGULATOR_GPIO=y
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_VIDEO_DEV=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+@@ -127,6 +128,9 @@ CONFIG_USB_ETH=m
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_GPIO=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_S35390A=y
+ CONFIG_DMADEVICES=y
+-- 
+1.7.9.5
+
