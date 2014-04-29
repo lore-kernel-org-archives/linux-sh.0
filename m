@@ -1,57 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 30 Apr 2014 22:06:07 +0000
-Subject: Re: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
-Message-Id: <CAMuHMdUz9bOx3AMfCQuk8nhW3A_xm1Y8DYi9-yg30iu_j94Vzw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 29 Apr 2014 07:43:26 +0000
+Subject: [PATCH 4/4] ARM: shmobile: marzen: Use disabled variant of clock workaround for scif devices
+Message-Id: <1398757406-30920-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
- <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
- <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
- <2068296.FXWLXn1mqR@avalon>
-In-Reply-To: <2068296.FXWLXn1mqR@avalon>
+References: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Now that SCIF devices are initialised using DT it should
+be sufficient to use the disabled variant of the clock workaround.
 
-On Wed, Apr 30, 2014 at 11:23 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Thursday 24 April 2014 15:11:24 Ulf Hansson wrote:
->> On 24 April 2014 12:13, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
->> > When adding a device from DT, check if its clocks are suitable for Runtime
->> > PM, and register them with the PM core.
->> > If Runtime PM is disabled, just enable the clock.
->> >
->> > This allows the PM core to automatically manage gate clocks of devices for
->> > Runtime PM.
->>
->> Normally I don't think it's a good idea to "automatically" manage
->> clocks from PM core or any other place but from the driver (and
->> possibly the subsystem).
->>
->> The reason is simply that we hide things that normally is supposed to
->> be handled by the driver. Typically a cross SOC driver should work
->> fine both with and without a pm_domain. It should also not rely on
->> CONFIG_PM_RUNTIME.
->
-> That's a very good point. Geert, what do you think should happen if
-> CONFIG_PM_RUNTIME is not set ? I don't have a strong opinion (yet) on whether
-> we could require CONFIG_PM_RUNTIME, but it would indeed be nice to support
-> both cases. One option would be to keep the clocks enabled unconditionally in
-> that case, as not setting CONFIG_PM_RUNTIME means that the user doesn't care
-> (or cares less) about power consumption.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-This is already handled by my patch. If CONFIG_PM_RUNTIME is disabled,
-the clocks are enabled by calling clk_prepare_enabled().
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 6d34baf..1f14d80 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -40,12 +40,6 @@ static void __init marzen_init_timer(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "scif0", NULL, "sh-sci.0" },
+-	{ "scif1", NULL, "sh-sci.1" },
+-	{ "scif2", NULL, "sh-sci.2" },
+-	{ "scif3", NULL, "sh-sci.3" },
+-	{ "scif4", NULL, "sh-sci.4" },
+-	{ "scif5", NULL, "sh-sci.5" },
+ 	{ "tmu0", NULL, "sh_tmu.0" },
+ 	{ "tmu1", NULL, "sh_tmu.1" },
+ 	{ "tmu2", NULL, "sh_tmu.2" },
+@@ -55,6 +49,12 @@ static const struct clk_name clk_names[] __initconst = {
+  * This is a really crude hack to work around core platform clock issues
+  */
+ static const struct clk_name clk_enables[] __initconst = {
++	{ "scif0", NULL, "sh-sci.0" },
++	{ "scif1", NULL, "sh-sci.1" },
++	{ "scif2", NULL, "sh-sci.2" },
++	{ "scif3", NULL, "sh-sci.3" },
++	{ "scif4", NULL, "sh-sci.4" },
++	{ "scif5", NULL, "sh-sci.5" },
+ 	{ "sdhi0", NULL, "ffe4c000.sd" },
+ 	{ "thermal", NULL, "ffc48000.thermal" },
+ };
+-- 
+1.8.5.2
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
