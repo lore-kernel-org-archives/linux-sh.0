@@ -1,120 +1,75 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 10 Apr 2014 09:06:21 +0000
-Subject: Re: [PATCH v2 4/5] ARM: shmobile: r8a7790: add IIC(B) clocks to dtsi
-Message-Id: <1469546.BhG9x3Qly1@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:31 +0000
+Subject: [PATCH v4 00/11] CCF support for Renesas r7s72100
+Message-Id: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1395773789-17249-1-git-send-email-wsa@the-dreams.de>
- <1467516.9721qlt3iV@avalon> <20140410085746.GC16758@verge.net.au>
-In-Reply-To: <20140410085746.GC16758@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+This series moves the r7s72100 platfrom from the legacy clock implementation to
+the common clock framework.
 
-On Thursday 10 April 2014 17:57:46 Simon Horman wrote:
-> On Wed, Mar 26, 2014 at 03:04:41PM +0100, Laurent Pinchart wrote:
-> > Hi Wolfram,
-> > 
-> > Thank you for the patch.
-> > 
-> > On Tuesday 25 March 2014 19:56:28 Wolfram Sang wrote:
-> > > From: Wolfram Sang <wsa@sang-engineering.com>
-> > > 
-> > > Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> > 
-> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> Thanks.
-> 
-> I had to resolve a minor conflict when queueing this up.
-> And I also replaced a tab with a whitspace as a separator
-> on the line that (now) contains ""i2c3", "i2c2", "i2c1", "i2c0";".
-> 
-> Please check the result to make sure I didn't introduce errors.
+This series has been tested with the renesas-devel-v3.15-rc2-20140428 tag.
+If you want to boot into a console, you have a runtime dependency [1].
 
-It still looks good to me.
+Changes since V4:
 
-> From: Wolfram Sang <wsa@sang-engineering.com>
-> 
-> ARM: shmobile: r8a7790: add IIC(B) clocks to dtsi
-> 
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-> [horms+renesas@verge.net.au resolved conflicts]
-> [horms+renesas@verge.net.au consistently use space as separator]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi | 27 ++++++++++++++-------------
->  1 file changed, 14 insertions(+), 13 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index b74631e..903efe7 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -679,18 +679,19 @@
->  		mstp3_clks: mstp3_clks@e615013c {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
-> -			clocks = <&cp_clk>, <&mmc1_clk>, <&sd3_clk>, <&sd2_clk>,
-> -				 <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks 
-R8A7790_CLK_SD0>,
-> -				 <&mmc0_clk>, <&rclk_clk>;
-> +			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
-> +				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks
-> R8A7790_CLK_SD0>, <&mmc0_clk>, +				 <&hp_clk>, <&hp_clk>, 
-<&rclk_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> -				R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
-> -				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
-> -				R8A7790_CLK_MMCIF0 R8A7790_CLK_CMT1
-> +				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 
-R8A7790_CLK_SDHI3
-> +				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0
-> R8A7790_CLK_MMCIF0 +				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 
-R8A7790_CLK_CMT1
-> 
->  			>;
-> 
->  			clock-output-names > -				"tpu0", "mmcif1", "sdhi3", "sdhi2",
-> -				"sdhi1", "sdhi0", "mmcif0", "cmt1";
-> +				"iic2", "tpu0", "mmcif1", "sdhi3",
-> +				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
-> +				"iic0", "iic1", "cmt1";
->  		};
->  		mstp5_clks: mstp5_clks@e6150144 {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
-> @@ -734,16 +735,16 @@
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>,
-> +			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, 
-<&cp_clk>,
->  				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> -				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
-> -				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1
-> -				R8A7790_CLK_I2C0
-> +				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD
-> R8A7790_CLK_IICDVFS +				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 
-R8A7790_CLK_I2C1
-> R8A7790_CLK_I2C0
->  			>;
-> 
->  			clock-output-names > -				"rcan1", "rcan0", "qspi_mod", "i2c3", "i2c2", "i2c1", "i2c0";
-> +				"rcan1", "rcan0", "qspi_mod", "iic3",
-> +				"i2c3", "i2c2", "i2c1", "i2c0";
->  		};
->  	};
+* only use dt alias for scif2
+
+Changes since V3:
+
+* rebased and tested against latest renesas/devel-tag
+* using the new "clock-indices" binding
+* reordered patches to skip the workaround entry for scif2
+* moved serial aliases from the dtsi to the board file
+  (and kept the numbering according to the legacy board code)
+* updated my email-address
+
+The workaround in the last patch could be avoided once the DT patches for MTU2
+are available. Or we include the patch right now and clean the little bit up
+later in an incremental fashion. Please apply.
+
+Thanks,
+
+   Wolfram
+
+PS: A tree can be found here with this series and the dependency patch:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r7s-ccf
+
+[1] http://www.spinics.net/lists/linux-sh/msg30918.html (clk: shmobile: clk-mstp: change to using clock-indices)
+
+
+Wolfram Sang (11):
+  ARM: shmobile: r7s72100: document MSTP clock support
+  ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
+  ARM: shmobile: r7s72100: add scif nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: add uart aliases and activate scif2
+    as console
+  ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy
+    support
+  ARM: shmobile: r7s72100: add i2c clocks to dtsi
+  ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock
+    support
+  ARM: shmobile: r7s72100: add spi clocks to dtsi
+  ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock
+    support
+  ARM: shmobile: r7s72100: use workaround for non DT-clocks
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  26 ++-
+ arch/arm/boot/dts/r7s72100.dtsi                    | 215 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-genmai-reference.c    |  14 +-
+ arch/arm/mach-shmobile/board-genmai.c              |  44 +++++
+ arch/arm/mach-shmobile/clock-r7s72100.c            |   9 -
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  43 -----
+ include/dt-bindings/clock/r7s72100-clock.h         |  41 ++++
+ 8 files changed, 337 insertions(+), 56 deletions(-)
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.2
 
