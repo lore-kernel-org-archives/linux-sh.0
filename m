@@ -1,35 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 21 Apr 2014 14:13:02 +0000
-Subject: [PATCH 2/9] iommu/ipmmu-vmsa: Fix the supported page sizes
-Message-Id: <1398089589-9181-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:36 +0000
+Subject: [PATCH v5 05/11] ARM: shmobile: r7s72100: genmai: add uart alias and activate scif2 as console
+Message-Id: <1398765822-2314-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398089589-9181-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The hardware supports 2MB page sizes, not 1MB.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+We keep the UART naming backwards compatible with the legacy version.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/iommu/ipmmu-vmsa.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 1e0a757..1ae97d8 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -977,7 +977,7 @@ static struct iommu_ops ipmmu_ops = {
- 	.iova_to_phys = ipmmu_iova_to_phys,
- 	.add_device = ipmmu_add_device,
- 	.remove_device = ipmmu_remove_device,
--	.pgsize_bitmap = SZ_1M | SZ_64K | SZ_4K,
-+	.pgsize_bitmap = SZ_2M | SZ_64K | SZ_4K,
- };
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 941e72ce7c82..ca88458e0706 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -1,7 +1,8 @@
+ /*
+  * Device Tree Source for the Genmai board
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-14 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -15,6 +16,10 @@
+ 	model = "Genmai";
+ 	compatible = "renesas,genmai-reference", "renesas,r7s72100";
  
- /* -----------------------------------------------------------------------------
++	aliases {
++		serial2 = &scif2;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+@@ -48,3 +53,7 @@
+ 		pagesize = <64>;
+ 	};
+ };
++
++&scif2 {
++	status = "okay";
++};
 -- 
-1.8.3.2
+1.9.2
 
