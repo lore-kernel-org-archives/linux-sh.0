@@ -1,51 +1,84 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 01 Apr 2014 12:01:41 +0000
-Subject: [PATCH v2 1/6] mmc: sh-mmcif: update to print version and bus clock rate on probe
-Message-Id: <1396353706-31864-2-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 29 Apr 2014 02:15:41 +0000
+Subject: [PATCH] ARM: shmobile: Ignore callbacks for subsys generic_pm_domain_data
+Message-Id: <ab496b9d259e754f5d646219e4f032b274b9fffe.1398737681.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1396353706-31864-1-git-send-email-ben.dooks@codethink.co.uk>
+References: <cover.1398737681.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398737681.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <chris@printf.net>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, magnus.damm@opensource.se, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Change the initial print to show chip version and the bus rate it is
-working at instead of the driver version. This is more useful information
-as we already know which driver version from the kernel it is in.
+From: Ulf Hansson <ulf.hansson@linaro.org>
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+There are no active users of these callbacks, thus there are no benefit
+of trying to invoke them.
+
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mmcif.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/pm-rmobile.c | 38 +++----------------------------------
+ 1 file changed, 3 insertions(+), 35 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index e8713d7..738b155 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1470,16 +1470,17 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 1fc05d9..f710235 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -99,39 +99,7 @@ static int rmobile_pd_power_up(struct generic_pm_domain *genpd)
  
- 	mutex_init(&host->thread_lock);
+ static bool rmobile_pd_active_wakeup(struct device *dev)
+ {
+-	bool (*active_wakeup)(struct device *dev);
+-
+-	active_wakeup = dev_gpd_data(dev)->ops.active_wakeup;
+-	return active_wakeup ? active_wakeup(dev) : true;
+-}
+-
+-static int rmobile_pd_stop_dev(struct device *dev)
+-{
+-	int (*stop)(struct device *dev);
+-
+-	stop = dev_gpd_data(dev)->ops.stop;
+-	if (stop) {
+-		int ret = stop(dev);
+-		if (ret)
+-			return ret;
+-	}
+-	return pm_clk_suspend(dev);
+-}
+-
+-static int rmobile_pd_start_dev(struct device *dev)
+-{
+-	int (*start)(struct device *dev);
+-	int ret;
+-
+-	ret = pm_clk_resume(dev);
+-	if (ret)
+-		return ret;
+-
+-	start = dev_gpd_data(dev)->ops.start;
+-	if (start)
+-		ret = start(dev);
+-
+-	return ret;
++	return true;
+ }
  
--	clk_disable_unprepare(host->hclk);
- 	ret = mmc_add_host(mmc);
- 	if (ret < 0)
- 		goto emmcaddh;
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+@@ -140,8 +108,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	struct dev_power_governor *gov = rmobile_pd->gov;
  
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
--	dev_info(&pdev->dev, "driver version %s\n", DRIVER_VERSION);
--	dev_dbg(&pdev->dev, "chip ver H'%04x\n",
--		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
-+	dev_info(&pdev->dev, "Chip version 0x%04x, clock rate %luMHz\n",
-+		 sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0xffff,
-+		 clk_get_rate(host->hclk) / 1000000UL);
-+
-+	clk_disable_unprepare(host->hclk);
- 	return ret;
- 
- emmcaddh:
+ 	pm_genpd_init(genpd, gov ? : &simple_qos_governor, false);
+-	genpd->dev_ops.stop		= rmobile_pd_stop_dev;
+-	genpd->dev_ops.start		= rmobile_pd_start_dev;
++	genpd->dev_ops.stop		= pm_clk_suspend;
++	genpd->dev_ops.start		= pm_clk_resume;
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->dev_irq_safe		= true;
+ 	genpd->power_off		= rmobile_pd_power_down;
 -- 
-1.9.0
+1.8.5.2
 
