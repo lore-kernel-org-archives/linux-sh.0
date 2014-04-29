@@ -1,62 +1,162 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Apr 2014 14:10:25 +0000
-Subject: [PATCH v2 00/05] ARM: shmobile: Lager and Koelsch USB prototype patches
-Message-Id: <20140408141025.10063.85072.sendpatchset@w520>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:37 +0000
+Subject: [PATCH v5 06/11] ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy support
+Message-Id: <1398765822-2314-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: Lager and Koelsch USB prototype patches
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-[PATCH v2 01/05] gpio: rcar: Per-controller gpios property prototype
-[PATCH v2 02/05] ARM: shmobile: lager: DT reference USB platform devices
-[PATCH v2 03/05] ARM: shmobile: lager: DT reference USB pinmux setup 
-[PATCH v2 04/05] ARM: shmobile: koelsch: DT reference USB platform devices
-[PATCH v2 05/05] ARM: shmobile: koelsch: DT reference USB pinmux setup
+We have now DT support for SCIF, so use the platform_device
+initialization only for the legacy support.
 
-These patches enable USB functionality for the DT reference
-board support for Lager and Koelsch. With these in place it is
-possible to use a single kernel binary with CCF and MULTIPLATFORM
-on Lager or Koelsch and use USB Host or USB Function even though
-DT bindings are not yet developed for such device drivers.
-
-This is intended as a short term prototype to show that USB
-can be used on R-Car Gen2 hardware such as Lager and Koelsch
-even though DT bindings are not yet in place.
-
-With these patches device drivers for USBHS, USB PCI (Host 2.0)
-and USB PHY are supported. USB Host 3.0 support is still missing.
-
-USB0 is routed to USBHS via the PHY and USB1 is fixed USB Host 2.0,
-while USB2 is current assigned to USB Host 2.0 but may be changed
-to USB Host 3.0 when that driver is available upstream.
-
-Based on the legacy Lager and Koelsch board code written by Valentine
-and Vladimir, but slightly reworked to include clock workarounds and
-DT-style GPIO handling. The first patch in this series is a prototype
-to allow board code written in C to access GPIOs on controllers
-described via DT.
-
-Not for upstream merge.
-
-Changes since V1:
- - Use Signed-off-by instead of Not-Yet-Signed-off-by
- - Adjust board name in patch titles
- - Updated text to include comment about USB PCI, USB PHY, USBHS and USB 3.0.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
+ arch/arm/mach-shmobile/board-genmai.c   | 44 +++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r7s72100.c | 43 --------------------------------
+ 2 files changed, 44 insertions(+), 43 deletions(-)
 
- Written against renesas-devel-v3.14-20140403
+diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
+index 6c328d63b819..c94201ee8596 100644
+--- a/arch/arm/mach-shmobile/board-genmai.c
++++ b/arch/arm/mach-shmobile/board-genmai.c
+@@ -21,6 +21,7 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/serial_sci.h>
+ #include <linux/sh_eth.h>
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
+@@ -89,6 +90,40 @@ static const struct spi_board_info spi_info[] __initconst = {
+ 	},
+ };
+ 
++/* SCIF */
++#define R7S72100_SCIF(index, baseaddr, irq)				\
++static const struct plat_sci_port scif##index##_platform_data = {	\
++	.type		= PORT_SCIF,					\
++	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
++	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
++			  SCSCR_REIE,					\
++};									\
++									\
++static struct resource scif##index##_resources[] = {			\
++	DEFINE_RES_MEM(baseaddr, 0x100),				\
++	DEFINE_RES_IRQ(irq + 1),					\
++	DEFINE_RES_IRQ(irq + 2),					\
++	DEFINE_RES_IRQ(irq + 3),					\
++	DEFINE_RES_IRQ(irq),						\
++}									\
++
++R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
++R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
++R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
++R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
++R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
++R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
++R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
++R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
++
++#define r7s72100_register_scif(index)					       \
++	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
++					  scif##index##_resources,	       \
++					  ARRAY_SIZE(scif##index##_resources), \
++					  &scif##index##_platform_data,	       \
++					  sizeof(scif##index##_platform_data))
++
+ static void __init genmai_add_standard_devices(void)
+ {
+ 	r7s72100_clock_init();
+@@ -102,6 +137,15 @@ static void __init genmai_add_standard_devices(void)
+ 	r7s72100_register_rspi(3);
+ 	r7s72100_register_rspi(4);
+ 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
++
++	r7s72100_register_scif(0);
++	r7s72100_register_scif(1);
++	r7s72100_register_scif(2);
++	r7s72100_register_scif(3);
++	r7s72100_register_scif(4);
++	r7s72100_register_scif(5);
++	r7s72100_register_scif(6);
++	r7s72100_register_scif(7);
+ }
+ 
+ static const char * const genmai_boards_compat_dt[] __initconst = {
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 9c0b3a9d5f7a..828842319653 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -21,47 +21,12 @@
+ #include <linux/irq.h>
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+-#include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach/arch.h>
+ 
+-#define R7S72100_SCIF(index, baseaddr, irq)				\
+-static const struct plat_sci_port scif##index##_platform_data = {	\
+-	.type		= PORT_SCIF,					\
+-	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
+-	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
+-	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
+-			  SCSCR_REIE,					\
+-};									\
+-									\
+-static struct resource scif##index##_resources[] = {			\
+-	DEFINE_RES_MEM(baseaddr, 0x100),				\
+-	DEFINE_RES_IRQ(irq + 1),					\
+-	DEFINE_RES_IRQ(irq + 2),					\
+-	DEFINE_RES_IRQ(irq + 3),					\
+-	DEFINE_RES_IRQ(irq),						\
+-}									\
+-
+-R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
+-R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
+-R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
+-R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
+-R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
+-R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
+-R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
+-R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
+-
+-#define r7s72100_register_scif(index)					       \
+-	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
+-					  scif##index##_resources,	       \
+-					  ARRAY_SIZE(scif##index##_resources), \
+-					  &scif##index##_platform_data,	       \
+-					  sizeof(scif##index##_platform_data))
+-
+-
+ static struct sh_timer_config mtu2_0_platform_data __initdata = {
+ 	.name = "MTU2_0",
+ 	.timer_bit = 0,
+@@ -83,14 +48,6 @@ static struct resource mtu2_0_resources[] __initdata = {
+ 
+ void __init r7s72100_add_dt_devices(void)
+ {
+-	r7s72100_register_scif(0);
+-	r7s72100_register_scif(1);
+-	r7s72100_register_scif(2);
+-	r7s72100_register_scif(3);
+-	r7s72100_register_scif(4);
+-	r7s72100_register_scif(5);
+-	r7s72100_register_scif(6);
+-	r7s72100_register_scif(7);
+ 	r7s72100_register_mtu2(0);
+ }
+ 
+-- 
+1.9.2
 
- The Koelsch code has a run time dependency on:
- [PATCH] ARM: shmobile: r8a7791: Add EHCI MSTP clock
-
- arch/arm/boot/dts/r8a7790-lager.dts              |   18 +
- arch/arm/boot/dts/r8a7791-koelsch.dts            |   12 +
- arch/arm/mach-shmobile/board-koelsch-reference.c |  184 +++++++++++++++++++
- arch/arm/mach-shmobile/board-lager-reference.c   |  211 ++++++++++++++++++++++
- drivers/gpio/gpio-rcar.c                         |   23 ++
- 5 files changed, 446 insertions(+), 2 deletions(-)
