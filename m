@@ -1,87 +1,104 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Apr 2014 06:03:45 +0000
-Subject: [PATCH 2/8] ARM: shmobile: Add shared shmobile_init_delay()
-Message-Id: <c39dae380b4a11f1050a2ef6607598dcbe0541be.1397627619.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:40 +0000
+Subject: [PATCH v5 09/11] ARM: shmobile: r7s72100: add spi clocks to dtsi
+Message-Id: <1398765822-2314-10-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Introduce shmobile_init_delay() that gets CPU specific
-parameters from DT and sets up the early delay from
-there. This allows us to both remove frequency information
-from the C code and consolidate existing code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |  1 +
- arch/arm/mach-shmobile/timer.c               | 28 ++++++++++++++++++++++++++++
- 2 files changed, 29 insertions(+)
+ arch/arm/boot/dts/r7s72100.dtsi            | 18 ++++++++++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h |  7 +++++++
+ 2 files changed, 25 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index cb8e32d..f7a360e 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -4,6 +4,7 @@
- extern void shmobile_earlytimer_init(void);
- extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- 			 unsigned int mult, unsigned int div);
-+extern void shmobile_init_delay(void);
- struct twd_local_timer;
- extern void shmobile_setup_console(void);
- extern void shmobile_boot_vector(void);
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index 62d7052..ccecde9 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -21,6 +21,7 @@
- #include <linux/platform_device.h>
- #include <linux/clocksource.h>
- #include <linux/delay.h>
-+#include <linux/of_address.h>
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index afce2e344c7a..f50fbc8f3bd9 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -121,6 +121,19 @@
+ 			>;
+ 			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
+ 		};
++
++		mstp10_clks: mstp10_clks@fcfe043c {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe043c 4>;
++			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
++				 <&p1_clk>;
++			clock-indices = <
++				R7S72100_CLK_SPI0 R7S72100_CLK_SPI1 R7S72100_CLK_SPI2 R7S72100_CLK_SPI3
++				R7S72100_CLK_SPI4
++			>;
++			clock-output-names = "spi0", "spi1", "spi2", "spi3", "spi4";
++		};
+ 	};
  
- void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- 				 unsigned int mult, unsigned int div)
-@@ -39,6 +40,33 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- 		preset_lpj = max_cpu_core_mhz * value;
- }
+ 	cpus {
+@@ -318,6 +331,7 @@
+ 			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI0>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -331,6 +345,7 @@
+ 			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI1>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -344,6 +359,7 @@
+ 			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI2>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -357,6 +373,7 @@
+ 			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI3>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -370,6 +387,7 @@
+ 			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
++		clocks = <&mstp10_clks R7S72100_CLK_SPI4>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+index ff84e0bafd7b..5128f4d94f44 100644
+--- a/include/dt-bindings/clock/r7s72100-clock.h
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -31,4 +31,11 @@
+ #define R7S72100_CLK_I2C2	5
+ #define R7S72100_CLK_I2C3	4
  
-+void __init shmobile_init_delay(void)
-+{
-+	struct device_node *np, *parent;
-+	u32 max_freq, freq;
++/* MSTP10 */
++#define R7S72100_CLK_SPI0	7
++#define R7S72100_CLK_SPI1	6
++#define R7S72100_CLK_SPI2	5
++#define R7S72100_CLK_SPI3	4
++#define R7S72100_CLK_SPI4	3
 +
-+	max_freq = 0;
-+
-+	parent = of_find_node_by_path("/cpus");
-+	if (parent) {
-+		for_each_child_of_node(parent, np) {
-+			if (!of_property_read_u32(np, "clock-frequency", &freq))
-+				max_freq = max(max_freq, freq);
-+		}
-+		of_node_put(parent);
-+	}
-+
-+	if (max_freq) {
-+		if (of_find_compatible_node(NULL, NULL, "arm,cortex-a8"))
-+			shmobile_setup_delay(max_freq, 1, 3);
-+		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a9"))
-+			shmobile_setup_delay(max_freq, 1, 3);
-+		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a15"))
-+			if (!IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
-+				shmobile_setup_delay(max_freq, 2, 4);
-+	}
-+}
-+
- static void __init shmobile_late_time_init(void)
- {
- 	/*
+ #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
 -- 
-1.8.5.2
+1.9.2
 
