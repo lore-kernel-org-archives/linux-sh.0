@@ -1,42 +1,76 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Apr 2014 22:44:57 +0000
-Subject: [PATCH 08/14] ARM: shmobile: Add Lager clock workarounds for SDHI and MMCIF
-Message-Id: <f98b55d730492e664fb2649bd7054fec0fe81acd.1397774191.git.horms+renesas@verge.net.au>
+Date: Tue, 29 Apr 2014 02:15:32 +0000
+Subject: [PATCH 2/3] ARM: shmobile: henninger: add Ether DT support
+Message-Id: <26b0d2cf73cb5091962c81598a36346d05e9ba83.1398737464.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397774190.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397774190.git.horms+renesas@verge.net.au>
+References: <cover.1398737464.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398737464.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Add MMCIF1, SDHI0 and SDHI2 to the clock workaround list for
-Lager multiplatform. Without these additional lines wakeup
-from Suspend-to-RAM never happens.
+Define the Henninger board dependent part of the Ether device node.
+Enable DHCP and NFS root for the kernel booting.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-lager-reference.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 313118c..1eb48cf 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -114,7 +114,10 @@ static const struct clk_name clk_names[] __initconst = {
- static const struct clk_name clk_enables[] __initconst = {
- 	{ "ether", NULL, "ee700000.ethernet" },
- 	{ "msiof1", NULL, "e6e10000.spi" },
-+	{ "mmcif1", NULL, "ee220000.mmc" },
- 	{ "qspi_mod", NULL, "e6b10000.spi" },
-+	{ "sdhi0", NULL, "ee100000.sd" },
-+	{ "sdhi2", NULL, "ee140000.sd" },
- 	{ "thermal", NULL, "e61f0000.thermal" },
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 0053f52..f82f306 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -21,7 +21,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,38400 ignore_loglevel";
++		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+ 
+ 	memory@40000000 {
+@@ -40,6 +40,16 @@
+ 		renesas,groups = "scif0_data_d";
+ 		renesas,function = "scif0";
+ 	};
++
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq0";
++		renesas,function = "intc";
++	};
  };
  
+ &scif0 {
+@@ -48,3 +58,19 @@
+ 
+ 	status = "okay";
+ };
++
++&ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "ok";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
 -- 
-1.8.4
+1.8.5.2
 
