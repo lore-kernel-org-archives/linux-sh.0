@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 29 Apr 2014 00:21:41 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Tue, 29 Apr 2014 16:17:01 +0000
 Subject: Re: [PATCH 51/97] ARM: l2c: remove platforms/SoCs setting early BRESP
-Message-Id: <20140429002140.GP27282@n2100.arm.linux.org.uk>
+Message-Id: <535FD07D.5070801@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140428192419.GV26756@n2100.arm.linux.org.uk>
  <E1WerG4-0001X4-Ic@rmk-PC.arm.linux.org.uk>
@@ -12,15 +12,15 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 29, 2014 at 09:02:27AM +0900, Simon Horman wrote:
+On 04/28/2014 06:02 PM, Simon Horman wrote:
 > On Mon, Apr 28, 2014 at 08:30:32PM +0100, Russell King wrote:
-> > Since we now automatically enable early BRESP in core L2C-310 code when
-> > we detect a Cortex-A9, we don't need platforms/SoCs to set this bit
-> > explicitly.  Instead, they should seek to preserve the value of bit 30
-> > in the auxiliary control register.
-> > 
-> > Acked-by: Tony Lindgren <tony@atomide.com>
-> > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+>> Since we now automatically enable early BRESP in core L2C-310 code when
+>> we detect a Cortex-A9, we don't need platforms/SoCs to set this bit
+>> explicitly.  Instead, they should seek to preserve the value of bit 30
+>> in the auxiliary control register.
+>>
+>> Acked-by: Tony Lindgren <tony@atomide.com>
+>> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 > 
 > I would prefer if this patch was broken out into individual patches
 > for each board or SoC file and that they were then picked up
@@ -29,12 +29,8 @@ On Tue, Apr 29, 2014 at 09:02:27AM +0900, Simon Horman wrote:
 > Likewise for patch 66/97. Although it is only for shmobile
 > I would prefer it broken out.
 
-Oh fuck that.
-
-Okay, I'm dropping the whole patch set right now and forgetting the whole
-damned thing.  The L2 cache code can damned well stay as it is and remain
-an unmaintainable mess.
-
--- 
-FTTC broadband for 0.8mile line: now at 9.7Mbps down 460kbps up... slowly
-improving, and getting towards what was expected from it.
+There are far too many dependencies in this series to break out the
+board file patches to be merged separately; it'd take either a whole
+bunch of kernel releases to merge it all that way, or a twisty maze of
+tiny topic branches cross-merged all over the place. Neither option is
+realistic.
