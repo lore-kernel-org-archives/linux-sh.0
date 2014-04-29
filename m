@@ -1,87 +1,34 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Wed, 09 Apr 2014 20:52:46 +0000
-Subject: Re: [PATCH 1/2] pwm: add period and polarity to struct pwm_lookup
-Message-Id: <20140409205246.GA2879@piout.net>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:32 +0000
+Subject: [PATCH v5 01/11] ARM: shmobile: r7s72100: document MSTP clock support
+Message-Id: <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397066649-3767-1-git-send-email-alexandre.belloni@free-electrons.com>
- <1397066649-3767-2-git-send-email-alexandre.belloni@free-electrons.com>
- <20140409193705.GJ27282@n2100.arm.linux.org.uk>
-In-Reply-To: <20140409193705.GJ27282@n2100.arm.linux.org.uk>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 09/04/2014 at 20:37:06 +0100, Russell King - ARM Linux wrote :
-> On Wed, Apr 09, 2014 at 08:04:08PM +0200, Alexandre Belloni wrote:
-> > Adds a period and a polarity member to struct pwm_lookup so that when performing
-> > a lookup using the lookup table instead of device tree, we are able to set the
-> > period and the polarity accordingly like what is done in
-> > of_pwm_xlate_with_flags.
-> > 
-> > Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-> > ---
-> >  drivers/pwm/core.c  | 5 +++++
-> >  include/linux/pwm.h | 2 ++
-> >  2 files changed, 7 insertions(+)
-> > 
-> > diff --git a/drivers/pwm/core.c b/drivers/pwm/core.c
-> > index a80471399c20..206e5996359c 100644
-> > --- a/drivers/pwm/core.c
-> > +++ b/drivers/pwm/core.c
-> > @@ -663,6 +663,11 @@ struct pwm_device *pwm_get(struct device *dev, const char *con_id)
-> >  
-> >  	if (chip)
-> >  		pwm = pwm_request_from_chip(chip, index, con_id ?: dev_id);
-> > +	if (IS_ERR(pwm))
-> > +		return pwm;
-> > +
-> > +	pwm_set_period(pwm, p->period);
-> > +	pwm_set_polarity(pwm, p->polarity);
-> >  
-> >  	mutex_unlock(&pwm_lookup_lock);
-> 
-> Clearly, this is not right.  Returning while leaving the mutex locked?
-> No.
-> 
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Sure, I will fix that crap, sorry about that and thanks for pointing it
-out.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-> The second issue is... with _just_ this patch applied, we end up with
-> "period" and "polarity" presumably initialised to zero, which means we
-> now end up with the above explicitly setting the period and polarity as
-> such.  Isn't that going to change the behaviour of this?
-> 
-
-I actually checked that.
-
-For the polarity, for now, it is assumed that it is normal unless
-specified otherwise.
-The only driver that was supporting inverting it using platform_data is
-pwm-renesas-tpu. It is used by board-armadillo800eva.c that I am
-modifying now (and I just now realise that I forgot to invert it).
-
-The only PWM controller that I know of that by default has its polarity
-inversed is the allwinner one and in the driver I submitted, I actually
-switch it to normal polarity in the probe instead of e.g. doing
-pwm->polarity = PWM_POLARITY_INVERSED;
-
-For the period, all the driver are assuming 0 after initialization.
-
-I think this is not specified. If you think that may be a concern then I
-suggest creating another macro and using a bitfield to know which value
-is set.
-
-I would also argue that when using device tree,
-of_pwm_xlate_with_flags() will set the period and the polarity
-unconditionally, this is replicating that behaviour.
-
-However, I could agree that we may need to test for
-pwm->chip->ops->set_polarity before calling pwm_set_polarity as we will
-get an error if it is NULL (but we actually discard that return value).
-
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 02a25d99ca61..6c3c0847e4fd 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
 -- 
-Alexandre Belloni, Free Electrons
-Embedded Linux, Kernel and Android engineering
-http://free-electrons.com
+1.9.2
+
