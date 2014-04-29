@@ -1,39 +1,98 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 14 Apr 2014 21:35:10 +0000
-Subject: [PATCH v2 7/9] ARM: shmobile: lager: enable sysdma units 0 and 1
-Message-Id: <1397511312-4845-8-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 29 Apr 2014 07:43:25 +0000
+Subject: [PATCH 3/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
+Message-Id: <1398757406-30920-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1397511312-4845-1-git-send-email-ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
+References: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, magnus.damm-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, g.liakhovetski@gmx.d, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add the new sysdma units to the lager board.
+Initialise SCIF devices using DT when booting marzen
+using multiplatform.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/boot/dts/r8a7779-marzen.dts   | 22 +++++++++++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 10 +++++-----
+ 2 files changed, 24 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 26a9010..3b4f59c 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -214,3 +214,11 @@
- 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
- 	status = "okay";
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 769ae84..6e603db 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -18,6 +18,11 @@
+ 	model = "marzen";
+ 	compatible = "renesas,marzen", "renesas,r8a7779";
+ 
++	aliases {
++		serial2 = &scif2;
++		serial4 = &scif4;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
+ 	};
+@@ -73,9 +78,6 @@
  };
+ 
+ &pfc {
+-	pinctrl-0 = <&scif2_pins &scif4_pins>;
+-	pinctrl-names = "default";
+-
+ 	lan0_pins: lan0 {
+ 		intc {
+ 			renesas,groups = "intc_irq1_b";
+@@ -108,6 +110,20 @@
+ 	};
+ };
+ 
++&scif2 {
++       pinctrl-0 = <&scif2_pins>;
++       pinctrl-names = "default";
 +
-+&sysdma0 {
-+	status = "okay";
++       status = "okay";
 +};
 +
-+&sysdma1 {
-+	status = "okay";
++&scif4 {
++       pinctrl-0 = <&scif4_pins>;
++       pinctrl-names = "default";
++
++       status = "okay";
 +};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 3471a9b..0d2910c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -679,17 +679,17 @@ static void __init r8a7779_register_hpb_dmae(void)
+ }
+ 
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
++	&tmu00_device,
++	&tmu01_device,
++};
++
++static struct platform_device *r8a7779_standard_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&scif3_device,
+ 	&scif4_device,
+ 	&scif5_device,
+-	&tmu00_device,
+-	&tmu01_device,
+-};
+-
+-static struct platform_device *r8a7779_standard_devices[] __initdata = {
+ 	&i2c0_device,
+ 	&i2c1_device,
+ 	&i2c2_device,
 -- 
-1.9.1
+1.8.5.2
 
