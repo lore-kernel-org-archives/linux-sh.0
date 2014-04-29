@@ -1,41 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:42 +0000
-Subject: [PATCH 3/4] ARM: shmobile: sh7372: Call sh7372_add_early_devices() instead of open coding
-Message-Id: <1fba31f047639a6c7accf4f6d075a6cf9eacecc0.1398216284.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:39 +0000
+Subject: [PATCH v5 08/11] ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock support
+Message-Id: <1398765822-2314-9-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Not used anymore since we switched to CCF.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r7s72100.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 2730127..f8176b0 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1037,11 +1037,7 @@ void __init sh7372_add_early_devices_dt(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A8 @ 800MHz */
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index bee0073c9b64..6974cadac51c 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -199,10 +199,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+-	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
+-	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
+-	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+-	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+ 	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
  
--	early_platform_add_devices(sh7372_early_devices,
--				   ARRAY_SIZE(sh7372_early_devices));
--
--	/* setup early console here as well */
--	shmobile_setup_console();
-+	sh7372_add_early_devices();
- }
- 
- void __init sh7372_add_standard_devices_dt(void)
 -- 
-1.8.5.2
+1.9.2
 
