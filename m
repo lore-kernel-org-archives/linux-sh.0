@@ -1,41 +1,129 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 24 Apr 2014 11:16:49 +0000
-Subject: Re: [PATCH 1/6] PM / clock_ops: Add helpers combining generic runtime and generic clock PM
-Message-Id: <5358F2A1.40106@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 29 Apr 2014 10:03:35 +0000
+Subject: [PATCH v5 04/11] ARM: shmobile: r7s72100: add scif nodes to dtsi
+Message-Id: <1398765822-2314-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398335198-26555-1-git-send-email-geert+renesas@glider.be>
- <1398335198-26555-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1398335198-26555-2-git-send-email-geert+renesas@glider.be>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On 24-04-2014 14:26, Geert Uytterhoeven wrote:
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 96 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 96 insertions(+)
 
-> Add helpers pm_generic_runtime_clk_suspend() and
-> pm_generic_clk_runtime_resume(), combining generic runtime PM and generic
-> clock PM.
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-[...]
-
-> diff --git a/include/linux/pm_clock.h b/include/linux/pm_clock.h
-> index 6981aa288c45..bf1e4d09a0ca 100644
-> --- a/include/linux/pm_clock.h
-> +++ b/include/linux/pm_clock.h
-> @@ -35,6 +35,8 @@ extern int pm_clk_add_clk(struct device *dev, struct clk *clk);
->   extern void pm_clk_remove(struct device *dev, const char *con_id);
->   extern int pm_clk_suspend(struct device *dev);
->   extern int pm_clk_resume(struct device *dev);
-> +extern int pm_generic_runtime_clk_suspend(struct device *dev);
-> +extern int pm_generic_clk_runtime_resume(struct device *dev);
-
-    Shouldn't these function names be symmetric? I think '_clk' and '_runtime' 
-need swapping in one case.
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 5a6e2481b567..a4a67380b0a2 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -200,6 +200,102 @@
+ 		status = "disabled";
+ 	};
+ 
++	scif0: serial@e8007000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007000 64>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 191 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e8007800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007800 64>;
++		interrupts = <0 194 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 195 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif2: serial@e8008000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008000 64>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif3: serial@e8008800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008800 64>;
++		interrupts = <0 202 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 203 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif4: serial@e8009000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009000 64>;
++		interrupts = <0 206 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 207 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif5: serial@e8009800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009800 64>;
++		interrupts = <0 210 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 211 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif6: serial@e800a000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a000 64>;
++		interrupts = <0 214 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 215 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif7: serial@e800a800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a800 64>;
++		interrupts = <0 218 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 219 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	spi0: spi@e800c800 {
+ 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
+ 		reg = <0xe800c800 0x24>;
+-- 
+1.9.2
 
