@@ -1,51 +1,39 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 30 Apr 2014 08:05:16 +0000
-Subject: Re: [PATCH] ARM: shmobile: dts: Move interrupt-parent property to root node
-Message-Id: <20140430080516.GA4378@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="wRRV7LY7NUeQGEoC"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 29 Apr 2014 07:20:11 +0000
+Subject: [PATCH/RFC v2] serial: sh-sci: Add device tree support for r8a7779
+Message-Id: <1398756011-4672-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398818488-6591-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398818488-6591-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Simply document a new compat string.
+There appears to be no need for a driver updates.
 
---wRRV7LY7NUeQGEoC
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-On Wed, Apr 30, 2014 at 02:41:28AM +0200, Laurent Pinchart wrote:
-> There's no need to duplicate the interrupt-parent property in all DT
-> nodes as the kernel automatically walks parent nodes to find the
-> property. Specify it once in the root node only.
->=20
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.co=
-m>
+---
 
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+v2
+* Do not update the driver to set SCSCR_CKE1.
+  Instead DT may provide the P clock as the clock for the SCIF devices.
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 53e6c17..bba86de 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -12,6 +12,7 @@ Required properties:
+     - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
+     - "renesas,scif" for generic SCIF compatible UART.
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
+-- 
+1.8.5.2
 
---wRRV7LY7NUeQGEoC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTYK68AAoJEBQN5MwUoCm24s4QAIuSU9TaxY/DsSZ7swFI2BQI
-5oLo7QIKH8/4I4TncO+V06hFXAOaIhv4bo1nkTLnih5Sc+L8E28P1KNgRVq89drf
-yjGR4uixzyVUJw0rbvgo8Ly3je6JHN7wJM8qcKv9ixdcf+utii9cenbd2hFCz6zD
-t5tmMQtSpjZBuNVdEgXiyMUjlIN2DvDO6+/wjO0QambTDFd51c2biGREwQKejeh1
-+YfkxD/dMOsoZ20/q/R2bpYPSv6soVmaWz+jDz6qhrbzw2qTIEvNudzM3/ZH7FWX
-s2momAuRg3e7dMyxWA1a59k+3yozJE6J6kyUVU0MFQCmVki5+JNffsp95hsGQAAy
-vkoAR3F5nByh8afKESewbonHp3i5g4nLvK497QWBcgygLdJ0GlXedAtenX3nDgiJ
-V3ijQR+rksNryCzXMRxRWiIYvAxrxI0rDL6zpltABgzuIPYp0wZHQxAPd8mocwIt
-HmAyRC9FuAAqglbFDJPg3ex9bV6bKpK/y9My5HkN8NR2D0yuLiCDrSf3CrReL16s
-ja27ZdeUci/m0o+4jfHIv2xGaw+NtGPTse3ZEhXLowvt+N7cIFpwEI0jRsAUTVCB
-T8D4LvIeh7MTfdgHDsvnJKb43znVeQkKFk4XZcIlCj0U+mv+AgWh5SdP/qfqDy+g
-bm1/vw/GfxHYYDS1RBSw
-=sMu1
------END PGP SIGNATURE-----
-
---wRRV7LY7NUeQGEoC--
