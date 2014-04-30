@@ -1,78 +1,115 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 23 Apr 2014 01:25:39 +0000
-Subject: [PATCH 11/33] ARM: shmobile: Add DTS gpio-keys support for SW2 on Lager
-Message-Id: <f7dcd382a8d6ce8c6da12786c8311e71e214290d.1398216022.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 30 Apr 2014 00:31:43 +0000
+Subject: [RFC/PATCH 3/6] ARM: shmobile: r8a7790: Rename the serial port clock to fck
+Message-Id: <1398817906-6023-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-Add DTS gpio-keys support for SW2 on the Lager board.
-This makes the DT code match the legacy board code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 34 ++++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index cdec1af..c3d8b17 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -12,6 +12,7 @@
- /dts-v1/;
- #include "r8a7790.dtsi"
- #include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
- 
- / {
- 	model = "Lager";
-@@ -36,6 +37,39 @@
- 		#size-cells = <1>;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index d38d703..0684710 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -344,7 +344,7 @@
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
  	};
  
-+	gpio_keys {
-+		compatible = "gpio-keys";
-+
-+		button@1 {
-+			linux,code = <KEY_1>;
-+			label = "SW2-1";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
-+		};
-+		button@2 {
-+			linux,code = <KEY_2>;
-+			label = "SW2-2";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
-+		};
-+		button@3 {
-+			linux,code = <KEY_3>;
-+			label = "SW2-3";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+			gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
-+		};
-+		button@4 {
-+			linux,code = <KEY_4>;
-+			label = "SW2-4";
-+			gpio-key,wakeup;
-+			debounce-interval = <20>;
-+			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
-+		};
-+	};
-+
- 	leds {
- 		compatible = "gpio-leds";
- 		led6 {
+@@ -353,7 +353,7 @@
+ 		reg = <0 0xe6c50000 0 64>;
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -362,7 +362,7 @@
+ 		reg = <0 0xe6c60000 0 64>;
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -371,7 +371,7 @@
+ 		reg = <0 0xe6c20000 0 64>;
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -380,7 +380,7 @@
+ 		reg = <0 0xe6c30000 0 64>;
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -389,7 +389,7 @@
+ 		reg = <0 0xe6ce0000 0 64>;
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -398,7 +398,7 @@
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -407,7 +407,7 @@
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -416,7 +416,7 @@
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
+@@ -425,7 +425,7 @@
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.8.5.2
+1.8.3.2
 
