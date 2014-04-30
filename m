@@ -1,129 +1,34 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 30 Apr 2014 22:21:09 +0000
-Subject: [PATCH 5/6] i2c: sh_mobile: devm conversion, low hanging fruits
-Message-Id: <1398896470-24663-6-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 30 Apr 2014 22:39:17 +0000
+Subject: Re: [PATCH 5/6] i2c: sh_mobile: devm conversion, low hanging fruits
+Message-Id: <CAMuHMdW08XLKtWeSCtUPnuqR4Etz=CiYCDfqYUnCqAZjEsN7wQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
+	<1398896470-24663-6-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398896470-24663-6-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On Thu, May 1, 2014 at 12:21 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>
+> Convert the easy parts to devm. irqs will be converted in a seperate
+> patch to keep diffs readable.
+>
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Convert the easy parts to devm. irqs will be converted in a seperate
-patch to keep diffs readable.
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- drivers/i2c/busses/i2c-sh_mobile.c | 41 ++++++++++----------------------------
- 1 file changed, 10 insertions(+), 31 deletions(-)
+Gr{oetje,eeting}s,
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 2e481abd50ce..c47d11493b97 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -655,45 +655,33 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	struct sh_mobile_i2c_data *pd;
- 	struct i2c_adapter *adap;
- 	struct resource *res;
--	int size;
- 	int ret;
- 	u32 bus_speed;
- 
--	pd = kzalloc(sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
--	if (pd = NULL) {
--		dev_err(&dev->dev, "cannot allocate private data\n");
-+	pd = devm_kzalloc(&dev->dev, sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
-+	if (!pd)
- 		return -ENOMEM;
--	}
- 
--	pd->clk = clk_get(&dev->dev, NULL);
-+	pd->clk = devm_clk_get(&dev->dev, NULL);
- 	if (IS_ERR(pd->clk)) {
- 		dev_err(&dev->dev, "cannot get clock\n");
--		ret = PTR_ERR(pd->clk);
--		goto err;
-+		return PTR_ERR(pd->clk);
- 	}
- 
- 	ret = sh_mobile_i2c_hook_irqs(dev, 1);
- 	if (ret) {
- 		dev_err(&dev->dev, "cannot request IRQ\n");
--		goto err_clk;
-+		return ret;
- 	}
- 
- 	pd->dev = &dev->dev;
- 	platform_set_drvdata(dev, pd);
- 
- 	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
--	if (res = NULL) {
--		dev_err(&dev->dev, "cannot find IO resource\n");
--		ret = -ENOENT;
--		goto err_irq;
--	}
- 
--	size = resource_size(res);
--
--	pd->reg = ioremap(res->start, size);
--	if (pd->reg = NULL) {
--		dev_err(&dev->dev, "cannot map IO\n");
--		ret = -ENXIO;
-+	pd->reg = devm_ioremap_resource(&dev->dev, res);
-+	if (IS_ERR(pd->reg)) {
-+		ret = PTR_ERR(pd->reg);
- 		goto err_irq;
- 	}
- 
-@@ -710,7 +698,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	/* The IIC blocks on SH-Mobile ARM processors
- 	 * come with two new bits in ICIC.
- 	 */
--	if (size > 0x17)
-+	if (resource_size(res) > 0x17)
- 		pd->flags |= IIC_FLAG_HAS_ICIC67;
- 
- 	sh_mobile_i2c_init(pd);
-@@ -747,7 +735,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	ret = i2c_add_numbered_adapter(adap);
- 	if (ret < 0) {
- 		dev_err(&dev->dev, "cannot add numbered adapter\n");
--		goto err_all;
-+		goto err_irq;
- 	}
- 
- 	dev_info(&dev->dev,
-@@ -756,14 +744,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 
- 	return 0;
- 
-- err_all:
--	iounmap(pd->reg);
-  err_irq:
- 	sh_mobile_i2c_hook_irqs(dev, 0);
-- err_clk:
--	clk_put(pd->clk);
-- err:
--	kfree(pd);
- 	return ret;
- }
- 
-@@ -772,11 +754,8 @@ static int sh_mobile_i2c_remove(struct platform_device *dev)
- 	struct sh_mobile_i2c_data *pd = platform_get_drvdata(dev);
- 
- 	i2c_del_adapter(&pd->adap);
--	iounmap(pd->reg);
- 	sh_mobile_i2c_hook_irqs(dev, 0);
--	clk_put(pd->clk);
- 	pm_runtime_disable(&dev->dev);
--	kfree(pd);
- 	return 0;
- }
- 
--- 
-1.9.2
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
