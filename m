@@ -1,46 +1,48 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Tue, 29 Apr 2014 13:16:10 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 30 Apr 2014 21:23:11 +0000
 Subject: Re: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
-Message-Id: <20140429131610.29859C4094A@trevor.secretlab.ca>
+Message-Id: <2068296.FXWLXn1mqR@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
  <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
- <7hoazpdldx.fsf@paris.lan>
-In-Reply-To: <7hoazpdldx.fsf@paris.lan>
+ <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
+In-Reply-To: <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 25 Apr 2014 16:44:58 -0700, Kevin Hilman <khilman@linaro.org> wrote:
-> Geert Uytterhoeven <geert+renesas@glider.be> writes:
-> 
+Hi Ulf and Geert,
+
+On Thursday 24 April 2014 15:11:24 Ulf Hansson wrote:
+> On 24 April 2014 12:13, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
 > > When adding a device from DT, check if its clocks are suitable for Runtime
 > > PM, and register them with the PM core.
 > > If Runtime PM is disabled, just enable the clock.
-> >
+> > 
 > > This allows the PM core to automatically manage gate clocks of devices for
 > > Runtime PM.
 > 
-> ...unless the device is already in an existing pm_domain, right?
+> Normally I don't think it's a good idea to "automatically" manage
+> clocks from PM core or any other place but from the driver (and
+> possibly the subsystem).
 > 
-> I like this approach, and it extends nicely what we already do on
-> platforms using drivers/base/power/clock_ops.c into DT land.
-> 
-> My only concern is how this will interact if it's used along with
-> devices that have existing pm_domains.  I don't have any specific
-> concerns (yet, because it's Friday, and my brain is turing off), but it
-> just made me wonder if this will be potentially confusing.
+> The reason is simply that we hide things that normally is supposed to
+> be handled by the driver. Typically a cross SOC driver should work
+> fine both with and without a pm_domain. It should also not rely on
+> CONFIG_PM_RUNTIME.
 
-I have big concerns about this approach. First, it will only work if
-a clock is available at deivce creation time. The conversion of irq
-controllers to normal device drivers has already shown that is a bad
-idea.
+That's a very good point. Geert, what do you think should happen if 
+CONFIG_PM_RUNTIME is not set ? I don't have a strong opinion (yet) on whether 
+we could require CONFIG_PM_RUNTIME, but it would indeed be nice to support 
+both cases. One option would be to keep the clocks enabled unconditionally in 
+that case, as not setting CONFIG_PM_RUNTIME means that the user doesn't care 
+(or cares less) about power consumption.
 
-I also don't like that it tries to set up every clock, but there is no
-guarantee that the driver will even use it. I would rather see this
-behaviour linked into the function that obtains the clock at driver
-.probe() time. That way it can handle deferred probe correctly and it
-only sets up clocks that are actually used by the driver.
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-g.
+-- 
+Regards,
+
+Laurent Pinchart
+
