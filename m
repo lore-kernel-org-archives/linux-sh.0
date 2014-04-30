@@ -1,58 +1,139 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 08 Apr 2014 14:12:02 +0000
-Subject: Re: [PATCH v2 0/2] Add PCI USB DT support for R8A7790/Lager reference board
-Message-Id: <CANqRtoSFac-cQXYtfB218fXp1pa0yof4P+J2r=0OSK=RqvFm6Q@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 30 Apr 2014 22:21:10 +0000
+Subject: [PATCH 6/6] i2c: sh_mobile: devm conversion, irq setup
+Message-Id: <1398896470-24663-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404080235.22151.sergei.shtylyov@cogentembedded.com>
- <CANqRtoSg+JLZ5AbiOnnfXjg3m86q5J2U675VhgmhP1jxmDmmLA@mail.gmail.com>
- <53440346.7020703@cogentembedded.com>
-In-Reply-To: <53440346.7020703@cogentembedded.com>
+References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398896470-24663-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
 
-Hi Sergei,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tue, Apr 8, 2014 at 11:10 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
->
->
-> On 04/08/2014 05:59 PM, Magnus Damm wrote:
->
->>>     Here's the set of 2 patches against Simon Horman's 'renesas.git'
->>> repo,
->>> 'renesas-devel-v3.14-20140403' tag. Here we add the PCI USB device tree
->>> support on the R8A7790/Lager reference board. The patchset requires the
->>> 'pci-rcar-gen2' driver device tree support (just re-posted) in order to
->>> work.
->
->
->>> [1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
->>> [2/2] ARM: shmobile: lager: enable internal PCI
->
->
->> Thanks for your efforts. It is good to see that you are caring for
->> both r8a7790 and r8a7791 now.
->
->
->> By the way, have you decided how to use DT with the PHY driver? Just
->> integrating this portion seems of the hardware seems insufficient to
->> me.
->
->
->    Yes, I have written the new driver for the generic PHY framework,
-> supporting DT probing. I'm going to post it today -- I lacked the time to
-> post all at once.
->    This new driver (and some additional patches) provides for doing what
-> you've indicated to be the desirable behavior, i.e. configuring the PHY's
-> UGCTRL2 register depending on what kind of USB driver gets loaded. I hope
-> you will be able to use my patches for your further work on USB DT support.
+This is what devm was made for. No rollback mechanism needed, remove the
+hook parameter from the irq setup function and simplify it. While we are
+here change some variables to proper types.
 
-Thanks, that's very nice to hear. I'm looking forward to see how the
-pieces fit together!
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 56 ++++++++++----------------------------
+ 1 file changed, 15 insertions(+), 41 deletions(-)
 
-Cheers,
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index c47d11493b97..ddc9970fd724 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -611,42 +611,25 @@ static struct i2c_algorithm sh_mobile_i2c_algorithm = {
+ 	.master_xfer	= sh_mobile_i2c_xfer,
+ };
+ 
+-static int sh_mobile_i2c_hook_irqs(struct platform_device *dev, int hook)
++static int sh_mobile_i2c_hook_irqs(struct platform_device *dev)
+ {
+ 	struct resource *res;
+-	int ret = -ENXIO;
+-	int n, k = 0;
++	resource_size_t n;
++	int k = 0, ret;
+ 
+ 	while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
+-		for (n = res->start; hook && n <= res->end; n++) {
+-			if (request_irq(n, sh_mobile_i2c_isr, 0,
+-					dev_name(&dev->dev), dev)) {
+-				for (n--; n >= res->start; n--)
+-					free_irq(n, dev);
+-
+-				goto rollback;
++		for (n = res->start; n <= res->end; n++) {
++			ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
++					  0, dev_name(&dev->dev), dev);
++			if (ret) {
++				dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
++				return ret;
+ 			}
+ 		}
+ 		k++;
+ 	}
+ 
+-	if (hook)
+-		return k > 0 ? 0 : -ENOENT;
+-
+-	ret = 0;
+-
+- rollback:
+-	k--;
+-
+-	while (k >= 0) {
+-		res = platform_get_resource(dev, IORESOURCE_IRQ, k);
+-		for (n = res->start; n <= res->end; n++)
+-			free_irq(n, dev);
+-
+-		k--;
+-	}
+-
+-	return ret;
++	return k > 0 ? 0 : -ENOENT;
+ }
+ 
+ static int sh_mobile_i2c_probe(struct platform_device *dev)
+@@ -668,11 +651,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		return PTR_ERR(pd->clk);
+ 	}
+ 
+-	ret = sh_mobile_i2c_hook_irqs(dev, 1);
+-	if (ret) {
+-		dev_err(&dev->dev, "cannot request IRQ\n");
++	ret = sh_mobile_i2c_hook_irqs(dev);
++	if (ret)
+ 		return ret;
+-	}
+ 
+ 	pd->dev = &dev->dev;
+ 	platform_set_drvdata(dev, pd);
+@@ -680,10 +661,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
+ 
+ 	pd->reg = devm_ioremap_resource(&dev->dev, res);
+-	if (IS_ERR(pd->reg)) {
+-		ret = PTR_ERR(pd->reg);
+-		goto err_irq;
+-	}
++	if (IS_ERR(pd->reg))
++		return PTR_ERR(pd->reg);
+ 
+ 	/* Use platform data bus speed or STANDARD_MODE */
+ 	ret = of_property_read_u32(dev->dev.of_node, "clock-frequency", &bus_speed);
+@@ -735,7 +714,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	ret = i2c_add_numbered_adapter(adap);
+ 	if (ret < 0) {
+ 		dev_err(&dev->dev, "cannot add numbered adapter\n");
+-		goto err_irq;
++		return ret;
+ 	}
+ 
+ 	dev_info(&dev->dev,
+@@ -743,10 +722,6 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		 adap->nr, pd->bus_speed, pd->iccl, pd->icch);
+ 
+ 	return 0;
+-
+- err_irq:
+-	sh_mobile_i2c_hook_irqs(dev, 0);
+-	return ret;
+ }
+ 
+ static int sh_mobile_i2c_remove(struct platform_device *dev)
+@@ -754,7 +729,6 @@ static int sh_mobile_i2c_remove(struct platform_device *dev)
+ 	struct sh_mobile_i2c_data *pd = platform_get_drvdata(dev);
+ 
+ 	i2c_del_adapter(&pd->adap);
+-	sh_mobile_i2c_hook_irqs(dev, 0);
+ 	pm_runtime_disable(&dev->dev);
+ 	return 0;
+ }
+-- 
+1.9.2
 
-/ magnus
