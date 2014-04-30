@@ -1,36 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 29 Apr 2014 07:43:24 +0000
-Subject: [PATCH 2/4] ARM: shmobile: marzen: Remove early_printk from command line
-Message-Id: <1398757406-30920-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 30 Apr 2014 00:45:07 +0000
+Subject: Re: [PATCH 2/4] ARM: shmobile: marzen: Remove early_printk from command line
+Message-Id: <5762305.SPmcAFynTG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1398757406-30920-1-git-send-email-horms+renesas@verge.net.au>
+ <1398757406-30920-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1398757406-30920-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As far as I understand things this does not have any affect.
-So remove it.
+Hi Simon,
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779-marzen.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thank you for the patch.
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 2c727cd..769ae84 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -19,7 +19,7 @@
- 	compatible = "renesas,marzen", "renesas,r8a7779";
- 
- 	chosen {
--		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
- 	};
- 
- 	memory {
+On Tuesday 29 April 2014 16:43:24 Simon Horman wrote:
+> As far as I understand things this does not have any affect.
+> So remove it.
+
+The earlyprintk parameter actually makes a different when early printk support 
+is enabled in the kernel. As that's not enabled by default, dropping it from 
+the default command line is fine with me.
+
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+>  arch/arm/boot/dts/r8a7779-marzen.dts | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts
+> b/arch/arm/boot/dts/r8a7779-marzen.dts index 2c727cd..769ae84 100644
+> --- a/arch/arm/boot/dts/r8a7779-marzen.dts
+> +++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+> @@ -19,7 +19,7 @@
+>  	compatible = "renesas,marzen", "renesas,r8a7779";
+> 
+>  	chosen {
+> -		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200
+> ignore_loglevel root=/dev/nfs ip=on"; +		bootargs = "console=ttySC2,115200
+> ignore_loglevel root=/dev/nfs ip=on"; };
+> 
+>  	memory {
+
 -- 
-1.8.5.2
+Regards,
+
+Laurent Pinchart
 
