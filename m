@@ -1,57 +1,152 @@
-From: Peter Ujfalusi <peter.ujfalusi@ti.com>
-Date: Tue, 15 Apr 2014 07:42:03 +0000
-Subject: Re: [PATCHv2 07/11] ARM: OMAP3: Beagle: use PWM_LOOKUP to initialize struct pwm_lookup
-Message-Id: <534CE2CB.5030503@ti.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 30 Apr 2014 00:31:42 +0000
+Subject: [RFC/PATCH 2/6] serial: sh-sci: Drop the interface clock
+Message-Id: <1398817906-6023-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397512793-10325-1-git-send-email-alexandre.belloni@free-electrons.com>
- <1397512793-10325-8-git-send-email-alexandre.belloni@free-electrons.com>
- <534CD958.4000303@ti.com> <20140415071430.GA13659@verge.net.au>
-In-Reply-To: <20140415071430.GA13659@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On 04/15/2014 10:14 AM, Simon Horman wrote:
-> On Tue, Apr 15, 2014 at 10:01:44AM +0300, Peter Ujfalusi wrote:
->> On 04/15/2014 12:59 AM, Alexandre Belloni wrote:
->>> Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
->>> ---
->>>  arch/arm/mach-omap2/board-omap3beagle.c | 10 ++--------
->>>  1 file changed, 2 insertions(+), 8 deletions(-)
->>>
->>> diff --git a/arch/arm/mach-omap2/board-omap3beagle.c b/arch/arm/mach-om=
-ap2/board-omap3beagle.c
->>> index f27e1ec90b5e..54c135a5b4f7 100644
->>> --- a/arch/arm/mach-omap2/board-omap3beagle.c
->>> +++ b/arch/arm/mach-omap2/board-omap3beagle.c
->>> @@ -61,14 +61,8 @@
->>> =20
->>>  static struct pwm_lookup pwm_lookup[] =3D {
->>>  	/* LEDB -> PMU_STAT */
->>> -	{
->>> -		.provider =3D "twl-pwmled",
->>> -		.index =3D 1,
->>> -		.dev_id =3D "leds_pwm",
->>> -		.con_id =3D "beagleboard::pmu_stat",
->>> -		.period =3D 7812500,
->>> -		.polarity =3D PWM_POLARITY_NORMAL,
->>> -	},
->>> +	PWM_LOOKUP("twl-pwmled", 1, "leds_pwm", "beagleboard::pmu_stat",
->>> +		   7812500, PWM_POLARITY_NORMAL),
->>
->> Why do you need to do this in two steps?
->> In patch 4 you removed the existing PWM_LOOKUP() and now you are adding =
-it back.
->> Would not be simpler if you just add the two new parameters in patch 4 (=
-the
->> 812500, PWM_POLARITY_NORMAL)?
->=20
-> Such an approach would apply an atomic change to both the infrastructure
-> and the users.
+As no platform defines an interface clock the SCI driver always fall
+back to a clock named "peripheral_clk". On SH platform that clock is the
+base clock for the SCI functional clock and has the same frequency. On
+ARM platforms that clock doesn't exist, and clk_get() will return the
+default clock for the device. We can thus make the functional clock
+mandatory and drop the interface clock.
 
-Yes, I overlooked patch 6...
-Just ignore my comment.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../bindings/serial/renesas,sci-serial.txt         |  4 +-
+ drivers/tty/serial/sh-sci.c                        | 52 ++++++++++++----------
+ 2 files changed, 31 insertions(+), 25 deletions(-)
 
---=20
-P=E9ter
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 53e6c17..efc9eda 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -26,7 +26,7 @@ Required properties:
+ 
+   - clocks: Must contain a phandle and clock-specifier pair for each entry
+     in clock-names.
+-  - clock-names: Must contain "sci_ick" for the SCIx UART interface clock.
++  - clock-names: Must contain "fck" for the SCIx UART functional clock.
+ 
+ Note: Each enabled SCIx UART should have an alias correctly numbered in the
+ "aliases" node.
+@@ -42,5 +42,5 @@ Example:
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 88236da..ea4255c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -90,8 +90,6 @@ struct sci_port {
+ 	struct timer_list	break_timer;
+ 	int			break_flag;
+ 
+-	/* Interface clock */
+-	struct clk		*iclk;
+ 	/* Function clock */
+ 	struct clk		*fclk;
+ 
+@@ -442,9 +440,8 @@ static void sci_port_enable(struct sci_port *sci_port)
+ 
+ 	pm_runtime_get_sync(sci_port->port.dev);
+ 
+-	clk_prepare_enable(sci_port->iclk);
+-	sci_port->port.uartclk = clk_get_rate(sci_port->iclk);
+ 	clk_prepare_enable(sci_port->fclk);
++	sci_port->port.uartclk = clk_get_rate(sci_port->fclk);
+ }
+ 
+ static void sci_port_disable(struct sci_port *sci_port)
+@@ -461,7 +458,6 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	sci_port->break_flag = 0;
+ 
+ 	clk_disable_unprepare(sci_port->fclk);
+-	clk_disable_unprepare(sci_port->iclk);
+ 
+ 	pm_runtime_put_sync(sci_port->port.dev);
+ }
+@@ -1045,7 +1041,7 @@ static int sci_notifier(struct notifier_block *self,
+ 		struct uart_port *port = &sci_port->port;
+ 
+ 		spin_lock_irqsave(&port->lock, flags);
+-		port->uartclk = clk_get_rate(sci_port->iclk);
++		port->uartclk = clk_get_rate(sci_port->fclk);
+ 		spin_unlock_irqrestore(&port->lock, flags);
+ 	}
+ 
+@@ -2097,6 +2093,30 @@ static struct uart_ops sci_uart_ops = {
+ #endif
+ };
+ 
++static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
++{
++	/* Get the SCI functional clock. It's called "fck" on ARM. */
++	sci_port->fclk = clk_get(dev, "fck");
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	/* SH has historically named the clock "sci_fck". */
++	sci_port->fclk = clk_get(dev, "sci_fck");
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	/*
++	 * Not all SH platforms declare a clock lookup entry for SCI devices, in
++	 * which case we need to get the global "peripheral_clk" clock.
++	 */
++	sci_port->fclk = clk_get(dev, "peripheral_clk");
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	dev_err(dev, "failed to can't get fclk\n");
++	return PTR_ERR(sci_port->fclk);
++}
++
+ static int sci_init_single(struct platform_device *dev,
+ 			   struct sci_port *sci_port, unsigned int index,
+ 			   struct plat_sci_port *p, bool early)
+@@ -2183,22 +2203,9 @@ static int sci_init_single(struct platform_device *dev,
+ 				: sampling_rate;
+ 
+ 	if (!early) {
+-		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+-		if (IS_ERR(sci_port->iclk)) {
+-			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
+-			if (IS_ERR(sci_port->iclk)) {
+-				dev_err(&dev->dev, "can't get iclk\n");
+-				return PTR_ERR(sci_port->iclk);
+-			}
+-		}
+-
+-		/*
+-		 * The function clock is optional, ignore it if we can't
+-		 * find it.
+-		 */
+-		sci_port->fclk = clk_get(&dev->dev, "sci_fck");
+-		if (IS_ERR(sci_port->fclk))
+-			sci_port->fclk = NULL;
++		ret = sci_init_clocks(sci_port, &dev->dev);
++		if (ret < 0)
++			return ret;
+ 
+ 		port->dev = &dev->dev;
+ 
+@@ -2252,7 +2259,6 @@ static int sci_init_single(struct platform_device *dev,
+ 
+ static void sci_cleanup_single(struct sci_port *port)
+ {
+-	clk_put(port->iclk);
+ 	clk_put(port->fclk);
+ 
+ 	pm_runtime_disable(port->port.dev);
+-- 
+1.8.3.2
+
