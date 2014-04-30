@@ -1,162 +1,57 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 18 Apr 2014 14:48:09 +0000
-Subject: [PATCH v2 09/14] clocksource: sh_tmu: Add DT support
-Message-Id: <1397832494-20607-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 30 Apr 2014 00:31:41 +0000
+Subject: [RFC/PATCH 1/6] sh: Rename sci_ick clock to sci_fck
+Message-Id: <1398817906-6023-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397832494-20607-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Cc: devicetree@vger.kernel.org
+The SCI driver requires an interface clock and handles an optional
+functional clock. When a clock named "sci_ick" exists that clock is used
+as the interface clock, otherwise the driver falls back to a clock
+called "peripheral_clk".
+
+Most SH platforms define an "sci_fck" functional clock without any
+"sci_ick" interface clock, relying on the driver fallback code. In
+preparation for dropping the interface clock from the SCI driver, rename
+the sci_ick clock to sci_fck in for the SH platforms that define
+sci_ick. The driver will correctly fallback on the peripheral_clk clock
+on those platforms.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../devicetree/bindings/timer/renesas,tmu.txt      | 40 +++++++++++++++++++
- drivers/clocksource/sh_tmu.c                       | 45 ++++++++++++++++++----
- 2 files changed, 77 insertions(+), 8 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
+ arch/sh/kernel/cpu/clock-cpg.c         | 2 +-
+ arch/sh/kernel/cpu/sh2a/clock-sh7264.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.txt b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-new file mode 100644
-index 0000000..2392e89
---- /dev/null
-+++ b/Documentation/devicetree/bindings/timer/renesas,tmu.txt
-@@ -0,0 +1,40 @@
-+* Renesas R-Car Timer Unit (TMU)
-+
-+The TMU is a 32-bit timer/counter with configurable clock inputs and
-+programmable compare match.
-+
-+Channels share hardware resources but their counter and compare match value
-+are independent. The TMU hardware supports up to three channels.
-+
-+Required Properties:
-+
-+  - compatible: must contain "renesas,tmu"
-+
-+  - reg: base address and length of the registers block for the timer module.
-+
-+  - interrupts: interrupt-specifier for the timer, one per channel.
-+
-+  - clocks: a list of phandle + clock-specifier pairs, one for each entry
-+    in clock-names.
-+  - clock-names: must contain "fck" for the functional clock.
-+
-+Optional Properties:
-+
-+  - #renesas,channels: number of channels implemented by the timer, must be 2
-+    or 3 (if not specified the value defaults to 3).
-+
-+
-+Example: R8A7779 (R-Car H1) TMU0 node
-+
-+	tmu0: timer@ffd80000 {
-+		compatible = "renesas,tmu";
-+		reg = <0xffd80000 0x30>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
-+		clock-names = "fck";
-+
-+		#renesas,channels = <3>;
-+	};
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index c8250f8..0ba70cc 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -24,6 +24,7 @@
- #include <linux/ioport.h>
- #include <linux/irq.h>
- #include <linux/module.h>
-+#include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
-@@ -509,23 +510,46 @@ static int sh_tmu_map_memory(struct sh_tmu_device *tmu)
- 	return 0;
+diff --git a/arch/sh/kernel/cpu/clock-cpg.c b/arch/sh/kernel/cpu/clock-cpg.c
+index f59b1f3..4f1d5e8 100644
+--- a/arch/sh/kernel/cpu/clock-cpg.c
++++ b/arch/sh/kernel/cpu/clock-cpg.c
+@@ -59,7 +59,7 @@ int __init __deprecated cpg_clk_init(void)
+ 	clk_add_alias("tmu_fck", NULL, "peripheral_clk", NULL);
+ 	clk_add_alias("mtu2_fck", NULL, "peripheral_clk", NULL);
+ 	clk_add_alias("cmt_fck", NULL, "peripheral_clk", NULL);
+-	clk_add_alias("sci_ick", NULL, "peripheral_clk", NULL);
++	clk_add_alias("sci_fck", NULL, "peripheral_clk", NULL);
+ 
+ 	return ret;
  }
+diff --git a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
+index fdf585c..bb05e3b 100644
+--- a/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/clock-sh7264.c
+@@ -115,7 +115,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk", &div4_clks[DIV4_P]),
  
-+static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
-+{
-+	struct device_node *np = tmu->pdev->dev.of_node;
-+
-+	tmu->num_channels = 3;
-+	of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
-+
-+	if (tmu->num_channels != 2 && tmu->num_channels != 3) {
-+		dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
-+			tmu->num_channels);
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
- static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- {
--	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	const struct platform_device_id *id = pdev->id_entry;
- 	unsigned int i;
- 	int ret;
- 
--	if (!cfg) {
--		dev_err(&tmu->pdev->dev, "missing platform data\n");
--		return -ENXIO;
--	}
--
- 	tmu->pdev = pdev;
- 	tmu->model = id->driver_data;
- 
- 	raw_spin_lock_init(&tmu->lock);
- 
-+	if (IS_ENABLED(CONFIG_OF) && pdev->dev.of_node) {
-+		ret = sh_tmu_parse_dt(tmu);
-+		if (ret < 0)
-+			return ret;
-+	} else if (pdev->dev.platform_data) {
-+		struct sh_timer_config *cfg = pdev->dev.platform_data;
-+
-+		tmu->num_channels = hweight8(cfg->channels_mask);
-+	} else {
-+		dev_err(&tmu->pdev->dev, "missing platform data\n");
-+		return -ENXIO;
-+	}
-+
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
-@@ -545,8 +569,6 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	}
- 
- 	/* Allocate and setup the channels. */
--	tmu->num_channels = hweight8(cfg->channels_mask);
--
- 	tmu->channels = kzalloc(sizeof(*tmu->channels) * tmu->num_channels,
- 				GFP_KERNEL);
- 	if (tmu->channels = NULL) {
-@@ -630,11 +652,18 @@ static const struct platform_device_id sh_tmu_id_table[] = {
- };
- MODULE_DEVICE_TABLE(platform, sh_tmu_id_table);
- 
-+static const struct of_device_id sh_tmu_of_table[] = {
-+	{ .compatible = "renesas,tmu" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, sh_tmu_of_table);
-+
- static struct platform_driver sh_tmu_device_driver = {
- 	.probe		= sh_tmu_probe,
- 	.remove		= sh_tmu_remove,
- 	.driver		= {
- 		.name	= "sh_tmu",
-+		.of_match_table = sh_tmu_of_table,
- 	},
- 	.id_table	= sh_tmu_id_table,
- };
+ 	/* MSTP clocks */
+-	CLKDEV_CON_ID("sci_ick", &mstp_clks[MSTP77]),
++	CLKDEV_CON_ID("sci_fck", &mstp_clks[MSTP77]),
+ 	CLKDEV_CON_ID("vdc3", &mstp_clks[MSTP74]),
+ 	CLKDEV_CON_ID("cmt_fck", &mstp_clks[MSTP72]),
+ 	CLKDEV_CON_ID("usb0", &mstp_clks[MSTP60]),
 -- 
 1.8.3.2
 
