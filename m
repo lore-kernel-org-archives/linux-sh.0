@@ -1,174 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 22 Apr 2014 10:50:52 +0000
-Subject: [PATCH v4 11/15] ARM: shmobile: r8a7740: Switch to new style TMU device
-Message-Id: <1398163856-7379-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 30 Apr 2014 22:21:04 +0000
+Subject: [PATCH 0/6] i2c: sh_mobile: cleanups
+Message-Id: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
+Some cleanups for i2c-sh_mobile. Tested on top of renesas-devel-v3.15-rc3-20140429
+and with a lager board. Branch is at
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/clock-r8a7740.c |  8 +--
- arch/arm/mach-shmobile/setup-r8a7740.c | 97 +++++-----------------------------
- 2 files changed, 15 insertions(+), 90 deletions(-)
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/sh_mobile-cleanup
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index cdb303c..2c1044a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -548,15 +548,9 @@ static struct clk_lookup lookups[] = {
- 
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0",	&mstp_clks[MSTP100]),
--	CLKDEV_DEV_ID("sh_tmu.3",		&mstp_clks[MSTP111]),
--	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
--	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("fff20000.i2c",		&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
--	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
--	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
--	CLKDEV_DEV_ID("sh_tmu.2",		&mstp_clks[MSTP125]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
- 
-@@ -603,6 +597,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
- 
- 	/* ICK */
-+	CLKDEV_ICK_ID("fck",	"sh-tmu.1",		&mstp_clks[MSTP111]),
-+	CLKDEV_ICK_ID("fck",	"sh-tmu.0",		&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
- 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 236ac3c..069cd3d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -257,94 +257,25 @@ static struct platform_device cmt1_device = {
- };
- 
- /* TMU */
--static struct sh_timer_config tmu00_platform_data = {
--	.name = "TMU00",
--	.channel_offset = 0x4,
--	.timer_bit = 0,
--	.clockevent_rating = 200,
-+static struct sh_timer_config tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct resource tmu00_resources[] = {
--	[0] = {
--		.name	= "TMU00",
--		.start	= 0xfff80008,
--		.end	= 0xfff80014 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(198),
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xfff80000, 0x2c),
-+	DEFINE_RES_IRQ(gic_spi(198)),
-+	DEFINE_RES_IRQ(gic_spi(199)),
-+	DEFINE_RES_IRQ(gic_spi(200)),
- };
- 
--static struct platform_device tmu00_device = {
--	.name		= "sh_tmu",
-+static struct platform_device tmu0_device = {
-+	.name		= "sh-tmu",
- 	.id		= 0,
- 	.dev = {
--		.platform_data	= &tmu00_platform_data,
--	},
--	.resource	= tmu00_resources,
--	.num_resources	= ARRAY_SIZE(tmu00_resources),
--};
--
--static struct sh_timer_config tmu01_platform_data = {
--	.name = "TMU01",
--	.channel_offset = 0x10,
--	.timer_bit = 1,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu01_resources[] = {
--	[0] = {
--		.name	= "TMU01",
--		.start	= 0xfff80014,
--		.end	= 0xfff80020 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(199),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu01_device = {
--	.name		= "sh_tmu",
--	.id		= 1,
--	.dev = {
--		.platform_data	= &tmu01_platform_data,
--	},
--	.resource	= tmu01_resources,
--	.num_resources	= ARRAY_SIZE(tmu01_resources),
--};
--
--static struct sh_timer_config tmu02_platform_data = {
--	.name = "TMU02",
--	.channel_offset = 0x1C,
--	.timer_bit = 2,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu02_resources[] = {
--	[0] = {
--		.name	= "TMU02",
--		.start	= 0xfff80020,
--		.end	= 0xfff8002C - 1,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(200),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu02_device = {
--	.name		= "sh_tmu",
--	.id		= 2,
--	.dev = {
--		.platform_data	= &tmu02_platform_data,
-+		.platform_data	= &tmu0_platform_data,
- 	},
--	.resource	= tmu02_resources,
--	.num_resources	= ARRAY_SIZE(tmu02_resources),
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
- };
- 
- /* IPMMUI (an IPMMU module for ICB/LMB) */
-@@ -396,9 +327,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&irqpin1_device,
- 	&irqpin2_device,
- 	&irqpin3_device,
--	&tmu00_device,
--	&tmu01_device,
--	&tmu02_device,
-+	&tmu0_device,
- 	&ipmmu_device,
- };
- 
+Wolfram Sang (6):
+  i2c: sh_mobile: replace magic hex values with constants
+  i2c: sh_mobile: improve error handling
+  i2c: sh_mobile: honor DT bus speed settings
+  i2c: sh_mobile: add devicetree documentation
+  i2c: sh_mobile: devm conversion, low hanging fruits
+  i2c: sh_mobile: devm conversion, irq setup
+
+ .../devicetree/bindings/i2c/i2c-sh_mobile.txt      |  26 ++++
+ drivers/i2c/busses/i2c-sh_mobile.c                 | 132 +++++++--------------
+ 2 files changed, 67 insertions(+), 91 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+
 -- 
-1.8.3.2
+1.9.2
 
