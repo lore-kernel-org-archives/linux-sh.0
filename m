@@ -1,33 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 23 May 2014 00:51:06 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: marzen dts: Remove superfluous include
-Message-Id: <20140523005106.GB8483@verge.net.au>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Thu, 01 May 2014 15:12:35 +0000
+Subject: Re: [PATCH 51/97] ARM: l2c: remove platforms/SoCs setting early BRESP
+Message-Id: <20140501151236.078E3C409DA@trevor.secretlab.ca>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400761997-13512-1-git-send-email-geert+renesas@glider.be>
- <1400761997-13512-3-git-send-email-geert+renesas@glider.be>
- <2352184.UXetcfavus@avalon>
- <CAMuHMdXWW-2BaEpMXy3b_scttgo3S1UD73kt-dH44_s-GGf4WQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXWW-2BaEpMXy3b_scttgo3S1UD73kt-dH44_s-GGf4WQ@mail.gmail.com>
+References: <20140428192419.GV26756@n2100.arm.linux.org.uk>
+ <E1WerG4-0001X4-Ic@rmk-PC.arm.linux.org.uk>
+ <20140429000224.GA31083@verge.net.au>
+ <20140429002140.GP27282@n2100.arm.linux.org.uk>
+In-Reply-To: <20140429002140.GP27282@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 22, 2014 at 02:58:57PM +0200, Geert Uytterhoeven wrote:
-> On Thu, May 22, 2014 at 2:50 PM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
-> > On Thursday 22 May 2014 14:33:17 Geert Uytterhoeven wrote:
-> >> <dt-bindings/interrupt-controller/irq.h> is already included by
-> >> r8a7779.dtsi.
-> >
-> > Isn't it better, like with C code, to explicitly include headers that provide
-> > the macros you need, instead of relying on implicit #include's that could
-> > change later ? OK, in this specific case, it's very unlikely that r8a7779.dtsi
-> > would stop including <dt-bindings/interrupt-controller/irq.h>, but in the
-> > general case I believe explicit includes to be good practice.
+On Tue, 29 Apr 2014 01:21:41 +0100, Russell King - ARM Linux <linux@arm.linux.org.uk> wrote:
+> On Tue, Apr 29, 2014 at 09:02:27AM +0900, Simon Horman wrote:
+> > On Mon, Apr 28, 2014 at 08:30:32PM +0100, Russell King wrote:
+> > > Since we now automatically enable early BRESP in core L2C-310 code when
+> > > we detect a Cortex-A9, we don't need platforms/SoCs to set this bit
+> > > explicitly.  Instead, they should seek to preserve the value of bit 30
+> > > in the auxiliary control register.
+> > > 
+> > > Acked-by: Tony Lindgren <tony@atomide.com>
+> > > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+> > 
+> > I would prefer if this patch was broken out into individual patches
+> > for each board or SoC file and that they were then picked up
+> > by their respective platform maintainers.
+> > 
+> > Likewise for patch 66/97. Although it is only for shmobile
+> > I would prefer it broken out.
 > 
-> You're right. I was a bit overzealous.
+> Oh fuck that.
 > 
-> Simon, please drop this.
+> Okay, I'm dropping the whole patch set right now and forgetting the whole
+> damned thing.  The L2 cache code can damned well stay as it is and remain
+> an unmaintainable mess.
 
-Done.
+FWIW, there are an awful lot of people, myself included, who do care
+that you've done this work. It is 100% okay for you to say "no" to
+requests to split things up because of the complexity of the series.
+
+I really hope you're reconsider and not give up on this series.
+
+g.
+
+
