@@ -1,72 +1,139 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 02 May 2014 18:21:47 +0000
-Subject: Re: [PATCH v5 12/15] ARM: shmobile: r8a7778: Switch to new style TMU device
-Message-Id: <29769434.fenvyKNn4c@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 01 May 2014 01:09:42 +0000
+Subject: [PATCH] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
+Message-Id: <1398906582-29888-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398251722-31667-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398251722-31667-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+If the kernel is built to support multi-ARM configuration with shmobile
+support built in, then drivers/sh is not built. This contains the PM
+runtime code in drivers/sh/pm_runtime.c, which implicitly enables the
+module clocks for all devices, and thus is quite essential.
+Without this, the state of clocks depends on implicit reset state, or on
+the bootloader.
 
-On Friday 02 May 2014 05:51:07 Geert Uytterhoeven wrote:
-> Hi Laurent,
-> 
-> On Wed, Apr 23, 2014 at 1:15 PM, Laurent Pinchart wrote:
-> > --- a/arch/arm/mach-shmobile/setup-r8a7778.c
-> > +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-> > @@ -71,33 +71,20 @@ R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
-> > 
-> >                                           sizeof(scif##index##_platform_da
-> >                                           ta))
-> >  
-> >  /* TMU */
-> > 
-> > -static struct resource sh_tmu0_resources[] __initdata = {
-> > -       DEFINE_RES_MEM(0xffd80008, 12),
-> > -       DEFINE_RES_IRQ(gic_iid(0x40)),
-> 
-> gic_iid(0x40)
-> 
-> > +static struct sh_timer_config sh_tmu0_platform_data = {
-> > +       .channels_mask = 7,
-> > 
-> >  };
-> > 
-> > -static struct sh_timer_config sh_tmu0_platform_data __initdata = {
-> > -       .name                   = "TMU00",
-> > -       .channel_offset         = 0x4,
-> > -       .timer_bit              = 0,
-> > -       .clockevent_rating      = 200,
-> > -};
-> > -
-> > -static struct resource sh_tmu1_resources[] __initdata = {
-> > -       DEFINE_RES_MEM(0xffd80014, 12),
-> > -       DEFINE_RES_IRQ(gic_iid(0x41)),
-> > -};
-> > -
-> > -static struct sh_timer_config sh_tmu1_platform_data __initdata = {
-> > -       .name                   = "TMU01",
-> > -       .channel_offset         = 0x10,
-> > -       .timer_bit              = 1,
-> > -       .clocksource_rating     = 200,
-> > +static struct resource sh_tmu0_resources[] = {
-> > +       DEFINE_RES_MEM(0xffd80000, 0x30),
-> > +       DEFINE_RES_IRQ(gic_spi(0x40)),
-> > +       DEFINE_RES_IRQ(gic_spi(0x41)),
-> > +       DEFINE_RES_IRQ(gic_spi(0x42)),
-> > 
-> >  };
-> 
-> So these should be gic_iid(x04x), too?
+If ARCH_SHMOBILE_MULTI then build the drivers/sh directory, but ensure that
+bits that may conflict (drivers/sh/clk if the common clock framework is
+enabled) or are not used (drivers/sh/intc), are not built.
+Also, only enable the PM runtime code when actually running on a shmobile
+SoCs that needs it.
 
-Definitely. I've sent a fixed v6 patch.
+ARCH_SHMOBILE_MULTI was added a while ago by commit
+efacfce5f8a523457e9419a25d52fe39db00b26a ("ARM: shmobile: Introduce
+ARCH_SHMOBILE_MULTI"), but drivers/sh was compiled for both
+ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI until commit
+bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187 ("ARM: Rename ARCH_SHMOBILE to
+ARCH_SHMOBILE_LEGACY").
 
+Inspired by a patch from Ben Dooks <ben.dooks@codethink.co.uk>.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This is a minimal solution to fix the issue for multi-platform shmobile
+kernels in a multi-platform-friendly way.
+As it touches drivers/sh-specific code only, Simom should still be able to
+get it in v3.15, and backported to v3.14-stable.
+
+This is an RFC for several reasons:
+  1. I'm at ELC, and away from my hardware to test it properly (also on
+     non-shmobile).
+  2. Can we already reduce the list of SoCs to check for?
+     E.g. is this needed for emev2, which doesn't have MSTP clocks?
+
+v3:
+  - Add of_machine_is_compatible() checks for multi-platform
+  - Remove Reviewed-by, Tested-by, as too much has changed,
+  - Assumed authorship, as not much is left from the original patch from
+    Ben (Ben: is that OK?),
+v2:
+  - Add Reviewed-by, Tested-by
+---
+ drivers/Makefile        |    2 +-
+ drivers/sh/Makefile     |   14 ++++++++------
+ drivers/sh/pm_runtime.c |   23 +++++++++++++++++++++--
+ 3 files changed, 30 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index d05d81b19b50..7183b6af5dac 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -119,7 +119,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
+ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+-obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
++obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+ ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+ obj-y				+= clocksource/
+ endif
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index fc67f564f02c..788ed9b59b4e 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -1,10 +1,12 @@
+ #
+ # Makefile for the SuperH specific drivers.
+ #
+-obj-y	:= intc/
++obj-$(CONFIG_SUPERH)			+= intc/
++obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= intc/
++ifneq ($(CONFIG_COMMON_CLK),y)
++obj-$(CONFIG_HAVE_CLK)			+= clk/
++endif
++obj-$(CONFIG_MAPLE)			+= maple/
++obj-$(CONFIG_SUPERHYWAY)		+= superhyway/
+ 
+-obj-$(CONFIG_HAVE_CLK)		+= clk/
+-obj-$(CONFIG_MAPLE)		+= maple/
+-obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+-
+-obj-y				+= pm_runtime.o
++obj-y					+= pm_runtime.o
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 8afa5a4589f2..cb4cb9f26896 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -50,8 +50,25 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ 	.con_ids = { NULL, },
+ };
+ 
+-static int __init sh_pm_runtime_init(void)
++static bool default_pm_on;
++
++int __init sh_pm_runtime_init(void)
+ {
++#ifdef CONFIG_ARCH_SHMOBILE_MULTI
++	if (!of_machine_is_compatible("renesas,emev2") &&
++	    !of_machine_is_compatible("renesas,r7s72100") &&
++	    !of_machine_is_compatible("renesas,r8a73a4") &&
++	    !of_machine_is_compatible("renesas,r8a7740") &&
++	    !of_machine_is_compatible("renesas,r8a7778") &&
++	    !of_machine_is_compatible("renesas,r8a7779") &&
++	    !of_machine_is_compatible("renesas,r8a7790") &&
++	    !of_machine_is_compatible("renesas,r8a7791") &&
++	    !of_machine_is_compatible("renesas,sh7372") &&
++	    !of_machine_is_compatible("renesas,sh73a0"))
++		return 0;
++#endif
++
++	default_pm_on = true;
+ 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
+ 	return 0;
+ }
+@@ -59,7 +76,9 @@ core_initcall(sh_pm_runtime_init);
+ 
+ static int __init sh_pm_runtime_late_init(void)
+ {
+-	pm_genpd_poweroff_unused();
++	if (default_pm_on)
++		pm_genpd_poweroff_unused();
+ 	return 0;
+ }
++
+ late_initcall(sh_pm_runtime_late_init);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
