@@ -1,31 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 16 May 2014 08:55:54 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: Enable PM_RUNTIME in defconfig
-Message-Id: <20140516085553.GC20299@verge.net.au>
+From: Rob Herring <robherring2@gmail.com>
+Date: Thu, 01 May 2014 01:02:10 +0000
+Subject: Re: [PATCH 4/6] i2c: sh_mobile: add devicetree documentation
+Message-Id: <CAL_JsqKgwKjag2hRSaDwoejuXRDxDgWwtpnS1gijQbVo0h_MjQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400198682-7666-1-git-send-email-horms+renesas@verge.net.au>
- <20140516020549.GB18137@verge.net.au>
- <CAMuHMdVEowWbMY+L1TuC4xxYvtGZiH5qYOjmd7-rt1e_=xEz1A@mail.gmail.com>
- <20140516080825.GA23295@verge.net.au>
- <CAMuHMdVG0=JG+d=_B9XM2OWn157UG4=2gsg2mfuRNwJ7N3qZFw@mail.gmail.com>
-In-Reply-To: <CAMuHMdVG0=JG+d=_B9XM2OWn157UG4=2gsg2mfuRNwJ7N3qZFw@mail.gmail.com>
+References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
+	<1398896470-24663-5-git-send-email-wsa@the-dreams.de>
+	<CAMuHMdWP8KH=6OKmBbA5UqixV7mdKZdEhFw8Tq_XZLaJCOQ07w@mail.gmail.com>
+In-Reply-To: <CAMuHMdWP8KH=6OKmBbA5UqixV7mdKZdEhFw8Tq_XZLaJCOQ07w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On Fri, May 16, 2014 at 10:39:46AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Fri, May 16, 2014 at 10:08 AM, Simon Horman <horms@verge.net.au> wrote:
-> > With that in mind I'll rephrase my question: are you are ware
-> > of any patches this one (the defconfig update) should depend on?
-> 
-> No, I don't think it will introduce any regressions.
-> We had CONFIG_PM_RUNTIME in most other defconfigs, and I've been
-> running quite some real multi-platform kernels on Koelsch before.
-> 
-> All known clock issues, for which patches have been send/accepted, happen
-> regardless of the value of CONFIG_PM_RUNTIME.
+On Wed, Apr 30, 2014 at 5:32 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Hi Wolfram,
+>
+> CC devicetree
+>
+> On Thu, May 1, 2014 at 12:21 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+>> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>>
+>> Reported-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>> ---
+>>  .../devicetree/bindings/i2c/i2c-sh_mobile.txt      | 26 ++++++++++++++++++++++
+>>  1 file changed, 26 insertions(+)
+>>  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+>>
+>> diff --git a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+>> new file mode 100644
+>> index 000000000000..d2153ce36fa8
+>> --- /dev/null
+>> +++ b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+>> @@ -0,0 +1,26 @@
+>> +Device tree configuration for Renesas IIC (sh_mobile) driver
+>> +
+>> +Required properties:
+>> +- compatible      : "renesas,iic-<soctype>". "renesas,rmobile-iic" as fallback
+>
+> Please also list all supported values, so checkpatch can validate DTS compatible
+> properties against this binding document.
 
-Thanks, I'll queue this up.
+You could add this pattern to checkpatch as well. I really wish
+Renesas would follow normal convention of <vendor>,<chip>-<device>.
+
+Rob
