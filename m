@@ -1,7 +1,7 @@
-From: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
-Date: Thu, 01 May 2014 16:50:03 +0000
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Thu, 01 May 2014 17:31:12 +0000
 Subject: Re: [PATCH v7 01/10] PCI: host: rcar: Add Renesas R-Car PCIe driver
-Message-Id: <20140501165003.GC3296@obsidianresearch.com>
+Message-Id: <CAErSpo4xJ36UabUcCDLsA_Q+r-C2ZV_q16y=Os8vVGFm-iMBxw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
  <1396261856-22465-2-git-send-email-phil.edworthy@renesas.com>
@@ -18,63 +18,47 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 01, 2014 at 09:50:56AM +0000, Phil Edworthy wrote:
+[+cc Srikanth, Michal, Grant because we're having the same discussion
+about root bus numbers in the Xilinx host bridge driver]
 
-> > The logic should be:
-> >  if (bus = primary)
-> >     do io access to host bridge
-> >  else if (bus = secondary)
-> >     issue type 0 TLP on the wire
-> >  else if (bus > secondary && bus <= subordinate)
-> >     issue type 1 TLP on the wire
-> >  else
-> >     fail, invalid bus number
-> > Where the three values come from the register in the PCI host bridge's
-> > configuration space, and are kept in sync with the programming from
-> > the Linux PCI core.
-> > 
-> > It is just a happy hapenstance that root_bus_nr equals the value the
-> > PCI core programmed into secondary - that is not guarenteed, you must
-> > use the primary value directly.
+On Thu, May 1, 2014 at 3:50 AM, Phil Edworthy <phil.edworthy@renesas.com> wrote:
 
-> For type0 TLPs, we are not checking that root_bus_nr equals the
-> value the PCI core programmed into secondary, we are checking that
-> the (root_bus_nr = bus->parent->number). The only way this wouldn't
-> work is if root_bus_nr was not the root bus number.
+> When would the PCI core change the root bus number to something other than set in sys->busnr?
 
-Okay, that isn't as sketchy, but that process still ignores the
-subordinate bus number and the failure case as required by PCI.
+The PCI core never changes the root bus number of a host bridge, but
+it's important for the core to know exactly what bus numbers are
+behind each host bridge so we can correctly assign bus numbers, MMIO,
+and I/O port resources.
 
-The goal here is to have the stuff below the drivers implement the PCI
-spec so that the core code can assume everything below is
-conformant. Drivers should not introduce gratuitous differences 'just
-because'
+The reason is that when we enumerate a PCI-to-PCI bridge, we have to
+know whether bus numbers are available for the secondary bus.  For
+example, assume two host bridges configured (or wired) as follows:
 
-There is no reason drivers should be using PCI core structures to make
-decisions when the spec says those decisions are driven by config
-space fields.
+  A leads to [bus 00-1f], with aperture [mem 0x80000000-0x8fffffff]
+  B leads to [bus 20-ff], with aperture [mem 0x90000000-0x9fffffff]
 
-This way the PCI core code doesn't have to be aware of any weird
-non-standard edge cases.. Such as not failing bus numbers beyond the
-subordinate bus number.
+Further, assume a PCI-to-PCI bridge at 1f:00.0.  If the host bridge
+driver doesn't tell us the [bus 00-1f] range for host bridge A, the
+PCI core will assume [bus 00-ff].  When the core enumerates the
+1f:00.0 bridge, it will assign bus number 20 to its secondary bus.
+Now it enumerates devices on bus 20.  The core expects this to be done
+via host bridge A, but enumeration uses ID-routed config transactions,
+so they are claimed by host bridge B instead.  If we find a device
+20:00.0, the core thinks it is below A, but it is really below B.
 
-> Since the Synopsys DW driver also saves off sys->busnr and later
-> uses this to determine if accesses are for the host bridge, I guess
-> that means it won't always work either, right? Or is it ok because
-> the DW driver saves sys->busnr in its .scan function?
+Now we assign resources to 20:00.0, and since we think it's below A,
+we assign them from the [mem 0x80000000-0x8fffffff] aperture.  This
+obviously doesn't work, because when the driver performs MMIO
+accesses, which are address-routed, they are claimed by host bridge A,
+not B, so the 20:00.0 device never sees them.
 
-Sounds like it is making the same mistake, and nobody noticed. This is
-another reason why it is important to implement correctly so people
-copying copy the right stuff :)
+If your host bridge really claims ALL bus numbers (00-ff), that's
+fine, and you can tell the PCI core that.  But if you have several
+such bridges, they should be placed in separate domains.
 
-> When would the PCI core change the root bus number to something
-> other than set in sys->busnr?
+This is probably more detail than you wanted, and maybe you don't ever
+expect to have multiple host bridges or complicated hierarchies of
+devices.  But the PCI core has to deal with these issues on other
+systems, so it's important to get these details right.
 
-I think the more likely scenario is that 'sys' in general is
-architecture specific and its use is being discouraged so that host
-drivers are not arch specific.
-
-A domain driver like rcar should always place the root complex
-integrated bus as bus 0 in the domain.
-
-Jason
+Bjorn
