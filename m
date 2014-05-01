@@ -1,42 +1,38 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Fri, 30 May 2014 16:23:54 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Fixes for v3.16
-Message-Id: <CAOesGMh9vQ6F9gFzeYYCizSwpiOFwKONAvNM5U6wVi1ezdjhmg@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 01 May 2014 22:56:33 +0000
+Subject: [PATCH] ARM: shmobile: henninger: specify EXTAL frequency
+Message-Id: <201405020256.34093.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1401406177.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1401406177.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 29, 2014 at 4:31 PM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
->
-> Please consider these Renesas ARM based SoC fixes for v3.16.
->
-> This corrects a bug that will be introduced in v3.15.
-> The bug causes audio playback to fail on the Armadillo800 EVA board.
->
-> I am posting this as a fix for v3.16 rather than v3.15 as I believe
-> it is too late in the v3.15 cycle for a change of this nature.
-> As such I would also like this change considered for v3.15 -stable.
->
->
-> The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
->
->   Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
->
-> are available in the git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v3.16
->
-> for you to fetch changes up to 730359857f5f0e1fac9881c63d389d73adb5f416:
->
->   ARM: shmobile: armadillo800eva: fixup HDMI sound flags setting (2014-05-28 12:57:07 +0900)
+When creating the initial device tree for the Henninger board,  I've overlooked
+that EXTAL frequency needs to be overridden there. The 'sh-sci' driver  managed
+to work somehow but the SDHI driver that I've tried to enable just hanged with
+the default EXTAL frequency of 0...
 
-Merged, thanks.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+---
+This patch is against 'renesas-devel-v3.15-rc3-20140429' tag of Simon Horman's
+'renesas.git' repo.
 
--Olof
+ arch/arm/boot/dts/r8a7791-henninger.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -35,6 +35,10 @@
+ 	};
+ };
+ 
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
+ &pfc {
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_d";
