@@ -1,71 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 01 May 2014 14:46:31 +0000
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Fri, 02 May 2014 08:13:11 +0000
 Subject: Re: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
-Message-Id: <CAMuHMdVSSZwEn=R_vDPYLWnZoxrdynwJMgKSsbbNZYdvQaYxvg@mail.gmail.com>
+Message-Id: <CAPDyKFqG0dV+-y2=t=d3w6_hxWsYi+sOmNdvS6ECPOuoQ61Pmw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
  <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
- <7hoazpdldx.fsf@paris.lan>
- <20140429131610.29859C4094A@trevor.secretlab.ca>
- <CAMuHMdUdnoah1uZbMn_xONXZ2i8wG5kY7msMzCdBwS+xt9tmDA@mail.gmail.com>
- <20140501080331.D3CFAC409DA@trevor.secretlab.ca>
- <CAMuHMdXbJrnNPyPmD-rcGN-M4ybFtrS3FCuvegJue1Pe-ae8SQ@mail.gmail.com>
- <CACxGe6sy-fumkNPRcQqB8G4so85dHW_5pZSv+cQDqzJfoneZ+A@mail.gmail.com>
-In-Reply-To: <CACxGe6sy-fumkNPRcQqB8G4so85dHW_5pZSv+cQDqzJfoneZ+A@mail.gmail.com>
+ <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
+ <535B130C.1000007@gmail.com>
+In-Reply-To: <535B130C.1000007@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Grant,
+>>
+>>
+>> Normally I don't think it's a good idea to "automatically" manage
+>> clocks from PM core or any other place but from the driver (and
+>> possibly the subsystem).
+>>
+>> The reason is simply that we hide things that normally is supposed to
+>> be handled by the driver. Typically a cross SOC driver should work
+>> fine both with and without a pm_domain. It should also not rely on
+>> CONFIG_PM_RUNTIME.
 
-On Thu, May 1, 2014 at 3:56 PM, Grant Likely <grant.likely@secretlab.ca> wrote:
-> On Thu, May 1, 2014 at 2:41 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> On Thu, May 1, 2014 at 10:03 AM, Grant Likely <grant.likely@secretlab.ca> wrote:
->>> On Wed, 30 Apr 2014 23:54:37 +0200, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->>>> On Tue, Apr 29, 2014 at 3:16 PM, Grant Likely <grant.likely@secretlab.ca> wrote:
->>>> > I also don't like that it tries to set up every clock, but there is no
->>>> > guarantee that the driver will even use it. I would rather see this
->>>> > behaviour linked into the function that obtains the clock at driver
->>>> > .probe() time. That way it can handle deferred probe correctly and it
->>>> > only sets up clocks that are actually used by the driver.
->>>>
->>>> Not every clock. Only the clocks that are advertised by the clock driver as
->>>> being suitable for runtime_pm management. These are typically module
->>>> clocks, that must be enabled for the module to work. The driver doesn't
->>>> always want to handle these explicitly.
->>>
->>> Help me out here becasue I don't understand how that works with this
->>> patch set. From my, admittedly naive, reading it looks like the setup is
->>> being done at device creation time, but if the driver (or module) gets
->>> to declare which clocks need to be enabled in order to work, then that
->>> information is not available at device creation time.
+[Snip]
+
 >>
->> Setup is indeed done at registration time. Note the check calling
->> clk_may_runtime_pm(), which is introduced in "[PATCH/RFC 1/4] clk: Add
->> CLK_RUNTIME_PM and clk_may_runtime_pm()".
+>>> +static int of_clk_register(struct device *dev, struct clk *clk)
+>>> +{
+>>> +       int error;
+>>> +
+>>> +       if (!dev->pm_domain) {
+>>> +               error = pm_clk_create(dev);
+>>> +               if (error)
+>>> +                       return error;
+>>> +
+>>> +               dev->pm_domain = &of_clk_pm_domain;
 >>
->> Clock drivers are initialized much earlier, so they can set the CLK_RUNTIME_PM
->> flag for suitable clocks before platform devices are created from DT, cfr. the
->> example for shmobile MSTP clocks in "[PATCH/RFC 4/4] clk: shmobile: mstp:
->> Set CLK_RUNTIME_PM flag".
+>>
+>> I am concerned about how this will work in conjunction with the
+>> generic power domain.
+>>
+>> A device can't reside in more than one pm_domain; thus I think it
+>> would be better to always use the generic power domain and not have a
+>> specific one for clocks. Typically the genpd should invoke
+>> pm_clk_resume|suspend from it's runtime PM callbacks.
 >
-> This is where I have issue. You're *assuming* clock drivers are
-> initialized much earlier. That is not guaranteed. It is perfectly
-> valid for clocks to be set up by a normal device driver, just like for
-> interrupt controllers or gpio controllers.
+>
+> I'm not sure about this. A typical use case would be to gate clocks ASAP and
+> then wait until device is idle long enough to consider turning off the power
+> domain worthwhile. Also sometimes we may want to gate the clocks, but
+> prevent power domain from being powered off to retain hardware state (e.g.
+> because there is no way to read it and restore later).
 
-OK, I didn't know that. In that case, nothing happens, and everything
-works like before. So the drivers still have to take care of the
-clocks themselves.
+So, in principle you prefer to have driver's handle clock gating to
+save power from their runtime PM callbacks, instead of from the power
+domain, right? Just to clarify, that's my view as well.
 
-Gr{oetje,eeting}s,
+Kind regards
+Ulf Hansson
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>
+> I believe, though, that for devices that are not inside a controllable power
+> domain, this might be a good solution.
+>
+> Best regards,
+> Tomasz
