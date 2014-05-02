@@ -1,54 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 May 2014 00:30:55 +0000
-Subject: Re: [PATCH v2 0/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
-Message-Id: <20140529003055.GF22705@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 02 May 2014 07:19:31 +0000
+Subject: Re: [PATCH 2/6] i2c: sh_mobile: improve error handling
+Message-Id: <20140502071931.GA2647@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="T4sUOijqQbZv57TR"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
+ <1398896470-24663-3-git-send-email-wsa@the-dreams.de>
+ <CAMuHMdWs=FkAgCpBNQcaRtJRanGQjp1erN+=Jqpekioj+9pk1A@mail.gmail.com>
+In-Reply-To: <CAMuHMdWs=FkAgCpBNQcaRtJRanGQjp1erN+=Jqpekioj+9pk1A@mail.gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Thu, May 15, 2014 at 08:39:29PM +0900, Simon Horman wrote:
-> The aim of this series is to provide a working prototype for enabling
-> SCIF devices using DT on the marzen board when booting using multiplatform.
-> 
-> This series addresses the review received for v1.
-> Changes are noted in the changelog of each updated patch.
-> 
-> 
-> This series depends on:
-> [PATCH v6 00/17] ARM: shmobile: r8a7779, marzen: CCF and multiplatform
-> 
-> This series was created and tested with the above mentioned series applied
-> on top of a merge of:
-> * The renesas-devel-v3.15-rc1-20140515 tag of my renesas tree.
-> * The clk-next branch of Mike Turquettes's tree
->   This is to provide the following which were previously part of this series:
->   - clk: shmobile: r8a7779: Add MSTP clock support
->   - clk: shmobile: r8a7779: Add clocks support
-> 
-> This series works in conjunction with but does not have a run-time or compile
-> time dependency on:
-> [PATCH v3] serial: sh-sci: Add device tree support for r8a7779
 
-As all the pre-requisites are now in place I have queued up this series.
+--T4sUOijqQbZv57TR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> 
-> Simon Horman (4):
->   ARM: shmobile: r8a7779: Add scif nodes to dtsi
->   ARM: shmobile: marzen: Remove early_printk from command line
->   ARM: shmobile: marzen: Initialise SCIF devices using DT
->   ARM: shmobile: marzen: Do not use workaround for scif devices
-> 
->  arch/arm/boot/dts/r8a7779-marzen.dts            | 24 ++++++++--
->  arch/arm/boot/dts/r8a7779.dtsi                  | 60 +++++++++++++++++++++++++
->  arch/arm/mach-shmobile/board-marzen-reference.c |  6 ---
->  arch/arm/mach-shmobile/setup-r8a7779.c          |  8 ++--
->  4 files changed, 84 insertions(+), 14 deletions(-)
-> 
-> -- 
-> 1.8.5.2
-> 
+On Thu, May 01, 2014 at 12:25:38AM +0200, Geert Uytterhoeven wrote:
+> Hi Wolfram,
+>=20
+> On Thu, May 1, 2014 at 12:21 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> > Use standard i2c error codes for i2c failures. Also, don't print
+> > something on timeout since it happens regularly with i2c. Simplify some,
+> > logic, too.
+>=20
+> You may want to keep the timeout messages with dev_dbg()?
+
+Not really. We now have an I2C tracer which shows the return value of
+the transfer. I really want to reduce debug output of all drivers in
+favor of the tracer.
+
+
+--T4sUOijqQbZv57TR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTY0cDAAoJEBQN5MwUoCm2yMAQAKM5PeO/Cxh1CbuRHzc/Mebm
+a7qpGhQm4VOKulkiYGSgcDNQafHCz4sEWjDO6PYXX+Uk8v0rmwB/TAwhuQM75Zau
+bKmyXHfF2cvrsV+OzbuZ7YscM9aOSTZx//KaN1DtLUjnTltJospU4H5dJQ4JRtAQ
+f2wCRSg91aTNN9/fr3NlLXp8Hhga+WA66y+6Ip9nU/f5V/IwW1mgg68FUdSnaeKY
+MCKTu9JbYtCN6BfUKeh4PbyxOGD4Ix0EKT4a9Yjz8jvNmZG6IbHxe5MPUVUOv6hz
+JRYJFjChf8RU0sX/Mj6J9NOfMIHBGgn7b0wYSBGk/IAGUeiE/1IO2Y2uAmprrkd/
+7p+3+KWKQLqWY3g5AJjsqGAmpCfCAIPMeqQGyG/jpG8nD7Uw5pNaUwDq04Wy6pEn
+NFYL410/VdueofRQIgoKiPcsu4ZcMsyJ/UfXne/GEuIWxEUASA2vsODBlPURV4cL
+lPXyR1gozOXyz+WFn91kwX6JW6TieEcxZlk6e0sr16/kDLAlEy/kloeSiecS7BqL
+KhHWpMvKWizOH0WWXXnUHyw168Iqs+ibf42FzcMmSqJjNds5QVGKqBzvTuSTWK/L
+Xr1PnwmbzDSwvpTFQlK1g11AJBwI1SPNWoPKXWLx6UM5LGE17Mv7RF3B42OWw09G
+s0h81k45FZyThQU+t7MR
+=nakb
+-----END PGP SIGNATURE-----
+
+--T4sUOijqQbZv57TR--
