@@ -1,131 +1,96 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 May 2014 01:49:24 +0000
-Subject: Re: [PATCH v3 2/2] ARM: shmobile: r8a7791 dtsi: Add GPIO clocks
-Message-Id: <20140513014924.GE10973@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 02 May 2014 19:15:13 +0000
+Subject: [PATCH v2 07/10] i2c: sh_mobile: remove superfluous offset parameter
+Message-Id: <1399058116-7721-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Wed, Apr 23, 2014 at 10:25:28AM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Sorry for missing this.
-I have queued it up.
+Following the KISS principle, remove unneeded stuff.
 
-> ---
-> v3:
->   - Add Acked-by
->   - Bindings have been accepted in
->     git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-> 
-> v2:
->   - No changes
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi |   19 ++++++++++++++++---
->  1 file changed, 16 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 44f03444ef74..81f27a35b19f 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -76,6 +76,7 @@
->  		gpio-ranges = <&pfc 0 0 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO0>;
->  	};
->  
->  	gpio1: gpio@e6051000 {
-> @@ -87,6 +88,7 @@
->  		gpio-ranges = <&pfc 0 32 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO1>;
->  	};
->  
->  	gpio2: gpio@e6052000 {
-> @@ -98,6 +100,7 @@
->  		gpio-ranges = <&pfc 0 64 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO2>;
->  	};
->  
->  	gpio3: gpio@e6053000 {
-> @@ -109,6 +112,7 @@
->  		gpio-ranges = <&pfc 0 96 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO3>;
->  	};
->  
->  	gpio4: gpio@e6054000 {
-> @@ -120,6 +124,7 @@
->  		gpio-ranges = <&pfc 0 128 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO4>;
->  	};
->  
->  	gpio5: gpio@e6055000 {
-> @@ -131,6 +136,7 @@
->  		gpio-ranges = <&pfc 0 160 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO5>;
->  	};
->  
->  	gpio6: gpio@e6055400 {
-> @@ -142,6 +148,7 @@
->  		gpio-ranges = <&pfc 0 192 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO6>;
->  	};
->  
->  	gpio7: gpio@e6055800 {
-> @@ -153,6 +160,7 @@
->  		gpio-ranges = <&pfc 0 224 26>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO7>;
->  	};
->  
->  	thermal@e61f0000 {
-> @@ -805,18 +813,23 @@
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
-> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
-> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
-> +				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
->  				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
->  				 <&hp_clk>, <&hp_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> +				R8A7791_CLK_GPIO7 R8A7791_CLK_GPIO6 R8A7791_CLK_GPIO5 R8A7791_CLK_GPIO4
-> +				R8A7791_CLK_GPIO3 R8A7791_CLK_GPIO2 R8A7791_CLK_GPIO1 R8A7791_CLK_GPIO0
->  				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
->  				R8A7791_CLK_IICDVFS R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
->  				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
->  			>;
->  			clock-output-names > -				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3",
-> -				"i2c2", "i2c1", "i2c0";
-> +				"gpio7", "gpio6", "gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
-> +				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
-> +				"i2c1", "i2c0";
->  		};
->  		mstp11_clks: mstp11_clks@e615099c {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index ddc9970fd724..9a5b693454e1 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -194,7 +194,7 @@ static void iic_set_clr(struct sh_mobile_i2c_data *pd, int offs,
+ 	iic_wr(pd, offs, (iic_rd(pd, offs) | set) & ~clr);
+ }
+ 
+-static u32 sh_mobile_i2c_iccl(unsigned long count_khz, u32 tLOW, u32 tf, int offset)
++static u32 sh_mobile_i2c_iccl(unsigned long count_khz, u32 tLOW, u32 tf)
+ {
+ 	/*
+ 	 * Conditional expression:
+@@ -206,10 +206,10 @@ static u32 sh_mobile_i2c_iccl(unsigned long count_khz, u32 tLOW, u32 tf, int off
+ 	 * account the fall time of SCL signal (tf).  Default tf value
+ 	 * should be 0.3 us, for safety.
+ 	 */
+-	return (((count_khz * (tLOW + tf)) + 5000) / 10000) + offset;
++	return (((count_khz * (tLOW + tf)) + 5000) / 10000);
+ }
+ 
+-static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, u32 tf, int offset)
++static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, u32 tf)
+ {
+ 	/*
+ 	 * Conditional expression:
+@@ -225,14 +225,13 @@ static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, u32 tf, int of
+ 	 * to take into account the fall time of SDA signal (tf) at START
+ 	 * condition, in order to meet both tHIGH and tHD;STA specs.
+ 	 */
+-	return (((count_khz * (tHIGH + tf)) + 5000) / 10000) + offset;
++	return (((count_khz * (tHIGH + tf)) + 5000) / 10000);
+ }
+ 
+ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+ {
+ 	unsigned long i2c_clk_khz;
+ 	u32 tHIGH, tLOW, tf;
+-	int offset;
+ 
+ 	/* Get clock rate after clock is enabled */
+ 	clk_prepare_enable(pd->clk);
+@@ -243,26 +242,24 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+ 		tLOW	= 47;	/* tLOW = 4.7 us */
+ 		tHIGH	= 40;	/* tHD;STA = tHIGH = 4.0 us */
+ 		tf	= 3;	/* tf = 0.3 us */
+-		offset	= 0;	/* No offset */
+ 	} else if (pd->bus_speed = FAST_MODE) {
+ 		tLOW	= 13;	/* tLOW = 1.3 us */
+ 		tHIGH	= 6;	/* tHD;STA = tHIGH = 0.6 us */
+ 		tf	= 3;	/* tf = 0.3 us */
+-		offset	= 0;	/* No offset */
+ 	} else {
+ 		dev_err(pd->dev, "unrecognized bus speed %lu Hz\n",
+ 			pd->bus_speed);
+ 		goto out;
+ 	}
+ 
+-	pd->iccl = sh_mobile_i2c_iccl(i2c_clk_khz, tLOW, tf, offset);
++	pd->iccl = sh_mobile_i2c_iccl(i2c_clk_khz, tLOW, tf);
+ 	/* one more bit of ICCL in ICIC */
+ 	if ((pd->iccl > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
+ 		pd->icic |= ICIC_ICCLB8;
+ 	else
+ 		pd->icic &= ~ICIC_ICCLB8;
+ 
+-	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, tf, offset);
++	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, tf);
+ 	/* one more bit of ICCH in ICIC */
+ 	if ((pd->icch > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
+ 		pd->icic |= ICIC_ICCHB8;
+-- 
+1.9.2
+
