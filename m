@@ -1,173 +1,130 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 14 May 2014 01:10:06 +0000
-Subject: [PATCH v6 02/12] ARM: shmobile: r7s72100: add essential clock nodes to dtsi
-Message-Id: <1400029816-24028-3-git-send-email-wsa@the-dreams.de>
+Date: Fri, 02 May 2014 19:15:11 +0000
+Subject: [PATCH v2 05/10] i2c: sh_mobile: devm conversion, low hanging fruits
+Message-Id: <1399058116-7721-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1399058116-7721-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
 
 From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Only essential clocks are added for now. Other clocks will be added when
-needed.
+Convert the easy parts to devm. irqs will be converted in a seperate
+patch to keep diffs readable.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 86 +++++++++++++++++++++++++++++-
- include/dt-bindings/clock/r7s72100-clock.h | 28 ++++++++++
- 2 files changed, 113 insertions(+), 1 deletion(-)
- create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
+ drivers/i2c/busses/i2c-sh_mobile.c | 41 ++++++++++----------------------------
+ 1 file changed, 10 insertions(+), 31 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index ee700717a34b..5a6e2481b567 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -1,13 +1,15 @@
- /*
-  * Device Tree Source for the r7s72100 SoC
-  *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-14 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-  * kind, whether express or implied.
-  */
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 2e481abd50ce..c47d11493b97 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -655,45 +655,33 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	struct sh_mobile_i2c_data *pd;
+ 	struct i2c_adapter *adap;
+ 	struct resource *res;
+-	int size;
+ 	int ret;
+ 	u32 bus_speed;
  
-+#include <dt-bindings/clock/r7s72100-clock.h>
- #include <dt-bindings/interrupt-controller/irq.h>
+-	pd = kzalloc(sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
+-	if (pd = NULL) {
+-		dev_err(&dev->dev, "cannot allocate private data\n");
++	pd = devm_kzalloc(&dev->dev, sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
++	if (!pd)
+ 		return -ENOMEM;
+-	}
  
- / {
-@@ -28,6 +30,88 @@
- 		spi4 = &spi4;
- 	};
+-	pd->clk = clk_get(&dev->dev, NULL);
++	pd->clk = devm_clk_get(&dev->dev, NULL);
+ 	if (IS_ERR(pd->clk)) {
+ 		dev_err(&dev->dev, "cannot get clock\n");
+-		ret = PTR_ERR(pd->clk);
+-		goto err;
++		return PTR_ERR(pd->clk);
+ 	}
  
-+	clocks {
-+		ranges;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+
-+		/* External clocks */
-+		extal_clk: extal_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-clock";
-+			/* If clk present, value must be set by board */
-+			clock-frequency = <0>;
-+			clock-output-names = "extal";
-+		};
-+
-+		usb_x1_clk: usb_x1_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-clock";
-+			/* If clk present, value must be set by board */
-+			clock-frequency = <0>;
-+			clock-output-names = "usb_x1";
-+		};
-+
-+		/* Special CPG clocks */
-+		cpg_clocks: cpg_clocks@fcfe0000 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-cpg-clocks",
-+				     "renesas,rz-cpg-clocks";
-+			reg = <0xfcfe0000 0x18>;
-+			clocks = <&extal_clk>, <&usb_x1_clk>;
-+			clock-output-names = "pll", "i", "g";
-+		};
-+
-+		/* Fixed factor clocks */
-+		b_clk: b_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
-+			clock-mult = <1>;
-+			clock-div = <3>;
-+			clock-output-names = "b";
-+		};
-+		p1_clk: p1_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
-+			clock-mult = <1>;
-+			clock-div = <6>;
-+			clock-output-names = "p1";
-+		};
-+		p0_clk: p0_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
-+			clock-mult = <1>;
-+			clock-div = <12>;
-+			clock-output-names = "p0";
-+		};
-+
-+		/* MSTP clocks */
-+		mstp3_clks: mstp3_clks@fcfe0420 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0420 4>;
-+			clocks = <&p0_clk>;
-+			clock-indices = <R7S72100_CLK_MTU2>;
-+			clock-output-names = "mtu2";
-+		};
-+
-+		mstp4_clks: mstp4_clks@fcfe0424 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0424 4>;
-+			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
-+				 <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>;
-+			clock-indices = <
-+				R7S72100_CLK_SCIF0 R7S72100_CLK_SCIF1 R7S72100_CLK_SCIF2 R7S72100_CLK_SCIF3
-+				R7S72100_CLK_SCIF4 R7S72100_CLK_SCIF5 R7S72100_CLK_SCIF6 R7S72100_CLK_SCIF7
-+			>;
-+			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
-+		};
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-new file mode 100644
-index 000000000000..c756f1cf0d52
---- /dev/null
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -0,0 +1,28 @@
-+/*
-+ * Copyright (C) 2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R7S72100_H__
-+#define __DT_BINDINGS_CLOCK_R7S72100_H__
-+
-+#define R7S72100_CLK_PLL	0
-+
-+/* MSTP3 */
-+#define R7S72100_CLK_MTU2	3
-+
-+/* MSTP4 */
-+#define R7S72100_CLK_SCIF0	7
-+#define R7S72100_CLK_SCIF1	6
-+#define R7S72100_CLK_SCIF2	5
-+#define R7S72100_CLK_SCIF3	4
-+#define R7S72100_CLK_SCIF4	3
-+#define R7S72100_CLK_SCIF5	2
-+#define R7S72100_CLK_SCIF6	1
-+#define R7S72100_CLK_SCIF7	0
-+
-+#endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+ 	ret = sh_mobile_i2c_hook_irqs(dev, 1);
+ 	if (ret) {
+ 		dev_err(&dev->dev, "cannot request IRQ\n");
+-		goto err_clk;
++		return ret;
+ 	}
+ 
+ 	pd->dev = &dev->dev;
+ 	platform_set_drvdata(dev, pd);
+ 
+ 	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
+-	if (res = NULL) {
+-		dev_err(&dev->dev, "cannot find IO resource\n");
+-		ret = -ENOENT;
+-		goto err_irq;
+-	}
+ 
+-	size = resource_size(res);
+-
+-	pd->reg = ioremap(res->start, size);
+-	if (pd->reg = NULL) {
+-		dev_err(&dev->dev, "cannot map IO\n");
+-		ret = -ENXIO;
++	pd->reg = devm_ioremap_resource(&dev->dev, res);
++	if (IS_ERR(pd->reg)) {
++		ret = PTR_ERR(pd->reg);
+ 		goto err_irq;
+ 	}
+ 
+@@ -710,7 +698,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	/* The IIC blocks on SH-Mobile ARM processors
+ 	 * come with two new bits in ICIC.
+ 	 */
+-	if (size > 0x17)
++	if (resource_size(res) > 0x17)
+ 		pd->flags |= IIC_FLAG_HAS_ICIC67;
+ 
+ 	sh_mobile_i2c_init(pd);
+@@ -747,7 +735,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	ret = i2c_add_numbered_adapter(adap);
+ 	if (ret < 0) {
+ 		dev_err(&dev->dev, "cannot add numbered adapter\n");
+-		goto err_all;
++		goto err_irq;
+ 	}
+ 
+ 	dev_info(&dev->dev,
+@@ -756,14 +744,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 
+ 	return 0;
+ 
+- err_all:
+-	iounmap(pd->reg);
+  err_irq:
+ 	sh_mobile_i2c_hook_irqs(dev, 0);
+- err_clk:
+-	clk_put(pd->clk);
+- err:
+-	kfree(pd);
+ 	return ret;
+ }
+ 
+@@ -772,11 +754,8 @@ static int sh_mobile_i2c_remove(struct platform_device *dev)
+ 	struct sh_mobile_i2c_data *pd = platform_get_drvdata(dev);
+ 
+ 	i2c_del_adapter(&pd->adap);
+-	iounmap(pd->reg);
+ 	sh_mobile_i2c_hook_irqs(dev, 0);
+-	clk_put(pd->clk);
+ 	pm_runtime_disable(&dev->dev);
+-	kfree(pd);
+ 	return 0;
+ }
+ 
 -- 
 1.9.2
 
