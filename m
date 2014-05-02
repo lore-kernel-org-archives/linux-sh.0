@@ -1,76 +1,108 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 19:15:15 +0000
-Subject: [PATCH v2 09/10] i2c: sh_mobile: check timing parameters for valid range
-Message-Id: <1399058116-7721-10-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 02 May 2014 18:21:25 +0000
+Subject: [PATCH v6 12/15] ARM: shmobile: r8a7778: Switch to new style TMU device
+Message-Id: <1399054885-4927-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1399058116-7721-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The TMU (Timer Unit) driver implements a new style of platform data that
+handles the timer as a single device with multiple channel. Switch from
+the old-style platform data to the new-style platform data.
 
-Due to misconfiguration, it can happen that the calculated timing
-parameters are out of range. Bail out if that happens. We can also
-simplify some logic later because of the verified value. Also, make the
-printouts of the values more precise by adding the hex-prefixes.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7778.c |  4 ++--
+ arch/arm/mach-shmobile/setup-r8a7778.c | 28 +++++++---------------------
+ 2 files changed, 9 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 9f02013eaeeb..b1d399e3e5fc 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -232,6 +232,7 @@ static int sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- {
- 	unsigned long i2c_clk_khz;
- 	u32 tHIGH, tLOW, tf;
-+	uint16_t max_val;
+Changes since last version:
+
+- Renamed to v6, was mistakenly sent as v5.
+
+Changes since v4:
+
+- Fixed TMU interrupts that mistakenly used gic_spi instead of gic_iid
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index 201fc48..65f08f7 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -207,8 +207,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+-	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+-	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
+ 	CLKDEV_DEV_ID("fffc7000.spi", &mstp_clks[MSTP007]), /* HSPI0 */
+ 	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
+@@ -239,6 +237,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("src.6", "rcar_sound", &mstp_clks[MSTP525]),
+ 	CLKDEV_ICK_ID("src.7", "rcar_sound", &mstp_clks[MSTP524]),
+ 	CLKDEV_ICK_ID("src.8", "rcar_sound", &mstp_clks[MSTP523]),
++	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP016]),
++	CLKDEV_ICK_ID("fck", "sh-tmu.1", &mstp_clks[MSTP015]),
+ };
  
- 	/* Get clock rate after clock is enabled */
- 	clk_prepare_enable(pd->clk);
-@@ -254,15 +255,23 @@ static int sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- 	}
+ void __init r8a7778_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 6d69452..8c02e24 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -71,33 +71,20 @@ R8A7778_SCIF(5, 0xffe45000, gic_iid(0x6b));
+ 					  sizeof(scif##index##_platform_data))
  
- 	pd->iccl = sh_mobile_i2c_iccl(i2c_clk_khz, tLOW, tf);
-+	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, tf);
-+
-+	max_val = pd->flags & IIC_FLAG_HAS_ICIC67 ? 0x1ff : 0xff;
-+	if (pd->iccl > max_val || pd->icch > max_val) {
-+		dev_err(pd->dev, "timing values out of range: L/H=0x%x/0x%x\n",
-+			pd->iccl, pd->icch);
-+		return -EINVAL;
-+	}
-+
- 	/* one more bit of ICCL in ICIC */
--	if ((pd->iccl > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
-+	if (pd->iccl & 0x100)
- 		pd->icic |= ICIC_ICCLB8;
- 	else
- 		pd->icic &= ~ICIC_ICCLB8;
+ /* TMU */
+-static struct resource sh_tmu0_resources[] __initdata = {
+-	DEFINE_RES_MEM(0xffd80008, 12),
+-	DEFINE_RES_IRQ(gic_iid(0x40)),
+-};
+-
+-static struct sh_timer_config sh_tmu0_platform_data __initdata = {
+-	.name			= "TMU00",
+-	.channel_offset		= 0x4,
+-	.timer_bit		= 0,
+-	.clockevent_rating	= 200,
++static struct sh_timer_config sh_tmu0_platform_data = {
++	.channels_mask = 7,
+ };
  
--	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, tf);
- 	/* one more bit of ICCH in ICIC */
--	if ((pd->icch > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
-+	if (pd->icch & 0x100)
- 		pd->icic |= ICIC_ICCHB8;
- 	else
- 		pd->icic &= ~ICIC_ICCHB8;
-@@ -717,7 +726,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	}
+-static struct resource sh_tmu1_resources[] __initdata = {
+-	DEFINE_RES_MEM(0xffd80014, 12),
++static struct resource sh_tmu0_resources[] = {
++	DEFINE_RES_MEM(0xffd80000, 0x30),
++	DEFINE_RES_IRQ(gic_iid(0x40)),
+ 	DEFINE_RES_IRQ(gic_iid(0x41)),
+-};
+-
+-static struct sh_timer_config sh_tmu1_platform_data __initdata = {
+-	.name			= "TMU01",
+-	.channel_offset		= 0x10,
+-	.timer_bit		= 1,
+-	.clocksource_rating	= 200,
++	DEFINE_RES_IRQ(gic_iid(0x42)),
+ };
  
- 	dev_info(&dev->dev,
--		 "I2C adapter %d with bus speed %lu Hz (L/H=%x/%x)\n",
-+		 "I2C adapter %d with bus speed %lu Hz (L/H=0x%x/0x%x)\n",
- 		 adap->nr, pd->bus_speed, pd->iccl, pd->icch);
+ #define r8a7778_register_tmu(idx)			\
+ 	platform_device_register_resndata(		\
+-		&platform_bus, "sh_tmu", idx,		\
++		&platform_bus, "sh-tmu", idx,		\
+ 		sh_tmu##idx##_resources,		\
+ 		ARRAY_SIZE(sh_tmu##idx##_resources),	\
+ 		&sh_tmu##idx##_platform_data,		\
+@@ -312,7 +299,6 @@ void __init r8a7778_add_dt_devices(void)
+ 	r8a7778_register_scif(4);
+ 	r8a7778_register_scif(5);
+ 	r8a7778_register_tmu(0);
+-	r8a7778_register_tmu(1);
+ }
  
- 	return 0;
+ /* HPB-DMA */
 -- 
-1.9.2
+Regards,
+
+Laurent Pinchart
 
