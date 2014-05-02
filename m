@@ -1,37 +1,59 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 02 May 2014 14:35:44 +0000
+Date: Fri, 02 May 2014 14:58:03 +0000
 Subject: Re: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
-Message-Id: <CAMuHMdUGdfF8x58dz46VWNsC4X0cmFng39Z2xSO_pXYqn9u=HA@mail.gmail.com>
+Message-Id: <CAMuHMdWLfKcKLORPJ9f-0TLoWM5EfCZ0G5MfxjUiJCRJG555Sg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
  <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
- <CAPDyKFpTwPDu9afhOjhhQ2PKGFB+hWsp=mcaYTq8OvuGF7yT3Q@mail.gmail.com>
-In-Reply-To: <CAPDyKFpTwPDu9afhOjhhQ2PKGFB+hWsp=mcaYTq8OvuGF7yT3Q@mail.gmail.com>
+ <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
+ <535B130C.1000007@gmail.com>
+ <CAPDyKFqG0dV+-y2=t=d3w6_hxWsYi+sOmNdvS6ECPOuoQ61Pmw@mail.gmail.com>
+In-Reply-To: <CAPDyKFqG0dV+-y2=t=d3w6_hxWsYi+sOmNdvS6ECPOuoQ61Pmw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulf,
+Hi Ulf, Tomasz,
 
-On Fri, May 2, 2014 at 10:56 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
->> +static int of_clk_pm_runtime_suspend(struct device *dev)
->> +{
->> +       int ret;
->> +
->> +       ret = pm_generic_runtime_suspend(dev);
->> +       if (ret)
->> +               return ret;
->> +
->> +       ret = pm_clk_suspend(dev);
+On Fri, May 2, 2014 at 10:13 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+>>>> +static int of_clk_register(struct device *dev, struct clk *clk)
+>>>> +{
+>>>> +       int error;
+>>>> +
+>>>> +       if (!dev->pm_domain) {
+>>>> +               error = pm_clk_create(dev);
+>>>> +               if (error)
+>>>> +                       return error;
+>>>> +
+>>>> +               dev->pm_domain = &of_clk_pm_domain;
+>>>
+>>>
+>>> I am concerned about how this will work in conjunction with the
+>>> generic power domain.
+>>>
+>>> A device can't reside in more than one pm_domain; thus I think it
+>>> would be better to always use the generic power domain and not have a
+>>> specific one for clocks. Typically the genpd should invoke
+>>> pm_clk_resume|suspend from it's runtime PM callbacks.
+>>
+>> I'm not sure about this. A typical use case would be to gate clocks ASAP and
+>> then wait until device is idle long enough to consider turning off the power
+>> domain worthwhile. Also sometimes we may want to gate the clocks, but
+>> prevent power domain from being powered off to retain hardware state (e.g.
+>> because there is no way to read it and restore later).
 >
-> What about slow clocks? Those aren't handled with pm_clk_suspend().
+> So, in principle you prefer to have driver's handle clock gating to
+> save power from their runtime PM callbacks, instead of from the power
+> domain, right? Just to clarify, that's my view as well.
 
-How are slow clocks handled?
+If there's both a gate clock and a power domain, and the driver's Runtime PM
+callbacks handle clock gating, who's handling the power domain?
 
 Gr{oetje,eeting}s,
 
-                        Geert
+                        Geert (still trying to fit all pieces of the
+puzzle together)
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
