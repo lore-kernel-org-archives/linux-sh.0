@@ -1,44 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:28 +0000
-Subject: [PATCH 03/12] ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
-Message-Id: <5f76a5699f52052468e006e6c58010c5183b8386.1400201383.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 02 May 2014 23:55:08 +0000
+Subject: Re: [PATCH 4/5][RESENT] mmc: SDHI: update sh_mobile_sdhi_of_data for r8a7790
+Message-Id: <5364305C.7090005@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
+References: <87lhy090m0.wl%kuninori.morimoto.gx@gmail.com>	<878ut5qo9d.wl%kuninori.morimoto.gx@gmail.com> <8738jdqo78.wl%kuninori.morimoto.gx@gmail.com>
+In-Reply-To: <8738jdqo78.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hello.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+On 02/21/2014 03:55 AM, Kuninori Morimoto wrote:
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index e664611..941e72c 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -30,6 +30,14 @@
- 	};
- };
- 
-+&extal_clk {
-+	clock-frequency = <13330000>;
-+};
-+
-+&usb_x1_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c2 {
- 	status = "okay";
- 	clock-frequency = <400000>;
--- 
-1.8.5.2
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+> This patch updates r8a7790 DT data to have SoC specific settings.
+
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>   drivers/mmc/host/sh_mobile_sdhi.c |   10 +++++++++-
+>   1 file changed, 9 insertions(+), 1 deletion(-)
+
+> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+> index 38acf26..cfc37ec 100644
+> --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+[...]
+> @@ -51,6 +52,12 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen1_compatible = {
+>   	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+>   };
+>
+> +static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+> +	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
+
+    Hm, I think SDHI0/1 still have the WP signal, only SDHI2 on Koelsch lacks 
+it due to using micro-SD slot?..
+
+WBR, Sergei
 
