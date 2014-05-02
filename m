@@ -1,63 +1,140 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 May 2014 13:17:41 +0000
-Subject: [PATCH v2 05/05] staging: board: kzm9d: Board staging support for emxx_udc
-Message-Id: <20140529131741.2329.37943.sendpatchset@w520>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 02 May 2014 19:15:12 +0000
+Subject: [PATCH v2 06/10] i2c: sh_mobile: devm conversion, irq setup
+Message-Id: <1399058116-7721-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140529131650.2329.3197.sendpatchset@w520>
-In-Reply-To: <20140529131650.2329.3197.sendpatchset@w520>
+References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Add staging board support for the KZM9D board and add
-an emxx_udc platform device to allow in-tree continous 
-development of the driver on the KZM9D board.
+This is what devm was made for. No rollback mechanism needed, remove the
+hook parameter from the irq setup function and simplify it. While we are
+here change some variables to proper types.
 
-When DT bindings are ready for the emxx_udc driver then
-the platform device in the KZM9D staging board code can
-easily be removed. Until then we use platform devices
-to continously improve the driver and integration code.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
+ drivers/i2c/busses/i2c-sh_mobile.c | 56 ++++++++++----------------------------
+ 1 file changed, 15 insertions(+), 41 deletions(-)
 
- Changes since V1:
- - Broke out staging board base patch
- - Compile in if CONFIG_ARCH_EMEV2 is selected
- - Make use of board_staging_dt_node_available()
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index c47d11493b97..ddc9970fd724 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -611,42 +611,25 @@ static struct i2c_algorithm sh_mobile_i2c_algorithm = {
+ 	.master_xfer	= sh_mobile_i2c_xfer,
+ };
+ 
+-static int sh_mobile_i2c_hook_irqs(struct platform_device *dev, int hook)
++static int sh_mobile_i2c_hook_irqs(struct platform_device *dev)
+ {
+ 	struct resource *res;
+-	int ret = -ENXIO;
+-	int n, k = 0;
++	resource_size_t n;
++	int k = 0, ret;
+ 
+ 	while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
+-		for (n = res->start; hook && n <= res->end; n++) {
+-			if (request_irq(n, sh_mobile_i2c_isr, 0,
+-					dev_name(&dev->dev), dev)) {
+-				for (n--; n >= res->start; n--)
+-					free_irq(n, dev);
+-
+-				goto rollback;
++		for (n = res->start; n <= res->end; n++) {
++			ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
++					  0, dev_name(&dev->dev), dev);
++			if (ret) {
++				dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
++				return ret;
+ 			}
+ 		}
+ 		k++;
+ 	}
+ 
+-	if (hook)
+-		return k > 0 ? 0 : -ENOENT;
+-
+-	ret = 0;
+-
+- rollback:
+-	k--;
+-
+-	while (k >= 0) {
+-		res = platform_get_resource(dev, IORESOURCE_IRQ, k);
+-		for (n = res->start; n <= res->end; n++)
+-			free_irq(n, dev);
+-
+-		k--;
+-	}
+-
+-	return ret;
++	return k > 0 ? 0 : -ENOENT;
+ }
+ 
+ static int sh_mobile_i2c_probe(struct platform_device *dev)
+@@ -668,11 +651,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		return PTR_ERR(pd->clk);
+ 	}
+ 
+-	ret = sh_mobile_i2c_hook_irqs(dev, 1);
+-	if (ret) {
+-		dev_err(&dev->dev, "cannot request IRQ\n");
++	ret = sh_mobile_i2c_hook_irqs(dev);
++	if (ret)
+ 		return ret;
+-	}
+ 
+ 	pd->dev = &dev->dev;
+ 	platform_set_drvdata(dev, pd);
+@@ -680,10 +661,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
+ 
+ 	pd->reg = devm_ioremap_resource(&dev->dev, res);
+-	if (IS_ERR(pd->reg)) {
+-		ret = PTR_ERR(pd->reg);
+-		goto err_irq;
+-	}
++	if (IS_ERR(pd->reg))
++		return PTR_ERR(pd->reg);
+ 
+ 	/* Use platform data bus speed or STANDARD_MODE */
+ 	ret = of_property_read_u32(dev->dev.of_node, "clock-frequency", &bus_speed);
+@@ -735,7 +714,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	ret = i2c_add_numbered_adapter(adap);
+ 	if (ret < 0) {
+ 		dev_err(&dev->dev, "cannot add numbered adapter\n");
+-		goto err_irq;
++		return ret;
+ 	}
+ 
+ 	dev_info(&dev->dev,
+@@ -743,10 +722,6 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		 adap->nr, pd->bus_speed, pd->iccl, pd->icch);
+ 
+ 	return 0;
+-
+- err_irq:
+-	sh_mobile_i2c_hook_irqs(dev, 0);
+-	return ret;
+ }
+ 
+ static int sh_mobile_i2c_remove(struct platform_device *dev)
+@@ -754,7 +729,6 @@ static int sh_mobile_i2c_remove(struct platform_device *dev)
+ 	struct sh_mobile_i2c_data *pd = platform_get_drvdata(dev);
+ 
+ 	i2c_del_adapter(&pd->adap);
+-	sh_mobile_i2c_hook_irqs(dev, 0);
+ 	pm_runtime_disable(&dev->dev);
+ 	return 0;
+ }
+-- 
+1.9.2
 
- drivers/staging/board/Makefile |    1 +
- drivers/staging/board/kzm9d.c  |   19 +++++++++++++++++++
- 2 files changed, 20 insertions(+)
-
---- 0011/drivers/staging/board/Makefile
-+++ work/drivers/staging/board/Makefile	2014-05-29 21:40:49.000000000 +0900
-@@ -1 +1,2 @@
- obj-y	:= board.o
-+obj-$(CONFIG_ARCH_EMEV2)      += kzm9d.o
---- /dev/null
-+++ work/drivers/staging/board/kzm9d.c	2014-05-29 21:42:34.000000000 +0900
-@@ -0,0 +1,19 @@
-+/* Staging board support for KZM9D. Enable not-yet-DT-capable devices here. */
-+
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include "board.h"
-+
-+static const struct resource usbs1_res[] __initconst = {
-+	DEFINE_RES_MEM(0xe2800000, 0x2000),
-+	DEFINE_RES_IRQ(159),
-+};
-+
-+static void __init kzm9d_init(void)
-+{
-+	if (!board_staging_dt_node_available(usbs1_res, ARRAY_SIZE(usbs1_res)))
-+		platform_device_register_simple("emxx_udc", -1, usbs1_res,
-+						ARRAY_SIZE(usbs1_res));
-+}
-+
-+board_staging("renesas,kzm9d", kzm9d_init);
