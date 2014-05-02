@@ -1,69 +1,67 @@
 From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 02 May 2014 08:13:11 +0000
+Date: Fri, 02 May 2014 08:56:23 +0000
 Subject: Re: [PATCH/RFC 3/4] of/clk: Register clocks suitable for Runtime PM with the PM core
-Message-Id: <CAPDyKFqG0dV+-y2=t=d3w6_hxWsYi+sOmNdvS6ECPOuoQ61Pmw@mail.gmail.com>
+Message-Id: <CAPDyKFpTwPDu9afhOjhhQ2PKGFB+hWsp=mcaYTq8OvuGF7yT3Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398334403-26181-1-git-send-email-geert+renesas@glider.be>
  <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
- <CAPDyKFr02yyhGNncYX2AgBXTA3Sc0AGQcExjtLvQ5QU0_=YJwg@mail.gmail.com>
- <535B130C.1000007@gmail.com>
-In-Reply-To: <535B130C.1000007@gmail.com>
+In-Reply-To: <1398334403-26181-4-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
->>
->>
->> Normally I don't think it's a good idea to "automatically" manage
->> clocks from PM core or any other place but from the driver (and
->> possibly the subsystem).
->>
->> The reason is simply that we hide things that normally is supposed to
->> be handled by the driver. Typically a cross SOC driver should work
->> fine both with and without a pm_domain. It should also not rely on
->> CONFIG_PM_RUNTIME.
+ Hi Geert,
 
-[Snip]
+Some more review comments.
 
->>
->>> +static int of_clk_register(struct device *dev, struct clk *clk)
->>> +{
->>> +       int error;
->>> +
->>> +       if (!dev->pm_domain) {
->>> +               error = pm_clk_create(dev);
->>> +               if (error)
->>> +                       return error;
->>> +
->>> +               dev->pm_domain = &of_clk_pm_domain;
->>
->>
->> I am concerned about how this will work in conjunction with the
->> generic power domain.
->>
->> A device can't reside in more than one pm_domain; thus I think it
->> would be better to always use the generic power domain and not have a
->> specific one for clocks. Typically the genpd should invoke
->> pm_clk_resume|suspend from it's runtime PM callbacks.
->
->
-> I'm not sure about this. A typical use case would be to gate clocks ASAP and
-> then wait until device is idle long enough to consider turning off the power
-> domain worthwhile. Also sometimes we may want to gate the clocks, but
-> prevent power domain from being powered off to retain hardware state (e.g.
-> because there is no way to read it and restore later).
+> +
+> +
+> +#ifdef CONFIG_PM_RUNTIME
+> +
+> +static int of_clk_pm_runtime_suspend(struct device *dev)
+> +{
+> +       int ret;
+> +
+> +       ret = pm_generic_runtime_suspend(dev);
+> +       if (ret)
+> +               return ret;
+> +
+> +       ret = pm_clk_suspend(dev);
 
-So, in principle you prefer to have driver's handle clock gating to
-save power from their runtime PM callbacks, instead of from the power
-domain, right? Just to clarify, that's my view as well.
+What about slow clocks? Those aren't handled with pm_clk_suspend().
+
+> +       if (ret) {
+> +               pm_generic_runtime_resume(dev);
+> +               return ret;
+> +       }
+> +
+> +       return 0;
+> +}
+> +
+> +static int of_clk_pm_runtime_resume(struct device *dev)
+> +{
+> +       pm_clk_resume(dev);
+
+What about slow clocks? Those aren't handled with pm_clk_resume().
+
+> +       return pm_generic_runtime_resume(dev);
+> +}
+> +
+> +static struct dev_pm_domain of_clk_pm_domain = {
+> +       .ops = {
+> +               .runtime_suspend = of_clk_pm_runtime_suspend,
+> +               .runtime_resume = of_clk_pm_runtime_resume,
+
+Drivers/subsystems may invoke pm_runtime_force_suspend|resume() from
+some of their system PM callbacks, which requires the runtime PM
+callbacks to be defined for CONFIG_PM instead of CONFIG_PM_RUNTIME, I
+believe that should be changed here as well.
+
+> +               USE_PLATFORM_PM_SLEEP_OPS
+
+What about other buses beside the platfrom bus. Certainly we need to
+handle devices attached to any other subsystem type as well.
 
 Kind regards
 Ulf Hansson
-
->
-> I believe, though, that for devices that are not inside a controllable power
-> domain, this might be a good solution.
->
-> Best regards,
-> Tomasz
