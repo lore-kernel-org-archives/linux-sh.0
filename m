@@ -1,49 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 May 2014 14:51:22 +0000
-Subject: [PATCH v3 4/4] ARM: shmobile: armadillo800eva defconfig: Enable REGULATOR_GPIO and LEDS_GPIO
-Message-Id: <1400079082-6340-4-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 02 May 2014 19:15:10 +0000
+Subject: [PATCH v2 04/10] i2c: sh_mobile: add devicetree documentation
+Message-Id: <1399058116-7721-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>, devicetree@vger.kernel.org
 
-Enable missing options for devices in platform data and/or DT:
-  - REGULATOR_GPIO
-  - LEDS_GPIO (and its dependencies)
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: devicetree@vger.kernel.org
 ---
-v3:
-  - No changes
-v2:
-  - Drop config refresh
----
- arch/arm/configs/armadillo800eva_defconfig |    4 ++++
- 1 file changed, 4 insertions(+)
+ .../devicetree/bindings/i2c/i2c-sh_mobile.txt      | 26 ++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 065adddeee3e..d9675c68a399 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -96,6 +96,7 @@ CONFIG_I2C_GPIO=y
- CONFIG_I2C_SH_MOBILE=y
- # CONFIG_HWMON is not set
- CONFIG_REGULATOR=y
-+CONFIG_REGULATOR_GPIO=y
- CONFIG_MEDIA_SUPPORT=y
- CONFIG_VIDEO_DEV=y
- CONFIG_MEDIA_CAMERA_SUPPORT=y
-@@ -127,6 +128,9 @@ CONFIG_USB_ETH=m
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_MMC_SH_MMCIF=y
-+CONFIG_NEW_LEDS=y
-+CONFIG_LEDS_CLASS=y
-+CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_S35390A=y
- CONFIG_DMADEVICES=y
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+new file mode 100644
+index 000000000000..d2153ce36fa8
+--- /dev/null
++++ b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+@@ -0,0 +1,26 @@
++Device tree configuration for Renesas IIC (sh_mobile) driver
++
++Required properties:
++- compatible      : "renesas,iic-<soctype>". "renesas,rmobile-iic" as fallback
++- reg             : address start and address range size of device
++- interrupts      : interrupt of device
++- clocks          : clock for device
++- #address-cells  : should be <1>
++- #size-cells     : should be <0>
++
++Optional properties:
++- clock-frequency : frequency of bus clock in Hz. Default 100kHz if unset.
++
++Pinctrl properties might be needed, too. See there.
++
++Example:
++
++	iic0: i2c@e6500000 {
++		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
++		reg = <0 0xe6500000 0 0x425>;
++		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
++		clock-frequency = <400000>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
 -- 
-1.7.9.5
+1.9.2
 
