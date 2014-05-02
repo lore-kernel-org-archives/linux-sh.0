@@ -1,48 +1,42 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Fri, 30 May 2014 14:04:34 +0000
-Subject: Re: Ethernet bug at Upstream-v3.15-rcx on Lager.
-Message-Id: <53888FF2.8040505@codethink.co.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 02 May 2014 19:15:06 +0000
+Subject: [PATCH v2 00/10] i2c: sh_mobile: cleanups & bugfixes
+Message-Id: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53745E88.7040108@jinso.co.jp> <5374F753.70203@cogentembedded.com> <537564FC.4090905@jinso.co.jp> <5375A877.1090606@renesas.com>
-In-Reply-To: <5375A877.1090606@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, cm-hiep@jinso.co.jp
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-On 16/05/14 06:56, Yoshihiro Shimoda wrote:
-> Hi Hiep-san,
-> 
-> (2014/05/16 10:08), カオ　ミン　ヒェップ wrote:
->>>
->>>> Please review it when you have time.
->>>
->>>    Please try this patch:
->>>
->>> http://marc.info/?l=linux-netdev&m9602519809181
->>>
->> I have tested this patch on v3.15.0-rc5-00077-g14186fe, and results are the message of
->> "sh-eth r8a7790-ether eth0: Receive FIFO Overflow" has disappeared and sending datagrams is good.
->> (Bandwidth 10M to 100M: Test with 5/5 times by script and by hand are good)
->>
-> 
-> It's nice!
-> So, I hope the patch is merged in upstream.
-> However, the patch's change log mentioned r8a7790 only.
-> The r8a7791's ethernet controller also has this bit.
+Some cleanups and bugfixes for i2c-sh_mobile. Tested on top of
+renesas-devel-v3.15-rc3-20140429 and with a lager board. Branch is at
 
-The bit update covers both of them as the r8a7790 and r8a7791 both share
-the same configuration structure.
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/sh_mobile-cleanup
 
-I re-sent the patch but didn't find your email post until after I had
-sent it, otherwise I would have mentioned your testing specifically. In
-future it would be helpful if you could do the following
+Changes since V1:
+* added patches to make bus speed calculation more robust
+* added patch to fix bus speed calculation for rcar-gen2 SoCs
+* added tags from Geert to patches
 
-- Mention driver by name in the subject line
-- Search the list for previous mentions and reply to that/those threads.
 
+Wolfram Sang (10):
+  i2c: sh_mobile: replace magic hex values with constants
+  i2c: sh_mobile: improve error handling
+  i2c: sh_mobile: honor DT bus speed settings
+  i2c: sh_mobile: add devicetree documentation
+  i2c: sh_mobile: devm conversion, low hanging fruits
+  i2c: sh_mobile: devm conversion, irq setup
+  i2c: sh_mobile: remove superfluous offset parameter
+  i2c: sh_mobile: bail out on errors when initializing
+  i2c: sh_mobile: check timing parameters for valid range
+  i2c: sh_mobile: fix clock calculation for newer SoCs
+
+ .../devicetree/bindings/i2c/i2c-sh_mobile.txt      |  26 +++
+ drivers/i2c/busses/i2c-sh_mobile.c                 | 222 ++++++++++-----------
+ 2 files changed, 130 insertions(+), 118 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.9.2
+
