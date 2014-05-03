@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 03 May 2014 00:11:08 +0000
+Date: Sat, 03 May 2014 15:51:45 +0000
 Subject: Re: [PATCH v2 02/02] ARM: shmobile: Add SDHI devices for Koelsch DTS
-Message-Id: <5364341C.9030105@cogentembedded.com>
+Message-Id: <53651091.1040601@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140212095404.4832.61203.sendpatchset@w520>
 In-Reply-To: <20140212095404.4832.61203.sendpatchset@w520>
@@ -12,28 +12,28 @@ To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 02/12/2014 12:54 PM, Magnus Damm wrote:
+On 05/03/2014 04:11 AM, Sergei Shtylyov wrote:
 
-> From: Magnus Damm <damm@opensource.se>
+>> From: Magnus Damm <damm@opensource.se>
 
-> Add DT support for SDHI0, SDHI1 and SDHI2 on Koelsch.
+>> Add DT support for SDHI0, SDHI1 and SDHI2 on Koelsch.
 
-> The board specific handling of CD and WP pins are
-> using GPIOs.
+>> The board specific handling of CD and WP pins are
+>> using GPIOs.
 
-    Frankly speaking, I didn't understand why. The native SDHI[012] CD/WP pins 
-are used in the legacy Koelsch code, why not do the same in the device tree?
+>     Frankly speaking, I didn't understand why. The native SDHI[012] CD/WP pins
+> are used in the legacy Koelsch code, why not do the same in the device tree?
 
-> SDHI0 and SDHI1 are hooked up to regular
-> SD connectors while SDHI2 is using micro-SD which
-> is lacking WP signal.
+    Ah, after looking at the SDHI driver, it seems I've figured that out: it 
+only can use GPIO for the CD signal, and the WP signal is ignored for R-Car 
+gen2 SoCs, so that only GPIO can actually work... Now I'm wondering how the 
+legacy code manages to work. :-)
 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+>> SDHI0 and SDHI1 are hooked up to regular
+>> SD connectors while SDHI2 is using micro-SD which
+>> is lacking WP signal.
 
-PS: I've done some limited testing of the SDHI using the dedicated CD/WP pins 
-on both Koelsch and Henninger boards; I haven't tested card insertion/removal 
-since I only have remote access to the boards and it's holiday in Russia 
-anyway. :-)
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
 
 WBR, Sergei
 
