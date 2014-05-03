@@ -1,34 +1,16 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 12 May 2014 23:02:12 +0000
-Subject: [PATCH 2/6] DMA: shdmac: Include linux/err.h
-Message-Id: <1399935736-16854-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Cabina Sanitaria <cabinasanitaria@junin.gob.ar>
+Date: Sat, 03 May 2014 03:18:07 +0000
+Subject: Re
+Message-Id: <1174741541.291288.1399087087021.JavaMail.zimbra@junin.gob.ar>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-linux/err.h isn't implicitly included by the current headers on all
-platforms, resulting in compilation failures due to implicit
-declarations of IS_ERR and PTR_ERR. Fix this by including linux/err.h.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/dma/sh/shdmac.c | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-index 7313537..146d5df 100644
---- a/drivers/dma/sh/shdmac.c
-+++ b/drivers/dma/sh/shdmac.c
-@@ -20,6 +20,7 @@
- 
- #include <linux/delay.h>
- #include <linux/dmaengine.h>
-+#include <linux/err.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/kdebug.h>
--- 
-1.8.5.5
+Noi oferim credite la rata dobânzii de 3% pentru toate scop. Ne e-mail dacă sunteți interesat.
+
+We offer loans at 3% interest rate for all purpose. Email us if you are interested.
 
