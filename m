@@ -1,7 +1,7 @@
-From: Jon Loeliger <loeliger@gmail.com>
-Date: Thu, 01 May 2014 16:18:45 +0000
+From: Olof Johansson <olof@lixom.net>
+Date: Sat, 03 May 2014 21:37:01 +0000
 Subject: Re: [PATCH 51/97] ARM: l2c: remove platforms/SoCs setting early BRESP
-Message-Id: <CAJgR-BiGjp9G=E7SzgidyVLTjpQ3ETFTFwxDapVc28PyokGa=g@mail.gmail.com>
+Message-Id: <CAOesGMiYG7oLd2DKeQxactjJyxsst4g688XD=bKNskDY16PR_g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140428192419.GV26756@n2100.arm.linux.org.uk>
  <E1WerG4-0001X4-Ic@rmk-PC.arm.linux.org.uk>
@@ -14,24 +14,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Russell,
-
-I emphatically second Grant's opinion here:
-This is a good patch series and is a much-needed improvement.
-
-I am in the middle of a board-port for an A9 system, and this
-series will greatly simplify things for me *despite* the fact that
-I will need to convert to the new write_sec() form of L2C control
-on PSCI-enabled non-secure platforms.
-
-To reiterate Grant's request, please re-consider applying
-this L2C patch series!
-
-Thank you,
-jdl
-
-
-On Thu, May 1, 2014 at 10:12 AM, Grant Likely <grant.likely@secretlab.ca> wrote:
+On Thu, May 1, 2014 at 8:12 AM, Grant Likely <grant.likely@secretlab.ca> wrote:
 > On Tue, 29 Apr 2014 01:21:41 +0100, Russell King - ARM Linux <linux@arm.linux.org.uk> wrote:
 >> On Tue, Apr 29, 2014 at 09:02:27AM +0900, Simon Horman wrote:
 >> > On Mon, Apr 28, 2014 at 08:30:32PM +0100, Russell King wrote:
@@ -61,12 +44,22 @@ On Thu, May 1, 2014 at 10:12 AM, Grant Likely <grant.likely@secretlab.ca> wrote:
 > requests to split things up because of the complexity of the series.
 >
 > I really hope you're reconsider and not give up on this series.
->
-> g.
->
->
->
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+
++1. I've been very behind on email lately and I haven't paid enough
+attention to this, but I'd like to see this go in for 3.16 as well,
+and it shouldn't have to go in through each subtree. Sequencing that
+in this case would be a huge pain indeed.
+
+It would be better to just keep it all on a shared topic branch that
+we can merge into arm-soc as a dependency, so we can resolve merge
+conflicts as we merge in from platform maintainers. I wouldn't expect
+anything major besides some context conflicts due to nearby edits.
+
+The only thing I am not 100% on is if it's a good idea or not to add
+to the machine descriptor, since it'll make it harder to make
+descriptor-free generic platforms for A9, but it's a minor detail and
+the benefit of the series outweigh that (and we can revisit if truly
+needed later).
+
+
+-Olof
