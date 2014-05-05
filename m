@@ -1,28 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 11 May 2014 00:20:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: henninger: add SDHI0/2 DT support
-Message-Id: <20140511002034.GQ31760@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 05 May 2014 21:29:45 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Cleanup Updates for v3.16
+Message-Id: <20140505212945.GE29245@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405032104.35276.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405032104.35276.sergei.shtylyov@cogentembedded.com>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, May 03, 2014 at 09:04:34PM +0400, Sergei Shtylyov wrote:
-> Define the Henninger board dependent part of the SDHI0/2 device nodes along with
-> the necessary voltage regulators (note that the Vcc regulators are dummy -- they
-> are required but don't actually exist on the board). Also, GPIOs have to be used
-> for the CD and WP signals due to the SDHI driver constraints...
+On Wed, Apr 23, 2014 at 10:25:38AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Please consider these Renesas ARM based SoC cleanup updates for v3.16.
 > 
-> ---
-> This patch is against 'renesas-devel-v3.15-rc3-20140502' tag of Simon Horman's
-> 'renesas.git' repo.
 > 
->  arch/arm/boot/dts/r8a7791-henninger.dts |   76 ++++++++++++++++++++++++++++++++
->  1 file changed, 76 insertions(+)
+> The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
+> 
+>   Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v3.16
+> 
+> for you to fetch changes up to bb6c3d58c36adb205b4bf233fd1c4079e02a6811:
+> 
+>   ARM: shmobile: r8a7740: Make r8a7740_meram_workaround() __init (2014-04-16 10:01:49 +0900)
 
-Thanks, I have queued this up.
+Merged, thanks.
+
+
+-Olof
