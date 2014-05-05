@@ -1,96 +1,74 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 May 2014 20:12:30 +0000
-Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-Message-Id: <201405210012.31347.sergei.shtylyov@cogentembedded.com>
+Date: Mon, 05 May 2014 22:45:31 +0000
+Subject: [PATCH] ARM: shmobile: henninger: add QSPI DT support
+Message-Id: <201405060245.32952.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+Define the Henninger board dependent part of the QSPI device node.
+Add device nodes for Spansion S25FL512S SPI flash and MTD partitions on it.
 
-Add device nodes for the R8A7790 internal PCI bridge devices.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-[Sergei: added interrupt-related properties to the PCI bridge nodes]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
-Changes in version 3:
-- added interrupt-related properties to the PCI bridge nodes;
-- refreshed the patch.
+This patch is against 'renesas-devel-v3.15-rc3-20140502' tag of Simon Horman's
+'renesas.git' repo and SDHI0/2 DT support patch posted last weekend.
 
-Changes in version 2:
-- reworded summary (fixing typo) and changelog;
-- removed extra spaces before {;
-- refreshed the patch.
+ arch/arm/boot/dts/r8a7791-henninger.dts |   38 ++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
- arch/arm/boot/dts/r8a7790.dtsi |   54 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -876,4 +876,58 @@
- 		#size-cells = <0>;
- 		status = "disabled";
+Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
++++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -109,6 +109,11 @@
+ 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
  	};
 +
-+	pci0: pci@ee090000 {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee090000 0x0 0xc00>,
-+		      <0x0 0xee080000 0x0 0x1100>;
-+		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci1: pci@ee0b0000 {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0b0000 0x0 0xc00>,
-+		      <0x0 0xee0a0000 0x0 0x1100>;
-+		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <1 1>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	pci2: pci@ee0d0000 {
-+		compatible = "renesas,pci-r8a7790";
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		reg = <0x0 0xee0d0000 0x0 0xc00>,
-+		      <0x0 0xee0c0000 0x0 0x1100>;
-+		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-+		status = "disabled";
-+
-+		bus-range = <2 2>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+		#interrupt-cells = <1>;
-+		interrupt-map-mask = <0xff00 0 0 0x7>;
-+		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
-+			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
 +	};
  };
+ 
+ &scif0 {
+@@ -158,3 +163,36 @@
+ 	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader_prg";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user_prg";
++			reg = <0x00040000 0x00400000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash_fs";
++			reg = <0x00440000 0x03bc0000>;
++		};
++	};
++};
