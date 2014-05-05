@@ -1,41 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 27 May 2014 13:45:11 +0000
-Subject: [PATCH RFC 3/3] spi: rspi: Add support for new R-Car Gen2 SoCs
-Message-Id: <1401198311-21268-4-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 05 May 2014 13:21:11 +0000
+Subject: Re: rcar-i2c: always reads a byte
+Message-Id: <20140505132111.GA13467@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="xHFwDpU9dbj6ez1V"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <531F3686.7050808@codethink.co.uk>
+ <53201A83.7040605@gmx.de>
+In-Reply-To: <53201A83.7040605-Mmb7MZpHnFY@public.gmane.org>
+To: Michael Lawnick <ml.lawnick-Mmb7MZpHnFY@public.gmane.org>
+Cc: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Add support for QSPI in:
-  - r8a7792 (R-Car V2H)
-  - r8a7793 (R-Car M2-N)
-  - r8a7794 (R-Car E2)
 
-r8a7791 is now called "R-Car M2-W".
+--xHFwDpU9dbj6ez1V
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- Documentation/devicetree/bindings/spi/spi-rspi.txt | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-index d57d82a74054..92a65e591648 100644
---- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
-+++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
-@@ -11,7 +11,10 @@ Required properties:
- 		        - "renesas,rspi-sh7757" (SH)
- 			- "renesas,rspi-r7s72100" (RZ/A1H)
- 			- "renesas,qspi-r8a7790" (R-Car H2)
--			- "renesas,qspi-r8a7791" (R-Car M2)
-+			- "renesas,qspi-r8a7791" (R-Car M2-W)
-+			- "renesas,qspi-r8a7792" (R-Car V2H)
-+			- "renesas,qspi-r8a7793" (R-Car M2-N)
-+			- "renesas,qspi-r8a7794" (R-Car E2)
- - reg              : Address start and address range size of the device
- - interrupts       : A list of interrupt-specifiers, one for each entry in
- 		     interrupt-names.
--- 
-1.9.1
+> >I have noticed the following behaviour with the i2c-rcar driver
+> >with the following single i2c_msg structure:
+> >
+> >	msg[0].addr =3D 0x12;
+> >	msg[0].flags =3D I2C_M_RD;
+> >	msg[0].len =3D 0;
+> >	msg[0].buf =3D data;
+>=20
+> isn't this illegal?
+> This should lead to 50% chance of blocked bus: After sending
+> read-bit the slave ACK's and puts first data bit onto SDL.
 
+It is not illegal, SMBUS_QUICK is described in the SMBus specs and can
+bee seen as a kind of 1-bit transfer. Yet, you should only issue it for
+devices which require exactly this kind of transfer. Which is true for
+most I2C transaction types.
+
+
+--xHFwDpU9dbj6ez1V
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTZ5BHAAoJEBQN5MwUoCm2eVsP+wfaHKiMIJtOqWwu34DXeemo
+2XYNAIifMhLAozmp0vNPMEWqeczqZfg4P2SKYCqm6GB1221srZYuxy0BbCLoJtvK
+AfEn3CNv81OF07EhEObiSahbMLEUfx8ri7w+tud/ma2z9a9fHHVJcOXpvBWscuH+
+P6TAsjzEB0xI1RcNGdBK/DlRsc5/zKtYnVw1YWuNj6r+lkzdVRYy0rh5MKOc2S0R
+jU03X1rrUTtyICCEFr+Ail6lOH/uQ2Mffnmqj1UygmjNoWVNaKjPBBD23EoliEQE
+y37eHo8f0kF7BQ9pCxQmn0DhcxJr4srOAxhNXC8WSjH4vPQpZkBgoPLEtQtzpjzQ
+tXm+O+6e75CHdb94w9lzVCITANWE8Svfy8N4YVUlCdlj3Z7HtU/0x0b6RBmwFnPf
+/JOqV6sorggMobET0BiF17uwrhrw5OEoI3REIWLqth6X7I/HUXda69vW4RXOrM2t
+ky7F8Xz6hejOoSIAaVksE0CUI9fkhOUjolSEAO5DWuPcGu51Yk2CjQB07iLk/bHr
+IJzAtqLlmSo+JHuYDPiE3q9l1LkMHZFPIh7pMkCOb1xP1CzPbbxw6OVOm2GA4eNO
+/uDkmgFZlGGuUkN7HaTnRXHLhbgcfFwcEbE6mZPNrCJci16wCId0Ve83XiTmwDdz
+cnWv9huokRfQR+H4Sv+n
+=xC0U
+-----END PGP SIGNATURE-----
+
+--xHFwDpU9dbj6ez1V--
