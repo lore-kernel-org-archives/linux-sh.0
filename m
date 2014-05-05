@@ -1,21 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 11 May 2014 00:45:02 +0000
-Subject: Re: [PATCH] ARM: shmobile: henninger: add MSIOF0 DT support
-Message-Id: <20140511004502.GV31760@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 05 May 2014 16:36:21 +0000
+Subject: [PATCH] i2c: rcar: bail out on zero length transfers
+Message-Id: <1399307781-23614-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405070048.00213.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405070048.00213.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 07, 2014 at 12:47:59AM +0400, Sergei Shtylyov wrote:
-> Define the Henninger board dependent part of the MSIOF0 device node.
-> Add device node for Renesas R2A11302FT PMIC for which no bindings exist yet.
-> 
-> Based on the Koelsch MSIOF device tree patch by Geert Uytterhoeven.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thanks, I have queued this up.
+This hardware does not support zero length transfers. Instead, the
+driver does one (random) byte transfers currently with undefined results
+for the slaves. We now bail out.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 72a400a73cce..66c952e62f0a 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -552,6 +552,13 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ 	ret = -EINVAL;
+ 	for (i = 0; i < num; i++) {
++
++		/* This HW can't send STOP after address phase */
++		if (msgs[i].len = 0) {
++			ret = -EOPNOTSUPP;
++			break;
++		}
++
+ 		/*-------------- spin lock -----------------*/
+ 		spin_lock_irqsave(&priv->lock, flags);
+ 
+@@ -616,7 +623,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ static u32 rcar_i2c_func(struct i2c_adapter *adap)
+ {
+-	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
++	/* This HW can't do SMBUS_QUICK and NOSTART */
++	return I2C_FUNC_I2C | (I2C_FUNC_SMBUS_EMUL & ~I2C_FUNC_SMBUS_QUICK);
+ }
+ 
+ static const struct i2c_algorithm rcar_i2c_algo = {
+-- 
+1.9.2
+
