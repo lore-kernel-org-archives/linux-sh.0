@@ -1,47 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 07 May 2014 23:32:56 +0000
-Subject: [PATCH 04/04] ARM: shmobile: Remove unused r8a7740_init_delay()
-Message-Id: <20140507233256.29712.54976.sendpatchset@w520>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 06 May 2014 14:23:53 +0000
+Subject: [PATCH 6/6] clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings
+Message-Id: <1399386233-11928-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140507233219.29712.9253.sendpatchset@w520>
-In-Reply-To: <20140507233219.29712.9253.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-Remove the now unused r8a7740_init_delay() function.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 ++
+ 1 file changed, 2 insertions(+)
 
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 -
- arch/arm/mach-shmobile/setup-r8a7740.c        |    5 -----
- 2 files changed, 6 deletions(-)
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 5992dce..8514088 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,8 +10,10 @@ index in the group, from 0 to 31.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r8a7740-mstp-clocks" for R8A7740 MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
++    - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
+     clocks. The first register is the clock control register and is mandatory.
+-- 
+1.8.4.5
 
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7740.h	2014-04-24 18:02:10.000000000 +0900
-@@ -47,7 +47,6 @@ enum {
- };
- 
- extern void r8a7740_meram_workaround(void);
--extern void r8a7740_init_delay(void);
- extern void r8a7740_init_irq_of(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
---- 0004/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-04-24 18:01:54.000000000 +0900
-@@ -876,11 +876,6 @@ void __init r8a7740_add_standard_devices
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
--void __init r8a7740_init_delay(void)
--{
--	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
--};
--
- void __init r8a7740_init_irq_of(void)
- {
- 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
