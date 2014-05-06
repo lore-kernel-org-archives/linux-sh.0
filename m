@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 06 May 2014 21:15:48 +0000
+Date: Tue, 06 May 2014 21:17:48 +0000
 Subject: Re: [PATCH] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-Message-Id: <CAMuHMdUQBJsQXYeerYOagU+kyRfHvnszyQKRnPg41wsbGQKP2g@mail.gmail.com>
+Message-Id: <CAMuHMdXeC154pM5BjPzSnMRegqJbzaGWt-dKwOKxNfNp18oBpQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398906582-29888-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1398906582-29888-1-git-send-email-geert+renesas@glider.be>
@@ -10,26 +10,58 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi Ben,
 
-On Sat, May 3, 2014 at 9:29 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> According to Magnus, emev2 doesn't rely on Runtime PM, so it can be
->> removed from the list.
+On Tue, May 6, 2014 at 12:45 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>>    2. Can we already reduce the list of SoCs to check for?
+>>       E.g. is this needed for emev2, which doesn't have MSTP clocks?
 >
-> Correct, but let me clarify a bit. At this point we are not using
-> Runtime PM in any driver used by EMEV2. At some point it would however
-> be good to use Runtime PM, so I don't think it would hurt enabling it.
+> From what I remember the EMEV2 does have hardware clock gates for
+> IP, just not the same way as the newer SoCs have. I have not tried
+> any newer kernels with this as the project I was on which used this
+> device is no-longer going.
 
-OK, so let's keep it.
+OK, will keep.
 
-> Actually, I think we should enable it for all our SoCs, so matching on
-> "renesas," may make even more sense.
+>> v3:
+>>    - Add of_machine_is_compatible() checks for multi-platform
+>>    - Remove Reviewed-by, Tested-by, as too much has changed,
+>>    - Assumed authorship, as not much is left from the original patch from
+>>      Ben (Ben: is that OK?),
+>
+> Yes, that would fine. It looks like there is enough changes to
+> drop that. Thanks for sorting this out.
 
-Is there an easy way to match on "renesas,"? I haven't found one yet.
+Thanks!
 
-Anyway, I'm a bit reluctant to do that. The final fix may be SoC-dependent,
-so having all SoCs listed explicitly allows to selectively remove lines when
-needed.
+>> -static int __init sh_pm_runtime_init(void)
+>> +static bool default_pm_on;
+>> +
+>> +int __init sh_pm_runtime_init(void)
+>>   {
+>> +#ifdef CONFIG_ARCH_SHMOBILE_MULTI
+>> +       if (!of_machine_is_compatible("renesas,emev2") &&
+>> +           !of_machine_is_compatible("renesas,r7s72100") &&
+>> +           !of_machine_is_compatible("renesas,r8a73a4") &&
+>> +           !of_machine_is_compatible("renesas,r8a7740") &&
+>> +           !of_machine_is_compatible("renesas,r8a7778") &&
+>> +           !of_machine_is_compatible("renesas,r8a7779") &&
+>> +           !of_machine_is_compatible("renesas,r8a7790") &&
+>> +           !of_machine_is_compatible("renesas,r8a7791") &&
+>> +           !of_machine_is_compatible("renesas,sh7372") &&
+>> +           !of_machine_is_compatible("renesas,sh73a0"))
+>> +               return 0;
+>> +#endif
+>
+> Is there a more generic compatible that could be matched on?
+
+As I already replied to Magnus, I don't think so.
+
+> Could we do an if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) instead
+> of an #ifdef block?
+
+Good idea, that will increase compile coverage, while, the compiler will
+still remove it when appropriate.
 
 Gr{oetje,eeting}s,
 
