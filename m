@@ -1,56 +1,38 @@
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Wed, 07 May 2014 22:37:27 +0000
-Subject: Re: [PATCH v5 0/8] Introduce new cpufreq helper macros
-Message-Id: <1628906.bvqGfBpWxn@vostro.rjw.lan>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 06 May 2014 01:44:33 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v3.16
+Message-Id: <20140506014433.GA4701@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <535AC247.3070907@semaphore.gr> <4469396.zveA7sC36d@vostro.rjw.lan> <536A3654.20201@semaphore.gr>
-In-Reply-To: <536A3654.20201@semaphore.gr>
+References: <cover.1398737464.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398737464.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Stratos Karafotis <stratosk@semaphore.gr>
-Cc: Viresh Kumar <viresh.kumar@linaro.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Jesper Nilsson <jesper.nilsson@axis.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Dirk Brandewie <dirk.j.brandewie@intel.com>, "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>, "cpufreq@vger.kernel.org" <cpufreq@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Randy Dunlap <rdunlap@infradead.org>, "David S. Miller" <davem@davemloft.net>, Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, Sekhar Nori <nsekhar@ti.com>, Samuel Ortiz <samuel@sortiz.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday, May 07, 2014 04:34:12 PM Stratos Karafotis wrote:
-> Hi Rafael,
+On Tue, Apr 29, 2014 at 11:15:32AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> On 07/05/2014 04:13 μμ, Rafael J. Wysocki wrote:
-> > On Wednesday, May 07, 2014 10:53:16 AM Viresh Kumar wrote:
-> >> On 6 May 2014 23:25, Stratos Karafotis <stratosk@semaphore.gr> wrote:
-> >>> My bad. I'm sorry for this. :(
-> >>>
-> >>> Rafael,
-> >>> A solution could be to make cpufreq_next_valid an inline function in cpufreq.h,
-> >>> but as Viresh mentioned this would be very inefficient because of multiple copies.
-> >>
-> >> That statement was true when we didn't had this problem..
-> >>
-> >>> So, maybe it's better to revert the 2 patches that don't depend on CONFIG_CPU_FREQ:
-> >>>
-> >>> 4229e1c61a4a ("sh: clk: Use cpufreq_for_each_valid_entry macro for iteration") and
-> >>> 04ae58645afa ("irda: sh_sir: Use cpufreq_for_each_valid_entry macro for iteration").
-> >>
-> >> This doesn't look right. It can happen to some other drivers as well in future.
-> >> So, there are two solutions I can think of:
-> >> 1. move cpufreq_next_valid and rename it to __cpufreq_next_valid(). Also make it
-> >> inline. Then create two versions of cpufreq_next_valid(), one inlined (only when
-> >> CONFIG_CPU_FREQ=n) and other one in cpufreq.c (non- inlined)..
-> >>
-> >> But probably that would be called ugly by some people :)
-> >>
-> >> 2. Make cpufreq_next_valid() inline and forget about extra space it takes :)
-> >>
-> >> @Rafel: Let me know which one you like :)
-> > 
-> > 2.
-> > 
-> > 
+> Please consider these second round of
+> Renesas ARM based SoC DT updates for v3.16.
 > 
-> Do you want me to resend the entire patch set or only patch 1/8?
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-dt-for-v3.16,
+> which I have already sent a pull-request for.
+> 
+> 
+> The following changes since commit dd485ab9a88267f4db0d58ace23b19e876ebf8ac:
+> 
+>   ARM: shmobile: armadillo-reference dts: Seiko Instruments, Inc is "sii" (2014-04-16 10:03:42 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v3.16
+> 
+> for you to fetch changes up to 5a62ec57004f1a434bfd3feed43e447b5780baf6:
+> 
+>   ARM: shmobile: henninger: enable SATA0 (2014-04-28 09:12:04 +0900)
 
-It's already on a branch that cannot be rebased.  Please send me a fix on top of it.
+Merged, thanks.
 
-
--- 
-I speak only for myself.
-Rafael J. Wysocki, Intel Open Source Technology Center.
+-Olof
