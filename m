@@ -1,35 +1,129 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 May 2014 10:05:16 +0000
-Subject: Re: [PATCH 4/7] ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
-Message-Id: <CAMuHMdV2ixL+n23nZUK1geadpvt3ubHoMM18Gw1rq_M+ym7vGw@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 06 May 2014 14:23:50 +0000
+Subject: [PATCH 3/6] clk: shmobile: div6: support selectable-input clocks
+Message-Id: <1399386233-11928-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5386E677.60801@bp.renesas.com>
-In-Reply-To: <5386E677.60801@bp.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Inami-san,
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-On Thu, May 29, 2014 at 9:49 AM, Gaku Inami
-<gaku.inami.xw@bp.renesas.com> wrote:
-> I add a new file(cpufreq.c) for the following reasons.
-> - Registration of platform_device must be unified in SH-Mobile.
-> - We can't create a node of cpufreq drivers into device tree.
->   (Because cpufreq driver is virtual device.)
+Adds support for DIV6 clocks with selectable parents as found in the r8a7740,
+sh73a0, and other SoCs.
 
-Just wondering: what will the migration path be to board-less platform
-support? I had a quick look how other platforms handle it, but didn't
-become much wiser.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     | 11 +++++++-
+ drivers/clk/shmobile/clk-div6.c                    | 32 ++++++++++++++++++----
+ 2 files changed, 36 insertions(+), 7 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 952e373..d8c6577 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -7,14 +7,23 @@ to 64.
+ Required Properties:
+ 
+   - compatible: Must be one of the following
++    - "renesas,r8a7740-div6-clock" for R8A7740 DIV6 clocks
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
++    - "renesas,sh73a0-div6-clock" for SH73A0 (SH-MobileAG5) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+   - reg: Base address and length of the memory resource used by the DIV6 clock
+-  - clocks: Reference to the parent clock
++  - clocks: Reference to the parent clock(s)
+   - #clock-cells: Must be 0
+   - clock-output-names: The name of the clock as a free-form string
+ 
++Optional Properties:
++
++  - renesas,src-shift: Bit position of the input clock selector (default:
++    fixed input clock)
++  - renesas,src-width: Bit width of the input clock selector (default: fixed
++    input clock)
++
+ 
+ Example
+ -------
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index f065f69..fbd1c31 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -38,9 +38,12 @@ struct div6_clock {
+ 
+ static int cpg_div6_clock_enable(struct clk_hw *hw)
+ {
++	unsigned int val;
+ 	struct div6_clock *clock = to_div6_clock(hw);
+ 
+-	clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
++	val = (clk_readl(clock->reg) & ~(CPG_DIV6_DIV_MASK | CPG_DIV6_CKSTP))
++		| CPG_DIV6_DIV(clock->div - 1);
++	clk_writel(val, clock->reg);
+ 
+ 	return 0;
+ }
+@@ -52,8 +55,8 @@ static void cpg_div6_clock_disable(struct clk_hw *hw)
+ 	/* DIV6 clocks require the divisor field to be non-zero when stopping
+ 	 * the clock.
+ 	 */
+-	clk_writel(CPG_DIV6_CKSTP | CPG_DIV6_DIV(CPG_DIV6_DIV_MASK),
+-		   clock->reg);
++	clk_writel(clk_readl(clock->reg) | CPG_DIV6_CKSTP | CPG_DIV6_DIV_MASK,
++		clock->reg);
+ }
+ 
+ static int cpg_div6_clock_is_enabled(struct clk_hw *hw)
+@@ -94,12 +97,14 @@ static int cpg_div6_clock_set_rate(struct clk_hw *hw, unsigned long rate,
+ {
+ 	struct div6_clock *clock = to_div6_clock(hw);
+ 	unsigned int div = cpg_div6_clock_calc_div(rate, parent_rate);
++	unsigned int val;
+ 
+ 	clock->div = div;
+ 
++	val = clk_readl(clock->reg) & ~CPG_DIV6_DIV_MASK;
+ 	/* Only program the new divisor if the clock isn't stopped. */
+-	if (!(clk_readl(clock->reg) & CPG_DIV6_CKSTP))
+-		clk_writel(CPG_DIV6_DIV(clock->div - 1), clock->reg);
++	if (!(val & CPG_DIV6_CKSTP))
++		clk_writel(val | CPG_DIV6_DIV(clock->div - 1), clock->reg);
+ 
+ 	return 0;
+ }
+@@ -121,6 +126,7 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 	const char *name;
+ 	struct clk *clk;
+ 	int ret;
++	u32 src_shift, src_width;
+ 
+ 	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
+ 	if (!clock) {
+@@ -150,7 +156,21 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 		goto error;
+ 	}
+ 
+-	parent_name = of_clk_get_parent_name(np, 0);
++	if (!of_property_read_u32(np, "renesas,src-shift", &src_shift)) {
++		if (!of_property_read_u32(np, "renesas,src-width",
++					&src_width)) {
++			unsigned int parent_idx +				(clk_readl(clock->reg) >> src_shift) &
++				(BIT(src_width) - 1);
++			parent_name = of_clk_get_parent_name(np, parent_idx);
++		} else {
++			pr_err("%s: renesas,src-shift without renesas,"
++			       "src-width in %s\n", __func__, np->name);
++			goto error;
++		}
++	} else
++		parent_name = of_clk_get_parent_name(np, 0);
++
+ 	if (parent_name = NULL) {
+ 		pr_err("%s: failed to get %s DIV6 clock parent name\n",
+ 		       __func__, np->name);
+-- 
+1.8.4.5
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
