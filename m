@@ -1,7 +1,7 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 06 May 2014 10:46:22 +0000
+Date: Tue, 06 May 2014 12:49:17 +0000
 Subject: RE: [PATCH v7 01/10] PCI: host: rcar: Add Renesas R-Car PCIe driver
-Message-Id: <0b36805160b7426faa481d5603bebb6c@HKXPR06MB168.apcprd06.prod.outlook.com>
+Message-Id: <adb16b87e1b54911b02d5d0cd720b02c@HKXPR06MB168.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
  <1396261856-22465-2-git-send-email-phil.edworthy@renesas.com>
@@ -12,76 +12,60 @@ References: <1396261856-22465-1-git-send-email-phil.edworthy@renesas.com>
  <ac795ce3bb6349708e2e96686e19d24f@HKXPR06MB168.apcprd06.prod.outlook.com>
  <20140430154345.GA1705@obsidianresearch.com>
  <b9160c7a49304270b5070dcf49482723@HKXPR06MB168.apcprd06.prod.outlook.com>
- <20140501165003.GC3296@obsidianresearch.com>
-In-Reply-To: <20140501165003.GC3296@obsidianresearch.com>
+ <CAErSpo4xJ36UabUcCDLsA_Q+r-C2ZV_q16y=Os8vVGFm-iMBxw@mail.gmail.com>
+In-Reply-To: <CAErSpo4xJ36UabUcCDLsA_Q+r-C2ZV_q16y=Os8vVGFm-iMBxw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Jason,
-
-On 01 May 2014 17:50, Jason wrote:
-> On Thu, May 01, 2014 at 09:50:56AM +0000, Phil Edworthy wrote:
-> 
-> > > The logic should be:
-> > >  if (bus = primary)
-> > >     do io access to host bridge
-> > >  else if (bus = secondary)
-> > >     issue type 0 TLP on the wire
-> > >  else if (bus > secondary && bus <= subordinate)
-> > >     issue type 1 TLP on the wire
-> > >  else
-> > >     fail, invalid bus number
-> > > Where the three values come from the register in the PCI host bridge's
-> > > configuration space, and are kept in sync with the programming from
-> > > the Linux PCI core.
-> > >
-> > > It is just a happy hapenstance that root_bus_nr equals the value the
-> > > PCI core programmed into secondary - that is not guarenteed, you must
-> > > use the primary value directly.
-> 
-> > For type0 TLPs, we are not checking that root_bus_nr equals the
-> > value the PCI core programmed into secondary, we are checking that
-> > the (root_bus_nr = bus->parent->number). The only way this wouldn't
-> > work is if root_bus_nr was not the root bus number.
-> 
-> Okay, that isn't as sketchy, but that process still ignores the
-> subordinate bus number and the failure case as required by PCI.
-> 
-> The goal here is to have the stuff below the drivers implement the PCI
-> spec so that the core code can assume everything below is
-> conformant. Drivers should not introduce gratuitous differences 'just
-> because'
-> 
-> There is no reason drivers should be using PCI core structures to make
-> decisions when the spec says those decisions are driven by config
-> space fields.
-> 
-> This way the PCI core code doesn't have to be aware of any weird
-> non-standard edge cases.. Such as not failing bus numbers beyond the
-> subordinate bus number.
-> 
-> > Since the Synopsys DW driver also saves off sys->busnr and later
-> > uses this to determine if accesses are for the host bridge, I guess
-> > that means it won't always work either, right? Or is it ok because
-> > the DW driver saves sys->busnr in its .scan function?
-> 
-> Sounds like it is making the same mistake, and nobody noticed. This is
-> another reason why it is important to implement correctly so people
-> copying copy the right stuff :)
-> 
-> > When would the PCI core change the root bus number to something
-> > other than set in sys->busnr?
-> 
-> I think the more likely scenario is that 'sys' in general is
-> architecture specific and its use is being discouraged so that host
-> drivers are not arch specific.
-> 
-> A domain driver like rcar should always place the root complex
-> integrated bus as bus 0 in the domain.
-
-Ok, I now understand the reason for removing the dependency on sys->busnr. That makes sense & I'll update the driver for this.
-
-Thanks for your patience :)
-Phil
+SGkgQmpvcm4sDQoNCk9uIDAxIE1heSAyMDE0IDE4OjMxLCBCam9ybiB3cm90ZToNCj4gWytjYyBT
+cmlrYW50aCwgTWljaGFsLCBHcmFudCBiZWNhdXNlIHdlJ3JlIGhhdmluZyB0aGUgc2FtZSBkaXNj
+dXNzaW9uDQo+IGFib3V0IHJvb3QgYnVzIG51bWJlcnMgaW4gdGhlIFhpbGlueCBob3N0IGJyaWRn
+ZSBkcml2ZXJdDQo+IA0KPiBPbiBUaHUsIE1heSAxLCAyMDE0IGF0IDM6NTAgQU0sIFBoaWwgRWR3
+b3J0aHkNCj4gPHBoaWwuZWR3b3J0aHlAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiANCj4gPiBXaGVu
+IHdvdWxkIHRoZSBQQ0kgY29yZSBjaGFuZ2UgdGhlIHJvb3QgYnVzIG51bWJlciB0byBzb21ldGhp
+bmcgb3RoZXINCj4gdGhhbiBzZXQgaW4gc3lzLT5idXNucj8NCj4gDQo+IFRoZSBQQ0kgY29yZSBu
+ZXZlciBjaGFuZ2VzIHRoZSByb290IGJ1cyBudW1iZXIgb2YgYSBob3N0IGJyaWRnZSwgYnV0DQo+
+IGl0J3MgaW1wb3J0YW50IGZvciB0aGUgY29yZSB0byBrbm93IGV4YWN0bHkgd2hhdCBidXMgbnVt
+YmVycyBhcmUNCj4gYmVoaW5kIGVhY2ggaG9zdCBicmlkZ2Ugc28gd2UgY2FuIGNvcnJlY3RseSBh
+c3NpZ24gYnVzIG51bWJlcnMsIE1NSU8sDQo+IGFuZCBJL08gcG9ydCByZXNvdXJjZXMuDQo+IA0K
+PiBUaGUgcmVhc29uIGlzIHRoYXQgd2hlbiB3ZSBlbnVtZXJhdGUgYSBQQ0ktdG8tUENJIGJyaWRn
+ZSwgd2UgaGF2ZSB0bw0KPiBrbm93IHdoZXRoZXIgYnVzIG51bWJlcnMgYXJlIGF2YWlsYWJsZSBm
+b3IgdGhlIHNlY29uZGFyeSBidXMuICBGb3INCj4gZXhhbXBsZSwgYXNzdW1lIHR3byBob3N0IGJy
+aWRnZXMgY29uZmlndXJlZCAob3Igd2lyZWQpIGFzIGZvbGxvd3M6DQo+IA0KPiAgIEEgbGVhZHMg
+dG8gW2J1cyAwMC0xZl0sIHdpdGggYXBlcnR1cmUgW21lbSAweDgwMDAwMDAwLTB4OGZmZmZmZmZd
+DQo+ICAgQiBsZWFkcyB0byBbYnVzIDIwLWZmXSwgd2l0aCBhcGVydHVyZSBbbWVtIDB4OTAwMDAw
+MDAtMHg5ZmZmZmZmZl0NCj4gDQo+IEZ1cnRoZXIsIGFzc3VtZSBhIFBDSS10by1QQ0kgYnJpZGdl
+IGF0IDFmOjAwLjAuICBJZiB0aGUgaG9zdCBicmlkZ2UNCj4gZHJpdmVyIGRvZXNuJ3QgdGVsbCB1
+cyB0aGUgW2J1cyAwMC0xZl0gcmFuZ2UgZm9yIGhvc3QgYnJpZGdlIEEsIHRoZQ0KPiBQQ0kgY29y
+ZSB3aWxsIGFzc3VtZSBbYnVzIDAwLWZmXS4gIFdoZW4gdGhlIGNvcmUgZW51bWVyYXRlcyB0aGUN
+Cj4gMWY6MDAuMCBicmlkZ2UsIGl0IHdpbGwgYXNzaWduIGJ1cyBudW1iZXIgMjAgdG8gaXRzIHNl
+Y29uZGFyeSBidXMuDQo+IE5vdyBpdCBlbnVtZXJhdGVzIGRldmljZXMgb24gYnVzIDIwLiAgVGhl
+IGNvcmUgZXhwZWN0cyB0aGlzIHRvIGJlIGRvbmUNCj4gdmlhIGhvc3QgYnJpZGdlIEEsIGJ1dCBl
+bnVtZXJhdGlvbiB1c2VzIElELXJvdXRlZCBjb25maWcgdHJhbnNhY3Rpb25zLA0KPiBzbyB0aGV5
+IGFyZSBjbGFpbWVkIGJ5IGhvc3QgYnJpZGdlIEIgaW5zdGVhZC4gIElmIHdlIGZpbmQgYSBkZXZp
+Y2UNCj4gMjA6MDAuMCwgdGhlIGNvcmUgdGhpbmtzIGl0IGlzIGJlbG93IEEsIGJ1dCBpdCBpcyBy
+ZWFsbHkgYmVsb3cgQi4NCj4gDQo+IE5vdyB3ZSBhc3NpZ24gcmVzb3VyY2VzIHRvIDIwOjAwLjAs
+IGFuZCBzaW5jZSB3ZSB0aGluayBpdCdzIGJlbG93IEEsDQo+IHdlIGFzc2lnbiB0aGVtIGZyb20g
+dGhlIFttZW0gMHg4MDAwMDAwMC0weDhmZmZmZmZmXSBhcGVydHVyZS4gIFRoaXMNCj4gb2J2aW91
+c2x5IGRvZXNuJ3Qgd29yaywgYmVjYXVzZSB3aGVuIHRoZSBkcml2ZXIgcGVyZm9ybXMgTU1JTw0K
+PiBhY2Nlc3Nlcywgd2hpY2ggYXJlIGFkZHJlc3Mtcm91dGVkLCB0aGV5IGFyZSBjbGFpbWVkIGJ5
+IGhvc3QgYnJpZGdlIEEsDQo+IG5vdCBCLCBzbyB0aGUgMjA6MDAuMCBkZXZpY2UgbmV2ZXIgc2Vl
+cyB0aGVtLg0KVGhhbmtzIGZvciB0aGUgY2xlYXIgZXhwbGFuYXRpb24uDQoNCj4gSWYgeW91ciBo
+b3N0IGJyaWRnZSByZWFsbHkgY2xhaW1zIEFMTCBidXMgbnVtYmVycyAoMDAtZmYpLCB0aGF0J3MN
+Cj4gZmluZSwgYW5kIHlvdSBjYW4gdGVsbCB0aGUgUENJIGNvcmUgdGhhdC4gIEJ1dCBpZiB5b3Ug
+aGF2ZSBzZXZlcmFsDQo+IHN1Y2ggYnJpZGdlcywgdGhleSBzaG91bGQgYmUgcGxhY2VkIGluIHNl
+cGFyYXRlIGRvbWFpbnMuDQpUaGF0IG1ha2VzIHNlbnNlLg0KDQpJbiB0aGUgY2FzZSBvZiB0aGUg
+Ui1DYXIgUENJZSBob3N0IGJyaWRnZSwgYXMgZmFyIGFzIEkgY2FuIHRlbGwsIHRoZSBoYXJkd2Fy
+ZSBkb2VzbuKAmXQgY2FyZSBhYm91dCBidXMgbnVtYmVycyBhdCBhbGwsIHdpdGggdGhlIGV4Y2Vw
+dGlvbiB0aGF0IHRoZSBkcml2ZXIgdXNlcyBvbmUgYnVzIG51bWJlciB0byB0YXJnZXQgdGhlIGJy
+aWRnZSBpdHNlbGYuIFdlIGNhbiB1c2UgYXMgbWFueSBvciBhcyBmZXcgYnVzIG51bWJlcnMgZm9y
+IHRoZSBzZWNvbmRhcnkgYnVzIGFzIHlvdSBsaWtlLg0KDQpTbywgdGhlIFItQ2FyIFBDSWUgZHJp
+dmVyIHNob3VsZCBpbXBsZW1lbnQgYnVzIHJhbmdlcywgYnV0IHNob3VsZCBpdCBhbHNvIHVzZSBz
+ZXBhcmF0ZSBQQ0kgZG9tYWlucyBmb3IgbXVsdGlwbGUgY29udHJvbGxlcnM/DQoNCj4gVGhpcyBp
+cyBwcm9iYWJseSBtb3JlIGRldGFpbCB0aGFuIHlvdSB3YW50ZWQsIGFuZCBtYXliZSB5b3UgZG9u
+J3QgZXZlcg0KPiBleHBlY3QgdG8gaGF2ZSBtdWx0aXBsZSBob3N0IGJyaWRnZXMgb3IgY29tcGxp
+Y2F0ZWQgaGllcmFyY2hpZXMgb2YNCj4gZGV2aWNlcy4gIEJ1dCB0aGUgUENJIGNvcmUgaGFzIHRv
+IGRlYWwgd2l0aCB0aGVzZSBpc3N1ZXMgb24gb3RoZXINCj4gc3lzdGVtcywgc28gaXQncyBpbXBv
+cnRhbnQgdG8gZ2V0IHRoZXNlIGRldGFpbHMgcmlnaHQuDQoNClRoYW5rcw0KUGhpbA0K
