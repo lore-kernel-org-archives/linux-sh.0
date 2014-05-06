@@ -1,143 +1,108 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 May 2014 08:54:47 +0000
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Tue, 06 May 2014 18:12:40 +0000
 Subject: Re: [PATCH v2 02/12] ARM: defconfigs: add MTD_SPI_NOR (new dependency for M25P80)
-Message-Id: <20140501085447.GB20410@verge.net.au>
+Message-Id: <20140506181240.GC28907@ld-irv-0074>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398925607-7482-1-git-send-email-computersforpeace@gmail.com>
  <1398925607-7482-3-git-send-email-computersforpeace@gmail.com>
-In-Reply-To: <1398925607-7482-3-git-send-email-computersforpeace@gmail.com>
+ <20140501085447.GB20410@verge.net.au>
+In-Reply-To: <20140501085447.GB20410@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-[ CC linux-sh and Magnus Damm (shmobile co-maintainer) ]
-
-On Wed, Apr 30, 2014 at 11:26:37PM -0700, Brian Norris wrote:
-> These defconfigs contain the CONFIG_M25P80 symbol, which is now
-> dependent on the MTD_SPI_NOR symbol. Add CONFIG_MTD_SPI_NOR to satisfy
-> the new dependency.
+On Thu, May 01, 2014 at 05:54:47PM +0900, Simon Horman wrote:
+> [ CC linux-sh and Magnus Damm (shmobile co-maintainer) ]
 > 
-> At the same time, drop the now-nonexistent CONFIG_MTD_CHAR symbol.
+> On Wed, Apr 30, 2014 at 11:26:37PM -0700, Brian Norris wrote:
+> > These defconfigs contain the CONFIG_M25P80 symbol, which is now
+> > dependent on the MTD_SPI_NOR symbol. Add CONFIG_MTD_SPI_NOR to satisfy
+> > the new dependency.
+> > 
+> > At the same time, drop the now-nonexistent CONFIG_MTD_CHAR symbol.
+> > 
+> > Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+> > Cc: Russell King <linux@arm.linux.org.uk>
+> > Cc: Arnd Bergmann <arnd@arndb.de>
+> > Cc: Olof Johansson <olof@lixom.net>
+> > Cc: linux-arm-kernel@lists.infradead.org
+> > Cc: linux-kernel@vger.kernel.org
+> > ---
+> > This patch catches all the configs I couldn't find a sub-arch for, plus the ARM
+> > multiplatform defconfigs
+> > 
+> >  arch/arm/configs/bockw_defconfig    | 2 +-
+> >  arch/arm/configs/koelsch_defconfig  | 1 +
+> >  arch/arm/configs/lager_defconfig    | 1 +
 > 
-> Signed-off-by: Brian Norris <computersforpeace@gmail.com>
-> Cc: Russell King <linux@arm.linux.org.uk>
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Olof Johansson <olof@lixom.net>
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-kernel@vger.kernel.org
-> ---
-> This patch catches all the configs I couldn't find a sub-arch for, plus the ARM
-> multiplatform defconfigs
+> The above changes are for shmobile SoC defconfigs which I maintain
+> (as is one other patch in the series).
+> While the below ones are not.
+
+This is admittedly a confusing process. I have to parse each defconfig
+to figure out what the mach-* is, then read MAINTAINERS. Perhaps you can
+update your MAINTAINERS entries? This is a wide problem, that makes
+patch submission for defconfigs even more difficult.
+
+Olof, other ARM SOC maintainers,
+
+What do you recommend? Should I send another couple of patches just to
+split this trivial patch? Olof mentioned taking some patch(es) directly,
+and handling merge conflicts when they come.
+
+> With regards to updating shmobile configuration options,
+> we have recently moved towards using Kconfig rather than
+> defconfig in cases where selecting A means we really ought
+> to select B too. Something along the lines of:
 > 
->  arch/arm/configs/bockw_defconfig    | 2 +-
->  arch/arm/configs/koelsch_defconfig  | 1 +
->  arch/arm/configs/lager_defconfig    | 1 +
+> 	select CONFIG_MTD_SPI_NOR if CONFIG_MTD_M25P80
 
-The above changes are for shmobile SoC defconfigs which I maintain
-(as is one other patch in the series).
-While the below ones are not.
+That seems like you're just avoiding touching defconfig for the sake of
+not touching defconfig. Additionally, this method only really makes
+sense for an upgrade path (otherwise, how would you configure MTD_M25P80
+&& !MTD_SPI_NOR?). Is this approach consistent across other mach-*?
 
+> Do you consider that CONFIG_MTD_SPI_NOR should always
+> be selected if CONFIG_MTD_M25P80 if selected?
 
-With regards to updating shmobile configuration options,
-we have recently moved towards using Kconfig rather than
-defconfig in cases where selecting A means we really ought
-to select B too. Something along the lines of:
+Yes. That's what "depends on" means.
 
-	select CONFIG_MTD_SPI_NOR if CONFIG_MTD_M25P80
+BTW, M25P80 will likely be moved under the SPI-NOR submenu eventually
+(its driver is not really a "Standalone MTD" anymore), but currently
+this is just a "depends on".
 
-Do you consider that CONFIG_MTD_SPI_NOR should always
-be selected if CONFIG_MTD_M25P80 if selected?
+> If so, perhaps it would be best to update the CONFIG_MTD_M25P80 Kconfig
+> node to select CONFIG_MTD_M25P80. This would probably imply that most
+> if not all of this series would no longer be needed.
 
-If so, perhaps it would be best to update the CONFIG_MTD_M25P80 Kconfig
-node to select CONFIG_MTD_M25P80. This would probably imply that most
-if not all of this series would no longer be needed.
+I do not understand this paragraph. How does M25P80 select M25P80?
 
-If not, would you be able to make a patch to add something like
-the above snippet to arch/arm/shmobile/Kconfig (probably more than once)
-and drop the changes to shmobile defconfigs from this series?
+> If not, would you be able to make a patch to add something like
+> the above snippet to arch/arm/shmobile/Kconfig (probably more than once)
+> and drop the changes to shmobile defconfigs from this series?
 
+Feel free to submit your own patch if you don't want mine.
 
->  arch/arm/configs/multi_v5_defconfig | 1 +
->  arch/arm/configs/multi_v7_defconfig | 1 +
->  5 files changed, 5 insertions(+), 1 deletion(-)
+> >  arch/arm/configs/multi_v5_defconfig | 1 +
+> >  arch/arm/configs/multi_v7_defconfig | 1 +
+> >  5 files changed, 5 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+> > index e816140d81c5..28339e072a71 100644
+> > --- a/arch/arm/configs/bockw_defconfig
+> > +++ b/arch/arm/configs/bockw_defconfig
+> > @@ -50,11 +50,11 @@ CONFIG_DEVTMPFS_MOUNT=y
+> >  # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+> >  # CONFIG_FW_LOADER is not set
+> >  CONFIG_MTD=y
+> > -CONFIG_MTD_CHAR=y
 > 
-> diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-> index e816140d81c5..28339e072a71 100644
-> --- a/arch/arm/configs/bockw_defconfig
-> +++ b/arch/arm/configs/bockw_defconfig
-> @@ -50,11 +50,11 @@ CONFIG_DEVTMPFS_MOUNT=y
->  # CONFIG_PREVENT_FIRMWARE_BUILD is not set
->  # CONFIG_FW_LOADER is not set
->  CONFIG_MTD=y
-> -CONFIG_MTD_CHAR=y
-
-The above change seems unrelated to the subject of the patch.
-
-If its valid then I'd prefer it submitted as a separate patch.
-
->  CONFIG_MTD_BLOCK=y
->  CONFIG_MTD_CFI=y
->  CONFIG_MTD_CFI_AMDSTD=y
->  CONFIG_MTD_M25P80=y
-> +CONFIG_MTD_SPI_NOR=y
->  CONFIG_SCSI=y
->  CONFIG_BLK_DEV_SD=y
->  CONFIG_NETDEVICES=y
-> diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-> index 86faab565a96..dcd55f20d36e 100644
-> --- a/arch/arm/configs/koelsch_defconfig
-> +++ b/arch/arm/configs/koelsch_defconfig
-> @@ -42,6 +42,7 @@ CONFIG_ATA=y
->  CONFIG_SATA_RCAR=y
->  CONFIG_MTD=y
->  CONFIG_MTD_M25P80=y
-> +CONFIG_MTD_SPI_NOR=y
->  CONFIG_NETDEVICES=y
->  # CONFIG_NET_VENDOR_ARC is not set
->  # CONFIG_NET_CADENCE is not set
-> diff --git a/arch/arm/configs/lager_defconfig b/arch/arm/configs/lager_defconfig
-> index 58702440472a..c4dbd778458b 100644
-> --- a/arch/arm/configs/lager_defconfig
-> +++ b/arch/arm/configs/lager_defconfig
-> @@ -53,6 +53,7 @@ CONFIG_DEVTMPFS=y
->  CONFIG_DEVTMPFS_MOUNT=y
->  CONFIG_MTD=y
->  CONFIG_MTD_M25P80=y
-> +CONFIG_MTD_SPI_NOR=y
->  CONFIG_BLK_DEV_SD=y
->  CONFIG_ATA=y
->  CONFIG_SATA_RCAR=y
-> diff --git a/arch/arm/configs/multi_v5_defconfig b/arch/arm/configs/multi_v5_defconfig
-> index aa3dfb084fed..aaf23933fb91 100644
-> --- a/arch/arm/configs/multi_v5_defconfig
-> +++ b/arch/arm/configs/multi_v5_defconfig
-> @@ -56,6 +56,7 @@ CONFIG_MTD_PHYSMAP=y
->  CONFIG_MTD_M25P80=y
->  CONFIG_MTD_NAND=y
->  CONFIG_MTD_NAND_ORION=y
-> +CONFIG_MTD_SPI_NOR=y
->  CONFIG_BLK_DEV_LOOP=y
->  CONFIG_EEPROM_AT24=y
->  # CONFIG_SCSI_PROC_FS is not set
-> diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-> index d4e8a47a2f7c..9937db16050c 100644
-> --- a/arch/arm/configs/multi_v7_defconfig
-> +++ b/arch/arm/configs/multi_v7_defconfig
-> @@ -108,6 +108,7 @@ CONFIG_CMA_SIZE_MBYTESd
->  CONFIG_OMAP_OCP2SCP=y
->  CONFIG_MTD=y
->  CONFIG_MTD_M25P80=y
-> +CONFIG_MTD_SPI_NOR=y
->  CONFIG_BLK_DEV_LOOP=y
->  CONFIG_ICS932S401=y
->  CONFIG_APDS9802ALS=y
-> -- 
-> 1.8.3.2
+> The above change seems unrelated to the subject of the patch.
 > 
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+> If its valid then I'd prefer it submitted as a separate patch.
+
+Seriously? It's mentioned in the commit description, and it's really
+really trivial.
+
+Brian
