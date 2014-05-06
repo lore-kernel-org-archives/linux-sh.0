@@ -1,70 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:32:06 +0000
-Subject: [PATCH v6 11/17] ARM: shmobile: marzen-reference: Initialize CPG device
-Message-Id: <1400153532-23675-12-git-send-email-horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Tue, 06 May 2014 14:23:51 +0000
+Subject: [PATCH 4/6] ARM: shmobile: kzm9g: require ZB1 clock for Ethernet controller
+Message-Id: <1399386233-11928-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On multiplatform kernels clocks are handled by the CCF CPG driver. It
-must be explicitly initialized by a call to r8a7779_clocks_init() with
-the value of the boot mode pins.
+Unlike the legacy stuff, CCF disables the ethernet controller's clock
+unless it is used somewhere.
 
-Based on similar work for the Koelsch board by Laurent Pinchart.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index d3e8319..e261431 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -19,7 +19,8 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
--#include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/clocksource.h>
- #include <linux/of_platform.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -27,11 +28,17 @@
- #include <asm/irq.h>
- #include <asm/mach/arch.h>
- 
--static void __init marzen_init(void)
-+static void __init marzen_init_timer(void)
- {
- #ifdef CONFIG_COMMON_CLK
--	of_clk_init(NULL);
--#else
-+	r8a7779_clocks_init(r8a7779_read_mode_pins());
-+#endif
-+	clocksource_of_init();
-+}
-+
-+static void __init marzen_init(void)
-+{
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7779_clock_init();
- #endif
- 	r8a7779_add_standard_devices_dt();
-@@ -48,6 +55,7 @@ DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= r8a7779_init_delay,
-+	.init_time	= marzen_init_timer,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= marzen_init,
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 708a50c..9d9f6e9 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -86,6 +86,7 @@
+ 		interrupt-parent = <&irqpin0>;
+ 		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+ 		reg-io-width = <4>;
++		clocks = <&zb1_clk>;
+ 		smsc,irq-push-pull;
+ 		smsc,save-mac-address;
+ 		vddvario-supply = <&reg_1p8v>;
 -- 
-1.8.5.2
+1.8.4.5
 
