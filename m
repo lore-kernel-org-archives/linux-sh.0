@@ -1,71 +1,79 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 30 May 2014 13:38:34 +0000
-Subject: Re: [PATCH 2/2] arm: shmobile: r8a7790: add USB3.0 node to r8a7790.dtsi
-Message-Id: <538889DA.8060006@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 06 May 2014 15:24:46 +0000
+Subject: Re: [PATCH v5 0/8] Introduce new cpufreq helper macros
+Message-Id: <CAMuHMdU6eKQbmqvDj8Ra3MjuqhvFQ6WxoTsiJ4mojqXY4XOtaw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53871338.8050606@renesas.com>
- <53875B7E.5010104@cogentembedded.com> <5388760D.3020101@renesas.com>
- <538882C6.3050202@cogentembedded.com>
-In-Reply-To: <538882C6.3050202@cogentembedded.com>
+References: <535AC247.3070907@semaphore.gr>
+	<CAKohpok-74uK5k-adxjmEy71=vF8V7MaBwdCD1Vb2ats7FHi_A@mail.gmail.com>
+	<535FCDBD.6080500@semaphore.gr>
+	<1621123.rMC9JtD3Mo@vostro.rjw.lan>
+In-Reply-To: <1621123.rMC9JtD3Mo@vostro.rjw.lan>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Stratos Karafotis <stratosk@semaphore.gr>
+Cc: Viresh Kumar <viresh.kumar@linaro.org>, Jesper Nilsson <jesper.nilsson@axis.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Dirk Brandewie <dirk.j.brandewie@intel.com>, "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>, "cpufreq@vger.kernel.org" <cpufreq@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Randy Dunlap <rdunlap@infradead.org>, "David S. Miller" <davem@davemloft.net>, Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, Sekhar Nori <nsekhar@ti.com>, Samuel Ortiz <samuel@sortiz.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hello.
+Hi Stratos,
 
-(2014/05/30 22:08), Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 05/30/2014 04:14 PM, Yoshihiro Shimoda wrote:
-> 
->>>> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->>>> ---
->>>>    arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
->>>>    1 file changed, 10 insertions(+)
-> 
->>>> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
->>>> index e06c486..e6b04f2 100644
->>>> --- a/arch/arm/boot/dts/r8a7790.dtsi
->>>> +++ b/arch/arm/boot/dts/r8a7790.dtsi
->>>> @@ -902,4 +902,14 @@
->>>>            #size-cells = <0>;
->>>>            status = "disabled";
->>>>        };
->>>> +
->>>> +    xhci: xhci@ee000000 {
-> 
->>>      The node name should be "usb@ee000000", according to section 2.2.2 of the
->>> ePAPR standard [1]:
-> 
->> Thank you for the point! I will fix this and r8a7791's one.
-> 
->>>> +        compatible = "renesas,xhci-r8a7790";
->>>> +        reg = <0 0xee000000 0 0xc00>;
->>>> +        interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
->>>> +        clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
->>>> +        phys = <&usbphy 1 1>;
-> 
->>>      This part is dependent on the generic PHY support in the USB HCD in order
->>> to work.
-> 
->    Oops, I hadn't seen that you added generic PHY support to the xHCI driver when writing this. I'm however for adding the generic PHY support to the generic USB HCD code, so that we can use it for the PCI controllers.
-> 
->> This means that I should wait to add this parameter until the generic USB PHY Gen2
->> driver is supported in upstream?
-> 
->    At least describe that dependency.
+On Wed, Apr 30, 2014 at 12:26 AM, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
+> On Tuesday, April 29, 2014 07:05:17 PM Stratos Karafotis wrote:
+>> On 29/04/2014 07:17 πμ, Viresh Kumar wrote:
+>> > On 26 April 2014 01:45, Stratos Karafotis <stratosk@semaphore.gr> wrote:
+>> >> This patch set introduces two freq_table helper macros which
+>> >> can be used for iteration over cpufreq_frequency_table and
+>> >> makes the necessary changes to cpufreq core and drivers that
+>> >> use such an iteration procedure.
+>> >>
+>> >> The motivation was a usage of common procedure to iterate over
+>> >> cpufreq_frequency_table across all drivers and cpufreq core.
+>> >>
+>> >> This was tested on a x86_64 platform.
+>> >> Most files compiled successfully but unfortunately I was not
+>> >> able to compile sh_sir.c pasemi_cpufreq.c and ppc_cbe_cpufreq.c
+>> >> due to lack of cross compiler.
+>> >>
+>> >> Changelog
+>> >>
+>> >> v4 -> v5
+>> >>         - Fix warnings in printk format specifier for 32 bit
+>> >>           architectures in freq_table.c, longhaul, pasemi, ppc_cbe
+>> >
+>> > Doesn't look much has changed and so it stays as is:
+>> >
+>> > Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+>> >
+>>
+>> Thank you very much!
+>
+> I've applied the series to my bleeding-edge branch, will move it to linux-next
+> after build testing later this week.
 
-Thank you for the reply! I will add such a describption in change log.
+This breaks if CONFIG_CPU_FREQ=n, e.g. ARM/shmobile/koelsch/
+non-multiplatform:
 
-Best regards,
-Yoshihiro Shimoda
+drivers/built-in.o: In function `clk_round_parent':
+clkdev.c:(.text+0xcf168): undefined reference to `cpufreq_next_valid'
+drivers/built-in.o: In function `clk_rate_table_find':
+clkdev.c:(.text+0xcf820): undefined reference to `cpufreq_next_valid'
+make[3]: *** [vmlinux] Error 1
 
->> Best regards,
->> Yoshihiro Shimoda
-> 
-> WBR, Sergei
-> 
+drivers/sh/clk/core.c (pre-CCF shmobile clock core) calls
+cpufreq_for_each_valid_entry():
 
--- 
-Yoshihiro Shimoda
+#define cpufreq_for_each_valid_entry(pos, table)        \
+        for (pos = table; cpufreq_next_valid(&pos); pos++)
+
+but cpufreq_next_valid() in drivers/cpufreq/cpufreq.c is not
+compiled in.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
