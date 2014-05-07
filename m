@@ -1,41 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 28 May 2014 08:26:38 +0000
-Subject: Re: [PATCH 00/11] i2c: rcar: cleanup series
-Message-Id: <CAMuHMdUq5YxL+JfSuAzPtd4bHkPJXACqMAG+Fc0AFv7TkUDHDg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 May 2014 20:32:29 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7740 dtsi: Add Ethernet support
+Message-Id: <1399494750-31996-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <1399494750-31996-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1399494750-31996-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, Bastian Hecht <hechtb+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi Wolfram,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+The "clocks" entry should be uncommented after the conversion to CCF is
+integrated.
 
-On Wed, May 28, 2014 at 9:44 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> Wolfram Sang (11):
->   i2c: rcar: not everything needs to be a function
->   i2c: rcar: no need to store irq number
->   i2c: rcar: refactor bus state machine
->   i2c: rcar: refactor irq state machine
->   i2c: rcar: check bus free before first message
->   i2c: rcar: refactor setting up msg
->   i2c: rcar: refactor status bit handling
->   i2c: rcar: remove spinlock
->   i2c: rcar: reuse status bits as enable bits
->   i2c: rcar: janitorial cleanup after refactoring
->   i2c: rcar: update copyright and license information
+ arch/arm/boot/dts/r8a7740.dtsi |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 3834b94dc02a..560d8d71cea4 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -122,6 +122,19 @@
+ 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	ether: ethernet@e9a00000 {
++		compatible = "renesas,gether-r8a7740";
++		reg = <0xe9a00000 0x800>,
++		      <0xe9a01800 0x800>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
++		/* clocks = <&mstp3_clks R8A7740_CLK_GETHER>; */
++		phy-mode = "mii";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	i2c0: i2c@fff20000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.7.9.5
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
