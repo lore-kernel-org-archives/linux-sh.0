@@ -1,89 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 15 May 2014 10:40:45 +0000
-Subject: [PATCH v2 04/10] iommu/ipmmu-vmsa: Define driver-specific page directory sizes
-Message-Id: <1400150451-13469-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 May 2014 23:32:47 +0000
+Subject: [PATCH 03/04] ARM: shmobile: Use r8a7740 DT CPU Frequency for Armadillo DT Ref
+Message-Id: <20140507233247.29712.21368.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140507233219.29712.9253.sendpatchset@w520>
+In-Reply-To: <20140507233219.29712.9253.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The PTRS_PER_(PUD|PGD|PMD|PTE) macros evaluate to different values
-depending on whether LPAE is enabled. The IPMMU driver uses a long
-descriptor format regardless of LPAE, making those macros mismatch the
-IPMMU configuration on non-LPAE systems.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Replace the macros by driver-specific versions that always evaluate to
-the right value.
+Convert the Armadillo r8a7740 DT reference board support
+to use shmobile_init_delay() to be able to migrate away
+from per-SoC delay setup functions.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/iommu/ipmmu-vmsa.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 313b5b9..b34a4b7b 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -209,6 +209,11 @@ static LIST_HEAD(ipmmu_devices);
- #define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
- #define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
- 
-+#define IPMMU_PTRS_PER_PTE		512
-+#define IPMMU_PTRS_PER_PMD		512
-+#define IPMMU_PTRS_PER_PGD		4
-+#define IPMMU_PTRS_PER_PUD		1
-+
- /* -----------------------------------------------------------------------------
-  * Read/Write Access
-  */
-@@ -327,7 +332,7 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
- 
- 	/* TTBR0 */
- 	ipmmu_flush_pgtable(domain->mmu, domain->pgd,
--			    PTRS_PER_PGD * sizeof(*domain->pgd));
-+			    IPMMU_PTRS_PER_PGD * sizeof(*domain->pgd));
- 	ttbr = __pa(domain->pgd);
- 	ipmmu_ctx_write(domain, IMTTLBR0, ttbr);
- 	ipmmu_ctx_write(domain, IMTTUBR0, ttbr >> 32);
-@@ -469,7 +474,7 @@ static void ipmmu_free_pmds(pud_t *pud)
- 	unsigned int i;
- 
- 	pmd = pmd_base;
--	for (i = 0; i < PTRS_PER_PMD; ++i) {
-+	for (i = 0; i < IPMMU_PTRS_PER_PMD; ++i) {
- 		if (pmd_none(*pmd))
- 			continue;
- 
-@@ -486,7 +491,7 @@ static void ipmmu_free_puds(pgd_t *pgd)
- 	unsigned int i;
- 
- 	pud = pud_base;
--	for (i = 0; i < PTRS_PER_PUD; ++i) {
-+	for (i = 0; i < IPMMU_PTRS_PER_PUD; ++i) {
- 		if (pud_none(*pud))
- 			continue;
- 
-@@ -509,7 +514,7 @@ static void ipmmu_free_pgtables(struct ipmmu_vmsa_domain *domain)
- 	 * tables.
- 	 */
- 	pgd = pgd_base;
--	for (i = 0; i < PTRS_PER_PGD; ++i) {
-+	for (i = 0; i < IPMMU_PTRS_PER_PGD; ++i) {
- 		if (pgd_none(*pgd))
- 			continue;
- 		ipmmu_free_puds(pgd);
-@@ -694,7 +699,7 @@ static int ipmmu_domain_init(struct iommu_domain *io_domain)
- 
- 	spin_lock_init(&domain->lock);
- 
--	domain->pgd = kzalloc(PTRS_PER_PGD * sizeof(pgd_t), GFP_KERNEL);
-+	domain->pgd = kzalloc(IPMMU_PTRS_PER_PGD * sizeof(pgd_t), GFP_KERNEL);
- 	if (!domain->pgd) {
- 		kfree(domain);
- 		return -ENOMEM;
--- 
-1.8.5.5
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+--- 0001/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ work/arch/arm/mach-shmobile/board-armadillo800eva-reference.c	2014-04-24 17:59:55.000000000 +0900
+@@ -187,7 +187,7 @@ static const char *eva_boards_compat_dt[
+ 
+ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
+ 	.map_io		= r8a7740_map_io,
+-	.init_early	= r8a7740_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= eva_init,
+ 	.init_late	= shmobile_init_late,
