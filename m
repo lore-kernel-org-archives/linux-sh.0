@@ -1,25 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 May 2014 02:30:12 +0000
-Subject: Re: [PATCH] ARM: shmobile: henninger: specify EXTAL frequency
-Message-Id: <20140502023012.GH2265@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 May 2014 23:37:53 +0000
+Subject: [PATCH] ARM: shmobile: Minor cleanup of the Armadillo legacy board code
+Message-Id: <20140507233753.29842.55463.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405020256.34093.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405020256.34093.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 02, 2014 at 02:56:33AM +0400, Sergei Shtylyov wrote:
-> When creating the initial device tree for the Henninger board,  I've overlooked
-> that EXTAL frequency needs to be overridden there. The 'sh-sci' driver  managed
-> to work somehow but the SDHI driver that I've tried to enable just hanged with
-> the default EXTAL frequency of 0...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-> This patch is against 'renesas-devel-v3.15-rc3-20140429' tag of Simon Horman's
-> 'renesas.git' repo.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I have queued this up.
+Cleanup the legacy Armadillo board code slightly by
+removing the pointless eva_add_early_devices() function
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written against renesas-devel-v3.15-rc3-20140502
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ work/arch/arm/mach-shmobile/board-armadillo800eva.c	2014-04-24 18:11:16.000000000 +0900
+@@ -1300,11 +1300,6 @@ static void __init eva_earlytimer_init(v
+ 	eva_clock_init();
+ }
+ 
+-static void __init eva_add_early_devices(void)
+-{
+-	r8a7740_add_early_devices();
+-}
+-
+ #define RESCNT2 IOMEM(0xe6188020)
+ static void eva_restart(enum reboot_mode mode, const char *cmd)
+ {
+@@ -1319,7 +1314,7 @@ static const char *eva_boards_compat_dt[
+ 
+ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
+ 	.map_io		= r8a7740_map_io,
+-	.init_early	= eva_add_early_devices,
++	.init_early	= r8a7740_add_early_devices,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= eva_init,
+ 	.init_late	= shmobile_init_late,
