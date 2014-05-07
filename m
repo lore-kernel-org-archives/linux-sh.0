@@ -1,24 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 May 2014 22:23:35 +0000
-Subject: [PATCH v3 0/2] Add R8A7790/Lager board PCI USB DT support
-Message-Id: <201405240223.36456.sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 May 2014 23:32:56 +0000
+Subject: [PATCH 04/04] ARM: shmobile: Remove unused r8a7740_init_delay()
+Message-Id: <20140507233256.29712.54976.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
+References: <20140507233219.29712.9253.sendpatchset@w520>
+In-Reply-To: <20140507233219.29712.9253.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-v3.14-20140521' tag plus R8A7790/Lager PCI USB support patches
-that I posted earlier. Here we add the USB PHY device tree support on the
-R8A7790/Lager reference board. The patchset requires the USB PHY driver (re-
-posted recently) in order to work.
+Remove the now unused r8a7740_init_delay() function.
 
-[1/2] ARM: shmobile: r8a7790: add USB PHY DT support
-[2/2] ARM: shmobile: lager: enable USB PHY
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-WBR, Sergei
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c        |    5 -----
+ 2 files changed, 6 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7740.h	2014-04-24 18:02:10.000000000 +0900
+@@ -47,7 +47,6 @@ enum {
+ };
+ 
+ extern void r8a7740_meram_workaround(void);
+-extern void r8a7740_init_delay(void);
+ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+--- 0004/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-04-24 18:01:54.000000000 +0900
+@@ -876,11 +876,6 @@ void __init r8a7740_add_standard_devices
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-void __init r8a7740_init_delay(void)
+-{
+-	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+-};
+-
+ void __init r8a7740_init_irq_of(void)
+ {
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
