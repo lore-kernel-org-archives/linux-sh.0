@@ -1,63 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 May 2014 00:15:33 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Thu, 08 May 2014 05:28:21 +0000
 Subject: Re: [PATCH 7/7] ASoC: rsnd: remove compatibility code
-Message-Id: <87bnv9nn19.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20140508052821.GY12304@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="y8F/z0+7AaC3SFq4"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87sipg20h1.wl%kuninori.morimoto.gx@gmail.com>
-	<87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
-	<20140414190327.GE25182@sirena.org.uk>
-In-Reply-To: <20140414190327.GE25182@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+ <87ioqc20ei.wl%kuninori.morimoto.gx@gmail.com>
+ <20140414190327.GE25182@sirena.org.uk>
+ <87bnv9nn19.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87bnv9nn19.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, alsa-devel@alsa-project.org
 
 
-Hi Mark
+--y8F/z0+7AaC3SFq4
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Now, all platform is using new style rsnd_dai_platform_info.
-> > Keeping compatibility is no longer needed.
-> > We can cleanup code.
-> 
-> This and the previous patch both look good.
+On Wed, May 07, 2014 at 05:15:33PM -0700, Kuninori Morimoto wrote:
 
-1) - 5) remove old style audio settings from platform, and
-6) - 7) remove compatibility (= old style) code from driver.
+> Now, 1) - 5) are accepted by ARM maintainer.
+> Can you please re-check 6) - 7) ?
 
-Kuninori Morimoto (7):
-      1) ARM: shmobile: r8a7778: remove old style audio clock
-      2) ARM: shmobile: r8a7790: remove old style audio clock
-      3) ARM: shmobile: bockw: remove old style audio clock
-      4) ARM: shmobile: bockw: switch to use dai info for R-Car sound
-      5) ARM: shmobile: lager: switch to use dai info for R-Car sound
-      6) ASoC: rsnd: remove old clock style support
-      7) ASoC: rsnd: remove compatibility code
+Please resend any patches you want me to look at along with a pull
+request for their dependencies.
 
-Now, 1) - 5) are accepted by ARM maintainer.
-Can you please re-check 6) - 7) ?
+--y8F/z0+7AaC3SFq4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
--- from Simon ---------
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-Patches 1 and 2 are included in the renesas-clock-for-v3.16 tag of the
-clocks-for-v3.16 branch of my renesas tree. This has been accepted by Olof.
+iQIcBAEBAgAGBQJTaxXyAAoJELSic+t+oim9uw0P/A5qpE6pKd7jIESXTYVijpdt
+xlIbHXx/VecP4IMowc+QceVY+MjsLSNtdCr1bbSKjYvVqmLBzGLtGW27GtmFYRGc
+/GCy1XZ3RcZlSAkEVMe5KvZiqx5zr6brQLF68BQSg23nmC9iwR5EjfOkvB9OBuNJ
+X8QFw90Y8Z1uXQ+U/hEQoGtvUtSkmX67fCdDWFP2Doc5f+OedASGjwUP9chilVbk
+lI5xzHk709nsrT4mjIzKoj/FhN8o8isjqpr+pPrkOHOflWkL5E5TBQAZw5+SN5TA
+dTa2oAI0MwCPuPtasV7V/nruwC5xFRazoyh5141xCqa0FdcDc68g8N0tl2HabOGF
+1bwnI6w7j8x/VRI3T+PIKk7ilttbmxiOd0uAYKw+0JAyIqjpJKmEEaWFSv2vpSCS
+2nWEg5LkcHMxRJmI1Owa6XWIpdPKM8Cq1mQ5RZfqpVrTRwvoz1EnH/hB1VBZM67y
+1bSW24EjNCKaqoScv+YNnQbJ/kDPuoEUNMNGIysKqhRed6A0KtHhfKsoeYkFRN+D
+W4tc0kvuP/tr2hVph/idyrEuiyS3eHnDUhF0EbDqzI/8Ru2sMmORgeuxoLmF9shD
+FW4z4o7WJhjqIyRTuLhdbs9cj820k/JpWYxr2N5DA0VZSAUVLPR0ZXstPSD4Y1+K
+su9ryqzFMQOXuDxhEsVv
+=oC1T
+-----END PGP SIGNATURE-----
 
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock-for-v3.16
-
-Patches 3 - 5 are included in the renesas-boards-for-v3.16 tag of
-the boards-for-v3.16 branch of my renesas tree. This has also been accepted
-by Olof.
-
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.16
-
-
-Mark, I think it would be cleanest if you pulled the above two branches.
-If you prefer a single tag that includes both of the above (albeit with
-other stuff that has also been accepted by Olof) then I suggest the
-renesas-next-v3.15-rc1-20140416 tag of the next branch of my renesas tree.
-
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-next-v3.15-rc1-20140416
-
--------------------------
+--y8F/z0+7AaC3SFq4--
