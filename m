@@ -1,57 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 07 May 2014 14:59:51 +0000
-Subject: Re: [PATCH 6/6] clk: shmobile: Add r8a7740, sh73a0 SoCs to MSTP bindings
-Message-Id: <CAMuHMdXOgWdA3hO2oX3+KENURvmB2d+Btq-KDoTN7wP1pMJA=g@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 08 May 2014 23:54:45 +0000
+Subject: Re: [PATCH V2 2/2] ARM: shmobile: r8a7791: add i2c2 bus to koelsch dt
+Message-Id: <536C1945.1000601@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399386233-11928-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<1399386233-11928-7-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1399386233-11928-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1392633882-12142-1-git-send-email-wsa@the-dreams.de>
+ <1392633882-12142-2-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1392633882-12142-2-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht@gmail.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+Hello.
 
-Thanks for your patch!
+On 02/17/2014 01:44 PM, Wolfram Sang wrote:
 
-CC devicetree + one comment below
+> From: Wolfram Sang <wsa@sang-engineering.com>
 
-On Tue, May 6, 2014 at 4:23 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 > ---
->  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 ++
->  1 file changed, 2 insertions(+)
+>   arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
+>   1 file changed, 19 insertions(+)
+
+> diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> index d4b9bba..b3f75d7 100644
+> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
+> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> @@ -108,10 +108,29 @@
+>   	clock-frequency = <20000000>;
+>   };
 >
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> index 5992dce..8514088 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> @@ -10,8 +10,10 @@ index in the group, from 0 to 31.
->  Required Properties:
->
->    - compatible: Must be one of the following
-> +    - "renesas,r8a7740-mstp-clocks" for R8A7740 MSTP gate clocks
+> +&i2c2 {
+> +	pinctrl-0 = <&i2c2_pins>;
+> +	pinctrl-names = "default";
+> +
+> +	status = "okay";
+> +	clock-frequency = <400000>;
+> +
+> +	eeprom@50 {
+> +		compatible = "renesas,24c02";
 
-Also known as "R-Mobile A1"
+    This is not quite right: Renesas' part is called differently, and you're 
+carrying the other vendor's naming onto Renesas parts. I'd just say "24c02" 
+(which I'll do in the Henninger board patch).
 
->      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
->      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-> +    - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
->      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
->    - reg: Base address and length of the I/O mapped registers used by the MSTP
->      clocks. The first register is the clock control register and is mandatory.
-> --
-> 1.8.4.5
+WBR, Sergei
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
