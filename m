@@ -1,61 +1,61 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 May 2014 22:36:36 +0000
-Subject: [PATCH v2 1/3] ARM: shmobile: r8a7791: add USB PHY DT support
-Message-Id: <201405240236.37742.sergei.shtylyov@cogentembedded.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 09 May 2014 06:58:37 +0000
+Subject: [PATCH] of/irq: provide int of_irq_parse_and_map_pci wrapper
+Message-Id: <4527717.yJh2gX3xCP@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405240234.47303.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405240234.47303.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: devicetree@vger.kernel.org
+Cc: Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <damm@opensource.se>, Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-Define the R8A7791 generic part of the USB PHY device node. It is up to the
-board file to enable the device.
+The pci-rcar driver is enabled for compile tests, and this has
+now shown that the driver cannot build without CONFIG_OF,
+following the inclusion of f8f2fe7355fb "PCI: rcar: Use new OF
+interrupt mapping when possible":
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+drivers/built-in.o: In function `rcar_pci_map_irq':
+:(.text+0x1cc7c): undefined reference to `of_irq_parse_and_map_pci'
 
----
-Changes in version 2:
-- added subnodes to the USB PHY node;
-- refreshed the patch.
+As pointed out by Ben Dooks and Geert Uytterhoeven, this is actually
+supposed to build fine, which we can achieve if we make the
+declaration of of_irq_parse_and_map_pci conditional on CONFIG_OF
+and provide an empty inline function otherwise, as we do for
+a lot of other of interfaces.
 
- arch/arm/boot/dts/r8a7791.dtsi |   26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+This lets us build the rcar_pci driver again without CONFIG_OF,
+which won't work but give us compile time coverage.
 
-Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7791.dtsi
-@@ -507,6 +507,32 @@
- 		status = "disabled";
- 	};
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+
+diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
+index 1a1f5ff..1e29bf4 100644
+--- a/include/linux/of_pci.h
++++ b/include/linux/of_pci.h
+@@ -7,13 +7,18 @@
+ struct pci_dev;
+ struct of_phandle_args;
+ int of_irq_parse_pci(const struct pci_dev *pdev, struct of_phandle_args *out_irq);
+-int of_irq_parse_and_map_pci(const struct pci_dev *dev, u8 slot, u8 pin);
  
-+	usbphy: usb-phy@e6590100 {
-+		compatible = "renesas,usb-phy-r8a7791";
-+		reg = <0 0xe6590100 0 0x100>;
-+		#phy-cells = <2>;
-+		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
-+		clock-names = "usbhs";
-+		status = "disabled";
-+
-+		usb-phy@0,0 {
-+			renesas,phy-select = <0 0>;
-+			renesas,ugctrl2-masks = <0x00000030 0x00000010>;
-+		};
-+		usb-phy@0,1 {
-+			renesas,phy-select = <0 1>;
-+			renesas,ugctrl2-masks = <0x00000030 0x00000030>;
-+		};
-+		usb-phy@1,0 {
-+			renesas,phy-select = <1 0>;
-+			renesas,ugctrl2-masks = <0x80000000 0x00000000>;
-+		};
-+		usb-phy@1,1 {
-+			renesas,phy-select = <1 1>;
-+			renesas,ugctrl2-masks = <0x80000000 0x80000000>;
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ struct device_node;
+ struct device_node *of_pci_find_child_device(struct device_node *parent,
+ 					     unsigned int devfn);
+ int of_pci_get_devfn(struct device_node *np);
+ int of_pci_parse_bus_range(struct device_node *node, struct resource *res);
++#ifdef CONFIG_OF
++int of_irq_parse_and_map_pci(const struct pci_dev *dev, u8 slot, u8 pin);
++#else
++static inline int
++of_irq_parse_and_map_pci(const struct pci_dev *dev, u8 slot, u8 pin) { return 0; }
++#endif
+ 
+ #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
+ int of_pci_msi_chip_add(struct msi_chip *chip);
+
