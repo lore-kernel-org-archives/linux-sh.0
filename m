@@ -1,78 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 May 2014 00:10:24 +0000
-Subject: Re: [PATCH] ARM: shmobile: henninger: add QSPI DT support
-Message-Id: <20140513001024.GC18157@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 09 May 2014 09:03:11 +0000
+Subject: [PATCH v2] of/irq: provide int of_irq_parse_and_map_pci wrapper
+Message-Id: <5744457.bgUFy9g0ST@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405060245.32952.sergei.shtylyov@cogentembedded.com>
- <536FBEB7.9080605@cogentembedded.com>
- <20140511225354.GC6451@verge.net.au>
- <537151DA.8000101@cogentembedded.com>
-In-Reply-To: <537151DA.8000101@cogentembedded.com>
+References: <4527717.yJh2gX3xCP@wuerfel> <1399624119.4833.3.camel@weser.hi.pengutronix.de>
+In-Reply-To: <1399624119.4833.3.camel@weser.hi.pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Lucas Stach <l.stach@pengutronix.de>
+Cc: devicetree@vger.kernel.org, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <damm@opensource.se>, Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, May 13, 2014 at 02:57:30AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 05/12/2014 02:53 AM, Simon Horman wrote:
-> 
-> >>>Define the Henninger board dependent part of the QSPI device node.
-> >>>Add device nodes for Spansion S25FL512S SPI flash and MTD partitions on it.
-> 
-> >>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >>>---
-> >>>This patch is against 'renesas-devel-v3.15-rc3-20140502' tag of Simon Horman's
-> >>>'renesas.git' repo and SDHI0/2 DT support patch posted last weekend.
-> 
-> >>>  arch/arm/boot/dts/r8a7791-henninger.dts |   38 ++++++++++++++++++++++++++++++++
-> >>>  1 file changed, 38 insertions(+)
-> 
-> >>>Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-> >>>=================================> >>>--- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-> >>>+++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-> >>[...]
-> >>>@@ -158,3 +163,36 @@
-> >>>  	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
-> >>>  	status = "okay";
-> >>>  };
-> >>>+
-> >>>+&qspi {
-> >>>+	pinctrl-0 = <&qspi_pins>;
-> >>>+	pinctrl-names = "default";
-> >>>+
-> >>>+	status = "okay";
-> >>>+
-> >>>+	flash@0 {
-> >>>+		#address-cells = <1>;
-> >>>+		#size-cells = <1>;
-> >>>+		compatible = "spansion,s25fl512s";
-> >>>+		reg = <0>;
-> >>>+		spi-max-frequency = <30000000>;
-> >>>+		spi-tx-bus-width = <4>;
-> >>>+		spi-rx-bus-width = <4>;
-> >>>+		m25p,fast-read;
-> >>>+
-> >>>+		partition@0 {
-> >>>+			label = "loader_prg";
-> >>>+			reg = <0x00000000 0x00040000>;
-> >>>+			read-only;
-> >>>+		};
-> >>>+		partition@40000 {
-> >>>+			label = "user_prg";
-> >>>+			reg = <0x00040000 0x00400000>;
-> >>>+			read-only;
-> 
-> >>    Oops, there shouldn't be "read-only" here, I forgot to refresh
-> >>the patch as I'm now seeing... too bad it's too late to resend now.
-> >>:-(
-> 
-> >Could you send an incremental fix for me to queue up?
-> 
->    Oops, I've rechecked and it should indeed be read-only, so the
-> patch was correct. Sorry. :-)
+The pci-rcar driver is enabled for compile tests, and this has
+now shown that the driver cannot build without CONFIG_OF,
+following the inclusion of f8f2fe7355fb "PCI: rcar: Use new OF
+interrupt mapping when possible":
 
-Thanks for double checking.
-I think we can safely do nothing for now :-)
+drivers/built-in.o: In function `rcar_pci_map_irq':
+:(.text+0x1cc7c): undefined reference to `of_irq_parse_and_map_pci'
+
+As pointed out by Ben Dooks and Geert Uytterhoeven, this is actually
+supposed to build fine, which we can achieve if we make the
+declaration of of_irq_parse_and_map_pci conditional on CONFIG_OF
+and provide an empty inline function otherwise, as we do for
+a lot of other of interfaces.
+
+This lets us build the rcar_pci driver again without CONFIG_OF
+for build testing. All platforms using this driver select OF,
+so this doesn't change anything for the users.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-pci@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+v2: clarified commit text.
+
+diff --git a/include/linux/of_pci.h b/include/linux/of_pci.h
+index 1a1f5ff..1e29bf4 100644
+--- a/include/linux/of_pci.h
++++ b/include/linux/of_pci.h
+@@ -7,13 +7,18 @@
+ struct pci_dev;
+ struct of_phandle_args;
+ int of_irq_parse_pci(const struct pci_dev *pdev, struct of_phandle_args *out_irq);
+-int of_irq_parse_and_map_pci(const struct pci_dev *dev, u8 slot, u8 pin);
+ 
+ struct device_node;
+ struct device_node *of_pci_find_child_device(struct device_node *parent,
+ 					     unsigned int devfn);
+ int of_pci_get_devfn(struct device_node *np);
+ int of_pci_parse_bus_range(struct device_node *node, struct resource *res);
++#ifdef CONFIG_OF
++int of_irq_parse_and_map_pci(const struct pci_dev *dev, u8 slot, u8 pin);
++#else
++static inline int
++of_irq_parse_and_map_pci(const struct pci_dev *dev, u8 slot, u8 pin) { return 0; }
++#endif
+ 
+ #if defined(CONFIG_OF) && defined(CONFIG_PCI_MSI)
+ int of_pci_msi_chip_add(struct msi_chip *chip);
+
