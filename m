@@ -1,131 +1,46 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 14 May 2014 01:10:08 +0000
-Subject: [PATCH v6 04/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
-Message-Id: <1400029816-24028-5-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 11 May 2014 23:25:27 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Use r8a7791 DT CPU Frequency for Koelsch
+Message-Id: <20140511232527.20177.15638.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+References: <20140511232508.20177.11556.sendpatchset@w520>
+In-Reply-To: <20140511232508.20177.11556.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Convert the Koelsch board support to use shmobile_init_delay()
+to be able to migrate away from per-SoC delay setup functions.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 96 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 96 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 5a6e2481b567..a4a67380b0a2 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -200,6 +200,102 @@
- 		status = "disabled";
- 	};
+ arch/arm/mach-shmobile/board-koelsch-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-koelsch.c           |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-05-12 08:04:07.000000000 +0900
+@@ -139,7 +139,7 @@ static const char * const koelsch_boards
  
-+	scif0: serial@e8007000 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe8007000 64>;
-+		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 191 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@e8007800 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe8007800 64>;
-+		interrupts = <0 194 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 195 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@e8008000 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe8008000 64>;
-+		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@e8008800 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe8008800 64>;
-+		interrupts = <0 202 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 203 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@e8009000 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe8009000 64>;
-+		interrupts = <0 206 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 207 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@e8009800 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe8009800 64>;
-+		interrupts = <0 210 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 211 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif6: serial@e800a000 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe800a000 64>;
-+		interrupts = <0 214 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 215 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif7: serial@e800a800 {
-+		compatible = "renesas,scif-r7s72100", "renesas,scif";
-+		reg = <0xe800a800 64>;
-+		interrupts = <0 218 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 219 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	spi0: spi@e800c800 {
- 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
- 		reg = <0xe800c800 0x24>;
--- 
-1.9.2
-
+ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= r8a7791_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= koelsch_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+--- 0001/arch/arm/mach-shmobile/board-koelsch.c
++++ work/arch/arm/mach-shmobile/board-koelsch.c	2014-05-12 08:03:53.000000000 +0900
+@@ -522,7 +522,7 @@ static const char * const koelsch_boards
+ 
+ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= r8a7791_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= koelsch_init,
+ 	.init_late	= shmobile_init_late,
