@@ -1,75 +1,120 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 09 May 2014 22:55:00 +0000
-Subject: Re: [PATCH 3/6] i2c: rcar: do not print error if device nacks transfer
-Message-Id: <536D5CC4.6030209@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 11 May 2014 11:46:54 +0000
+Subject: Re: [PATCH v5 06/15] ARM: shmobile: r8a7790: Switch to new style CMT device
+Message-Id: <20140511114654.GA4745@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1390752337-22386-1-git-send-email-ben.dooks@codethink.co.uk> <1390752337-22386-4-git-send-email-ben.dooks@codethink.co.uk> <536BFF39.40607@cogentembedded.com> <536CA0B1.4040300@codethink.co.uk>
-In-Reply-To: <536CA0B1.4040300-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
+References: <1398251722-31667-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398251722-31667-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org
-Cc: Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+On Wed, Apr 23, 2014 at 01:15:13PM +0200, Laurent Pinchart wrote:
+> The CMT (Compare Match Timer) driver implements a new style of platform
+> data that handles the timer as a single device with multiple channel.
+> Switch from the old-style platform data to the new-style platform data.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On 05/09/2014 01:32 PM, Ben Dooks wrote:
+Hi Laurent,
 
->>> The i2c-rcar driver currently prints an error message if the master_xfer
->>> callback fails. However if the bus is being probed then lots of NAKs
->>> will be generated, causing the output of a number of errors printed.
+I have queued up the following after updating the
+board-lager-reference.c portion of the patch to use clk_name.
 
->>> To solve this, disable the print if the error is not -EREMOTEIO.
+Please check to see that what I have is correct.
 
->>> An example of running i2cdetect:
 
->>> 10: i2c-rcar e6530000.i2c: error -121 : 15
->>> -- i2c-rcar e6530000.i2c: error -121 : 15
->>> -- 12 i2c-rcar e6530000.i2c: error -121 : 15
->>> -- i2c-rcar e6530000.i2c: error -121 : 15
->>> -- i2c-rcar e6530000.i2c: error -121 : 15
->>> -- i2c-rcar e6530000.i2c: error -121 : 15
->>> -- i2c-rcar e6530000.i2c: error -121 : 15
->>> -- i2c-rcar e6530000.i2c: error -121 : 15
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
->>> Cc: Simon Horman <horms+renesas@verge.net.au>
->>> Cc: Wolfram Sang <wsa@the-dreams.de>
->>> Cc: linux-i2c@vger.kernel.org
->>> Cc: linux-sh@vger.kernel.org
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> ---
->>>   drivers/i2c/busses/i2c-rcar.c | 2 +-
->>>   1 file changed, 1 insertion(+), 1 deletion(-)
+ARM: shmobile: r8a7790: Switch to new style CMT device
 
->>> diff --git a/drivers/i2c/busses/i2c-rcar.c
->>> b/drivers/i2c/busses/i2c-rcar.c
->>> index 2c2fd7c..0d25104 100644
->>> --- a/drivers/i2c/busses/i2c-rcar.c
->>> +++ b/drivers/i2c/busses/i2c-rcar.c
->>> @@ -623,7 +623,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter
->>> *adap,
->>>
->>>       pm_runtime_put(dev);
->>>
->>> -    if (ret < 0)
->>> +    if (ret < 0 && ret != -EREMOTEIO)
->>>           dev_err(dev, "error %d : %x\n", ret, priv->flags);
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
->>     Hm, I'm now getting -EBUSY and -EAGAIN running i2cdetect on R8A7791
->> base Henninger board. Only when I comment out the above 2 lines, I can
->> get the bus scanned, otherwise I don't see any devices at all.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[horms+renesas@verge.net.au resolved conflict: use clk_names]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-lager-reference.c |  2 +-
+ arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 17 +++++++----------
+ 3 files changed, 9 insertions(+), 12 deletions(-)
 
-> i2c-detect does not work well on the i2c-rcar due to it insisting
-> on sending or receiving at-least one byte of data.
-
-   I've noticed that it works more or less reliable only the first time I run 
-it, on subsequent runs it only sees devices for which a driver is bound, IIRC.
-
-> I think it
-> is possible that it confuses some of the bus devices.
-
-    Yes, it seems to be the case. However, with these lines commented out, it 
-still works the first time...
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 1eb48cf..1bca2748 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -90,7 +90,7 @@ static void __init lager_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "scifa0", NULL, "sh-sci.0" },
+ 	{ "scifa1", NULL, "sh-sci.1" },
+ 	{ "scifb0", NULL, "sh-sci.2" },
+diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c b/arch/arm/mach-shmobile/clock-r8a7790.c
+index a936ae7..296a057 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7790.c
++++ b/arch/arm/mach-shmobile/clock-r8a7790.c
+@@ -357,7 +357,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
+ 	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
+-	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
+ 	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
+@@ -367,6 +366,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
+ 
+ 	/* ICK */
++	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
+ 	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
+ 	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index c4616f0..87327f3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -269,20 +269,17 @@ static const struct resource thermal_resources[] __initconst = {
+ 					thermal_resources,		\
+ 					ARRAY_SIZE(thermal_resources))
+ 
+-static const struct sh_timer_config cmt00_platform_data __initconst = {
+-	.name = "CMT00",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_config cmt0_platform_data = {
++	.channels_mask = 0x60,
+ };
+ 
+-static const struct resource cmt00_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xffca0510, 0x0c),
+-	DEFINE_RES_MEM(0xffca0500, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++static struct resource cmt0_resources[] = {
++	DEFINE_RES_MEM(0xffca0000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(142)),
+ };
+ 
+ #define r8a7790_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -300,7 +297,7 @@ void __init r8a7790_add_dt_devices(void)
+ 	r8a7790_register_scif(7);
+ 	r8a7790_register_scif(8);
+ 	r8a7790_register_scif(9);
+-	r8a7790_register_cmt(00);
++	r8a7790_register_cmt(0);
+ }
+ 
+ void __init r8a7790_add_standard_devices(void)
+-- 
+1.8.4
 
