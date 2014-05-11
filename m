@@ -1,97 +1,117 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 21 May 2014 08:16:45 +0000
-Subject: Re: [PATCH 2/3] usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <537C60ED.9090300@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 11 May 2014 11:48:23 +0000
+Subject: Re: [PATCH v5 07/15] ARM: shmobile: r8a7791: Switch to new style CMT device
+Message-Id: <20140511114823.GB4745@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5379D805.3070002@renesas.com> <5727435.rfALGRgzCB@wuerfel> <537C5B98.7060401@renesas.com> <5594897.Dm70JHoDO1@wuerfel>
-In-Reply-To: <5594897.Dm70JHoDO1@wuerfel>
+References: <1398251722-31667-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398251722-31667-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-
-(2014/05/21 17:04), Arnd Bergmann wrote:
-> On Wednesday 21 May 2014 16:54:00 Yoshihiro Shimoda wrote:
->>
->> (2014/05/20 19:11), Arnd Bergmann wrote:
->>> On Monday 19 May 2014 19:08:05 Yoshihiro Shimoda wrote:
->>>>
->>>>  #include "xhci.h"
->>>>  #include "xhci-mvebu.h"
->>>> +#include "xhci-rcar.h"
->>>>
->>>>  static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
->>>>  {
->>>> @@ -39,6 +40,12 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
->>>>
->>>>  static int xhci_plat_start(struct usb_hcd *hcd)
->>>>  {
->>>> +    struct device_node *of_node = hcd->self.controller->of_node;
->>>> +
->>>> +    if (of_device_is_compatible(of_node, "renesas,r8a7790-xhci") ||
->>>> +        of_device_is_compatible(of_node, "renesas,r8a7790-xhci"))
->>>> +            xhci_rcar_start(hcd);
->>>> +
->>>>      return xhci_run(hcd);
->>>>  }
->>>>
->>>> @@ -165,6 +172,15 @@ static int xhci_plat_probe(struct platform_device *pdev)
->>>>                      goto unmap_registers;
->>>>      }
->>>>
->>>> +    if (of_device_is_compatible(pdev->dev.of_node,
->>>> +                                "renesas,r8a7790-xhci") ||
->>>> +        of_device_is_compatible(pdev->dev.of_node,
->>>> +                                "renesas,r8a7791-xhci")) {
->>>> +            ret = xhci_rcar_init_quirk(pdev);
->>>> +            if (ret)
->>>> +                    goto disable_clk;
->>>> +    }
->>>> +
->>>>      ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
->>>>      if (ret)
->>>>              goto disable_clk;
->>>> @@ -270,6 +286,8 @@ static const struct of_device_id usb_xhci_of_match[] = {
->>>>      { .compatible = "xhci-platform" },
->>>>      { .compatible = "marvell,armada-375-xhci"},
->>>>      { .compatible = "marvell,armada-380-xhci"},
->>>> +    { .compatible = "renesas,r8a7790-xhci"},
->>>> +    { .compatible = "renesas,r8a7791-xhci"},
->>>>      { },
->>>>  };
->>>>  MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
->>>
->>> Like the drivers before, this is way more than a quirk, and deserves to
->>> be its own driver. It would be better to have an abstract way to split
->>> out soc specific xhci front-ends and export functions from the xhci-platform
->>> code.
->>
->> Thank you for your comment. But, I couldn't understand your comment...
->> Did you mean that xhci-rcar.c should call of_device_is_compatible(of_node, "renesas,...")?
->> If so, I will modify this patch.
+On Wed, Apr 23, 2014 at 01:15:14PM +0200, Laurent Pinchart wrote:
+> The CMT (Compare Match Timer) driver implements a new style of platform
+> data that handles the timer as a single device with multiple channel.
+> Switch from the old-style platform data to the new-style platform data.
 > 
-> 
-> What I mean is that there should be a separate module that contains all the
-> renesas specific code, and that module should register a platform driver
-> that contains the match table for its own IDs.
-> 
-> Then instead of having a common xhci_plat_probe() that gets called as the
-> ->probe() callback of the driver, you have a rcar_xhci_probe() function
-> that calls into common helper functions exported by the base driver, just
-> as we do things for all other drivers. See ehci or ahci for instance.
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
+>  arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
+>  arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
+>  3 files changed, 9 insertions(+), 12 deletions(-)
 
-Thank you very much for the prompt reply!
-I will see ehci and ahci drivers.
+Hi Laurent,
 
-Best regards,
-Yoshihiro Shimoda
+I have queued up the following after updating the
+board-lager-reference.c portion of the patch to use clk_name.
 
-> 
-> 	Arnd
-> 
+Please check to see that what I have is correct.
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+ARM: shmobile: r8a7791: Switch to new style CMT device
+
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[horms+renesas@verge.net.au resolved conflict: use clk_names]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-koelsch-reference.c |  2 +-
+ arch/arm/mach-shmobile/clock-r8a7791.c           |  2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 17 +++++++----------
+ 3 files changed, 9 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index 941f8b3..bd90932 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -86,7 +86,7 @@ static void __init koelsch_add_du_device(void)
+  * devices until they get moved to DT.
+  */
+ static const struct clk_name clk_names[] __initconst = {
+-	{ "cmt0", NULL, "sh_cmt.0" },
++	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+ 	{ "scifa0", NULL, "sh-sci.0" },
+ 	{ "scifa1", NULL, "sh-sci.1" },
+ 	{ "scifb0", NULL, "sh-sci.2" },
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index 3b26c7e..e2fdfcc 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -264,7 +264,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]),
+-	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index e28404e..561653d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -128,20 +128,17 @@ R8A7791_SCIFA(14, 0xe6c80000, gic_spi(31)); /* SCIFA5 */
+ 					  &scif##index##_platform_data,	       \
+ 					  sizeof(scif##index##_platform_data))
+ 
+-static const struct sh_timer_config cmt00_platform_data __initconst = {
+-	.name = "CMT00",
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
++static struct sh_timer_config cmt0_platform_data = {
++	.channels_mask = 0x60,
+ };
+ 
+-static const struct resource cmt00_resources[] __initconst = {
+-	DEFINE_RES_MEM(0xffca0510, 0x0c),
+-	DEFINE_RES_MEM(0xffca0500, 0x04),
+-	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
++static struct resource cmt0_resources[] = {
++	DEFINE_RES_MEM(0xffca0000, 0x1004),
++	DEFINE_RES_IRQ(gic_spi(142)),
+ };
+ 
+ #define r8a7791_register_cmt(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
++	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
+ 					  idx, cmt##idx##_resources,	\
+ 					  ARRAY_SIZE(cmt##idx##_resources), \
+ 					  &cmt##idx##_platform_data,	\
+@@ -200,7 +197,7 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_register_cmt(00);
++	r8a7791_register_cmt(0);
+ }
+ 
+ void __init r8a7791_add_standard_devices(void)
 -- 
-Yoshihiro Shimoda
-EC No.
+1.8.4
+
