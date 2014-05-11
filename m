@@ -1,36 +1,31 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 21 May 2014 19:50:30 +0000
-Subject: Re: [PATCH/RFC 5/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
-Message-Id: <CAMuHMdWWg1Py_sJOk9h-PO-33b0QuBhka-gX1-jXpZ0sji2zZw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 11 May 2014 14:16:32 +0000
+Subject: Re: [PATCH v8] can: add Renesas R-Car CAN driver
+Message-Id: <536F8640.9030904@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400254015-29539-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400254015-29539-6-git-send-email-geert+renesas@glider.be>
+References: <201404120152.02366.sergei.shtylyov@cogentembedded.com> <53583DE6.2050908@cogentembedded.com>
+In-Reply-To: <53583DE6.2050908@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, vksavl@gmail.com
 
-On Fri, May 16, 2014 at 5:26 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -917,6 +917,9 @@
->                 reg = <0 0xe6b10000 0 0x2c>;
->                 interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
-> +               dmas = <&dma0 R8A7791_DMA_QSPI_RX CHCR_RX_32BIT>,
-> +                      <&dma0 R8A7791_DMA_QSPI_TX CHCR_TX_32BIT>;
-> +               dma-names = "rx", "tx";
+Hello.
 
-This one is not correct: it should use 8BIT instead of 32BIT.
+On 04/24/2014 02:25 AM, Sergei Shtylyov wrote:
 
-Gr{oetje,eeting}s,
+>> Add support for the CAN controller found in Renesas R-Car SoCs.
 
-                        Geert
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>> ---
+>> The patch is against the 'linux-can-next.git' repo.
+>> Not posting to netdev@vger.kernel.org this time or DaveM will scold me. :-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>     Marc, Wolfgang, any feedback on the driver?
+
+    Erm, we seem to be stuck with this driver. Maybe I should repost?
+
+WBR, Sergei
+
