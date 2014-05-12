@@ -1,33 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 19 May 2014 12:00:42 +0000
-Subject: Re: [PATCH 1/3] usb: host: xhci-plat: add xhci_plat_start()
-Message-Id: <CAMuHMdWSuZv0kTEW6XJ8XTnd6LuYnMBQ0MhN0G35riwKfvDbag@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 12 May 2014 22:26:35 +0000
+Subject: Re: [PATCH v2 4/4] ARM: shmobile: marzen-reference: Set SMSC lan to use irq-push-pull
+Message-Id: <2152550.dZ0p2WIftv@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5379D7F8.5060604@renesas.com>
-In-Reply-To: <5379D7F8.5060604@renesas.com>
+References: <1368586650-26263-1-git-send-email-horms+renesas@verge.net.au>
+ <1368586650-26263-5-git-send-email-horms+renesas@verge.net.au>
+ <10371644.BMkVSLAUGy@avalon>
+In-Reply-To: <10371644.BMkVSLAUGy@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: mathias.nyman@intel.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 19, 2014 at 12:07 PM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> Some platforms (such as the Renesas R-Car) need to initialize some specific
-> registers after xhci driver calls usb_add_hcd() and before the driver calls
-> xhci_run(). So, this patch adds the xhci_plat_start() function.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Hi Simon,
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+On Wednesday 15 May 2013 11:15:01 Laurent Pinchart wrote:
+> Hi Simon,
+> 
+> Thanks for the patch.
+> 
+> On Wednesday 15 May 2013 11:57:30 Simon Horman wrote:
+> > This change makes the DTS consistent with the platform data
+> > that exists in board-marzen.c.
+> > 
+> > Empirically it does not appear to be necessary.
+> > 
+> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Gr{oetje,eeting}s,
+I've noticed that this patch hasn't landed in mainline. Do you still plan to 
+upstream it ?
 
-                        Geert
+While the board has a pull-up resistor on the IRQ signal and can thus 
+accommodate an open-drain configuration, using push-pull mode would lower the 
+rise time.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> > ---
+> > 
+> >  arch/arm/boot/dts/r8a7779-marzen-reference.dts | 1 +
+> >  1 file changed, 1 insertion(+)
+> > 
+> > diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+> > b/arch/arm/boot/dts/r8a7779-marzen-reference.dts index 10cfc7f..fe32e1a
+> > 100644
+> > --- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+> > +++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+> > @@ -40,6 +40,7 @@
+> > 
+> >  		phy-mode = "mii";
+> >  		interrupt-parent = <&irqpin0>;
+> >  		interrupts = <1 0x4>;
+> > 
+> > +		smsc,irq-push-pull;
+> > 
+> >  		reg-io-width = <4>;
+> >  		vddvario-supply = <&fixedregulator3v3>;
+> >  		vdd33a-supply = <&fixedregulator3v3>;
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Regards,
+
+Laurent Pinchart
+
