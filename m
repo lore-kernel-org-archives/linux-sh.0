@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 12 May 2014 11:53:48 +0000
+Date: Mon, 12 May 2014 22:57:30 +0000
 Subject: Re: [PATCH] ARM: shmobile: henninger: add QSPI DT support
-Message-Id: <5370B64C.60709@cogentembedded.com>
+Message-Id: <537151DA.8000101@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201405060245.32952.sergei.shtylyov@cogentembedded.com>
  <536FBEB7.9080605@cogentembedded.com> <20140511225354.GC6451@verge.net.au>
@@ -68,7 +68,8 @@ On 05/12/2014 02:53 AM, Simon Horman wrote:
 
 > Could you send an incremental fix for me to queue up?
 
-    Yes, I will.
+    Oops, I've rechecked and it should indeed be read-only, so the patch was 
+correct. Sorry. :-)
 
 WBR, Sergei
 
