@@ -1,64 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 09 May 2014 08:56:01 +0000
-Subject: Re: [PATCH] of/irq: provide int of_irq_parse_and_map_pci wrapper
-Message-Id: <CAMuHMdU_H3_vzP84UwfSUShJ3_x+t3Q6enn=YNdC2tEDzgOOmg@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 12 May 2014 23:02:11 +0000
+Subject: [PATCH 1/6] DMA: shdmac: Keep #include sorted alphabetically
+Message-Id: <1399935736-16854-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4527717.yJh2gX3xCP@wuerfel>
-	<1399624119.4833.3.camel@weser.hi.pengutronix.de>
-	<4975430.zMeeu7d2Xc@wuerfel>
-In-Reply-To: <4975430.zMeeu7d2Xc@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Lucas Stach <l.stach@pengutronix.de>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <damm@opensource.se>, Ben Dooks <ben.dooks@codethink.co.uk>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Arnd,
+This helps detecting duplicate includes.
 
-On Fri, May 9, 2014 at 10:45 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Friday 09 May 2014 10:28:39 Lucas Stach wrote:
->> Am Freitag, den 09.05.2014, 08:58 +0200 schrieb Arnd Bergmann:
->> > The pci-rcar driver is enabled for compile tests, and this has
->> > now shown that the driver cannot build without CONFIG_OF,
->> > following the inclusion of f8f2fe7355fb "PCI: rcar: Use new OF
->> > interrupt mapping when possible":
->> >
->> > drivers/built-in.o: In function `rcar_pci_map_irq':
->> > :(.text+0x1cc7c): undefined reference to `of_irq_parse_and_map_pci'
->> >
->> > As pointed out by Ben Dooks and Geert Uytterhoeven, this is actually
->> > supposed to build fine, which we can achieve if we make the
->> > declaration of of_irq_parse_and_map_pci conditional on CONFIG_OF
->> > and provide an empty inline function otherwise, as we do for
->> > a lot of other of interfaces.
->> >
->> > This lets us build the rcar_pci driver again without CONFIG_OF,
->> > which won't work but give us compile time coverage.
->> >
->> This part of the commit message is confusing. The driver is explicitly
->> written to fall back to a platform irq when OF interrupt mapping doesn't
->> work (return 0 or error), to keep non DT enabled boards working.
->>
->> I hadn't thought of the compile time dependency, so thanks for fixing
->> this up.
->
-> I thought it was meant to keep old DTBs working. AFAIK, there is no
-> legacy board file support for rcar-gen2, so we don't actually have to
-> worry about that.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/dma/sh/shdmac.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-arch/arm/mach-shmobile/board-lager.c does intantiate platform devices
-for it, and I guess they're still to be added to .../board-koelsch.c.
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index dda7e75..7313537 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -18,21 +18,21 @@
+  *
+  */
+ 
++#include <linux/delay.h>
++#include <linux/dmaengine.h>
+ #include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/kdebug.h>
+ #include <linux/module.h>
++#include <linux/notifier.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+-#include <linux/slab.h>
+-#include <linux/interrupt.h>
+-#include <linux/dmaengine.h>
+-#include <linux/delay.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/rculist.h>
+ #include <linux/sh_dma.h>
+-#include <linux/notifier.h>
+-#include <linux/kdebug.h>
++#include <linux/slab.h>
+ #include <linux/spinlock.h>
+-#include <linux/rculist.h>
+ 
+ #include "../dmaengine.h"
+ #include "shdma.h"
+-- 
+1.8.5.5
 
-However, all legacy board configs in arch/arm/mach-shmobile/Kconfig
-do "select USE_OF", so the file will always be build with OF=y.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
