@@ -1,41 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 11 May 2014 00:08:35 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 12 May 2014 07:35:46 +0000
 Subject: Re: [PATCH V2 2/2] ARM: shmobile: r8a7791: add i2c2 bus to koelsch dt
-Message-Id: <20140511000834.GM31760@verge.net.au>
+Message-Id: <CAMuHMdX_19vLyO7fqaBO7=WpdoZ8fYm9BU9Zmj6cXSNDNYE+Kw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1392633882-12142-1-git-send-email-wsa@the-dreams.de>
  <1392633882-12142-2-git-send-email-wsa@the-dreams.de>
  <536C1945.1000601@cogentembedded.com>
  <20140509050610.GB2624@katana>
  <536D5DC3.3070409@cogentembedded.com>
-In-Reply-To: <536D5DC3.3070409@cogentembedded.com>
+ <20140511000834.GM31760@verge.net.au>
+In-Reply-To: <20140511000834.GM31760@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, May 10, 2014 at 02:59:15AM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 05/09/2014 09:06 AM, Wolfram Sang wrote:
-> 
-> >>>+	eeprom@50 {
-> >>>+		compatible = "renesas,24c02";
-> 
-> >>    This is not quite right: Renesas' part is called differently, and
-> >>you're carrying the other vendor's naming onto Renesas parts. I'd
-> >>just say "24c02" (which I'll do in the Henninger board patch).
-> 
-> >What about "generic"?
-> 
->    I don't know, really. However, you're right in that there should
-> be some vendor prefix -- I've just seen
-> Documentation/devicetree/bindings/eeprom.txt.
+On Sun, May 11, 2014 at 2:08 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Sat, May 10, 2014 at 02:59:15AM +0400, Sergei Shtylyov wrote:
+>> Hello.
+>>
+>> On 05/09/2014 09:06 AM, Wolfram Sang wrote:
+>>
+>> >>>+  eeprom@50 {
+>> >>>+          compatible = "renesas,24c02";
+>>
+>> >>    This is not quite right: Renesas' part is called differently, and
+>> >>you're carrying the other vendor's naming onto Renesas parts. I'd
+>> >>just say "24c02" (which I'll do in the Henninger board patch).
+>>
+>> >What about "generic"?
+>>
+>>    I don't know, really. However, you're right in that there should
+>> be some vendor prefix -- I've just seen
+>> Documentation/devicetree/bindings/eeprom.txt.
+>
+> A quick survey of arch/arm/boot/dts/ yields:
+>
+> "atmel,24c02" (22 times)
+> "microchip,24c02" (once)
+> "mcp,24c02" (once)
+>
+> So it seems to me that precedence is in favour of using "renesas,24c02".
 
-A quick survey of arch/arm/boot/dts/ yields:
+Except that the Renesas part is called differently (as Sergei already pointed
+out), unlike the Atmel and Microchip parts.
 
-"atmel,24c02" (22 times)
-"microchip,24c02" (once)
-"mcp,24c02" (once)
+So it should be:
 
-So it seems to me that precedence is in favour of using "renesas,24c02".
+        compatible = "renesas,r1ex24002", "<something>,24c02";
+
+Unfortunately the datasheet doesn't mention compatibility with parts from
+other manufacturers.
+
+So let's <something> be "atmel"?
+
+BTW, we have a similar issue with Genmai, which has an R1EX24128.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
