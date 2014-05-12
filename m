@@ -1,133 +1,95 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:11 +0000
-Subject: [PATCH 02/11] ARM: shmobile: henninger: add SDHI0/2 DT support
-Message-Id: <1299df03d7191ab4356c995dde8b912d3c8922e9.1400200395.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 12 May 2014 10:57:50 +0000
+Subject: [PATCH v8 3/3] dt-bindings: pci: rcar pcie device tree bindings
+Message-Id: <1399892270-25021-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200395.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
+References: <1399892270-25021-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1399892270-25021-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch adds the bindings for the R-Car PCIe driver. The driver
+resides under drivers/pci/host/pcie-rcar.c
 
-Define the Henninger board dependent part of the SDHI0/2 device nodes along with
-the necessary voltage regulators (note that the Vcc regulators are dummy -- they
-are required but don't actually exist on the board). Also, GPIOs have to be used
-for the CD and WP signals due to the SDHI driver constraints...
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+v8:
+ - Split interrupt bindings into separate cells
+ - Add explicit bus number range
+
+v7:
+ - Change binding description of clocks to 'clock specifiers'
+
+v6:
+ - Correct DT bindings description for reg and clocks
+
+v5:
+ - Add PCIe bus clock reference
+ - Add additional interrupt bindings
+ - Use dma-ranges property to specify inbound memory regions
+
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 76 +++++++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 47 ++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/rcar-pci.txt
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index 0a65523..2e45c06 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -11,6 +11,7 @@
- 
- /dts-v1/;
- #include "r8a7791.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "Henninger";
-@@ -33,6 +34,50 @@
- 		device_type = "memory";
- 		reg = <2 0x00000000 0 0x40000000>;
- 	};
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+new file mode 100644
+index 0000000..29d3b98
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -0,0 +1,47 @@
++* Renesas RCar PCIe interface
 +
-+	vcc_sdhi0: regulator@0 {
-+		compatible = "regulator-fixed";
++Required properties:
++- compatible: should contain one of the following
++	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
++- reg: base address and length of the pcie controller registers.
++- #address-cells: set to <3>
++- #size-cells: set to <2>
++- bus-range: PCI bus numbers covered
++- device_type: set to "pci"
++- ranges: ranges for the PCI memory and I/O regions.
++- dma-ranges: ranges for the inbound memory regions.
++- interrupts: two interrupt sources for MSI interrupts, followed by interrupt
++	source for hardware related interrupts (e.g. link speed change).
++- #interrupt-cells: set to <1>
++- interrupt-map-mask and interrupt-map: standard PCI properties
++	to define the mapping of the PCIe interface to interrupt
++	numbers.
++- clocks: from common clock binding: clock specifiers for the PCIe controller
++	and PCIe bus clocks.
++- clock-names: from common clock binding: should be "pcie" and "pcie_bus".
 +
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
++Example:
++
++SoC specific DT Entry:
++
++	pcie: pcie@fe000000 {
++		compatible = "renesas,pcie-r8a7791";
++		reg = <0 0xfe000000 0 0x80000>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		bus-range = <0x00 0xff>;
++		device_type = "pci";
++		ranges = <0x01000000 0 0x00000000 0 0xfe100000 0 0x00100000
++			  0x02000000 0 0xfe200000 0 0xfe200000 0 0x00200000
++			  0x02000000 0 0x30000000 0 0x30000000 0 0x08000000
++			  0x42000000 0 0x38000000 0 0x38000000 0 0x08000000>;
++		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000
++			      0x42000000 2 0x00000000 2 0x00000000 0 0x40000000>;
++		interrupts = <0 116 4>, <0 117 4>, <0 118 4>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 0>;
++		interrupt-map = <0 0 0 0 &gic 0 116 4>;
++		clocks = <&mstp3_clks R8A7791_CLK_PCIE>, <&pcie_bus_clk>;
++		clock-names = "pcie", "pcie_bus";
++		status = "disabled";
 +	};
-+
-+	vccq_sdhi0: regulator@1 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI0 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
-+
-+	vcc_sdhi2: regulator@2 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "SDHI2 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+	};
-+
-+	vccq_sdhi2: regulator@3 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "SDHI2 VccQ";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <1>;
-+		states = <3300000 1
-+			  1800000 0>;
-+	};
- };
- 
- &extal_clk {
-@@ -54,6 +99,16 @@
- 		renesas,groups = "intc_irq0";
- 		renesas,function = "intc";
- 	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
- };
- 
- &scif0 {
-@@ -82,3 +137,24 @@
- &sata0 {
-        status = "okay";
- };
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi0>;
-+	vqmmc-supply = <&vccq_sdhi0>;
-+	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
-+	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vcc_sdhi2>;
-+	vqmmc-supply = <&vccq_sdhi2>;
-+	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
-+	status = "okay";
-+};
 -- 
-1.8.5.2
+1.9.1
 
