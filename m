@@ -1,44 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 21 May 2014 19:53:48 +0000
-Subject: Re: [PATCH/RFC 0/7] ARM: shmobile: r8a7791: Add preliminary DMA support
-Message-Id: <CAMuHMdVx2jvdKmnkX=ByxDacZCub_Fhf-VTWZAUXEnsxcZHoSA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 12 May 2014 23:37:41 +0000
+Subject: Re: [PATCH] ARM: shmobile: dts: Move interrupt-parent property to root node
+Message-Id: <1627187.1ceB3Z4cgL@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400254015-29539-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400254015-29539-1-git-send-email-geert+renesas@glider.be>
+References: <1398818488-6591-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398818488-6591-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, May 16, 2014 at 5:26 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> This patch series adds preliminary DMA support for r8a7791, based on the
-> work for r8a7790 by Ben Dooks (cfr. "[PATCH v2 0/9] Updates Renesas OF-DMA
-> code").
->
->   - [1/7] DMA: shdma: Add r8a7791 support
->   - [2/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
->   - [3/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for
->           bindings
->   - [4/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
->   - [5/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
->   - [6/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
->   - [7/7] ARM: shmobile: koelsch dts: Enable sysdma0 and sysdma1
->
-> This is NOT meant to be applied yet, hence the RFC status, as so far I
-> couldn't get it to actually work.
+Hi Simon,
 
-The SYS-DMAC changes do work for QSPI. This does need changes to the QSPI
-driver (spi-rspi), though, as the driver supported DMA only for RSPI modules
-on SH.
+On Wednesday 30 April 2014 10:05:16 Wolfram Sang wrote:
+> On Wed, Apr 30, 2014 at 02:41:28AM +0200, Laurent Pinchart wrote:
+> > There's no need to duplicate the interrupt-parent property in all DT
+> > nodes as the kernel automatically walks parent nodes to find the
+> > property. Specify it once in the root node only.
+> > 
+> > Signed-off-by: Laurent Pinchart
+> > <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Gr{oetje,eeting}s,
+Could you please pick this up for v3.16 ?
 
-                        Geert
+-- 
+Regards,
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Laurent Pinchart
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
