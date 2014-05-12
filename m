@@ -1,52 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 12 May 2014 12:44:36 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 12 May 2014 12:52:24 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: genmai-reference: Switch to new style MTU device
-Message-Id: <1751770.qQ4mhXj5fn@avalon>
+Message-Id: <20140512125222.GA6860@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="T4sUOijqQbZv57TR"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1399898169-22067-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1399898169-22067-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
 
-Thank you for the patch.
+--T4sUOijqQbZv57TR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Monday 12 May 2014 14:36:09 Geert Uytterhoeven wrote:
+On Mon, May 12, 2014 at 02:36:09PM +0200, Geert Uytterhoeven wrote:
 > The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
 > style of platform data that handles the timer as a single device with
 > multiple channels. Switch from the old-style platform data to the
 > new-style platform data.
-> 
+>=20
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Huh? Right, I had this once but seems to have been lost in some rebase
+:( Thanks for the heads up!
 
-> ---
-> To be folded into Wolfram's "ARM: shmobile: r7s72100: use workaround for
-> non DT-clocks".
-> 
->  arch/arm/mach-shmobile/board-genmai-reference.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c
-> b/arch/arm/mach-shmobile/board-genmai-reference.c index
-> fde558b66d4e..33015e5ed52a 100644
-> --- a/arch/arm/mach-shmobile/board-genmai-reference.c
-> +++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-> @@ -32,7 +32,7 @@
->   * devices until they get moved to DT.
->   */
->  static const struct clk_name clk_names[] = {
-> -	{ "mtu2", NULL, "sh_mtu2.0" },
-> +	{ "mtu2", "fck", "sh-mtu2" },
->  };
->  #endif
+Acked-by: Wolfram Sang <wsa@sang-engineering.com>
 
--- 
-Regards,
 
-Laurent Pinchart
+--T4sUOijqQbZv57TR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTcMQGAAoJEBQN5MwUoCm23fMP/09u7yw9T1FuEeinl0Hsp5Pw
+0mgXyGkjDQSazi31Ps+1ESxm05PXtaUTqSRzx2Cdbz4+QJM5+CQuLU6qehmMwbSm
+QObGzn0MrE2bUCgR1sJfeUho4iYbtYzkM89j9xEFpEEazX8HIVIFg7Ph8oQOK1Rd
+21RMpx93xvdAVqLaXG0Np1CvSjy2PMmRNPC0ZpRZW+WuU4n+4SVBZwZsug2qvbxW
+aTswZREIA6Dvcph5YEQhIijylIfPLOTpa1A9IuNht8dU4tTDoGyx/u4MC6h05aAe
+7NUhmYBmUmQ0UUrPvMV2huc50j37GNITQWPocH+4ssuWqo9qeh4FMMdCUAl7BHYB
+qXGd2NcJJUhjJgLz5BmcX3ogl4Eb9wV0FXSNV7FhKvon73/Pg4BQ3nLu8qN9x53a
+pwrOv1VmYcRAyNUfxHzeJnWxIdHtfbyiVMIeRdCATjcPSqjgK1aY3ipTXfBUBbDu
+cS5u1+zQ3iPavy+xYBVcWEfqX5o4KTCaM0vdG0do7aNQKkkzPKpoC+u9LqGKNr/g
+OlPHrZ4ZkwR8Sc7t7HKGI7P0dwp6hWb+Ous9lVsE8GKC0/c/+bKdps6F2pNmIMjx
+adWHr4QKnhKqUIU/CYiDPYBTiOOBeguR67XneJezWIE9Mw9tJALG8Qi4mh5A+zsc
+ZG3bZqJL42ailgfQdvqd
+=rccL
+-----END PGP SIGNATURE-----
+
+--T4sUOijqQbZv57TR--
