@@ -1,37 +1,30 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 11 May 2014 20:05:50 +0000
-Subject: [PATCH] sh_eth: replace devm_kzalloc() with devm_kmalloc()
-Message-Id: <201405120005.51199.sergei.shtylyov@cogentembedded.com>
+From: Joe Perches <joe@perches.com>
+Date: Mon, 12 May 2014 00:10:35 +0000
+Subject: Re: [PATCH] sh_eth: replace devm_kzalloc() with devm_kmalloc()
+Message-Id: <1399853435.9156.1.camel@joe-AO725>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201405120005.51199.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405120005.51199.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-When I was converting the driver to the managed device API, only devm_kzalloc()
-was available for memory allocation, so I had to use it, despite zeroing out
-PHY IRQ array right before initializing all its entries with PHY_POLL was quite
-stupid. Now that devm_kmalloc() has become available, we can avoid the needless
-zeroing out of the PHY IRQ array.
+On Mon, 2014-05-12 at 00:05 +0400, Sergei Shtylyov wrote:
+> Now that devm_kmalloc() has become available, we can avoid the needless
+> zeroing out of the PHY IRQ array.
+[]
+> net-next/drivers/net/ethernet/renesas/sh_eth.c
+[]
+> @@ -2627,7 +2627,7 @@ static int sh_mdio_init(struct sh_eth_pr
+[]
+> -	mdp->mii_bus->irq = devm_kzalloc(dev, sizeof(int) * PHY_MAX_ADDR,
+> +	mdp->mii_bus->irq = devm_kmalloc(dev, sizeof(int) * PHY_MAX_ADDR,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+perhaps
 
----
-This patch is against DaveM's 'net-next.git' repo.
+	mdp->mii_bus->irq = devm_kmalloc_array(dev, PHY_MAX_ADDR, sizeof(int),
 
- drivers/net/ethernet/renesas/sh_eth.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -2627,7 +2627,7 @@ static int sh_mdio_init(struct sh_eth_pr
- 		 pdev->name, pdev->id);
- 
- 	/* PHY IRQ */
--	mdp->mii_bus->irq = devm_kzalloc(dev, sizeof(int) * PHY_MAX_ADDR,
-+	mdp->mii_bus->irq = devm_kmalloc(dev, sizeof(int) * PHY_MAX_ADDR,
- 					 GFP_KERNEL);
- 	if (!mdp->mii_bus->irq) {
- 		ret = -ENOMEM;
+
