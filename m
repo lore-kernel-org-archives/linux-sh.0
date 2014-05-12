@@ -1,68 +1,60 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 12 May 2014 07:35:46 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 12 May 2014 12:10:51 +0000
 Subject: Re: [PATCH V2 2/2] ARM: shmobile: r8a7791: add i2c2 bus to koelsch dt
-Message-Id: <CAMuHMdX_19vLyO7fqaBO7=WpdoZ8fYm9BU9Zmj6cXSNDNYE+Kw@mail.gmail.com>
+Message-Id: <5370BA4B.6070003@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392633882-12142-1-git-send-email-wsa@the-dreams.de>
- <1392633882-12142-2-git-send-email-wsa@the-dreams.de>
- <536C1945.1000601@cogentembedded.com>
- <20140509050610.GB2624@katana>
- <536D5DC3.3070409@cogentembedded.com>
- <20140511000834.GM31760@verge.net.au>
-In-Reply-To: <20140511000834.GM31760@verge.net.au>
+References: <1392633882-12142-1-git-send-email-wsa@the-dreams.de>	<1392633882-12142-2-git-send-email-wsa@the-dreams.de>	<536C1945.1000601@cogentembedded.com>	<20140509050610.GB2624@katana>	<536D5DC3.3070409@cogentembedded.com>	<20140511000834.GM31760@verge.net.au>
+ <CAMuHMdX_19vLyO7fqaBO7=WpdoZ8fYm9BU9Zmj6cXSNDNYE+Kw@mail.gmail.com>
+In-Reply-To: <CAMuHMdX_19vLyO7fqaBO7=WpdoZ8fYm9BU9Zmj6cXSNDNYE+Kw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, May 11, 2014 at 2:08 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Sat, May 10, 2014 at 02:59:15AM +0400, Sergei Shtylyov wrote:
->> Hello.
->>
->> On 05/09/2014 09:06 AM, Wolfram Sang wrote:
->>
->> >>>+  eeprom@50 {
->> >>>+          compatible = "renesas,24c02";
->>
->> >>    This is not quite right: Renesas' part is called differently, and
->> >>you're carrying the other vendor's naming onto Renesas parts. I'd
->> >>just say "24c02" (which I'll do in the Henninger board patch).
->>
->> >What about "generic"?
->>
->>    I don't know, really. However, you're right in that there should
->> be some vendor prefix -- I've just seen
->> Documentation/devicetree/bindings/eeprom.txt.
->
-> A quick survey of arch/arm/boot/dts/ yields:
->
-> "atmel,24c02" (22 times)
-> "microchip,24c02" (once)
-> "mcp,24c02" (once)
->
-> So it seems to me that precedence is in favour of using "renesas,24c02".
+Hello.
 
-Except that the Renesas part is called differently (as Sergei already pointed
-out), unlike the Atmel and Microchip parts.
+On 05/12/2014 11:35 AM, Geert Uytterhoeven wrote:
 
-So it should be:
+>>>>>> +  eeprom@50 {
+>>>>>> +          compatible = "renesas,24c02";
 
-        compatible = "renesas,r1ex24002", "<something>,24c02";
+>>>>>     This is not quite right: Renesas' part is called differently, and
+>>>>> you're carrying the other vendor's naming onto Renesas parts. I'd
+>>>>> just say "24c02" (which I'll do in the Henninger board patch).
 
-Unfortunately the datasheet doesn't mention compatibility with parts from
-other manufacturers.
+>>>> What about "generic"?
 
-So let's <something> be "atmel"?
+>>>     I don't know, really. However, you're right in that there should
+>>> be some vendor prefix -- I've just seen
+>>> Documentation/devicetree/bindings/eeprom.txt.
 
-BTW, we have a similar issue with Genmai, which has an R1EX24128.
+>> A quick survey of arch/arm/boot/dts/ yields:
 
-Gr{oetje,eeting}s,
+>> "atmel,24c02" (22 times)
+>> "microchip,24c02" (once)
+>> "mcp,24c02" (once)
 
-                        Geert
+>> So it seems to me that precedence is in favour of using "renesas,24c02".
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> Except that the Renesas part is called differently (as Sergei already pointed
+> out), unlike the Atmel and Microchip parts.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> So it should be:
+
+>          compatible = "renesas,r1ex24002", "<something>,24c02";
+
+    Unfortunately, that way the legacy I2C driver matching used now won't work 
+anymore. :-(
+
+> Unfortunately the datasheet doesn't mention compatibility with parts from
+> other manufacturers.
+
+> So let's <something> be "atmel"?
+
+    Yes, probably. But the "renesas,r1ex24002" part have to be dropped.
+
+> Gr{oetje,eeting}s,
+>                          Geert
+
+WBR, Sergei
+
