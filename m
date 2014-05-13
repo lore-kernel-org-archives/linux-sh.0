@@ -1,42 +1,48 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 29 May 2014 11:05:53 +0000
-Subject: [PATCH 1/2] arm: shmobile: r8a7791: add USB3.0 clocks to device tree
-Message-Id: <53871491.1000109@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 13 May 2014 01:59:05 +0000
+Subject: Re: [PATCH v6 0/2] clk: shmobile: r8a7779: Add clocks support
+Message-Id: <20140513015905.GB29336@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
+References: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7791.dtsi |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+Hi Mike,
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index ede8b7f..c2b5b38 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -784,15 +784,15 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
--				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
--				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
-+				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
- 			>;
- 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
--				"mmcif0", "i2c7", "i2c8", "cmt1";
-+				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
--- 
-1.7.9.5
+I'm wondering if you would consider this series.
+I'm happy to take it through my tree and then arm-soc is
+that works best for you.
 
+On Fri, Apr 18, 2014 at 08:05:49AM +0900, Simon Horman wrote:
+> Hi Mike,
+> 
+> please consider applying this series.
+> 
+> It is the first step on the way towards using the common clock framework
+> and in turn multi-platform on the r8a7779 (R-Car H1) SoC.
+> 
+> It has been acked by Laurent Pinchart who did similar work
+> for the R-Car Gen-2 family of SoCs. This work is based on that work.
+> 
+> The bindings added in this series have not been changed since
+> v4 was posted with devicetree@vger.kernel.org CCed on the 13th of March.
+> 
+> Simon Horman (2):
+>   clk: shmobile: r8a7779: Add clocks support
+>   clk: shmobile: r8a7779: Add MSTP clock support
+> 
+>  .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+>  .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  |  27 ++++
+>  drivers/clk/shmobile/Makefile                      |   1 +
+>  drivers/clk/shmobile/clk-r8a7779.c                 | 180 +++++++++++++++++++++
+>  include/linux/clk/shmobile.h                       |   3 +
+>  5 files changed, 212 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+>  create mode 100644 drivers/clk/shmobile/clk-r8a7779.c
+> 
+> -- 
+> 1.8.4
+> 
