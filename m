@@ -1,38 +1,109 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 13 May 2014 11:37:47 +0000
-Subject: [PATCH v2 2/4] pinctrl: sh-pfc: r8a7740: Allow Multiplatform Build
-Message-Id: <1399981069-29366-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 13 May 2014 01:49:18 +0000
+Subject: Re: [PATCH v3 1/2] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
+Message-Id: <20140513014917.GD10973@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Wed, Apr 23, 2014 at 10:25:27AM +0200, Geert Uytterhoeven wrote:
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Add #ifdefs to allow r8a7740 Multiplatform build. Needed
-to enable r8a7740 Multiplatform support.
+Sorry for missing this.
+I have queued it up.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 6c83ce4..e4c1ef4 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -22,7 +22,9 @@
- #include <linux/kernel.h>
- #include <linux/pinctrl/pinconf-generic.h>
- 
-+#ifndef CONFIG_ARCH_MULTIPLATFORM
- #include <mach/irqs.h>
-+#endif
- 
- #include "core.h"
- #include "sh_pfc.h"
--- 
-1.8.5.5
-
+> ---
+> v3:
+>   - Add Acked-by
+>   - Bindings have been accepted in
+>     git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+> 
+> v2:
+>   - No changes
+> ---
+>  arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index d38d70339149..7ff29601f962 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -117,6 +117,7 @@
+>  		gpio-ranges = <&pfc 0 0 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
+>  	};
+>  
+>  	gpio1: gpio@e6051000 {
+> @@ -128,6 +129,7 @@
+>  		gpio-ranges = <&pfc 0 32 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
+>  	};
+>  
+>  	gpio2: gpio@e6052000 {
+> @@ -139,6 +141,7 @@
+>  		gpio-ranges = <&pfc 0 64 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
+>  	};
+>  
+>  	gpio3: gpio@e6053000 {
+> @@ -150,6 +153,7 @@
+>  		gpio-ranges = <&pfc 0 96 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
+>  	};
+>  
+>  	gpio4: gpio@e6054000 {
+> @@ -161,6 +165,7 @@
+>  		gpio-ranges = <&pfc 0 128 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
+>  	};
+>  
+>  	gpio5: gpio@e6055000 {
+> @@ -172,6 +177,7 @@
+>  		gpio-ranges = <&pfc 0 160 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
+>  	};
+>  
+>  	thermal@e61f0000 {
+> @@ -802,14 +808,19 @@
+>  		mstp9_clks: mstp9_clks@e6150994 {
+>  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+>  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
+> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
+>  				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+>  			#clock-cells = <1>;
+>  			renesas,clock-indices = <
+> +				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
+> +				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
+>  				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
+>  				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
+>  			>;
+>  			clock-output-names > +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
+>  				"rcan1", "rcan0", "qspi_mod", "iic3",
+>  				"i2c3", "i2c2", "i2c1", "i2c0";
+>  		};
+> -- 
+> 1.7.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
