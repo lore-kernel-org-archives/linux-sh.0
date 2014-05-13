@@ -1,86 +1,131 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 28 May 2014 07:44:41 +0000
-Subject: [PATCH 06/11] i2c: rcar: refactor setting up msg
-Message-Id: <1401263086-13720-7-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 13 May 2014 01:49:24 +0000
+Subject: Re: [PATCH v3 2/2] ARM: shmobile: r8a7791 dtsi: Add GPIO clocks
+Message-Id: <20140513014924.GE10973@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On Wed, Apr 23, 2014 at 10:25:28AM +0200, Geert Uytterhoeven wrote:
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Setting up a read or write message is similar enough to be done in one
-function. Also, move a helper function into the new function since it is
-only used here.
+Sorry for missing this.
+I have queued it up.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- drivers/i2c/busses/i2c-rcar.c | 30 +++++-------------------------
- 1 file changed, 5 insertions(+), 25 deletions(-)
-
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index a97a14955ddf..f7b14d049d5c 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -155,11 +155,6 @@ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
- 	rcar_i2c_write(priv, ICMAR, 0);
- }
- 
--static void rcar_i2c_set_addr(struct rcar_i2c_priv *priv, u32 recv)
--{
--	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | recv);
--}
--
- /*
-  *		bus control functions
-  */
-@@ -279,25 +274,14 @@ static void rcar_i2c_status_bit_clear(struct rcar_i2c_priv *priv, u32 bit)
- 	rcar_i2c_write(priv, ICMSR, ~bit);
- }
- 
--/*
-- *		recv/send functions
-- */
--static int rcar_i2c_recv(struct rcar_i2c_priv *priv)
-+static int rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
- {
--	rcar_i2c_set_addr(priv, 1);
--	rcar_i2c_status_clear(priv);
--	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
--	rcar_i2c_write(priv, ICMIER, RCAR_IRQ_RECV);
--
--	return 0;
--}
-+	int read = !!rcar_i2c_is_recv(priv);
- 
--static int rcar_i2c_send(struct rcar_i2c_priv *priv)
--{
--	rcar_i2c_set_addr(priv, 0);
-+	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
- 	rcar_i2c_status_clear(priv);
- 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
--	rcar_i2c_write(priv, ICMIER, RCAR_IRQ_SEND);
-+	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
- 
- 	return 0;
- }
-@@ -520,11 +504,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		if (priv->msg = &msgs[num - 1])
- 			rcar_i2c_flags_set(priv, ID_LAST_MSG);
- 
--		/* start send/recv */
--		if (rcar_i2c_is_recv(priv))
--			ret = rcar_i2c_recv(priv);
--		else
--			ret = rcar_i2c_send(priv);
-+		ret = rcar_i2c_prepare_msg(priv);
- 
- 		spin_unlock_irqrestore(&priv->lock, flags);
- 		/*-------------- spin unlock -----------------*/
--- 
-2.0.0.rc2
-
+> ---
+> v3:
+>   - Add Acked-by
+>   - Bindings have been accepted in
+>     git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+> 
+> v2:
+>   - No changes
+> ---
+>  arch/arm/boot/dts/r8a7791.dtsi |   19 ++++++++++++++++---
+>  1 file changed, 16 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+> index 44f03444ef74..81f27a35b19f 100644
+> --- a/arch/arm/boot/dts/r8a7791.dtsi
+> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+> @@ -76,6 +76,7 @@
+>  		gpio-ranges = <&pfc 0 0 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO0>;
+>  	};
+>  
+>  	gpio1: gpio@e6051000 {
+> @@ -87,6 +88,7 @@
+>  		gpio-ranges = <&pfc 0 32 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO1>;
+>  	};
+>  
+>  	gpio2: gpio@e6052000 {
+> @@ -98,6 +100,7 @@
+>  		gpio-ranges = <&pfc 0 64 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO2>;
+>  	};
+>  
+>  	gpio3: gpio@e6053000 {
+> @@ -109,6 +112,7 @@
+>  		gpio-ranges = <&pfc 0 96 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO3>;
+>  	};
+>  
+>  	gpio4: gpio@e6054000 {
+> @@ -120,6 +124,7 @@
+>  		gpio-ranges = <&pfc 0 128 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO4>;
+>  	};
+>  
+>  	gpio5: gpio@e6055000 {
+> @@ -131,6 +136,7 @@
+>  		gpio-ranges = <&pfc 0 160 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO5>;
+>  	};
+>  
+>  	gpio6: gpio@e6055400 {
+> @@ -142,6 +148,7 @@
+>  		gpio-ranges = <&pfc 0 192 32>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO6>;
+>  	};
+>  
+>  	gpio7: gpio@e6055800 {
+> @@ -153,6 +160,7 @@
+>  		gpio-ranges = <&pfc 0 224 26>;
+>  		#interrupt-cells = <2>;
+>  		interrupt-controller;
+> +		clocks = <&mstp9_clks R8A7791_CLK_GPIO7>;
+>  	};
+>  
+>  	thermal@e61f0000 {
+> @@ -805,18 +813,23 @@
+>  		mstp9_clks: mstp9_clks@e6150994 {
+>  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+>  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
+> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7791_CLK_QSPI>, <&hp_clk>,
+>  				 <&cp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>,
+>  				 <&hp_clk>, <&hp_clk>;
+>  			#clock-cells = <1>;
+>  			renesas,clock-indices = <
+> +				R8A7791_CLK_GPIO7 R8A7791_CLK_GPIO6 R8A7791_CLK_GPIO5 R8A7791_CLK_GPIO4
+> +				R8A7791_CLK_GPIO3 R8A7791_CLK_GPIO2 R8A7791_CLK_GPIO1 R8A7791_CLK_GPIO0
+>  				R8A7791_CLK_RCAN1 R8A7791_CLK_RCAN0 R8A7791_CLK_QSPI_MOD R8A7791_CLK_I2C5
+>  				R8A7791_CLK_IICDVFS R8A7791_CLK_I2C4 R8A7791_CLK_I2C3 R8A7791_CLK_I2C2
+>  				R8A7791_CLK_I2C1 R8A7791_CLK_I2C0
+>  			>;
+>  			clock-output-names > -				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3",
+> -				"i2c2", "i2c1", "i2c0";
+> +				"gpio7", "gpio6", "gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
+> +				"rcan1", "rcan0", "qspi_mod", "i2c5", "i2c6", "i2c4", "i2c3", "i2c2",
+> +				"i2c1", "i2c0";
+>  		};
+>  		mstp11_clks: mstp11_clks@e615099c {
+>  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+> -- 
+> 1.7.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
