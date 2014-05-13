@@ -1,56 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 May 2014 23:04:40 +0000
-Subject: Re: [PATCH 0/7] ARM: shmobile: Enable CPU FREQ support
-Message-Id: <20140529230438.GA2353@verge.net.au>
+From: Mike Turquette <mturquette@linaro.org>
+Date: Tue, 13 May 2014 00:05:13 +0000
+Subject: Re: [PATCH v5 01/11] ARM: shmobile: r7s72100: document MSTP clock support
+Message-Id: <20140513000513.5943.68810@quantum>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5386E64B.7060202@bp.renesas.com>
-In-Reply-To: <5386E64B.7060202@bp.renesas.com>
+References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
+ <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 29, 2014 at 01:09:17AM -0700, Kuninori Morimoto wrote:
+Quoting Wolfram Sang (2014-04-29 03:03:32)
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 > 
-> Hi Inami-san
-> 
-> > Benoit Cousson (2):
-> >   ARM: dts: r8a7790-lager: Add DVFS parameters into cpu0 node for
-> >     r8a7790
-> >   ARM: shmobile: Make r8a77900 CPUFreq capable
-> 
-> According to this, [1/7] [2/7] patches were
-> created by Benoit ?
-> 
-> Maybe you want to add extra "From" to these patches,
-> and I guess you want to add your Signed-off-by also ?
-> Otherwise, patch author will be you instead of Benoit
-> 
-> like this ?
-> 
-> -----------------------
->     From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->     Subject: [PATCH 2/7] ARM: shmobile: Make r8a77900 CPUFreq capable
-> 
-> =>  From: Benoit Cousson <bcousson@baylibre.com>
-> 
->     Mark r8a77900 platform as CPUFreq capable
->     on multiplatform build only.
-> 
-> =>  Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->     Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-If Benoit Cousson wrote the patch and Inami-san is passing it on
-(with or without modifications) then I think the Signed-off-by lines
-should be the other way around.
+Acked-by: Mike Turquette <mturquette@linaro.org>
 
-    Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
-=>  Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+No need to take this through the clk tree. Feel free to send it with the
+rest through arm-soc.
 
+Regards,
+Mike
 
-Also, I think it would be sane tough not essential to CC Benoit Cousson
-when reposting the patches.
-
->     ---
->     ...
+> ---
+>  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+>  1 file changed, 1 insertion(+)
 > 
+> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> index 02a25d99ca61..6c3c0847e4fd 100644
+> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> @@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+>  Required Properties:
+>  
+>    - compatible: Must be one of the following
+> +    - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+>      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+>      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+>      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+> -- 
+> 1.9.2
+> 
+> 
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
