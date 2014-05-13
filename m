@@ -1,44 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 May 2014 04:54:21 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Updates for v3.16
-Message-Id: <20140507045421.GB14157@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 13 May 2014 08:03:28 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Clock Updates for v3.16
+Message-Id: <cover.1399967342.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398737681.git.horms+renesas@verge.net.au>
- <20140506014623.GB4701@quad.lixom.net>
-In-Reply-To: <20140506014623.GB4701@quad.lixom.net>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 05, 2014 at 06:46:23PM -0700, Olof Johansson wrote:
-> On Tue, Apr 29, 2014 at 11:15:38AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these second round of Renesas ARM based SoC updates for v3.16.
-> > 
-> > This pull request is based on the previous round of
-> > such requests, tagged as renesas-soc-for-v3.16,
-> > which I have already sent a pull-request for.
-> > 
-> > 
-> > The following changes since commit e35db38d66d1e4007cfc1bb90a05e11b4aaee2a8:
-> > 
-> >   ARM: shmobile: r8a7778/bockw: Move "select RENESAS_INTC_IRQPIN" under SoC (2014-04-14 11:28:43 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc2-for-v3.16
-> > 
-> > for you to fetch changes up to ab496b9d259e754f5d646219e4f032b274b9fffe:
-> > 
-> >   ARM: shmobile: Ignore callbacks for subsys generic_pm_domain_data (2014-04-25 10:01:43 +0900)
-> 
-> Merged into next/soc. It's OK to keep it here, but pure removals like
-> these usually go in the cleanup branch. It can be tricky when there's
-> dependencies on new code though, which you might have had in this
-> case. Either way, no need to respin, etc.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks, noted.
+Please consider these second round of
+Renesas ARM based SoC clock updates for v3.16.
 
-In this case I think that there aren't any awkward dependencies.
+This pull request is based on the previous round of
+such requests, tagged as renesas-clock-for-v3.16,
+which you have already pulled.
+
+
+The following changes since commit 932616eed0308cbebbb20a079e4bed3674bf1117:
+
+  ARM: shmobile: r8a7790: remove old style audio clock (2014-04-14 12:49:43 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock2-for-v3.16
+
+for you to fetch changes up to a505daa501dc3f02b08d0b48b049bce719299b74:
+
+  ARM: shmobile: r8a7791: Correct SYS-DMAC clock defines (2014-05-13 10:16:42 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Clock Updates for v3.16
+
+r8a7791 (R-Car M2) SoC
+* Correct SYS-DMAC clock defines
+
+r8a7740 (R-Mobile A1) SoC
+* Correct name of DT Ethernet clock
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      ARM: shmobile: r8a7740: Correct name of DT Ethernet clock
+      ARM: shmobile: r8a7791: Correct SYS-DMAC clock defines
+
+ arch/arm/mach-shmobile/clock-r8a7740.c    | 2 +-
+ include/dt-bindings/clock/r8a7791-clock.h | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
