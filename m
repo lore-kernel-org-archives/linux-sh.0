@@ -1,41 +1,48 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 15 May 2014 10:40:50 +0000
-Subject: [PATCH v2 09/10] iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
-Message-Id: <1400150451-13469-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 13 May 2014 00:06:23 +0000
+Subject: Re: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
+Message-Id: <2193707.R9XiqBsnU4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131205000928.GI29268@sirena.org.uk> <2248657.5UVkYxaC6z@avalon>
+In-Reply-To: <2248657.5UVkYxaC6z@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-We don't support stage 2 translation yet.
+Hi Mark,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/ipmmu-vmsa.c | 8 --------
- 1 file changed, 8 deletions(-)
+On Thursday 05 December 2013 01:47:04 Laurent Pinchart wrote:
+> On Thursday 05 December 2013 00:09:28 Mark Brown wrote:
+> > On Thu, Nov 28, 2013 at 04:44:52PM +0100, Laurent Pinchart wrote:
+> > > The gpio-regulator driver requires the regulator-type property to be
+> > > present. Document it as required in the DT bindings.
+> > 
+> > It does?  That seems needless.  It should just default to voltage and
+> > provide a way override to current, though frankly I'd be astonished to see
+> > a GPIO controlled current regulator at all so I'm not sure I'd even
+> > bother writing the code for that until someone needs it.  As it is this
+> > will most likely just be noise in the DT files and wasted cycles parsing
+> > the property.
+>
+> I'm fine with that. The property should still be documented in the DT
+> bindings as optional though. Or be removed completely until a
+> GPIO-controlled current regulator is needed.
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 27fd4d0..a4175d3 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -201,14 +201,6 @@ static LIST_HEAD(ipmmu_devices);
- #define ARM_VMSA_PTE_ATTRINDX_SHIFT	2
- #define ARM_VMSA_PTE_nG			(((pteval_t)1) << 11)
- 
--/* Stage-2 PTE */
--#define ARM_VMSA_PTE_HAP_FAULT		(((pteval_t)0) << 6)
--#define ARM_VMSA_PTE_HAP_READ		(((pteval_t)1) << 6)
--#define ARM_VMSA_PTE_HAP_WRITE		(((pteval_t)2) << 6)
--#define ARM_VMSA_PTE_MEMATTR_OIWB	(((pteval_t)0xf) << 2)
--#define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
--#define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
--
- #define ARM_VMSA_PTE_CONT_ENTRIES	16
- #define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
- 
+What's the status of this ? The gpio regulator driver now defaults to voltage 
+regulator when the regulator-type property is not set. Should the DT bindings 
+document the property as optional (I can submit a patch for that), or do you 
+consider that the gpio regulator driver should support voltage regulators only 
+when used with DT, and just keep the regulator-type property support in the 
+driver for backward compatibility ?
+
+> > Please CC maintainers...
+> 
+> My bad, sorry.
+
 -- 
-1.8.5.5
+Regards,
+
+Laurent Pinchart
 
