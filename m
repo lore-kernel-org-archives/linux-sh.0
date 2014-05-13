@@ -1,102 +1,130 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:39:32 +0000
-Subject: [PATCH v2 3/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
-Message-Id: <1400153973-25546-4-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 13 May 2014 08:03:37 +0000
+Subject: [PATCH 10/15] ARM: shmobile: sh73a0: Switch to new style TMU device
+Message-Id: <3df592bc335a6efe30c88c9e39d29ceb5c20bbfb.1399967755.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1399967755.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1399967755.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Initialise SCIF devices using DT when booting marzen
-using multiplatform.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The TMU (Timer Unit) driver implements a new style of platform data that
+handles the timer as a single device with multiple channel. Switch from
+the old-style platform data to the new-style platform data.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* Rebase
-* Add Ack from Laurent Pinchart
----
- arch/arm/boot/dts/r8a7779-marzen.dts   | 22 +++++++++++++++++++---
- arch/arm/mach-shmobile/setup-r8a7779.c |  8 ++++----
- 2 files changed, 23 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c |  3 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c | 56 ++++++++---------------------------
+ 2 files changed, 14 insertions(+), 45 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 3212908..20b1768 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -18,6 +18,11 @@
- 	model = "marzen";
- 	compatible = "renesas,marzen", "renesas,r8a7779";
- 
-+	aliases {
-+		serial2 = &scif2;
-+		serial4 = &scif4;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
- 	};
-@@ -74,9 +79,6 @@
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index ca03989..0d9cd1f 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -633,8 +633,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.1", &mstp_clks[MSTP128]), /* CSI2-RX1 */
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
+-	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
+-	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+@@ -683,6 +681,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
++	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
  };
  
- &pfc {
--	pinctrl-0 = <&scif2_pins &scif4_pins>;
--	pinctrl-names = "default";
--
- 	lan0_pins: lan0 {
- 		intc {
- 			renesas,groups = "intc_irq1_b";
-@@ -109,6 +111,20 @@
- 	};
+ void __init sh73a0_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 71d0e44..ad00724 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -124,54 +124,25 @@ static struct platform_device cmt1_device = {
  };
  
-+&scif2 {
-+       pinctrl-0 = <&scif2_pins>;
-+       pinctrl-names = "default";
-+
-+       status = "okay";
-+};
-+
-+&scif4 {
-+       pinctrl-0 = <&scif4_pins>;
-+       pinctrl-names = "default";
-+
-+       status = "okay";
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index c0e61d5..cd23b27 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -640,16 +640,16 @@ static void __init r8a7779_register_hpb_dmae(void)
- }
+ /* TMU */
+-static struct sh_timer_config tmu00_platform_data = {
+-	.name = "TMU00",
+-	.channel_offset = 0x4,
+-	.timer_bit = 0,
+-	.clockevent_rating = 200,
++static struct sh_timer_config tmu0_platform_data = {
++	.channels_mask = 7,
+ };
  
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
-+	&tmu0_device,
-+};
-+
-+static struct platform_device *r8a7779_standard_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
- 	&scif3_device,
- 	&scif4_device,
- 	&scif5_device,
--	&tmu0_device,
+-static struct resource tmu00_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xfff60008, 0xc),
+-	[1] = {
+-		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource tmu0_resources[] = {
++	DEFINE_RES_MEM(0xfff60000, 0x2c),
++	DEFINE_RES_IRQ(intcs_evt2irq(0xe80)),
++	DEFINE_RES_IRQ(intcs_evt2irq(0xea0)),
++	DEFINE_RES_IRQ(intcs_evt2irq(0xec0)),
+ };
+ 
+-static struct platform_device tmu00_device = {
+-	.name		= "sh_tmu",
++static struct platform_device tmu0_device = {
++	.name		= "sh-tmu",
+ 	.id		= 0,
+ 	.dev = {
+-		.platform_data	= &tmu00_platform_data,
+-	},
+-	.resource	= tmu00_resources,
+-	.num_resources	= ARRAY_SIZE(tmu00_resources),
 -};
 -
--static struct platform_device *r8a7779_standard_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
- 	&i2c2_device,
+-static struct sh_timer_config tmu01_platform_data = {
+-	.name = "TMU01",
+-	.channel_offset = 0x10,
+-	.timer_bit = 1,
+-	.clocksource_rating = 200,
+-};
+-
+-static struct resource tmu01_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xfff60014, 0xc),
+-	[1] = {
+-		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device tmu01_device = {
+-	.name		= "sh_tmu",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &tmu01_platform_data,
++		.platform_data	= &tmu0_platform_data,
+ 	},
+-	.resource	= tmu01_resources,
+-	.num_resources	= ARRAY_SIZE(tmu01_resources),
++	.resource	= tmu0_resources,
++	.num_resources	= ARRAY_SIZE(tmu0_resources),
+ };
+ 
+ static struct resource i2c0_resources[] = {
+@@ -738,8 +709,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+-	&tmu00_device,
+-	&tmu01_device,
++	&tmu0_device,
+ 	&ipmmu_device,
+ };
+ 
 -- 
 1.8.5.2
 
