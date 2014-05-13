@@ -1,71 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 May 2014 01:57:08 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 13 May 2014 21:59:29 +0000
 Subject: Re: [PATCH v5 01/11] ARM: shmobile: r7s72100: document MSTP clock support
-Message-Id: <20140513015708.GA29336@verge.net.au>
+Message-Id: <20140513215929.GA3967@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="d6Gm4EdcadzBjdND"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
  <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
  <20140513000513.5943.68810@quantum>
-In-Reply-To: <20140513000513.5943.68810@quantum>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <20140513015708.GA29336@verge.net.au>
+In-Reply-To: <20140513015708.GA29336@verge.net.au>
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 12, 2014 at 05:05:13PM -0700, Mike Turquette wrote:
-> Quoting Wolfram Sang (2014-04-29 03:03:32)
-> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > 
-> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Acked-by: Mike Turquette <mturquette@linaro.org>
-> 
-> No need to take this through the clk tree. Feel free to send it with the
-> rest through arm-soc.
 
-Thanks Mike.
+--d6Gm4EdcadzBjdND
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Wolfram,
+Simon,
 
-Its a getting a little to close to rc6 for me to take this series for v3.16,
-especially considering some bits seem to need tweaking (I am thinking of sci).
+> Its a getting a little to close to rc6 for me to take this series for v3.=
+16,
+> especially considering some bits seem to need tweaking (I am thinking of =
+sci).
+>=20
+> Could you either:
+>=20
+> * Re-post it without the sci changes and
+>   I'll look at queuing it up for v3.17 or;
 
-Could you either:
+If it is possible and does not cause too much burden for you, I'd prefer
+to include it soonish and handle the fixups incrementally. Since it
+touches a few files which change a lot, rebasing and retesting is extra
+work (done twice for this series IIRC) and thus I'd prefer to do the
+clenaups as seperate patches.
 
-* Re-post it without the sci changes and
-  I'll look at queuing it up for v3.17 or;
-* Re-post it with the sci changes once the sci driver changes
-  have filtered through.
+So, if no one objects, I'll resend tomorrow with Geerts fixup folded
+into my series and retested against latest renesas/devel.
 
-> Regards,
-> Mike
-> 
-> > ---
-> >  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > index 02a25d99ca61..6c3c0847e4fd 100644
-> > --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> > @@ -10,6 +10,7 @@ index in the group, from 0 to 31.
-> >  Required Properties:
-> >  
-> >    - compatible: Must be one of the following
-> > +    - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
-> >      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-> >      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-> >      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-> > -- 
-> > 1.9.2
-> > 
-> > 
-> > _______________________________________________
-> > linux-arm-kernel mailing list
-> > linux-arm-kernel@lists.infradead.org
-> > http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+--d6Gm4EdcadzBjdND
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTcpXBAAoJEBQN5MwUoCm2ISIP/2RRBowH+TPU6i9bMdMFL8JN
+vUN44cAPoFleZ6/DycREntRHe/CEk9KcDC4HVwtRsVPJSBBLCuxrbN47ovU+RWYc
+CsDDk5QD6lG9ReQ71s3SlAIK4MpF1ZcusjGqKxrXdaOIlWG66cd0W8E311msNlmx
+vASVv4DMrFUlu/0GbBvrmTFLLdRdhfMKFOjLH/c5B2wP4c7uXAtipfECUQAZh/58
+xBUs2RyydXLvgKQpr5aZbzreQfz8n4tyT7whp7vnW+sDFjIq6OUpcSuqJbKGZ40k
+I9puuuXqZCSPWRsd11N/NeOsY2iJJrbJ1GuRHQxTGhLlicdREfoVl764eRv6IV9R
+ebljCw6pp9I9T9QMcGp4NcJe0zEYtFNutXBwl+Jt0pn/Dz2NhLXIX1eyoMk7BeNe
+AGmX7CBCmUWMJwFc9KG/IjTLTJFYy0uQ0WTVJYp89JJKavn04U05rCXaKntzK3bl
+tJONB/aq3eDTfzoamOnOsISNtqNX0Z58vwYp66Lv5B5zp5CkLxNeyS3BMYNoyoz4
+nZOEvx0Cx2VR1xd/RWJ+AAN+h9ZQESx6W34KEafaZp8xWMfQ1yjHl4IRAdJmKRBS
+jacrRXJoGBOwr64CS7PBwe+AbV/TdpfTAFonx9aNb5EPern9xmE2LsWbhmaWVqiE
+0LjxYFedy+AHjTSLXyAl
+=c6qS
+-----END PGP SIGNATURE-----
+
+--d6Gm4EdcadzBjdND--
