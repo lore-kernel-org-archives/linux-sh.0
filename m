@@ -1,58 +1,40 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 30 May 2014 13:53:00 +0000
-Subject: [PATCH v4] add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <53888D3C.5020003@renesas.com>
+From: Ley Foon Tan <lftan@altera.com>
+Date: Tue, 13 May 2014 09:06:30 +0000
+Subject: [PATCH 21/25] sh: Add 32 bit time_t and clock_t
+Message-Id: <1399971990-4744-1-git-send-email-lftan@altera.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1399971456-3941-1-git-send-email-lftan@altera.com>
+In-Reply-To: <1399971456-3941-1-git-send-email-lftan@altera.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Ley Foon Tan <lftan@altera.com>, lftan.linux@gmail.com, cltang@codesourcery.com, linux-sh@vger.kernel.org
 
-This patch adds the USB xHCI support for the R-Car H2 and M2 SoCs.
-These SoCs use an xHCI but still need specific initialization, mainly
-to setup the firmware downloading and the specific registers.
+Override time_t and clock_t in include/uapi/asm-generic.
 
-This patch set is based on the usb-next branch of Greg usb.git tree.
-(commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
+Signed-off-by: Ley Foon Tan <lftan@altera.com>
+---
+ arch/sh/include/uapi/asm/posix_types_32.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-Changes since v3:
- - Remove a general phy driver calling in xhci-plat.c
- - Change xhci_rcar_init_quirk() calling into xhci_plat_setup(). Because of
-   usb_add_hcd() will call a generic phy driver calling.
- - Modify xhci_rcar_init_quirk()
-
-Changes since v2:
- - Fix goto direction in patch 1.
- - Remove some unnecessary checks in patch 1.
- - Add MODULE_FIRMWARE() in patch 2.
- - Add a comment about xhci_rcar_init_quirk() in patch 2.
-
-Changes since v1 (about patch 2 only because patch 1 and 3 ware applied):
- - Fix some typos in patch 2.
- - Remove duplicated #define in patch 2.
- - Remove usb_phy framework calling in patch 2.
- - Change prototype of xhci_rcar_start() in patch 2.
- - Change compatible strings from "renesas,r8a779[01]-xhci" to
-   "renesas,xhci-r8a779[01]" in patch 2. Because of Renesas SoC
-   maintainer's comment:
-    http://marc.info/?l=linux-sh&m0109049002958&w=2
-
- - Rewrite the custom get_unaligned_le32() and add comment about it in patch 2.
-
-
-Yoshihiro Shimoda (1):
-  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
-    controllers
-
- drivers/usb/host/Kconfig     |    8 +++
- drivers/usb/host/Makefile    |    3 +
- drivers/usb/host/xhci-plat.c |   19 ++++++
- drivers/usb/host/xhci-rcar.c |  148 ++++++++++++++++++++++++++++++++++++++++++
- drivers/usb/host/xhci-rcar.h |   27 ++++++++
- 5 files changed, 205 insertions(+)
- create mode 100644 drivers/usb/host/xhci-rcar.c
- create mode 100644 drivers/usb/host/xhci-rcar.h
-
+diff --git a/arch/sh/include/uapi/asm/posix_types_32.h b/arch/sh/include/uapi/asm/posix_types_32.h
+index ba0bdc4..cfc4331 100644
+--- a/arch/sh/include/uapi/asm/posix_types_32.h
++++ b/arch/sh/include/uapi/asm/posix_types_32.h
+@@ -17,6 +17,12 @@ typedef unsigned short	__kernel_old_gid_t;
+ typedef unsigned short	__kernel_old_dev_t;
+ #define __kernel_old_dev_t __kernel_old_dev_t
+ 
++typedef long	__kernel_time_t;
++#define __kernel_time_t __kernel_time_t
++
++typedef long	__kernel_clock_t;
++#define __kernel_clock_t __kernel_clock_t
++
+ #include <asm-generic/posix_types.h>
+ 
+ #endif /* __ASM_SH_POSIX_TYPES_32_H */
 -- 
-1.7.9.5
+1.8.2.1
+
