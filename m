@@ -1,46 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 02 May 2014 19:46:41 +0000
+From: Joerg Roedel <joro@8bytes.org>
+Date: Tue, 13 May 2014 17:55:29 +0000
 Subject: Re: [PATCH v3] iommu: Add driver for Renesas VMSA-compatible IPMMU
-Message-Id: <4429714.XiPXBbktvU@avalon>
+Message-Id: <20140513175529.GD23770@8bytes.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396435657-3922-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20140409105703.GV13491@8bytes.org> <3961471.IYYJh47THK@avalon>
-In-Reply-To: <3961471.IYYJh47THK@avalon>
+References: <1396435657-3922-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1396435657-3922-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Joerg Roedel <joro@8bytes.org>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Cc: iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org
 
-Hi Joerg,
+Hi Laurent,
 
-On Thursday 17 April 2014 12:14:00 Laurent Pinchart wrote:
-> On Wednesday 09 April 2014 12:57:03 Joerg Roedel wrote:
-> > On Wed, Apr 09, 2014 at 12:43:57PM +0200, Laurent Pinchart wrote:
-> > > On Wednesday 02 April 2014 12:47:37 Laurent Pinchart wrote:
-> > > > Signed-off-by: Laurent Pinchart
-> > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > ---
-> > > > 
-> > > >  drivers/iommu/Kconfig                    |   12 +
-> > > >  drivers/iommu/Makefile                   |    1 +
-> > > >  drivers/iommu/ipmmu-vmsa.c               | 1070 +++++++++++++++++++++
-> > > >  include/linux/platform_data/ipmmu-vmsa.h |   24 +
-> > > >  4 files changed, 1107 insertions(+)
-> > > >  create mode 100644 drivers/iommu/ipmmu-vmsa.c
-> > > >  create mode 100644 include/linux/platform_data/ipmmu-vmsa.h
-> > > > 
-> > > > Joerg, could you please take this patch in your tree for v3.16 ?
-> > > 
-> > > Ping ?
-> > 
-> > I am looking into this when the merge window is over.
-> 
-> I think it's over now :-)
+Sorry for taking so long with this. The code looks good and clean
+overall, besides my second comment.
 
-Ping ?
+On Wed, Apr 02, 2014 at 12:47:37PM +0200, Laurent Pinchart wrote:
+> +static void ipmmu_domain_destroy_context(struct ipmmu_vmsa_domain *domain)
+> +{
+> +	/*
+> +	 * Disable the context. Flush the TLB as required when modifying the
+> +	 * context registers.
+> +	 *
+> +	 * TODO: Is TLB flush really needed ?
+> +	 */
+> +	ipmmu_ctx_write(domain, IMCTR, IMCTR_FLUSH);
+> +	ipmmu_tlb_sync(domain);
 
--- 
-Regards,
+Isn't this the same as ipmmu_tlb_invalidate()?
 
-Laurent Pinchart
+> +static int ipmmu_attach_device(struct iommu_domain *io_domain,
+> +			       struct device *dev)
+> +{
+> +	struct ipmmu_vmsa_device *mmu = dev->archdata.iommu;
+> +	struct ipmmu_vmsa_domain *domain = io_domain->priv;
+> +	const struct ipmmu_vmsa_master *master;
+> +	unsigned long flags;
+> +	int ret = 0;
+> +
+> +	if (!mmu) {
+> +		dev_err(dev, "Cannot attach to IPMMU\n");
+> +		return -ENXIO;
+> +	}
+> +
+> +	spin_lock_irqsave(&domain->lock, flags);
+> +
+> +	if (!domain->mmu) {
+> +		/* The domain hasn't been used yet, initialize it. */
+> +		domain->mmu = mmu;
+> +		ret = ipmmu_domain_init_context(domain);
+> +	} else if (domain->mmu != mmu) {
+> +		/*
+> +		 * Something is wrong, we can't attach two devices using
+> +		 * different IOMMUs to the same domain.
+> +		 */
+
+Why not? This is something the IOMMU-API basically supports (multiple
+devices behind different IOMMUs in the same domain). Can't you just use
+the same page-table for different IOMMUs?
+
+
+	Joerg
+
 
