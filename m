@@ -1,57 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 May 2014 01:31:05 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: armadillo-reference dts: Add matching LED labels
-Message-Id: <20140513013105.GB10973@verge.net.au>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 13 May 2014 16:59:21 +0000
+Subject: Re: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
+Message-Id: <20140513165921.GK12304@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="MBvrg9yBmBnxRi7n"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399550800-25656-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1399550800-25656-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20131205000928.GI29268@sirena.org.uk> <2248657.5UVkYxaC6z@avalon>
+ <2193707.R9XiqBsnU4@avalon>
+In-Reply-To: <2193707.R9XiqBsnU4@avalon>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 08, 2014 at 02:06:40PM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Should the node names be changed from "led[1-4]" to "led[3-6]", too?
 
-Yes, I think so. At the very least that would seem to be
-the way it has been done for newer renesas SoCs.
+--MBvrg9yBmBnxRi7n
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> 
->  .../boot/dts/r8a7740-armadillo800eva-reference.dts |    4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> index 486007d7ffe4..8c7255438292 100644
-> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-> @@ -106,15 +106,19 @@
->  		compatible = "gpio-leds";
->  		led1 {
->  			gpios = <&pfc 102 GPIO_ACTIVE_HIGH>;
-> +			label = "LED3";
->  		};
->  		led2 {
->  			gpios = <&pfc 111 GPIO_ACTIVE_HIGH>;
-> +			label = "LED4";
->  		};
->  		led3 {
->  			gpios = <&pfc 110 GPIO_ACTIVE_HIGH>;
-> +			label = "LED5";
->  		};
->  		led4 {
->  			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
-> +			label = "LED6";
->  		};
->  	};
->  
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+On Tue, May 13, 2014 at 02:06:23AM +0200, Laurent Pinchart wrote:
+
+> What's the status of this ? The gpio regulator driver now defaults to vol=
+tage=20
+> regulator when the regulator-type property is not set. Should the DT bind=
+ings=20
+> document the property as optional (I can submit a patch for that), or do =
+you=20
+> consider that the gpio regulator driver should support voltage regulators=
+ only=20
+> when used with DT, and just keep the regulator-type property support in t=
+he=20
+> driver for backward compatibility ?
+
+I don't really care either way, I did write a patch for the bindings but
+there was some language lawyering over it and I never cared enough to
+get round to updating it.
+
+--MBvrg9yBmBnxRi7n
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTck9mAAoJELSic+t+oim9flUP+wY5sh1P9PWuuQqcJoBx8rxV
+cUlSprpLHC3fwt7rxqkHOUPz3blJopPgSKz/BhC3if+PjdcTGIw50isJk2rllfVi
+1j4qotTlAO6MhuPjk/wn1gEOyzTxNb+cpKCVeOgfpW1DdPNer6NuRALZQ7RfswEJ
+cpGeFTPiBRJnWain/28oe/FEYwKdvM3hbyuPtVwe1q1hG06OyjVkZlZP26Y2cBoA
+s8vHwom3BAB3JnzTSwGZ83zHDvdMentgdbJR0N5m4HSznRakIOgC8KzTyJA9FBXj
+k2ahrPqhBNEvh7mj3HCZXmm4AT6wgkDVO2dp7kPINjVSCAxiyC5Eyf3b/2MbLSD9
+rsQP6ww+Yk7GfzfI8bHEM7G3UrEVGkN7UudP5twms93QjizNEe5uwgJ4j9+38OBB
+uE2P5YnPZ1sF/yrj+yuHHAEX4syp2yEDiq3Xj0FX9RP4p3B3XFyjzFjP5jSRUEvN
++LFvYMbBAd9bwLAkca4F76aSb27kCYSPuBb/3/Q5G52hXUjsuX+6NqoSYjaViy2H
+r9BqaIx7EmZ784Um/8/xXJOki69asW8iZzrmww71AjGXRVYRaZkMM59btWgYoMJs
+fAUOMRifK0IscKYVP1c6QcX/6ZwVlDMoUocrJvgdnUsK3eN2/OfvH+78YvgsWm3R
+IA4fx+sbFb/F94T/y0z6
+=0KZY
+-----END PGP SIGNATURE-----
+
+--MBvrg9yBmBnxRi7n--
