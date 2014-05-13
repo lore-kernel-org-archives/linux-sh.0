@@ -1,38 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:26 +0000
-Subject: [PATCH 01/12] ARM: shmobile: r7s72100: document MSTP clock support
-Message-Id: <b557deadc5cca47aff93781b21fef468233c2ea8.1400201383.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 13 May 2014 09:23:39 +0000
+Subject: Re: [PATCH v2 1/9] ARM: shmobile: r8a7790: add dmac0,dmac1 clocks
+Message-Id: <CAMuHMdVn84FcQCpn6k8caPJGV9wDAi3m0_jwUARDem-Y05+NnQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
+	<1397511312-4845-2-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397511312-4845-2-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ben Dooks <ben.dooks@codethink.co.uk>
+Cc: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hi Ben,
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Mike Turquette <mturquette@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+On Mon, Apr 14, 2014 at 11:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -671,16 +671,17 @@
+>                         compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+>                         reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+>                         clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+> -                                <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
+> +                                <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&hp_clk>, <&hp_clk>;
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 5992dce..b5fc726 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
- Required Properties:
- 
-   - compatible: Must be one of the following
-+    - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
--- 
-1.8.5.2
+According to the docs, the parent clock of SYS-DMAC[01] is the ZS clock
+(at 260 MHz), not the HP clock (at 130 MHz).
 
+>                         #clock-cells = <1>;
+>                         renesas,clock-indices = <
+>                                 R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
+>                                 R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
+>                                 R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
+> +                               R8A7790_CLK_SYS_DMAC0 R8A7790_CLK_SYS_DMAC1
+
+I know order doesn't really matter, but all other members are sorted by
+value, so R8A7790_CLK_SYS_DMAC1 should come before
+R8A7790_CLK_SYS_DMAC0.
+
+>                         >;
+>                         clock-output-names >                                 "scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+> -                               "scifb1", "msiof1", "msiof3", "scifb2";
+> +                               "scifb1", "msiof1", "msiof3", "scifb2", "dmac0", "dmac1";
+
+"sys-dmac0", "sys-dmac1" (and order changes, cfr. my comment above),
+to match the documentation?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
