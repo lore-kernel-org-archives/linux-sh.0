@@ -1,32 +1,96 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 28 May 2014 07:24:02 +0000
-Subject: [PATCH 7/8] ARM: shmobile: koelsch: Add PCIe to defconfig
-Message-Id: <1401261843-6964-8-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 13 May 2014 08:03:42 +0000
+Subject: [PATCH 15/15] ARM: shmobile: r7s72100: Switch to new style MTU2 device
+Message-Id: <c17fcfbcc0f6b4f3cae761149e1a6108dd6750e7.1399967755.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1399967755.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1399967755.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
+style of platform data that handles the timer as a single device with
+multiple channel. Switch from the old-style platform data to the
+new-style platform data.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/koelsch_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/clock-r7s72100.c |  2 +-
+ arch/arm/mach-shmobile/setup-r7s72100.c | 26 +++++++++-----------------
+ 2 files changed, 10 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/configs/koelsch_defconfig b/arch/arm/configs/koelsch_defconfig
-index 86faab5..ec14547 100644
---- a/arch/arm/configs/koelsch_defconfig
-+++ b/arch/arm/configs/koelsch_defconfig
-@@ -15,6 +15,9 @@ CONFIG_MACH_KOELSCH=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PCI=y
-+CONFIG_PCI_MSI=y
-+CONFIG_PCI_RCAR_GEN2_PCIE=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
- CONFIG_NR_CPUS=8
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index bee0073..644f1c2 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -204,7 +204,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
+ 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
+ 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+-	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
+@@ -215,6 +214,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
+ 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
++	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP33]),
+ };
+ 
+ void __init r7s72100_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
+index 9c0b3a9..545db15 100644
+--- a/arch/arm/mach-shmobile/setup-r7s72100.c
++++ b/arch/arm/mach-shmobile/setup-r7s72100.c
+@@ -62,24 +62,16 @@ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
+ 					  sizeof(scif##index##_platform_data))
+ 
+ 
+-static struct sh_timer_config mtu2_0_platform_data __initdata = {
+-	.name = "MTU2_0",
+-	.timer_bit = 0,
+-	.channel_offset = -0x80,
+-	.clockevent_rating = 200,
++static struct resource mtu2_resources[] __initdata = {
++	DEFINE_RES_MEM(0xfcff0000, 0x400),
++	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
+ };
+ 
+-static struct resource mtu2_0_resources[] __initdata = {
+-	DEFINE_RES_MEM(0xfcff0300, 0x27),
+-	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
+-};
+-
+-#define r7s72100_register_mtu2(idx)					\
+-	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
+-					  idx, mtu2_##idx##_resources,	\
+-					  ARRAY_SIZE(mtu2_##idx##_resources), \
+-					  &mtu2_##idx##_platform_data,	\
+-					  sizeof(struct sh_timer_config))
++#define r7s72100_register_mtu2()					\
++	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
++					  -1, mtu2_resources,		\
++					  ARRAY_SIZE(mtu2_resources),	\
++					  NULL, 0)
+ 
+ void __init r7s72100_add_dt_devices(void)
+ {
+@@ -91,7 +83,7 @@ void __init r7s72100_add_dt_devices(void)
+ 	r7s72100_register_scif(5);
+ 	r7s72100_register_scif(6);
+ 	r7s72100_register_scif(7);
+-	r7s72100_register_mtu2(0);
++	r7s72100_register_mtu2();
+ }
+ 
+ void __init r7s72100_init_early(void)
 -- 
-1.9.3
+1.8.5.2
 
