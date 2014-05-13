@@ -1,68 +1,108 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 19:15:07 +0000
-Subject: [PATCH v2 01/10] i2c: sh_mobile: replace magic hex values with constants
-Message-Id: <1399058116-7721-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 13 May 2014 08:03:30 +0000
+Subject: [PATCH 03/15] ARM: shmobile: sh73a0: Switch to new style CMT device
+Message-Id: <652256fd475053f7fd8c2cd3e85f37be96d594db.1399967755.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1399058116-7721-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <cover.1399967755.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1399967755.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-No functional change, binaries are identical.
+The CMT (Compare Match Timer) driver implements a new style of platform
+data that handles the timer as a single device with multiple channel.
+Switch from the old-style platform data to the new-style platform data.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-sh73a0.c |  2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c | 36 ++++++++++++-----------------------
+ 2 files changed, 13 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 1d79585ba4b3..d91625eea6bb 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -316,7 +316,7 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 23edf83..ca03989 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -650,7 +650,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+-	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+@@ -683,6 +682,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+ 	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
++	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
+ };
  
- 	switch (op) {
- 	case OP_START: /* issue start and trigger DTE interrupt */
--		iic_wr(pd, ICCR, 0x94);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_TRS | ICCR_BBSY);
- 		break;
- 	case OP_TX_FIRST: /* disable DTE interrupt and write data */
- 		iic_wr(pd, ICIC, ICIC_WAITE | ICIC_ALE | ICIC_TACKE);
-@@ -327,10 +327,11 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
- 		break;
- 	case OP_TX_STOP: /* write data and issue a stop afterwards */
- 		iic_wr(pd, ICDR, data);
--		iic_wr(pd, ICCR, pd->send_stop ? 0x90 : 0x94);
-+		iic_wr(pd, ICCR, pd->send_stop ? ICCR_ICE | ICCR_TRS
-+					       : ICCR_ICE | ICCR_TRS | ICCR_BBSY);
- 		break;
- 	case OP_TX_TO_RX: /* select read mode */
--		iic_wr(pd, ICCR, 0x81);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_SCP);
- 		break;
- 	case OP_RX: /* just read data */
- 		ret = iic_rd(pd, ICDR);
-@@ -338,13 +339,13 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
- 	case OP_RX_STOP: /* enable DTE interrupt, issue stop */
- 		iic_wr(pd, ICIC,
- 		       ICIC_DTEE | ICIC_WAITE | ICIC_ALE | ICIC_TACKE);
--		iic_wr(pd, ICCR, 0xc0);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_RACK);
- 		break;
- 	case OP_RX_STOP_DATA: /* enable DTE interrupt, read data, issue stop */
- 		iic_wr(pd, ICIC,
- 		       ICIC_DTEE | ICIC_WAITE | ICIC_ALE | ICIC_TACKE);
- 		ret = iic_rd(pd, ICDR);
--		iic_wr(pd, ICCR, 0xc0);
-+		iic_wr(pd, ICCR, ICCR_ICE | ICCR_RACK);
- 		break;
- 	}
+ void __init sh73a0_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index f74ab53..71d0e44 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -104,35 +104,23 @@ SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
+ SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
+ SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
  
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 80,
+-	.clocksource_rating = 125,
++static struct sh_timer_config cmt1_platform_data = {
++	.channels_mask = 0x3f,
+ };
+ 
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(65),
+-		.flags	= IORESOURCE_IRQ,
+-	},
++static struct resource cmt1_resources[] = {
++	DEFINE_RES_MEM(0xe6138000, 0x200),
++	DEFINE_RES_IRQ(gic_spi(65)),
+ };
+ 
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
++static struct platform_device cmt1_device = {
++	.name		= "sh-cmt-48",
++	.id		= 1,
+ 	.dev = {
+-		.platform_data	= &cmt10_platform_data,
++		.platform_data	= &cmt1_platform_data,
+ 	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
++	.resource	= cmt1_resources,
++	.num_resources	= ARRAY_SIZE(cmt1_resources),
+ };
+ 
+ /* TMU */
+@@ -746,7 +734,7 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
++	&cmt1_device,
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
 -- 
-1.9.2
+1.8.5.2
 
