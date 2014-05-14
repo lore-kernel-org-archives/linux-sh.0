@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 May 2014 08:03:28 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Clock Updates for v3.16
-Message-Id: <cover.1399967342.git.horms+renesas@verge.net.au>
+Date: Wed, 14 May 2014 07:26:55 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Boards Updates for v3.16
+Message-Id: <cover.1400052350.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -13,39 +13,34 @@ To: linux-arm-kernel@lists.infradead.org
 Hi Olof, Hi Kevin, Hi Arnd,
 
 Please consider these second round of
-Renesas ARM based SoC clock updates for v3.16.
+Renesas ARM based SoC boards updates for v3.16.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-clock-for-v3.16,
-which you have already pulled.
+such requests, tagged as renesas-boards-for-v3.16,
+which you have previously pulled.
 
 
-The following changes since commit 932616eed0308cbebbb20a079e4bed3674bf1117:
+The following changes since commit a09b2f0ba170dc89a67d6c4c4f027b37a085dad9:
 
-  ARM: shmobile: r8a7790: remove old style audio clock (2014-04-14 12:49:43 +0900)
+  ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI FLASH (2014-04-15 08:13:22 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clock2-for-v3.16
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.16
 
-for you to fetch changes up to a505daa501dc3f02b08d0b48b049bce719299b74:
+for you to fetch changes up to fd105ecf17fe459d979f336a7389d87172a1cf6d:
 
-  ARM: shmobile: r8a7791: Correct SYS-DMAC clock defines (2014-05-13 10:16:42 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Clock Updates for v3.16
-
-r8a7791 (R-Car M2) SoC
-* Correct SYS-DMAC clock defines
-
-r8a7740 (R-Mobile A1) SoC
-* Correct name of DT Ethernet clock
+  ARM: shmobile: Minor cleanup of the Armadillo legacy board code (2014-05-11 20:59:57 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      ARM: shmobile: r8a7740: Correct name of DT Ethernet clock
-      ARM: shmobile: r8a7791: Correct SYS-DMAC clock defines
+Second Round of Renesas ARM Based SoC Boards Updates for v3.16
 
- arch/arm/mach-shmobile/clock-r8a7740.c    | 2 +-
- include/dt-bindings/clock/r8a7791-clock.h | 3 ++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
+r8a7740 (R-Mobile A1) based Armadillo800 EVA board
+* Minor cleanup of the Armadillo legacy board code
+
+----------------------------------------------------------------
+Magnus Damm (1):
+      ARM: shmobile: Minor cleanup of the Armadillo legacy board code
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
