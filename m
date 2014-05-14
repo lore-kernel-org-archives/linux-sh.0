@@ -1,98 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:39:30 +0000
-Subject: [PATCH v2 1/4] ARM: shmobile: r8a7779: Add scif nodes to dtsi
-Message-Id: <1400153973-25546-2-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 May 2014 14:47:46 +0000
+Subject: [PATCH v3 2/2] ARM: shmobile: lager-reference: Remove workarounds for core clock issues
+Message-Id: <1400078866-5694-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Now the core clock issues have been fixed by commit
+3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh: compile
+drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI"), revert the following
+2 commits:
+  - f98b55d730492e664fb2649bd7054fec0fe81acd ("ARM: shmobile: Add Lager
+    clock workarounds for SDHI and MMCIF"),
+  - aa5de826afe747c353162bbc116c63ab5335f91c ("ARM: shmobile:
+    lager-reference: Work around core clock issues").
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-v2
-* As suggested by Laurent Pinchart
-  - The correct size of the register is 256 not 265.
-    And to make this a bit more readable use 0x100.
-  - List compat strings from most to least specific.
----
- arch/arm/boot/dts/r8a7779.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+This depends on 3c90c55dcde745bed81f6447f24ba96bda43d984 having landed
+in Linus' tree
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index bdaaadc..7c3b2d3 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -192,6 +192,66 @@
- 		status = "disabled";
- 	};
+v3:
+  - Add Reviewed-by
+v2:
+  - New
+---
+ arch/arm/mach-shmobile/board-lager-reference.c |   14 --------------
+ 1 file changed, 14 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 749832e3f33c..e55d817377ab 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -98,23 +98,9 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
+ };
  
-+	scif0: serial@ffe40000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe40000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@ffe41000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe41000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@ffe42000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe42000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@ffe43000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe43000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@ffe44000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe44000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@ffe45000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe45000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
+-/*
+- * This is a really crude hack to work around core platform clock issues
+- */
+-static const struct clk_name clk_enables[] __initconst = {
+-	{ "ether", NULL, "ee700000.ethernet" },
+-	{ "msiof1", NULL, "e6e10000.spi" },
+-	{ "mmcif1", NULL, "ee220000.mmc" },
+-	{ "qspi_mod", NULL, "e6b10000.spi" },
+-	{ "sdhi0", NULL, "ee100000.sd" },
+-	{ "sdhi2", NULL, "ee140000.sd" },
+-	{ "thermal", NULL, "e61f0000.thermal" },
+-};
+-
+ static void __init lager_add_standard_devices(void)
+ {
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
+ 	r8a7790_add_dt_devices();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
 -- 
-1.8.5.2
+1.7.9.5
 
