@@ -1,31 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 14 May 2014 02:50:08 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 14 May 2014 10:26:38 +0000
 Subject: Re: [PATCH v5 01/11] ARM: shmobile: r7s72100: document MSTP clock support
-Message-Id: <20140514025005.GA7733@verge.net.au>
+Message-Id: <CAMuHMdWK1WAePx3N_ybPkWcoTtP_6PdcEPNEyBv02A9zOZSWOg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
  <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
  <20140513000513.5943.68810@quantum>
- <20140513015708.GA29336@verge.net.au>
- <20140513215929.GA3967@katana> <20140513235335.GF6784@verge.net.au>
- <20140514001136.GA2596@katana>
-In-Reply-To: <20140514001136.GA2596@katana>
+In-Reply-To: <20140513000513.5943.68810@quantum>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 14, 2014 at 02:11:36AM +0200, Wolfram Sang wrote:
-> > I will do my best. But I need to have pull-requests sent off
-> > to the arm-soc maintainers before rc6 appears. And ideally patches
-> > should have been present in next for a day before I send such a request.
-> > So by my calculations I need to push things to my next tree very
-> > soon (i.e. today) in order to reach the above mentioned criteria.
-> 
-> Thank you very much! Luckily(?) I can't sleep today, so I'll send the
-> patches tested against renesas/devel in a few minutes.
+Hi Mike, Stephen,
 
-Luckily ! :^)
+On Tue, May 13, 2014 at 2:05 AM, Mike Turquette <mturquette@linaro.org> wrote:
+> Quoting Wolfram Sang (2014-04-29 03:03:32)
+>> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>>
+>> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>
+> Acked-by: Mike Turquette <mturquette@linaro.org>
+>
+> No need to take this through the clk tree. Feel free to send it with the
+> rest through arm-soc.
 
-I see the new series and am queuing it up.
-So far, so good :)
+(merging in clk/clk-next)
+
+Note that this will cause a conflict for you, as Mike applied commit
+5483bf698f42a6f0467463b064084eb888298232 ("clk: shmobile: r8a7779:
+Add MSTP clock support"), which adds a line at the exact same spot.
+
+Resolution: both lines should be kept.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
