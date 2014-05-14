@@ -1,42 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 May 2014 23:53:35 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 00:11:36 +0000
 Subject: Re: [PATCH v5 01/11] ARM: shmobile: r7s72100: document MSTP clock support
-Message-Id: <20140513235335.GF6784@verge.net.au>
+Message-Id: <20140514001136.GA2596@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="/04w6evG8XlLl3ft"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
  <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
  <20140513000513.5943.68810@quantum>
  <20140513015708.GA29336@verge.net.au>
- <20140513215929.GA3967@katana>
-In-Reply-To: <20140513215929.GA3967@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <20140513215929.GA3967@katana> <20140513235335.GF6784@verge.net.au>
+In-Reply-To: <20140513235335.GF6784@verge.net.au>
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 13, 2014 at 11:59:29PM +0200, Wolfram Sang wrote:
-> Simon,
-> 
-> > Its a getting a little to close to rc6 for me to take this series for v3.16,
-> > especially considering some bits seem to need tweaking (I am thinking of sci).
-> > 
-> > Could you either:
-> > 
-> > * Re-post it without the sci changes and
-> >   I'll look at queuing it up for v3.17 or;
-> 
-> If it is possible and does not cause too much burden for you, I'd prefer
-> to include it soonish and handle the fixups incrementally. Since it
-> touches a few files which change a lot, rebasing and retesting is extra
-> work (done twice for this series IIRC) and thus I'd prefer to do the
-> clenaups as seperate patches.
-> 
-> So, if no one objects, I'll resend tomorrow with Geerts fixup folded
-> into my series and retested against latest renesas/devel.
 
-I will do my best. But I need to have pull-requests sent off
-to the arm-soc maintainers before rc6 appears. And ideally patches
-should have been present in next for a day before I send such a request.
-So by my calculations I need to push things to my next tree very
-soon (i.e. today) in order to reach the above mentioned criteria.
+--/04w6evG8XlLl3ft
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+> I will do my best. But I need to have pull-requests sent off
+> to the arm-soc maintainers before rc6 appears. And ideally patches
+> should have been present in next for a day before I send such a request.
+> So by my calculations I need to push things to my next tree very
+> soon (i.e. today) in order to reach the above mentioned criteria.
+
+Thank you very much! Luckily(?) I can't sleep today, so I'll send the
+patches tested against renesas/devel in a few minutes.
+
+
+--/04w6evG8XlLl3ft
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTcrS3AAoJEBQN5MwUoCm2FAIQAJlqZxrkkhB36e2+tLHLe+bk
+GGGneh2EgFrk0J1ZjyjTNpbKGBLkshFKbySHjSBi9W/XCRnABEK8xCck023l7OIH
+r0hMZwy9mUp7idZ3DJMID9v4BeFiGsYpNxE8NqajZ9hmhshdWlc03Ma61XoORt6h
+OremJLrbPV4oAYifEUSBn3DMEX6kJ3ZPGngdsiFJ7R5C+xZrmz76P+nZGUpfwsj8
+5rrgdtnjP/fNNgxe+89WdwCVVdJH2LidAKxIL/P3GPkQlEan7k8dl/MyspItOZjo
+I6EPOQj6kfXS1GakW4q0Fr09iB2NaJt8ZOUbWW+OPNFpfLTAxfOdIq/RkbBc6WLK
+z2T+vWpyHVinaQQ91kZej/CAqDSxlO4Nb0xw3WgXKYCVUcQ+Ho/5KczqJoyrhXiw
+VxLfHWc5F/mNLFslaljDC36sXhjb3+I3l859Kbxh1hDkE7/B0EhlQXmSHgx8A0TM
+q2MkpiGclOG91TCVi9yDJmaS8mo7IiV2y9jEumSj2LUJGIgvr79Qur/a0qv/MEyQ
+V1cfF7uaAaBD0c2eU/2F1D/tGx4ATblUNl2HjuT2QPE6nIgco7OdPMIq9hzEZALh
+n4f7uN7SZ3d+lBdLHM2p+G4c0gPmoUeZz+7Z9nNGBGhNcLIBBz8R09DEWH6u/c0i
+md1EijjmWDF83vhywnOQ
+=MwGk
+-----END PGP SIGNATURE-----
+
+--/04w6evG8XlLl3ft--
