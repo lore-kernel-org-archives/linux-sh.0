@@ -1,60 +1,43 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 May 2014 13:16:50 +0000
-Subject: [PATCH v2 00/05] staging: Emma Mobile USB driver and KZM9D board code V2
-Message-Id: <20140529131650.2329.3197.sendpatchset@w520>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 01:10:14 +0000
+Subject: [PATCH v6 10/12] ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock support
+Message-Id: <1400029816-24028-11-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
+To: linux-arm-kernel@lists.infradead.org
 
-staging: Emma Mobile USB driver and KZM9D board code V2
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-[PATCH v2 01/05] staging: emxx_udc: Add Emma Mobile USB Gadget driver
-[PATCH v2 02/05] staging: emxx_udc: I/O memory and IRQ resource support
-[PATCH v2 03/05] staging: emxx_udc: Add TODO file
-[PATCH v2 04/05] staging: board: Initial board staging support
-[PATCH v2 05/05] staging: board: kzm9d: Board staging support for emxx_udc
+Not used anymore since we switched to CCF.
 
-This patch series is V2 of the old USB Gadget driver for Emma Mobile
-that gets slightly adjusted to make use of the platform device interface
-which in turn is used to add USB Gadget support to the KZM9D board.
-
-Two separate staging components are included in this series:
-1) the emxx_udc driver - from out-of-tree Android 2.6.35.7
-2) board staging support for KZM9D - platform device for DT-only KZM9D
-
-The two components above will be used to continously improve the driver
-and board integration code until the driver can be moved out of staging
-and/or DT bindings are available so the board staging platform device code
-can be replaced with a DT node.
-
-A few minor things have happened since V1:
-- Added TODO file for emxx_udc
-- Broke out board staging base support, included TODO file
-- Added code to avoid registering platform device if DT node exists
-- Modified KZM9D board code build condition to use SoC Kconfig entry
-
-Many thanks to Dan Carpenter, Geert Uytterhoeven and Greg KH for
-feedback!
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
+ arch/arm/mach-shmobile/clock-r7s72100.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
- Written against renesas-devel-v3.15-rc7-20140528
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 1a797fe9e42f..df187484de5d 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -194,11 +194,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
+-	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
+-	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
+-	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
+-	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
+-	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+ 
+ 	/* ICK */
+-- 
+1.9.2
 
- drivers/staging/Kconfig             |    4 
- drivers/staging/Makefile            |    2 
- drivers/staging/board/Kconfig       |    7 
- drivers/staging/board/Makefile      |    2 
- drivers/staging/board/TODO          |    2 
- drivers/staging/board/board.c       |   41 
- drivers/staging/board/board.h       |   20 
- drivers/staging/board/kzm9d.c       |   19 
- drivers/staging/emxx_udc/Kconfig    |   10 
- drivers/staging/emxx_udc/Makefile   |    1 
- drivers/staging/emxx_udc/TODO       |    4 
- drivers/staging/emxx_udc/emxx_udc.c | 3616 ++++++++++++++++++++++++++++++++++-
- drivers/staging/emxx_udc/emxx_udc.h |  671 ++++++
- 13 files changed, 4351 insertions(+), 48 deletions(-)
