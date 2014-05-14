@@ -1,61 +1,57 @@
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-Date: Thu, 29 May 2014 23:40:25 +0000
-Subject: Re: [PATCH] gpio: removes all usage of gpiochip_remove retval
-Message-Id: <20140530094025.3b78301e@canb.auug.org.au>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Sig_/852XE2D+8ii.R+aAPw7pJ16"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 May 2014 14:51:19 +0000
+Subject: [PATCH v3 1/4] ARM: shmobile: armadillo800eva reference dts: Add matching LED labels
+Message-Id: <1400079082-6340-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401400492-26175-1-git-send-email-berthe.ab@gmail.com>
- <5387B149.20408@gmail.com>
- <CABprBybQ-Jyk95zCqnoWjjyzhNyHVbsbEhb=vA5d=ZYp95_bFA@mail.gmail.com>
-In-Reply-To: <CABprBybQ-Jyk95zCqnoWjjyzhNyHVbsbEhb=vA5d=ZYp95_bFA@mail.gmail.com>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, devicetree@vger.kernel.org
 
---Sig_/852XE2D+8ii.R+aAPw7pJ16
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+And make the node name numbering match the label numbering.
 
-Hi abdoulaye,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+v3:
+  - Make node name numbering match label numbering
+v2:
+  - New
+---
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-On Fri, 30 May 2014 01:16:22 +0200 abdoulaye berthe <berthe.ab@gmail.com> w=
-rote:
->
-> The aim of this patch is to make gpiochip_remove() behavior consistent,
-> especially when issuing a remove request while the chipio chip is
-> still requested. A patch has been submitted to change the return value of
-> gpiochip_remove() from int to void. This one updates users of the return
-> value:
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 486007d7ffe4..f6ef73ff49e8 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -104,17 +104,21 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
+-		led1 {
++		led3 {
+ 			gpios = <&pfc 102 GPIO_ACTIVE_HIGH>;
++			label = "LED3";
+ 		};
+-		led2 {
++		led4 {
+ 			gpios = <&pfc 111 GPIO_ACTIVE_HIGH>;
++			label = "LED4";
+ 		};
+-		led3 {
++		led5 {
+ 			gpios = <&pfc 110 GPIO_ACTIVE_HIGH>;
++			label = "LED5";
+ 		};
+-		led4 {
++		led6 {
+ 			gpios = <&pfc 177 GPIO_ACTIVE_HIGH>;
++			label = "LED6";
+ 		};
+ 	};
+ 
+-- 
+1.7.9.5
 
-Then you need to keep these two patch in a series with this one first
-to make sure that the other patch is not applied without this one.
-
-And you should add the above explanation to the changelog for this
-patch.
-
---=20
-Cheers,
-Stephen Rothwell                    sfr@canb.auug.org.au
-
---Sig_/852XE2D+8ii.R+aAPw7pJ16
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBCAAGBQJTh8VuAAoJEMDTa8Ir7ZwV8iEQAICWaN/UMPsdzewqsMiXXSMh
-C5svkPpUj+qDUSm6Z89xsBlSrNn5iaa06uiZllN8KLoLbhGpZ5xdGqmMalys33zc
-Bh2lJNCtozIbI1fMW63+W94wMtWNSnUAbX4szSpxbbaZQ3ig9ixXegji8nvONTqw
-QWNjGORnMPvzrCsTrv8/hNYlmeT/9WZwAwVLr9++ldM0fow/SfF251WvmNjheAcq
-2YCd1vEk7ZZ9aFDr463CKP3eeTKDtWaSrdoXLdIvs627tRtfhSuqQF1q6d8B1Vbk
-HR9xx3bANosgA/Fa7rHcWxw8lLr5EDXeaHJieT0I05kXPM1rSIh9tTGAeXivG/LH
-j+FWHe7P3v2qN+mvgqRHIndi1axUhm4ZbqG3Wcg8uAV+rGxemlmkZMWzdMPwzcRA
-YJKTVoc+LbLp4Yb1HpZ4hYbKvxu7iEf8OQJsb9bY3lnm8Rnax4VhQtn15aKn2fLr
-b8xSfM9iGeL1bgEyh5pK4BVgE1+N7Z/7qGfD95EAT9v5cX7di9y+eU8zXb0fmXRh
-V1rV2n9RfrbH3wE8DoR4yC2SeDcQl5F/CwII/zHkymzWTgGvpN4mhk06q0CPhxxO
-nZD317b7OuLQbDbZJ+o/92/XMlOt6Sanno1I27C19ahUMynJAo32O+xHIDdv5AKI
-Dom8qI4Ex3DKkwqflJzw
-=RG4V
------END PGP SIGNATURE-----
-
---Sig_/852XE2D+8ii.R+aAPw7pJ16--
