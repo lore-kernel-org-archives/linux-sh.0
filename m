@@ -1,44 +1,131 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 19 May 2014 10:07:36 +0000
-Subject: [PATCH 0/3] add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <5379D7E8.9070700@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 01:10:08 +0000
+Subject: [PATCH v6 04/12] ARM: shmobile: r7s72100: add scif nodes to dtsi
+Message-Id: <1400029816-24028-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch set adds the USB xHCI support for the R-Car H2 and M2 SoCs.
-These SoCs use an xHCI but still need specific initialization, mainly
-to setup the firmware downloading and the specific registers.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This patch set depends on the following patches:
-	http://marc.info/?l=linux-usb&m0014937401793&w=2
-	http://marc.info/?l=linux-usb&m0014935801786&w=2
-	http://marc.info/?l=linux-usb&m0014933101775&w=2
-	http://marc.info/?l=linux-usb&m0014932301770&w=2
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 96 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 96 insertions(+)
 
-However, this patch set doesn't depend on the following patch because
-this patch set uses the "USB phy", not "phy":
-	http://marc.info/?l=linux-usb&m0025742005303&w=2
-
-Yoshihiro Shimoda (3):
-  usb: host: xhci-plat: add xhci_plat_start()
-  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
-    controllers
-  Documentation: dt-bindings: update xhci-platform DT binding for R-Car
-    Gen2
-
- Documentation/devicetree/bindings/usb/usb-xhci.txt |    3 +-
- drivers/usb/host/Kconfig                           |    8 +
- drivers/usb/host/Makefile                          |    3 +
- drivers/usb/host/xhci-plat.c                       |   25 ++-
- drivers/usb/host/xhci-rcar.c                       |  187 ++++++++++++++++++++
- drivers/usb/host/xhci-rcar.h                       |   37 ++++
- 6 files changed, 261 insertions(+), 2 deletions(-)
- create mode 100644 drivers/usb/host/xhci-rcar.c
- create mode 100644 drivers/usb/host/xhci-rcar.h
-
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 5a6e2481b567..a4a67380b0a2 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -200,6 +200,102 @@
+ 		status = "disabled";
+ 	};
+ 
++	scif0: serial@e8007000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007000 64>;
++		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 191 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif1: serial@e8007800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8007800 64>;
++		interrupts = <0 194 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 195 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif2: serial@e8008000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008000 64>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif3: serial@e8008800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8008800 64>;
++		interrupts = <0 202 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 203 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif4: serial@e8009000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009000 64>;
++		interrupts = <0 206 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 207 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif5: serial@e8009800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe8009800 64>;
++		interrupts = <0 210 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 211 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif6: serial@e800a000 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a000 64>;
++		interrupts = <0 214 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 215 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif7: serial@e800a800 {
++		compatible = "renesas,scif-r7s72100", "renesas,scif";
++		reg = <0xe800a800 64>;
++		interrupts = <0 218 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 219 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	spi0: spi@e800c800 {
+ 		compatible = "renesas,rspi-r7s72100", "renesas,rspi-rz";
+ 		reg = <0xe800c800 0x24>;
 -- 
-1.7.9.5
+1.9.2
+
