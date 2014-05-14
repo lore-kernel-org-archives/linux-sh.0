@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 14 May 2014 03:08:32 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 14 May 2014 03:23:49 +0000
 Subject: Re: [PATCH 00/03] pinctrl: sh-pfc: Extend Multiplatform Support
-Message-Id: <20140514030831.GA22813@verge.net.au>
+Message-Id: <40002984.1NtQc8xob2@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140507231748.29661.46207.sendpatchset@w520>
 In-Reply-To: <20140507231748.29661.46207.sendpatchset@w520>
@@ -10,70 +10,19 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, May 14, 2014 at 08:45:09AM +0900, Simon Horman wrote:
-> On Tue, May 13, 2014 at 11:50:31PM +0200, Laurent Pinchart wrote:
-> > Hi Simon,
-> > 
-> > On Wednesday 14 May 2014 06:42:48 Simon Horman wrote:
-> > > On Tue, May 13, 2014 at 01:24:09PM +0200, Laurent Pinchart wrote:
-> > > > Hi Magnus,
-> > > > 
-> > > > Thank you for the patches.
-> > > > 
-> > > > On Thursday 08 May 2014 08:17:48 Magnus Damm wrote:
-> > > > > pinctrl: sh-pfc: Extend Multiplatform Support
-> > > > > 
-> > > > > [PATCH 01/03] pinctrl: sh-pfc: r8a7740: Allow Multiplatform Build
-> > > > > [PATCH 02/03] pinctrl: sh-pfc: sh73a0: Allow Multiplatform Build
-> > > > > [PATCH 03/03] pinctrl: sh-pfc: r8a73a4: Allow Multiplatform Build
-> > > > > 
-> > > > > These patches enable Multiplatform support for r8a7740, sh73a0 and
-> > > > > r8a73a4.
-> > > > > 
-> > > > > The legacy case is still kept around, so the mach-header is still needed
-> > > > > to allow static GPIO-IRQ assignment. In case of DT the GPIO IRQs are
-> > > > > already provided via DT properties, so we can simply #ifdef out the
-> > > > > static IRQ tables in case of Multiplatform build. Not pretty but it
-> > > > > works.
-> > > > 
-> > > > Well, it builds, but does it really work ? If I'm not mistaken this patch
-> > > > set essentially disables gpio_to_irq support for the above three SoCs as
-> > > > the gpio_pin_to_irq() function (drivers/pinctrl/sh-pfc/gpio.c) will
-> > > > immediately return -ENOSYS due to pfc->info->gpio_irq_size being 0.
-> > > > Worse, the sh_pfc_register_gpiochip() function will fail with an error
-> > > > due to
-> > > >
-> > > >         if (pfc->num_irqs && pfc->num_irqs != pfc->info->gpio_irq_size) {
-> > > >         
-> > > >                 dev_err(pfc->dev, "invalid number of IRQ resources\n");
-> > > >                 return -EINVAL;
-> > > >         
-> > > >         }
-> > > > 
-> > > > with num_irqs being non-zero and gpio_irq_size being 0.
-> > > > 
-> > > > Am I missing something, or is this series completely untested ? :-)
-> > > > 
-> > > > I'll send another (also untested, as I have no Armadillo board anymore
-> > > > ;-)) patch set shortly with a proposed fix.
-> > > 
-> > > I'm happy to provide testing, if you let me know what to look for.
-> > 
-> > Making sure that the GPIO keys still work on Armadillo with a multiplatform 
-> > kernel should be enough.
-> > 
-> > > I'm also happy to provide remote access to a board if you think this would
-> > > be useful in future (its a bit of work for me to set up).
-> > 
-> > It might be useful in the future, but given that the test is pretty simple 
-> > here, it would probably be easier if you could perform it yourself.
-> 
-> Agreed.
-> 
-> As it involves pressing keys I'll defer it until I get to my office a
-> little later today.
+On Wednesday 14 May 2014 12:08:32 Simon Horman wrote:
 
-I got a little ahead of myself there.
+[snip]
 
-I'm not sure how to compile (and boot) a multiplaform kernel for Armadillo.
-Do I need some patches which aren't in the renesas devel branch?
+> I got a little ahead of myself there.
+> 
+> I'm not sure how to compile (and boot) a multiplaform kernel for Armadillo.
+> Do I need some patches which aren't in the renesas devel branch?
+
+You most probably do, and I expect those patches to be in Magnus' tree :-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
