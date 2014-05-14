@@ -1,30 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 May 2014 18:20:32 +0000
-Subject: Re: [PATCH v2 0/3] Add R8A7791/Koelsch/Henninger board PCI DT support
-Message-Id: <537B9CF0.8020000@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 01:10:04 +0000
+Subject: [PATCH v6 00/12] CCF support for Renesas r7s72100
+Message-Id: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+This series moves the r7s72100 platfrom from the legacy clock implementation to
+the common clock framework.
 
-On 05/20/2014 01:48 AM, Sergei Shtylyov wrote:
+This series has been tested with the renesas-devel-v3.15-rc2-20140428 tag. If
+you want to boot into a console, you have a runtime dependency [1] which is
+expected to go away in 3.15-rc6.
 
->     Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-> 'renesas-devel-v3.15-rc5-20140517' tag. Here we add internal PCI support for
-> the R8A7791-based Koelsch and Henninger boards for the sake of getting USB
-> EHCI/OHCI working...
+Changes since V5:
 
-    Forgot to mention that it depends on the internal PCI bridge device tree 
-support reposted just before these patches...
+* rebased and tested against latest renesas/devel-tag
+  (with and without CCF)
+* added acks
+* added the patch from Geert, and folded another into the series
 
-> [1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-> [2/3] ARM: shmobile: koelsch: enable internal PCI
-> [3/3] ARM: shmobile: henninger: enable internal PCI
+PS: A tree can be found here with this series and the dependency patch:
 
-WBR, Sergei
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r7s-ccf
+
+[1] http://www.spinics.net/lists/linux-sh/msg30918.html (clk: shmobile: clk-mstp: change to using clock-indices)
+
+Geert Uytterhoeven (1):
+  ARM: shmobile: Add forward declaration of struct clk to silence
+    warning
+
+Wolfram Sang (11):
+  ARM: shmobile: r7s72100: document MSTP clock support
+  ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
+  ARM: shmobile: r7s72100: add scif nodes to dtsi
+  ARM: shmobile: r7s72100: genmai: add uart alias and activate scif2 as
+    console
+  ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy
+    support
+  ARM: shmobile: r7s72100: add i2c clocks to dtsi
+  ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock
+    support
+  ARM: shmobile: r7s72100: add spi clocks to dtsi
+  ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock
+    support
+  ARM: shmobile: r7s72100: use workaround for non DT-clocks
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  19 +-
+ arch/arm/boot/dts/r7s72100.dtsi                    | 215 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-genmai-reference.c    |  14 +-
+ arch/arm/mach-shmobile/board-genmai.c              |  44 +++++
+ arch/arm/mach-shmobile/clock-r7s72100.c            |   9 -
+ arch/arm/mach-shmobile/include/mach/clock.h        |   1 +
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  43 -----
+ include/dt-bindings/clock/r7s72100-clock.h         |  41 ++++
+ 9 files changed, 331 insertions(+), 56 deletions(-)
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
+
+-- 
+1.9.2
 
