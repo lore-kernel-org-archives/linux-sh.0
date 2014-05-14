@@ -1,62 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 17 May 2014 01:28:28 +0000
-Subject: Re: [PATCH 0/5] remove Genmai Reference from Legacy support
-Message-Id: <20140517012828.GA25731@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 May 2014 14:45:20 +0000
+Subject: [PATCH v3 1/3] drivers: sh: pm_runtime does not need idle callback
+Message-Id: <1400078722-5517-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, May 16, 2014 at 02:10:11PM +0200, Wolfram Sang wrote:
-> Here is the series to remove Genmai Reference from Legacy support since we now
-> have CCF in multiplatform. Removal is done very similar to Marzen and the
-> commit messages are largely from that series. Thanks a lot!
-> 
-> Technically, only the first patch fixes the unbootable Genmai-Reference-with-
-> Legacy-constellation. The other patches clean up the leftovers. Simon, I think
-> you know best when to push which patches?
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Thanks. I appreciate the way you have arranged the series.
+In the runtime_pm idle callback the code assumes that a NULL .runtime_idle
+entry is the same as a .runtime_idle entry that returns 0 as a result. This
+means the entry in drivers/sh/pm_runtime can be removed in favour of just
+leaving the entry NULL.
 
-I have decided to take all of the patches and expedited a pull-request
-(without the usual cooling off period in next, so if it blows up we will
-have some egg on our faces :^).
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+---
+v3:
+  - No changes
+v2:
+  - Add Reviewed-by, Tested-by
+---
+ drivers/sh/pm_runtime.c |    8 --------
+ 1 file changed, 8 deletions(-)
 
-> 
-> The series has been tested with/without multiplatform on a genmai board. The
-> branch is based on my r7s-ccf branch and can also be found here:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/r7s-ccf-with-fixup
-> 
-> Thanks,
-> 
->    Wolfram
-> 
-> Wolfram Sang (5):
->   ARM: shmobile: Remove non-multiplatform Genmai reference support
->   ARM: shmobile: genmai-reference: Remove legacy clock support
->   ARM: shmobile: Sync Genmai DTS with Genmai reference DTS
->   ARM: shmobile: Let Genmai multiplatform boot with Genmai DTB
->   ARM: shmobile: Remove Genmai reference DTS
-> 
->  arch/arm/boot/dts/Makefile                      |  3 +-
->  arch/arm/boot/dts/r7s72100-genmai-reference.dts | 59 -------------------------
->  arch/arm/boot/dts/r7s72100-genmai.dts           | 30 ++++++++++++-
->  arch/arm/mach-shmobile/Kconfig                  | 11 -----
->  arch/arm/mach-shmobile/Makefile                 |  1 -
->  arch/arm/mach-shmobile/Makefile.boot            |  1 -
->  arch/arm/mach-shmobile/board-genmai-reference.c |  8 +---
->  7 files changed, 31 insertions(+), 82 deletions(-)
->  delete mode 100644 arch/arm/boot/dts/r7s72100-genmai-reference.dts
-> 
-> -- 
-> 1.9.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 10c65eb51f85..00b82ec94442 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,18 +21,10 @@
+ #include <linux/slab.h>
+ 
+ #ifdef CONFIG_PM_RUNTIME
+-
+-static int default_platform_runtime_idle(struct device *dev)
+-{
+-	/* suspend synchronously to disable clocks immediately */
+-	return 0;
+-}
+-
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+ 		.runtime_suspend = pm_clk_suspend,
+ 		.runtime_resume = pm_clk_resume,
+-		.runtime_idle = default_platform_runtime_idle,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+1.7.9.5
+
