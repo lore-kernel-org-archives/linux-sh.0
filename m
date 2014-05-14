@@ -1,147 +1,173 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 May 2014 08:53:59 +0000
-Subject: [PATCH 02/03] staging: emxx_udc: I/O memory and IRQ resource support
-Message-Id: <20140522085359.26279.50368.sendpatchset@w520>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 01:10:06 +0000
+Subject: [PATCH v6 02/12] ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+Message-Id: <1400029816-24028-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140522085339.26279.83340.sendpatchset@w520>
-In-Reply-To: <20140522085339.26279.83340.sendpatchset@w520>
+References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Adjust the emxx_udc driver to make use of the standard
-driver model to pass I/O memory and IRQ as resources
-instead of hard coding those things in the driver.
+Only essential clocks are added for now. Other clocks will be added when
+needed.
 
-Needs more work - the VBUS signal is yet not handled.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
+ arch/arm/boot/dts/r7s72100.dtsi            | 86 +++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r7s72100-clock.h | 28 ++++++++++
+ 2 files changed, 113 insertions(+), 1 deletion(-)
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
 
- drivers/staging/emxx_udc/emxx_udc.c |   57 +++++++++++------------------------
- drivers/staging/emxx_udc/emxx_udc.h |    9 -----
- 2 files changed, 18 insertions(+), 48 deletions(-)
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index ee700717a34b..5a6e2481b567 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -1,13 +1,15 @@
+ /*
+  * Device Tree Source for the r7s72100 SoC
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-14 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+  * kind, whether express or implied.
+  */
+ 
++#include <dt-bindings/clock/r7s72100-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -28,6 +30,88 @@
+ 		spi4 = &spi4;
+ 	};
+ 
++	clocks {
++		ranges;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		/* External clocks */
++		extal_clk: extal_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			/* If clk present, value must be set by board */
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		usb_x1_clk: usb_x1_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			/* If clk present, value must be set by board */
++			clock-frequency = <0>;
++			clock-output-names = "usb_x1";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@fcfe0000 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-cpg-clocks",
++				     "renesas,rz-cpg-clocks";
++			reg = <0xfcfe0000 0x18>;
++			clocks = <&extal_clk>, <&usb_x1_clk>;
++			clock-output-names = "pll", "i", "g";
++		};
++
++		/* Fixed factor clocks */
++		b_clk: b_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
++			clock-mult = <1>;
++			clock-div = <3>;
++			clock-output-names = "b";
++		};
++		p1_clk: p1_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
++			clock-mult = <1>;
++			clock-div = <6>;
++			clock-output-names = "p1";
++		};
++		p0_clk: p0_clk {
++			#clock-cells = <0>;
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
++			clock-mult = <1>;
++			clock-div = <12>;
++			clock-output-names = "p0";
++		};
++
++		/* MSTP clocks */
++		mstp3_clks: mstp3_clks@fcfe0420 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0420 4>;
++			clocks = <&p0_clk>;
++			clock-indices = <R7S72100_CLK_MTU2>;
++			clock-output-names = "mtu2";
++		};
++
++		mstp4_clks: mstp4_clks@fcfe0424 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0424 4>;
++			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
++				 <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>;
++			clock-indices = <
++				R7S72100_CLK_SCIF0 R7S72100_CLK_SCIF1 R7S72100_CLK_SCIF2 R7S72100_CLK_SCIF3
++				R7S72100_CLK_SCIF4 R7S72100_CLK_SCIF5 R7S72100_CLK_SCIF6 R7S72100_CLK_SCIF7
++			>;
++			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+new file mode 100644
+index 000000000000..c756f1cf0d52
+--- /dev/null
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -0,0 +1,28 @@
++/*
++ * Copyright (C) 2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R7S72100_H__
++#define __DT_BINDINGS_CLOCK_R7S72100_H__
++
++#define R7S72100_CLK_PLL	0
++
++/* MSTP3 */
++#define R7S72100_CLK_MTU2	3
++
++/* MSTP4 */
++#define R7S72100_CLK_SCIF0	7
++#define R7S72100_CLK_SCIF1	6
++#define R7S72100_CLK_SCIF2	5
++#define R7S72100_CLK_SCIF3	4
++#define R7S72100_CLK_SCIF4	3
++#define R7S72100_CLK_SCIF5	2
++#define R7S72100_CLK_SCIF6	1
++#define R7S72100_CLK_SCIF7	0
++
++#endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+-- 
+1.9.2
 
---- 0002/drivers/staging/emxx_udc/emxx_udc.c
-+++ work/drivers/staging/emxx_udc/emxx_udc.c	2014-05-22 16:20:02.000000000 +0900
-@@ -3356,37 +3356,38 @@ static int nbu2ss_drv_probe(struct platf
- {
- 	int	status = -ENODEV;
- 	struct nbu2ss_udc	*udc;
-+	struct resource *r;
-+	int irq;
-+	void __iomem *mmio_base;
- 
- 	udc = &udc_controller;
- 	memset(udc, 0, sizeof(struct nbu2ss_udc));
- 
- 	platform_set_drvdata(pdev, udc);
- 
--	/* IO Memory Region */
--	if (!request_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE
--				, driver_name)) {
-+	/* require I/O memory and IRQ to be provided as resources */
-+	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	mmio_base = devm_request_and_ioremap(&pdev->dev, r);
-+	if (IS_ERR(mmio_base)) {
-+		dev_err(&pdev->dev, "failed to map I/O memory\n");
-+		return PTR_ERR(mmio_base);
-+	}
- 
--		ERR("request_mem_region failed\n");
--		return -EBUSY;
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0) {
-+		dev_err(&pdev->dev, "failed to get IRQ\n");
-+		return irq;
- 	}
-+	status = devm_request_irq(&pdev->dev, irq, _nbu2ss_udc_irq,
-+				  0, driver_name, udc);
- 
- 	/* IO Memory */
--	udc->p_regs = (PT_FC_REGS)ioremap(USB_BASE_ADDRESS, USB_BASE_SIZE);
--	if (!udc->p_regs) {
--		ERR("request_io_mem failed\n");
--		goto cleanup3;
--	}
-+	udc->p_regs = (PT_FC_REGS)mmio_base;
- 
- 	/* USB Function Controller Interrupt */
--	status = request_irq(USB_UDC_IRQ_1,
--				_nbu2ss_udc_irq,
--				IRQF_DISABLED,
--				driver_name,
--				udc);
--
- 	if (status != 0) {
- 		ERR("request_irq(USB_UDC_IRQ_1) failed\n");
--		goto cleanup2;
-+		goto cleanup1;
- 	}
- 
- 	/* Driver Initialization */
-@@ -3412,18 +3413,6 @@ static int nbu2ss_drv_probe(struct platf
- 	return status;
- 
- cleanup1:
--	/* Interrupt Handler - Release */
--	free_irq(USB_UDC_IRQ_1, udc);
--
--cleanup2:
--	/* IO Memory - Release */
--	if (udc->p_regs)
--		iounmap(udc->p_regs);
--
--cleanup3:
--	/* IO Memory Region - Release */
--	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
--
- 	return status;
- }
- 
-@@ -3456,18 +3445,8 @@ static int __exit nbu2ss_drv_remove(stru
- 	}
- 
- 	/* Interrupt Handler - Release */
--	free_irq(USB_UDC_IRQ_1, udc);
--
--	/* Interrupt Handler - Release */
- 	free_irq(INT_VBUS, udc);
- 
--	/* IO Memory - Release */
--	if (udc->p_regs)
--		iounmap(udc->p_regs);
--
--	/* IO Memory Region - Release */
--	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
--
- 	return 0;
- }
- 
---- 0002/drivers/staging/emxx_udc/emxx_udc.h
-+++ work/drivers/staging/emxx_udc/emxx_udc.h	2014-05-22 16:20:02.000000000 +0900
-@@ -47,20 +47,11 @@
- 
- 
- /*------------ Board dependence(Resource) */
--#define USB_BASE_ADDRESS	EMXX_USBS1_BASE
--#define USB_BASE_SIZE		0x2000
--
--#define USB_UDC_IRQ_0		INT_USBF0
--#define USB_UDC_IRQ_1		INT_USBF1
- #define	VBUS_VALUE		GPIO_VBUS
- 
- /* below hacked up for staging integration */
- #define GPIO_VBUS 0 /* GPIO_P153 on KZM9D */
- #define INT_VBUS 0 /* IRQ for GPIO_P153 */
--#define INT_USBF0 158
--#define INT_USBF1 159
--#define EMXX_USBS0_BASE 0xe2700000
--#define EMXX_USBS1_BASE 0xe2800000
- 
- /*------------ Board dependence(Wait) */
- 
