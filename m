@@ -1,56 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:48 +0000
-Subject: [PATCH 7/9] ARM: shmobile: Remove unused r8a7791_init_early()
-Message-Id: <595e9b00fb81f971d84ff451861423d02c39d060.1400200838.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 14 May 2014 14:45:22 +0000
+Subject: [PATCH v3 3/3] drivers: sh: Restrict INTC_USERIMASK to SH4A
+Message-Id: <1400078722-5517-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200838.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+register_intc_userimask() is called from sh4a code only.
 
-Remove the now unused r8a7791_init_early() function.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
 ---
- arch/arm/mach-shmobile/include/mach/r8a7791.h | 1 -
- arch/arm/mach-shmobile/setup-r8a7791.c        | 7 -------
- 2 files changed, 8 deletions(-)
+v3:
+  - No changes
+v2:
+  - Add Reviewed-by, Tested-by
+---
+ drivers/sh/intc/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 200fa69..664274c 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -5,7 +5,6 @@ void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
--void r8a7791_init_early(void);
- extern struct smp_operations r8a7791_smp_ops;
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index f7d90617c9d9..60228fae943f 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -6,7 +6,7 @@ comment "Interrupt controller options"
  
- #endif /* __ASM_R8A7791_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 2c84e74..949580a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -210,13 +210,6 @@ void __init r8a7791_add_standard_devices(void)
- 	r8a7791_register_thermal();
- }
- 
--void __init r8a7791_init_early(void)
--{
--#ifndef CONFIG_ARM_ARCH_TIMER
--	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
--#endif
--}
--
- #ifdef CONFIG_USE_OF
- static const char *r8a7791_boards_compat_dt[] __initdata = {
- 	"renesas,r8a7791",
+ config INTC_USERIMASK
+ 	bool "Userspace interrupt masking support"
+-	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
++	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
+ 	help
+ 	  This enables support for hardware-assisted userspace hardirq
+ 	  masking.
 -- 
-1.8.5.2
+1.7.9.5
 
