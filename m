@@ -1,185 +1,94 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 20 May 2014 07:59:00 +0000
-Subject: [PATCH 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
-Message-Id: <20140520080058.13851.83767.sendpatchset@w520>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 01:10:11 +0000
+Subject: [PATCH v6 07/12] ARM: shmobile: r7s72100: add i2c clocks to dtsi
+Message-Id: <1400029816-24028-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140520075949.13851.42995.sendpatchset@w520>
-In-Reply-To: <20140520075949.13851.42995.sendpatchset@w520>
+References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Move most of pm-rcar.h so it can be used as #include "pm-rcar.h"
-instead of the old style #include <mach/pm-rcar.h>. Also clean up
-the r8a7779 case to move some unused header file cruft into a C
-file.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
+ arch/arm/boot/dts/r7s72100.dtsi            | 15 +++++++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h |  6 ++++++
+ 2 files changed, 21 insertions(+)
 
- arch/arm/mach-shmobile/include/mach/pm-rcar.h |   15 ---------------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |   13 -------------
- arch/arm/mach-shmobile/pm-r8a7779.c           |   13 ++++++++++++-
- arch/arm/mach-shmobile/pm-r8a7790.c           |    2 +-
- arch/arm/mach-shmobile/pm-rcar.c              |    2 +-
- arch/arm/mach-shmobile/pm-rcar.h              |   15 +++++++++++++++
- arch/arm/mach-shmobile/smp-r8a7779.c          |    2 +-
- arch/arm/mach-shmobile/smp-r8a7790.c          |    2 +-
- 8 files changed, 31 insertions(+), 33 deletions(-)
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index a4a67380b0a2..afce2e344c7a 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -110,6 +110,17 @@
+ 			>;
+ 			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
+ 		};
++
++		mstp9_clks: mstp9_clks@fcfe0438 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0438 4>;
++			clocks = <&p0_clk>, <&p0_clk>, <&p0_clk>, <&p0_clk>;
++			clock-indices = <
++				R7S72100_CLK_I2C0 R7S72100_CLK_I2C1 R7S72100_CLK_I2C2 R7S72100_CLK_I2C3
++			>;
++			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
++		};
+ 	};
+ 
+ 	cpus {
+@@ -145,6 +156,7 @@
+ 			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -162,6 +174,7 @@
+ 			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -179,6 +192,7 @@
+ 			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -196,6 +210,7 @@
+ 			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+index c756f1cf0d52..ff84e0bafd7b 100644
+--- a/include/dt-bindings/clock/r7s72100-clock.h
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -25,4 +25,10 @@
+ #define R7S72100_CLK_SCIF6	1
+ #define R7S72100_CLK_SCIF7	0
+ 
++/* MSTP9 */
++#define R7S72100_CLK_I2C0	7
++#define R7S72100_CLK_I2C1	6
++#define R7S72100_CLK_I2C2	5
++#define R7S72100_CLK_I2C3	4
++
+ #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+-- 
+1.9.2
 
---- 0001/arch/arm/mach-shmobile/include/mach/pm-rcar.h
-+++ /dev/null	2013-06-03 21:41:10.638032047 +0900
-@@ -1,15 +0,0 @@
--#ifndef PM_RCAR_H
--#define PM_RCAR_H
--
--struct rcar_sysc_ch {
--	unsigned long chan_offs;
--	unsigned int chan_bit;
--	unsigned int isr_bit;
--};
--
--int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
--int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
--bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
--void __iomem *rcar_sysc_init(phys_addr_t base);
--
--#endif /* PM_RCAR_H */
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2014-05-20 01:13:37.000000000 +0900
-@@ -1,9 +1,6 @@
- #ifndef __ASM_R8A7779_H__
- #define __ASM_R8A7779_H__
- 
--#include <linux/pm_domain.h>
--#include <mach/pm-rcar.h>
--
- /* HPB-DMA slave IDs */
- enum {
- 	HPBDMA_SLAVE_DUMMY,
-@@ -11,16 +8,6 @@ enum {
- 	HPBDMA_SLAVE_SDHI0_RX,
- };
- 
--struct r8a7779_pm_domain {
--	struct generic_pm_domain genpd;
--	struct rcar_sysc_ch ch;
--};
--
--static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
--{
--	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
--}
--
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq_extpin(int irlm);
- extern void r8a7779_init_irq_extpin_dt(int irlm);
---- 0009/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2014-05-20 01:13:51.000000000 +0900
-@@ -13,20 +13,31 @@
- #include <linux/suspend.h>
- #include <linux/err.h>
- #include <linux/pm_clock.h>
-+#include <linux/pm_domain.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
- #include <linux/console.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7779.h>
- #include "common.h"
-+#include "pm-rcar.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
- #define SYSCIMR 0x10
- 
-+struct r8a7779_pm_domain {
-+	struct generic_pm_domain genpd;
-+	struct rcar_sysc_ch ch;
-+};
-+
-+static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
-+{
-+	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
-+}
-+
- #if defined(CONFIG_PM) || defined(CONFIG_SMP)
- 
- static void __init r8a7779_sysc_init(void)
---- 0001/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-05-20 01:04:34.000000000 +0900
-@@ -12,8 +12,8 @@
- 
- #include <linux/kernel.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7790.h>
-+#include "pm-rcar.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
---- 0001/arch/arm/mach-shmobile/pm-rcar.c
-+++ work/arch/arm/mach-shmobile/pm-rcar.c	2014-05-20 01:04:52.000000000 +0900
-@@ -13,7 +13,7 @@
- #include <linux/mm.h>
- #include <linux/spinlock.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
-+#include "pm-rcar.h"
- 
- /* SYSC */
- #define SYSCSR 0x00
---- /dev/null
-+++ work/arch/arm/mach-shmobile/pm-rcar.h	2014-05-20 01:03:32.000000000 +0900
-@@ -0,0 +1,15 @@
-+#ifndef PM_RCAR_H
-+#define PM_RCAR_H
-+
-+struct rcar_sysc_ch {
-+	unsigned long chan_offs;
-+	unsigned int chan_bit;
-+	unsigned int isr_bit;
-+};
-+
-+int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
-+int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
-+bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
-+void __iomem *rcar_sysc_init(phys_addr_t base);
-+
-+#endif /* PM_RCAR_H */
---- 0009/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2014-05-20 01:05:10.000000000 +0900
-@@ -23,13 +23,13 @@
- #include <linux/spinlock.h>
- #include <linux/io.h>
- #include <linux/delay.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7779.h>
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
- #include <asm/smp_twd.h>
- #include "common.h"
-+#include "pm-rcar.h"
- 
- #define AVECR IOMEM(0xfe700040)
- #define R8A7779_SCU_BASE 0xf0000000
---- 0009/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-05-20 01:05:53.000000000 +0900
-@@ -18,9 +18,9 @@
- #include <linux/smp.h>
- #include <linux/io.h>
- #include <asm/smp_plat.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7790.h>
- #include "common.h"
-+#include "pm-rcar.h"
- 
- #define RST		0xe6160000
- #define CA15BAR		0x0020
