@@ -1,64 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:13 +0000
-Subject: [PATCH 04/11] ARM: shmobile: henninger: add MSIOF0 DT support
-Message-Id: <667366bff7c4d38c6efa60f2e32d13c26a58d7d4.1400200395.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 May 2014 01:10:05 +0000
+Subject: [PATCH v6 01/12] ARM: shmobile: r7s72100: document MSTP clock support
+Message-Id: <1400029816-24028-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200395.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
+References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Define the Henninger board dependent part of the MSIOF0 device node.
-Add device node for Renesas R2A11302FT PMIC for which no bindings exist yet.
-
-Based on the Koelsch MSIOF device tree patch by Geert Uytterhoeven.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Mike Turquette <mturquette@linaro.org>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index 1d715a3..cc6d992 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -114,6 +114,12 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	msiof0_pins: spi1 {
-+		renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
-+				 "msiof0_tx";
-+		renesas,function = "msiof0";
-+	};
- };
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 02a25d99ca61..6c3c0847e4fd 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -10,6 +10,7 @@ index in the group, from 0 to 31.
+ Required Properties:
  
- &scif0 {
-@@ -196,3 +202,18 @@
- 		};
- 	};
- };
-+
-+&msiof0 {
-+	pinctrl-0 = <&msiof0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+
-+	pmic@0 {
-+		compatible = "renesas,r2a11302ft";
-+		reg = <0>;
-+		spi-max-frequency = <6000000>;
-+		spi-cpol;
-+		spi-cpha;
-+	};
-+};
+   - compatible: Must be one of the following
++    - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
 -- 
-1.8.5.2
+1.9.2
 
