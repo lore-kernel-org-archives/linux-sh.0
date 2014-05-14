@@ -1,31 +1,44 @@
-From: United Nations <maj@junin.gob.ar>
-Date: Mon, 12 May 2014 15:22:58 +0000
-Subject: =?utf-8?Q?Felicit=C4=83ri?=
-Message-Id: <132381478.422760.1399908178095.JavaMail.zimbra@junin.gob.ar>
+From: Richard Weinberger <richard@nod.at>
+Date: Wed, 14 May 2014 18:59:54 +0000
+Subject: [PATCH 22/27] sh: Use common bits from generic tlb.h
+Message-Id: <1400093999-18703-23-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400093999-18703-1-git-send-email-richard@nod.at>
+In-Reply-To: <1400093999-18703-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arch@vger.kernel.org, arnd@arndb.de, linux-kernel@vger.kernel.org
+Cc: Richard Weinberger <richard@nod.at>, Peter Zijlstra <peterz@infradead.org>, Michal Hocko <mhocko@suse.cz>, Hugh Dickins <hughd@google.com>, linux-sh@vger.kernel.org
 
+It is no longer needed to define them on our own.
 
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Michal Hocko <mhocko@suse.cz>
+Cc: Hugh Dickins <hughd@google.com>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Richard Weinberger <richard@nod.at>
+---
+ arch/sh/include/asm/tlb.h | 5 -----
+ 1 file changed, 5 deletions(-)
 
-Felicitări 
-
-Sunteți unul dintre beneficiarii de pe ordinea de zi a Națiunilor Unite 2014/2015 Grant Award. Informațiile dvs. au fost verificate și suma de șase milioane de euro (6.000.000,00) a fost acordat pentru a vă în programul de granturi al Națiunilor Unite ca Date tale au fost listate pe lista câștigătoare. 
-
-Această sumă urmează a fi utilizate de dumneavoastră pentru orice scop, de care vor beneficia foloseste comunitatea ta. 
-
-Informațiile de care avem nevoie pentru verificare sunt: 
-
-Numele complet: 
-adresa: 
-Următor de Kin: 
-
-Va oferi, de asemenea, un cont bancar care premiile de finanțare ar trebui să fie depus în. Veți avea nevoie, de asemenea, să plătească doar o taxă administrativă de 721 de euro (șapte sute douăzeci și unu de euro). 
-
-Ajunge înapoi la noi cât mai curând posibil, astfel încât să puteți trimite certificatul câștigătoare. 
-
-Biroul Organizației Națiunilor Unite. 
-2014/2015
+diff --git a/arch/sh/include/asm/tlb.h b/arch/sh/include/asm/tlb.h
+index 62f80d2..7d3f816 100644
+--- a/arch/sh/include/asm/tlb.h
++++ b/arch/sh/include/asm/tlb.h
+@@ -133,11 +133,6 @@ static inline void tlb_unwire_entry(void)
+ 
+ #else /* CONFIG_MMU */
+ 
+-#define tlb_start_vma(tlb, vma)				do { } while (0)
+-#define tlb_end_vma(tlb, vma)				do { } while (0)
+-#define __tlb_remove_tlb_entry(tlb, pte, address)	do { } while (0)
+-#define tlb_flush(tlb)					do { } while (0)
+-
+ #include <asm-generic/tlb.h>
+ 
+ #endif /* CONFIG_MMU */
+-- 
+1.8.4.2
 
