@@ -1,34 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 16 May 2014 15:26:55 +0000
-Subject: [PATCH/RFC 7/7] ARM: shmobile: koelsch dts: Enable sysdma0 and sysdma1
-Message-Id: <1400254015-29539-8-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 May 2014 10:40:44 +0000
+Subject: [PATCH v2 03/10] iommu/ipmmu-vmsa: Fix the supported page sizes
+Message-Id: <1400150451-13469-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The hardware supports 2MB page sizes, not 1MB.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |    8 ++++++++
- 1 file changed, 8 insertions(+)
+ drivers/iommu/ipmmu-vmsa.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 3461cfd506dc..b42ba5cca593 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -430,3 +430,11 @@
- 		spi-max-frequency = <52000000>;
- 	};
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 49dbedd..313b5b9 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -959,7 +959,7 @@ static struct iommu_ops ipmmu_ops = {
+ 	.iova_to_phys = ipmmu_iova_to_phys,
+ 	.add_device = ipmmu_add_device,
+ 	.remove_device = ipmmu_remove_device,
+-	.pgsize_bitmap = SZ_1M | SZ_64K | SZ_4K,
++	.pgsize_bitmap = SZ_2M | SZ_64K | SZ_4K,
  };
-+
-+&sysdma0 {
-+	status = "okay";
-+};
-+
-+&sysdma1 {
-+	status = "okay";
-+};
+ 
+ /* -----------------------------------------------------------------------------
 -- 
-1.7.9.5
+1.8.5.5
 
