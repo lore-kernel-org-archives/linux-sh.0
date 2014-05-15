@@ -1,58 +1,224 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 07 May 2014 23:18:08 +0000
-Subject: [PATCH 02/03] pinctrl: sh-pfc: sh73a0: Allow Multiplatform Build
-Message-Id: <20140507231808.29661.31944.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:31:57 +0000
+Subject: [PATCH v6 02/17] ARM: shmobile: r8a7779: Add clocks
+Message-Id: <1400153532-23675-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Declare all core and MSTP clocks currently used by r8a7779-based boards.
 
-Add #ifdefs to allow sh73a0 Multiplatform build. Needed
-to enable sh73a0 Multiplatform support.
+Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoCs.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
+v6
+* Add Ack by Laurent Pinchart
 
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    6 ++++++
- 1 file changed, 6 insertions(+)
+v5
+* As suggested by Laurent Pinchart
+  - Do not add duplicate HSPI or USB clocks
+  - Add TMU1 and TMU2 clocks instead of duplicate TMU0 clocks
 
---- 0001/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ work/drivers/pinctrl/sh-pfc/pfc-sh73a0.c	2014-04-24 19:27:57.000000000 +0900
-@@ -26,7 +26,9 @@
- #include <linux/regulator/machine.h>
- #include <linux/slab.h>
+v4
+* As suggested by Laurent Pinchart
+  - Do not duplicate clocks
+  - Use TMU2 and TMU1 instead of TMU0 three times.
+  - Correct order of tmu clock output names
+  - Use usb01 and usb2 as clock output names instead
+    of ehci0 and ehci1.
+* As suggested by Geert Uytterhoeven
+  - Wrap lines at < 80columns
+  - Beef-up short lines towards 80 columns
+* As suggested by Laurent Pinchart
+  - Add HSCIF clocks
+  - Correct many clock sources
+  - Correct reg of cpg_clocks
+* Add CPG clock "b" which is now part of the binding
+
+v3
+* As suggested by Laurent Pinchart
+  - Add and use extal_clk
+  - Fix bogus status register use for MSTP clocks
+  - Fix bogus mstp3_cls to use its own entries rather than
+    that of mstp1_clks
+
+* Update to use "main" in cpg_clocks as per updated
+  binding in previous patch
+* Update for new, consolidated and renamed index macros
+  - R8A7779_CLK_ETHER
+  - R8A7779_CLK_HSCIF
+  - R8A7779_CLK_HSPI
+  - R8A7779_CLK_MMC0,1
+  - R8A7779_CLK_PCIE
+  - R8A7779_CLK_USB01,2
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 144 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 144 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index b517c8e..5a62970 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -11,6 +11,7 @@
  
-+#ifndef CONFIG_ARCH_MULTIPLATFORM
- #include <mach/irqs.h>
-+#endif
+ /include/ "skeleton.dtsi"
  
- #include "core.h"
- #include "sh_pfc.h"
-@@ -3650,6 +3652,7 @@ static const struct pinmux_data_reg pinm
- 	{ },
++#include <dt-bindings/clock/r8a7779-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -265,4 +266,147 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* External root clock */
++		extal_clk: extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overriden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@0xe6150000 {
++			compatible = "renesas,r8a7779-cpg-clocks";
++			reg = <0 0xffc80000 0 0x30>;
++			clocks = <&extal_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "plla", "z", "zs", "s",
++					     "s1", "p", "b", "out";
++		};
++
++		/* Fixed factor clocks */
++		i_clk: i_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <2>;
++			clock-mult = <1>;
++			clock-output-names = "i";
++		};
++		s3_clk: s3_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "s3";
++		};
++		s4_clk: s4_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <16>;
++			clock-mult = <1>;
++			clock-output-names = "s4";
++		};
++		g_clk: g_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <24>;
++			clock-mult = <1>;
++			clock-output-names = "g";
++		};
++
++		/* Gate clocks */
++		mstp0_clks: mstp0_clks {
++			compatible = "renesas,r8a7779-mstp-clocks",
++			             "renesas,cpg-mstp-clocks";
++			reg = <0 0xffc80030 0 4>;
++			clocks = <&cpg_clocks R8A7779_CLK_S>,
++			         <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_S>,
++				 <&cpg_clocks R8A7779_CLK_S>,
++				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_S1>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
++				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
++				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
++				R8A7779_CLK_SCIF5 R8A7779_CLK_SCIF4
++				R8A7779_CLK_SCIF3 R8A7779_CLK_SCIF2
++				R8A7779_CLK_SCIF1 R8A7779_CLK_SCIF0
++				R8A7779_CLK_I2C3 R8A7779_CLK_I2C2
++				R8A7779_CLK_I2C1 R8A7779_CLK_I2C0
++			>;
++			clock-output-names +				"hspi", "tmu2", "tmu1", "tmu0", "hscif1",
++				"hscif0", "scif5", "scif4", "scif3", "scif2",
++				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
++				"i2c0";
++		};
++		mstp1_clks: mstp1_clks {
++			compatible = "renesas,r8a7779-mstp-clocks",
++			             "renesas,cpg-mstp-clocks";
++			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
++			clocks = <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_S>,
++				 <&cpg_clocks R8A7779_CLK_S>,
++				 <&cpg_clocks R8A7779_CLK_S>,
++				 <&cpg_clocks R8A7779_CLK_S>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_P>,
++				 <&cpg_clocks R8A7779_CLK_S>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7779_CLK_USB01 R8A7779_CLK_USB2
++				R8A7779_CLK_DU R8A7779_CLK_VIN2
++				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
++				R8A7779_CLK_ETHER R8A7779_CLK_SATA
++				R8A7779_CLK_PCIE R8A7779_CLK_VIN3
++			>;
++			clock-output-names +				"usb01", "usb2",
++				"du", "vin2",
++				"vin1", "vin0",
++				"ether", "sata",
++				"pcie", "vin3";
++		};
++		mstp3_clks: mstp3_clks {
++			compatible = "renesas,r8a7779-mstp-clocks",
++			             "renesas,cpg-mstp-clocks";
++			reg = <0 0xffc8003c 0 4>;
++			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
++				 <&s4_clk>, <&s4_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <
++				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
++				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
++				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
++			>;
++			clock-output-names +				"sdhi3", "sdhi2", "sdhi1", "sdhi0",
++				"mmc1", "mmc0";
++		};
++	};
  };
- 
-+#ifndef CONFIG_ARCH_MULTIPLATFORM
- static const struct pinmux_irq pinmux_irqs[] = {
- 	PINMUX_IRQ(irq_pin(0), 11),
- 	PINMUX_IRQ(irq_pin(1), 10),
-@@ -3684,6 +3687,7 @@ static const struct pinmux_irq pinmux_ir
- 	PINMUX_IRQ(irq_pin(30), 27),
- 	PINMUX_IRQ(irq_pin(31), 26),
- };
-+#endif /* CONFIG_ARCH_MULTIPLATFORM */
- 
- /* -----------------------------------------------------------------------------
-  * VCCQ MC0 regulator
-@@ -3888,6 +3892,8 @@ const struct sh_pfc_soc_info sh73a0_pinm
- 	.gpio_data = pinmux_data,
- 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
- 
-+#ifndef CONFIG_ARCH_MULTIPLATFORM
- 	.gpio_irq = pinmux_irqs,
- 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
-+#endif
- };
+-- 
+1.8.5.2
+
