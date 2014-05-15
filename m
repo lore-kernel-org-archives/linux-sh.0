@@ -1,43 +1,48 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 19 May 2014 20:42:36 +0000
-Subject: [PATCHv2 resend 05/11] ARM: pxa: hx4700: initialize all the struct pwm_lookup members
-Message-Id: <1400532162-29483-6-git-send-email-alexandre.belloni@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:31:59 +0000
+Subject: [PATCH v6 04/17] ARM: shmobile: marzen: Specify external clock frequency in DT
+Message-Id: <1400153532-23675-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
+References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This will allow to get rid of the .pwm_period_ns member of struct
-platform_pwm_backlight_data as the period will be set by the PWM core.
+The external crystal frequency is 31.25 on the Marzen board.
+Specify it in the device tree.
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Based on work for the Lager board by Laurent Pinchart.
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/mach-pxa/hx4700.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+v4 - v5
+* No change
 
-diff --git a/arch/arm/mach-pxa/hx4700.c b/arch/arm/mach-pxa/hx4700.c
-index a7c30eb0c8db..0788a1f171fe 100644
---- a/arch/arm/mach-pxa/hx4700.c
-+++ b/arch/arm/mach-pxa/hx4700.c
-@@ -574,7 +574,14 @@ static struct platform_device backlight = {
+v3
+* Update r8a7779-marzen.dts instead of r8a7779-marzen-reference.dts
+---
+ arch/arm/boot/dts/r8a7779-marzen.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index ddf9b9e..363f693 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -69,6 +69,10 @@
+ 	status = "okay";
  };
  
- static struct pwm_lookup hx4700_pwm_lookup[] = {
--	PWM_LOOKUP("pxa27x-pwm.1", 0, "pwm-backlight", NULL),
-+	{
-+		.provider = "pxa27x-pwm.1",
-+		.index = 0,
-+		.dev_id = "pwm-backlight",
-+		.con_id = NULL,
-+		.period = 30923,
-+		.polarity = PWM_POLARITY_NORMAL,
-+	},
- };
- 
- /*
++&extal_clk {
++	clock-frequency = <31250000>;
++};
++
+ &pfc {
+ 	pinctrl-0 = <&scif2_pins &scif4_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.9.1
+1.8.5.2
 
