@@ -1,64 +1,87 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 May 2014 14:47:46 +0000
-Subject: [PATCH v3 2/2] ARM: shmobile: lager-reference: Remove workarounds for core clock issues
-Message-Id: <1400078866-5694-2-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 May 2014 10:40:46 +0000
+Subject: [PATCH v2 05/10] iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
+Message-Id: <1400150451-13469-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Now the core clock issues have been fixed by commit
-3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh: compile
-drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI"), revert the following
-2 commits:
-  - f98b55d730492e664fb2649bd7054fec0fe81acd ("ARM: shmobile: Add Lager
-    clock workarounds for SDHI and MMCIF"),
-  - aa5de826afe747c353162bbc116c63ab5335f91c ("ARM: shmobile:
-    lager-reference: Work around core clock issues").
+The contiguous hint bit signals to the IOMMU that a range of 16 PTEs
+refer to physically contiguous memory. It improves performances by
+dividing the number of TLB lookups by 16, effectively implementing 64kB
+page sizes.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-This depends on 3c90c55dcde745bed81f6447f24ba96bda43d984 having landed
-in Linus' tree
+ drivers/iommu/ipmmu-vmsa.c | 43 ++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 40 insertions(+), 3 deletions(-)
 
-v3:
-  - Add Reviewed-by
-v2:
-  - New
----
- arch/arm/mach-shmobile/board-lager-reference.c |   14 --------------
- 1 file changed, 14 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 749832e3f33c..e55d817377ab 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -98,23 +98,9 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "lvds1", "lvds.1", "rcar-du-r8a7790" },
- };
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index b34a4b7b..150e18e 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -209,6 +209,9 @@ static LIST_HEAD(ipmmu_devices);
+ #define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
+ #define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
  
--/*
-- * This is a really crude hack to work around core platform clock issues
-- */
--static const struct clk_name clk_enables[] __initconst = {
--	{ "ether", NULL, "ee700000.ethernet" },
--	{ "msiof1", NULL, "e6e10000.spi" },
--	{ "mmcif1", NULL, "ee220000.mmc" },
--	{ "qspi_mod", NULL, "e6b10000.spi" },
--	{ "sdhi0", NULL, "ee100000.sd" },
--	{ "sdhi2", NULL, "ee140000.sd" },
--	{ "thermal", NULL, "e61f0000.thermal" },
--};
--
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	shmobile_clk_workaround(clk_enables, ARRAY_SIZE(clk_enables), true);
- 	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++#define ARM_VMSA_PTE_CONT_ENTRIES	16
++#define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
++
+ #define IPMMU_PTRS_PER_PTE		512
+ #define IPMMU_PTRS_PER_PMD		512
+ #define IPMMU_PTRS_PER_PGD		4
+@@ -569,10 +572,44 @@ static int ipmmu_alloc_init_pte(struct ipmmu_vmsa_device *mmu, pmd_t *pmd,
+ 	pteval |= ARM_VMSA_PTE_SH_IS;
+ 	start = pte;
  
+-	/* Install the page table entries. */
++	/*
++	 * Install the page table entries.
++	 *
++	 * Set the contiguous hint in the PTEs where possible. The hint
++	 * indicates a series of ARM_VMSA_PTE_CONT_ENTRIES PTEs mapping a
++	 * physically contiguous region with the following constraints:
++	 *
++	 * - The region start is aligned to ARM_VMSA_PTE_CONT_SIZE
++	 * - Each PTE in the region has the contiguous hint bit set
++	 *
++	 * We don't support partial unmapping so there's no need to care about
++	 * clearing the contiguous hint from neighbour PTEs.
++	 */
+ 	do {
+-		*pte++ = pfn_pte(pfn++, __pgprot(pteval));
+-		addr += PAGE_SIZE;
++		unsigned long chunk_end;
++
++		/*
++		 * If the address is aligned to a contiguous region size and the
++		 * mapping size is large enough, process the largest possible
++		 * number of PTEs multiple of ARM_VMSA_PTE_CONT_ENTRIES.
++		 * Otherwise process the smallest number of PTEs to align the
++		 * address to a contiguous region size or to complete the
++		 * mapping.
++		 */
++		if (IS_ALIGNED(addr, ARM_VMSA_PTE_CONT_SIZE) &&
++		    end - addr >= ARM_VMSA_PTE_CONT_SIZE) {
++			chunk_end = round_down(end, ARM_VMSA_PTE_CONT_SIZE);
++			pteval |= ARM_VMSA_PTE_CONT;
++		} else {
++			chunk_end = min(ALIGN(addr, ARM_VMSA_PTE_CONT_SIZE),
++					end);
++			pteval &= ~ARM_VMSA_PTE_CONT;
++		}
++
++		do {
++			*pte++ = pfn_pte(pfn++, __pgprot(pteval));
++			addr += PAGE_SIZE;
++		} while (addr != chunk_end);
+ 	} while (addr != end);
+ 
+ 	ipmmu_flush_pgtable(mmu, start, sizeof(*pte) * (pte - start));
 -- 
-1.7.9.5
+1.8.5.5
 
