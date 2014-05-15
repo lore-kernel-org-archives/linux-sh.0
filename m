@@ -1,30 +1,48 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 29 May 2014 11:05:38 +0000
-Subject: [PATCH 0/2] arm: shmobile: add USB 3.0 DT for r8a7791
-Message-Id: <53871482.2050807@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:39:29 +0000
+Subject: [PATCH v2 0/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
+Message-Id: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <53871324.1080908@renesas.com>
-In-Reply-To: <53871324.1080908@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch series is based on the renesas-devel-v3.15-rc7-20140528
-in renesas.git.
+The aim of this series is to provide a working prototype for enabling
+SCIF devices using DT on the marzen board when booting using multiplatform.
 
-Also this patch needs the following patch:
-http://marc.info/?l=linux-sh&m0088459227096&w=2
+This series addresses the review received for v1.
+Changes are noted in the changelog of each updated patch.
 
-Yoshihiro Shimoda (2):
-  arm: shmobile: r8a7791: add USB3.0 clocks to device tree
-  arm: shmobile: r8a7791: add USB3.0 node to r8a7791.dtsi
 
- arch/arm/boot/dts/r8a7791.dtsi |   16 +++++++++++++---
- 1 file changed, 13 insertions(+), 3 deletions(-)
+This series depends on:
+[PATCH v6 00/17] ARM: shmobile: r8a7779, marzen: CCF and multiplatform
+
+This series was created and tested with the above mentioned series applied
+on top of a merge of:
+* The renesas-devel-v3.15-rc1-20140515 tag of my renesas tree.
+* The clk-next branch of Mike Turquettes's tree
+  This is to provide the following which were previously part of this series:
+  - clk: shmobile: r8a7779: Add MSTP clock support
+  - clk: shmobile: r8a7779: Add clocks support
+
+This series works in conjunction with but does not have a run-time or compile
+time dependency on:
+[PATCH v3] serial: sh-sci: Add device tree support for r8a7779
+
+
+Simon Horman (4):
+  ARM: shmobile: r8a7779: Add scif nodes to dtsi
+  ARM: shmobile: marzen: Remove early_printk from command line
+  ARM: shmobile: marzen: Initialise SCIF devices using DT
+  ARM: shmobile: marzen: Do not use workaround for scif devices
+
+ arch/arm/boot/dts/r8a7779-marzen.dts            | 24 ++++++++--
+ arch/arm/boot/dts/r8a7779.dtsi                  | 60 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-marzen-reference.c |  6 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c          |  8 ++--
+ 4 files changed, 84 insertions(+), 14 deletions(-)
 
 -- 
-1.7.9.5
-
-
+1.8.5.2
 
