@@ -1,43 +1,149 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 26 May 2014 00:41:27 +0000
-Subject: [PATCH v3 REPOST] serial: sh-sci: Add device tree support for r8a7779
-Message-Id: <20140526004127.GB31096@verge.net.au>
+Date: Thu, 15 May 2014 11:31:58 +0000
+Subject: [PATCH v6 03/17] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
+Message-Id: <1400153532-23675-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Simply document a new compat string.
-There appears to be no need for a driver updates.
+Copy the device nodes from Marzen reference into the Marzen device tree
+file. This will allow us to use a single DTS file regardless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+will be used.
+
+Based on a similar change for the Lager board by Laurent Pinchart.
 
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
+v6
+* Updated for recent changes to Marzen reference DTS
+
+v4 - v5
+* No change
+
 v3
-* Keep lists sorted by SoC number
-* Added Ack from Laurent Pinchart
-
-v2
-* Do not update the driver to set SCSCR_CKE1.
-  Instead DT may provide the P clock as the clock for the SCIF devices.
+* Updated for recent changes to Marzen reference DTS
 ---
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 94 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index 53e6c17..64fd7de 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -4,6 +4,7 @@ Required properties:
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index a7af2c2..ddf9b9e 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -11,6 +11,8 @@
  
-   - compatible: Must contain one of the following:
+ /dts-v1/;
+ #include "r8a7779.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/irq.h>
  
-+    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
-     - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
-     - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
-     - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
+ / {
+ 	model = "marzen";
+@@ -24,4 +26,96 @@
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x40000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	lan0@18000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18000000 0x100>;
++		pinctrl-0 = <&lan0_pins>;
++		pinctrl-names = "default";
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
++		smsc,irq-push-pull;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led2 {
++			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		};
++		led3 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++		};
++		led4 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&irqpin0 {
++	status = "okay";
++};
++
++&pfc {
++	pinctrl-0 = <&scif2_pins &scif4_pins>;
++	pinctrl-names = "default";
++
++	lan0_pins: lan0 {
++		intc {
++			renesas,groups = "intc_irq1_b";
++			renesas,function = "intc";
++		};
++		lbsc {
++			renesas,groups = "lbsc_ex_cs0";
++			renesas,function = "lbsc";
++		};
++	};
++
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data_c";
++		renesas,function = "scif2";
++	};
++
++	scif4_pins: serial4 {
++		renesas,groups = "scif4_data";
++		renesas,function = "scif4";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
+ };
 -- 
 1.8.5.2
 
