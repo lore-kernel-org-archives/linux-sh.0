@@ -1,41 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:44 +0000
-Subject: [PATCH 3/9] ARM: shmobile: Use r8a7740 DT CPU Frequency for Armadillo DT Ref
-Message-Id: <e568802d13eb1dbcbe688aa4e7cf1db866a52e3e.1400200838.git.horms+renesas@verge.net.au>
+From: Zhang Rui <rui.zhang@intel.com>
+Date: Thu, 15 May 2014 08:48:05 +0000
+Subject: Re: [PATCH] thermal: rcar: Use pm_runtime_put() i.s.o. pm_runtime_put_sync()
+Message-Id: <1400143685.2273.31.camel@rzhang1-toshiba>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200838.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
+References: <1397494975-22489-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1397494975-22489-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Eduardo Valentin <eduardo.valentin@ti.com>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On =E4=B8=80, 2014-04-14 at 19:02 +0200, Geert Uytterhoeven wrote:
+> From: Geert Uytterhoeven <geert+renesas@glider.be>
+>=20
+> There's no need for this to be synchronous
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Convert the Armadillo r8a7740 DT reference board support
-to use shmobile_init_delay() to be able to migrate away
-from per-SoC delay setup functions.
+applied.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Tested-by: Geert Uytterhoeven <geert@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+thanks,
+rui
+> ---
+>  drivers/thermal/rcar_thermal.c |    4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_therma=
+l.c
+> index 5a37940b02c9..a8ed0e0265ae 100644
+> --- a/drivers/thermal/rcar_thermal.c
+> +++ b/drivers/thermal/rcar_thermal.c
+> @@ -470,7 +470,7 @@ error_unregister:
+>  			rcar_thermal_irq_disable(priv);
+>  	}
+> =20
+> -	pm_runtime_put_sync(dev);
+> +	pm_runtime_put(dev);
+>  	pm_runtime_disable(dev);
+> =20
+>  	return ret;
+> @@ -488,7 +488,7 @@ static int rcar_thermal_remove(struct platform_device=
+ *pdev)
+>  			rcar_thermal_irq_disable(priv);
+>  	}
+> =20
+> -	pm_runtime_put_sync(dev);
+> +	pm_runtime_put(dev);
+>  	pm_runtime_disable(dev);
+> =20
+>  	return 0;
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index 57d1a78..57d246e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -187,7 +187,7 @@ static const char *eva_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
- 	.map_io		= r8a7740_map_io,
--	.init_early	= r8a7740_init_delay,
-+	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
- 	.init_late	= shmobile_init_late,
--- 
-1.8.5.2
 
