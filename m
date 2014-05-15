@@ -1,224 +1,102 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:31:57 +0000
-Subject: [PATCH v6 02/17] ARM: shmobile: r8a7779: Add clocks
-Message-Id: <1400153532-23675-3-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:39:32 +0000
+Subject: [PATCH v2 3/4] ARM: shmobile: marzen: Initialise SCIF devices using DT
+Message-Id: <1400153973-25546-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+References: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Declare all core and MSTP clocks currently used by r8a7779-based boards.
+Initialise SCIF devices using DT when booting marzen
+using multiplatform.
 
-Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoCs.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
 ---
-v6
-* Add Ack by Laurent Pinchart
-
-v5
-* As suggested by Laurent Pinchart
-  - Do not add duplicate HSPI or USB clocks
-  - Add TMU1 and TMU2 clocks instead of duplicate TMU0 clocks
-
-v4
-* As suggested by Laurent Pinchart
-  - Do not duplicate clocks
-  - Use TMU2 and TMU1 instead of TMU0 three times.
-  - Correct order of tmu clock output names
-  - Use usb01 and usb2 as clock output names instead
-    of ehci0 and ehci1.
-* As suggested by Geert Uytterhoeven
-  - Wrap lines at < 80columns
-  - Beef-up short lines towards 80 columns
-* As suggested by Laurent Pinchart
-  - Add HSCIF clocks
-  - Correct many clock sources
-  - Correct reg of cpg_clocks
-* Add CPG clock "b" which is now part of the binding
-
-v3
-* As suggested by Laurent Pinchart
-  - Add and use extal_clk
-  - Fix bogus status register use for MSTP clocks
-  - Fix bogus mstp3_cls to use its own entries rather than
-    that of mstp1_clks
-
-* Update to use "main" in cpg_clocks as per updated
-  binding in previous patch
-* Update for new, consolidated and renamed index macros
-  - R8A7779_CLK_ETHER
-  - R8A7779_CLK_HSCIF
-  - R8A7779_CLK_HSPI
-  - R8A7779_CLK_MMC0,1
-  - R8A7779_CLK_PCIE
-  - R8A7779_CLK_USB01,2
+v2
+* Rebase
+* Add Ack from Laurent Pinchart
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 144 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 144 insertions(+)
+ arch/arm/boot/dts/r8a7779-marzen.dts   | 22 +++++++++++++++++++---
+ arch/arm/mach-shmobile/setup-r8a7779.c |  8 ++++----
+ 2 files changed, 23 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index b517c8e..5a62970 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -11,6 +11,7 @@
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 3212908..20b1768 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -18,6 +18,11 @@
+ 	model = "marzen";
+ 	compatible = "renesas,marzen", "renesas,r8a7779";
  
- /include/ "skeleton.dtsi"
- 
-+#include <dt-bindings/clock/r8a7779-clock.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
-@@ -265,4 +266,147 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	clocks {
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		/* External root clock */
-+		extal_clk: extal_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			/* This value must be overriden by the board. */
-+			clock-frequency = <0>;
-+			clock-output-names = "extal";
-+		};
-+
-+		/* Special CPG clocks */
-+		cpg_clocks: cpg_clocks@0xe6150000 {
-+			compatible = "renesas,r8a7779-cpg-clocks";
-+			reg = <0 0xffc80000 0 0x30>;
-+			clocks = <&extal_clk>;
-+			#clock-cells = <1>;
-+			clock-output-names = "plla", "z", "zs", "s",
-+					     "s1", "p", "b", "out";
-+		};
-+
-+		/* Fixed factor clocks */
-+		i_clk: i_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-+			#clock-cells = <0>;
-+			clock-div = <2>;
-+			clock-mult = <1>;
-+			clock-output-names = "i";
-+		};
-+		s3_clk: s3_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-+			#clock-cells = <0>;
-+			clock-div = <8>;
-+			clock-mult = <1>;
-+			clock-output-names = "s3";
-+		};
-+		s4_clk: s4_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-+			#clock-cells = <0>;
-+			clock-div = <16>;
-+			clock-mult = <1>;
-+			clock-output-names = "s4";
-+		};
-+		g_clk: g_clk {
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R8A7779_CLK_PLLA>;
-+			#clock-cells = <0>;
-+			clock-div = <24>;
-+			clock-mult = <1>;
-+			clock-output-names = "g";
-+		};
-+
-+		/* Gate clocks */
-+		mstp0_clks: mstp0_clks {
-+			compatible = "renesas,r8a7779-mstp-clocks",
-+			             "renesas,cpg-mstp-clocks";
-+			reg = <0 0xffc80030 0 4>;
-+			clocks = <&cpg_clocks R8A7779_CLK_S>,
-+			         <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_S>,
-+				 <&cpg_clocks R8A7779_CLK_S>,
-+				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_S1>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7779_CLK_HSPI R8A7779_CLK_TMU2
-+				R8A7779_CLK_TMU1 R8A7779_CLK_TMU0
-+				R8A7779_CLK_HSCIF1 R8A7779_CLK_HSCIF0
-+				R8A7779_CLK_SCIF5 R8A7779_CLK_SCIF4
-+				R8A7779_CLK_SCIF3 R8A7779_CLK_SCIF2
-+				R8A7779_CLK_SCIF1 R8A7779_CLK_SCIF0
-+				R8A7779_CLK_I2C3 R8A7779_CLK_I2C2
-+				R8A7779_CLK_I2C1 R8A7779_CLK_I2C0
-+			>;
-+			clock-output-names +				"hspi", "tmu2", "tmu1", "tmu0", "hscif1",
-+				"hscif0", "scif5", "scif4", "scif3", "scif2",
-+				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
-+				"i2c0";
-+		};
-+		mstp1_clks: mstp1_clks {
-+			compatible = "renesas,r8a7779-mstp-clocks",
-+			             "renesas,cpg-mstp-clocks";
-+			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
-+			clocks = <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_S>,
-+				 <&cpg_clocks R8A7779_CLK_S>,
-+				 <&cpg_clocks R8A7779_CLK_S>,
-+				 <&cpg_clocks R8A7779_CLK_S>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_P>,
-+				 <&cpg_clocks R8A7779_CLK_S>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7779_CLK_USB01 R8A7779_CLK_USB2
-+				R8A7779_CLK_DU R8A7779_CLK_VIN2
-+				R8A7779_CLK_VIN1 R8A7779_CLK_VIN0
-+				R8A7779_CLK_ETHER R8A7779_CLK_SATA
-+				R8A7779_CLK_PCIE R8A7779_CLK_VIN3
-+			>;
-+			clock-output-names +				"usb01", "usb2",
-+				"du", "vin2",
-+				"vin1", "vin0",
-+				"ether", "sata",
-+				"pcie", "vin3";
-+		};
-+		mstp3_clks: mstp3_clks {
-+			compatible = "renesas,r8a7779-mstp-clocks",
-+			             "renesas,cpg-mstp-clocks";
-+			reg = <0 0xffc8003c 0 4>;
-+			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
-+				 <&s4_clk>, <&s4_clk>;
-+			#clock-cells = <1>;
-+			renesas,clock-indices = <
-+				R8A7779_CLK_SDHI3 R8A7779_CLK_SDHI2
-+				R8A7779_CLK_SDHI1 R8A7779_CLK_SDHI0
-+				R8A7779_CLK_MMC1 R8A7779_CLK_MMC0
-+			>;
-+			clock-output-names +				"sdhi3", "sdhi2", "sdhi1", "sdhi0",
-+				"mmc1", "mmc0";
-+		};
++	aliases {
++		serial2 = &scif2;
++		serial4 = &scif4;
 +	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
+ 	};
+@@ -74,9 +79,6 @@
  };
+ 
+ &pfc {
+-	pinctrl-0 = <&scif2_pins &scif4_pins>;
+-	pinctrl-names = "default";
+-
+ 	lan0_pins: lan0 {
+ 		intc {
+ 			renesas,groups = "intc_irq1_b";
+@@ -109,6 +111,20 @@
+ 	};
+ };
+ 
++&scif2 {
++       pinctrl-0 = <&scif2_pins>;
++       pinctrl-names = "default";
++
++       status = "okay";
++};
++
++&scif4 {
++       pinctrl-0 = <&scif4_pins>;
++       pinctrl-names = "default";
++
++       status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index c0e61d5..cd23b27 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -640,16 +640,16 @@ static void __init r8a7779_register_hpb_dmae(void)
+ }
+ 
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
++	&tmu0_device,
++};
++
++static struct platform_device *r8a7779_standard_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+ 	&scif3_device,
+ 	&scif4_device,
+ 	&scif5_device,
+-	&tmu0_device,
+-};
+-
+-static struct platform_device *r8a7779_standard_devices[] __initdata = {
+ 	&i2c0_device,
+ 	&i2c1_device,
+ 	&i2c2_device,
 -- 
 1.8.5.2
 
