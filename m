@@ -1,40 +1,46 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 May 2014 23:34:54 +0000
-Subject: Re: [PATCH 2/2] arm: shmobile: r8a7791: add USB3.0 node to r8a7791.dtsi
-Message-Id: <20140529233453.GA15648@verge.net.au>
+Date: Thu, 15 May 2014 05:22:27 +0000
+Subject: [ANNOUNCE] Renesas Tree is Closed for v3.16
+Message-Id: <20140515052227.GE778@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5387149A.4010503@renesas.com>
-In-Reply-To: <5387149A.4010503@renesas.com>
+References: <20131230013640.GA1944@verge.net.au>
+In-Reply-To: <20131230013640.GA1944@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, May 29, 2014 at 08:06:02PM +0900, Yoshihiro Shimoda wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi |   10 ++++++++++
->  1 file changed, 10 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index c2b5b38..2855c1f 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -906,4 +906,14 @@
->  		#size-cells = <0>;
->  		status = "disabled";
->  	};
-> +
-> +	xhci: xhci@ee000000 {
-> +		compatible = "renesas,xhci-r8a7791";
-> +		reg = <0 0xee000000 0 0xc00>;
-> +		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7791_CLK_SSUSB>;
-> +		phys = <&usbphy 1 1>;
-> +		phy-names = "usb";
-> +		status = "disabled";
-> +	};
->  };
+Hi,
 
-I assume that Sergei's comments regarding the r8a7790 version
-of this change are equally relevant here.
+The Renesas tree is now closed for arm-soc changes for v3.16.
+
+I am not planning to accept any more patches for v3.16 other than fixes[1].
+Fixes and branches needing fixes[1] aside, I am planning to send the last
+set of pull-requests for v3.16 tomorrow.
+
+I have tagged renesas-next-v3.15-rc1-20140515 which includes all patches I
+have queued up. I have also tagged renesas-devel-v3.15-rc5-20140515. The
+only difference between the two tags is that the former is based on
+v3.15-rc1 while the latter is includes v3.15-rc5.
+
+I now plan to start queuing up patches for v3.17, making them them
+available in the devel branch. I will rebase them on top of v3.16-rc1 once
+it is released and the result will become available in the next branch at
+that time.
+
+I realise that there may be patches that people anticipated would make it
+into v3.16 but have not. I sympathise with this but arm-soc has a cut-off
+of v3.15-rc6 and this means I have to have things queued up well before
+then. I believe that in this release cycle I have cut things as fine as
+possible and in future I hope to close the Renesas tree soon after the
+release of v3.16-rc5. Your understanding is appreciated.
+
+Lastly, I will be in Tokyo for Linux Con Japan next week.
+I apologise if that results in any delays.
+
+
+[1] At this time the only fix I am waiting on is one to either fix
+    or remove genmai-reference support.
+    https://patchwork.kernel.org/patch/4173801/
+    This affects only the r7s72100-ccf-for-v3.16 branch.
+    https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/log/?h=r7s72100-ccf-for-v3.16
