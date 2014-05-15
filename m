@@ -1,44 +1,43 @@
-From: HUSAM AL SAYED <Husamalsayed@asia.com>
-Date: Mon, 26 May 2014 18:00:48 +0000
-Subject: Your Urgent reply.
-Message-Id: <CAKFyHyqE-jAV0G8GqYW7H_3cUYv2iXVQm5a6-m1VNZWRhKVXAg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:00:58 +0000
+Subject: [PATCH v3] serial: sh-sci: Add device tree support for r8a7779
+Message-Id: <1400151658-17488-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Dear Friend,
+Simply document a new compat string.
+There appears to be no need for a driver updates.
 
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Compliments of the day.This mail May be a surprise to you Because you
-did not give me the permission to do so and Neither do you know me but
-before I tell you about myself I want you to please forgive me for
-sending this mail without your permission I have been in search of
-someone with this last name so when I saw you online, I was pushed to
-contact you and see how best we can assist each other. I am Mr. Husam
-Al Sayed, a Bank Officer here in U.A.E. I believe it is the wish of
-God for me to come across you now. I am having an important business
-discussion I wish to share with you which I  believe will interest
-you, because it is in connection with your last name and you are going
-to benefit from it.
+---
+v3
+* Keep lists sorted by SoC number
+* Added Ack from Laurent Pinchart
 
-One Late peter who was among the death victims in the May 27 2006
-Earthquake disaster in Java, Indonesia that killed over 5,000 people.
-He was in Indonesia on a business trip and that was how he met his
-end. My bank management is yet to know about his death, I knew about
-it because he was my friend and I am his account officer.he did not
-mention any Next of Kin/ Heir when the account was opened, and he was
-not married and no children. Last week my Bank Management requested
-that he should give instructions on what to do about his funds,I know
-this will happen and that is why I have been looking for a means to
-handle the situation,
+v2
+* Do not update the driver to set SCSCR_CKE1.
+  Instead DT may provide the P clock as the clock for the SCIF devices.
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-If you are interested send me your private Email Address so that i can
-send you more details of the transaction,
-Thanks for your understanding
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 53e6c17..64fd7de 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -4,6 +4,7 @@ Required properties:
+ 
+   - compatible: Must contain one of the following:
+ 
++    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
+     - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
+     - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
+-- 
+1.8.5.2
 
-I am waiting for your reply.
-
-Best regards,
-
-Mr. Husam Al Sayed
