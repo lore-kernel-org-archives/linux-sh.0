@@ -1,39 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 15 May 2014 13:11:17 +0000
-Subject: Re: [PATCH v2 3/9] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
-Message-Id: <CAMuHMdX4+XPcUGfF0mrzeXuL3T5Tn7RTBW-T-mvLOM0VV_BURg@mail.gmail.com>
+From: =?UTF-8?B?44Kr44Kq44CA44Of44Oz44CA44OS44Kn44OD44OX?=  <cm-hiep@jinso.co.jp>
+Date: Thu, 15 May 2014 06:28:24 +0000
+Subject: Ethernet bug at Upstream-v3.15-rcx on Lager.
+Message-Id: <53745E88.7040108@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
-	<1397511312-4845-4-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1397511312-4845-4-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-On Mon, Apr 14, 2014 at 11:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -8,6 +8,8 @@
-> +               sysdma0: dma-controller@e6700000 {
+Hi Sergei
 
-> +                       reg = <0 0xe6700020 0 0xffc0>;
+I am Hiep from JINZAI SOLUTION (a Japanese Company).
+Now, I am testing a upstream-v3.15-rc2 on Lager for Renesas RSO.
+I found a problem about Ethernet Driver so I would like to report to you.
+The problem is losing data when sending data by UDP:
 
-> +               sysdma1: dma-controller@e6720000 {
+     - From Lager board to PC:
+     BANDWIDTH from 10M to 70M are good,  but they suddenly  down 51.2=20
+Mbits/sec at 80M
+     and 57.8 Mbits/sec at 90 M and 64.2 Mbits/sec at 100M.
 
-> +                       reg = <0 0xe6720020 0 0xffc0>;
+     - From PC to Lager board:
+    Some time when the message of "sh-eth r8a7790-ether eth0: Receive=20
+FIFO Overflow" occurs,
+    some of datagrams will be lost as the logs show below:
+     =E3=80=8C$ iperf -c 172.16.1.36 -u -b 90M
+     .....
+     [  3] Server Report:
+     [  3]  0.0-10.0 sec   108 MBytes  90.4 Mbits/sec   0.000 ms=20
+36/76923 (0.047%)
+     .....
+     # iperf -s -u
+     [ ID] Interval       Transfer     Bandwidth        Jitter=20
+Lost/Total Datagrams
+     sh-eth r8a7790-ether eth0: Receive FIFO Overflow
+     [  3]  0.0-10.0 sec   108 MBytes  90.4 Mbits/sec   0.001 ms=20
+36/76923 (0.047%)
 
-ePAPR: "The unit-address must match the first address specified in the reg
-property of the node."
+Please review it when you have time.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Bests Regards,
+Cao Minh Hiep.
