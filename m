@@ -1,81 +1,117 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 May 2014 08:03:31 +0000
-Subject: [PATCH 04/15] ARM: shmobile: r8a73a4: Switch to new style CMT device
-Message-Id: <52065ef71e2c4da9e9661da68915741afc72ec1d.1399967755.git.horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:32:01 +0000
+Subject: [PATCH v6 06/17] ARM: shmobile: r8a7779: Add helper to read mode pins
+Message-Id: <1400153532-23675-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1399967755.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1399967755.git.horms+renesas@verge.net.au>
+References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add and use helper to read mode pins.
+This will be re-used when moving marzen-reference to
+the common clock framework.
 
-The CMT (Compare Match Timer) driver implements a new style of platform
-data that handles the timer as a single device with multiple channel.
-Switch from the old-style platform data to the new-style platform data.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a73a4.c |  2 +-
- arch/arm/mach-shmobile/setup-r8a73a4.c | 17 +++++++----------
- 2 files changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a73a4.c b/arch/arm/mach-shmobile/clock-r8a73a4.c
-index 7348d58..b5bc22c 100644
---- a/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/clock-r8a73a4.c
-@@ -597,7 +597,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6560000.i2c", &mstp_clks[MSTP317]),
- 	CLKDEV_DEV_ID("e6500000.i2c", &mstp_clks[MSTP318]),
- 	CLKDEV_DEV_ID("e6510000.i2c", &mstp_clks[MSTP323]),
--	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]),
-+	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.1", &mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("e60b0000.i2c", &mstp_clks[MSTP409]),
- 	CLKDEV_DEV_ID("e6540000.i2c", &mstp_clks[MSTP410]),
- 	CLKDEV_DEV_ID("e6530000.i2c", &mstp_clks[MSTP411]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a73a4.c b/arch/arm/mach-shmobile/setup-r8a73a4.c
-index cd36f80..9333770 100644
---- a/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ b/arch/arm/mach-shmobile/setup-r8a73a4.c
-@@ -169,20 +169,17 @@ static const struct resource thermal0_resources[] = {
- 					thermal0_resources,		\
- 					ARRAY_SIZE(thermal0_resources))
+---
+
+There seems to be some scope to share this code
+with similar code in setup-rcar-gen2.c
+
+v6
+* As suggested by Geert Uytterhoeven
+  - Cache result
+
+v2 - v5
+* No change
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c        | 11 ++---------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c        | 18 ++++++++++++++++++
+ 3 files changed, 21 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index a13298b..e9d3348 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -25,6 +25,7 @@
+ #include <linux/clkdev.h>
+ #include <mach/clock.h>
+ #include <mach/common.h>
++#include <mach/r8a7779.h>
  
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.timer_bit = 0,
--	.clockevent_rating = 80,
-+static struct sh_timer_config cmt1_platform_data = {
-+	.channels_mask = 0xff,
- };
+ /*
+  *		MD1 = 1			MD1 = 0
+@@ -52,9 +53,6 @@
+ #define MSTPCR3		IOMEM(0xffc8003c)
+ #define MSTPSR1		IOMEM(0xffc80044)
  
--static struct resource cmt10_resources[] = {
--	DEFINE_RES_MEM(0xe6130010, 0x0c),
--	DEFINE_RES_MEM(0xe6130000, 0x04),
--	DEFINE_RES_IRQ(gic_spi(120)), /* CMT1_0 */
-+static struct resource cmt1_resources[] = {
-+	DEFINE_RES_MEM(0xe6130000, 0x1004),
-+	DEFINE_RES_IRQ(gic_spi(120)),
- };
+-#define MODEMR		0xffcc0020
+-
+-
+ /* ioremap() through clock mapping mandatory to avoid
+  * collision with ARM coherent DMA virtual memory range.
+  */
+@@ -207,14 +205,9 @@ static struct clk_lookup lookups[] = {
  
- #define r8a7790_register_cmt(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-+	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
- 					  idx, cmt##idx##_resources,	\
- 					  ARRAY_SIZE(cmt##idx##_resources), \
- 					  &cmt##idx##_platform_data,	\
-@@ -196,7 +193,7 @@ void __init r8a73a4_add_dt_devices(void)
- 	r8a73a4_register_scif(3);
- 	r8a73a4_register_scif(4);
- 	r8a73a4_register_scif(5);
--	r8a7790_register_cmt(10);
-+	r8a7790_register_cmt(1);
+ void __init r8a7779_clock_init(void)
+ {
+-	void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
+-	u32 mode;
++	u32 mode = r8a7779_read_mode_pins();
+ 	int k, ret = 0;
+ 
+-	BUG_ON(!modemr);
+-	mode = ioread32(modemr);
+-	iounmap(modemr);
+-
+ 	if (mode & MD(1)) {
+ 		plla_clk.rate = 1500000000;
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 88eecea..d5ba2d8 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -32,6 +32,7 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_add_standard_devices_dt(void);
+ extern void r8a7779_init_late(void);
++extern u32 r8a7779_read_mode_pins(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index d197b5a..6d091bd 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -762,6 +762,24 @@ void __init r8a7779_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
- /* DMA */
++#define MODEMR		0xffcc0020
++
++u32 __init r8a7779_read_mode_pins(void)
++{
++	static u32 mode;
++	static bool mode_valid;
++
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, PAGE_SIZE);
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
++}
++
+ static const char *r8a7779_compat_dt[] __initdata = {
+ 	"renesas,r8a7779",
+ 	NULL,
 -- 
 1.8.5.2
 
