@@ -1,71 +1,71 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 19 May 2014 20:42:33 +0000
-Subject: [PATCHv2 resend 02/11] ARM: shmobile: Armadillo 800 EVA: initialize all struct pwm_lookup members
-Message-Id: <1400532162-29483-3-git-send-email-alexandre.belloni@free-electrons.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:32:12 +0000
+Subject: [PATCH v6 17/17] ARM: shmobile: marzen-reference: Remove legacy clock support
+Message-Id: <1400153532-23675-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
+References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Initializing all the struc pwm_lookup members allows to get rid of the struct
-tpu_pwm_platform_data as the polarity initialization will be taken care of by
-the PWM core.
+Marzen DT reference is now only built for multiplatform
+which means that CCF comes with the package. Remove unused legacy
+code ifdefs to clean up the code.
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Acked-by: Simon Horman <horms@verge.net.au>
+Based on similar work for the Koelsch board by Magnus Damm.
+
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 20 +++++++++-----------
- 1 file changed, 9 insertions(+), 11 deletions(-)
+v5, v6
+* Rebase
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2858f380beae..1bf61dad9a35 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -31,7 +31,7 @@
- #include <linux/gpio_keys.h>
- #include <linux/regulator/driver.h>
- #include <linux/pinctrl/machine.h>
--#include <linux/platform_data/pwm-renesas-tpu.h>
-+#include <linux/pwm.h>
- #include <linux/pwm_backlight.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/gpio-regulator.h>
-@@ -399,24 +399,22 @@ static struct resource pwm_resources[] = {
- 	},
- };
+v4
+* As suggested by Geert Uytterhoeven
+  - Remove bogus "these" from changelog
+* Rebase
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 21c8cee..c6c133d 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -31,13 +31,10 @@
  
--static struct tpu_pwm_platform_data pwm_device_data = {
--	.channels[2] = {
--		.polarity = PWM_POLARITY_INVERSED,
--	}
--};
--
- static struct platform_device pwm_device = {
- 	.name = "renesas-tpu-pwm",
- 	.id = -1,
--	.dev = {
--		.platform_data = &pwm_device_data,
--	},
- 	.num_resources = ARRAY_SIZE(pwm_resources),
- 	.resource = pwm_resources,
- };
+ static void __init marzen_init_timer(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-#endif
+ 	clocksource_of_init();
+ }
  
- static struct pwm_lookup pwm_lookup[] = {
--	PWM_LOOKUP("renesas-tpu-pwm", 2, "pwm-backlight.0", NULL),
-+	{
-+		.provider = "renesas-tpu-pwm",
-+		.index = 2,
-+		.dev_id = "pwm-backlight.0",
-+		.con_id = NULL,
-+		.period = 33333,
-+		.polarity = PWM_POLARITY_INVERSED,
-+	},
+-#ifdef CONFIG_COMMON_CLK
+ /*
+  * This is a really crude hack to provide clkdev support to platform
+  * devices until they get moved to DT.
+@@ -51,15 +48,10 @@ static const struct clk_name clk_names[] __initconst = {
+ 	{ "scif5", NULL, "sh-sci.5" },
+ 	{ "tmu0", "fck", "sh-tmu.0" },
  };
+-#endif
  
- /* LCDC and backlight */
+ static void __init marzen_init(void)
+ {
+-#ifdef CONFIG_COMMON_CLK
+ 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
+-#else
+-	r8a7779_clock_init();
+-#endif
+ 	r8a7779_add_standard_devices_dt();
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
 -- 
-1.9.1
+1.8.5.2
 
