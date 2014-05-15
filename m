@@ -1,54 +1,65 @@
-From: Zhang Rui <rui.zhang@intel.com>
-Date: Thu, 15 May 2014 08:48:05 +0000
-Subject: Re: [PATCH] thermal: rcar: Use pm_runtime_put() i.s.o. pm_runtime_put_sync()
-Message-Id: <1400143685.2273.31.camel@rzhang1-toshiba>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:32:03 +0000
+Subject: [PATCH v6 08/17] ARM: shmobile: marzen-reference: Move clock and OF device initialisation into board
+Message-Id: <1400153532-23675-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397494975-22489-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1397494975-22489-1-git-send-email-geert@linux-m68k.org>
+References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Eduardo Valentin <eduardo.valentin@ti.com>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On =E4=B8=80, 2014-04-14 at 19:02 +0200, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@glider.be>
->=20
-> There's no need for this to be synchronous
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Move the clock initialisation and OF device population from
+SoC to board code. This is in keeping with the pattern used by Lager.
+And the clock portion is part of decoupling clock initialisation
+from SoC code in preparation for moving to the common clock framework.
 
-applied.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen-reference.c | 3 +++
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 4 ----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
-thanks,
-rui
-> ---
->  drivers/thermal/rcar_thermal.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->=20
-> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_therma=
-l.c
-> index 5a37940b02c9..a8ed0e0265ae 100644
-> --- a/drivers/thermal/rcar_thermal.c
-> +++ b/drivers/thermal/rcar_thermal.c
-> @@ -470,7 +470,7 @@ error_unregister:
->  			rcar_thermal_irq_disable(priv);
->  	}
-> =20
-> -	pm_runtime_put_sync(dev);
-> +	pm_runtime_put(dev);
->  	pm_runtime_disable(dev);
-> =20
->  	return ret;
-> @@ -488,7 +488,7 @@ static int rcar_thermal_remove(struct platform_device=
- *pdev)
->  			rcar_thermal_irq_disable(priv);
->  	}
-> =20
-> -	pm_runtime_put_sync(dev);
-> +	pm_runtime_put(dev);
->  	pm_runtime_disable(dev);
-> =20
->  	return 0;
-
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index 2773936..c22e5c2 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ 
++#include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -27,7 +28,9 @@
+ 
+ static void __init marzen_init(void)
+ {
++	r8a7779_clock_init();
+ 	r8a7779_add_standard_devices_dt();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 6c1aef0..c0e61d5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -744,12 +744,8 @@ void __init r8a7779_init_delay(void)
+ 
+ void __init r8a7779_add_standard_devices_dt(void)
+ {
+-	/* clocks are setup late during boot in the case of DT */
+-	r8a7779_clock_init();
+-
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			     ARRAY_SIZE(r8a7779_devices_dt));
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+ #define MODEMR		0xffcc0020
+-- 
+1.8.5.2
 
