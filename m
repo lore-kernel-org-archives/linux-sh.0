@@ -1,174 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:27 +0000
-Subject: [PATCH 02/12] ARM: shmobile: r7s72100: add essential clock nodes to dtsi
-Message-Id: <b6face404f38f783c4428d953efa4eeb68d7cc24.1400201383.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 May 2014 10:40:50 +0000
+Subject: [PATCH v2 09/10] iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
+Message-Id: <1400150451-13469-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
+References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+We don't support stage 2 translation yet.
 
-Only essential clocks are added for now. Other clocks will be added when
-needed.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 86 +++++++++++++++++++++++++++++-
- include/dt-bindings/clock/r7s72100-clock.h | 28 ++++++++++
- 2 files changed, 113 insertions(+), 1 deletion(-)
- create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
+ drivers/iommu/ipmmu-vmsa.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index ee70071..5a6e248 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -1,13 +1,15 @@
- /*
-  * Device Tree Source for the r7s72100 SoC
-  *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013-14 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-  *
-  * This file is licensed under the terms of the GNU General Public License
-  * version 2.  This program is licensed "as is" without any warranty of any
-  * kind, whether express or implied.
-  */
+diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
+index 27fd4d0..a4175d3 100644
+--- a/drivers/iommu/ipmmu-vmsa.c
++++ b/drivers/iommu/ipmmu-vmsa.c
+@@ -201,14 +201,6 @@ static LIST_HEAD(ipmmu_devices);
+ #define ARM_VMSA_PTE_ATTRINDX_SHIFT	2
+ #define ARM_VMSA_PTE_nG			(((pteval_t)1) << 11)
  
-+#include <dt-bindings/clock/r7s72100-clock.h>
- #include <dt-bindings/interrupt-controller/irq.h>
+-/* Stage-2 PTE */
+-#define ARM_VMSA_PTE_HAP_FAULT		(((pteval_t)0) << 6)
+-#define ARM_VMSA_PTE_HAP_READ		(((pteval_t)1) << 6)
+-#define ARM_VMSA_PTE_HAP_WRITE		(((pteval_t)2) << 6)
+-#define ARM_VMSA_PTE_MEMATTR_OIWB	(((pteval_t)0xf) << 2)
+-#define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
+-#define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
+-
+ #define ARM_VMSA_PTE_CONT_ENTRIES	16
+ #define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
  
- / {
-@@ -28,6 +30,88 @@
- 		spi4 = &spi4;
- 	};
- 
-+	clocks {
-+		ranges;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+
-+		/* External clocks */
-+		extal_clk: extal_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-clock";
-+			/* If clk present, value must be set by board */
-+			clock-frequency = <0>;
-+			clock-output-names = "extal";
-+		};
-+
-+		usb_x1_clk: usb_x1_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-clock";
-+			/* If clk present, value must be set by board */
-+			clock-frequency = <0>;
-+			clock-output-names = "usb_x1";
-+		};
-+
-+		/* Special CPG clocks */
-+		cpg_clocks: cpg_clocks@fcfe0000 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-cpg-clocks",
-+				     "renesas,rz-cpg-clocks";
-+			reg = <0xfcfe0000 0x18>;
-+			clocks = <&extal_clk>, <&usb_x1_clk>;
-+			clock-output-names = "pll", "i", "g";
-+		};
-+
-+		/* Fixed factor clocks */
-+		b_clk: b_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
-+			clock-mult = <1>;
-+			clock-div = <3>;
-+			clock-output-names = "b";
-+		};
-+		p1_clk: p1_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
-+			clock-mult = <1>;
-+			clock-div = <6>;
-+			clock-output-names = "p1";
-+		};
-+		p0_clk: p0_clk {
-+			#clock-cells = <0>;
-+			compatible = "fixed-factor-clock";
-+			clocks = <&cpg_clocks R7S72100_CLK_PLL>;
-+			clock-mult = <1>;
-+			clock-div = <12>;
-+			clock-output-names = "p0";
-+		};
-+
-+		/* MSTP clocks */
-+		mstp3_clks: mstp3_clks@fcfe0420 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0420 4>;
-+			clocks = <&p0_clk>;
-+			clock-indices = <R7S72100_CLK_MTU2>;
-+			clock-output-names = "mtu2";
-+		};
-+
-+		mstp4_clks: mstp4_clks@fcfe0424 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0424 4>;
-+			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
-+				 <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>;
-+			clock-indices = <
-+				R7S72100_CLK_SCIF0 R7S72100_CLK_SCIF1 R7S72100_CLK_SCIF2 R7S72100_CLK_SCIF3
-+				R7S72100_CLK_SCIF4 R7S72100_CLK_SCIF5 R7S72100_CLK_SCIF6 R7S72100_CLK_SCIF7
-+			>;
-+			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
-+		};
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-new file mode 100644
-index 0000000..c756f1c
---- /dev/null
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -0,0 +1,28 @@
-+/*
-+ * Copyright (C) 2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R7S72100_H__
-+#define __DT_BINDINGS_CLOCK_R7S72100_H__
-+
-+#define R7S72100_CLK_PLL	0
-+
-+/* MSTP3 */
-+#define R7S72100_CLK_MTU2	3
-+
-+/* MSTP4 */
-+#define R7S72100_CLK_SCIF0	7
-+#define R7S72100_CLK_SCIF1	6
-+#define R7S72100_CLK_SCIF2	5
-+#define R7S72100_CLK_SCIF3	4
-+#define R7S72100_CLK_SCIF4	3
-+#define R7S72100_CLK_SCIF5	2
-+#define R7S72100_CLK_SCIF6	1
-+#define R7S72100_CLK_SCIF7	0
-+
-+#endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
 -- 
-1.8.5.2
+1.8.5.5
 
