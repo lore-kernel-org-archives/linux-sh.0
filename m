@@ -1,47 +1,98 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 28 May 2014 07:24:01 +0000
-Subject: [PATCH 6/8] ARM: shmobile: koelsch: Add PCIe bus clock and enable PCIe device
-Message-Id: <1401261843-6964-7-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 May 2014 11:39:30 +0000
+Subject: [PATCH v2 1/4] ARM: shmobile: r8a7779: Add scif nodes to dtsi
+Message-Id: <1400153973-25546-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400153973-25546-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+v2
+* As suggested by Laurent Pinchart
+  - The correct size of the register is 256 not 265.
+    And to make this a bit more readable use 0x100.
+  - List compat strings from most to least specific.
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 05d44f9..9ece88c 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -209,6 +209,16 @@
- 		states = <3300000 1
- 			  1800000 0>;
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index bdaaadc..7c3b2d3 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -192,6 +192,66 @@
+ 		status = "disabled";
  	};
-+
-+	clocks {
-+		/* External PCIe bus clock */
-+		pcie_bus_clk: pcie_bus_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <100000000>;
-+			clock-output-names = "pcie_bus";
-+		};
-+	};
- };
  
- &extal_clk {
-@@ -408,3 +418,7 @@
- 		spi-cpha;
- 	};
- };
++	scif0: serial@ffe40000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe40000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
 +
-+&pcie {
-+	status = "okay";
-+};
++	scif1: serial@ffe41000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe41000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif2: serial@ffe42000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe42000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif3: serial@ffe43000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe43000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif4: serial@ffe44000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe44000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
++	scif5: serial@ffe45000 {
++		compatible = "renesas,scif-r8a7779", "renesas,scif";
++		reg = <0xffe45000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&cpg_clocks R8A7779_CLK_P>;
++		clock-names = "sci_ick";
++		status = "disabled";
++	};
++
+ 	pfc: pfc@fffc0000 {
+ 		compatible = "renesas,pfc-r8a7779";
+ 		reg = <0xfffc0000 0x23c>;
 -- 
-1.9.3
+1.8.5.2
 
