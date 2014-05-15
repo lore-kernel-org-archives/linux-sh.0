@@ -1,44 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 21 May 2014 22:55:34 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC r7s72100-ccf Updates for v3.16
-Message-Id: <20140521225534.GB19986@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 15 May 2014 10:40:41 +0000
+Subject: [PATCH v2 00/10] Renesas ipmmu-vmsa: Miscellaneous cleanups and fixes
+Message-Id: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201383.git.horms+renesas@verge.net.au>
- <20140521213416.GC24972@quad.lixom.net>
-In-Reply-To: <20140521213416.GC24972@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 21, 2014 at 02:34:16PM -0700, Olof Johansson wrote:
-> On Fri, May 16, 2014 at 09:58:33AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Renesas ARM based SoC r7s72100-ccf updates for v3.16.
-> > 
-> > This pull request is based on Renesas SoC Clock Cleanups for v3.16,
-> > such requests, tagged as renesas-clock-cleanup2-for-v3.16,
-> > which I have already sent a pull-request for.
-> > 
-> > 
-> > This series includes dependencies that do not fit easily into the usual
-> > inter-branch dependencies and as such I have grouped them together in a
-> > single branch.
-> > 
-> > 
-> > The following changes since commit c17fcfbcc0f6b4f3cae761149e1a6108dd6750e7:
-> > 
-> >   ARM: shmobile: r7s72100: Switch to new style MTU2 device (2014-05-11 19:35:28 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r7s72100-ccf-for-v3.16
-> 
-> Seems like lots of stuff is ending up in next/boards now. That's OK. This
-> branch too.
+Hello,
 
-Thanks. At a high level I think we are experiencing this due to various
-efforts to convert our SoCs and boards over to multiplatform. I suspect
-this will continue on a per-SoC/board basis until all the conversions and
-related cleanups are done.
+This patch set cleans up and fixes small issues in the ipmmu-vmsa driver. The
+patches are based on top of "[PATCH v3] iommu: Add driver for Renesas
+VMSA-compatible IPMMU" that adds the ipmmu-vmsa driver.
+
+The most interesting part of this series is the rewrite of the page table
+management code. The IOMMU core guarantees that the map and unmap operations
+will always be called only with page sizes advertised by the driver. We can
+use that assumption to remove loops of PGD and PMD entries, simplifying the
+code.
+
+Joerg, is there still time to get this merged in v3.16 ? The patches have all
+been posted previously and the only comment I've received was about a missing
+#define in patch 04/10.
+
+Cc: Joerg Roedel <joro@8bytes.org>
+
+Changes since v1:
+
+- Add missing IPMMU_PTRS_PER_PUD definition in patch 04/10
+
+Laurent Pinchart (10):
+  iommu/ipmmu-vmsa: Refactor micro-TLB lookup
+  iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or
+    attachment
+  iommu/ipmmu-vmsa: Fix the supported page sizes
+  iommu/ipmmu-vmsa: Define driver-specific page directory sizes
+  iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
+  iommu/ipmmu-vmsa: PMD is never folded, PUD always is
+  iommu/ipmmu-vmsa: Rewrite page table management
+  iommu/ipmmu-vmsa: Support 2MB mappings
+  iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
+  iommu/ipmmu-vmsa: Support clearing mappings
+
+ drivers/iommu/ipmmu-vmsa.c | 535 ++++++++++++++++++++++++++++++---------------
+ 1 file changed, 361 insertions(+), 174 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
