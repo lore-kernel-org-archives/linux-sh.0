@@ -1,48 +1,133 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 13 May 2014 00:06:23 +0000
-Subject: Re: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
-Message-Id: <2193707.R9XiqBsnU4@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:11 +0000
+Subject: [PATCH 02/11] ARM: shmobile: henninger: add SDHI0/2 DT support
+Message-Id: <1299df03d7191ab4356c995dde8b912d3c8922e9.1400200395.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131205000928.GI29268@sirena.org.uk> <2248657.5UVkYxaC6z@avalon>
-In-Reply-To: <2248657.5UVkYxaC6z@avalon>
+References: <cover.1400200395.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Thursday 05 December 2013 01:47:04 Laurent Pinchart wrote:
-> On Thursday 05 December 2013 00:09:28 Mark Brown wrote:
-> > On Thu, Nov 28, 2013 at 04:44:52PM +0100, Laurent Pinchart wrote:
-> > > The gpio-regulator driver requires the regulator-type property to be
-> > > present. Document it as required in the DT bindings.
-> > 
-> > It does?  That seems needless.  It should just default to voltage and
-> > provide a way override to current, though frankly I'd be astonished to see
-> > a GPIO controlled current regulator at all so I'm not sure I'd even
-> > bother writing the code for that until someone needs it.  As it is this
-> > will most likely just be noise in the DT files and wasted cycles parsing
-> > the property.
->
-> I'm fine with that. The property should still be documented in the DT
-> bindings as optional though. Or be removed completely until a
-> GPIO-controlled current regulator is needed.
+Define the Henninger board dependent part of the SDHI0/2 device nodes along with
+the necessary voltage regulators (note that the Vcc regulators are dummy -- they
+are required but don't actually exist on the board). Also, GPIOs have to be used
+for the CD and WP signals due to the SDHI driver constraints...
 
-What's the status of this ? The gpio regulator driver now defaults to voltage 
-regulator when the regulator-type property is not set. Should the DT bindings 
-document the property as optional (I can submit a patch for that), or do you 
-consider that the gpio regulator driver should support voltage regulators only 
-when used with DT, and just keep the regulator-type property support in the 
-driver for backward compatibility ?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-henninger.dts | 76 +++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-> > Please CC maintainers...
-> 
-> My bad, sorry.
-
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 0a65523..2e45c06 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -11,6 +11,7 @@
+ 
+ /dts-v1/;
+ #include "r8a7791.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Henninger";
+@@ -33,6 +34,50 @@
+ 		device_type = "memory";
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
++
++	vcc_sdhi0: regulator@0 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	vccq_sdhi0: regulator@1 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi2: regulator@2 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	vccq_sdhi2: regulator@3 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI2 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
+ };
+ 
+ &extal_clk {
+@@ -54,6 +99,16 @@
+ 		renesas,groups = "intc_irq0";
+ 		renesas,function = "intc";
+ 	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sd2 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
+ };
+ 
+ &scif0 {
+@@ -82,3 +137,24 @@
+ &sata0 {
+        status = "okay";
+ };
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi2>;
++	vqmmc-supply = <&vccq_sdhi2>;
++	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
