@@ -1,44 +1,38 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 28 May 2014 07:23:55 +0000
-Subject: [PATCH 0/8] ARM: shmobile: R-Car: Add PCIe clocks and DT nodes
-Message-Id: <1401261843-6964-1-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:42 +0000
+Subject: [PATCH 1/9] ARM: shmobile: Add r8a7740 Maximum CPU Frequency to DTS
+Message-Id: <63575d8cd5cba0c657ac5c18f75e91e2e30cc0eb.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-These patches add PCIe support to the R-Car H2/M2 devices and enable it on the
-Koelsch board. They depend on the following commits in Bjorn's PCI tree:
-	c25da4778803b41e11fd82dd5576c35c09b5f0e0
-	290c1fb35860540223bef1be021944d02232889d
-	7869fc6e295cbb1f80e30555bebbc795abb5b9a7
+From: Magnus Damm <damm+renesas@opensource.se>
 
-They have been tested on an off-the-shelf Koelsch board, and also a Lager board
-with some hardware mods.
+Add 800 MHz to the r8a7740 DTS to describe the maximum CPU frequency.
 
-They are based on Simon's renesas-devel-v3.15-rc7-20140528 tag.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Geert Uytterhoeven <geert@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-Phil Edworthy (8):
-  ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
-  ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
-  ARM: shmobile: r8a7790: Add PCIe device nodes
-  ARM: shmobile: lager: Add dummy PCIe bus clock
-  ARM: shmobile: r8a7791: Add PCIe device nodes
-  ARM: shmobile: koelsch: Add PCIe bus clock and enable PCIe device
-  ARM: shmobile: koelsch: Add PCIe to defconfig
-  ARM: shmobile: henninger: Add dummy PCIe bus clock
-
- arch/arm/boot/dts/r8a7790-lager.dts       | 10 ++++++++++
- arch/arm/boot/dts/r8a7790.dtsi            | 31 ++++++++++++++++++++++++++++---
- arch/arm/boot/dts/r8a7791-henninger.dts   | 10 ++++++++++
- arch/arm/boot/dts/r8a7791-koelsch.dts     | 14 ++++++++++++++
- arch/arm/boot/dts/r8a7791.dtsi            | 31 +++++++++++++++++++++++++++++--
- arch/arm/configs/koelsch_defconfig        |  3 +++
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- include/dt-bindings/clock/r8a7791-clock.h |  1 +
- 8 files changed, 96 insertions(+), 5 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 8280884..67c4b8b 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -22,6 +22,7 @@
+ 			compatible = "arm,cortex-a9";
+ 			device_type = "cpu";
+ 			reg = <0x0>;
++			clock-frequency = <800000000>;
+ 		};
+ 	};
+ 
 -- 
-1.9.3
+1.8.5.2
 
