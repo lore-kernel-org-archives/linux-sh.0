@@ -1,96 +1,60 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 May 2014 08:03:42 +0000
-Subject: [PATCH 15/15] ARM: shmobile: r7s72100: Switch to new style MTU2 device
-Message-Id: <c17fcfbcc0f6b4f3cae761149e1a6108dd6750e7.1399967755.git.horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:30 +0000
+Subject: [PATCH 05/12] ARM: shmobile: r7s72100: genmai: add uart alias and activate scif2 as console
+Message-Id: <5be13fefdb83c15ed69eb032dfe011162d1a5269.1400201383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1399967755.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1399967755.git.horms+renesas@verge.net.au>
+References: <cover.1400201383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The MTU2 (Multi-Function Timer Pulse Unit 2) driver implements a new
-style of platform data that handles the timer as a single device with
-multiple channel. Switch from the old-style platform data to the
-new-style platform data.
+We keep the UART naming backwards compatible with the legacy version.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Wolfram Sang <wsa@sang-engineering.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c |  2 +-
- arch/arm/mach-shmobile/setup-r7s72100.c | 26 +++++++++-----------------
- 2 files changed, 10 insertions(+), 18 deletions(-)
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index bee0073..644f1c2 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -204,7 +204,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
- 	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
- 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
--	CLKDEV_CON_ID("mtu2_fck", &mstp_clks[MSTP33]),
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index 941e72c..ca88458 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -1,7 +1,8 @@
+ /*
+  * Device Tree Source for the Genmai board
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-14 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -15,6 +16,10 @@
+ 	model = "Genmai";
+ 	compatible = "renesas,genmai-reference", "renesas,r7s72100";
  
- 	/* ICK */
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.0", &mstp_clks[MSTP47]),
-@@ -215,6 +214,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.5", &mstp_clks[MSTP42]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.6", &mstp_clks[MSTP41]),
- 	CLKDEV_ICK_ID("sci_fck", "sh-sci.7", &mstp_clks[MSTP40]),
-+	CLKDEV_ICK_ID("fck", "sh-mtu2", &mstp_clks[MSTP33]),
++	aliases {
++		serial2 = &scif2;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+@@ -48,3 +53,7 @@
+ 		pagesize = <64>;
+ 	};
  };
- 
- void __init r7s72100_clock_init(void)
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 9c0b3a9..545db15 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -62,24 +62,16 @@ R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
- 					  sizeof(scif##index##_platform_data))
- 
- 
--static struct sh_timer_config mtu2_0_platform_data __initdata = {
--	.name = "MTU2_0",
--	.timer_bit = 0,
--	.channel_offset = -0x80,
--	.clockevent_rating = 200,
-+static struct resource mtu2_resources[] __initdata = {
-+	DEFINE_RES_MEM(0xfcff0000, 0x400),
-+	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
- };
- 
--static struct resource mtu2_0_resources[] __initdata = {
--	DEFINE_RES_MEM(0xfcff0300, 0x27),
--	DEFINE_RES_IRQ(gic_iid(139)), /* MTU2 TGI0A */
--};
--
--#define r7s72100_register_mtu2(idx)					\
--	platform_device_register_resndata(&platform_bus, "sh_mtu2",	\
--					  idx, mtu2_##idx##_resources,	\
--					  ARRAY_SIZE(mtu2_##idx##_resources), \
--					  &mtu2_##idx##_platform_data,	\
--					  sizeof(struct sh_timer_config))
-+#define r7s72100_register_mtu2()					\
-+	platform_device_register_resndata(&platform_bus, "sh-mtu2",	\
-+					  -1, mtu2_resources,		\
-+					  ARRAY_SIZE(mtu2_resources),	\
-+					  NULL, 0)
- 
- void __init r7s72100_add_dt_devices(void)
- {
-@@ -91,7 +83,7 @@ void __init r7s72100_add_dt_devices(void)
- 	r7s72100_register_scif(5);
- 	r7s72100_register_scif(6);
- 	r7s72100_register_scif(7);
--	r7s72100_register_mtu2(0);
-+	r7s72100_register_mtu2();
- }
- 
- void __init r7s72100_init_early(void)
++
++&scif2 {
++	status = "okay";
++};
 -- 
 1.8.5.2
 
