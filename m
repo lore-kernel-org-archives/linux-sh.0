@@ -1,47 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 16 May 2014 15:26:50 +0000
-Subject: [PATCH/RFC 2/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
-Message-Id: <1400254015-29539-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:48 +0000
+Subject: [PATCH 7/9] ARM: shmobile: Remove unused r8a7791_init_early()
+Message-Id: <595e9b00fb81f971d84ff451861423d02c39d060.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Cfr. the r8a7790 version by Ben Dooks.
+Remove the now unused r8a7791_init_early() function.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |    7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7791.h | 1 -
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 7 -------
+ 2 files changed, 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8d7ffaeff6e0..e5c35d784ec8 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -743,16 +743,19 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
--				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
-+				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
-+				 <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
- 				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
- 				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
-+				R8A7791_CLK_SYS_DMAC1 R8A7791_CLK_SYS_DMAC0
- 			>;
- 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
--				"scifb1", "msiof1", "scifb2";
-+				"scifb1", "msiof1", "scifb2",
-+				"sys-dmac1", "sys-dmac0";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 200fa69..664274c 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -5,7 +5,6 @@ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
+-void r8a7791_init_early(void);
+ extern struct smp_operations r8a7791_smp_ops;
+ 
+ #endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 2c84e74..949580a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -210,13 +210,6 @@ void __init r8a7791_add_standard_devices(void)
+ 	r8a7791_register_thermal();
+ }
+ 
+-void __init r8a7791_init_early(void)
+-{
+-#ifndef CONFIG_ARM_ARCH_TIMER
+-	shmobile_setup_delay(1500, 2, 4); /* Cortex-A15 @ 1500MHz */
+-#endif
+-}
+-
+ #ifdef CONFIG_USE_OF
+ static const char *r8a7791_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a7791",
 -- 
-1.7.9.5
+1.8.5.2
 
