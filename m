@@ -1,56 +1,41 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 28 May 2014 07:23:57 +0000
-Subject: [PATCH 2/8] ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
-Message-Id: <1401261843-6964-3-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:20 +0000
+Subject: [PATCH 11/11] ARM: shmobile: r8a7740 dtsi: Remove duplicate interrupt-parent property
+Message-Id: <3fa3985e624aea24334abc9a33b484c3d316e64e.1400200395.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400200395.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds the device tree clock nodes for PCIe
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Caused by interaction between commit
+08ec67b50db7ca8c9077e67ca23850cdc5bfc716 ("ARM: shmobile: r8a7740 dtsi:
+Add Ethernet support") and commit 9ff254adc1e32db46000a33b8ecbc4d7047672be
+("ARM: shmobile: dts: Move interrupt-parent property to root node").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 6 ++++--
- include/dt-bindings/clock/r8a7791-clock.h | 1 +
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7740.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8d7ffae..d22acd5 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -758,15 +758,17 @@
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
- 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
--				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
-+				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>, <&mp_clk>;
- 			#clock-cells = <1>;
- 			renesas,clock-indices = <
- 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
- 				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
-+				R8A7791_CLK_PCIE
- 			>;
- 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
--				"mmcif0", "i2c7", "i2c8", "cmt1";
-+				"mmcif0", "i2c7", "i2c8", "cmt1",
-+				"pcie";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index b050d18..16bc1fc 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -53,6 +53,7 @@
- #define R8A7791_CLK_SDHI0		14
- #define R8A7791_CLK_MMCIF0		15
- #define R8A7791_CLK_IIC0		18
-+#define R8A7791_CLK_PCIE		19
- #define R8A7791_CLK_IIC1		23
- #define R8A7791_CLK_SSUSB		28
- #define R8A7791_CLK_CMT1		29
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index fbf47fb..5d2edd8 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -124,7 +124,6 @@
+ 		compatible = "renesas,gether-r8a7740";
+ 		reg = <0xe9a00000 0x800>,
+ 		      <0xe9a01800 0x800>;
+-		interrupt-parent = <&gic>;
+ 		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
+ 		/* clocks = <&mstp3_clks R8A7740_CLK_GETHER>; */
+ 		phy-mode = "mii";
 -- 
-1.9.3
+1.8.5.2
 
