@@ -1,42 +1,80 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 28 May 2014 07:24:03 +0000
-Subject: [PATCH 8/8] ARM: shmobile: henninger: Add dummy PCIe bus clock
-Message-Id: <1401261843-6964-9-git-send-email-phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 16 May 2014 12:10:14 +0000
+Subject: [PATCH 3/5] ARM: shmobile: Sync Genmai DTS with Genmai reference DTS
+Message-Id: <1400242216-20848-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Since the CPU's dtsi refers to pcie_bus_clock, we need an entry in
-the board's dts, even if we aren't using PCIe.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Copy the device nodes from Genmai reference into the Genmai device tree
+file. This will allow us to use a single DTS file regardless of kernel
+configuration. In case of legacy C board code the device nodes may or
+may not be used, but in the multiplatform case all the DT device nodes
+will be used.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/boot/dts/r7s72100-genmai.dts | 30 +++++++++++++++++++++++++++++-
+ 1 file changed, 29 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index cc6d992..6e5d779 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -78,6 +78,16 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
-+
-+	clocks {
-+		/* External PCIe bus clock - not used */
-+		pcie_bus_clk: pcie_bus_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <0>;
-+			clock-output-names = "pcie_bus";
-+		};
-+	};
- };
+diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
+index b1deaf7e2e06..56849b55e1c2 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai.dts
+@@ -1,7 +1,8 @@
+ /*
+  * Device Tree Source for the Genmai board
+  *
+- * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013-14 Renesas Solutions Corp.
++ * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+  *
+  * This file is licensed under the terms of the GNU General Public License
+  * version 2.  This program is licensed "as is" without any warranty of any
+@@ -15,6 +16,10 @@
+ 	model = "Genmai";
+ 	compatible = "renesas,genmai", "renesas,r7s72100";
  
- &extal_clk {
++	aliases {
++		serial2 = &scif2;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+@@ -29,3 +34,26 @@
+ 		#size-cells = <1>;
+ 	};
+ };
++
++&extal_clk {
++	clock-frequency = <13330000>;
++};
++
++&usb_x1_clk {
++	clock-frequency = <48000000>;
++};
++
++&i2c2 {
++	status = "okay";
++	clock-frequency = <400000>;
++
++	eeprom@50 {
++		compatible = "renesas,24c128";
++		reg = <0x50>;
++		pagesize = <64>;
++	};
++};
++
++&scif2 {
++	status = "okay";
++};
 -- 
-1.9.3
+1.9.2
 
