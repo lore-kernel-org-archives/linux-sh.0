@@ -1,93 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 14 May 2014 14:45:21 +0000
-Subject: [PATCH v3 2/3] drivers: sh: pm_runtime implementation needs to suspend and resume devices
-Message-Id: <1400078722-5517-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:10 +0000
+Subject: [PATCH 01/11] ARM: shmobile: henninger: specify EXTAL frequency
+Message-Id: <2af0d93762e91d4496cc2e63761c70ae9f50f997.1400200395.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400200395.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-If we override the platform bus calls for pm_runtime then we end up
-with the calls to the devices' suspend and resume methods ignored
-in favour of the bus ones.
+When creating the initial device tree for the Henninger board,  I've overlooked
+that EXTAL frequency needs to be overridden there. The 'sh-sci' driver  managed
+to work somehow but the SDHI driver that I've tried to enable just hanged with
+the default EXTAL frequency of 0...
 
-Change to calling the pm_runtime calls to suspend and resume the
-devices specifically in the drivers/sh/pm_runtime.c implementation
-to allow any device that may want to run power management to do so.
-
-Note, all the current sh driver implementations do not use their
-own power management code so this is not a major implementation
-issues.
-
-This also brings the implementation into line with the versions
-used by the Davinci and Keystone PM domain code, so once fully
-tested these implementations could be merged together.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Add Reviewed-by
-v2:
-  - New
----
- drivers/sh/pm_runtime.c |   37 +++++++++++++++++++++++++++++++++++--
- 1 file changed, 35 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 00b82ec94442..25eafbe4da33 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -21,10 +21,43 @@
- #include <linux/slab.h>
- 
- #ifdef CONFIG_PM_RUNTIME
-+static int sh_pm_runtime_suspend(struct device *dev)
-+{
-+	int ret;
-+
-+	ret = pm_generic_runtime_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend device\n");
-+		return ret;
-+	}
-+
-+	ret = pm_clk_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend clock\n");
-+		pm_generic_runtime_resume(dev);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static int sh_pm_runtime_resume(struct device *dev)
-+{
-+	int ret;
-+
-+	ret = pm_clk_resume(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to resume clock\n");
-+		return ret;
-+	}
-+
-+	return pm_generic_runtime_resume(dev);
-+}
-+
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
--		.runtime_suspend = pm_clk_suspend,
--		.runtime_resume = pm_clk_resume,
-+		.runtime_suspend = sh_pm_runtime_suspend,
-+		.runtime_resume = sh_pm_runtime_resume,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 6e67cea..0a65523 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -35,6 +35,10 @@
+ 	};
  };
+ 
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
+ &pfc {
+ 	scif0_pins: serial0 {
+ 		renesas,groups = "scif0_data_d";
 -- 
-1.7.9.5
+1.8.5.2
 
