@@ -1,87 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 19:15:08 +0000
-Subject: [PATCH v2 02/10] i2c: sh_mobile: improve error handling
-Message-Id: <1399058116-7721-3-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:44 +0000
+Subject: [PATCH 3/9] ARM: shmobile: Use r8a7740 DT CPU Frequency for Armadillo DT Ref
+Message-Id: <e568802d13eb1dbcbe688aa4e7cf1db866a52e3e.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1399058116-7721-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Use standard i2c error codes for i2c failures. Also, don't print
-something on timeout since it happens regularly with i2c. Simplify some,
-logic, too.
+Convert the Armadillo r8a7740 DT reference board support
+to use shmobile_init_delay() to be able to migrate away
+from per-SoC delay setup functions.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Geert Uytterhoeven <geert@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 25 +++++++++----------------
- 1 file changed, 9 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index d91625eea6bb..d2fa222df3d1 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -480,7 +480,7 @@ static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg,
- {
- 	if (usr_msg->len = 0 && (usr_msg->flags & I2C_M_RD)) {
- 		dev_err(pd->dev, "Unsupported zero length i2c read\n");
--		return -EIO;
-+		return -EOPNOTSUPP;
- 	}
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 57d1a78..57d246e 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -187,7 +187,7 @@ static const char *eva_boards_compat_dt[] __initdata = {
  
- 	if (do_init) {
-@@ -515,17 +515,12 @@ static int poll_dte(struct sh_mobile_i2c_data *pd)
- 			break;
- 
- 		if (val & ICSR_TACK)
--			return -EIO;
-+			return -ENXIO;
- 
- 		udelay(10);
- 	}
- 
--	if (!i) {
--		dev_warn(pd->dev, "Timeout polling for DTE!\n");
--		return -ETIMEDOUT;
--	}
--
--	return 0;
-+	return i ? 0 : -ETIMEDOUT;
- }
- 
- static int poll_busy(struct sh_mobile_i2c_data *pd)
-@@ -543,20 +538,18 @@ static int poll_busy(struct sh_mobile_i2c_data *pd)
- 		 */
- 		if (!(val & ICSR_BUSY)) {
- 			/* handle missing acknowledge and arbitration lost */
--			if ((val | pd->sr) & (ICSR_TACK | ICSR_AL))
--				return -EIO;
-+			val |= pd->sr;
-+			if (val & ICSR_TACK)
-+				return -ENXIO;
-+			if (val & ICSR_AL)
-+				return -EAGAIN;
- 			break;
- 		}
- 
- 		udelay(10);
- 	}
- 
--	if (!i) {
--		dev_err(pd->dev, "Polling timed out\n");
--		return -ETIMEDOUT;
--	}
--
--	return 0;
-+	return i ? 0 : -ETIMEDOUT;
- }
- 
- static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
+ 	.map_io		= r8a7740_map_io,
+-	.init_early	= r8a7740_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= eva_init,
+ 	.init_late	= shmobile_init_late,
 -- 
-1.9.2
+1.8.5.2
 
