@@ -1,109 +1,95 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 May 2014 01:49:18 +0000
-Subject: Re: [PATCH v3 1/2] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
-Message-Id: <20140513014917.GD10973@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:32 +0000
+Subject: [PATCH 07/12] ARM: shmobile: r7s72100: add i2c clocks to dtsi
+Message-Id: <d165566b8dc425e52a4f2c19c27c63d9807128b2.1400201383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400201383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 23, 2014 at 10:25:27AM +0200, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Sorry for missing this.
-I have queued it up.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r7s72100.dtsi            | 15 +++++++++++++++
+ include/dt-bindings/clock/r7s72100-clock.h |  6 ++++++
+ 2 files changed, 21 insertions(+)
 
-> ---
-> v3:
->   - Add Acked-by
->   - Bindings have been accepted in
->     git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-> 
-> v2:
->   - No changes
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi |   13 ++++++++++++-
->  1 file changed, 12 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index d38d70339149..7ff29601f962 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -117,6 +117,7 @@
->  		gpio-ranges = <&pfc 0 0 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
->  	};
->  
->  	gpio1: gpio@e6051000 {
-> @@ -128,6 +129,7 @@
->  		gpio-ranges = <&pfc 0 32 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
->  	};
->  
->  	gpio2: gpio@e6052000 {
-> @@ -139,6 +141,7 @@
->  		gpio-ranges = <&pfc 0 64 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
->  	};
->  
->  	gpio3: gpio@e6053000 {
-> @@ -150,6 +153,7 @@
->  		gpio-ranges = <&pfc 0 96 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
->  	};
->  
->  	gpio4: gpio@e6054000 {
-> @@ -161,6 +165,7 @@
->  		gpio-ranges = <&pfc 0 128 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
->  	};
->  
->  	gpio5: gpio@e6055000 {
-> @@ -172,6 +177,7 @@
->  		gpio-ranges = <&pfc 0 160 32>;
->  		#interrupt-cells = <2>;
->  		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
->  	};
->  
->  	thermal@e61f0000 {
-> @@ -802,14 +808,19 @@
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-> -			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
-> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
-> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
-> +				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
->  				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
-> +				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
-> +				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
->  				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
->  				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
->  			>;
->  			clock-output-names > +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
->  				"rcan1", "rcan0", "qspi_mod", "iic3",
->  				"i2c3", "i2c2", "i2c1", "i2c0";
->  		};
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index a4a6738..afce2e3 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -110,6 +110,17 @@
+ 			>;
+ 			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
+ 		};
++
++		mstp9_clks: mstp9_clks@fcfe0438 {
++			#clock-cells = <1>;
++			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xfcfe0438 4>;
++			clocks = <&p0_clk>, <&p0_clk>, <&p0_clk>, <&p0_clk>;
++			clock-indices = <
++				R7S72100_CLK_I2C0 R7S72100_CLK_I2C1 R7S72100_CLK_I2C2 R7S72100_CLK_I2C3
++			>;
++			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
++		};
+ 	};
+ 
+ 	cpus {
+@@ -145,6 +156,7 @@
+ 			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -162,6 +174,7 @@
+ 			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -179,6 +192,7 @@
+ 			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+@@ -196,6 +210,7 @@
+ 			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
+ 		clock-frequency = <100000>;
+ 		status = "disabled";
+ 	};
+diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
+index c756f1c..ff84e0b 100644
+--- a/include/dt-bindings/clock/r7s72100-clock.h
++++ b/include/dt-bindings/clock/r7s72100-clock.h
+@@ -25,4 +25,10 @@
+ #define R7S72100_CLK_SCIF6	1
+ #define R7S72100_CLK_SCIF7	0
+ 
++/* MSTP9 */
++#define R7S72100_CLK_I2C0	7
++#define R7S72100_CLK_I2C1	6
++#define R7S72100_CLK_I2C2	5
++#define R7S72100_CLK_I2C3	4
++
+ #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+-- 
+1.8.5.2
+
