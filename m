@@ -1,41 +1,53 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 14 May 2014 01:10:12 +0000
-Subject: [PATCH v6 08/12] ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock support
-Message-Id: <1400029816-24028-9-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:47 +0000
+Subject: [PATCH 6/9] ARM: shmobile: Use r8a7791 DT CPU Frequency for Koelsch
+Message-Id: <7e99497cf5e7b46ff5f434beae45f6f35005e8b6.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Not used anymore since we switched to CCF.
+Convert the Koelsch board support to use shmobile_init_delay()
+to be able to migrate away from per-SoC delay setup functions.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r7s72100.c | 4 ----
- 1 file changed, 4 deletions(-)
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 2 +-
+ arch/arm/mach-shmobile/board-koelsch.c           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 644f1c2a96c7..1a797fe9e42f 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -199,10 +199,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
- 	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
- 	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
--	CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
--	CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
--	CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
--	CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
- 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index a3fd302..ff33d9c 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -139,7 +139,7 @@ static const char * const koelsch_boards_compat_dt[] __initconst = {
  
- 	/* ICK */
+ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= r8a7791_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= koelsch_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index 5a034ff..3cd8008 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -522,7 +522,7 @@ static const char * const koelsch_boards_compat_dt[] __initconst = {
+ 
+ DT_MACHINE_START(KOELSCH_DT, "koelsch")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= r8a7791_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_machine	= koelsch_init,
+ 	.init_late	= shmobile_init_late,
 -- 
-1.9.2
+1.8.5.2
 
