@@ -1,49 +1,55 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 20 May 2014 12:34:26 +0000
-Subject: Re: [PATCH] clk: shmobile: Add R8A7740-specific clock support
-Message-Id: <CAO3366zcREudh09Kswig8ecTZQetktagAJ9AWBHEFM-pjBh1VA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 04:42:58 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7779: Add Maximum CPU Frequency to DTS
+Message-Id: <1400215381-7027-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400156437-19694-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <CAMuHMdWDwgugY6jzj3UuvweyrRqj6sey3smLHQ1fgw_0mAJsKw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWDwgugY6jzj3UuvweyrRqj6sey3smLHQ1fgw_0mAJsKw@mail.gmail.com>
+References: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 19, 2014 at 9:16 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, May 15, 2014 at 2:20 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
->> --- /dev/null
->> +++ b/Documentation/devicetree/bindings/clock/renesas,r8a7740-cpg-clocks.txt
-[...]
->> +  - clocks: Reference to the two parent clocks
->
-> Aren't there 3 parent clocks (extal1, extal2, extalr)?
+Add 1GHz to the r8a7779 DTS to describe the maximum CPU frequency.
 
-Yes, there are.
+Based on work by Magnus dam for the r8a7740 SoC.
 
->> +static struct div4_clk div4_clks[] = {
->> +       { "i", CPG_FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT },
->> +       { "zg", CPG_FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT },
->> +       { "b", CPG_FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT },
->> +       { "m1", CPG_FRQCRA,  4, 0x6fff, CLK_ENABLE_ON_INIT },
->> +       { "hp", CPG_FRQCRB,  4, 0x6fff, 0 },
->> +       { "hpp", CPG_FRQCRC, 20, 0x6fff, 0 },
->> +       { "usbp", CPG_FRQCRC, 16, 0x6fff, 0 },
->> +       { "s", CPG_FRQCRC, 12, 0x6fff, 0 },
->> +       { "zb", CPG_FRQCRC,  8, 0x6fff, 0 },
->> +       { "m3", CPG_FRQCRC,  4, 0x6fff, 0 },
->> +       { "cp", CPG_FRQCRC,  0, 0x6fff, 0 },
->
-> I assume the identical mask values (0x6fff) are not the final values, and will
-> be updated when the field becomes used?
+Cc: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-I copied them from the legacy driver, and they are the actual values.
-And thus redundant. :) I'll remove the mask.
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index bdaaadc..038c16a 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -26,21 +26,25 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <0>;
++			clock-frequency = <1000000000>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <1>;
++			clock-frequency = <1000000000>;
+ 		};
+ 		cpu@2 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <2>;
++			clock-frequency = <1000000000>;
+ 		};
+ 		cpu@3 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <3>;
++			clock-frequency = <1000000000>;
+ 		};
+ 	};
+ 
+-- 
+1.8.5.2
 
-Thanks for your comments. I'll wait if Laurent has anything to add and
-send a new patch then.
-
-CU
-Uli
