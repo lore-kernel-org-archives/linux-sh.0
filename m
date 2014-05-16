@@ -1,58 +1,71 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 07:19:31 +0000
-Subject: Re: [PATCH 2/6] i2c: sh_mobile: improve error handling
-Message-Id: <20140502071931.GA2647@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="T4sUOijqQbZv57TR"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:33 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC r7s72100-ccf Updates for v3.16
+Message-Id: <cover.1400201383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398896470-24663-1-git-send-email-wsa@the-dreams.de>
- <1398896470-24663-3-git-send-email-wsa@the-dreams.de>
- <CAMuHMdWs=FkAgCpBNQcaRtJRanGQjp1erN+=Jqpekioj+9pk1A@mail.gmail.com>
-In-Reply-To: <CAMuHMdWs=FkAgCpBNQcaRtJRanGQjp1erN+=Jqpekioj+9pk1A@mail.gmail.com>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+Hi Olof, Hi Kevin, Hi Arnd,
+
+Please consider these Renesas ARM based SoC r7s72100-ccf updates for v3.16.
+
+This pull request is based on Renesas SoC Clock Cleanups for v3.16,
+such requests, tagged as renesas-clock-cleanup2-for-v3.16,
+which I have already sent a pull-request for.
 
 
---T4sUOijqQbZv57TR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Thu, May 01, 2014 at 12:25:38AM +0200, Geert Uytterhoeven wrote:
-> Hi Wolfram,
->=20
-> On Thu, May 1, 2014 at 12:21 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> > Use standard i2c error codes for i2c failures. Also, don't print
-> > something on timeout since it happens regularly with i2c. Simplify some,
-> > logic, too.
->=20
-> You may want to keep the timeout messages with dev_dbg()?
-
-Not really. We now have an I2C tracer which shows the return value of
-the transfer. I really want to reduce debug output of all drivers in
-favor of the tracer.
+This series includes dependencies that do not fit easily into the usual
+inter-branch dependencies and as such I have grouped them together in a
+single branch.
 
 
---T4sUOijqQbZv57TR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+The following changes since commit c17fcfbcc0f6b4f3cae761149e1a6108dd6750e7:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+  ARM: shmobile: r7s72100: Switch to new style MTU2 device (2014-05-11 19:35:28 +0900)
 
-iQIcBAEBAgAGBQJTY0cDAAoJEBQN5MwUoCm2yMAQAKM5PeO/Cxh1CbuRHzc/Mebm
-a7qpGhQm4VOKulkiYGSgcDNQafHCz4sEWjDO6PYXX+Uk8v0rmwB/TAwhuQM75Zau
-bKmyXHfF2cvrsV+OzbuZ7YscM9aOSTZx//KaN1DtLUjnTltJospU4H5dJQ4JRtAQ
-f2wCRSg91aTNN9/fr3NlLXp8Hhga+WA66y+6Ip9nU/f5V/IwW1mgg68FUdSnaeKY
-MCKTu9JbYtCN6BfUKeh4PbyxOGD4Ix0EKT4a9Yjz8jvNmZG6IbHxe5MPUVUOv6hz
-JRYJFjChf8RU0sX/Mj6J9NOfMIHBGgn7b0wYSBGk/IAGUeiE/1IO2Y2uAmprrkd/
-7p+3+KWKQLqWY3g5AJjsqGAmpCfCAIPMeqQGyG/jpG8nD7Uw5pNaUwDq04Wy6pEn
-NFYL410/VdueofRQIgoKiPcsu4ZcMsyJ/UfXne/GEuIWxEUASA2vsODBlPURV4cL
-lPXyR1gozOXyz+WFn91kwX6JW6TieEcxZlk6e0sr16/kDLAlEy/kloeSiecS7BqL
-KhHWpMvKWizOH0WWXXnUHyw168Iqs+ibf42FzcMmSqJjNds5QVGKqBzvTuSTWK/L
-Xr1PnwmbzDSwvpTFQlK1g11AJBwI1SPNWoPKXWLx6UM5LGE17Mv7RF3B42OWw09G
-s0h81k45FZyThQU+t7MR
-=nakb
------END PGP SIGNATURE-----
+are available in the git repository at:
 
---T4sUOijqQbZv57TR--
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r7s72100-ccf-for-v3.16
+
+for you to fetch changes up to 9fbb1ae01b878e2cce9626fa6fdc9e5dcefeb6b5:
+
+  ARM: shmobile: r7s72100: use workaround for non DT-clocks (2014-05-14 11:42:55 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based r7s72100 SoC CCF Updates for v3.16
+
+r7s72100 (RZ/A1H) SoC and its Genmai board
+* Add and use CCF support
+* Initislise SCIF, I2C and SPI via DT
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      ARM: shmobile: Add forward declaration of struct clk to silence warning
+
+Wolfram Sang (11):
+      ARM: shmobile: r7s72100: document MSTP clock support
+      ARM: shmobile: r7s72100: add essential clock nodes to dtsi
+      ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
+      ARM: shmobile: r7s72100: add scif nodes to dtsi
+      ARM: shmobile: r7s72100: genmai: add uart alias and activate scif2 as console
+      ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy support
+      ARM: shmobile: r7s72100: add i2c clocks to dtsi
+      ARM: shmobile: r7s72100: remove I2C DT clocks from legacy clock support
+      ARM: shmobile: r7s72100: add spi clocks to dtsi
+      ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock support
+      ARM: shmobile: r7s72100: use workaround for non DT-clocks
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts    |  19 +-
+ arch/arm/boot/dts/r7s72100.dtsi                    | 215 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-genmai-reference.c    |  14 +-
+ arch/arm/mach-shmobile/board-genmai.c              |  44 +++++
+ arch/arm/mach-shmobile/clock-r7s72100.c            |   9 -
+ arch/arm/mach-shmobile/include/mach/clock.h        |   1 +
+ arch/arm/mach-shmobile/setup-r7s72100.c            |  43 -----
+ include/dt-bindings/clock/r7s72100-clock.h         |  41 ++++
+ 9 files changed, 331 insertions(+), 56 deletions(-)
+ create mode 100644 include/dt-bindings/clock/r7s72100-clock.h
