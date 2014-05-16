@@ -1,59 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 15 May 2014 10:16:01 +0000
-Subject: Re: [PATCH v3] iommu: Add driver for Renesas VMSA-compatible IPMMU
-Message-Id: <1571584.ZDVCh9phHE@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 04:42:57 +0000
+Subject: [PATCH 0/4] ARM: shmobile: r8a7779: Use shmobile_init_delay()
+Message-Id: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1396435657-3922-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <2227683.61UxrJHGnf@avalon> <20140513220023.GE23770@8bytes.org>
-In-Reply-To: <20140513220023.GE23770@8bytes.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Joerg Roedel <joro@8bytes.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, iommu@lists.linux-foundation.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Joerg,
+Use shmobile_init_delay() on r8a7779 SoC.
 
-On Wednesday 14 May 2014 00:00:23 Joerg Roedel wrote:
-> On Tue, May 13, 2014 at 11:04:10PM +0200, Laurent Pinchart wrote:
-> > > Isn't this the same as ipmmu_tlb_invalidate()?
-> > 
-> > ipmmu_tlb_invalidate() performs a read-update-write operation on the IMCTR
-> > register to set the FLUSH bit without modifying the other bits, while this
-> > function writes the FLUSH bit and sets all other bits (including the
-> > enable bit) to zero. The difference is thus important.
-> 
-> Ah ok, I've seen that, but wasn't aware that it makes a difference.
-> 
-> > > Why not? This is something the IOMMU-API basically supports (multiple
-> > > devices behind different IOMMUs in the same domain). Can't you just use
-> > > the same page-table for different IOMMUs?
-> > 
-> > I might be able to (I'll need to check first though), but I don't really
-> > see what the use cases for sharing a common page table between separate
-> > IOMMUs would be. Could you please elaborate a bit ? Given that we're
-> > getting close to the v3.16 merge window, would it be acceptable to fix
-> > (if needed) that as a follow-up patch, as the driver is already usable
-> > as-is ?
-> 
-> The typical use-case is device-assignment in KVM, when you want to assign
-> multiple devices to the same guest it is desireable to only have one domain
-> with one page-table.
-> At least this is where this requirement comes from in the IOMMU-API, and I
-> like the IOMMU drivers to be consistent in their implementation of the API.
+Convert r8a7779 to rely on shmobile_init_delay() instead of using a per-SoC
+delay setup function. This is a cleanup towards enabling Multiplatform support
+for the r8a7779 SoC.
 
-Good point, I hadn't thought about that. However, shouldn't that case be 
-handled by 2-stage translation instead ? The IPMMU hardware supports that, but 
-the driver doesn't implement it yet.
+Based on work for the r8a7740 SoC by Magnus Damm.
 
-> I think given that otherwise the code looks good overall it is ok if you
-> do this as a follow-on patch to this one. I can put it in my tree for
-> the time being so that you can make a patch against the feature branch.
+Based on the renesas-devel-v3.15-rc5-20140516
+tag of my renesas tree.
 
-Thank you. I won't have time to implement that feature for v3.16 though, given 
-how close we are to the merge window.
+Simon Horman (4):
+  ARM: shmobile: r8a7779: Add Maximum CPU Frequency to DTS
+  ARM: shmobile: r8a7779: Use DT CPU Frequency in common case
+  ARM: shmobile: marzen-reference: Use DT CPU Frequency
+  ARM: shmobile: r8a7779: Remove unused r8a7779_init_delay()
+
+ arch/arm/boot/dts/r8a7779.dtsi                  | 4 ++++
+ arch/arm/mach-shmobile/board-marzen-reference.c | 2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7779.h   | 1 -
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 7 +------
+ 4 files changed, 6 insertions(+), 8 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.5.2
 
