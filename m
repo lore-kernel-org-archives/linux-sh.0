@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:42 +0000
-Subject: [PATCH 1/9] ARM: shmobile: Add r8a7740 Maximum CPU Frequency to DTS
-Message-Id: <63575d8cd5cba0c657ac5c18f75e91e2e30cc0eb.1400200838.git.horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:45 +0000
+Subject: [PATCH 4/9] ARM: shmobile: Remove unused r8a7740_init_delay()
+Message-Id: <bf901fbd9040effe4aa1389f78efcc1c2736a44b.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1400200838.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
@@ -12,27 +12,44 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-Add 800 MHz to the r8a7740 DTS to describe the maximum CPU frequency.
+Remove the now unused r8a7740_init_delay() function.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Tested-by: Geert Uytterhoeven <geert@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h | 1 -
+ arch/arm/mach-shmobile/setup-r8a7740.c        | 5 -----
+ 2 files changed, 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 8280884..67c4b8b 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -22,6 +22,7 @@
- 			compatible = "arm,cortex-a9";
- 			device_type = "cpu";
- 			reg = <0x0>;
-+			clock-frequency = <800000000>;
- 		};
- 	};
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index d07932f..5e3c9ec 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -47,7 +47,6 @@ enum {
+ };
  
+ extern void r8a7740_meram_workaround(void);
+-extern void r8a7740_init_delay(void);
+ extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index d1ce3ca..eaec043 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -887,11 +887,6 @@ void __init r8a7740_add_standard_devices_dt(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-void __init r8a7740_init_delay(void)
+-{
+-	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+-};
+-
+ void __init r8a7740_init_irq_of(void)
+ {
+ 	void __iomem *intc_prio_base = ioremap_nocache(0xe6900010, 0x10);
 -- 
 1.8.5.2
 
