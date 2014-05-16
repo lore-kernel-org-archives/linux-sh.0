@@ -1,45 +1,111 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 May 2014 08:03:34 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Correct SYS-DMAC clock defines
-Message-Id: <a505daa501dc3f02b08d0b48b049bce719299b74.1399967342.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 May 2014 15:26:52 +0000
+Subject: [PATCH/RFC 4/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
+Message-Id: <1400254015-29539-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1399967342.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1399967342.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
+both share the same device sources, so are wrapped in the shdma-mux
+node to allow both to be used.
 
-R-Car M2 has two MSTP bits for SYS-DMAC, not one.
-Also bring the naming in sync with the documentation.
-
-This issue was introduced in v3.14, in commit
-4d8864c9e94ec727f1c675b9f6921525c360334b ("ARM: shmobile: r8a7791: Add
-clock index macros for DT sources").
+Cfr. the r8a7790 version by Ben Dooks.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/r8a7791-clock.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791.dtsi |   69 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
 
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index f069bc6..c3b0130 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -43,7 +43,8 @@
- #define R8A7791_CLK_SCIFB1		7
- #define R8A7791_CLK_MSIOF1		8
- #define R8A7791_CLK_SCIFB2		16
--#define R8A7791_CLK_DMAC		18
-+#define R8A7791_CLK_SYS_DMAC1		18
-+#define R8A7791_CLK_SYS_DMAC0		19
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index e5c35d784ec8..37685ef32ea0 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -11,6 +11,7 @@
+  */
  
- /* MSTP3 */
- #define R8A7791_CLK_TPU0		4
+ #include <dt-bindings/clock/r8a7791-clock.h>
++#include <dt-bindings/dma/r8a7791-dma.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+@@ -55,6 +56,74 @@
+ 		};
+ 	};
+ 
++	dma0: dma-mux@0 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <2>;
++		dma-channels = <30>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		sysdma0: dma-controller@e6700020 {
++			compatible = "renesas,shdma-r8a7791";
++			reg = <0 0xe6700020 0 0xffc0>;
++			clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC0>;
++			dma-channels = <15>;
++			interrupts =	<0 197 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 200 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 201 IRQ_TYPE_LEVEL_HIGH>,
++					<0 202 IRQ_TYPE_LEVEL_HIGH>,
++					<0 203 IRQ_TYPE_LEVEL_HIGH>,
++					<0 204 IRQ_TYPE_LEVEL_HIGH>,
++					<0 205 IRQ_TYPE_LEVEL_HIGH>,
++					<0 206 IRQ_TYPE_LEVEL_HIGH>,
++					<0 207 IRQ_TYPE_LEVEL_HIGH>,
++					<0 208 IRQ_TYPE_LEVEL_HIGH>,
++					<0 209 IRQ_TYPE_LEVEL_HIGH>,
++					<0 210 IRQ_TYPE_LEVEL_HIGH>,
++					<0 211 IRQ_TYPE_LEVEL_HIGH>,
++					<0 212 IRQ_TYPE_LEVEL_HIGH>,
++					<0 213 IRQ_TYPE_LEVEL_HIGH>,
++					<0 214 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14";
++			status = "disabled";
++		};
++
++		sysdma1: dma-controller@e6720020 {
++			compatible = "renesas,shdma-r8a7791";
++			reg = <0 0xe6720020 0 0xffc0>;
++			clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC1>;
++			dma-channels = <15>;
++			interrupts =  <0 220 IRQ_TYPE_LEVEL_HIGH>,
++					<0 216 IRQ_TYPE_LEVEL_HIGH>,
++					<0 217 IRQ_TYPE_LEVEL_HIGH>,
++					<0 218 IRQ_TYPE_LEVEL_HIGH>,
++					<0 219 IRQ_TYPE_LEVEL_HIGH>,
++					<0 308 IRQ_TYPE_LEVEL_HIGH>,
++					<0 309 IRQ_TYPE_LEVEL_HIGH>,
++					<0 310 IRQ_TYPE_LEVEL_HIGH>,
++					<0 311 IRQ_TYPE_LEVEL_HIGH>,
++					<0 312 IRQ_TYPE_LEVEL_HIGH>,
++					<0 313 IRQ_TYPE_LEVEL_HIGH>,
++					<0 314 IRQ_TYPE_LEVEL_HIGH>,
++					<0 315 IRQ_TYPE_LEVEL_HIGH>,
++					<0 316 IRQ_TYPE_LEVEL_HIGH>,
++					<0 317 IRQ_TYPE_LEVEL_HIGH>,
++					<0 318 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14";
++			status = "disabled";
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
 -- 
-1.8.5.2
+1.7.9.5
 
