@@ -1,72 +1,132 @@
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-Date: Wed, 14 May 2014 12:21:26 +0000
-Subject: Re: [PATCH v5 01/11] ARM: shmobile: r7s72100: document MSTP clock support
-Message-Id: <20140514222126.5d10212f@canb.auug.org.au>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Sig_/rcrTsY_iTidXVJye7rrFJ9h"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:09 +0000
+Subject: [PATCH 2/2] ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT
+Message-Id: <5ba55fa81aee9493928c245f142a0bfe9f32d02f.1400201670.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398765822-2314-1-git-send-email-wsa@the-dreams.de>
- <1398765822-2314-2-git-send-email-wsa@the-dreams.de>
- <20140513000513.5943.68810@quantum>
- <CAMuHMdWK1WAePx3N_ybPkWcoTtP_6PdcEPNEyBv02A9zOZSWOg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWK1WAePx3N_ybPkWcoTtP_6PdcEPNEyBv02A9zOZSWOg@mail.gmail.com>
+References: <cover.1400201670.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201670.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
---Sig_/rcrTsY_iTidXVJye7rrFJ9h
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Hi Geert,
+SCIF0 and SCIF1 are used as debug serial ports. Enable them and
+configure pinmuxing appropriately. We can now remove the clkdev
+registration hack for SCIF devices from the Koelsch reference board
+file.
 
-On Wed, 14 May 2014 12:26:38 +0200 Geert Uytterhoeven <geert@linux-m68k.org=
-> wrote:
->
-> On Tue, May 13, 2014 at 2:05 AM, Mike Turquette <mturquette@linaro.org> w=
-rote:
-> > Quoting Wolfram Sang (2014-04-29 03:03:32)
-> >> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> >>
-> >> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> >
-> > Acked-by: Mike Turquette <mturquette@linaro.org>
-> >
-> > No need to take this through the clk tree. Feel free to send it with the
-> > rest through arm-soc.
->=20
-> (merging in clk/clk-next)
->=20
-> Note that this will cause a conflict for you, as Mike applied commit
-> 5483bf698f42a6f0467463b064084eb888298232 ("clk: shmobile: r8a7779:
-> Add MSTP clock support"), which adds a line at the exact same spot.
->=20
-> Resolution: both lines should be kept.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[horms+renesas@verge.net.au: added aliases to avoid device renumbering]
+[horms+renesas@verge.net.au: resolved conflicts]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 21 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 15 ---------------
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 10 +++++-----
+ 3 files changed, 25 insertions(+), 21 deletions(-)
 
-Thanks.
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index bdd73e6..10c6b40 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -18,6 +18,11 @@
+ 	model = "Koelsch";
+ 	compatible = "renesas,koelsch", "renesas,r8a7791";
+ 
++	aliases {
++		serial6 = &scif0;
++		serial7 = &scif1;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+@@ -196,7 +201,7 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	i2c2_pins: i2c {
+@@ -269,6 +274,20 @@
+ 	status = "okay";
+ };
+ 
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/board-koelsch-reference.c b/arch/arm/mach-shmobile/board-koelsch-reference.c
+index bd90932..0b0ce5a 100644
+--- a/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ b/arch/arm/mach-shmobile/board-koelsch-reference.c
+@@ -87,21 +87,6 @@ static void __init koelsch_add_du_device(void)
+  */
+ static const struct clk_name clk_names[] __initconst = {
+ 	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+-	{ "scifa0", NULL, "sh-sci.0" },
+-	{ "scifa1", NULL, "sh-sci.1" },
+-	{ "scifb0", NULL, "sh-sci.2" },
+-	{ "scifb1", NULL, "sh-sci.3" },
+-	{ "scifb2", NULL, "sh-sci.4" },
+-	{ "scifa2", NULL, "sh-sci.5" },
+-	{ "scif0", NULL, "sh-sci.6" },
+-	{ "scif1", NULL, "sh-sci.7" },
+-	{ "scif2", NULL, "sh-sci.8" },
+-	{ "scif3", NULL, "sh-sci.9" },
+-	{ "scif4", NULL, "sh-sci.10" },
+-	{ "scif5", NULL, "sh-sci.11" },
+-	{ "scifa3", NULL, "sh-sci.12" },
+-	{ "scifa4", NULL, "sh-sci.13" },
+-	{ "scifa5", NULL, "sh-sci.14" },
+ 	{ "du0", "du.0", "rcar-du-r8a7791" },
+ 	{ "du1", "du.1", "rcar-du-r8a7791" },
+ 	{ "lvds0", "lvds.0", "rcar-du-r8a7791" },
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 561653d..b3f42b5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -182,6 +182,11 @@ static const struct resource thermal_resources[] __initconst = {
+ 
+ void __init r8a7791_add_dt_devices(void)
+ {
++	r8a7791_register_cmt(0);
++}
++
++void __init r8a7791_add_standard_devices(void)
++{
+ 	r8a7791_register_scif(0);
+ 	r8a7791_register_scif(1);
+ 	r8a7791_register_scif(2);
+@@ -197,11 +202,6 @@ void __init r8a7791_add_dt_devices(void)
+ 	r8a7791_register_scif(12);
+ 	r8a7791_register_scif(13);
+ 	r8a7791_register_scif(14);
+-	r8a7791_register_cmt(0);
+-}
+-
+-void __init r8a7791_add_standard_devices(void)
+-{
+ 	r8a7791_add_dt_devices();
+ 	r8a7791_register_irqc(0);
+ 	r8a7791_register_thermal();
+-- 
+1.8.5.2
 
---=20
-Cheers,
-Stephen Rothwell                    sfr@canb.auug.org.au
-
---Sig_/rcrTsY_iTidXVJye7rrFJ9h
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBCAAGBQJTc1/MAAoJEMDTa8Ir7ZwV2lwP/iyh749f31wRz5cQsPeAgszO
-n3xhIcqRBJzz1HZVEqCmmM3jkPTYr0p5sFPZOKqojVImPHhXIVfFVqmAuR6i+U4I
-/Rz0I1bBiCpW4HydT9Zee1/yrEtKIPtP6bR7bA0l6GcGWzu2JHbm0353ZOYGIJ9A
-+tKL6VgkkBTiOFFaHpLq2bW9A9T4XCWGcKssR/mLpyrmEv/4U2rl7gNMbDBVVjvK
-ioI32fjF5zHearqteoM55MfS5JeK7DoA75N9rz9rf8u57JZc5sfVViOuuiGmVEIy
-XE91CQfr/Mv8iVD9v8m/TaROQqduOE5qwPpKdRdxP6en9z/CfFpFJk2QkRQNbpFL
-d2juug0cHGHG1EN6jT2hIB2YT+O32P7rnLBtS08oF03t7z3YUdFHioWd82DyJdcU
-JwijIOk6On9/fyRKVJ2ZtcqqSxx7Ap1OHANLx7uOOwXow/rJ+UY1Y4//mg5yc66t
-EcmHkMkd4Zcb42HyEbyKQqkHn3wmKXptsDEMNOVOIslFdHK7KWM0jroyTRbDSsSg
-sufP98k+bokYLvjN7+mmpgfUvUJnN/26PTkzgzSGtIWTnCYMgbIgUfpcerH6kDTs
-w4+60kt3P9MY5oauD8xlsh6Od+QyguIf1Mu//XnY6fVgvWaSkt+AIH7C+6tkSovw
-eenaurdx5ArrXcmzGNTV
-=4dfw
------END PGP SIGNATURE-----
-
---Sig_/rcrTsY_iTidXVJye7rrFJ9h--
