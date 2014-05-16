@@ -1,109 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 16 May 2014 00:19:45 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 16 May 2014 06:49:38 +0000
 Subject: Re: [PATCH v6 00/12] CCF support for Renesas r7s72100
-Message-Id: <20140516001944.GA9418@verge.net.au>
+Message-Id: <20140516064938.GA2593@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="82I3+IH0IqGh5yIs"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
  <20140514050801.GE3502@verge.net.au>
  <CAMuHMdUTQbTSU4GSuxZX22QTqyQuo-zsNg4+d+OqpqEbjOnCaA@mail.gmail.com>
  <20140514230241.GA29233@verge.net.au>
-In-Reply-To: <20140514230241.GA29233@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <20140516001944.GA9418@verge.net.au>
+In-Reply-To: <20140516001944.GA9418@verge.net.au>
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 15, 2014 at 08:02:47AM +0900, Simon Horman wrote:
-> On Wed, May 14, 2014 at 11:44:02AM +0200, Geert Uytterhoeven wrote:
-> > Hi Wolfram, Simon,
-> > 
-> > On Wed, May 14, 2014 at 7:08 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Wed, May 14, 2014 at 03:10:04AM +0200, Wolfram Sang wrote:
-> > >> This series moves the r7s72100 platfrom from the legacy clock implementation to
-> > >> the common clock framework.
-> > >>
-> > >> This series has been tested with the renesas-devel-v3.15-rc2-20140428 tag. If
-> > >> you want to boot into a console, you have a runtime dependency [1] which is
-> > >> expected to go away in 3.15-rc6.
-> > >>
-> > >> Changes since V5:
-> > >>
-> > >> * rebased and tested against latest renesas/devel-tag
-> > >>   (with and without CCF)
-> > 
-> > That's genmai-legacy (ARCH_SHMOBILE_LEGACY=y, MACH_GENMAI=y),
-> > and genmai-multiplatform (ARCH_SHMOBILE_MULTI=y, MACH_GENMAI=y,
-> > right?
-> > 
-> > There's still a third variant: genmai-reference (ARCH_SHMOBILE_LEGACY=y,
-> > MACH_GENMAI_REFERENCE=y), which uses board-genmai-reference.c,
-> > but without CCF, i.e. with clock-r7s72100.c.
-> > For that, you still need the legacy clocks (also for serial!), so I needed the
-> > (gmail-whitespace-damaged) temporary workaround below in my local tree.
-> > 
-> > > Thanks, I have queued up this series.
-> > 
-> > Do we want to go for the quick fix below, or just fix the issue for good,
-> > and merge genmai-reference and genmai-multiplatform now, just like we did
-> > for koelsch/lager?
-> > 
-> > I can send a proper patch for the quick fix, depending on your decision.
-> 
-> I do not feel particularly strongly about this.  But it seems to me that it
-> would make sense to take the same approach as koelsch and lager.
 
-Wolfram, are you planing to handle this one way or another?
+--82I3+IH0IqGh5yIs
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> > >From 1b7b851a5d1b7d10f42f68a35b65278827b03cc4 Mon Sep 17 00:00:00 2001
-> > From: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Date: Mon, 12 May 2014 14:32:25 +0200
-> > Subject: [PATCH] ARM: shmobile: genmai-reference: Re-add legacy clocks
-> > 
-> > genmai-reference still uses non-CCF, so it needs the legacy clocks
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > ---
-> >  arch/arm/mach-shmobile/clock-r7s72100.c |   10 ++++++++++
-> >  1 file changed, 10 insertions(+)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c
-> > b/arch/arm/mach-shmobile/clock-r7s72100.c
-> > index df187484de5d..1b677e0a69c6 100644
-> > --- a/arch/arm/mach-shmobile/clock-r7s72100.c
-> > +++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-> > @@ -194,6 +194,16 @@ static struct clk_lookup lookups[] = {
-> >   CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
-> >   CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
-> >   CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
-> > + CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
-> > + CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
-> > + CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
-> > + CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
-> > + CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
-> > + CLKDEV_DEV_ID("fcfee000.i2c", &mstp_clks[MSTP97]),
-> > + CLKDEV_DEV_ID("fcfee400.i2c", &mstp_clks[MSTP96]),
-> > + CLKDEV_DEV_ID("fcfee800.i2c", &mstp_clks[MSTP95]),
-> > + CLKDEV_DEV_ID("fcfeec00.i2c", &mstp_clks[MSTP94]),
-> > + CLKDEV_DEV_ID("e8008000.serial", &mstp_clks[MSTP45]),
-> >   CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
-> > 
-> >   /* ICK */
-> > -- 
-> > 1.7.9.5
-> > 
-> > Gr{oetje,eeting}s,
-> > 
-> >                         Geert
-> > 
-> > --
-> > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> > 
-> > In personal conversations with technical people, I call myself a hacker. But
-> > when I'm talking to journalists I just say "programmer" or something like that.
-> >                                 -- Linus Torvalds
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> > I do not feel particularly strongly about this.  But it seems to me tha=
+t it
+> > would make sense to take the same approach as koelsch and lager.
+>=20
+> Wolfram, are you planing to handle this one way or another?
+
+I'll check what it takes for the reference removal. Hopefully it is not
+too late in the cycle for this?
+
+
+--82I3+IH0IqGh5yIs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTdbUCAAoJEBQN5MwUoCm28iYQAJjJSP1YMUEQU+qShzR3rK58
+rdKO5gf1zwbaJVl8hYj+WhEwAd2Z4sH3EJU/AKJDGj9/zaZhh3AH38P55E6MLRff
+SME03lMtGNqyfjMUD0yLFKAjYJgloARlm3shvn1C7befW3CISf+fgoPi9sXTrR+c
+u5pOG+TD9+Y5VlNvwMLMbeGllb+Ti+B0aAh1XAgw0HOO2I/kpvIVMmfYM5WFQtOC
+Uq11D/NoC+LyPF49vF6ACDJ3NAh6aIVKwRFDdih1Ii5/TqQPSlpf2t993957ElwO
+pBqAFCkVQhMRjnwD8oFrg3nkCzsmIFnPkQ3NXCDTNuQLW1QuYOTCVYh8fM/mk9W7
+sVEJwPhe3A2yZgd+jX+9wIqlxFLoWOYXTQJuoZleQIZgBDAnIo2zOBii6WIsKRcP
+jGDovaq3B4x3MkYJuG6bnYM6CKToV8zCN1mRriBAGFNqcrpiCMnKajGPxLdViBhD
+XE57BQjTNRR+J2EGjr52nAHs5W+ZMx2M/IjA991hUGdIM1LbmL7AL98LcRb83VAd
+N4dTBJ1EG2HGxHXXT6SVbkuj1TF3Vp5ShU/ETYayPpToSox50Ble9D1Bl3WvLaEL
+y+sbqZ+uA1j8m2LzoTdmJsjj98sgZg6ZcH8CUnW9HlQmmgcSvIkWQa14rzMhfVmW
+ZXee9P+UDv+mBA0U/lmT
+=uSrh
+-----END PGP SIGNATURE-----
+
+--82I3+IH0IqGh5yIs--
