@@ -1,111 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 16 May 2014 15:26:52 +0000
-Subject: [PATCH/RFC 4/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
-Message-Id: <1400254015-29539-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:28 +0000
+Subject: [PATCH 03/12] ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
+Message-Id: <5f76a5699f52052468e006e6c58010c5183b8386.1400201383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400201383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
-both share the same device sources, so are wrapped in the shdma-mux
-node to allow both to be used.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Cfr. the r8a7790 version by Ben Dooks.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |   69 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 69 insertions(+)
+ arch/arm/boot/dts/r7s72100-genmai-reference.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e5c35d784ec8..37685ef32ea0 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -11,6 +11,7 @@
-  */
- 
- #include <dt-bindings/clock/r8a7791-clock.h>
-+#include <dt-bindings/dma/r8a7791-dma.h>
- #include <dt-bindings/interrupt-controller/arm-gic.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- 
-@@ -55,6 +56,74 @@
- 		};
+diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+index e664611..941e72c 100644
+--- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
++++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
+@@ -30,6 +30,14 @@
  	};
+ };
  
-+	dma0: dma-mux@0 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <2>;
-+		dma-channels = <30>;
-+		dma-requests = <256>;
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
++&extal_clk {
++	clock-frequency = <13330000>;
++};
 +
-+		sysdma0: dma-controller@e6700020 {
-+			compatible = "renesas,shdma-r8a7791";
-+			reg = <0 0xe6700020 0 0xffc0>;
-+			clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC0>;
-+			dma-channels = <15>;
-+			interrupts =	<0 197 IRQ_TYPE_LEVEL_HIGH>, /* error */
-+					<0 200 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
-+					<0 201 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 202 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 203 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 204 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 205 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 206 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 207 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 208 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 209 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 210 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 211 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 212 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 213 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 214 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14";
-+			status = "disabled";
-+		};
++&usb_x1_clk {
++	clock-frequency = <48000000>;
++};
 +
-+		sysdma1: dma-controller@e6720020 {
-+			compatible = "renesas,shdma-r8a7791";
-+			reg = <0 0xe6720020 0 0xffc0>;
-+			clocks = <&mstp2_clks R8A7791_CLK_SYS_DMAC1>;
-+			dma-channels = <15>;
-+			interrupts =  <0 220 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 216 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 217 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 218 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 219 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 308 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 309 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 310 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 311 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 312 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 313 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 314 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 315 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 316 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 317 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 318 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14";
-+			status = "disabled";
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,cortex-a15-gic";
- 		#interrupt-cells = <3>;
+ &i2c2 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
 -- 
-1.7.9.5
+1.8.5.2
 
