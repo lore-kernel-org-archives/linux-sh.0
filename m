@@ -1,37 +1,40 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 27 May 2014 13:45:09 +0000
-Subject: [PATCH RFC 1/3] drivers: sh: Enable PM runtime for new R-Car Gen2 SoCs
-Message-Id: <1401198311-21268-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:36 +0000
+Subject: [PATCH 11/12] ARM: shmobile: Add forward declaration of struct clk to silence warning
+Message-Id: <1f9c7a691fefc2158bed4d5403422cc9b99ca335.1400201383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400201383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The PM runtime code should also be enabled for:
-  - r8a7792 (R-Car V2H)
-  - r8a7793 (R-Car M2-N)
-  - r8a7794 (R-Car E2)
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+arch/arm/mach-shmobile/board-genmai-reference.c:23:0:
+arch/arm/mach-shmobile/include/mach/clock.h:19:54: warning: 'struct clk' declared inside parameter list [enabled by default]
+arch/arm/mach-shmobile/include/mach/clock.h:19:54: warning: its scope is only this definition or declaration, which is probably not what you want [enabled by default]
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/pm_runtime.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/include/mach/clock.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 25eafbe4da33..72f63817a1a0 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -88,6 +88,9 @@ static int __init sh_pm_runtime_init(void)
- 		    !of_machine_is_compatible("renesas,r8a7779") &&
- 		    !of_machine_is_compatible("renesas,r8a7790") &&
- 		    !of_machine_is_compatible("renesas,r8a7791") &&
-+		    !of_machine_is_compatible("renesas,r8a7792") &&
-+		    !of_machine_is_compatible("renesas,r8a7793") &&
-+		    !of_machine_is_compatible("renesas,r8a7794") &&
- 		    !of_machine_is_compatible("renesas,sh7372") &&
- 		    !of_machine_is_compatible("renesas,sh73a0"))
- 			return 0;
+diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
+index 9a93cf9..31b6417 100644
+--- a/arch/arm/mach-shmobile/include/mach/clock.h
++++ b/arch/arm/mach-shmobile/include/mach/clock.h
+@@ -16,6 +16,7 @@ void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
+ #else /* CONFIG_COMMON_CLK */
+ /* legacy clock implementation */
+ 
++struct clk;
+ unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
+ extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
+ 
 -- 
-1.9.1
+1.8.5.2
 
