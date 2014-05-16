@@ -1,54 +1,41 @@
-From: Yinghai Lu <yinghai@kernel.org>
-Date: Tue, 06 May 2014 01:33:20 +0000
-Subject: [PATCH v3 2/8] sh, irq: Remove irq_reserve_irq calling
-Message-Id: <1399340006-31550-3-git-send-email-yinghai@kernel.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:43 +0000
+Subject: [PATCH 2/9] ARM: shmobile: Use r8a7740 DT CPU Frequency in common case
+Message-Id: <a0c1fb0c285d9aa5f9d078449cfa37883a3f5a91.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399340006-31550-1-git-send-email-yinghai@kernel.org>
-In-Reply-To: <1399340006-31550-1-git-send-email-yinghai@kernel.org>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@elte.hu>, "H. Peter Anvin" <hpa@zytor.com>, Tony Luck <tony.luck@intel.com>
-Cc: linux-kernel@vger.kernel.org, Yinghai Lu <yinghai@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-in sh calling path:
-	register_intc_controller
-		=> irq_create_identity_mapping/irq_create_strict_mappins
-			=>irq_alloc_desc: it will set bits on allocate_irq
-		=> intc_register_irq
-			=> irq_reserve_irq: set bits again
+From: Magnus Damm <damm+renesas@opensource.se>
 
-so we can kill this irq_reserve_irq calling.
+Convert the common C-code-less r8a7740 DT board support
+to use shmobile_init_delay() to be able to migrate away
+from per-SoC delay setup functions.
 
--v2: Fix comment style according to Sergei Shtylyov.
-
-Signed-off-by: Yinghai Lu <yinghai@kernel.org>
-Cc: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Geert Uytterhoeven <geert@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/intc/core.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-index 8f32a13..d146ce1 100644
---- a/drivers/sh/intc/core.c
-+++ b/drivers/sh/intc/core.c
-@@ -80,12 +80,7 @@ static void __init intc_register_irq(struct intc_desc *desc,
- 	unsigned int data[2], primary;
- 	unsigned long flags;
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 8f3c681..d1ce3ca 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -935,7 +935,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
  
--	/*
--	 * Register the IRQ position with the global IRQ map, then insert
--	 * it in to the radix tree.
--	 */
--	irq_reserve_irq(irq);
--
-+	/* Insert it in to the radix tree. */
- 	raw_spin_lock_irqsave(&intc_big_lock, flags);
- 	radix_tree_insert(&d->tree, enum_id, intc_irq_xlate_get(irq));
- 	raw_spin_unlock_irqrestore(&intc_big_lock, flags);
+ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.map_io		= r8a7740_map_io,
+-	.init_early	= r8a7740_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= r8a7740_generic_init,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
 -- 
-1.8.4.5
+1.8.5.2
 
