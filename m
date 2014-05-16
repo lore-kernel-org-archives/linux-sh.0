@@ -1,47 +1,34 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 27 May 2014 21:53:02 +0000
-Subject: Re: [PATCH v2] usb: hcd: add generic PHY support
-Message-Id: <5385093E.3060503@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 May 2014 15:26:53 +0000
+Subject: [PATCH/RFC 5/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+Message-Id: <1400254015-29539-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404100132.39469.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404100132.39469.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Add a DMA property to the QSPI node
 
-On 05/28/2014 01:13 AM, Greg KH wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791.dtsi |    3 +++
+ 1 file changed, 3 insertions(+)
 
->>> Add the generic PHY support, analogous to the USB PHY support. Intended it to be
->>> used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
-
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>> ---
->>> This patch is against the 'usb-next' branch of Greg KH's 'usb.git' repo.
-
->>> Changes in version 2:
->>> - renamed the new 'phy' field of 'struct usb_phy' to 'gen_phy';
->>> - resolved rejects due to removal of the first patch in the series.
-
->>     Is anyone going to apply this for 3.16? Time's running out...
-
-> As I don't see any patches that need this patch, I'm not likely to apply
-> it, sorry.  We don't add infrastructure without users...
-
-> Feel free to resend it when you have some code that needs it.
-
-    I certainly have the code that needs this to work but it's rather DTS 
-files than the actual code, so I didn't CC linux-usb. :-)
-    Unless you want to see the generic PHY driver, of course. I can CC 
-linux-usb next time I repost it; however, this patch relies on the generic PHY 
-framework itself rather than on a particular driver.
-
-> thanks,
-
-> greg k-h
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 37685ef32ea0..5b3ac8d1391c 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -917,6 +917,9 @@
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		dmas = <&dma0 R8A7791_DMA_QSPI_RX CHCR_RX_32BIT>,
++		       <&dma0 R8A7791_DMA_QSPI_TX CHCR_TX_32BIT>;
++		dma-names = "rx", "tx";
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.7.9.5
 
