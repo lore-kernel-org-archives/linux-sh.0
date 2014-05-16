@@ -1,67 +1,127 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 28 May 2014 07:44:36 +0000
-Subject: [PATCH 01/11] i2c: rcar: not everything needs to be a function
-Message-Id: <1401263086-13720-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:08 +0000
+Subject: [PATCH 1/2] ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+Message-Id: <4e9c4877aacc134b568e480eb8998de58b43d63e.1400201670.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400201670.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201670.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Very basic operations, just called once, can also go to the caller.
+SCIF0 and SCIF1 are used as debug serial ports. Enable them and
+configure pinmuxing appropriately. We can now remove the clkdev
+registration hack for SCIF devices from the Lager reference board file.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[horms+renesas@verge.net.au: updated changelog to remove references to
+                             device renaming]
+[horms+renesas@verge.net.au: resolved conflicts]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 14 +++-----------
- 1 file changed, 3 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts            | 21 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-lager-reference.c | 10 ----------
+ arch/arm/mach-shmobile/setup-r8a7790.c         | 10 +++++-----
+ 3 files changed, 25 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 06d47aafbb79..32df4e1f3738 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -312,18 +312,9 @@ scgd_find:
- 	return 0;
- }
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 6e99eb2..25e0485 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -17,6 +17,11 @@
+ 	model = "Lager";
+ 	compatible = "renesas,lager", "renesas,r8a7790";
  
--static void rcar_i2c_clock_start(struct rcar_i2c_priv *priv)
--{
--	rcar_i2c_write(priv, ICCCR, priv->icccr);
++	aliases {
++		serial6 = &scif0;
++		serial7 = &scif1;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 	};
+@@ -112,7 +117,7 @@
+ };
+ 
+ &pfc {
+-	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
++	pinctrl-0 = <&du_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	du_pins: du {
+@@ -221,6 +226,20 @@
+ 	};
+ };
+ 
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
+diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
+index 1bca2748..749832e 100644
+--- a/arch/arm/mach-shmobile/board-lager-reference.c
++++ b/arch/arm/mach-shmobile/board-lager-reference.c
+@@ -91,16 +91,6 @@ static void __init lager_add_du_device(void)
+  */
+ static const struct clk_name clk_names[] __initconst = {
+ 	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
+-	{ "scifa0", NULL, "sh-sci.0" },
+-	{ "scifa1", NULL, "sh-sci.1" },
+-	{ "scifb0", NULL, "sh-sci.2" },
+-	{ "scifb1", NULL, "sh-sci.3" },
+-	{ "scifb2", NULL, "sh-sci.4" },
+-	{ "scifa2", NULL, "sh-sci.5" },
+-	{ "scif0", NULL, "sh-sci.6" },
+-	{ "scif1", NULL, "sh-sci.7" },
+-	{ "hscif0", NULL, "sh-sci.8" },
+-	{ "hscif1", NULL, "sh-sci.9" },
+ 	{ "du0", "du.0", "rcar-du-r8a7790" },
+ 	{ "du1", "du.1", "rcar-du-r8a7790" },
+ 	{ "du2", "du.2", "rcar-du-r8a7790" },
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 87327f3..5fc9b17 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -287,6 +287,11 @@ static struct resource cmt0_resources[] = {
+ 
+ void __init r8a7790_add_dt_devices(void)
+ {
++	r8a7790_register_cmt(0);
++}
++
++void __init r8a7790_add_standard_devices(void)
++{
+ 	r8a7790_register_scif(0);
+ 	r8a7790_register_scif(1);
+ 	r8a7790_register_scif(2);
+@@ -297,11 +302,6 @@ void __init r8a7790_add_dt_devices(void)
+ 	r8a7790_register_scif(7);
+ 	r8a7790_register_scif(8);
+ 	r8a7790_register_scif(9);
+-	r8a7790_register_cmt(0);
 -}
 -
- /*
-  *		status functions
-  */
--static u32 rcar_i2c_status_get(struct rcar_i2c_priv *priv)
+-void __init r8a7790_add_standard_devices(void)
 -{
--	return rcar_i2c_read(priv, ICMSR);
--}
- 
- #define rcar_i2c_status_clear(priv) rcar_i2c_status_bit_clear(priv, 0xffffffff)
- static void rcar_i2c_status_bit_clear(struct rcar_i2c_priv *priv, u32 bit)
-@@ -480,7 +471,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 	/*-------------- spin lock -----------------*/
- 	spin_lock(&priv->lock);
- 
--	msr = rcar_i2c_status_get(priv);
-+	msr = rcar_i2c_read(priv, ICMSR);
- 
- 	/*
- 	 * Arbitration lost
-@@ -554,7 +545,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 	spin_lock_irqsave(&priv->lock, flags);
- 
- 	rcar_i2c_init(priv);
--	rcar_i2c_clock_start(priv);
-+	/* start clock */
-+	rcar_i2c_write(priv, ICCCR, priv->icccr);
- 
- 	spin_unlock_irqrestore(&priv->lock, flags);
- 	/*-------------- spin unlock -----------------*/
+ 	r8a7790_add_dt_devices();
+ 	r8a7790_register_irqc(0);
+ 	r8a7790_register_thermal();
 -- 
-2.0.0.rc2
+1.8.5.2
 
