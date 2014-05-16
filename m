@@ -1,37 +1,40 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 27 May 2014 12:17:32 +0000
-Subject: [PATCH 2/2] i2c: sh_mobile: add compatibles for additional SoC
-Message-Id: <1401193052-8582-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:46 +0000
+Subject: [PATCH 5/9] ARM: shmobile: Use r8a7791 DT CPU Frequency in common case
+Message-Id: <648c687a6a43a6473caedba4785a16537bd21bfb.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401193052-8582-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401193052-8582-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Convert the common C-code-less r8a7791 DT board support
+to use shmobile_init_delay() to be able to migrate away
+from per-SoC delay setup functions.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index c29be2bba6ea..8b5e79cb4468 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -634,6 +634,9 @@ static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
- 	{ .compatible = "renesas,rmobile-iic", .data = &default_dt_config },
- 	{ .compatible = "renesas,iic-r8a7790", .data = &rcar_gen2_dt_config },
- 	{ .compatible = "renesas,iic-r8a7791", .data = &rcar_gen2_dt_config },
-+	{ .compatible = "renesas,iic-r8a7792", .data = &rcar_gen2_dt_config },
-+	{ .compatible = "renesas,iic-r8a7793", .data = &rcar_gen2_dt_config },
-+	{ .compatible = "renesas,iic-r8a7794", .data = &rcar_gen2_dt_config },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, sh_mobile_i2c_dt_ids);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index a7e4966..2c84e74 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -225,7 +225,7 @@ static const char *r8a7791_boards_compat_dt[] __initdata = {
+ 
+ DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
+ 	.smp		= smp_ops(r8a7791_smp_ops),
+-	.init_early	= r8a7791_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.dt_compat	= r8a7791_boards_compat_dt,
+ MACHINE_END
 -- 
-2.0.0.rc2
+1.8.5.2
 
