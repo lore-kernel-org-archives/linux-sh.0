@@ -1,63 +1,96 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 29 May 2014 01:31:57 +0000
-Subject: [PATCH v3 0/2] add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <53868E0D.7060703@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:17 +0000
+Subject: [PATCH 08/11] ARM: shmobile: r8a7790 dtsi: Add GPIO clocks
+Message-Id: <81f6883f0b1bbb1dbca34cc65257f823acb55cbd.1400200395.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400200395.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, Gregory CLEMENT <gregory.clement@free-electrons.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch set adds the USB xHCI support for the R-Car H2 and M2 SoCs.
-These SoCs use an xHCI but still need specific initialization, mainly
-to setup the firmware downloading and the specific registers.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch set is based on the usb-next branch of Greg usb.git tree.
-(commit id = ff1fcd50bc2459744e6f948310bc18eb7d6e8c72)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-
-This patch series has a Gregory CLEMENT's patch. Since the patch needed to
-fix some things, I modified the patch:
-http://marc.info/?l=linux-usb&m0025742005303&w=2
-http://marc.info/?l=linux-usb&m0088117126268&w=2
-
-
-Changes since v2:
- - Fix goto direction in patch 1.
- - Remove some unnecessary checks in patch 1.
- - Add MODULE_FIRMWARE() in patch 2.
- - Add a comment about xhci_rcar_init_quirk() in patch 2.
-
-Changes since v1 (about patch 2 only because patch 1 and 3 ware applied):
- - Fix some typos in patch 2.
- - Remove duplicated #define in patch 2.
- - Remove usb_phy framework calling in patch 2.
- - Change prototype of xhci_rcar_start() in patch 2.
- - Change compatible strings from "renesas,r8a779[01]-xhci" to
-   "renesas,xhci-r8a779[01]" in patch 2. Because of Renesas SoC
-   maintainer's comment:
-    http://marc.info/?l=linux-sh&m0109049002958&w=2
-
- - Rewrite the custom get_unaligned_le32() and add comment about it in patch 2.
-
-
-Gregory CLEMENT (1):
-  usb: host: xhci-plat: add optional PHY support
-
-Yoshihiro Shimoda (1):
-  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
-    controllers
-
- drivers/usb/host/Kconfig     |    8 +++
- drivers/usb/host/Makefile    |    3 +
- drivers/usb/host/xhci-plat.c |   45 +++++++++++-
- drivers/usb/host/xhci-rcar.c |  162 ++++++++++++++++++++++++++++++++++++++++++
- drivers/usb/host/xhci-rcar.h |   27 +++++++
- drivers/usb/host/xhci.h      |    2 +
- 6 files changed, 246 insertions(+), 1 deletion(-)
- create mode 100644 drivers/usb/host/xhci-rcar.c
- create mode 100644 drivers/usb/host/xhci-rcar.h
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index bf2db38..e6130d6 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -117,6 +117,7 @@
+ 		gpio-ranges = <&pfc 0 0 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
+ 	};
+ 
+ 	gpio1: gpio@e6051000 {
+@@ -128,6 +129,7 @@
+ 		gpio-ranges = <&pfc 0 32 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
+ 	};
+ 
+ 	gpio2: gpio@e6052000 {
+@@ -139,6 +141,7 @@
+ 		gpio-ranges = <&pfc 0 64 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
+ 	};
+ 
+ 	gpio3: gpio@e6053000 {
+@@ -150,6 +153,7 @@
+ 		gpio-ranges = <&pfc 0 96 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
+ 	};
+ 
+ 	gpio4: gpio@e6054000 {
+@@ -161,6 +165,7 @@
+ 		gpio-ranges = <&pfc 0 128 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
+ 	};
+ 
+ 	gpio5: gpio@e6055000 {
+@@ -172,6 +177,7 @@
+ 		gpio-ranges = <&pfc 0 160 32>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
++		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
+ 	};
+ 
+ 	thermal@e61f0000 {
+@@ -802,14 +808,19 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&p_clk>, <&p_clk>, <&cpg_clocks R8A7790_CLK_QSPI>, <&cp_clk>,
+ 				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
++				R8A7790_CLK_GPIO5 R8A7790_CLK_GPIO4 R8A7790_CLK_GPIO3
++				R8A7790_CLK_GPIO2 R8A7790_CLK_GPIO1 R8A7790_CLK_GPIO0
+ 				R8A7790_CLK_RCAN1 R8A7790_CLK_RCAN0 R8A7790_CLK_QSPI_MOD R8A7790_CLK_IICDVFS
+ 				R8A7790_CLK_I2C3 R8A7790_CLK_I2C2 R8A7790_CLK_I2C1 R8A7790_CLK_I2C0
+ 			>;
+ 			clock-output-names +				"gpio5", "gpio4", "gpio3", "gpio2", "gpio1", "gpio0",
+ 				"rcan1", "rcan0", "qspi_mod", "iic3",
+ 				"i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
 -- 
-1.7.9.5
+1.8.5.2
+
