@@ -1,45 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 16 May 2014 02:05:51 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 16 May 2014 07:17:03 +0000
 Subject: Re: [PATCH/RFC] ARM: shmobile: Enable PM_RUNTIME in defconfig
-Message-Id: <20140516020549.GB18137@verge.net.au>
+Message-Id: <CAMuHMdVEowWbMY+L1TuC4xxYvtGZiH5qYOjmd7-rt1e_=xEz1A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1400198682-7666-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400198682-7666-1-git-send-email-horms+renesas@verge.net.au>
+ <20140516020549.GB18137@verge.net.au>
+In-Reply-To: <20140516020549.GB18137@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Simon,
 
-I realise this change was your idea but I'd like to confirm some details.
+On Fri, May 16, 2014 at 4:05 AM, Simon Horman <horms@verge.net.au> wrote:
+> I realise this change was your idea but I'd like to confirm some details.
+>
+> My assumption is that it requires
+>
+> [PATCH v4] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
+>
+> Is that indeed required?
+> Are there other dependencies that are not in the next branch
+> of my renesas tree?
 
-My assumption is that it requires
+Your assumption is wrong. The aforementioned patch is always needed in
+the multi-platform case.
 
-[PATCH v4] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
+Please let me clarify:
+drivers/sh/pm_runtime.c registers a bus notifier for platform devices, which
+registers the default clock for automatic clock management by the PM core.
+If CONFIG_PM_RUNTIME=y, the clock will be managed dynamically, based
+on runtime requirements.
+If CONFIG_PM_RUNTIME=n, the clock will be enabled at registration time.
 
-Is that indeed required?
-Are there other dependencies that are not in the next branch
-of my renesas tree?
+So even if CONFIG_PM_RUNTIME=n, you need this patch, else the affected
+clocks won't be enabled (if not already enabled by reset state or the boot
+loader).
 
-On Fri, May 16, 2014 at 09:04:42AM +0900, Simon Horman wrote:
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/configs/shmobile_defconfig | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-> index 114e88e..4cbaf52 100644
-> --- a/arch/arm/configs/shmobile_defconfig
-> +++ b/arch/arm/configs/shmobile_defconfig
-> @@ -35,6 +35,7 @@ CONFIG_KEXEC=y
->  CONFIG_VFP=y
->  CONFIG_NEON=y
->  # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-> +CONFIG_PM_RUNTIME=y
->  CONFIG_NET=y
->  CONFIG_PACKET=y
->  CONFIG_UNIX=y
-> -- 
-> 1.8.5.2
-> 
+Note that some drivers (e.g. sh-sci) will still work fine without
+drivers/sh/pm_runtime.c, as they manage their clocks themselves.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
