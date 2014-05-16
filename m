@@ -1,134 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:32:00 +0000
-Subject: [PATCH v6 05/17] ARM: shmobile: r8a7779: Reference clocks
-Message-Id: <1400153532-23675-6-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 May 2014 15:26:50 +0000
+Subject: [PATCH/RFC 2/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
+Message-Id: <1400254015-29539-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Reference clocks using a "clocks" property in all nodes corresponding to
-devices that require a clock.
+Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
 
-Based on work by Laurent Pinchart for the r8a7790 and r8a7791 SoC.
+Cfr. the r8a7790 version by Ben Dooks.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v4 - v5
-* No change
+ arch/arm/boot/dts/r8a7791.dtsi |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-v3
-* Also update the following nodes which are now present
-  - hspi{0,1,2}
-  - sata: Suggested by Laurent Pinchart
----
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 5a62970..bdaaadc 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -158,6 +158,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc70000 0x1000>;
- 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
- 		status = "disabled";
- 	};
- 
-@@ -167,6 +168,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc71000 0x1000>;
- 		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
- 		status = "disabled";
- 	};
- 
-@@ -176,6 +178,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc72000 0x1000>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
- 		status = "disabled";
- 	};
- 
-@@ -185,6 +188,7 @@
- 		compatible = "renesas,i2c-r8a7779";
- 		reg = <0xffc73000 0x1000>;
- 		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
- 		status = "disabled";
- 	};
- 
-@@ -202,12 +206,14 @@
- 		compatible = "renesas,rcar-sata";
- 		reg = <0xfc600000 0x2000>;
- 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
- 	};
- 
- 	sdhi0: sd@ffe4c000 {
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4c000 0x100>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -217,6 +223,7 @@
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4d000 0x100>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -226,6 +233,7 @@
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4e000 0x100>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -235,6 +243,7 @@
- 		compatible = "renesas,sdhi-r8a7779";
- 		reg = <0xffe4f000 0x100>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
- 		cap-sd-highspeed;
- 		cap-sdio-irq;
- 		status = "disabled";
-@@ -246,6 +255,7 @@
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -255,6 +265,7 @@
- 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
-@@ -264,6 +275,7 @@
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
- 		status = "disabled";
- 	};
- 
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffaeff6e0..e5c35d784ec8 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -743,16 +743,19 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
+ 				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
+ 				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
++				R8A7791_CLK_SYS_DMAC1 R8A7791_CLK_SYS_DMAC0
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "scifb2";
++				"scifb1", "msiof1", "scifb2",
++				"sys-dmac1", "sys-dmac0";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.8.5.2
+1.7.9.5
 
