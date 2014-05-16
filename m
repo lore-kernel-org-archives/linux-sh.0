@@ -1,71 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:32:12 +0000
-Subject: [PATCH v6 17/17] ARM: shmobile: marzen-reference: Remove legacy clock support
-Message-Id: <1400153532-23675-18-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:35 +0000
+Subject: [PATCH 10/12] ARM: shmobile: r7s72100: remove SPI DT clocks from legacy clock support
+Message-Id: <3158e053ff45ed36d531d775cf0040642b91b606.1400201383.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1400201383.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Marzen DT reference is now only built for multiplatform
-which means that CCF comes with the package. Remove unused legacy
-code ifdefs to clean up the code.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Based on similar work for the Koelsch board by Magnus Damm.
+Not used anymore since we switched to CCF.
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v5, v6
-* Rebase
+ arch/arm/mach-shmobile/clock-r7s72100.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-v4
-* As suggested by Geert Uytterhoeven
-  - Remove bogus "these" from changelog
-* Rebase
----
- arch/arm/mach-shmobile/board-marzen-reference.c | 8 --------
- 1 file changed, 8 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 21c8cee..c6c133d 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -31,13 +31,10 @@
+diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
+index 1a797fe..df18748 100644
+--- a/arch/arm/mach-shmobile/clock-r7s72100.c
++++ b/arch/arm/mach-shmobile/clock-r7s72100.c
+@@ -194,11 +194,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rspi-rz.2", &mstp_clks[MSTP105]),
+ 	CLKDEV_DEV_ID("rspi-rz.3", &mstp_clks[MSTP104]),
+ 	CLKDEV_DEV_ID("rspi-rz.4", &mstp_clks[MSTP103]),
+-	CLKDEV_DEV_ID("e800c800.spi", &mstp_clks[MSTP107]),
+-	CLKDEV_DEV_ID("e800d000.spi", &mstp_clks[MSTP106]),
+-	CLKDEV_DEV_ID("e800d800.spi", &mstp_clks[MSTP105]),
+-	CLKDEV_DEV_ID("e800e000.spi", &mstp_clks[MSTP104]),
+-	CLKDEV_DEV_ID("e800e800.spi", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("r7s72100-ether", &mstp_clks[MSTP74]),
  
- static void __init marzen_init_timer(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	r8a7779_clocks_init(r8a7779_read_mode_pins());
--#endif
- 	clocksource_of_init();
- }
- 
--#ifdef CONFIG_COMMON_CLK
- /*
-  * This is a really crude hack to provide clkdev support to platform
-  * devices until they get moved to DT.
-@@ -51,15 +48,10 @@ static const struct clk_name clk_names[] __initconst = {
- 	{ "scif5", NULL, "sh-sci.5" },
- 	{ "tmu0", "fck", "sh-tmu.0" },
- };
--#endif
- 
- static void __init marzen_init(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--#else
--	r8a7779_clock_init();
--#endif
- 	r8a7779_add_standard_devices_dt();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+ 	/* ICK */
 -- 
 1.8.5.2
 
