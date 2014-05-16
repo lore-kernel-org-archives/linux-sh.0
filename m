@@ -1,42 +1,53 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 21 May 2014 21:30:03 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT SCIF Updates for v3.16
-Message-Id: <20140521213003.GB24972@quad.lixom.net>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 16 May 2014 12:37:40 +0000
+Subject: Re: [PATCH] clocksource: sh_cmt: Fix channel IRQ retrieval in legacy case
+Message-Id: <1580610.4LWCC2gJVO@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201670.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400201670.git.horms+renesas@verge.net.au>
+References: <1398251248-31504-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1398251248-31504-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, May 16, 2014 at 09:58:02AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC DT SCIF updates for v3.16.
-> 
-> This pull request is based on Renesas SoC Clock Cleanups for v3.16,
-> such requests, tagged as renesas-clock-cleanup2-for-v3.16,
-> which I have already sent a pull-request for.
-> 
-> 
-> This series includes dependencies that do not fit easily into the usual
-> inter-branch dependencies and as such I have grouped them together in a
-> single branch.
-> 
-> The following changes since commit c17fcfbcc0f6b4f3cae761149e1a6108dd6750e7:
-> 
->   ARM: shmobile: r7s72100: Switch to new style MTU2 device (2014-05-11 19:35:28 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-scif-for-v3.16
-> 
-> for you to fetch changes up to 5ba55fa81aee9493928c245f142a0bfe9f32d02f:
-> 
->   ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT (2014-05-14 09:56:38 +0900)
+Hi Daniel,
 
-Merged into next/boards. Thanks!
+On Wednesday 23 April 2014 13:07:28 Laurent Pinchart wrote:
+> In the legacy platform data case each CMT platform device handles a
+> single channel with a single IRQ for the platform device. Retrieve the
+> IRQ using the logical channel number instead of the hardware channel
+> number.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/clocksource/sh_tmu.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> This patch applies on top of the clockevents/cmt-mtu2-tmu-cleanups branch of
+> the git://git.linaro.org/people/daniel.lezcano/linux.git tree. It avoids
+> breaking bisection of the TMU-related platform cleanup patches, the issue
+> it fixes will disappear in a later driver cleanup patch. Daniel, I'll ask
+> you to please apply it to your tree when it will get tested with the timer
+> issues that Simon has reported.
 
+Could you please apply up to clockevents/cmt-mtu2-tmu-cleanups for v3.16 ?
 
--Olof
+> diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+> index 4ba2c0f..ec34095 100644
+> --- a/drivers/clocksource/sh_tmu.c
+> +++ b/drivers/clocksource/sh_tmu.c
+> @@ -498,7 +498,7 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel
+> *ch, unsigned int index, ch->base = tmu->mapbase + 8 + ch->index * 12;
+>  	}
+> 
+> -	ch->irq = platform_get_irq(tmu->pdev, ch->index);
+> +	ch->irq = platform_get_irq(tmu->pdev, index);
+>  	if (ch->irq < 0) {
+>  		dev_err(&tmu->pdev->dev, "ch%u: failed to get irq\n",
+>  			ch->index);
+
+-- 
+Regards,
+
+Laurent Pinchart
+
