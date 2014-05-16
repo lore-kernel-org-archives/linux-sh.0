@@ -1,50 +1,39 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 27 May 2014 12:17:31 +0000
-Subject: [PATCH 1/2] i2c: rcar: add compatibles for additional SoC
-Message-Id: <1401193052-8582-1-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:49 +0000
+Subject: [PATCH 8/9] ARM: shmobile: Use shmobile_init_late() on r8a7740
+Message-Id: <34b9fa401eeef4e388bb7563110733c73c452c80.1400200838.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1400200838.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Hook up ->init_late for r8a7740 to initialize Suspend-to-RAM
+and CPUIdle in case of C-code less board support for r8a7740.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/i2c/i2c-rcar.txt | 3 +++
- drivers/i2c/busses/i2c-rcar.c                      | 3 +++
- 2 files changed, 6 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-index dd8b2dd1edeb..16b3e07aa98f 100644
---- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-@@ -7,6 +7,9 @@ Required properties:
- 	"renesas,i2c-r8a7779"
- 	"renesas,i2c-r8a7790"
- 	"renesas,i2c-r8a7791"
-+	"renesas,i2c-r8a7792"
-+	"renesas,i2c-r8a7793"
-+	"renesas,i2c-r8a7794"
- - reg: physical base address of the controller and length of memory mapped
-   region.
- - interrupts: interrupt specifier.
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 06d47aafbb79..467eafa050a6 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -646,6 +646,9 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
- 	{ .compatible = "renesas,i2c-r8a7779", .data = (void *)I2C_RCAR_GEN1 },
- 	{ .compatible = "renesas,i2c-r8a7790", .data = (void *)I2C_RCAR_GEN2 },
- 	{ .compatible = "renesas,i2c-r8a7791", .data = (void *)I2C_RCAR_GEN2 },
-+	{ .compatible = "renesas,i2c-r8a7792", .data = (void *)I2C_RCAR_GEN2 },
-+	{ .compatible = "renesas,i2c-r8a7793", .data = (void *)I2C_RCAR_GEN2 },
-+	{ .compatible = "renesas,i2c-r8a7794", .data = (void *)I2C_RCAR_GEN2 },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index eaec043..7bdc51c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -933,6 +933,7 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.init_machine	= r8a7740_generic_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
+ MACHINE_END
+ 
 -- 
-2.0.0.rc2
+1.8.5.2
 
