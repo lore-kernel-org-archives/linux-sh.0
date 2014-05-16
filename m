@@ -1,40 +1,93 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 27 May 2014 08:08:45 +0000
-Subject: Re: [PATCH v2 2/9] ARM: shmobile: r8a7790: add dma defines for sys and audio dmacs
-Message-Id: <CAMuHMdX7YzDq4HT6A3a2jgUQ1DNx=oEA0f1SCfN45uusbwk40g@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 16 May 2014 12:10:12 +0000
+Subject: [PATCH 1/5] ARM: shmobile: Remove non-multiplatform Genmai reference support
+Message-Id: <1400242216-20848-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>
-	<1397511312-4845-3-git-send-email-ben.dooks@codethink.co.uk>
-	<CAMuHMdUsRSGuGgnAgjKtOWmx3C_PWUxAU=2XTvPE1M9o13S1uA@mail.gmail.com>
-In-Reply-To: <CAMuHMdUsRSGuGgnAgjKtOWmx3C_PWUxAU=2XTvPE1M9o13S1uA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
-Cc: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, magnus.damm-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ben,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tue, May 13, 2014 at 12:46 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
->> +#define R8A7790_DMA_MSIOF0_TX  (0x81)
->> +#define R8A7790_DMA_MSIOF0_RX  (0x82)
->> +#define R8A7790_DMA_MSIOF1_TX  (0x85)
->> +#define R8A7790_DMA_MSIOF1_RX  (0x86)
->
-> These are the only ones that se different for r8a7791 (0x51 etc.
-> compared to 0x81).
-> Wondering whether someone mixed up decimal and hexadecimal...
+Now that r7s72100 has CCF support, remove the legacy Genmai reference
+Kconfig bits for the non-multiplatform case.
 
-Confirmed. They should be 0x51, 0x52, 0x55, 0x56.
+Starting from this commit Genmai board support is always enabled via
+CONFIG_MACH_GENMAI, and CONFIG_ARCH_MULTIPLATFORM is used to select
+between board-genmai.c and board-genmai-reference.c
 
-Gr{oetje,eeting}s,
+The file board-genmai-reference.c can no longer be used together with
+the legacy sh-clk clock framework, instead CCF is used.
 
-                        Geert
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/Makefile           |  1 -
+ arch/arm/mach-shmobile/Kconfig       | 11 -----------
+ arch/arm/mach-shmobile/Makefile      |  1 -
+ arch/arm/mach-shmobile/Makefile.boot |  1 -
+ 4 files changed, 14 deletions(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index fbebf739dfb0..a6eed6d661ac 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -298,7 +298,6 @@ dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
+ dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
+ 	s3c6410-smdk6410.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
+-	r7s72100-genmai-reference.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 037c00622de6..bc91eaf99e98 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -229,17 +229,6 @@ config MACH_GENMAI
+ 	depends on ARCH_R7S72100
+ 	select USE_OF
+ 
+-config MACH_GENMAI_REFERENCE
+-	bool "Genmai board - Reference Device Tree Implementation"
+-	depends on ARCH_R7S72100
+-	select USE_OF
+-	---help---
+-	   Use reference implementation of Genmai board support
+-	   which makes use of device tree at the expense
+-	   of not supporting a number of devices.
+-
+-	   This is intended to aid developers
+-
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 9c5cd8c53a85..38d5fe825e93 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -66,7 +66,6 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
+-obj-$(CONFIG_MACH_GENMAI_REFERENCE)	+= board-genmai-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index 99455ecafa05..918fccffa1b6 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -7,7 +7,6 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+ loadaddr-$(CONFIG_MACH_GENMAI) += 0x08008000
+-loadaddr-$(CONFIG_MACH_GENMAI_REFERENCE) += 0x08008000
+ loadaddr-$(CONFIG_MACH_KOELSCH) += 0x40008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+ loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
+-- 
+1.9.2
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
