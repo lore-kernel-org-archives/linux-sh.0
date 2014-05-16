@@ -1,47 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:14 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a7740 dtsi: Add Ethernet support
-Message-Id: <08ec67b50db7ca8c9077e67ca23850cdc5bfc716.1400200395.git.horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 04:43:00 +0000
+Subject: [PATCH 3/4] ARM: shmobile: marzen-reference: Use DT CPU Frequency
+Message-Id: <1400215381-7027-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200395.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
+References: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Convert the Marzen DT reference board support to use shmobile_init_delay()
+to be able to migrate away from per-SoC delay setup functions.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Based on work for the Armadillo800 EVA board by Magnus Damm.
+
+Cc: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/mach-shmobile/board-marzen-reference.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 9f65986..f014789 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -123,6 +123,19 @@
- 			      0 149 IRQ_TYPE_LEVEL_HIGH>;
- 	};
- 
-+	ether: ethernet@e9a00000 {
-+		compatible = "renesas,gether-r8a7740";
-+		reg = <0xe9a00000 0x800>,
-+		      <0xe9a01800 0x800>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
-+		/* clocks = <&mstp3_clks R8A7740_CLK_GETHER>; */
-+		phy-mode = "mii";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	i2c0: i2c@fff20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+index c6c133d..dbfec58 100644
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ b/arch/arm/mach-shmobile/board-marzen-reference.c
+@@ -66,7 +66,7 @@ static const char *marzen_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(MARZEN, "marzen")
+ 	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+-	.init_early	= r8a7779_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_time	= marzen_init_timer,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= r8a7779_init_irq_dt,
 -- 
 1.8.5.2
 
