@@ -1,61 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 21 May 2014 16:11:55 +0000
-Subject: Re: [PATCH v2 00/10] Renesas ipmmu-vmsa: Miscellaneous cleanups and fixes
-Message-Id: <1419363.GGUKXiAPyI@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 May 2014 15:26:48 +0000
+Subject: [PATCH/RFC 0/7] ARM: shmobile: r8a7791: Add preliminary DMA support
+Message-Id: <1400254015-29539-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Joerg,
+This patch series adds preliminary DMA support for r8a7791, based on the
+work for r8a7790 by Ben Dooks (cfr. "[PATCH v2 0/9] Updates Renesas OF-DMA
+code").
 
-Ping ?
+  - [1/7] DMA: shdma: Add r8a7791 support
+  - [2/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
+  - [3/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for
+	  bindings
+  - [4/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
+  - [5/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+  - [6/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF
+  - [7/7] ARM: shmobile: koelsch dts: Enable sysdma0 and sysdma1
 
-On Thursday 15 May 2014 12:40:41 Laurent Pinchart wrote:
-> Hello,
-> 
-> This patch set cleans up and fixes small issues in the ipmmu-vmsa driver.
-> The patches are based on top of "[PATCH v3] iommu: Add driver for Renesas
-> VMSA-compatible IPMMU" that adds the ipmmu-vmsa driver.
-> 
-> The most interesting part of this series is the rewrite of the page table
-> management code. The IOMMU core guarantees that the map and unmap operations
-> will always be called only with page sizes advertised by the driver. We can
-> use that assumption to remove loops of PGD and PMD entries, simplifying the
-> code.
-> 
-> Joerg, is there still time to get this merged in v3.16 ? The patches have
-> all been posted previously and the only comment I've received was about a
-> missing #define in patch 04/10.
-> 
-> Cc: Joerg Roedel <joro@8bytes.org>
-> 
-> Changes since v1:
-> 
-> - Add missing IPMMU_PTRS_PER_PUD definition in patch 04/10
-> 
-> Laurent Pinchart (10):
->   iommu/ipmmu-vmsa: Refactor micro-TLB lookup
->   iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or
->     attachment
->   iommu/ipmmu-vmsa: Fix the supported page sizes
->   iommu/ipmmu-vmsa: Define driver-specific page directory sizes
->   iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
->   iommu/ipmmu-vmsa: PMD is never folded, PUD always is
->   iommu/ipmmu-vmsa: Rewrite page table management
->   iommu/ipmmu-vmsa: Support 2MB mappings
->   iommu/ipmmu-vmsa: Remove stage 2 PTE bits definitions
->   iommu/ipmmu-vmsa: Support clearing mappings
-> 
-> drivers/iommu/ipmmu-vmsa.c | 535 +++++++++++++++++++++++++++---------------
-> 1 file changed, 361
-> insertions(+), 174 deletions(-)
+This is NOT meant to be applied yet, hence the RFC status, as so far I
+couldn't get it to actually work.
 
--- 
-Regards,
+I tried refreshing Guennadi's old patch set to add DMA support to MSIOF
+(http://comments.gmane.org/gmane.linux.ports.sh.devel/12303), but it
+seems DMA never sends data to MSIOF, causing MSIOF to refuse enabling
+its sync signal (setting TFSE fails).
 
-Laurent Pinchart
+I've also tried replacing SDHI2 on Koelsch by MMCIF0, as Ben's patches
+used MMCIF1 on Lager, but that also failed. Apparently sh_mmcif doesn't
+even work on Koelsch without DMA?
+
+Perhaps I missed some other patches?
+
+Thanks for your comments!
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
 
