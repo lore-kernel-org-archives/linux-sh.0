@@ -1,165 +1,79 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:31 +0000
-Subject: [PATCH 06/12] ARM: shmobile: r7s72100: genmai: platform scif devices only for legacy support
-Message-Id: <d45b21c9021d7de7941b00f0902a9401fb32a3d9.1400201383.git.horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:12 +0000
+Subject: [PATCH 03/11] ARM: shmobile: henninger: add QSPI DT support
+Message-Id: <f59838d448356feb4f0ce70785a49045d842c9c3.1400200395.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
+References: <cover.1400200395.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-We have now DT support for SCIF, so use the platform_device
-initialization only for the legacy support.
+Define the Henninger board dependent part of the QSPI device node.
+Add device nodes for Spansion S25FL512S SPI flash and MTD partitions on it.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-genmai.c   | 44 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r7s72100.c | 43 --------------------------------
- 2 files changed, 44 insertions(+), 43 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 38 +++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index 6c328d6..c94201e 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -21,6 +21,7 @@
- 
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
-+#include <linux/serial_sci.h>
- #include <linux/sh_eth.h>
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
-@@ -89,6 +90,40 @@ static const struct spi_board_info spi_info[] __initconst = {
- 	},
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 2e45c06..1d715a3 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -109,6 +109,11 @@
+ 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
+ 	};
++
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
  };
  
-+/* SCIF */
-+#define R7S72100_SCIF(index, baseaddr, irq)				\
-+static const struct plat_sci_port scif##index##_platform_data = {	\
-+	.type		= PORT_SCIF,					\
-+	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
-+	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
-+			  SCSCR_REIE,					\
-+};									\
-+									\
-+static struct resource scif##index##_resources[] = {			\
-+	DEFINE_RES_MEM(baseaddr, 0x100),				\
-+	DEFINE_RES_IRQ(irq + 1),					\
-+	DEFINE_RES_IRQ(irq + 2),					\
-+	DEFINE_RES_IRQ(irq + 3),					\
-+	DEFINE_RES_IRQ(irq),						\
-+}									\
+ &scif0 {
+@@ -158,3 +163,36 @@
+ 	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
 +
-+R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
-+R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
-+R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
-+R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
-+R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
-+R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
-+R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
-+R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
 +
-+#define r7s72100_register_scif(index)					       \
-+	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
-+					  scif##index##_resources,	       \
-+					  ARRAY_SIZE(scif##index##_resources), \
-+					  &scif##index##_platform_data,	       \
-+					  sizeof(scif##index##_platform_data))
++	status = "okay";
 +
- static void __init genmai_add_standard_devices(void)
- {
- 	r7s72100_clock_init();
-@@ -102,6 +137,15 @@ static void __init genmai_add_standard_devices(void)
- 	r7s72100_register_rspi(3);
- 	r7s72100_register_rspi(4);
- 	spi_register_board_info(spi_info, ARRAY_SIZE(spi_info));
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		m25p,fast-read;
 +
-+	r7s72100_register_scif(0);
-+	r7s72100_register_scif(1);
-+	r7s72100_register_scif(2);
-+	r7s72100_register_scif(3);
-+	r7s72100_register_scif(4);
-+	r7s72100_register_scif(5);
-+	r7s72100_register_scif(6);
-+	r7s72100_register_scif(7);
- }
- 
- static const char * const genmai_boards_compat_dt[] __initconst = {
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index 545db15..412e179 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -21,47 +21,12 @@
- #include <linux/irq.h>
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/r7s72100.h>
- #include <asm/mach/arch.h>
- 
--#define R7S72100_SCIF(index, baseaddr, irq)				\
--static const struct plat_sci_port scif##index##_platform_data = {	\
--	.type		= PORT_SCIF,					\
--	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,		\
--	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,		\
--	.scscr		= SCSCR_RIE | SCSCR_TIE | SCSCR_RE | SCSCR_TE |	\
--			  SCSCR_REIE,					\
--};									\
--									\
--static struct resource scif##index##_resources[] = {			\
--	DEFINE_RES_MEM(baseaddr, 0x100),				\
--	DEFINE_RES_IRQ(irq + 1),					\
--	DEFINE_RES_IRQ(irq + 2),					\
--	DEFINE_RES_IRQ(irq + 3),					\
--	DEFINE_RES_IRQ(irq),						\
--}									\
--
--R7S72100_SCIF(0, 0xe8007000, gic_iid(221));
--R7S72100_SCIF(1, 0xe8007800, gic_iid(225));
--R7S72100_SCIF(2, 0xe8008000, gic_iid(229));
--R7S72100_SCIF(3, 0xe8008800, gic_iid(233));
--R7S72100_SCIF(4, 0xe8009000, gic_iid(237));
--R7S72100_SCIF(5, 0xe8009800, gic_iid(241));
--R7S72100_SCIF(6, 0xe800a000, gic_iid(245));
--R7S72100_SCIF(7, 0xe800a800, gic_iid(249));
--
--#define r7s72100_register_scif(index)					       \
--	platform_device_register_resndata(&platform_bus, "sh-sci", index,      \
--					  scif##index##_resources,	       \
--					  ARRAY_SIZE(scif##index##_resources), \
--					  &scif##index##_platform_data,	       \
--					  sizeof(scif##index##_platform_data))
--
--
- static struct resource mtu2_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xfcff0000, 0x400),
- 	DEFINE_RES_IRQ_NAMED(gic_iid(139), "tgi0a"),
-@@ -75,14 +40,6 @@ static struct resource mtu2_resources[] __initdata = {
- 
- void __init r7s72100_add_dt_devices(void)
- {
--	r7s72100_register_scif(0);
--	r7s72100_register_scif(1);
--	r7s72100_register_scif(2);
--	r7s72100_register_scif(3);
--	r7s72100_register_scif(4);
--	r7s72100_register_scif(5);
--	r7s72100_register_scif(6);
--	r7s72100_register_scif(7);
- 	r7s72100_register_mtu2();
- }
- 
++		partition@0 {
++			label = "loader_prg";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user_prg";
++			reg = <0x00040000 0x00400000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash_fs";
++			reg = <0x00440000 0x03bc0000>;
++		};
++	};
++};
 -- 
 1.8.5.2
 
