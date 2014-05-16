@@ -1,37 +1,54 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 15 May 2014 19:31:55 +0000
-Subject: Re: [PATCH] tmio_mmc_pio: prevent endless loop in tmio_mmc_set_clock()
-Message-Id: <5375162B.7050104@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:02 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC DT SCIF Updates for v3.16
+Message-Id: <cover.1400201670.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405040219.30018.sergei.shtylyov@cogentembedded.com> <20140513013820.GC10973@verge.net.au> <53720B95.401@cogentembedded.com> <20140513214723.GC6784@verge.net.au>
-In-Reply-To: <20140513214723.GC6784@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: linux-mmc@vger.kernel.org, ian@mnementh.co.uk, linux-sh@vger.kernel.org, chris@printf.net, ulf.hansson@linaro.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On 05/14/2014 01:47 AM, Simon Horman wrote:
+Please consider these Renesas ARM based SoC DT SCIF updates for v3.16.
 
->>>> I've spent a couple of days with the driver just hanging due to me forgetting
->>>> to specify the external crystal frequency, so that clk_get_rate() returned 0
->>>> and thus the loop in tmio_mmc_set_clock() never ended. I don't think that's an
->>>> acceptable behavior, so I suggest that the minimum frequency is checked for 0
->>>> in tmio_mmc_host_probe().
+This pull request is based on Renesas SoC Clock Cleanups for v3.16,
+such requests, tagged as renesas-clock-cleanup2-for-v3.16,
+which I have already sent a pull-request for.
 
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>> My suggestion is to update tmio_mmc_host_probe() so that it always exits,
->>> perhaps returning an error if appropriate.
+This series includes dependencies that do not fit easily into the usual
+inter-branch dependencies and as such I have grouped them together in a
+single branch.
 
->>     Did you mean tmio_mmc_set_clock()?
+The following changes since commit c17fcfbcc0f6b4f3cae761149e1a6108dd6750e7:
 
-> Sorry for the cut-and-paste error. Yes, that is what I meant.
+  ARM: shmobile: r7s72100: Switch to new style MTU2 device (2014-05-11 19:35:28 +0900)
 
-    Not sure about that, really (there's no documentation). That's why I went 
-for the probe time check.
+are available in the git repository at:
 
-WBR, Sergei
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-scif-for-v3.16
 
+for you to fetch changes up to 5ba55fa81aee9493928c245f142a0bfe9f32d02f:
+
+  ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT (2014-05-14 09:56:38 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC dt-scif Updates for v3.16
+
+r8a7791 (R-Car M2) based Koelsch board and
+r8a7790 (R-Car H1) based Lager board
+* Enable SCIF0 and SCIF1 serial ports in DT
+
+----------------------------------------------------------------
+Laurent Pinchart (2):
+      ARM: shmobile: lager: Enable SCIF0 and SCIF1 serial ports in DT
+      ARM: shmobile: koelsch: Enable SCIF0 and SCIF1 serial ports in DT
+
+ arch/arm/boot/dts/r8a7790-lager.dts              | 21 ++++++++++++++++++++-
+ arch/arm/boot/dts/r8a7791-koelsch.dts            | 21 ++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-koelsch-reference.c | 15 ---------------
+ arch/arm/mach-shmobile/board-lager-reference.c   | 10 ----------
+ arch/arm/mach-shmobile/setup-r8a7790.c           | 10 +++++-----
+ arch/arm/mach-shmobile/setup-r8a7791.c           | 10 +++++-----
+ 6 files changed, 50 insertions(+), 37 deletions(-)
