@@ -1,68 +1,64 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 28 May 2014 07:44:46 +0000
-Subject: [PATCH 11/11] i2c: rcar: update copyright and license information
-Message-Id: <1401263086-13720-12-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 16 May 2014 00:58:13 +0000
+Subject: [PATCH 04/11] ARM: shmobile: henninger: add MSIOF0 DT support
+Message-Id: <667366bff7c4d38c6efa60f2e32d13c26a58d7d4.1400200395.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400200395.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Make clear that the driver is GPL v2 only. Remove FSF address. Remove
-filename in comment. Update copyright information.
+Define the Henninger board dependent part of the MSIOF0 device node.
+Add device node for Renesas R2A11302FT PMIC for which no bindings exist yet.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Based on the Koelsch MSIOF device tree patch by Geert Uytterhoeven.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ arch/arm/boot/dts/r8a7791-henninger.dts | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index b4cbbc412ca9..f1ae1a3e187e 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -1,7 +1,9 @@
- /*
-- *  drivers/i2c/busses/i2c-rcar.c
-+ * Driver for the Renesas RCar I2C unit
-  *
-- * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Wolfram Sang <wsa@sang-engineering.com>
-+ *
-+ * Copyright (C) 2012-14 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-  *
-  * This file is based on the drivers/i2c/busses/i2c-sh7760.c
-@@ -12,16 +14,12 @@
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License
-+ * the Free Software Foundation; version 2 of the License.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-  */
- #include <linux/clk.h>
- #include <linux/delay.h>
-@@ -605,6 +603,6 @@ static struct platform_driver rcar_i2c_driver = {
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index 1d715a3..cc6d992 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -114,6 +114,12 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	msiof0_pins: spi1 {
++		renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
++				 "msiof0_tx";
++		renesas,function = "msiof0";
++	};
+ };
  
- module_platform_driver(rcar_i2c_driver);
- 
--MODULE_LICENSE("GPL");
-+MODULE_LICENSE("GPL v2");
- MODULE_DESCRIPTION("Renesas R-Car I2C bus driver");
- MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
+ &scif0 {
+@@ -196,3 +202,18 @@
+ 		};
+ 	};
+ };
++
++&msiof0 {
++	pinctrl-0 = <&msiof0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	pmic@0 {
++		compatible = "renesas,r2a11302ft";
++		reg = <0>;
++		spi-max-frequency = <6000000>;
++		spi-cpol;
++		spi-cpha;
++	};
++};
 -- 
-2.0.0.rc2
+1.8.5.2
 
