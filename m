@@ -1,112 +1,142 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 28 May 2014 07:44:39 +0000
-Subject: [PATCH 04/11] i2c: rcar: refactor irq state machine
-Message-Id: <1401263086-13720-5-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 May 2014 15:26:51 +0000
+Subject: [PATCH/RFC 3/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for bindings
+Message-Id: <1400254015-29539-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add channel resource identifiers for the SYS DMA controller.
 
-Remove the seperate functions and use designated constants. As readable
-but less overhead. Actually, this is even more readable since the old
-function used a mix of "=" and "|=".
+Cfr. the r8a7790 version by Ben Dooks.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 39 +++++++--------------------------------
- 1 file changed, 7 insertions(+), 32 deletions(-)
+I don't like the CHCR_[RT]X_*BIT definitions
+---
+ include/dt-bindings/dma/r8a7791-dma.h |  111 +++++++++++++++++++++++++++++++++
+ 1 file changed, 111 insertions(+)
+ create mode 100644 include/dt-bindings/dma/r8a7791-dma.h
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index e0cdab488cc5..9757adf33f37 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -83,12 +83,9 @@
- #define RCAR_BUS_PHASE_DATA	(MDBS | MIE)
- #define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
- 
--enum {
--	RCAR_IRQ_CLOSE,
--	RCAR_IRQ_OPEN_FOR_SEND,
--	RCAR_IRQ_OPEN_FOR_RECV,
--	RCAR_IRQ_OPEN_FOR_STOP,
--};
-+#define RCAR_IRQ_SEND	(MNRE | MALE | MSTE | MATE | MDEE)
-+#define RCAR_IRQ_RECV	(MNRE | MALE | MSTE | MATE | MDRE)
-+#define RCAR_IRQ_STOP	(MSTE)
- 
- /*
-  * flags
-@@ -158,28 +155,6 @@ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
- 	rcar_i2c_write(priv, ICMAR, 0);
- }
- 
--static void rcar_i2c_irq_mask(struct rcar_i2c_priv *priv, int open)
--{
--	u32 val = MNRE | MALE | MSTE | MATE; /* default */
--
--	switch (open) {
--	case RCAR_IRQ_OPEN_FOR_SEND:
--		val |= MDEE; /* default + send */
--		break;
--	case RCAR_IRQ_OPEN_FOR_RECV:
--		val |= MDRE; /* default + read */
--		break;
--	case RCAR_IRQ_OPEN_FOR_STOP:
--		val = MSTE; /* stop irq only */
--		break;
--	case RCAR_IRQ_CLOSE:
--	default:
--		val = 0; /* all close */
--		break;
--	}
--	rcar_i2c_write(priv, ICMIER, val);
--}
--
- static void rcar_i2c_set_addr(struct rcar_i2c_priv *priv, u32 recv)
- {
- 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | recv);
-@@ -312,7 +287,7 @@ static int rcar_i2c_recv(struct rcar_i2c_priv *priv)
- 	rcar_i2c_set_addr(priv, 1);
- 	rcar_i2c_status_clear(priv);
- 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
--	rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_RECV);
-+	rcar_i2c_write(priv, ICMIER, RCAR_IRQ_RECV);
- 
- 	return 0;
- }
-@@ -331,7 +306,7 @@ static int rcar_i2c_send(struct rcar_i2c_priv *priv)
- 	rcar_i2c_set_addr(priv, 0);
- 	rcar_i2c_status_clear(priv);
- 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
--	rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_SEND);
-+	rcar_i2c_write(priv, ICMIER, RCAR_IRQ_SEND);
- 
- 	return 0;
- }
-@@ -486,7 +461,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 
- 		/* go to stop phase */
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
--		rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_STOP);
-+		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
- 		rcar_i2c_flags_set(priv, ID_NACK);
- 		goto out;
- 	}
-@@ -501,7 +476,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 
- out:
- 	if (rcar_i2c_flags_has(priv, ID_DONE)) {
--		rcar_i2c_irq_mask(priv, RCAR_IRQ_CLOSE);
-+		rcar_i2c_write(priv, ICMIER, 0);
- 		rcar_i2c_status_clear(priv);
- 		wake_up(&priv->wait);
- 	}
+diff --git a/include/dt-bindings/dma/r8a7791-dma.h b/include/dt-bindings/dma/r8a7791-dma.h
+new file mode 100644
+index 000000000000..6fec881d5d46
+--- /dev/null
++++ b/include/dt-bindings/dma/r8a7791-dma.h
+@@ -0,0 +1,111 @@
++/*
++ * R8A7791 System DMA channel resource identifiers
++ */
++
++#ifndef __DT_BINDINGS_DMA_R8A7791_DMA_H__
++#define __DT_BINDINGS_DMA_R8A7791_DMA_H__
++
++#include <dt-bindings/dma/shdma.h>
++
++/* System DMAC */
++
++#define R8A7791_DMA_SCIFA0_TX	(0x21)
++#define R8A7791_DMA_SCIFA0_RX	(0x22)
++#define R8A7791_DMA_SCIFA1_TX	(0x25)
++#define R8A7791_DMA_SCIFA1_RX	(0x26)
++#define R8A7791_DMA_SCIFA2_TX	(0x27)
++#define R8A7791_DMA_SCIFA2_RX	(0x28)
++#define R8A7791_DMA_SCIFA3_TX	(0x1B)
++#define R8A7791_DMA_SCIFA3_RX	(0x1C)
++#define R8A7791_DMA_SCIFA4_TX	(0x1F)
++#define R8A7791_DMA_SCIFA4_RX	(0x20)
++#define R8A7791_DMA_SCIFA5_TX	(0x23)
++#define R8A7791_DMA_SCIFA5_RX	(0x24)
++
++#define R8A7791_DMA_SCIFB0_TX	(0x3D)
++#define R8A7791_DMA_SCIFB0_RX	(0x3E)
++#define R8A7791_DMA_SCIFB1_TX	(0x19)
++#define R8A7791_DMA_SCIFB1_RX	(0x1A)
++#define R8A7791_DMA_SCIFB2_TX	(0x1D)
++#define R8A7791_DMA_SCIFB2_RX	(0x1E)
++
++#define R8A7791_DMA_HSCIF0_TX	(0x39)
++#define R8A7791_DMA_HSCIF0_RX	(0x3A)
++#define R8A7791_DMA_HSCIF1_TX	(0x4D)
++#define R8A7791_DMA_HSCIF1_RX	(0x4E)
++#define R8A7791_DMA_HSCIF2_TX	(0x3B)
++#define R8A7791_DMA_HSCIF2_RX	(0x3C)
++
++#define R8A7791_DMA_SCIF0_TX	(0x29)
++#define R8A7791_DMA_SCIF0_RX	(0x2A)
++#define R8A7791_DMA_SCIF1_TX	(0x2D)
++#define R8A7791_DMA_SCIF1_RX	(0x2E)
++#define R8A7791_DMA_SCIF2_TX	(0x2B)
++#define R8A7791_DMA_SCIF2_RX	(0x2C)
++#define R8A7791_DMA_SCIF3_TX	(0x2F)
++#define R8A7791_DMA_SCIF3_RX	(0x30)
++#define R8A7791_DMA_SCIF4_TX	(0xFB)
++#define R8A7791_DMA_SCIF4_RX	(0xFC)
++#define R8A7791_DMA_SCIF5_TX	(0xFD)
++#define R8A7791_DMA_SCIF5_RX	(0xFE)
++
++#define R8A7791_DMA_MSIOF0_TX	(0x51)
++#define R8A7791_DMA_MSIOF0_RX	(0x52)
++#define R8A7791_DMA_MSIOF1_TX	(0x55)
++#define R8A7791_DMA_MSIOF1_RX	(0x56)
++#define R8A7791_DMA_MSIOF2_TX	(0x41)
++#define R8A7791_DMA_MSIOF2_RX	(0x42)
++
++#define R8A7791_DMA_QSPI_TX	(0x17)
++#define R8A7791_DMA_QSPI_RX	(0x18)
++
++#define R8A7791_DMA_SIM_TX	(0xA1)
++#define R8A7791_DMA_SIM_RX	(0xA2)
++
++#define R8A7791_DMA_IIC0_TX	(0x61)
++#define R8A7791_DMA_IIC0_RX	(0x62)
++#define R8A7791_DMA_IIC1_TX	(0x65)
++#define R8A7791_DMA_IIC1_RX	(0x66)
++#define R8A7791_DMA_IICDVFS_TX	(0x77)
++#define R8A7791_DMA_IICDVFS_RX	(0x78)
++
++#define R8A7791_DMA_SDHI0_TX	(0xCD)
++#define R8A7791_DMA_SDHI0_RX	(0xCE)
++#define R8A7791_DMA_SDHI2_TX	(0xC1)
++#define R8A7791_DMA_SDHI2_RX	(0xC2)
++#define R8A7791_DMA_SDHI2C2_TX	(0xC5)
++#define R8A7791_DMA_SDHI2C2_RX	(0xC6)
++#define R8A7791_DMA_SDHI3_TX	(0xD3)
++#define R8A7791_DMA_SDHI3_RX	(0xD4)
++#define R8A7791_DMA_SDHI3C2_TX	(0xDF)
++#define R8A7791_DMA_SDHI3C2_RX	(0xDE)
++
++#define R8A7791_DMA_TPU0	(0xF1)
++#define R8A7791_DMA_TSIF0	(0xEA)
++#define R8A7791_DMA_TSIF1	(0xF0)
++
++#define R8A7791_DMA_AXISTATR	(0xA6)
++#define R8A7791_DMA_AXISTATS0	(0xAC)
++#define R8A7791_DMA_AXISTATS1	(0xAA)
++#define R8A7791_DMA_AXISTATS2	(0xA8)
++#define R8A7791_DMA_AXISTATS3C	(0xA4)
++
++#define R8A7791_DMA_MMCIF0_TX	(0xD1)
++#define R8A7791_DMA_MMCIF0_RX	(0xD2)
++
++#define R8A7791_DMA_AXSTM	(0xAE)
++
++
++/* Misc */
++
++// FIXME
++#define CHCR_RX_8BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_8BIT)
++#define CHCR_TX_8BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_8BIT)
++#define CHCR_RX_16BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_16BIT)
++#define CHCR_TX_16BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_16BIT)
++#define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
++#define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
++#define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
++#define CHCR_TX_256BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
++
++#endif /* __DT_BINDINGS_DMA_R8A7791_DMA_H__ */
 -- 
-2.0.0.rc2
+1.7.9.5
 
