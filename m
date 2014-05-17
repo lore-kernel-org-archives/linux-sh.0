@@ -1,10 +1,10 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 16 May 2014 12:10:14 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 May 2014 01:24:52 +0000
 Subject: [PATCH 3/5] ARM: shmobile: Sync Genmai DTS with Genmai reference DTS
-Message-Id: <1400242216-20848-4-git-send-email-wsa@the-dreams.de>
+Message-Id: <2606f47be55fd4545ed9236467682c636fd23f9d.1400289483.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400289483.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,12 +19,13 @@ may not be used, but in the multiplatform case all the DT device nodes
 will be used.
 
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r7s72100-genmai.dts | 30 +++++++++++++++++++++++++++++-
  1 file changed, 29 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/boot/dts/r7s72100-genmai.dts b/arch/arm/boot/dts/r7s72100-genmai.dts
-index b1deaf7e2e06..56849b55e1c2 100644
+index b1deaf7..56849b5 100644
 --- a/arch/arm/boot/dts/r7s72100-genmai.dts
 +++ b/arch/arm/boot/dts/r7s72100-genmai.dts
 @@ -1,7 +1,8 @@
@@ -76,5 +77,5 @@ index b1deaf7e2e06..56849b55e1c2 100644
 +	status = "okay";
 +};
 -- 
-1.9.2
+1.8.4
 
