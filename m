@@ -1,10 +1,10 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 16 May 2014 12:10:13 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 May 2014 01:24:51 +0000
 Subject: [PATCH 2/5] ARM: shmobile: genmai-reference: Remove legacy clock support
-Message-Id: <1400242216-20848-3-git-send-email-wsa@the-dreams.de>
+Message-Id: <88351216f595786a24ff6cb7df7b101811981c78.1400289483.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400289483.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,12 +17,14 @@ CCF comes with the package. Remove unused legacy code ifdefs to clean up
 the code.
 
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/mach-shmobile/board-genmai-reference.c | 6 ------
  1 file changed, 6 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 33015e5ed52a..968bbba20d08 100644
+index 33015e5..968bbba 100644
 --- a/arch/arm/mach-shmobile/board-genmai-reference.c
 +++ b/arch/arm/mach-shmobile/board-genmai-reference.c
 @@ -26,7 +26,6 @@
@@ -50,5 +52,5 @@ index 33015e5ed52a..968bbba20d08 100644
  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
 -- 
-1.9.2
+1.8.4
 
