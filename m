@@ -1,10 +1,10 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 16 May 2014 12:10:16 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 May 2014 01:24:54 +0000
 Subject: [PATCH 5/5] ARM: shmobile: Remove Genmai reference DTS
-Message-Id: <1400242216-20848-6-git-send-email-wsa@the-dreams.de>
+Message-Id: <a5176e0d9de31a54e08468f21c15dc08e006857f.1400289483.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400289483.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,6 +17,8 @@ board-genmai.c and board-genmai-reference.c, proceed with removing
 r7s72100-genmai-reference.dts.
 
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r7s72100-genmai-reference.dts | 59 -------------------------
  1 file changed, 59 deletions(-)
@@ -24,7 +26,7 @@ Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
 diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
 deleted file mode 100644
-index ca88458e0706..000000000000
+index ca88458..0000000
 --- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
 +++ /dev/null
 @@ -1,59 +0,0 @@
@@ -88,5 +90,5 @@ index ca88458e0706..000000000000
 -	status = "okay";
 -};
 -- 
-1.9.2
+1.8.4
 
