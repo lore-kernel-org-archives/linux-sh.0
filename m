@@ -1,10 +1,10 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 16 May 2014 12:10:12 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 17 May 2014 01:24:50 +0000
 Subject: [PATCH 1/5] ARM: shmobile: Remove non-multiplatform Genmai reference support
-Message-Id: <1400242216-20848-2-git-send-email-wsa@the-dreams.de>
+Message-Id: <551f80a5c915c4615cd4065ad4db5cf68f765b97.1400289483.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400242216-20848-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1400289483.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,6 +23,8 @@ The file board-genmai-reference.c can no longer be used together with
 the legacy sh-clk clock framework, instead CCF is used.
 
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/Makefile           |  1 -
  arch/arm/mach-shmobile/Kconfig       | 11 -----------
@@ -31,22 +33,22 @@ Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
  4 files changed, 14 deletions(-)
 
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index fbebf739dfb0..a6eed6d661ac 100644
+index 35c146f..4ede75e 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -298,7 +298,6 @@ dtb-$(CONFIG_ARCH_S3C24XX) += s3c2416-smdk2416.dtb
- dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
+@@ -306,7 +306,6 @@ dtb-$(CONFIG_ARCH_S3C64XX) += s3c6410-mini6410.dtb \
  	s3c6410-smdk6410.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += r7s72100-genmai.dtb \
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
 -	r7s72100-genmai-reference.dtb \
  	r8a7740-armadillo800eva.dtb \
  	r8a7778-bockw.dtb \
  	r8a7778-bockw-reference.dtb \
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 037c00622de6..bc91eaf99e98 100644
+index 0f92ba8..2ba18c6 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
-@@ -229,17 +229,6 @@ config MACH_GENMAI
+@@ -240,17 +240,6 @@ config MACH_GENMAI
  	depends on ARCH_R7S72100
  	select USE_OF
  
@@ -65,10 +67,10 @@ index 037c00622de6..bc91eaf99e98 100644
  	bool "MARZEN board"
  	depends on ARCH_R8A7779
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 9c5cd8c53a85..38d5fe825e93 100644
+index c12a1c5..a455584 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
-@@ -66,7 +66,6 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+@@ -67,7 +67,6 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
  obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
  obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
  obj-$(CONFIG_MACH_GENMAI)	+= board-genmai.o
@@ -77,7 +79,7 @@ index 9c5cd8c53a85..38d5fe825e93 100644
  obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
  obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
 diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 99455ecafa05..918fccffa1b6 100644
+index 99455ec..918fccf 100644
 --- a/arch/arm/mach-shmobile/Makefile.boot
 +++ b/arch/arm/mach-shmobile/Makefile.boot
 @@ -7,7 +7,6 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA_REFERENCE) += 0x40008000
@@ -89,5 +91,5 @@ index 99455ecafa05..918fccffa1b6 100644
  loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
  loadaddr-$(CONFIG_MACH_KZM9G_REFERENCE) += 0x41008000
 -- 
-1.9.2
+1.8.4
 
