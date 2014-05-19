@@ -1,51 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 14 May 2014 07:26:57 +0000
-Subject: [PATCH] ARM: shmobile: Minor cleanup of the Armadillo legacy board code
-Message-Id: <fd105ecf17fe459d979f336a7389d87172a1cf6d.1400052350.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 19 May 2014 10:07:52 +0000
+Subject: [PATCH 1/3] usb: host: xhci-plat: add xhci_plat_start()
+Message-Id: <5379D7F8.5060604@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400052350.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400052350.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: mathias.nyman@intel.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Some platforms (such as the Renesas R-Car) need to initialize some specific
+registers after xhci driver calls usb_add_hcd() and before the driver calls
+xhci_run(). So, this patch adds the xhci_plat_start() function.
 
-Cleanup the legacy Armadillo board code slightly by
-removing the pointless eva_add_early_devices() function
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ drivers/usb/host/xhci-plat.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2858f38..4eb9a13 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1299,11 +1299,6 @@ static void __init eva_earlytimer_init(void)
- 	eva_clock_init();
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 0f5f4c8..561d07e 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -37,6 +37,11 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
+ 	return xhci_gen_setup(hcd, xhci_plat_quirks);
  }
- 
--static void __init eva_add_early_devices(void)
--{
--	r8a7740_add_early_devices();
--}
--
- #define RESCNT2 IOMEM(0xe6188020)
- static void eva_restart(enum reboot_mode mode, const char *cmd)
- {
-@@ -1318,7 +1313,7 @@ static const char *eva_boards_compat_dt[] __initdata = {
- 
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.map_io		= r8a7740_map_io,
--	.init_early	= eva_add_early_devices,
-+	.init_early	= r8a7740_add_early_devices,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= eva_init,
- 	.init_late	= shmobile_init_late,
--- 
-1.8.5.2
 
++static int xhci_plat_start(struct usb_hcd *hcd)
++{
++	return xhci_run(hcd);
++}
++
+ static const struct hc_driver xhci_plat_xhci_driver = {
+ 	.description =		"xhci-hcd",
+ 	.product_desc =		"xHCI Host Controller",
+@@ -52,7 +57,7 @@ static const struct hc_driver xhci_plat_xhci_driver = {
+ 	 * basic lifecycle operations
+ 	 */
+ 	.reset =		xhci_plat_setup,
+-	.start =		xhci_run,
++	.start =		xhci_plat_start,
+ 	.stop =			xhci_stop,
+ 	.shutdown =		xhci_shutdown,
+
+-- 
+1.7.9.5
