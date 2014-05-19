@@ -1,12 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 19 May 2014 13:43:44 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 19 May 2014 19:16:42 +0000
 Subject: Re: [PATCH] clk: shmobile: Add R8A7740-specific clock support
-Message-Id: <CANqRtoS4nx44zpVEdyMb-kdSiNGTr09CBhE4M_o3HjKU35vPAA@mail.gmail.com>
+Message-Id: <CAMuHMdWDwgugY6jzj3UuvweyrRqj6sey3smLHQ1fgw_0mAJsKw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1400156437-19694-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <CANqRtoTq5ri+ye7Htcg3hSRZCUmvyMcuWAXvkcAV8arDjuLYzw@mail.gmail.com>
- <CAO3366xgmXPUWAc4DSxgRaMimZozkPNyzMr0X3U9hUTzJvQv2Q@mail.gmail.com>
-In-Reply-To: <CAO3366xgmXPUWAc4DSxgRaMimZozkPNyzMr0X3U9hUTzJvQv2Q@mail.gmail.com>
+In-Reply-To: <1400156437-19694-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,39 +12,76 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Ulrich,
 
-On Fri, May 16, 2014 at 3:26 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
-> On Fri, May 16, 2014 at 3:52 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> On Thu, May 15, 2014 at 9:20 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
->>> Driver for the R8A7740's clocks that are too specific to be supported by a
->>> generic driver.
->>>
->>> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
->>> ---
->>
->> Thanks a lot for your patches. My gut feeling is that r8a7740 CCF
->> support should be pretty close to be finalized, but I also see some
->> feedback and I have a bit of hard time following what is going on. My
->> hope has been to include r8a7740 CCF in v3.16 (this patch), but we may
->> be running out of time there. What's the latest status?
->
-> IIRC there have been no complaints about the r8a7740 CCF part.
+On Thu, May 15, 2014 at 2:20 PM, Ulrich Hecht <ulrich.hecht@gmail.com> wrote:
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/clock/renesas,r8a7740-cpg-clocks.txt
+> @@ -0,0 +1,39 @@
+> +* Renesas R8A7740  Clock Pulse Generator (CPG)
+> +
+> +The CPG generates core clocks for the R8A7740 SoC. It includes three PLLs
+> +and several fixed ratio and variable ratio dividers.
+> +
+> +Required Properties:
+> +
+> +  - compatible: Must be "renesas,r8a7740-cpg-clocks"
+> +
+> +  - reg: Base address and length of the memory resource used by the CPG
+> +
+> +  - clocks: Reference to the two parent clocks
 
-Ok, thanks. Could you please collect acks from people giving feedback
-and ping the maintainer?
+Aren't there 3 parent clocks (extal1, extal2, extalr)?
 
->> Would it be possible for you to adjust your work flow to always
->> include version number of patch and also include a change log?
->> Basically, I'd like to know which is the latest patch and if all the
->> issues have been fixed up.
->
-> One might call this v2; the only change is that it has been reshuffled
-> to include the DT bindings and Makefile patch, because that's what
-> "clk: shmobile: add CPG driver for rz-platforms" looks like...
+> +Example
+> +-------
+> +
+> +cpg_clocks: cpg_clocks@e6150000 {
+> +        compatible = "renesas,r8a7740-cpg-clocks";
+> +        reg = <0xe6150000 0x10000>;
+> +        clocks = <&extal1_clk>, <&extalr_clk>;
 
-Once you resend, please reflect this in the next version of the patch!
+Hence missing "<&extal2_clk>" (see below)?
 
-Thanks for your help!
+> --- /dev/null
+> +++ b/drivers/clk/shmobile/clk-r8a7740.c
 
-Cheers,
+> +static struct div4_clk div4_clks[] = {
+> +       { "i", CPG_FRQCRA, 20, 0x6fff, CLK_ENABLE_ON_INIT },
+> +       { "zg", CPG_FRQCRA, 16, 0x6fff, CLK_ENABLE_ON_INIT },
+> +       { "b", CPG_FRQCRA,  8, 0x6fff, CLK_ENABLE_ON_INIT },
+> +       { "m1", CPG_FRQCRA,  4, 0x6fff, CLK_ENABLE_ON_INIT },
+> +       { "hp", CPG_FRQCRB,  4, 0x6fff, 0 },
+> +       { "hpp", CPG_FRQCRC, 20, 0x6fff, 0 },
+> +       { "usbp", CPG_FRQCRC, 16, 0x6fff, 0 },
+> +       { "s", CPG_FRQCRC, 12, 0x6fff, 0 },
+> +       { "zb", CPG_FRQCRC,  8, 0x6fff, 0 },
+> +       { "m3", CPG_FRQCRC,  4, 0x6fff, 0 },
+> +       { "cp", CPG_FRQCRC,  0, 0x6fff, 0 },
 
-/ magnus
+I assume the identical mask values (0x6fff) are not the final values, and will
+be updated when the field becomes used?
+
+> +       { NULL, 0, 0, 0, 0 },
+> +};
+
+> +static struct clk * __init
+> +r8a7740_cpg_register_clock(struct device_node *np, struct r8a7740_cpg *cpg,
+> +                            const char *name)
+> +{
+
+> +       } else if (!strcmp(name, "usb24s")) {
+> +               u32 value = clk_readl(cpg->reg + CPG_USBCKCR);
+> +               if (value & BIT(7))
+> +                       parent_name = "extal2";
+
+This one references extal2.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
