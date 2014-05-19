@@ -1,142 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 16 May 2014 15:26:51 +0000
-Subject: [PATCH/RFC 3/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for bindings
-Message-Id: <1400254015-29539-4-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 19 May 2014 10:07:36 +0000
+Subject: [PATCH 0/3] add support for the R-Car H2 and M2 xHCI controllers
+Message-Id: <5379D7E8.9070700@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Add channel resource identifiers for the SYS DMA controller.
+This patch set adds the USB xHCI support for the R-Car H2 and M2 SoCs.
+These SoCs use an xHCI but still need specific initialization, mainly
+to setup the firmware downloading and the specific registers.
 
-Cfr. the r8a7790 version by Ben Dooks.
+This patch set depends on the following patches:
+	http://marc.info/?l=linux-usb&m0014937401793&w=2
+	http://marc.info/?l=linux-usb&m0014935801786&w=2
+	http://marc.info/?l=linux-usb&m0014933101775&w=2
+	http://marc.info/?l=linux-usb&m0014932301770&w=2
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-I don't like the CHCR_[RT]X_*BIT definitions
----
- include/dt-bindings/dma/r8a7791-dma.h |  111 +++++++++++++++++++++++++++++++++
- 1 file changed, 111 insertions(+)
- create mode 100644 include/dt-bindings/dma/r8a7791-dma.h
+However, this patch set doesn't depend on the following patch because
+this patch set uses the "USB phy", not "phy":
+	http://marc.info/?l=linux-usb&m0025742005303&w=2
 
-diff --git a/include/dt-bindings/dma/r8a7791-dma.h b/include/dt-bindings/dma/r8a7791-dma.h
-new file mode 100644
-index 000000000000..6fec881d5d46
---- /dev/null
-+++ b/include/dt-bindings/dma/r8a7791-dma.h
-@@ -0,0 +1,111 @@
-+/*
-+ * R8A7791 System DMA channel resource identifiers
-+ */
-+
-+#ifndef __DT_BINDINGS_DMA_R8A7791_DMA_H__
-+#define __DT_BINDINGS_DMA_R8A7791_DMA_H__
-+
-+#include <dt-bindings/dma/shdma.h>
-+
-+/* System DMAC */
-+
-+#define R8A7791_DMA_SCIFA0_TX	(0x21)
-+#define R8A7791_DMA_SCIFA0_RX	(0x22)
-+#define R8A7791_DMA_SCIFA1_TX	(0x25)
-+#define R8A7791_DMA_SCIFA1_RX	(0x26)
-+#define R8A7791_DMA_SCIFA2_TX	(0x27)
-+#define R8A7791_DMA_SCIFA2_RX	(0x28)
-+#define R8A7791_DMA_SCIFA3_TX	(0x1B)
-+#define R8A7791_DMA_SCIFA3_RX	(0x1C)
-+#define R8A7791_DMA_SCIFA4_TX	(0x1F)
-+#define R8A7791_DMA_SCIFA4_RX	(0x20)
-+#define R8A7791_DMA_SCIFA5_TX	(0x23)
-+#define R8A7791_DMA_SCIFA5_RX	(0x24)
-+
-+#define R8A7791_DMA_SCIFB0_TX	(0x3D)
-+#define R8A7791_DMA_SCIFB0_RX	(0x3E)
-+#define R8A7791_DMA_SCIFB1_TX	(0x19)
-+#define R8A7791_DMA_SCIFB1_RX	(0x1A)
-+#define R8A7791_DMA_SCIFB2_TX	(0x1D)
-+#define R8A7791_DMA_SCIFB2_RX	(0x1E)
-+
-+#define R8A7791_DMA_HSCIF0_TX	(0x39)
-+#define R8A7791_DMA_HSCIF0_RX	(0x3A)
-+#define R8A7791_DMA_HSCIF1_TX	(0x4D)
-+#define R8A7791_DMA_HSCIF1_RX	(0x4E)
-+#define R8A7791_DMA_HSCIF2_TX	(0x3B)
-+#define R8A7791_DMA_HSCIF2_RX	(0x3C)
-+
-+#define R8A7791_DMA_SCIF0_TX	(0x29)
-+#define R8A7791_DMA_SCIF0_RX	(0x2A)
-+#define R8A7791_DMA_SCIF1_TX	(0x2D)
-+#define R8A7791_DMA_SCIF1_RX	(0x2E)
-+#define R8A7791_DMA_SCIF2_TX	(0x2B)
-+#define R8A7791_DMA_SCIF2_RX	(0x2C)
-+#define R8A7791_DMA_SCIF3_TX	(0x2F)
-+#define R8A7791_DMA_SCIF3_RX	(0x30)
-+#define R8A7791_DMA_SCIF4_TX	(0xFB)
-+#define R8A7791_DMA_SCIF4_RX	(0xFC)
-+#define R8A7791_DMA_SCIF5_TX	(0xFD)
-+#define R8A7791_DMA_SCIF5_RX	(0xFE)
-+
-+#define R8A7791_DMA_MSIOF0_TX	(0x51)
-+#define R8A7791_DMA_MSIOF0_RX	(0x52)
-+#define R8A7791_DMA_MSIOF1_TX	(0x55)
-+#define R8A7791_DMA_MSIOF1_RX	(0x56)
-+#define R8A7791_DMA_MSIOF2_TX	(0x41)
-+#define R8A7791_DMA_MSIOF2_RX	(0x42)
-+
-+#define R8A7791_DMA_QSPI_TX	(0x17)
-+#define R8A7791_DMA_QSPI_RX	(0x18)
-+
-+#define R8A7791_DMA_SIM_TX	(0xA1)
-+#define R8A7791_DMA_SIM_RX	(0xA2)
-+
-+#define R8A7791_DMA_IIC0_TX	(0x61)
-+#define R8A7791_DMA_IIC0_RX	(0x62)
-+#define R8A7791_DMA_IIC1_TX	(0x65)
-+#define R8A7791_DMA_IIC1_RX	(0x66)
-+#define R8A7791_DMA_IICDVFS_TX	(0x77)
-+#define R8A7791_DMA_IICDVFS_RX	(0x78)
-+
-+#define R8A7791_DMA_SDHI0_TX	(0xCD)
-+#define R8A7791_DMA_SDHI0_RX	(0xCE)
-+#define R8A7791_DMA_SDHI2_TX	(0xC1)
-+#define R8A7791_DMA_SDHI2_RX	(0xC2)
-+#define R8A7791_DMA_SDHI2C2_TX	(0xC5)
-+#define R8A7791_DMA_SDHI2C2_RX	(0xC6)
-+#define R8A7791_DMA_SDHI3_TX	(0xD3)
-+#define R8A7791_DMA_SDHI3_RX	(0xD4)
-+#define R8A7791_DMA_SDHI3C2_TX	(0xDF)
-+#define R8A7791_DMA_SDHI3C2_RX	(0xDE)
-+
-+#define R8A7791_DMA_TPU0	(0xF1)
-+#define R8A7791_DMA_TSIF0	(0xEA)
-+#define R8A7791_DMA_TSIF1	(0xF0)
-+
-+#define R8A7791_DMA_AXISTATR	(0xA6)
-+#define R8A7791_DMA_AXISTATS0	(0xAC)
-+#define R8A7791_DMA_AXISTATS1	(0xAA)
-+#define R8A7791_DMA_AXISTATS2	(0xA8)
-+#define R8A7791_DMA_AXISTATS3C	(0xA4)
-+
-+#define R8A7791_DMA_MMCIF0_TX	(0xD1)
-+#define R8A7791_DMA_MMCIF0_RX	(0xD2)
-+
-+#define R8A7791_DMA_AXSTM	(0xAE)
-+
-+
-+/* Misc */
-+
-+// FIXME
-+#define CHCR_RX_8BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_8BIT)
-+#define CHCR_TX_8BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_8BIT)
-+#define CHCR_RX_16BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_16BIT)
-+#define CHCR_TX_16BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_16BIT)
-+#define CHCR_RX_32BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_32BIT)
-+#define CHCR_TX_32BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_32BIT)
-+#define CHCR_RX_256BIT	SHDMA_ARM_CHCR_RX(SHDMA_ARM_SZ_256BIT)
-+#define CHCR_TX_256BIT	SHDMA_ARM_CHCR_TX(SHDMA_ARM_SZ_256BIT)
-+
-+#endif /* __DT_BINDINGS_DMA_R8A7791_DMA_H__ */
+Yoshihiro Shimoda (3):
+  usb: host: xhci-plat: add xhci_plat_start()
+  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
+    controllers
+  Documentation: dt-bindings: update xhci-platform DT binding for R-Car
+    Gen2
+
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |    3 +-
+ drivers/usb/host/Kconfig                           |    8 +
+ drivers/usb/host/Makefile                          |    3 +
+ drivers/usb/host/xhci-plat.c                       |   25 ++-
+ drivers/usb/host/xhci-rcar.c                       |  187 ++++++++++++++++++++
+ drivers/usb/host/xhci-rcar.h                       |   37 ++++
+ 6 files changed, 261 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/usb/host/xhci-rcar.c
+ create mode 100644 drivers/usb/host/xhci-rcar.h
+
 -- 
 1.7.9.5
-
