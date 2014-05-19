@@ -1,58 +1,71 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 19:15:10 +0000
-Subject: [PATCH v2 04/10] i2c: sh_mobile: add devicetree documentation
-Message-Id: <1399058116-7721-5-git-send-email-wsa@the-dreams.de>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 19 May 2014 20:42:33 +0000
+Subject: [PATCHv2 resend 02/11] ARM: shmobile: Armadillo 800 EVA: initialize all struct pwm_lookup members
+Message-Id: <1400532162-29483-3-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
+References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Initializing all the struc pwm_lookup members allows to get rid of the struct
+tpu_pwm_platform_data as the polarity initialization will be taken care of by
+the PWM core.
 
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Acked-by: Simon Horman <horms@verge.net.au>
 ---
- .../devicetree/bindings/i2c/i2c-sh_mobile.txt      | 26 ++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 20 +++++++++-----------
+ 1 file changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
-new file mode 100644
-index 000000000000..d2153ce36fa8
---- /dev/null
-+++ b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
-@@ -0,0 +1,26 @@
-+Device tree configuration for Renesas IIC (sh_mobile) driver
-+
-+Required properties:
-+- compatible      : "renesas,iic-<soctype>". "renesas,rmobile-iic" as fallback
-+- reg             : address start and address range size of device
-+- interrupts      : interrupt of device
-+- clocks          : clock for device
-+- #address-cells  : should be <1>
-+- #size-cells     : should be <0>
-+
-+Optional properties:
-+- clock-frequency : frequency of bus clock in Hz. Default 100kHz if unset.
-+
-+Pinctrl properties might be needed, too. See there.
-+
-+Example:
-+
-+	iic0: i2c@e6500000 {
-+		compatible = "renesas,iic-r8a7790", "renesas,rmobile-iic";
-+		reg = <0 0xe6500000 0 0x425>;
-+		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
-+		clock-frequency = <400000>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 2858f380beae..1bf61dad9a35 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -31,7 +31,7 @@
+ #include <linux/gpio_keys.h>
+ #include <linux/regulator/driver.h>
+ #include <linux/pinctrl/machine.h>
+-#include <linux/platform_data/pwm-renesas-tpu.h>
++#include <linux/pwm.h>
+ #include <linux/pwm_backlight.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/gpio-regulator.h>
+@@ -399,24 +399,22 @@ static struct resource pwm_resources[] = {
+ 	},
+ };
+ 
+-static struct tpu_pwm_platform_data pwm_device_data = {
+-	.channels[2] = {
+-		.polarity = PWM_POLARITY_INVERSED,
+-	}
+-};
+-
+ static struct platform_device pwm_device = {
+ 	.name = "renesas-tpu-pwm",
+ 	.id = -1,
+-	.dev = {
+-		.platform_data = &pwm_device_data,
+-	},
+ 	.num_resources = ARRAY_SIZE(pwm_resources),
+ 	.resource = pwm_resources,
+ };
+ 
+ static struct pwm_lookup pwm_lookup[] = {
+-	PWM_LOOKUP("renesas-tpu-pwm", 2, "pwm-backlight.0", NULL),
++	{
++		.provider = "renesas-tpu-pwm",
++		.index = 2,
++		.dev_id = "pwm-backlight.0",
++		.con_id = NULL,
++		.period = 33333,
++		.polarity = PWM_POLARITY_INVERSED,
++	},
+ };
+ 
+ /* LCDC and backlight */
 -- 
-1.9.2
+1.9.1
 
