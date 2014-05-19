@@ -1,29 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 May 2014 01:45:20 +0000
-Subject: Re: [PATCH v4 0/3] drivers: sh: Misc updates
-Message-Id: <20140526014519.GI31096@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 19 May 2014 10:08:19 +0000
+Subject: [PATCH 3/3] Documentation: dt-bindings: update xhci-platform DT binding for R-Car H2 and M2
+Message-Id: <5379D813.1040100@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400781606-18601-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1400781606-18601-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: mathias.nyman@intel.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On Thu, May 22, 2014 at 08:00:03PM +0200, Geert Uytterhoeven wrote:
-> From: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> 	Hi Simon,
-> 
-> Now commit 3c90c55dcde745bed81f6447f24ba96bda43d984 ("drivers: sh:
-> compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI") has landed in
-> mainline in v3.15-rc6, I'm resubmitting a few updates for drivers/sh,
-> like you asked me before:
-> 
->   - [1/3] drivers: sh: pm_runtime does not need idle callback
->   - [2/3] drivers: sh: pm_runtime implementation needs to suspend
->   - [3/3] drivers: sh: Restrict INTC_USERIMASK to SH4A
-> 
-> Thanks for applying!
+This commit extends the compatible string list of the xhci-platform
+binding with the new "renesas,r8a7790-xhci" and "renesas,r8a7791-xhci"
+compatible strings. It is used to describe the xHCI controller which
+is available in the R-Car H2 and M2 SoCs.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Thanks, done.
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 999be5c..e3107bb 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -2,7 +2,8 @@ USB xHCI controllers
+
+ Required properties:
+   - compatible: should be one of "generic-xhci",
+-    "marvell,armada-375-xhci", "marvell,armada-380-xhci" (deprecated:
++    "marvell,armada-375-xhci", "marvell,armada-380-xhci",
++    "renesas,r8a7790-xhci", "renesas,r8a7791-xhci" (deprecated:
+     "xhci-platform").
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
+-- 
+1.7.9.5
