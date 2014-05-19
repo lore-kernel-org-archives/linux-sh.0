@@ -1,58 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:15 +0000
-Subject: [PATCH 06/11] ARM: shmobile: armadillo-reference dts: Add Ethernet support
-Message-Id: <15d89dc9bfde872885c6226d86fb25676cbedfb3.1400200395.git.horms+renesas@verge.net.au>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 19 May 2014 20:42:39 +0000
+Subject: [PATCHv2 resend 08/11] ARM: shmobile: Armadillo 800 EVA: use PWM_LOOKUP to initialize struct pwm_loo
+Message-Id: <1400532162-29483-9-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200395.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
+References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Acked-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 10344e6..486007d 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -158,6 +158,18 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 1bf61dad9a35..ca82b1e2ebab 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -407,14 +407,8 @@ static struct platform_device pwm_device = {
  };
  
-+&ether {
-+	pinctrl-0 = <&ether_pins>;
-+	pinctrl-names = "default";
-+
-+	phy-handle = <&phy0>;
-+	status = "ok";
-+
-+	phy0: ethernet-phy@0 {
-+		reg = <0>;
-+	};
-+};
-+
- &i2c0 {
- 	status = "okay";
- 	touchscreen@55 {
-@@ -189,6 +201,11 @@
- 	pinctrl-0 = <&scifa1_pins>;
- 	pinctrl-names = "default";
+ static struct pwm_lookup pwm_lookup[] = {
+-	{
+-		.provider = "renesas-tpu-pwm",
+-		.index = 2,
+-		.dev_id = "pwm-backlight.0",
+-		.con_id = NULL,
+-		.period = 33333,
+-		.polarity = PWM_POLARITY_INVERSED,
+-	},
++	PWM_LOOKUP("renesas-tpu-pwm", 2, "pwm-backlight.0", NULL,
++		   33333, PWM_POLARITY_INVERSED),
+ };
  
-+	ether_pins: ether {
-+		renesas,groups = "gether_mii", "gether_int";
-+		renesas,function = "gether";
-+	};
-+
- 	scifa1_pins: serial1 {
- 		renesas,groups = "scifa1_data";
- 		renesas,function = "scifa1";
+ /* LCDC and backlight */
 -- 
-1.8.5.2
+1.9.1
 
