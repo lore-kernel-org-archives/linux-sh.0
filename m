@@ -1,47 +1,33 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 19 May 2014 10:07:52 +0000
-Subject: [PATCH 1/3] usb: host: xhci-plat: add xhci_plat_start()
-Message-Id: <5379D7F8.5060604@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 19 May 2014 12:00:42 +0000
+Subject: Re: [PATCH 1/3] usb: host: xhci-plat: add xhci_plat_start()
+Message-Id: <CAMuHMdWSuZv0kTEW6XJ8XTnd6LuYnMBQ0MhN0G35riwKfvDbag@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5379D7F8.5060604@renesas.com>
+In-Reply-To: <5379D7F8.5060604@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mathias.nyman@intel.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: mathias.nyman@intel.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Some platforms (such as the Renesas R-Car) need to initialize some specific
-registers after xhci driver calls usb_add_hcd() and before the driver calls
-xhci_run(). So, this patch adds the xhci_plat_start() function.
+On Mon, May 19, 2014 at 12:07 PM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+> Some platforms (such as the Renesas R-Car) need to initialize some specific
+> registers after xhci driver calls usb_add_hcd() and before the driver calls
+> xhci_run(). So, this patch adds the xhci_plat_start() function.
+>
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/host/xhci-plat.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 0f5f4c8..561d07e 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -37,6 +37,11 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
- 	return xhci_gen_setup(hcd, xhci_plat_quirks);
- }
+Gr{oetje,eeting}s,
 
-+static int xhci_plat_start(struct usb_hcd *hcd)
-+{
-+	return xhci_run(hcd);
-+}
-+
- static const struct hc_driver xhci_plat_xhci_driver = {
- 	.description =		"xhci-hcd",
- 	.product_desc =		"xHCI Host Controller",
-@@ -52,7 +57,7 @@ static const struct hc_driver xhci_plat_xhci_driver = {
- 	 * basic lifecycle operations
- 	 */
- 	.reset =		xhci_plat_setup,
--	.start =		xhci_run,
-+	.start =		xhci_plat_start,
- 	.stop =			xhci_stop,
- 	.shutdown =		xhci_shutdown,
+                        Geert
 
--- 
-1.7.9.5
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
