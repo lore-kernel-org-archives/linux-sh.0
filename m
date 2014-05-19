@@ -1,85 +1,185 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Mon, 26 May 2014 23:33:28 +0000
-Subject: Re: [PATCH v3 3/4] sh/PCI: Pass GAPSPCI_DMA_BASE CPU & bus address to dma_declare_coherent_memory()
-Message-Id: <CAErSpo708iC2UWjTwDqLnSUSXWG087DoOQEMkFcfNsGw1wvQsg@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 19 May 2014 21:10:20 +0000
+Subject: [PATCH v4] pci-rcar-gen2: add device tree support
+Message-Id: <201405200110.21914.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140508204257.17877.4639.stgit@bhelgaas-glaptop.roam.corp.google.com>
- <20140508204907.17877.4848.stgit@bhelgaas-glaptop.roam.corp.google.com> <CAMuHMdWp-dUFwSgw30SYqXxAtAsrXDgaxcgfBZwV=1pEVN3B=A@mail.gmail.com>
-In-Reply-To: <CAMuHMdWp-dUFwSgw30SYqXxAtAsrXDgaxcgfBZwV=1pEVN3B=A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Joerg Roedel <joro@8bytes.org>, Randy Dunlap <rdunlap@infradead.org>, Liviu Dudau <Liviu.Dudau@arm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, James Bottomley <jbottomley@parallels.com>, Magnus Damm <damm@opensource.se>, linux-pci <linux-pci@vger.kernel.org>, David Woodhouse <dwmw2@infradead.org>
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, horms@verge.net.au, bhelgaas@google.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-pci@vger.kernel.org
+Cc: rdunlap@infradead.org, linux-doc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Mon, May 26, 2014 at 8:46 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, May 8, 2014 at 10:49 PM, Bjorn Helgaas <bhelgaas@google.com> wrote:
->> --- a/arch/sh/drivers/pci/fixups-dreamcast.c
->> +++ b/arch/sh/drivers/pci/fixups-dreamcast.c
->> @@ -31,6 +31,8 @@
->>  static void gapspci_fixup_resources(struct pci_dev *dev)
->>  {
->>         struct pci_channel *p = dev->sysdata;
->> +       struct resource res;
->> +       struct pci_bus_region region;
->>
->>         printk(KERN_NOTICE "PCI: Fixing up device %s\n", pci_name(dev));
->>
->> @@ -50,11 +52,21 @@ static void gapspci_fixup_resources(struct pci_dev *dev)
->>
->>                 /*
->>                  * Redirect dma memory allocations to special memory window.
->> +                *
->> +                * If this GAPSPCI region were mapped by a BAR, the CPU
->> +                * phys_addr_t would be pci_resource_start(), and the bus
->> +                * address would be pci_bus_address(pci_resource_start()).
->> +                * But apparently there's no BAR mapping it, so we just
->> +                * "know" its CPU address is GAPSPCI_DMA_BASE.
->>                  */
->> +               res.start = GAPSPCI_DMA_BASE;
->> +               res.end = GAPSPCI_DMA_BASE + GAPSPCI_DMA_SIZE - 1;
->> +               res.flags = IORESOURCE_MEM;
->> +               pcibios_resource_to_bus(dev, &region, &resource);
->
-> In response to http://kisskb.ellerman.id.au/kisskb/buildresult/11212250/
->
-> | /scratch/kisskb/src/arch/sh/drivers/pci/fixups-dreamcast.c: In
-> function 'gapspci_fixup_resources':
-> | /scratch/kisskb/src/arch/sh/drivers/pci/fixups-dreamcast.c:65:42:
-> error: 'resource' undeclared (first use in this function)
-> | /scratch/kisskb/src/arch/sh/drivers/pci/fixups-dreamcast.c:65:42:
-> note: each undeclared identifier is reported only once for each
-> function it appears in
->
-> "resource" seem to have been replaced by "res", but this warning still happens:
->
-> | /scratch/kisskb/src/arch/sh/drivers/pci/fixups-dreamcast.c:65:3:
-> warning: passing argument 1 of 'pcibios_resource_to_bus' from
-> incompatible pointer type [enabled by default]
-> | /scratch/kisskb/src/include/linux/pci.h:737:6: note: expected
-> 'struct pci_bus *' but argument is of type 'struct pci_dev *'
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Sheesh, this really has not been my day.  Fixed, thanks.
+Add device tree probing support to the 'pci-rcar-gen2' driver.
 
->>                 BUG_ON(!dma_declare_coherent_memory(&dev->dev,
->> -                                               GAPSPCI_DMA_BASE,
->> -                                               GAPSPCI_DMA_BASE,
->> -                                               GAPSPCI_DMA_SIZE,
->> +                                               res.start,
->> +                                               region.start,
->> +                                               resource_size(&res),
->>                                                 DMA_MEMORY_MAP |
->>                                                 DMA_MEMORY_EXCLUSIVE));
->>                 break;
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[Sergei: numerous fixes/cleanups/additions]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against the 'next' branch of Bjorn Helgaas' 'pci.git' repo.
+
+Changes in version 4:
+- added the descriptions for the #{address|size|interrupt}-cells and
+  #interrupt-map[-mask] properties to the binding document;
+- added the interrupt-related properties to the example;
+- refreshed the patch.
+
+Changes in version 3:
+- added "renesas,pci-r8a7791" to the possible "compatible" property values;
+- removed '#ifdef CONFIG_OF' around rcar_pci_of_match[] and hence of_match_ptr()
+  invocation too;
+- fixed trailing whitespace in the DT parsing code;
+- removed the wrong "renessas," prefix from the binding document's file name;
+- moved the PCI device sub-nodes from the board example to the SoC example;
+- fixed labels in the board example;
+- fixed grammar and punctuation in the binding document;
+- reworded the changelog, fixed the subject.
+
+Changes in version 2:
+- merged the binding document from a separate patch;
+- moved to the "bus-range" property parsing;
+- added example to the binding document.
+
+ Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt |   66 ++++++++++++++++
+ drivers/pci/host/pci-rcar-gen2.c                        |   31 +++++++
+ 2 files changed, 95 insertions(+), 2 deletions(-)
+
+Index: pci/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+=================================--- /dev/null
++++ pci/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+@@ -0,0 +1,66 @@
++Renesas AHB to PCI bridge
++-------------------------
++
++This is the bridge used internally to connect the USB controllers to the
++AHB. There is one bridge instance per USB port connected to the internal
++OHCI and EHCI controllers.
++
++Required properties:
++- compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
++	      "renesas,pci-r8a7791" for the R8A7791 SoC.
++- reg:	A list of physical regions to access the device: the first is
++	the operational registers for the OHCI/EHCI controllers and the
++	second is for the bridge configuration and control registers.
++- interrupts: interrupt for the device.
++- clocks: The reference to the device clock.
++- bus-range: The PCI bus number range; as this is a single bus, the range
++	     should be specified as the same value twice.
++- #address-cells: must be 3.
++- #size-cells: must be 2.
++- #interrupt-cells: must be 1.
++- interrupt-map: standard property used to define the mapping of the PCI
++  interrupts to the GIC interrupts.
++- interrupt-map-mask: standard property that helps to define the interrupt
++  mapping.
++
++Example SoC configuration:
++
++	pci0: pci@ee090000  {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++		pci@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
++
++		pci@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
++	};
++
++Example board setup:
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
+Index: pci/drivers/pci/host/pci-rcar-gen2.c
+=================================--- pci.orig/drivers/pci/host/pci-rcar-gen2.c
++++ pci/drivers/pci/host/pci-rcar-gen2.c
+@@ -98,6 +98,7 @@ struct rcar_pci_priv {
+ 	struct resource io_res;
+ 	struct resource mem_res;
+ 	struct resource *cfg_res;
++	unsigned busnr;
+ 	int irq;
+ 	unsigned long window_size;
+ };
+@@ -312,8 +313,8 @@ static int rcar_pci_setup(int nr, struct
+ 	pci_add_resource(&sys->resources, &priv->io_res);
+ 	pci_add_resource(&sys->resources, &priv->mem_res);
+ 
+-	/* Setup bus number based on platform device id */
+-	sys->busnr = to_platform_device(priv->dev)->id;
++	/* Setup bus number based on platform device id / of bus-range */
++	sys->busnr = priv->busnr;
+ 	return 1;
+ }
+ 
+@@ -366,6 +367,23 @@ static int rcar_pci_probe(struct platfor
+ 
+ 	priv->window_size = SZ_1G;
+ 
++	if (pdev->dev.of_node) {
++		struct resource busnr;
++		int ret;
++
++		ret = of_pci_parse_bus_range(pdev->dev.of_node, &busnr);
++		if (ret < 0) {
++			dev_err(&pdev->dev, "failed to parse bus-range\n");
++			return ret;
++		}
++
++		priv->busnr = busnr.start;
++		if (busnr.end != busnr.start)
++			dev_warn(&pdev->dev, "only one bus number supported\n");
++	} else {
++		priv->busnr = pdev->id;
++	}
++
+ 	hw_private[0] = priv;
+ 	memset(&hw, 0, sizeof(hw));
+ 	hw.nr_controllers = ARRAY_SIZE(hw_private);
+@@ -377,11 +395,20 @@ static int rcar_pci_probe(struct platfor
+ 	return 0;
+ }
+ 
++static struct of_device_id rcar_pci_of_match[] = {
++	{ .compatible = "renesas,pci-r8a7790", },
++	{ .compatible = "renesas,pci-r8a7791", },
++	{ },
++};
++
++MODULE_DEVICE_TABLE(of, rcar_pci_of_match);
++
+ static struct platform_driver rcar_pci_driver = {
+ 	.driver = {
+ 		.name = "pci-rcar-gen2",
+ 		.owner = THIS_MODULE,
+ 		.suppress_bind_attrs = true,
++		.of_match_table = rcar_pci_of_match,
+ 	},
+ 	.probe = rcar_pci_probe,
+ };
