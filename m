@@ -1,230 +1,78 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 15 May 2014 10:40:42 +0000
-Subject: [PATCH v2 01/10] iommu/ipmmu-vmsa: Refactor micro-TLB lookup
-Message-Id: <1400150451-13469-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 19 May 2014 20:42:31 +0000
+Subject: [PATCHv2 resend 00/11] improve PWM lookup support without device tree
+Message-Id: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Cache the micro-TLB number in archdata allocated in the .add_device
-handler instead of looking it up when the deviced is attached and
-detached. This simplifies the .attach_dev and .detach_dev operations and
-prepares for DT support.
+Hi,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/ipmmu-vmsa.c | 92 ++++++++++++++++++++++++++--------------------
- 1 file changed, 52 insertions(+), 40 deletions(-)
+Originally sent on Apr 14th, note that this series is blocking another 16
+patches series, I would like it to be taken in 3.16 if we can agree on this
+implementation.
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index a8a940a..49e00f7 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -44,6 +44,11 @@ struct ipmmu_vmsa_domain {
- 	pgd_t *pgd;
- };
- 
-+struct ipmmu_vmsa_archdata {
-+	struct ipmmu_vmsa_device *mmu;
-+	unsigned int utlb;
-+};
-+
- static DEFINE_SPINLOCK(ipmmu_devices_lock);
- static LIST_HEAD(ipmmu_devices);
- 
-@@ -265,14 +270,19 @@ static void ipmmu_tlb_invalidate(struct ipmmu_vmsa_domain *domain)
-  * Enable MMU translation for the microTLB.
-  */
- static void ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
--			      const struct ipmmu_vmsa_master *master)
-+			      unsigned int utlb)
- {
- 	struct ipmmu_vmsa_device *mmu = domain->mmu;
- 
-+	/*
-+	 * TODO: Reference-count the microTLB as several bus masters can be
-+	 * connected to the same microTLB.
-+	 */
-+
- 	/* TODO: What should we set the ASID to ? */
--	ipmmu_write(mmu, IMUASID(master->utlb), 0);
-+	ipmmu_write(mmu, IMUASID(utlb), 0);
- 	/* TODO: Do we need to flush the microTLB ? */
--	ipmmu_write(mmu, IMUCTR(master->utlb),
-+	ipmmu_write(mmu, IMUCTR(utlb),
- 		    IMUCTR_TTSEL_MMU(domain->context_id) | IMUCTR_FLUSH |
- 		    IMUCTR_MMUEN);
- }
-@@ -281,11 +291,11 @@ static void ipmmu_utlb_enable(struct ipmmu_vmsa_domain *domain,
-  * Disable MMU translation for the microTLB.
-  */
- static void ipmmu_utlb_disable(struct ipmmu_vmsa_domain *domain,
--			       const struct ipmmu_vmsa_master *master)
-+			       unsigned int utlb)
- {
- 	struct ipmmu_vmsa_device *mmu = domain->mmu;
- 
--	ipmmu_write(mmu, IMUCTR(master->utlb), 0);
-+	ipmmu_write(mmu, IMUCTR(utlb), 0);
- }
- 
- static void ipmmu_flush_pgtable(struct ipmmu_vmsa_device *mmu, void *addr,
-@@ -674,21 +684,6 @@ static int ipmmu_handle_mapping(struct ipmmu_vmsa_domain *domain,
-  * IOMMU Operations
-  */
- 
--static const struct ipmmu_vmsa_master *
--ipmmu_find_master(struct ipmmu_vmsa_device *ipmmu, struct device *dev)
--{
--	const struct ipmmu_vmsa_master *master = ipmmu->pdata->masters;
--	const char *devname = dev_name(dev);
--	unsigned int i;
--
--	for (i = 0; i < ipmmu->pdata->num_masters; ++i, ++master) {
--		if (strcmp(master->name, devname) = 0)
--			return master;
--	}
--
--	return NULL;
--}
--
- static int ipmmu_domain_init(struct iommu_domain *io_domain)
- {
- 	struct ipmmu_vmsa_domain *domain;
-@@ -727,9 +722,9 @@ static void ipmmu_domain_destroy(struct iommu_domain *io_domain)
- static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 			       struct device *dev)
- {
--	struct ipmmu_vmsa_device *mmu = dev->archdata.iommu;
-+	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
-+	struct ipmmu_vmsa_device *mmu = archdata->mmu;
- 	struct ipmmu_vmsa_domain *domain = io_domain->priv;
--	const struct ipmmu_vmsa_master *master;
- 	unsigned long flags;
- 	int ret = 0;
- 
-@@ -759,11 +754,7 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 	if (ret < 0)
- 		return ret;
- 
--	master = ipmmu_find_master(mmu, dev);
--	if (!master)
--		return -EINVAL;
--
--	ipmmu_utlb_enable(domain, master);
-+	ipmmu_utlb_enable(domain, archdata->utlb);
- 
- 	return 0;
- }
-@@ -771,14 +762,10 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- static void ipmmu_detach_device(struct iommu_domain *io_domain,
- 				struct device *dev)
- {
-+	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
- 	struct ipmmu_vmsa_domain *domain = io_domain->priv;
--	const struct ipmmu_vmsa_master *master;
- 
--	master = ipmmu_find_master(domain->mmu, dev);
--	if (!master)
--		return;
--
--	ipmmu_utlb_disable(domain, master);
-+	ipmmu_utlb_disable(domain, archdata->utlb);
- 
- 	/*
- 	 * TODO: Optimize by disabling the context when no device is attached.
-@@ -839,11 +826,26 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
- 	return __pfn_to_phys(pte_pfn(pte)) | (iova & ~PAGE_MASK);
- }
- 
-+static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
-+{
-+	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
-+	const char *devname = dev_name(dev);
-+	unsigned int i;
-+
-+	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
-+		if (strcmp(master->name, devname) = 0)
-+			return master->utlb;
-+	}
-+
-+	return -1;
-+}
-+
- static int ipmmu_add_device(struct device *dev)
- {
--	const struct ipmmu_vmsa_master *master = NULL;
-+	struct ipmmu_vmsa_archdata *archdata;
- 	struct ipmmu_vmsa_device *mmu;
- 	struct iommu_group *group;
-+	int utlb = -1;
- 	int ret;
- 
- 	if (dev->archdata.iommu) {
-@@ -856,10 +858,10 @@ static int ipmmu_add_device(struct device *dev)
- 	spin_lock(&ipmmu_devices_lock);
- 
- 	list_for_each_entry(mmu, &ipmmu_devices, list) {
--		master = ipmmu_find_master(mmu, dev);
--		if (master) {
-+		utlb = ipmmu_find_utlb(mmu, dev);
-+		if (utlb >= 0) {
- 			/*
--			 * TODO Take a reference to the master to protect
-+			 * TODO Take a reference to the MMU to protect
- 			 * against device removal.
- 			 */
- 			break;
-@@ -868,10 +870,10 @@ static int ipmmu_add_device(struct device *dev)
- 
- 	spin_unlock(&ipmmu_devices_lock);
- 
--	if (!master)
-+	if (utlb < 0)
- 		return -ENODEV;
- 
--	if (!master->utlb >= mmu->num_utlbs)
-+	if (utlb >= mmu->num_utlbs)
- 		return -EINVAL;
- 
- 	/* Create a device group and add the device to it. */
-@@ -889,7 +891,15 @@ static int ipmmu_add_device(struct device *dev)
- 		return ret;
- 	}
- 
--	dev->archdata.iommu = mmu;
-+	archdata = kzalloc(sizeof(*archdata), GFP_KERNEL);
-+	if (!archdata) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
-+
-+	archdata->mmu = mmu;
-+	archdata->utlb = utlb;
-+	dev->archdata.iommu = archdata;
- 
- 	/*
- 	 * Create the ARM mapping, used by the ARM DMA mapping core to allocate
-@@ -923,6 +933,7 @@ static int ipmmu_add_device(struct device *dev)
- 	return 0;
- 
- error:
-+	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- 	iommu_group_remove_device(dev);
- 	return ret;
-@@ -932,6 +943,7 @@ static void ipmmu_remove_device(struct device *dev)
- {
- 	arm_iommu_detach_device(dev);
- 	iommu_group_remove_device(dev);
-+	kfree(dev->archdata.iommu);
- 	dev->archdata.iommu = NULL;
- }
- 
+A patch set as suggested by Thierry to make lookup with the lookup table
+instead of device tree behave more like when using device tree.
+
+The first patch adds a period and a polarity member to the lookup table and use
+those to set period and polarity.
+
+Patch 2, 4 and 5 are making use of those new members from the board files.
+Patch 3 removes useless code since setting the polarity is now handled by the
+PWM core.
+
+I couldn't decide on a good name for the extended PWM_LOOKUP macro and I believe
+we won't have to add members to that structure soon so:
+Patch 6 modifies the PWM_LOOKUP macro to also initialize period and polarity
+and
+Patch 7-9 are making use of the new PWM_LOOKUP macro in the board files
+
+Patch 10 and 11 are making the leds-pwm and pwm_bl drivers get the period from
+the PWM before using pwm_period_ns if it is not already set.
+
+Patch 10 will obviously conflict with the series of Russell reworking the
+leds-pwm probing. I can rebase if necessary
+
+The final goal would be to get rid of .pwm_period_ns in leds-pwm and pwm_bl
+after moving all the remaining users (still around 25) to pwm_lookup.
+
+Changes in v2:
+ - correctly unlock the pwm_lookup_lock mutex before returning.
+ - don't change PWM_LOOKUP atomically
+ - remove tpu_pwm_platform_data and the associated header file
+ - make the leds-pwm and pwm_bl drivers get the period from the PWM
+
+Alexandre Belloni (11):
+  pwm: add period and polarity to struct pwm_lookup
+  ARM: shmobile: Armadillo 800 EVA: initialize all struct pwm_lookup
+    members
+  pwm: renesas-tpu: remove useless struct tpu_pwm_platform_data
+  ARM: OMAP3: Beagle: initialize all the struct pwm_lookup members
+  ARM: pxa: hx4700: initialize all the struct pwm_lookup members
+  pwm: modify PWM_LOOKUP to initialize all struct pwm_lookup members
+  ARM: OMAP3: Beagle: use PWM_LOOKUP to initialize struct pwm_lookup
+  ARM: shmobile: Armadillo 800 EVA: use PWM_LOOKUP to initialize struct
+    pwm_lookup
+  ARM: pxa: hx4700: use PWM_LOOKUP to initialize struct pwm_lookup
+  leds: leds-pwm: retrieve configured pwm period
+  backlight: pwm_bl: retrieve configured pwm period
+
+ Documentation/pwm.txt                          |  3 ++-
+ arch/arm/mach-omap2/board-omap3beagle.c        |  3 ++-
+ arch/arm/mach-pxa/hx4700.c                     |  3 ++-
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 14 +++-----------
+ drivers/leds/leds-pwm.c                        |  5 ++++-
+ drivers/pwm/core.c                             |  8 +++++++-
+ drivers/pwm/pwm-renesas-tpu.c                  | 19 +++----------------
+ drivers/video/backlight/pwm_bl.c               |  8 +++++---
+ include/linux/platform_data/pwm-renesas-tpu.h  | 16 ----------------
+ include/linux/pwm.h                            |  6 +++++-
+ 10 files changed, 33 insertions(+), 52 deletions(-)
+ delete mode 100644 include/linux/platform_data/pwm-renesas-tpu.h
+
 -- 
-1.8.5.5
+1.9.1
 
