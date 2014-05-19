@@ -1,22 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 15 May 2014 06:42:12 +0000
-Subject: Re: [PATCH v3 1/3] drivers: sh: pm_runtime does not need idle callback
-Message-Id: <20140515064211.GA18635@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 19 May 2014 21:52:05 +0000
+Subject: [PATCH v2 1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
+Message-Id: <201405200152.06575.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400078722-5517-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400078722-5517-1-git-send-email-geert+renesas@glider.be>
+References: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 15, 2014 at 08:33:41AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Thu, May 15, 2014 at 1:12 AM, Simon Horman <horms@verge.net.au> wrote:
-> > quick question: Is this series targeted at 3.16?
-> 
-> Ideally yes. And since you're the drivers/sh maintainer, that should work
-> out fine ;-)
+Add device nodes for the R8A7791 internal PCI bridge devices.
 
-Yes, I agree it should work out fine.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 2:
+- added interrupt-related properties to the PCI device nodes;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7791.dtsi |   36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -880,4 +880,40 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7791";
++		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci1: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7791";
++		clocks = <&mstp7_clks R8A7791_CLK_EHCI>;
++		reg = <0x0 0xee0d0000 0x0 0xc00>,
++		      <0x0 0xee0c0000 0x0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	};
+ };
