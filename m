@@ -1,44 +1,32 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 14 May 2014 07:09:46 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: Use shmobile_init_delay() on r8a7791
-Message-Id: <CANqRtoQxGcTUvU1qAcJTy8ONPNmcx5CBNcrXASoMCVpAyOAfqw@mail.gmail.com>
+Date: Mon, 19 May 2014 23:37:14 +0000
+Subject: [PATCH 00/03] ARM: shmobile: Use shmobile_init_delay() on r8a7790
+Message-Id: <20140519233714.10496.31390.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140511232508.20177.11556.sendpatchset@w520>
- <1509906.x9u0HJ6AbJ@avalon>
-In-Reply-To: <1509906.x9u0HJ6AbJ@avalon>
+In-Reply-To: <20140511232508.20177.11556.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+ARM: shmobile: Use shmobile_init_delay() on r8a7790
 
-On Tue, May 13, 2014 at 5:00 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> On Monday 12 May 2014 08:25:08 Magnus Damm wrote:
->> ARM: shmobile: Use shmobile_init_delay() on r8a7791
->>
->> [PATCH 01/03] ARM: shmobile: Use r8a7791 DT CPU Frequency in common case
->> [PATCH 02/03] ARM: shmobile: Use r8a7791 DT CPU Frequency for Koelsch
->> [PATCH 03/03] ARM: shmobile: Remove unused r8a7791_init_early()
->>
->> Convert r8a7791 to rely on shmobile_init_delay() instead of using a per-SoC
->> delay setup function.
->
-> I'm afraid this patch set causes a boot time and CPU load regression on
-> Koelsch. With Simon's latest devel branch which has the patches applied, the
-> kernel boot time (using koelsch_defconfig) up to the point where the kernel
-> tries to connect to the DHCP server is 17.898437s. The CPU load (as reported
-> by top) on an idle system is then around 33%, spent in [kworker/0:1]. If I
-> revert the patches the same time goes down to 1.921875s and the CPU load on an
-> idle system is close to 0.
+[PATCH 01/03] ARM: shmobile: Use r8a7790 DT CPU Frequency in common case	
+[PATCH 02/03] ARM: shmobile: Use r8a7790 DT CPU Frequency for Lager
+[PATCH 03/03] ARM: shmobile: Remove unused r8a7790_init_early()
 
-Thanks for testing and reporting this! I believe Simon has posted a
-fix for this issue which is related to MHz vs Hz bug introduced by me
-in function shmobile_init_delay(). Things should be in order now.
+Convert r8a7790 to rely on shmobile_init_delay() instead of using a per-SoC
+delay setup function. Very similar to the r8a7791 implementation.
 
-Cheers,
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-/ magnus
+ Written against renesas-devel-v3.15-rc5-20140517
+
+ arch/arm/mach-shmobile/board-lager-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-lager.c           |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7790.h  |    1 -
+ arch/arm/mach-shmobile/setup-r8a7790.c         |    9 +--------
+ 4 files changed, 3 insertions(+), 11 deletions(-)
+
