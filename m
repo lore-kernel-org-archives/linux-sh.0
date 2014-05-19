@@ -1,38 +1,27 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 19 May 2014 10:21:04 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 19 May 2014 11:58:48 +0000
 Subject: Re: [PATCH 2/3] usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <CANqRtoQ7k8auQzrE-YA=W+9_eOZ1iT20=RKoqQxOqyofD+Jk=g@mail.gmail.com>
+Message-Id: <CAMuHMdUMGc_SNLWruEF=91v0Z+w6pnEpYhb4MeU+NEk=Dfi5Xg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <5379D805.3070002@renesas.com>
-In-Reply-To: <5379D805.3070002-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <5379D805.3070002@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: mathias.nyman@intel.com, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
 Hi Shimoda-san,
 
-Thanks for your patches, I did however find one typo below:
-
-On Mon, May 19, 2014 at 7:08 PM, Yoshihiro Shimoda
+On Mon, May 19, 2014 at 12:08 PM, Yoshihiro Shimoda
 <yoshihiro.shimoda.uh@renesas.com> wrote:
 > The R-Car H2 and M2 SoCs come with an xHCI controller that requires
 > some specific initilization related to the firmware downloading and
 > some specific registers. This patch adds the support for this special
 > configuration as an xHCI quirk executed during probe and start.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  drivers/usb/host/Kconfig     |    8 ++
->  drivers/usb/host/Makefile    |    3 +
->  drivers/usb/host/xhci-plat.c |   18 +++++
->  drivers/usb/host/xhci-rcar.c |  182 ++++++++++++++++++++++++++++++++++++++++++
->  drivers/usb/host/xhci-rcar.h |   28 +++++++
->  5 files changed, 239 insertions(+)
->  create mode 100644 drivers/usb/host/xhci-rcar.c
->  create mode 100644 drivers/usb/host/xhci-rcar.h
->
+
+Thanks for your patch!
+
 > diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
 > index 9247ad2..229e968 100644
 > --- a/drivers/usb/host/Kconfig
@@ -48,36 +37,15 @@ On Mon, May 19, 2014 at 7:08 PM, Yoshihiro Shimoda
 > +       ---help---
 > +         Say 'Y' to enable the support for the xHCI host controller
 > +         found in Renesas R-Car ARM SoCs.
-> +
->  endif # USB_XHCI_HCD
->
->  config USB_EHCI_HCD
-> diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
-> index 7c0886a..b59ca3c 100644
-> --- a/drivers/usb/host/Makefile
-> +++ b/drivers/usb/host/Makefile
-> @@ -22,6 +22,9 @@ ifneq ($(CONFIG_USB_XHCI_PLATFORM), )
->  ifneq ($(CONFIG_USB_XHCI_MVEBU), )
->         xhci-hcd-y              += xhci-mvebu.o
->  endif
-> +ifneq ($(CONFIG_USB_XHCI_RCAR), )
-> +       xhci-hcd-y              += xhci-rcar.o
-> +endif
->  endif
->
->  obj-$(CONFIG_USB_WHCI_HCD)     += whci/
+
+Does R-Car Gen1 also have xHCI, and is it compatible?
+If not, you may want to call this driver USB_XHCI_RCAR2.
+
 > diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
 > index 561d07e..3a2da1f 100644
 > --- a/drivers/usb/host/xhci-plat.c
 > +++ b/drivers/usb/host/xhci-plat.c
-> @@ -20,6 +20,7 @@
->
->  #include "xhci.h"
->  #include "xhci-mvebu.h"
-> +#include "xhci-rcar.h"
->
->  static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
->  {
+
 > @@ -39,6 +40,12 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
 >
 >  static int xhci_plat_start(struct usb_hcd *hcd)
@@ -86,12 +54,92 @@ On Mon, May 19, 2014 at 7:08 PM, Yoshihiro Shimoda
 > +
 > +       if (of_device_is_compatible(of_node, "renesas,r8a7790-xhci") ||
 > +           of_device_is_compatible(of_node, "renesas,r8a7790-xhci"))
+
+r8a7791, as Magnus already pointed out.
+
 > +               xhci_rcar_start(hcd);
+
+If CONFIG_USB_XHCI_RCAR is not defined, xhci_rcar_start() is a dummy
+function, but the of_device_is_compatible() checks will still be compiled in.
+
+Hence perhaps an #ifdef CONFIG_USB_XHCI_RCAR is warranted here,
+possibly combined with inclusion of a C-source file, like is done in
+drivers/usb/host/ohci-hcd.c? It's up to the USB maintainer to decide this,
+though.
+
 > +
+>         return xhci_run(hcd);
+>  }
+>
+> @@ -165,6 +172,15 @@ static int xhci_plat_probe(struct platform_device *pdev)
+>                         goto unmap_registers;
+>         }
+>
+> +       if (of_device_is_compatible(pdev->dev.of_node,
+> +                                   "renesas,r8a7790-xhci") ||
+> +           of_device_is_compatible(pdev->dev.of_node,
+> +                                   "renesas,r8a7791-xhci")) {
+> +               ret = xhci_rcar_init_quirk(pdev);
 
-This is most likely a typo - I believe this is supposed to be r8a7790
-and r8a7791?
+Same here.
 
-Cheers,
+> +               if (ret)
+> +                       goto disable_clk;
+> +       }
+> +
+>         ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
+>         if (ret)
+>                 goto disable_clk;
 
-/ magnus
+> --- /dev/null
+> +++ b/drivers/usb/host/xhci-rcar.c
+
+> +/* USB3.0 Configuraion */
+
+Configuration
+
+> +static int xhci_rcar_download_firmware(struct device *dev, void __iomem *regs)
+> +{
+> +       const struct firmware *fw;
+> +       int retval, index, j, time;
+> +       int timeout = 10000;
+> +       u32 data, val, temp;
+> +
+> +       /* request R-Car USB3.0 firmware */
+> +       retval = request_firmware(&fw, FIRMWARE_NAME, dev);
+> +       if (retval)
+> +               return retval;
+> +
+> +       /* download R-Car USB3.0 firmware */
+> +       temp = readl(regs + RCAR_USB3_DL_CTRL);
+> +       temp |= RCAR_USB3_DL_CTRL_ENABLE;
+> +       writel(temp, regs + RCAR_USB3_DL_CTRL);
+> +
+> +       for (index = 0; index < fw->size; index += 4) {
+> +               for (data = 0, j = 3; j >= 0; j--) {
+> +                       if ((j + index) >= fw->size)
+> +                               continue;
+> +                       data |= fw->data[index + j] << (8 * j);
+> +               }
+
+This is your custom get_unaligned_le32(), to avoid reading beyond the end
+of the buffer if its size is not a multiple of 4 bytes?
+Is there some way to just use get_unaligned_le32()?
+
+If you want to keep it, I would rewrite it as
+
+              for (data = 0, j = 3; j >= 0; j--) {
+                      if ((j + index) < fw->size)
+                              data |= fw->data[index + j] << (8 * j);
+              }
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torval
