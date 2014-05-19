@@ -1,40 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:46 +0000
-Subject: [PATCH 5/9] ARM: shmobile: Use r8a7791 DT CPU Frequency in common case
-Message-Id: <648c687a6a43a6473caedba4785a16537bd21bfb.1400200838.git.horms+renesas@verge.net.au>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 19 May 2014 20:42:42 +0000
+Subject: [PATCHv2 resend 11/11] backlight: pwm_bl: retrieve configured pwm period
+Message-Id: <1400532162-29483-12-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200838.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
+References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The PWM core is now able to initialize the PWM period from platform_data. Use it
+and if it is not configured, use the supplied pwm_period_ns.
 
-Convert the common C-code-less r8a7791 DT board support
-to use shmobile_init_delay() to be able to migrate away
-from per-SoC delay setup functions.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7791.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/video/backlight/pwm_bl.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index a7e4966..2c84e74 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -225,7 +225,7 @@ static const char *r8a7791_boards_compat_dt[] __initdata = {
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index b75201ff46f6..1bb8a69062c5 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -304,12 +304,14 @@ static int pwm_backlight_probe(struct platform_device *pdev)
+ 	/*
+ 	 * The DT case will set the pwm_period_ns field to 0 and store the
+ 	 * period, parsed from the DT, in the PWM device. For the non-DT case,
+-	 * set the period from platform data.
++	 * set the period from platform data if it is not already set.
+ 	 */
+-	if (data->pwm_period_ns > 0)
++	pb->period = pwm_get_period(pb->pwm);
++	if (!pb->period && (data->pwm_period_ns > 0)) {
++		pb->period = data->pwm_period_ns;
+ 		pwm_set_period(pb->pwm, data->pwm_period_ns);
++	}
  
- DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
- 	.smp		= smp_ops(r8a7791_smp_ops),
--	.init_early	= r8a7791_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
- 	.dt_compat	= r8a7791_boards_compat_dt,
- MACHINE_END
+-	pb->period = pwm_get_period(pb->pwm);
+ 	pb->lth_brightness = data->lth_brightness * (pb->period / pb->scale);
+ 
+ 	memset(&props, 0, sizeof(struct backlight_properties));
 -- 
-1.8.5.2
+1.9.1
 
