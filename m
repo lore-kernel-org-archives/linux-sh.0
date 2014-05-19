@@ -1,46 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 15 May 2014 05:22:27 +0000
-Subject: [ANNOUNCE] Renesas Tree is Closed for v3.16
-Message-Id: <20140515052227.GE778@verge.net.au>
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 19 May 2014 20:42:35 +0000
+Subject: [PATCHv2 resend 04/11] ARM: OMAP3: Beagle: initialize all the struct pwm_lookup members
+Message-Id: <1400532162-29483-5-git-send-email-alexandre.belloni@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20131230013640.GA1944@verge.net.au>
-In-Reply-To: <20131230013640.GA1944@verge.net.au>
+References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
+In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+This will allow to get rid of the .pwm_period_ns member of struct led_pwm as the
+period will be set by the PWM core.
 
-The Renesas tree is now closed for arm-soc changes for v3.16.
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+---
+ arch/arm/mach-omap2/board-omap3beagle.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-I am not planning to accept any more patches for v3.16 other than fixes[1].
-Fixes and branches needing fixes[1] aside, I am planning to send the last
-set of pull-requests for v3.16 tomorrow.
+diff --git a/arch/arm/mach-omap2/board-omap3beagle.c b/arch/arm/mach-omap2/board-omap3beagle.c
+index d6ed819ff15c..f27e1ec90b5e 100644
+--- a/arch/arm/mach-omap2/board-omap3beagle.c
++++ b/arch/arm/mach-omap2/board-omap3beagle.c
+@@ -61,7 +61,14 @@
+ 
+ static struct pwm_lookup pwm_lookup[] = {
+ 	/* LEDB -> PMU_STAT */
+-	PWM_LOOKUP("twl-pwmled", 1, "leds_pwm", "beagleboard::pmu_stat"),
++	{
++		.provider = "twl-pwmled",
++		.index = 1,
++		.dev_id = "leds_pwm",
++		.con_id = "beagleboard::pmu_stat",
++		.period = 7812500,
++		.polarity = PWM_POLARITY_NORMAL,
++	},
+ };
+ 
+ static struct led_pwm pwm_leds[] = {
+-- 
+1.9.1
 
-I have tagged renesas-next-v3.15-rc1-20140515 which includes all patches I
-have queued up. I have also tagged renesas-devel-v3.15-rc5-20140515. The
-only difference between the two tags is that the former is based on
-v3.15-rc1 while the latter is includes v3.15-rc5.
-
-I now plan to start queuing up patches for v3.17, making them them
-available in the devel branch. I will rebase them on top of v3.16-rc1 once
-it is released and the result will become available in the next branch at
-that time.
-
-I realise that there may be patches that people anticipated would make it
-into v3.16 but have not. I sympathise with this but arm-soc has a cut-off
-of v3.15-rc6 and this means I have to have things queued up well before
-then. I believe that in this release cycle I have cut things as fine as
-possible and in future I hope to close the Renesas tree soon after the
-release of v3.16-rc5. Your understanding is appreciated.
-
-Lastly, I will be in Tokyo for Linux Con Japan next week.
-I apologise if that results in any delays.
-
-
-[1] At this time the only fix I am waiting on is one to either fix
-    or remove genmai-reference support.
-    https://patchwork.kernel.org/patch/4173801/
-    This affects only the r7s72100-ccf-for-v3.16 branch.
-    https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/log/?h=r7s72100-ccf-for-v3.16
