@@ -1,37 +1,124 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 15 May 2014 12:10:11 +0000
-Subject: Re: [alsa-devel] [PATCH] ASoC: rsnd: Fix warnings due to improper printk formats
-Message-Id: <37843959.gzda0hXopa@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 20 May 2014 07:59:49 +0000
+Subject: [PATCH 00/08] ARM: shmobile: Rework include path (Try 2, Part 1)
+Message-Id: <20140520075949.13851.42995.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399936220-17123-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <5372D5E4.9060300@renesas.com> <20140515101450.GN12304@sirena.org.uk>
-In-Reply-To: <20140515101450.GN12304@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon Horman <horms@verge.net.au>, alsa-devel@alsa-project.org, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+ARM: shmobile: Rework include path (Try 2, Part 1)
 
-On Thursday 15 May 2014 11:14:50 Mark Brown wrote:
-> On Wed, May 14, 2014 at 11:33:08AM +0900, Kuninori Morimoto wrote:
-> > >Morimoto-san, should Mark Brown need to be CCed on a re-post
-> > >in order for him to see this?
-> > 
-> > Ahh, I didn't notice that Mark wasn't CCed.
-> > He never (?) accepts patch which doesn't have "To" him.
-> 
-> Well, sometimes I do but it's much less likely I'll even see an e-mail
-> that only went to the lists than if it goes to my inbox and since CCing
-> the maintainer is one of the things SubmittingPatches tells you to do
-> people really ought to know better.  Anyway, I saw this one and applied
-> it.
+[PATCH 01/08] ARM: shmobile: Move intc.h, cleanup sh_intc.h usage
+[PATCH 02/08] ARM: shmobile: Move dma-register.h
+[PATCH 03/08] ARM: shmobile: Move clock.h
+[PATCH 04/08] ARM: shmobile: Move most of irqs.h, keep some for pinctl
+[PATCH 05/08] ARM: shmobile: Move common.h
+[PATCH 06/08] ARM: shmobile: Move pm-rmobile.h, cleanup sh73xx.h
+[PATCH 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
+[PATCH 08/08] ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
 
-My bad, sorry. I suppose I'm too used to maintainers who prefer not to be 
-CC'ed :-/
+Olof, here my latest take on the header move that you requested earlier.
 
--- 
-Regards,
+This particular series hopefully follows your proposed way and moves the
+most common shared header files for mach-shmobile from <mach/foobar.h>
+to "foobar.h" without any workaround. Left are still per-SoC header files
+that will be moved once I know you are comformatble with this format.
 
-Laurent Pinchart
+Please note that these are only lightly compile tested with a handful
+of defconfigs, but any potential issue should be trivial to fix.
+
+Also, there are certain bits of arch/arm/mach-shmobile/include/mach/
+get included from places like arch/arm/boot/compressed/ (booting
+legacy kernel directly from reset vector) and also from SoC specific
+legacy code under drivers/pinctrl. My proposal is to keep those users
+as-is until we phase out legacy board support (2-3 kernels?), let me
+know if you would like to get rid of "include/mach" sooner!
+
+Thanks!
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written against renesas.git tag renesas-devel-v3.15-rc5-20140517
+ and "[PATCH 00/03] ARM: shmobile: Use shmobile_init_delay() on r8a7790"
+
+ arch/arm/mach-shmobile/board-ape6evm-reference.c         |    2 
+ arch/arm/mach-shmobile/board-ape6evm.c                   |    4 
+ arch/arm/mach-shmobile/board-armadillo800eva-reference.c |    2 
+ arch/arm/mach-shmobile/board-armadillo800eva.c           |    6 
+ arch/arm/mach-shmobile/board-bockw-reference.c           |    2 
+ arch/arm/mach-shmobile/board-bockw.c                     |    4 
+ arch/arm/mach-shmobile/board-genmai-reference.c          |    4 
+ arch/arm/mach-shmobile/board-genmai.c                    |    4 
+ arch/arm/mach-shmobile/board-koelsch-reference.c         |    8 
+ arch/arm/mach-shmobile/board-koelsch.c                   |    6 
+ arch/arm/mach-shmobile/board-kzm9g-reference.c           |    2 
+ arch/arm/mach-shmobile/board-kzm9g.c                     |    4 
+ arch/arm/mach-shmobile/board-lager-reference.c           |    8 
+ arch/arm/mach-shmobile/board-lager.c                     |    5 
+ arch/arm/mach-shmobile/board-mackerel.c                  |   10 
+ arch/arm/mach-shmobile/board-marzen-reference.c          |    6 
+ arch/arm/mach-shmobile/board-marzen.c                    |    4 
+ arch/arm/mach-shmobile/clock-r7s72100.c                  |    2 
+ arch/arm/mach-shmobile/clock-r8a73a4.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7740.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7778.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7779.c                   |    4 
+ arch/arm/mach-shmobile/clock-r8a7790.c                   |    5 
+ arch/arm/mach-shmobile/clock-r8a7791.c                   |    6 
+ arch/arm/mach-shmobile/clock-sh7372.c                    |    4 
+ arch/arm/mach-shmobile/clock-sh73a0.c                    |    4 
+ arch/arm/mach-shmobile/clock.c                           |    6 
+ arch/arm/mach-shmobile/clock.h                           |   56 ++
+ arch/arm/mach-shmobile/common.h                          |   56 ++
+ arch/arm/mach-shmobile/console.c                         |    2 
+ arch/arm/mach-shmobile/dma-register.h                    |   84 ++++
+ arch/arm/mach-shmobile/include/mach/clock.h              |   56 --
+ arch/arm/mach-shmobile/include/mach/common.h             |   56 --
+ arch/arm/mach-shmobile/include/mach/dma-register.h       |   84 ----
+ arch/arm/mach-shmobile/include/mach/intc.h               |  290 --------------
+ arch/arm/mach-shmobile/include/mach/irqs.h               |   17 
+ arch/arm/mach-shmobile/include/mach/pm-rcar.h            |   15 
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h         |   63 ---
+ arch/arm/mach-shmobile/include/mach/r8a7740.h            |    2 
+ arch/arm/mach-shmobile/include/mach/r8a7779.h            |   13 
+ arch/arm/mach-shmobile/include/mach/r8a7790.h            |    2 
+ arch/arm/mach-shmobile/include/mach/rcar-gen2.h          |    8 
+ arch/arm/mach-shmobile/include/mach/sh7372.h             |    4 
+ arch/arm/mach-shmobile/intc-sh7372.c                     |    5 
+ arch/arm/mach-shmobile/intc-sh73a0.c                     |    5 
+ arch/arm/mach-shmobile/intc.h                            |  290 ++++++++++++++
+ arch/arm/mach-shmobile/irqs.h                            |   21 +
+ arch/arm/mach-shmobile/platsmp-apmu.c                    |    2 
+ arch/arm/mach-shmobile/platsmp-scu.c                     |    2 
+ arch/arm/mach-shmobile/platsmp.c                         |    2 
+ arch/arm/mach-shmobile/pm-r8a7740.c                      |    4 
+ arch/arm/mach-shmobile/pm-r8a7779.c                      |   15 
+ arch/arm/mach-shmobile/pm-r8a7790.c                      |    2 
+ arch/arm/mach-shmobile/pm-rcar.c                         |    2 
+ arch/arm/mach-shmobile/pm-rcar.h                         |   15 
+ arch/arm/mach-shmobile/pm-rmobile.c                      |    2 
+ arch/arm/mach-shmobile/pm-rmobile.h                      |   63 +++
+ arch/arm/mach-shmobile/pm-sh7372.c                       |    4 
+ arch/arm/mach-shmobile/pm-sh73a0.c                       |    2 
+ arch/arm/mach-shmobile/rcar-gen2.h                       |    8 
+ arch/arm/mach-shmobile/setup-emev2.c                     |    2 
+ arch/arm/mach-shmobile/setup-r7s72100.c                  |    4 
+ arch/arm/mach-shmobile/setup-r8a73a4.c                   |    6 
+ arch/arm/mach-shmobile/setup-r8a7740.c                   |    8 
+ arch/arm/mach-shmobile/setup-r8a7778.c                   |    4 
+ arch/arm/mach-shmobile/setup-r8a7779.c                   |    4 
+ arch/arm/mach-shmobile/setup-r8a7790.c                   |    7 
+ arch/arm/mach-shmobile/setup-r8a7791.c                   |    6 
+ arch/arm/mach-shmobile/setup-rcar-gen2.c                 |    4 
+ arch/arm/mach-shmobile/setup-sh7372.c                    |    8 
+ arch/arm/mach-shmobile/setup-sh73a0.c                    |    7 
+ arch/arm/mach-shmobile/smp-emev2.c                       |    2 
+ arch/arm/mach-shmobile/smp-r8a7779.c                     |    4 
+ arch/arm/mach-shmobile/smp-r8a7790.c                     |    4 
+ arch/arm/mach-shmobile/smp-r8a7791.c                     |    4 
+ arch/arm/mach-shmobile/smp-sh73a0.c                      |    2 
+ 76 files changed, 724 insertions(+), 728 deletions(-)
 
