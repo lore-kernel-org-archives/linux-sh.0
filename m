@@ -1,33 +1,81 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 05 May 2014 20:45:11 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Updates for v3.16
-Message-Id: <20140505204511.GC27961@quad.lixom.net>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 20 May 2014 20:14:06 +0000
+Subject: [PATCH v3 2/2] ARM: shmobile: lager: enable internal PCI
+Message-Id: <201405210014.07278.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
+References: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 16, 2014 at 03:03:25PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC updates for v3.16.
-> 
-> 
-> The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
-> 
->   Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.16
-> 
-> for you to fetch changes up to e35db38d66d1e4007cfc1bb90a05e11b4aaee2a8:
-> 
->   ARM: shmobile: r8a7778/bockw: Move "select RENESAS_INTC_IRQPIN" under SoC (2014-04-14 11:28:43 +0900)
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Merged, thanks.
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
--Olof
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: enabled PCI0]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 3:
+- refreshed the patch.
+
+Changes in version 2:
+- enabled PCI0 device;
+- reworded summary and changelog;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
++++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -204,6 +204,21 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
+ };
+ 
+ &ether {
+@@ -317,3 +332,21 @@
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
++&pci2 {
++	status = "okay";
++	pinctrl-0 = <&usb2_pins>;
++	pinctrl-names = "default";
++};
