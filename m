@@ -1,32 +1,21 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 May 2014 06:13:59 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7791 SYSC setup code
-Message-Id: <CANqRtoRvkxAUnZWcyv7D88SHxeydokD9dbw8-QMSRadM2wOYNA@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 20 May 2014 20:08:14 +0000
+Subject: [PATCH v3 0/2] Add R8A7790/Lager board PCI USB DT support
+Message-Id: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <538814B8.1060406@renesas.com>
-In-Reply-To: <538814B8.1060406@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 30, 2014 at 2:18 PM, keita kobayashi
-<keita.kobayashi.ym@renesas.com> wrote:
-> Add r8a7791 SYSC power management support.
->
-> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-> ---
->
-> Changes since v2:
-> - Fix typo
-> - Fix in alphabetical order
+Hello.
 
-Hi Kobayashi-san,
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
+'renesas-devel-v3.15-rc5-20140517' tag. Here we add PCI USB device tree support
+for the R8A7790-based Lager board. The patchset requires the 'pci-rcar-gen2'
+driver device tree support (re-posted yesterday) in order to work.
 
-Thanks for cooking up a v2. This one looks fine to me.
+[1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+[2/2] ARM: shmobile: lager: enable internal PCI
 
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-
-Cheers,
-
-/ magnus
+WBR, Sergei
