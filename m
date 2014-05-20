@@ -1,54 +1,338 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 04:43:01 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7779: Remove unused r8a7779_init_delay()
-Message-Id: <1400215381-7027-5-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 20 May 2014 07:58:21 +0000
+Subject: [PATCH 03/08] ARM: shmobile: Move clock.h
+Message-Id: <20140520080017.13851.96123.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400215381-7027-1-git-send-email-horms+renesas@verge.net.au>
+References: <20140520075949.13851.42995.sendpatchset@w520>
+In-Reply-To: <20140520075949.13851.42995.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove the now unused r8a7779_init_delay() function.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Based on work for the r8a7740 SoC by Magnus Damm.
+Change location of clock.h so it can be used as #include "clock.h"
+instead of the old style #include <mach/clock.h>.
 
-Cc: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 1 -
- arch/arm/mach-shmobile/setup-r8a7779.c        | 5 -----
- 2 files changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 757b903..e443c54 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -21,7 +21,6 @@ static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
- 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
- }
+ arch/arm/mach-shmobile/board-genmai-reference.c  |    2 
+ arch/arm/mach-shmobile/board-koelsch-reference.c |    2 
+ arch/arm/mach-shmobile/board-lager-reference.c   |    2 
+ arch/arm/mach-shmobile/board-marzen-reference.c  |    2 
+ arch/arm/mach-shmobile/clock-r8a73a4.c           |    2 
+ arch/arm/mach-shmobile/clock-r8a7740.c           |    2 
+ arch/arm/mach-shmobile/clock-r8a7778.c           |    2 
+ arch/arm/mach-shmobile/clock-r8a7779.c           |    2 
+ arch/arm/mach-shmobile/clock-r8a7790.c           |    2 
+ arch/arm/mach-shmobile/clock-r8a7791.c           |    2 
+ arch/arm/mach-shmobile/clock-sh7372.c            |    2 
+ arch/arm/mach-shmobile/clock-sh73a0.c            |    2 
+ arch/arm/mach-shmobile/clock.c                   |    4 -
+ arch/arm/mach-shmobile/clock.h                   |   56 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/clock.h      |   56 ----------------------
+ 15 files changed, 70 insertions(+), 70 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-genmai-reference.c
++++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2014-05-19 23:44:47.000000000 +0900
+@@ -20,11 +20,11 @@
  
--extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq_extpin(int irlm);
- extern void r8a7779_init_irq_extpin_dt(int irlm);
- extern void r8a7779_init_irq_dt(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 3cad080..a57a454 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -737,11 +737,6 @@ void __init r8a7779_init_irq_dt(void)
- 	__raw_writel(0x003fee3f, INT2SMSKCR4);
- }
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include "clock.h"
  
--void __init r8a7779_init_delay(void)
--{
--	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
+ /*
+  * This is a really crude hack to provide clkdev support to platform
+--- 0001/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-05-19 23:45:09.000000000 +0900
+@@ -23,12 +23,12 @@
+ #include <linux/kernel.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7791.h>
+ #include <asm/mach/arch.h>
++#include "clock.h"
+ 
+ /* DU */
+ static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+--- 0002/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-05-19 23:45:28.000000000 +0900
+@@ -22,12 +22,12 @@
+ #include <linux/init.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
++#include "clock.h"
+ 
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+--- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
++++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2014-05-19 23:45:51.000000000 +0900
+@@ -23,11 +23,11 @@
+ #include <linux/clocksource.h>
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
++#include "clock.h"
+ 
+ static void __init marzen_init_timer(void)
+ {
+--- 0001/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2014-05-19 23:46:16.000000000 +0900
+@@ -22,8 +22,8 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
++#include "clock.h"
+ 
+ #define CPG_BASE 0xe6150000
+ #define CPG_LEN 0x270
+--- 0001/arch/arm/mach-shmobile/clock-r8a7740.c
++++ work/arch/arm/mach-shmobile/clock-r8a7740.c	2014-05-19 23:46:48.000000000 +0900
+@@ -22,9 +22,9 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7740.h>
++#include "clock.h"
+ 
+ /*
+  *        |  MDx  |  XTAL1/EXTAL1   |  System   | EXTALR |
+--- 0001/arch/arm/mach-shmobile/clock-r8a7778.c
++++ work/arch/arm/mach-shmobile/clock-r8a7778.c	2014-05-19 23:47:09.000000000 +0900
+@@ -39,8 +39,8 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
++#include "clock.h"
+ 
+ #define MSTPCR0		IOMEM(0xffc80030)
+ #define MSTPCR1		IOMEM(0xffc80034)
+--- 0001/arch/arm/mach-shmobile/clock-r8a7779.c
++++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2014-05-19 23:47:31.000000000 +0900
+@@ -24,9 +24,9 @@
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+ #include <linux/sh_timer.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7779.h>
++#include "clock.h"
+ 
+ /*
+  *		MD1 = 1			MD1 = 0
+--- 0001/arch/arm/mach-shmobile/clock-r8a7790.c
++++ work/arch/arm/mach-shmobile/clock-r8a7790.c	2014-05-19 23:47:50.000000000 +0900
+@@ -22,9 +22,9 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/r8a7790.h>
++#include "clock.h"
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+--- 0001/arch/arm/mach-shmobile/clock-r8a7791.c
++++ work/arch/arm/mach-shmobile/clock-r8a7791.c	2014-05-19 23:48:36.000000000 +0900
+@@ -23,9 +23,9 @@
+ #include <linux/kernel.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
+ #include <mach/rcar-gen2.h>
++#include "clock.h"
+ 
+ /*
+  *   MD		EXTAL		PLL0	PLL1	PLL3
+--- 0001/arch/arm/mach-shmobile/clock-sh7372.c
++++ work/arch/arm/mach-shmobile/clock-sh7372.c	2014-05-19 23:48:53.000000000 +0900
+@@ -21,8 +21,8 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
++#include "clock.h"
+ 
+ /* SH7372 registers */
+ #define FRQCRA		IOMEM(0xe6150000)
+--- 0001/arch/arm/mach-shmobile/clock-sh73a0.c
++++ work/arch/arm/mach-shmobile/clock-sh73a0.c	2014-05-19 23:49:11.000000000 +0900
+@@ -22,8 +22,8 @@
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
+ #include <asm/processor.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
++#include "clock.h"
+ 
+ #define FRQCRA		IOMEM(0xe6150000)
+ #define FRQCRB		IOMEM(0xe6150004)
+--- 0001/arch/arm/mach-shmobile/clock.c
++++ work/arch/arm/mach-shmobile/clock.c	2014-05-19 23:49:57.000000000 +0900
+@@ -25,7 +25,7 @@
+ #ifdef CONFIG_COMMON_CLK
+ #include <linux/clk.h>
+ #include <linux/clkdev.h>
+-#include <mach/clock.h>
++#include "clock.h"
+ 
+ void __init shmobile_clk_workaround(const struct clk_name *clks,
+ 				    int nr_clks, bool enable)
+@@ -49,8 +49,8 @@ void __init shmobile_clk_workaround(cons
+ #else /* CONFIG_COMMON_CLK */
+ #include <linux/sh_clk.h>
+ #include <linux/export.h>
+-#include <mach/clock.h>
+ #include <mach/common.h>
++#include "clock.h"
+ 
+ unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk)
+ {
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock.h	2014-05-19 23:43:52.000000000 +0900
+@@ -0,0 +1,56 @@
++#ifndef CLOCK_H
++#define CLOCK_H
++
++#ifdef CONFIG_COMMON_CLK
++/* temporary clock configuration helper for platform devices */
++
++struct clk_name {
++	const char *clk;
++	const char *con_id;
++	const char *dev_id;
++};
++
++void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
++			     bool enable);
++
++#else /* CONFIG_COMMON_CLK */
++/* legacy clock implementation */
++
++struct clk;
++unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
++extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
++
++/* clock ratio */
++struct clk_ratio {
++	int mul;
++	int div;
++};
++
++#define SH_CLK_RATIO(name, m, d)		\
++static struct clk_ratio name ##_ratio = {	\
++	.mul = m,				\
++	.div = d,				\
++}
++
++#define SH_FIXED_RATIO_CLKg(name, p, r)	\
++struct clk name = {			\
++	.parent	= &p,				\
++	.ops	= &shmobile_fixed_ratio_clk_ops,\
++	.priv	= &r ## _ratio,			\
++}
++
++#define SH_FIXED_RATIO_CLK(name, p, r)		\
++static SH_FIXED_RATIO_CLKg(name, p, r)
++
++#define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
++	SH_CLK_RATIO(name, m, d);		\
++	SH_FIXED_RATIO_CLK(name, p, name)
++
++#define SH_CLK_SET_RATIO(p, m, d)	\
++do {			\
++	(p)->mul = m;	\
++	(p)->div = d;	\
++} while (0)
++
++#endif /* CONFIG_COMMON_CLK */
++#endif
+--- 0001/arch/arm/mach-shmobile/include/mach/clock.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,56 +0,0 @@
+-#ifndef CLOCK_H
+-#define CLOCK_H
+-
+-#ifdef CONFIG_COMMON_CLK
+-/* temporary clock configuration helper for platform devices */
+-
+-struct clk_name {
+-	const char *clk;
+-	const char *con_id;
+-	const char *dev_id;
+-};
+-
+-void shmobile_clk_workaround(const struct clk_name *clks, int nr_clks,
+-			     bool enable);
+-
+-#else /* CONFIG_COMMON_CLK */
+-/* legacy clock implementation */
+-
+-struct clk;
+-unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
+-extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
+-
+-/* clock ratio */
+-struct clk_ratio {
+-	int mul;
+-	int div;
+-};
+-
+-#define SH_CLK_RATIO(name, m, d)		\
+-static struct clk_ratio name ##_ratio = {	\
+-	.mul = m,				\
+-	.div = d,				\
 -}
 -
- void __init r8a7779_add_standard_devices_dt(void)
- {
- 	platform_add_devices(r8a7779_devices_dt,
--- 
-1.8.5.2
-
+-#define SH_FIXED_RATIO_CLKg(name, p, r)	\
+-struct clk name = {			\
+-	.parent	= &p,				\
+-	.ops	= &shmobile_fixed_ratio_clk_ops,\
+-	.priv	= &r ## _ratio,			\
+-}
+-
+-#define SH_FIXED_RATIO_CLK(name, p, r)		\
+-static SH_FIXED_RATIO_CLKg(name, p, r)
+-
+-#define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
+-	SH_CLK_RATIO(name, m, d);		\
+-	SH_FIXED_RATIO_CLK(name, p, name)
+-
+-#define SH_CLK_SET_RATIO(p, m, d)	\
+-do {			\
+-	(p)->mul = m;	\
+-	(p)->div = d;	\
+-} while (0)
+-
+-#endif /* CONFIG_COMMON_CLK */
+-#endif
