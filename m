@@ -1,61 +1,96 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 14 May 2014 23:11:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7740 dtsi: Remove duplicate interrupt-parent property
-Message-Id: <20140514231109.GC29233@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 20 May 2014 20:12:30 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
+Message-Id: <201405210012.31347.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400078472-4630-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400078472-4630-1-git-send-email-geert+renesas@glider.be>
+References: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 14, 2014 at 04:44:02PM +0200, Laurent Pinchart wrote:
-> On Wednesday 14 May 2014 16:41:12 Geert Uytterhoeven wrote:
-> > Caused by interaction between commit
-> > 08ec67b50db7ca8c9077e67ca23850cdc5bfc716 ("ARM: shmobile: r8a7740 dtsi:
-> > Add Ethernet support") and commit 9ff254adc1e32db46000a33b8ecbc4d7047672be
-> > ("ARM: shmobile: dts: Move interrupt-parent property to root node").
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> > ---
-> > Can this still be folded into the latter commit?
-> 
-> I'll let Simon decide, I'm fine with both.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-I would prefer to take this as in incremental change as
-* It seems to reduce the scope for error on my part and;
-* It avoids rebasing branches that I have already pushed
+Add device nodes for the R8A7790 internal PCI bridge devices.
 
-As such I have queued up this patch with Laurent's Ack.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
+[Sergei: added interrupt-related properties to the PCI bridge nodes]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> 
-> >  arch/arm/boot/dts/r8a7740.dtsi |    1 -
-> >  1 file changed, 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-> > index ce7a0b29ae7c..55d29f4d2ed6 100644
-> > --- a/arch/arm/boot/dts/r8a7740.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7740.dtsi
-> > @@ -124,7 +124,6 @@
-> >  		compatible = "renesas,gether-r8a7740";
-> >  		reg = <0xe9a00000 0x800>,
-> >  		      <0xe9a01800 0x800>;
-> > -		interrupt-parent = <&gic>;
-> >  		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH>;
-> >  		/* clocks = <&mstp3_clks R8A7740_CLK_GETHER>; */
-> >  		phy-mode = "mii";
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+---
+Changes in version 3:
+- added interrupt-related properties to the PCI bridge nodes;
+- refreshed the patch.
+
+Changes in version 2:
+- reworded summary (fixing typo) and changelog;
+- removed extra spaces before {;
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7790.dtsi |   54 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -876,4 +876,58 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee090000 0x0 0xc00>,
++		      <0x0 0xee080000 0x0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci1: pci@ee0b0000 {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0b0000 0x0 0xc00>,
++		      <0x0 0xee0a0000 0x0 0x1100>;
++		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 112 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 112 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci2: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7790";
++		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
++		reg = <0x0 0xee0d0000 0x0 0xc00>,
++		      <0x0 0xee0c0000 0x0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		status = "disabled";
++
++		bus-range = <2 2>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	};
+ };
