@@ -1,46 +1,185 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 19:15:09 +0000
-Subject: [PATCH v2 03/10] i2c: sh_mobile: honor DT bus speed settings
-Message-Id: <1399058116-7721-4-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 20 May 2014 07:59:00 +0000
+Subject: [PATCH 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
+Message-Id: <20140520080058.13851.83767.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1399058116-7721-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <20140520075949.13851.42995.sendpatchset@w520>
+In-Reply-To: <20140520075949.13851.42995.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Move most of pm-rcar.h so it can be used as #include "pm-rcar.h"
+instead of the old style #include <mach/pm-rcar.h>. Also clean up
+the r8a7779 case to move some unused header file cruft into a C
+file.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index d2fa222df3d1..2e481abd50ce 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -657,6 +657,7 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	struct resource *res;
- 	int size;
- 	int ret;
-+	u32 bus_speed;
+ arch/arm/mach-shmobile/include/mach/pm-rcar.h |   15 ---------------
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |   13 -------------
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   13 ++++++++++++-
+ arch/arm/mach-shmobile/pm-r8a7790.c           |    2 +-
+ arch/arm/mach-shmobile/pm-rcar.c              |    2 +-
+ arch/arm/mach-shmobile/pm-rcar.h              |   15 +++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7779.c          |    2 +-
+ arch/arm/mach-shmobile/smp-r8a7790.c          |    2 +-
+ 8 files changed, 31 insertions(+), 33 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/include/mach/pm-rcar.h
++++ /dev/null	2013-06-03 21:41:10.638032047 +0900
+@@ -1,15 +0,0 @@
+-#ifndef PM_RCAR_H
+-#define PM_RCAR_H
+-
+-struct rcar_sysc_ch {
+-	unsigned long chan_offs;
+-	unsigned int chan_bit;
+-	unsigned int isr_bit;
+-};
+-
+-int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
+-int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
+-bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
+-void __iomem *rcar_sysc_init(phys_addr_t base);
+-
+-#endif /* PM_RCAR_H */
+--- 0001/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a7779.h	2014-05-20 01:13:37.000000000 +0900
+@@ -1,9 +1,6 @@
+ #ifndef __ASM_R8A7779_H__
+ #define __ASM_R8A7779_H__
  
- 	pd = kzalloc(sizeof(struct sh_mobile_i2c_data), GFP_KERNEL);
- 	if (pd = NULL) {
-@@ -697,7 +698,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	}
+-#include <linux/pm_domain.h>
+-#include <mach/pm-rcar.h>
+-
+ /* HPB-DMA slave IDs */
+ enum {
+ 	HPBDMA_SLAVE_DUMMY,
+@@ -11,16 +8,6 @@ enum {
+ 	HPBDMA_SLAVE_SDHI0_RX,
+ };
  
- 	/* Use platform data bus speed or STANDARD_MODE */
--	pd->bus_speed = STANDARD_MODE;
-+	ret = of_property_read_u32(dev->dev.of_node, "clock-frequency", &bus_speed);
-+	pd->bus_speed = ret ? STANDARD_MODE : bus_speed;
+-struct r8a7779_pm_domain {
+-	struct generic_pm_domain genpd;
+-	struct rcar_sysc_ch ch;
+-};
+-
+-static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
+-{
+-	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
+-}
+-
+ extern void r8a7779_init_delay(void);
+ extern void r8a7779_init_irq_extpin(int irlm);
+ extern void r8a7779_init_irq_extpin_dt(int irlm);
+--- 0009/arch/arm/mach-shmobile/pm-r8a7779.c
++++ work/arch/arm/mach-shmobile/pm-r8a7779.c	2014-05-20 01:13:51.000000000 +0900
+@@ -13,20 +13,31 @@
+ #include <linux/suspend.h>
+ #include <linux/err.h>
+ #include <linux/pm_clock.h>
++#include <linux/pm_domain.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+ #include <linux/console.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7779.h>
+ #include "common.h"
++#include "pm-rcar.h"
+ 
+ /* SYSC */
+ #define SYSCIER 0x0c
+ #define SYSCIMR 0x10
+ 
++struct r8a7779_pm_domain {
++	struct generic_pm_domain genpd;
++	struct rcar_sysc_ch ch;
++};
 +
- 	if (pdata && pdata->bus_speed)
- 		pd->bus_speed = pdata->bus_speed;
- 	pd->clks_per_count = 1;
--- 
-1.9.2
-
++static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
++{
++	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
++}
++
+ #if defined(CONFIG_PM) || defined(CONFIG_SMP)
+ 
+ static void __init r8a7779_sysc_init(void)
+--- 0001/arch/arm/mach-shmobile/pm-r8a7790.c
++++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-05-20 01:04:34.000000000 +0900
+@@ -12,8 +12,8 @@
+ 
+ #include <linux/kernel.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7790.h>
++#include "pm-rcar.h"
+ 
+ /* SYSC */
+ #define SYSCIER 0x0c
+--- 0001/arch/arm/mach-shmobile/pm-rcar.c
++++ work/arch/arm/mach-shmobile/pm-rcar.c	2014-05-20 01:04:52.000000000 +0900
+@@ -13,7 +13,7 @@
+ #include <linux/mm.h>
+ #include <linux/spinlock.h>
+ #include <asm/io.h>
+-#include <mach/pm-rcar.h>
++#include "pm-rcar.h"
+ 
+ /* SYSC */
+ #define SYSCSR 0x00
+--- /dev/null
++++ work/arch/arm/mach-shmobile/pm-rcar.h	2014-05-20 01:03:32.000000000 +0900
+@@ -0,0 +1,15 @@
++#ifndef PM_RCAR_H
++#define PM_RCAR_H
++
++struct rcar_sysc_ch {
++	unsigned long chan_offs;
++	unsigned int chan_bit;
++	unsigned int isr_bit;
++};
++
++int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
++int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
++bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
++void __iomem *rcar_sysc_init(phys_addr_t base);
++
++#endif /* PM_RCAR_H */
+--- 0009/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2014-05-20 01:05:10.000000000 +0900
+@@ -23,13 +23,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7779.h>
+ #include <asm/cacheflush.h>
+ #include <asm/smp_plat.h>
+ #include <asm/smp_scu.h>
+ #include <asm/smp_twd.h>
+ #include "common.h"
++#include "pm-rcar.h"
+ 
+ #define AVECR IOMEM(0xfe700040)
+ #define R8A7779_SCU_BASE 0xf0000000
+--- 0009/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-05-20 01:05:53.000000000 +0900
+@@ -18,9 +18,9 @@
+ #include <linux/smp.h>
+ #include <linux/io.h>
+ #include <asm/smp_plat.h>
+-#include <mach/pm-rcar.h>
+ #include <mach/r8a7790.h>
+ #include "common.h"
++#include "pm-rcar.h"
+ 
+ #define RST		0xe6160000
+ #define CA15BAR		0x0020
