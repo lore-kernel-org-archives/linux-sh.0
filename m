@@ -1,90 +1,461 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Tue, 06 May 2014 14:23:52 +0000
-Subject: [PATCH 5/6] ARM: shmobile: sh73a0: common clock framework board support
-Message-Id: <1399386233-11928-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 20 May 2014 07:58:33 +0000
+Subject: [PATCH 04/08] ARM: shmobile: Move most of irqs.h, keep some for pinctl
+Message-Id: <20140520080026.13851.55343.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140520075949.13851.42995.sendpatchset@w520>
+In-Reply-To: <20140520075949.13851.42995.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Adds support for the common clock framework to the KZM9G reference board
-and SH73A0 SoC setup code.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Move most of irqs.h so it can be used as #include "irqs.h"
+instead of the old style #include <mach/irqs.h>.
+
+Legacy code in drivers/pinctrl needs more work to get rid
+of the "mach" portion of the include path, so some part
+is left in the original location.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 25 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c          |  5 ++++-
- 2 files changed, 29 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 598e324..2ca37b8 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -26,13 +26,38 @@
- #include <linux/input.h>
+ arch/arm/mach-shmobile/board-ape6evm.c           |    2 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c   |    3 +--
+ arch/arm/mach-shmobile/board-bockw.c             |    2 +-
+ arch/arm/mach-shmobile/board-genmai.c            |    2 +-
+ arch/arm/mach-shmobile/board-koelsch-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-koelsch.c           |    2 +-
+ arch/arm/mach-shmobile/board-kzm9g.c             |    2 +-
+ arch/arm/mach-shmobile/board-lager-reference.c   |    2 +-
+ arch/arm/mach-shmobile/board-lager.c             |    2 +-
+ arch/arm/mach-shmobile/board-mackerel.c          |    5 +----
+ arch/arm/mach-shmobile/board-marzen-reference.c  |    2 +-
+ arch/arm/mach-shmobile/board-marzen.c            |    2 +-
+ arch/arm/mach-shmobile/include/mach/irqs.h       |   17 ++---------------
+ arch/arm/mach-shmobile/intc-sh7372.c             |    2 +-
+ arch/arm/mach-shmobile/intc-sh73a0.c             |    2 +-
+ arch/arm/mach-shmobile/irqs.h                    |   21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r7s72100.c          |    2 +-
+ arch/arm/mach-shmobile/setup-r8a73a4.c           |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c           |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7778.c           |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c           |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7790.c           |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7791.c           |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c            |    2 +-
+ arch/arm/mach-shmobile/setup-sh73a0.c            |    2 +-
+ 25 files changed, 46 insertions(+), 42 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2014-05-20 00:15:00.000000000 +0900
+@@ -34,10 +34,10 @@
+ #include <linux/sh_clk.h>
+ #include <linux/smsc911x.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include "irqs.h"
+ 
+ /* LEDS */
+ static struct gpio_led ape6evm_leds[] = {
+--- 0001/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ work/arch/arm/mach-shmobile/board-armadillo800eva.c	2014-05-20 00:15:00.000000000 +0900
+@@ -46,7 +46,6 @@
+ #include <linux/i2c-gpio.h>
+ #include <linux/reboot.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7740.h>
+ #include <media/mt9t112.h>
+ #include <media/sh_mobile_ceu.h>
+@@ -61,7 +60,7 @@
+ #include <video/sh_mobile_hdmi.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
+-
++#include "irqs.h"
+ #include "sh-gpio.h"
+ 
+ /*
+--- 0001/arch/arm/mach-shmobile/board-bockw.c
++++ work/arch/arm/mach-shmobile/board-bockw.c	2014-05-20 00:15:00.000000000 +0900
+@@ -36,11 +36,11 @@
+ #include <linux/usb/renesas_usbhs.h>
+ #include <media/soc_camera.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+ #include <asm/mach/arch.h>
+ #include <sound/rcar_snd.h>
+ #include <sound/simple_card.h>
++#include "irqs.h"
+ 
+ #define FPGA	0x18200000
+ #define IRQ0MR	0x30
+--- 0001/arch/arm/mach-shmobile/board-genmai.c
++++ work/arch/arm/mach-shmobile/board-genmai.c	2014-05-20 00:15:00.000000000 +0900
+@@ -26,10 +26,10 @@
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include "irqs.h"
+ 
+ /* Ether */
+ static const struct sh_eth_plat_data ether_pdata __initconst = {
+--- 0007/arch/arm/mach-shmobile/board-koelsch-reference.c
++++ work/arch/arm/mach-shmobile/board-koelsch-reference.c	2014-05-20 00:15:00.000000000 +0900
+@@ -24,11 +24,11 @@
  #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7791.h>
+ #include <asm/mach/arch.h>
+ #include "clock.h"
++#include "irqs.h"
+ 
+ /* DU */
+ static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+--- 0001/arch/arm/mach-shmobile/board-koelsch.c
++++ work/arch/arm/mach-shmobile/board-koelsch.c	2014-05-20 00:15:00.000000000 +0900
+@@ -46,11 +46,11 @@
+ #include <linux/spi/rspi.h>
+ #include <linux/spi/spi.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include "irqs.h"
+ 
+ /* DU */
+ static struct rcar_du_encoder_data koelsch_du_encoders[] = {
+--- 0001/arch/arm/mach-shmobile/board-kzm9g.c
++++ work/arch/arm/mach-shmobile/board-kzm9g.c	2014-05-20 00:15:00.000000000 +0900
+@@ -43,13 +43,13 @@
+ #include <linux/videodev2.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
+-#include <mach/irqs.h>
  #include <mach/sh73a0.h>
-+#include <mach/clock.h>
  #include <mach/common.h>
  #include <asm/hardware/cache-l2x0.h>
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
+ #include <video/sh_mobile_lcdc.h>
++#include "irqs.h"
  
-+#ifdef CONFIG_COMMON_CLK
-+static const struct clk_name clk_names[] __initconst = {
-+	{ "cmt1", NULL, "sh_cmt.10" },
-+	{ "scifa0", NULL, "sh-sci.0" },
-+	{ "scifa1", NULL, "sh-sci.1" },
-+	{ "scifa2", NULL, "sh-sci.2" },
-+	{ "scifa3", NULL, "sh-sci.3" },
-+	{ "scifa4", NULL, "sh-sci.4" },
-+	{ "scifa5", NULL, "sh-sci.5" },
-+	{ "scifa6", NULL, "sh-sci.6" },
-+	{ "scifa7", NULL, "sh-sci.7" },
-+	{ "scifb", NULL, "sh-sci.8" },
-+	{ "sdhi0", NULL, "ee100000.sd" },
-+	{ "sdhi1", NULL, "ee120000.sd" },
-+	{ "sdhi2", NULL, "ee140000.sd" },
-+	{ "mmcif0", NULL, "e6bd0000.mmc" },
-+	{ "iic0", NULL, "e6820000.i2c" },
-+	{ "iic3", NULL, "e6826000.i2c" },
-+};
-+#endif
-+
- static void __init kzm_init(void)
- {
-+#ifdef CONFIG_COMMON_CLK
-+	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-+#endif
- 	sh73a0_add_standard_devices_dt();
+ /*
+  * external GPIO
+--- 0007/arch/arm/mach-shmobile/board-lager-reference.c
++++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-05-20 00:15:00.000000000 +0900
+@@ -23,11 +23,11 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_data/rcar-du.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/rcar-gen2.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ #include "clock.h"
++#include "irqs.h"
  
- #ifdef CONFIG_CACHE_L2X0
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index f74ab53..12a007a 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -796,7 +796,9 @@ void __init __weak sh73a0_register_twd(void) { }
- void __init sh73a0_earlytimer_init(void)
- {
- 	sh73a0_init_delay();
-+#ifndef CONFIG_COMMON_CLK
- 	sh73a0_clock_init();
-+#endif
- 	shmobile_earlytimer_init();
- 	sh73a0_register_twd();
- }
-@@ -819,8 +821,9 @@ void __init sh73a0_add_standard_devices_dt(void)
- 	struct platform_device_info devinfo = { .name = "cpufreq-cpu0", .id = -1, };
+ /* DU */
+ static struct rcar_du_encoder_data lager_du_encoders[] = {
+--- 0002/arch/arm/mach-shmobile/board-lager.c
++++ work/arch/arm/mach-shmobile/board-lager.c	2014-05-20 00:15:00.000000000 +0900
+@@ -46,7 +46,6 @@
+ #include <linux/usb/phy.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+ #include <media/soc_camera.h>
+ #include <asm/mach-types.h>
+@@ -58,6 +57,7 @@
+ #include <linux/spi/spi.h>
+ #include <sound/rcar_snd.h>
+ #include <sound/simple_card.h>
++#include "irqs.h"
  
- 	/* clocks are setup late during boot in the case of DT */
-+#ifndef CONFIG_COMMON_CLK
- 	sh73a0_clock_init();
+ /*
+  * SSI-AK4643
+--- 0005/arch/arm/mach-shmobile/board-mackerel.c
++++ work/arch/arm/mach-shmobile/board-mackerel.c	2014-05-20 00:15:00.000000000 +0900
+@@ -57,14 +57,11 @@
+ #include <media/soc_camera_platform.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
 -
-+#endif
- 	platform_add_devices(sh73a0_devices_dt,
- 			     ARRAY_SIZE(sh73a0_devices_dt));
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--- 
-1.8.4.5
-
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/sh7372.h>
+-
+ #include <asm/mach/arch.h>
+ #include <asm/mach-types.h>
+-
++#include "irqs.h"
+ #include "sh-gpio.h"
+ 
+ /*
+--- 0007/arch/arm/mach-shmobile/board-marzen-reference.c
++++ work/arch/arm/mach-shmobile/board-marzen-reference.c	2014-05-20 00:15:00.000000000 +0900
+@@ -24,10 +24,10 @@
+ #include <linux/of_platform.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <asm/irq.h>
+ #include <asm/mach/arch.h>
+ #include "clock.h"
++#include "irqs.h"
+ 
+ static void __init marzen_init_timer(void)
+ {
+--- 0001/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2014-05-20 00:15:00.000000000 +0900
+@@ -44,10 +44,10 @@
+ #include <media/soc_camera.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/traps.h>
++#include "irqs.h"
+ 
+ /* Fixed 3.3V regulator to be used by SDHI0 */
+ static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+--- 0001/arch/arm/mach-shmobile/include/mach/irqs.h
++++ work/arch/arm/mach-shmobile/include/mach/irqs.h	2014-05-20 00:46:25.000000000 +0900
+@@ -1,24 +1,11 @@
+ #ifndef __ASM_MACH_IRQS_H
+ #define __ASM_MACH_IRQS_H
+ 
+-#include <linux/sh_intc.h>
+-
+-/* GIC */
+-#define gic_spi(nr)		((nr) + 32)
+-#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+-
+-/* INTCS */
+-#define INTCS_VECT_BASE		0x3400
+-#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
+-#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
++/* Stuck here until drivers/pinctl/sh-pfc gets rid of legacy code */
+ 
+ /* External IRQ pins */
+ #define IRQPIN_BASE		2000
+ #define irq_pin(nr)		((nr) + IRQPIN_BASE)
+ 
+-/* GPIO IRQ */
+-#define _GPIO_IRQ_BASE		2500
+-#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
+-#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
+-
+ #endif /* __ASM_MACH_IRQS_H */
++
+--- 0005/arch/arm/mach-shmobile/intc-sh7372.c
++++ work/arch/arm/mach-shmobile/intc-sh7372.c	2014-05-20 00:15:00.000000000 +0900
+@@ -22,10 +22,10 @@
+ #include <linux/module.h>
+ #include <linux/irq.h>
+ #include <linux/io.h>
+-#include <mach/irqs.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include "intc.h"
++#include "irqs.h"
+ 
+ enum {
+ 	UNUSED_INTCA = 0,
+--- 0005/arch/arm/mach-shmobile/intc-sh73a0.c
++++ work/arch/arm/mach-shmobile/intc-sh73a0.c	2014-05-20 00:15:00.000000000 +0900
+@@ -24,11 +24,11 @@
+ #include <linux/io.h>
+ #include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+-#include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include "intc.h"
++#include "irqs.h"
+ 
+ enum {
+ 	UNUSED = 0,
+--- /dev/null
++++ work/arch/arm/mach-shmobile/irqs.h	2014-05-20 00:46:53.000000000 +0900
+@@ -0,0 +1,21 @@
++#ifndef __SHMOBILE_IRQS_H
++#define __SHMOBILE_IRQS_H
++
++#include <linux/sh_intc.h>
++#include <mach/irqs.h>
++
++/* GIC */
++#define gic_spi(nr)		((nr) + 32)
++#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
++
++/* INTCS */
++#define INTCS_VECT_BASE		0x3400
++#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
++#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
++
++/* GPIO IRQ */
++#define _GPIO_IRQ_BASE		2500
++#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
++#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
++
++#endif /* __SHMOBILE_IRQS_H */
+--- 0001/arch/arm/mach-shmobile/setup-r7s72100.c
++++ work/arch/arm/mach-shmobile/setup-r7s72100.c	2014-05-20 00:15:00.000000000 +0900
+@@ -23,9 +23,9 @@
+ #include <linux/of_platform.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r7s72100.h>
+ #include <asm/mach/arch.h>
++#include "irqs.h"
+ 
+ static struct resource mtu2_resources[] __initdata = {
+ 	DEFINE_RES_MEM(0xfcff0000, 0x400),
+--- 0006/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2014-05-20 00:15:00.000000000 +0900
+@@ -25,10 +25,10 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach/arch.h>
+ #include "dma-register.h"
++#include "irqs.h"
+ 
+ static const struct resource pfc_resources[] = {
+ 	DEFINE_RES_MEM(0xe6050000, 0x9000),
+--- 0006/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2014-05-20 00:15:00.000000000 +0900
+@@ -34,12 +34,12 @@
+ #include <mach/r8a7740.h>
+ #include <mach/pm-rmobile.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ #include "dma-register.h"
++#include "irqs.h"
+ 
+ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 	 /*
+--- 0001/arch/arm/mach-shmobile/setup-r8a7778.c
++++ work/arch/arm/mach-shmobile/setup-r8a7778.c	2014-05-20 00:15:00.000000000 +0900
+@@ -37,11 +37,11 @@
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/dma-mapping.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7778.h>
+ #include <mach/common.h>
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/cache-l2x0.h>
++#include "irqs.h"
+ 
+ /* SCIF */
+ #define R8A7778_SCIF(index, baseaddr, irq)			\
+--- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2014-05-20 00:15:00.000000000 +0900
+@@ -40,7 +40,6 @@
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+@@ -48,6 +47,7 @@
+ #include <asm/mach/time.h>
+ #include <asm/mach/map.h>
+ #include <asm/hardware/cache-l2x0.h>
++#include "irqs.h"
+ 
+ static struct map_desc r8a7779_io_desc[] __initdata = {
+ 	/* 2M entity map for 0xf0000000 (MPCORE) */
+--- 0006/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-05-20 00:15:00.000000000 +0900
+@@ -27,10 +27,10 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7790.h>
+ #include <asm/mach/arch.h>
+ #include "dma-register.h"
++#include "irqs.h"
+ 
+ /* Audio-DMAC */
+ #define AUDIO_DMAC_SLAVE(_id, _addr, t, r)			\
+--- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
++++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2014-05-20 00:15:00.000000000 +0900
+@@ -27,10 +27,10 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
+-#include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
++#include "irqs.h"
+ 
+ static const struct resource pfc_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+--- 0006/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2014-05-20 00:15:00.000000000 +0900
+@@ -33,7 +33,6 @@
+ #include <linux/pm_domain.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+-#include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ #include <mach/common.h>
+ #include <asm/mach/map.h>
+@@ -41,6 +40,7 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ #include "dma-register.h"
++#include "irqs.h"
+ 
+ static struct map_desc sh7372_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+--- 0006/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2014-05-20 00:15:00.000000000 +0900
+@@ -32,7 +32,6 @@
+ #include <linux/sh_timer.h>
+ #include <linux/platform_data/sh_ipmmu.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+-#include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+@@ -40,6 +39,7 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ #include "dma-register.h"
++#include "irqs.h"
+ 
+ static struct map_desc sh73a0_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
