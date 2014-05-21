@@ -1,91 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 May 2014 13:31:05 +0000
-Subject: [PATCH] ARM: shmobile: Fix device node reference leakage in shmobile_init_delay
-Message-Id: <1400679065-17287-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 21 May 2014 13:56:20 +0000
+Subject: Re: [PATCH] ARM: shmobile: Fix device node reference leakage in shmobile_init_delay
+Message-Id: <CAMuHMdXjgUjSGXbzgp_uLsbqfcSsZD0EQxPkTbHN-LWiGCRiig@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1400679065-17287-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1400679065-17287-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The of_find_compatible_node() function returns a new reference to the
-found node. Instead of just adding of_node_put() calls, simplify the
-code by moving the CPU identification logic inside the loop over cpu
-nodes, in order to lower complexity from O(n) to O(1) by replacing
-of_find_compatible_node() calls with of_device_is_compatible().
+Hi Laurent, Magnus,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/timer.c | 50 ++++++++++++++++++++++++------------------
- 1 file changed, 29 insertions(+), 21 deletions(-)
+On Wed, May 21, 2014 at 3:31 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+> +       bool is_a8_a9 = false;
+> +       bool is_a15 = false;
+> +       u32 max_freq = 0;
+> +
+> +       cpus = of_find_node_by_path("/cpus");
+> +       if (!cpus)
+> +               return;
+> +
+> +       for_each_child_of_node(cpus, np) {
+> +               u32 freq;
+> +
+> +               if (!of_property_read_u32(np, "clock-frequency", &freq))
+> +                       max_freq = max(max_freq, freq);
+>
+> -       if (max_freq) {
+> -               if (of_find_compatible_node(NULL, NULL, "arm,cortex-a8"))
+> -                       shmobile_setup_delay_hz(max_freq, 1, 3);
+> -               else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a9"))
+> -                       shmobile_setup_delay_hz(max_freq, 1, 3);
+> -               else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a15"))
+> -                       if (!IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
+> -                               shmobile_setup_delay_hz(max_freq, 2, 4);
+> +               if (of_device_is_compatible(np, "arm,cortex-a8") ||
+> +                   of_device_is_compatible(np, "arm,cortex-a9"))
+> +                       is_a8_a9 = true;
 
-Based on top of Simon's latest devel branch.
+So now we have to care about CPU families in two places: here and below,
+when calling shmobile_setup_delay_hz().
 
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index 68bc0b8..942efdc 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -59,29 +59,37 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- 
- void __init shmobile_init_delay(void)
- {
--	struct device_node *np, *parent;
--	u32 max_freq, freq;
--
--	max_freq = 0;
--
--	parent = of_find_node_by_path("/cpus");
--	if (parent) {
--		for_each_child_of_node(parent, np) {
--			if (!of_property_read_u32(np, "clock-frequency", &freq))
--				max_freq = max(max_freq, freq);
--		}
--		of_node_put(parent);
--	}
-+	struct device_node *np, *cpus;
-+	bool is_a8_a9 = false;
-+	bool is_a15 = false;
-+	u32 max_freq = 0;
-+
-+	cpus = of_find_node_by_path("/cpus");
-+	if (!cpus)
-+		return;
-+
-+	for_each_child_of_node(cpus, np) {
-+		u32 freq;
-+
-+		if (!of_property_read_u32(np, "clock-frequency", &freq))
-+			max_freq = max(max_freq, freq);
- 
--	if (max_freq) {
--		if (of_find_compatible_node(NULL, NULL, "arm,cortex-a8"))
--			shmobile_setup_delay_hz(max_freq, 1, 3);
--		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a9"))
--			shmobile_setup_delay_hz(max_freq, 1, 3);
--		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a15"))
--			if (!IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
--				shmobile_setup_delay_hz(max_freq, 2, 4);
-+		if (of_device_is_compatible(np, "arm,cortex-a8") ||
-+		    of_device_is_compatible(np, "arm,cortex-a9"))
-+			is_a8_a9 = true;
-+		else if (of_device_is_compatible(np, "arm,cortex-a15"))
-+			is_a15 = true;
- 	}
-+
-+	of_node_put(cpus);
-+
-+	if (!max_freq)
-+		return;
-+
-+	if (is_a8_a9)
-+		shmobile_setup_delay_hz(max_freq, 1, 3);
-+	else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
-+		shmobile_setup_delay_hz(max_freq, 2, 4);
- }
- 
- static void __init shmobile_late_time_init(void)
--- 
-Regards,
+IIUC, "shmobile_setup_delay_hz(max_freq, 2, 4)" is (ignoring rounding)
+equivalent to "shmobile_setup_delay_hz(max_freq, 1, 2)"?
+Do we actually have cases where mult needs to be different from 1?
+If not, we can kill the "mult" parameter, and replace the "is_a8_a9 = true"
+by:
 
-Laurent Pinchart
+div = 3;
 
+> +               else if (of_device_is_compatible(np, "arm,cortex-a15"))
+> +                       is_a15 = true;
+
+and
+
+else if (of_device_is_compatible(np, "arm,cortex-a15") &&
+         !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
+        div = 2;
+
+>         }
+> +
+> +       of_node_put(cpus);
+> +
+> +       if (!max_freq)
+> +               return;
+> +
+> +       if (is_a8_a9)
+> +               shmobile_setup_delay_hz(max_freq, 1, 3);
+> +       else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
+> +               shmobile_setup_delay_hz(max_freq, 2, 4);
+
+and this just becomes:
+
+if (div)
+    shmobile_setup_delay_hz(max_freq, div);
+
+Am I missing something?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
