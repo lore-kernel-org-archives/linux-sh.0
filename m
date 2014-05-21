@@ -1,60 +1,64 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 13 May 2014 16:59:21 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 21 May 2014 13:44:56 +0000
 Subject: Re: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
-Message-Id: <20140513165921.GK12304@sirena.org.uk>
+Message-Id: <1885616.D9TNdZVfuO@avalon>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="MBvrg9yBmBnxRi7n"
+Content-Type: multipart/mixed; boundary="nextPart1818049.ItSK0xXosh"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20131205000928.GI29268@sirena.org.uk> <2248657.5UVkYxaC6z@avalon>
- <2193707.R9XiqBsnU4@avalon>
-In-Reply-To: <2193707.R9XiqBsnU4@avalon>
+ <2193707.R9XiqBsnU4@avalon> <20140513165921.GK12304@sirena.org.uk>
+In-Reply-To: <20140513165921.GK12304@sirena.org.uk>
 To: linux-arm-kernel@lists.infradead.org
 
 
---MBvrg9yBmBnxRi7n
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart1818049.ItSK0xXosh
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-On Tue, May 13, 2014 at 02:06:23AM +0200, Laurent Pinchart wrote:
+On Tuesday 13 May 2014 17:59:21 Mark Brown wrote:
+> On Tue, May 13, 2014 at 02:06:23AM +0200, Laurent Pinchart wrote:
+> > What's the status of this ? The gpio regulator driver now defaults =
+to
+> > voltage regulator when the regulator-type property is not set. Shou=
+ld the
+> > DT bindings document the property as optional (I can submit a patch=
+ for
+> > that), or do you consider that the gpio regulator driver should sup=
+port
+> > voltage regulators only when used with DT, and just keep the
+> > regulator-type property support in the driver for backward compatib=
+ility
+> > ?
+>=20
+> I don't really care either way, I did write a patch for the bindings =
+but
+> there was some language lawyering over it and I never cared enough to=
 
-> What's the status of this ? The gpio regulator driver now defaults to vol=
-tage=20
-> regulator when the regulator-type property is not set. Should the DT bind=
-ings=20
-> document the property as optional (I can submit a patch for that), or do =
-you=20
-> consider that the gpio regulator driver should support voltage regulators=
- only=20
-> when used with DT, and just keep the regulator-type property support in t=
-he=20
-> driver for backward compatibility ?
+> get round to updating it.
 
-I don't really care either way, I did write a patch for the bindings but
-there was some language lawyering over it and I never cared enough to
-get round to updating it.
+Could you please point me to the patch ?
 
---MBvrg9yBmBnxRi7n
+=2D-=20
+Regards,
+
+Laurent Pinchart
+
+--nextPart1818049.ItSK0xXosh
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIcBAEBAgAGBQJTck9mAAoJELSic+t+oim9flUP+wY5sh1P9PWuuQqcJoBx8rxV
-cUlSprpLHC3fwt7rxqkHOUPz3blJopPgSKz/BhC3if+PjdcTGIw50isJk2rllfVi
-1j4qotTlAO6MhuPjk/wn1gEOyzTxNb+cpKCVeOgfpW1DdPNer6NuRALZQ7RfswEJ
-cpGeFTPiBRJnWain/28oe/FEYwKdvM3hbyuPtVwe1q1hG06OyjVkZlZP26Y2cBoA
-s8vHwom3BAB3JnzTSwGZ83zHDvdMentgdbJR0N5m4HSznRakIOgC8KzTyJA9FBXj
-k2ahrPqhBNEvh7mj3HCZXmm4AT6wgkDVO2dp7kPINjVSCAxiyC5Eyf3b/2MbLSD9
-rsQP6ww+Yk7GfzfI8bHEM7G3UrEVGkN7UudP5twms93QjizNEe5uwgJ4j9+38OBB
-uE2P5YnPZ1sF/yrj+yuHHAEX4syp2yEDiq3Xj0FX9RP4p3B3XFyjzFjP5jSRUEvN
-+LFvYMbBAd9bwLAkca4F76aSb27kCYSPuBb/3/Q5G52hXUjsuX+6NqoSYjaViy2H
-r9BqaIx7EmZ784Um/8/xXJOki69asW8iZzrmww71AjGXRVYRaZkMM59btWgYoMJs
-fAUOMRifK0IscKYVP1c6QcX/6ZwVlDMoUocrJvgdnUsK3eN2/OfvH+78YvgsWm3R
-IA4fx+sbFb/F94T/y0z6
-=0KZY
+iQEcBAABAgAGBQJTfK3dAAoJEIkPb2GL7hl1oA4IALQEal7dcRGY5e5H3z+MJtga
+rPmqakhShuJEFlR2qSgUtdKlvF9cs28o8XLIF0w8Yzp8KmuJwgCYhRXlm9pmFKvW
+k428y2vHWUOelJmmFvse9nfvgcDHb0UQ9+Ky9igsqzMcYmuR9mVkzqa8MX7hcimQ
+8G8pRmtec7W7Z7F+7lwv/AON9Bs+fC1Fh6rKnq9UokdIQqo7dF0ok1M/O/tbnC1K
+wrSO2gMe2DoaAxnB84S0ygUGvTbq+h4Bt11r6zInLRVfN0cLffGf+udeixWjqxMb
+OYN1EKgpNaz/3vjpIgChJjv2IoeZbPwwGzSpnioMIs8aJFJ4tIqmtyqoX5Yd4MA=
+=4vxS
 -----END PGP SIGNATURE-----
 
---MBvrg9yBmBnxRi7n--
+--nextPart1818049.ItSK0xXosh--
+
