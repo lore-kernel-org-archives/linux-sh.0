@@ -1,64 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 21 May 2014 13:44:56 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Wed, 21 May 2014 14:22:23 +0000
 Subject: Re: [PATCH 1/2] regulator: gpio-regulator: Add required regulator-type property
-Message-Id: <1885616.D9TNdZVfuO@avalon>
+Message-Id: <20140521142223.GR12304@sirena.org.uk>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart1818049.ItSK0xXosh"
+Content-Type: multipart/mixed; boundary="ylLDPojcDoueJWW3"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1385653493-9952-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <2193707.R9XiqBsnU4@avalon> <20140513165921.GK12304@sirena.org.uk>
-In-Reply-To: <20140513165921.GK12304@sirena.org.uk>
+ <1885616.D9TNdZVfuO@avalon>
+In-Reply-To: <1885616.D9TNdZVfuO@avalon>
 To: linux-arm-kernel@lists.infradead.org
 
 
---nextPart1818049.ItSK0xXosh
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+--ylLDPojcDoueJWW3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On Tuesday 13 May 2014 17:59:21 Mark Brown wrote:
-> On Tue, May 13, 2014 at 02:06:23AM +0200, Laurent Pinchart wrote:
-> > What's the status of this ? The gpio regulator driver now defaults =
-to
-> > voltage regulator when the regulator-type property is not set. Shou=
-ld the
-> > DT bindings document the property as optional (I can submit a patch=
- for
-> > that), or do you consider that the gpio regulator driver should sup=
-port
-> > voltage regulators only when used with DT, and just keep the
-> > regulator-type property support in the driver for backward compatib=
-ility
-> > ?
->=20
-> I don't really care either way, I did write a patch for the bindings =
-but
-> there was some language lawyering over it and I never cared enough to=
+On Wed, May 21, 2014 at 03:44:56PM +0200, Laurent Pinchart wrote:
+> On Tuesday 13 May 2014 17:59:21 Mark Brown wrote:
 
-> get round to updating it.
+> > I don't really care either way, I did write a patch for the bindings but
+> > there was some language lawyering over it and I never cared enough to
+> > get round to updating it.
 
-Could you please point me to the patch ?
+> Could you please point me to the patch ?
 
-=2D-=20
-Regards,
+I appear to have discarded it I'm afraid.
 
-Laurent Pinchart
-
---nextPart1818049.ItSK0xXosh
+--ylLDPojcDoueJWW3
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQEcBAABAgAGBQJTfK3dAAoJEIkPb2GL7hl1oA4IALQEal7dcRGY5e5H3z+MJtga
-rPmqakhShuJEFlR2qSgUtdKlvF9cs28o8XLIF0w8Yzp8KmuJwgCYhRXlm9pmFKvW
-k428y2vHWUOelJmmFvse9nfvgcDHb0UQ9+Ky9igsqzMcYmuR9mVkzqa8MX7hcimQ
-8G8pRmtec7W7Z7F+7lwv/AON9Bs+fC1Fh6rKnq9UokdIQqo7dF0ok1M/O/tbnC1K
-wrSO2gMe2DoaAxnB84S0ygUGvTbq+h4Bt11r6zInLRVfN0cLffGf+udeixWjqxMb
-OYN1EKgpNaz/3vjpIgChJjv2IoeZbPwwGzSpnioMIs8aJFJ4tIqmtyqoX5Yd4MA=
-=4vxS
+iQIcBAEBAgAGBQJTfLabAAoJELSic+t+oim9OpEP/AuSVV248aeQkpjNO6JT3IWl
+vitgVHh1nQ0BZMQYlhiWiX0q6lAh8iHTdETstWwlRLdiFgr3IG5yS8CTh29e7Pm0
+3KrpP+UBIvNf1k6e9MraIGCjbm3X/lyYO8m99s/RarZS/2pDti6lGI2/Qs3AL1YD
+2QUYcZGPdRLTwJ9D6s/XI6wiyhmSsASYZth10h3X0i7wF3Zbt59yz/4EYBEEjMVb
+KU5K7+eIcEerPr7egj2f569LnWDcGqB/y/w2PFzc4enTPbb1Wa7PX+9Dp1W31AyS
+mOSPGdrc2Li0B+OJMV0NusdQeAZ6glEkxINb8GPJyl2VlOXS8EztmQx0Obauxr5R
+eDi0g1Sh7Br76WfTtQyIzFr+FJEvuCCnCwjR1S26e/oa/dOuGdVc3Rl0KdCYApQa
+W6hzvZov8e4Dv8kcak4gvRjKAaaI/53JbEO29e5mtvuKWzXOAJT/DTUCXSEkXFIn
+y2kfQ2eFWe2cdMFfiOa72VyFbmPCjqNKVX0mBwihtZjRN0qSvOwiMKfnTde8E3Tr
+6POyCg4v7mByLAukB7etamY08palIWxEvAYGqlYeGg0mkO4JhlsEcOZF6jw0c2ID
+My7i2Z6uY6QzOrX8T83+HCd1atbXIZYv9qjXrRF1czMFycpv2X38TdurtqILCyXi
+7nSZt0ABGgM81iqVK+JL
+=s9ui
 -----END PGP SIGNATURE-----
 
---nextPart1818049.ItSK0xXosh--
-
+--ylLDPojcDoueJWW3--
