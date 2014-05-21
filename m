@@ -1,50 +1,99 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 27 May 2014 08:04:16 +0000
-Subject: Re: [PATCH v3] clk: shmobile: mstp: Fix the is_enabled() operation
-Message-Id: <CAMuHMdUO+avQtRQ2zwqiCZwtnGubC3M-7+VHR4NXjft4P4FDnw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 21 May 2014 22:23:44 +0000
+Subject: Re: [PATCH v3] phy: Renesas R-Car Gen2 PHY driver
+Message-Id: <537D2770.2040605@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400781734-19002-1-git-send-email-geert+renesas@glider.be>
-	<CANqRtoQk1=ZVJAqio4Oo-2NSO2qVo=xM0sUCDL_sMz1+zyOLPQ@mail.gmail.com>
-In-Reply-To: <CANqRtoQk1=ZVJAqio4Oo-2NSO2qVo=xM0sUCDL_sMz1+zyOLPQ@mail.gmail.com>
+References: <201404120415.43761.sergei.shtylyov@cogentembedded.com> <534B77E2.8060901@ti.com> <53557BFE.5020908@cogentembedded.com> <53578FA8.6040607@ti.com>
+In-Reply-To: <53578FA8.6040607@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Mike Turquette <mturquette@linaro.org>, SH-Linux <linux-sh@vger.kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+To: Kishon Vijay Abraham I <kishon@ti.com>, devicetree@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, grant.likely@linaro.org
+Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, linux-doc@vger.kernel.org, rdunlap@infradead.org
 
-Hi Magnus,
+Hello.
 
-On Tue, May 27, 2014 at 3:02 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Fri, May 23, 2014 at 3:02 AM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
->>
->> The MSTP[SC]R registers have clock stop bits, not clock enable bits. The
->> bit value should thus be inverted in the is_enabled() operation.
->>
->> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> Cc: Mike Turquette <mturquette@linaro.org>
->> ---
->> v3:
->>   - This depends on commit 3c90c55dcde745bed81f6447f24ba96bda43d984
->>     ("drivers: sh: compile drivers/sh/pm_runtime.c if
->>     ARCH_SHMOBILE_MULTI"), which has entered mainline in v3.15-rc6.
->
-> Thanks for resubmitting this fix. Do you intend to get this included
-> in v3.15 (seems unlikely) or is your target v3.16?
+On 04/23/2014 02:02 PM, Kishon Vijay Abraham I wrote:
 
-3.16 is OK. The only ill effect is that some clocks may be enabled,
-while they're
-not needed.
+>>>> This PHY, though formally being a part of Renesas USBHS controller, contains
+>>>> the
+>>>> UGCTRL2 register that controls multiplexing of the USB ports (Renesas calls
+>>>> them
+>>>> channels) to the different USB controllers: channel 0 can be connected to
+>>>> either
+>>>> PCI EHCI/OHCI or USBHS controllers, channel 2 can be connected to PCI EHCI/OHCI
+>>>> or xHCI controllers.
 
-Gr{oetje,eeting}s,
+>>>> This is a new driver for this USB PHY currently already supported under
+>>>> drivers/
+>>>> usb/phy/. The reason for writing the new driver was the requirement that the
+>>>> multiplexing of USB channels to the controller be dynamic, depending on what
+>>>> USB drivers are loaded,  rather than static as provided by the old driver.
+>>>> The infrastructure provided by drivers/phy/phy-core.c seems to fit that purpose
+>>>> ideally. The new driver only supports device tree probing for now.
 
-                        Geert
+>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>> [...]
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>>>> Index: linux-phy/drivers/phy/phy-rcar-gen2.c
+>>>> =================================>>>> --- /dev/null
+>>>> +++ linux-phy/drivers/phy/phy-rcar-gen2.c
+>>>> @@ -0,0 +1,283 @@
+
+>> [...]
+
+>>>> +static int rcar_gen2_phy_probe(struct platform_device *pdev)
+>>>> +{
+
+>> [...]
+
+>>>> +    drv->phys[0][0].select_mask  = USBHS_UGCTRL2_USB0SEL;
+>>>> +    drv->phys[0][0].select_value = USBHS_UGCTRL2_USB0SEL_PCI;
+>>>> +    drv->phys[0][1].select_mask  = USBHS_UGCTRL2_USB0SEL;
+>>>> +    drv->phys[0][1].select_value = USBHS_UGCTRL2_USB0SEL_HS_USB;
+>>>> +    drv->phys[2][0].select_mask  = USBHS_UGCTRL2_USB2SEL;
+>>>> +    drv->phys[2][0].select_value = USBHS_UGCTRL2_USB2SEL_PCI;
+>>>> +    drv->phys[2][1].select_mask  = USBHS_UGCTRL2_USB2SEL;
+>>>> +    drv->phys[2][1].select_value = USBHS_UGCTRL2_USB2SEL_USB30;
+>>>> +
+>>>> +    for (i = 0; i < NUM_USB_CHANNELS; i++) {
+
+>>> Instead of hard coding the number of channels,
+
+>>     It's hard coded in the hardware. We can even decrease that number to 2 as
+
+> right, that's why thought dt should have that information.
+
+    So you want a dedicated property for that or you meant something else?
+
+>> for the channel #1 we have nothing to do, regardless of whether it's present or
+>> not...
+
+>>> we can model the channels (PHYs) as sub-nodes of the main PHY
+
+>>     Hm, I don't think such representation would be adequate: the channels
+>> themselves do not usually correspond to any particular PHY, that's why I used
+>> #phy-cells = <2>.
+
+>>> in dt and use it to create individual PHYs.
+
+>>     Well, we probably can... however, I fail to see any immediate gain from
+>> it here...
+>>     I have to ask why you've selected this particular driver for such DT
+>> representation experiments, despite it not being the first one supporting
+>> multiple PHYs?
+
+> just that it didn't strike before.. but I think all multiple PHYs should be
+> modelled this way.
+
+    I've basically reimplemented the driver to parse the info from the 
+subnodes and it's now became larger in size, not smaller. :-/ Overall, I'm not 
+content with the changes, nor do I think such a change in the DT 
+representation was a great idea...
+
+> Thanks
+> Kishon
+
+WBR, Sergei
+
