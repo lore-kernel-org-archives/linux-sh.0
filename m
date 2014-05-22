@@ -1,150 +1,95 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 May 2014 13:17:12 +0000
-Subject: [PATCH v2 02/05] staging: emxx_udc: I/O memory and IRQ resource support
-Message-Id: <20140529131712.2329.80344.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 22 May 2014 18:00:05 +0000
+Subject: [PATCH v4 2/3] drivers: sh: pm_runtime implementation needs to suspend and resume devices
+Message-Id: <1400781606-18601-3-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140529131650.2329.3197.sendpatchset@w520>
-In-Reply-To: <20140529131650.2329.3197.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Adjust the emxx_udc driver to make use of the standard
-driver model to pass I/O memory and IRQ as resources
-instead of hard coding those things in the driver.
+If we override the platform bus calls for pm_runtime then we end up
+with the calls to the devices' suspend and resume methods ignored
+in favour of the bus ones.
 
-Needs more work - the VBUS signal is yet not handled.
+Change to calling the pm_runtime calls to suspend and resume the
+devices specifically in the drivers/sh/pm_runtime.c implementation
+to allow any device that may want to run power management to do so.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Note, all the current sh driver implementations do not use their
+own power management code so this is not a major implementation
+issues.
+
+This also brings the implementation into line with the versions
+used by the Davinci and Keystone PM domain code, so once fully
+tested these implementations could be merged together.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+v4:
+  - No changes
+v3:
+  - Add Reviewed-by
+v2:
+  - New
+---
+ drivers/sh/pm_runtime.c | 37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
 
- Changes since V1:
- - None
-
- drivers/staging/emxx_udc/emxx_udc.c |   57 +++++++++++------------------------
- drivers/staging/emxx_udc/emxx_udc.h |    9 -----
- 2 files changed, 18 insertions(+), 48 deletions(-)
-
---- 0002/drivers/staging/emxx_udc/emxx_udc.c
-+++ work/drivers/staging/emxx_udc/emxx_udc.c	2014-05-22 16:20:02.000000000 +0900
-@@ -3356,37 +3356,38 @@ static int nbu2ss_drv_probe(struct platf
- {
- 	int	status = -ENODEV;
- 	struct nbu2ss_udc	*udc;
-+	struct resource *r;
-+	int irq;
-+	void __iomem *mmio_base;
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 00b82ec94442..25eafbe4da33 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,10 +21,43 @@
+ #include <linux/slab.h>
  
- 	udc = &udc_controller;
- 	memset(udc, 0, sizeof(struct nbu2ss_udc));
- 
- 	platform_set_drvdata(pdev, udc);
- 
--	/* IO Memory Region */
--	if (!request_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE
--				, driver_name)) {
-+	/* require I/O memory and IRQ to be provided as resources */
-+	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	mmio_base = devm_request_and_ioremap(&pdev->dev, r);
-+	if (IS_ERR(mmio_base)) {
-+		dev_err(&pdev->dev, "failed to map I/O memory\n");
-+		return PTR_ERR(mmio_base);
+ #ifdef CONFIG_PM_RUNTIME
++static int sh_pm_runtime_suspend(struct device *dev)
++{
++	int ret;
++
++	ret = pm_generic_runtime_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend device\n");
++		return ret;
 +	}
- 
--		ERR("request_mem_region failed\n");
--		return -EBUSY;
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0) {
-+		dev_err(&pdev->dev, "failed to get IRQ\n");
-+		return irq;
- 	}
-+	status = devm_request_irq(&pdev->dev, irq, _nbu2ss_udc_irq,
-+				  0, driver_name, udc);
- 
- 	/* IO Memory */
--	udc->p_regs = (PT_FC_REGS)ioremap(USB_BASE_ADDRESS, USB_BASE_SIZE);
--	if (!udc->p_regs) {
--		ERR("request_io_mem failed\n");
--		goto cleanup3;
--	}
-+	udc->p_regs = (PT_FC_REGS)mmio_base;
- 
- 	/* USB Function Controller Interrupt */
--	status = request_irq(USB_UDC_IRQ_1,
--				_nbu2ss_udc_irq,
--				IRQF_DISABLED,
--				driver_name,
--				udc);
--
- 	if (status != 0) {
- 		ERR("request_irq(USB_UDC_IRQ_1) failed\n");
--		goto cleanup2;
-+		goto cleanup1;
- 	}
- 
- 	/* Driver Initialization */
-@@ -3412,18 +3413,6 @@ static int nbu2ss_drv_probe(struct platf
- 	return status;
- 
- cleanup1:
--	/* Interrupt Handler - Release */
--	free_irq(USB_UDC_IRQ_1, udc);
--
--cleanup2:
--	/* IO Memory - Release */
--	if (udc->p_regs)
--		iounmap(udc->p_regs);
--
--cleanup3:
--	/* IO Memory Region - Release */
--	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
--
- 	return status;
- }
- 
-@@ -3456,18 +3445,8 @@ static int __exit nbu2ss_drv_remove(stru
- 	}
- 
- 	/* Interrupt Handler - Release */
--	free_irq(USB_UDC_IRQ_1, udc);
--
--	/* Interrupt Handler - Release */
- 	free_irq(INT_VBUS, udc);
- 
--	/* IO Memory - Release */
--	if (udc->p_regs)
--		iounmap(udc->p_regs);
--
--	/* IO Memory Region - Release */
--	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
--
- 	return 0;
- }
- 
---- 0002/drivers/staging/emxx_udc/emxx_udc.h
-+++ work/drivers/staging/emxx_udc/emxx_udc.h	2014-05-22 16:20:02.000000000 +0900
-@@ -47,20 +47,11 @@
- 
- 
- /*------------ Board dependence(Resource) */
--#define USB_BASE_ADDRESS	EMXX_USBS1_BASE
--#define USB_BASE_SIZE		0x2000
--
--#define USB_UDC_IRQ_0		INT_USBF0
--#define USB_UDC_IRQ_1		INT_USBF1
- #define	VBUS_VALUE		GPIO_VBUS
- 
- /* below hacked up for staging integration */
- #define GPIO_VBUS 0 /* GPIO_P153 on KZM9D */
- #define INT_VBUS 0 /* IRQ for GPIO_P153 */
--#define INT_USBF0 158
--#define INT_USBF1 159
--#define EMXX_USBS0_BASE 0xe2700000
--#define EMXX_USBS1_BASE 0xe2800000
- 
- /*------------ Board dependence(Wait) */
- 
++
++	ret = pm_clk_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend clock\n");
++		pm_generic_runtime_resume(dev);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int sh_pm_runtime_resume(struct device *dev)
++{
++	int ret;
++
++	ret = pm_clk_resume(dev);
++	if (ret) {
++		dev_err(dev, "failed to resume clock\n");
++		return ret;
++	}
++
++	return pm_generic_runtime_resume(dev);
++}
++
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = pm_clk_suspend,
+-		.runtime_resume = pm_clk_resume,
++		.runtime_suspend = sh_pm_runtime_suspend,
++		.runtime_resume = sh_pm_runtime_resume,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+1.9.1
+
