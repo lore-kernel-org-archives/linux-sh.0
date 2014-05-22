@@ -1,97 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 May 2014 00:30:14 +0000
-Subject: Re: [GIT PULL] SH Driver Updates for v3.15
-Message-Id: <20140526003014.GA31096@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 May 2014 08:53:39 +0000
+Subject: [PATCH 00/03] staging: Emma Mobile USB driver and KZM9D board code
+Message-Id: <20140522085339.26279.83340.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1399966519.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1399966519.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <paul.mundt@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-[ For the benefit of those watching at home ]
+Emma Mobile USB driver and KZM9D board code
 
-Linus pulled this and it was included in v3.15-rc6.
+[PATCH 01/03] staging: emxx_udc: Add Emma Mobile USB Gadget driver
+[PATCH 02/03] staging: emxx_udc: I/O memory and IRQ resource support
+[PATCH 03/03] staging: board: kzm9d: Board staging support for emxx_udc
 
-Thanks Linus, Geert and a cast of 1000s.
+This patch series contains an old USB Gadget driver for Emma Mobile
+that gets slightly adjusted to make use of the platform device interface
+which in turn is used to add USB Gadget support to the KZM9D board.
 
-On Tue, May 13, 2014 at 04:42:04PM +0900, Simon Horman wrote:
-> Hi Linus,
-> 
-> Please consider this SH Driver Update for v3.15.
-> 
-> It consists of a single fix for a regression
-> introduced in v3.14 by bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187.
-> 
-> 
-> This is my first pull-request to you for these drivers.
-> 
-> It is my understanding that previously the SH Drivers were maintained by
-> Paul Mundt as part of his maintenance of the SH architecture and Renesas
-> ARM Based SoCs. These days the SH architecture is orphaned and the Renesas
-> ARM Based SoCs are maintained by Magnus Damm and I.
-> 
-> Over the past year or so there have been very few updates to these drivers.
-> And the few that have been made have generally been taken by other
-> subsystem maintainers as part of larger patchsets. As this patch
-> does not fall into that category I would like you to consider pulling it.
-> 
-> 
-> The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
-> 
->   Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v3.15
-> 
-> for you to fetch changes up to 3c90c55dcde745bed81f6447f24ba96bda43d984:
-> 
->   drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI (2014-05-12 16:05:01 +0900)
-> 
-> ----------------------------------------------------------------
-> SH Driver Updates for v3.15
-> 
-> * Compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (1):
->       drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-> 
->  drivers/Makefile        |  2 +-
->  drivers/sh/Makefile     | 14 ++++++++------
->  drivers/sh/pm_runtime.c | 20 +++++++++++++++++++-
->  3 files changed, 28 insertions(+), 8 deletions(-)
-> 
-> 
-> The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
-> 
->   Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v3.15
-> 
-> for you to fetch changes up to 3c90c55dcde745bed81f6447f24ba96bda43d984:
-> 
->   drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI (2014-05-12 16:05:01 +0900)
-> 
-> ----------------------------------------------------------------
-> SH Driver Update for v3.15
-> 
-> * Compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-> 
->   This resolves a regression introduced in v3.14 by
->   bf98c1eac1d4a6 ("ARM: Rename ARCH_SHMOBILE to ARCH_SHMOBILE_LEGACY").
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (1):
->       drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-> 
->  drivers/Makefile        |  2 +-
->  drivers/sh/Makefile     | 14 ++++++++------
->  drivers/sh/pm_runtime.c | 20 +++++++++++++++++++-
->  3 files changed, 28 insertions(+), 8 deletions(-)
-> 
+Two separate staging components are included in this series:
+1) the emxx_udc driver - from out-of-tree Android 2.6.35.7
+2) board staging support for KZM9D - platform device for DT-only KZM9D
+
+The two components above will be used to continously improve the driver
+and board integration code until the driver can be moved out of staging
+and/or DT bindings are available so the board staging platform device code
+can be replaced with a DT node.
+
+Olof, patch 3/3 contains some board staging code for KZM9D. As it is
+today the EMEV2 SoC is DT-only and we neither have defconfig nor Kconfig
+definitions for the KZM9D board (emev2-kzm9d.dts). Instead of again adding
+board code to the ARM subarchitecture I hereby propose that we use staging to
+integrate non-DT drivers while they are improved to get DT support.
+
+Greg, please let me know your opinions. I'd be happy to rework the code.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written against renesas-devel-v3.15-rc5-20140521
+
+ drivers/staging/Kconfig             |    4 
+ drivers/staging/Makefile            |    2 
+ drivers/staging/board/Kconfig       |    7 
+ drivers/staging/board/Makefile      |    1 
+ drivers/staging/board/board.h       |   17 
+ drivers/staging/board/kzm9d.c       |   18 
+ drivers/staging/emxx_udc/Kconfig    |   10 
+ drivers/staging/emxx_udc/Makefile   |    1 
+ drivers/staging/emxx_udc/emxx_udc.c | 3616 ++++++++++++++++++++++++++++++++++-
+ drivers/staging/emxx_udc/emxx_udc.h |  671 ++++++
+ 10 files changed, 4299 insertions(+), 48 deletions(-)
