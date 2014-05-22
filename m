@@ -1,39 +1,57 @@
 From: Olof Johansson <olof@lixom.net>
-Date: Tue, 20 May 2014 05:39:32 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Boards Updates for v3.16
-Message-Id: <20140520053932.GN18956@quad.lixom.net>
+Date: Thu, 22 May 2014 05:08:40 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC r7s72100-ccf Updates for v3.16
+Message-Id: <20140522050840.GA32618@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400052350.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400052350.git.horms+renesas@verge.net.au>
+References: <cover.1400289483.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 14, 2014 at 04:26:55PM +0900, Simon Horman wrote:
+On Sat, May 17, 2014 at 10:24:53AM +0900, Simon Horman wrote:
 > Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> Please consider these second round of
-> Renesas ARM based SoC boards updates for v3.16.
+> Please consider these Second Round of
+> Renesas ARM Based SoC r7s72100 CCF Updates for v3.16.
 > 
 > This pull request is based on the previous round of
-> such requests, tagged as renesas-boards-for-v3.16,
-> which you have previously pulled.
+> such requests, tagged as renesas-r7s72100-ccf-for-v3.16,
+> which I have already sent a pull-request for.
 > 
+> This comprehensively addresses an oversight in patches included in
+> the pull request that it depends on, specifically leaving broken
+> non-multiplatform support in place for genmai-reference.
 > 
-> The following changes since commit a09b2f0ba170dc89a67d6c4c4f027b37a085dad9:
+> This pull request has some minor conflicts with other DT changes which I
+> have previously sent pull requests for. These conflicts are in
+> arch/arm/boot/dts/Makefile. A resolution can be found in the
+> renesas-next-v3.15-rc1-20140517 tag if my renesas tree. In words:
 > 
->   ARM: shmobile: lager legacy: Enable Quad SPI transfers for the SPI FLASH (2014-04-15 08:13:22 +0900)
+>     CONFIG_ARCH_SHMOBILE_LEGACY hunk:
+>     * Remove emev2-kzm9d.dtb
+>     * Remove r7s72100-genmai-reference.dtb
+>     * Keep r7s72100-genmai.dtb
+> 
+
+Are you sure? Shouldn't the genmai board be covered by multi now? Or
+are both multi and legacy driven by the same DTS now? Just making sure.
+
+> The following changes since commit 9fbb1ae01b878e2cce9626fa6fdc9e5dcefeb6b5:
+> 
+>   ARM: shmobile: r7s72100: use workaround for non DT-clocks (2014-05-14 11:42:55 +0900)
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.16
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r7s72100-ccf2-for-v3.16
 > 
-> for you to fetch changes up to fd105ecf17fe459d979f336a7389d87172a1cf6d:
+> for you to fetch changes up to a5176e0d9de31a54e08468f21c15dc08e006857f:
 > 
->   ARM: shmobile: Minor cleanup of the Armadillo legacy board code (2014-05-11 20:59:57 +0900)
+>   ARM: shmobile: Remove Genmai reference DTS (2014-05-17 09:06:29 +0900)
+> 
 
-Merged, thanks.
+Pulled, thanks.
 
 
 -Olof
