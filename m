@@ -1,87 +1,147 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 15 May 2014 10:40:46 +0000
-Subject: [PATCH v2 05/10] iommu/ipmmu-vmsa: Set the PTE contiguous hint bit when possible
-Message-Id: <1400150451-13469-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 22 May 2014 08:53:59 +0000
+Subject: [PATCH 02/03] staging: emxx_udc: I/O memory and IRQ resource support
+Message-Id: <20140522085359.26279.50368.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140522085339.26279.83340.sendpatchset@w520>
+In-Reply-To: <20140522085339.26279.83340.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-The contiguous hint bit signals to the IOMMU that a range of 16 PTEs
-refer to physically contiguous memory. It improves performances by
-dividing the number of TLB lookups by 16, effectively implementing 64kB
-page sizes.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Adjust the emxx_udc driver to make use of the standard
+driver model to pass I/O memory and IRQ as resources
+instead of hard coding those things in the driver.
+
+Needs more work - the VBUS signal is yet not handled.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/iommu/ipmmu-vmsa.c | 43 ++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 40 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index b34a4b7b..150e18e 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -209,6 +209,9 @@ static LIST_HEAD(ipmmu_devices);
- #define ARM_VMSA_PTE_MEMATTR_NC		(((pteval_t)0x5) << 2)
- #define ARM_VMSA_PTE_MEMATTR_DEV	(((pteval_t)0x1) << 2)
- 
-+#define ARM_VMSA_PTE_CONT_ENTRIES	16
-+#define ARM_VMSA_PTE_CONT_SIZE		(PAGE_SIZE * ARM_VMSA_PTE_CONT_ENTRIES)
-+
- #define IPMMU_PTRS_PER_PTE		512
- #define IPMMU_PTRS_PER_PMD		512
- #define IPMMU_PTRS_PER_PGD		4
-@@ -569,10 +572,44 @@ static int ipmmu_alloc_init_pte(struct ipmmu_vmsa_device *mmu, pmd_t *pmd,
- 	pteval |= ARM_VMSA_PTE_SH_IS;
- 	start = pte;
- 
--	/* Install the page table entries. */
-+	/*
-+	 * Install the page table entries.
-+	 *
-+	 * Set the contiguous hint in the PTEs where possible. The hint
-+	 * indicates a series of ARM_VMSA_PTE_CONT_ENTRIES PTEs mapping a
-+	 * physically contiguous region with the following constraints:
-+	 *
-+	 * - The region start is aligned to ARM_VMSA_PTE_CONT_SIZE
-+	 * - Each PTE in the region has the contiguous hint bit set
-+	 *
-+	 * We don't support partial unmapping so there's no need to care about
-+	 * clearing the contiguous hint from neighbour PTEs.
-+	 */
- 	do {
--		*pte++ = pfn_pte(pfn++, __pgprot(pteval));
--		addr += PAGE_SIZE;
-+		unsigned long chunk_end;
-+
-+		/*
-+		 * If the address is aligned to a contiguous region size and the
-+		 * mapping size is large enough, process the largest possible
-+		 * number of PTEs multiple of ARM_VMSA_PTE_CONT_ENTRIES.
-+		 * Otherwise process the smallest number of PTEs to align the
-+		 * address to a contiguous region size or to complete the
-+		 * mapping.
-+		 */
-+		if (IS_ALIGNED(addr, ARM_VMSA_PTE_CONT_SIZE) &&
-+		    end - addr >= ARM_VMSA_PTE_CONT_SIZE) {
-+			chunk_end = round_down(end, ARM_VMSA_PTE_CONT_SIZE);
-+			pteval |= ARM_VMSA_PTE_CONT;
-+		} else {
-+			chunk_end = min(ALIGN(addr, ARM_VMSA_PTE_CONT_SIZE),
-+					end);
-+			pteval &= ~ARM_VMSA_PTE_CONT;
-+		}
-+
-+		do {
-+			*pte++ = pfn_pte(pfn++, __pgprot(pteval));
-+			addr += PAGE_SIZE;
-+		} while (addr != chunk_end);
- 	} while (addr != end);
- 
- 	ipmmu_flush_pgtable(mmu, start, sizeof(*pte) * (pte - start));
--- 
-1.8.5.5
+ drivers/staging/emxx_udc/emxx_udc.c |   57 +++++++++++------------------------
+ drivers/staging/emxx_udc/emxx_udc.h |    9 -----
+ 2 files changed, 18 insertions(+), 48 deletions(-)
 
+--- 0002/drivers/staging/emxx_udc/emxx_udc.c
++++ work/drivers/staging/emxx_udc/emxx_udc.c	2014-05-22 16:20:02.000000000 +0900
+@@ -3356,37 +3356,38 @@ static int nbu2ss_drv_probe(struct platf
+ {
+ 	int	status = -ENODEV;
+ 	struct nbu2ss_udc	*udc;
++	struct resource *r;
++	int irq;
++	void __iomem *mmio_base;
+ 
+ 	udc = &udc_controller;
+ 	memset(udc, 0, sizeof(struct nbu2ss_udc));
+ 
+ 	platform_set_drvdata(pdev, udc);
+ 
+-	/* IO Memory Region */
+-	if (!request_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE
+-				, driver_name)) {
++	/* require I/O memory and IRQ to be provided as resources */
++	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	mmio_base = devm_request_and_ioremap(&pdev->dev, r);
++	if (IS_ERR(mmio_base)) {
++		dev_err(&pdev->dev, "failed to map I/O memory\n");
++		return PTR_ERR(mmio_base);
++	}
+ 
+-		ERR("request_mem_region failed\n");
+-		return -EBUSY;
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "failed to get IRQ\n");
++		return irq;
+ 	}
++	status = devm_request_irq(&pdev->dev, irq, _nbu2ss_udc_irq,
++				  0, driver_name, udc);
+ 
+ 	/* IO Memory */
+-	udc->p_regs = (PT_FC_REGS)ioremap(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-	if (!udc->p_regs) {
+-		ERR("request_io_mem failed\n");
+-		goto cleanup3;
+-	}
++	udc->p_regs = (PT_FC_REGS)mmio_base;
+ 
+ 	/* USB Function Controller Interrupt */
+-	status = request_irq(USB_UDC_IRQ_1,
+-				_nbu2ss_udc_irq,
+-				IRQF_DISABLED,
+-				driver_name,
+-				udc);
+-
+ 	if (status != 0) {
+ 		ERR("request_irq(USB_UDC_IRQ_1) failed\n");
+-		goto cleanup2;
++		goto cleanup1;
+ 	}
+ 
+ 	/* Driver Initialization */
+@@ -3412,18 +3413,6 @@ static int nbu2ss_drv_probe(struct platf
+ 	return status;
+ 
+ cleanup1:
+-	/* Interrupt Handler - Release */
+-	free_irq(USB_UDC_IRQ_1, udc);
+-
+-cleanup2:
+-	/* IO Memory - Release */
+-	if (udc->p_regs)
+-		iounmap(udc->p_regs);
+-
+-cleanup3:
+-	/* IO Memory Region - Release */
+-	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-
+ 	return status;
+ }
+ 
+@@ -3456,18 +3445,8 @@ static int __exit nbu2ss_drv_remove(stru
+ 	}
+ 
+ 	/* Interrupt Handler - Release */
+-	free_irq(USB_UDC_IRQ_1, udc);
+-
+-	/* Interrupt Handler - Release */
+ 	free_irq(INT_VBUS, udc);
+ 
+-	/* IO Memory - Release */
+-	if (udc->p_regs)
+-		iounmap(udc->p_regs);
+-
+-	/* IO Memory Region - Release */
+-	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-
+ 	return 0;
+ }
+ 
+--- 0002/drivers/staging/emxx_udc/emxx_udc.h
++++ work/drivers/staging/emxx_udc/emxx_udc.h	2014-05-22 16:20:02.000000000 +0900
+@@ -47,20 +47,11 @@
+ 
+ 
+ /*------------ Board dependence(Resource) */
+-#define USB_BASE_ADDRESS	EMXX_USBS1_BASE
+-#define USB_BASE_SIZE		0x2000
+-
+-#define USB_UDC_IRQ_0		INT_USBF0
+-#define USB_UDC_IRQ_1		INT_USBF1
+ #define	VBUS_VALUE		GPIO_VBUS
+ 
+ /* below hacked up for staging integration */
+ #define GPIO_VBUS 0 /* GPIO_P153 on KZM9D */
+ #define INT_VBUS 0 /* IRQ for GPIO_P153 */
+-#define INT_USBF0 158
+-#define INT_USBF1 159
+-#define EMXX_USBS0_BASE 0xe2700000
+-#define EMXX_USBS1_BASE 0xe2800000
+ 
+ /*------------ Board dependence(Wait) */
+ 
