@@ -1,36 +1,38 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 May 2014 09:32:03 +0000
+Date: Thu, 22 May 2014 09:32:51 +0000
 Subject: Re: [PATCH 00/03] staging: Emma Mobile USB driver and KZM9D board code
-Message-Id: <CANqRtoTaaS8UAA7UdmMFDXnZ1c71m_Poo7VY9+3fDx0Q5PAw2Q@mail.gmail.com>
+Message-Id: <CANqRtoSXD78K067RVt-p2KA0cpTBnT-qbvHQuk=+MG5LSBzMwA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140522085339.26279.83340.sendpatchset@w520>
-	<20140522091720.GH15585@mwanda>
-In-Reply-To: <20140522091720.GH15585@mwanda>
+	<CAMuHMdW=UdR9sk_jBZu_14LvkHUqg+tXtGaFtLGD0+ikwqO+bw@mail.gmail.com>
+In-Reply-To: <CAMuHMdW=UdR9sk_jBZu_14LvkHUqg+tXtGaFtLGD0+ikwqO+bw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, driverdevel <devel@driverdev.osuosl.org>, SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Olof Johansson <olof@lixom.net>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, driverdevel <devel@driverdev.osuosl.org>, Linux-sh list <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Olof Johansson <olof@lixom.net>
 
-Hi Dan,
+Hi Geert,
 
-On Thu, May 22, 2014 at 6:17 PM, Dan Carpenter <dan.carpenter@oracle.com> wrote:
-> Generally we take things as is into staging so there is no need for a
-> re-work if you don't want to.  But we do need a TODO file.  Read the
-> TODO files for other staging drivers.
+On Thu, May 22, 2014 at 6:21 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Hi Magnus,
+>
+> Thanks for your series! This looks like a good solution for interim board
+> support.
 
-Thanks for pointing that out, my apologies for being random and
-skipping that! I will add a TODO file to v2!
+Thanks!
 
-Cheers,
+> On Thu, May 22, 2014 at 10:53 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>> Olof, patch 3/3 contains some board staging code for KZM9D. As it is
+>> today the EMEV2 SoC is DT-only and we neither have defconfig nor Kconfig
+>> definitions for the KZM9D board (emev2-kzm9d.dts).
+>
+> Although there's no KZM9D-specific defconfig anymore, support for it is
+> included in shmobile_defconfig, right?
+
+Correct, I forgot to mention that.
+
+Thanks,
 
 / magnus
-
-On Thu, May 22, 2014 at 6:17 PM, Dan Carpenter <dan.carpenter@oracle.com> wrote:
-> Generally we take things as is into staging so there is no need for a
-> re-work if you don't want to.  But we do need a TODO file.  Read the
-> TODO files for other staging drivers.
->
-> regards,
-> dan carpenter
->
