@@ -1,71 +1,83 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 23 May 2014 07:46:20 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: r8a7779 dtsi: Update unit-addresses for clocks
-Message-Id: <1400831180-20409-3-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 23 May 2014 09:36:51 +0000
+Subject: Re: [PATCH v2 2/2] ARM: shmobile: r8a7779 dtsi: Update unit-addresses for clocks
+Message-Id: <11119685.9RVVTTLT6z@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
+ <1400831180-20409-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1400831180-20409-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-  - Correct the unit-address for the "cpg_clocks" node,
-  - Add missing unit-addresses for the "mstp*_clks" nodes,
-  - Rename "cpg_clocks" and "mstp*_clks" nodes to the more generic
-    "clocks".
+Hi Geert,
 
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
----
-v2:
-  - Spun-off from "ARM: shmobile: r8a7779 dtsi: Correct #address-cells/
-    #size-cells for clocks".
-  - Removed "0x" prefix from cpg_clocks unit-address,
-  - Renamed cpg_clocks and mstp*_clks nodes to the more generic "clocks".
+Thank you for the patch.
 
- arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+On Friday 23 May 2014 09:46:20 Geert Uytterhoeven wrote:
+>   - Correct the unit-address for the "cpg_clocks" node,
+>   - Add missing unit-addresses for the "mstp*_clks" nodes,
+>   - Rename "cpg_clocks" and "mstp*_clks" nodes to the more generic
+>     "clocks".
+> 
+> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 395a611e2b5a..61d08f42456c 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -298,7 +298,7 @@
- 		};
- 
- 		/* Special CPG clocks */
--		cpg_clocks: cpg_clocks@0xe6150000 {
-+		cpg_clocks: clocks@ffc80000 {
- 			compatible = "renesas,r8a7779-cpg-clocks";
- 			reg = <0xffc80000 0x30>;
- 			clocks = <&extal_clk>;
-@@ -342,7 +342,7 @@
- 		};
- 
- 		/* Gate clocks */
--		mstp0_clks: mstp0_clks {
-+		mstp0_clks: clocks@ffc80030 {
- 			compatible = "renesas,r8a7779-mstp-clocks",
- 			             "renesas,cpg-mstp-clocks";
- 			reg = <0xffc80030 4>;
-@@ -379,7 +379,7 @@
- 				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
- 				"i2c0";
- 		};
--		mstp1_clks: mstp1_clks {
-+		mstp1_clks: clocks@ffc80034 {
- 			compatible = "renesas,r8a7779-mstp-clocks",
- 			             "renesas,cpg-mstp-clocks";
- 			reg = <0xffc80034 4>, <0xffc80044 4>;
-@@ -408,7 +408,7 @@
- 				"ether", "sata",
- 				"pcie", "vin3";
- 		};
--		mstp3_clks: mstp3_clks {
-+		mstp3_clks: clocks@ffc8003c {
- 			compatible = "renesas,r8a7779-mstp-clocks",
- 			             "renesas,cpg-mstp-clocks";
- 			reg = <0xffc8003c 4>;
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+> v2:
+>   - Spun-off from "ARM: shmobile: r8a7779 dtsi: Correct #address-cells/
+>     #size-cells for clocks".
+>   - Removed "0x" prefix from cpg_clocks unit-address,
+>   - Renamed cpg_clocks and mstp*_clks nodes to the more generic "clocks".
+> 
+>  arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+> index 395a611e2b5a..61d08f42456c 100644
+> --- a/arch/arm/boot/dts/r8a7779.dtsi
+> +++ b/arch/arm/boot/dts/r8a7779.dtsi
+> @@ -298,7 +298,7 @@
+>  		};
+> 
+>  		/* Special CPG clocks */
+> -		cpg_clocks: cpg_clocks@0xe6150000 {
+> +		cpg_clocks: clocks@ffc80000 {
+>  			compatible = "renesas,r8a7779-cpg-clocks";
+>  			reg = <0xffc80000 0x30>;
+>  			clocks = <&extal_clk>;
+> @@ -342,7 +342,7 @@
+>  		};
+> 
+>  		/* Gate clocks */
+> -		mstp0_clks: mstp0_clks {
+> +		mstp0_clks: clocks@ffc80030 {
+>  			compatible = "renesas,r8a7779-mstp-clocks",
+>  			             "renesas,cpg-mstp-clocks";
+>  			reg = <0xffc80030 4>;
+> @@ -379,7 +379,7 @@
+>  				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
+>  				"i2c0";
+>  		};
+> -		mstp1_clks: mstp1_clks {
+> +		mstp1_clks: clocks@ffc80034 {
+>  			compatible = "renesas,r8a7779-mstp-clocks",
+>  			             "renesas,cpg-mstp-clocks";
+>  			reg = <0xffc80034 4>, <0xffc80044 4>;
+> @@ -408,7 +408,7 @@
+>  				"ether", "sata",
+>  				"pcie", "vin3";
+>  		};
+> -		mstp3_clks: mstp3_clks {
+> +		mstp3_clks: clocks@ffc8003c {
+>  			compatible = "renesas,r8a7779-mstp-clocks",
+>  			             "renesas,cpg-mstp-clocks";
+>  			reg = <0xffc8003c 4>;
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
