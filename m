@@ -1,57 +1,61 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 16 May 2014 08:22:53 +0000
-Subject: Re: [PATCH v6 00/12] CCF support for Renesas r7s72100
-Message-Id: <20140516082253.GB2593@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="R3G7APHDIzY6R/pk"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 May 2014 22:28:09 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add USB PHY DT support
+Message-Id: <201405240228.10824.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
- <20140514050801.GE3502@verge.net.au>
- <CAMuHMdUTQbTSU4GSuxZX22QTqyQuo-zsNg4+d+OqpqEbjOnCaA@mail.gmail.com>
- <20140514230241.GA29233@verge.net.au>
- <20140516001944.GA9418@verge.net.au> <20140516064938.GA2593@katana>
- <20140516070333.GA9149@verge.net.au>
-In-Reply-To: <20140516070333.GA9149@verge.net.au>
+References: <201405240226.27820.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405240226.27820.sergei.shtylyov@cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Define the R8A7790 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
---R3G7APHDIzY6R/pk
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+---
+Changes in version 2:
+- added subnodes to the USB PHY node;
+- refreshed the patch.
 
-> It is my hope that such a change can be treated as a fix and thus it is not
-> too late.
+ arch/arm/boot/dts/r8a7790.dtsi |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-Makes sense. Good.
-
-> I suspect that if you look at the reference removal of koelsch and lager,
-> or the more recent marzen patches, that you should be able to see a pattern
-> that works for genmai too.
-
-Yeah, that was my plan. I'll start after I finished my mails.
-
-
---R3G7APHDIzY6R/pk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTdcrdAAoJEBQN5MwUoCm2L5sQALInzG22dTfeZfKudFq0EF46
-yZLZuIyJwEw49EM8tnsWgl1wSlTMYb6ikMFGXlFBSx3Dyq3bihat0Vfezv2Qn8sB
-uOVxfC6iPZbVA68BF/yit4IBQ+OdNGQM6Q07/0r8kDzHzNO9cH8ho16nITLyZJSC
-Kq12vf8rSQraic1blJFcjV7/+bPY1dEdrFqab/oVETUcPZC+0cgAxDAl1LadduEW
-7jm+ppllb6XQzfiQSHDYOi4Ob/fv5Ca6H/iHCwdKDLPW5w8lPS8/kQQ83zzNdsLX
-Dd2KB21drvdssJD+DjsMWlrjPs6nyc3BfwA3N8uTl55iT1F8OKbsFboky1V0eDHC
-TrLasFs1OPudQjh/pF/uHI4o2Mz5csyZCpPfzK6JGYt42gIsEu7pwgPgZXGG0j27
-mW0X2VyFB8qpU2JKIefAarDCr/d4j7nfztcdiElHdV612bmAmAptPoSiO7Yi8Fm5
-J0TqK7++7cQDbYahgyz7esJKvl+Pdx5yO6OkUwxp11dJH6xGjt+RWaKwR3AFFDKJ
-ADfDOdse9Q96c/yUBZvKj/oNOwiYCnQUoVDLknJZWipi29DIqcoPLYicp39UQlaN
-rJbJNGdE7CvFQ3gRSt4ylQZ6f6RBYRlJbYO+nacXhnQ2hHKCmIEOr5KZeK2n4VIK
-S1Q+UmDw90/f1hIkkO4w
-=e955
------END PGP SIGNATURE-----
-
---R3G7APHDIzY6R/pk--
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -462,6 +462,32 @@
+ 		status = "disabled";
+ 	};
+ 
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7790";
++		reg = <0 0xe6590100 0 0x100>;
++		#phy-cells = <2>;
++		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
++		clock-names = "usbhs";
++		status = "disabled";
++
++		usb-phy@0,0 {
++			renesas,phy-select = <0 0>;
++			renesas,ugctrl2-masks = <0x00000030 0x00000010>;
++		};
++		usb-phy@0,1 {
++			renesas,phy-select = <0 1>;
++			renesas,ugctrl2-masks = <0x00000030 0x00000030>;
++		};
++		usb-phy@1,0 {
++			renesas,phy-select = <1 0>;
++			renesas,ugctrl2-masks = <0x80000000 0x00000000>;
++		};
++		usb-phy@1,1 {
++			renesas,phy-select = <1 1>;
++			renesas,ugctrl2-masks = <0x80000000 0x80000000>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
