@@ -1,31 +1,61 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 May 2014 10:45:43 +0000
-Subject: Re: [PATCH v2 1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-Message-Id: <537B3257.5000105@cogentembedded.com>
+Date: Fri, 23 May 2014 22:36:36 +0000
+Subject: [PATCH v2 1/3] ARM: shmobile: r8a7791: add USB PHY DT support
+Message-Id: <201405240236.37742.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
- <201405200152.06575.sergei.shtylyov@cogentembedded.com>
- <5095898.2pUCzGkcW7@wuerfel>
-In-Reply-To: <5095898.2pUCzGkcW7@wuerfel>
+References: <201405240234.47303.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405240234.47303.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Define the R8A7791 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
-On 20-05-2014 12:04, Arnd Bergmann wrote:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->> +               interrupt-map-mask = <0xff00 0 0 0x7>;
->> +               interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
->> +                                0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
->> +                                0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
+---
+Changes in version 2:
+- added subnodes to the USB PHY node;
+- refreshed the patch.
 
-> Are there only internal devices on this PCI host?
+ arch/arm/boot/dts/r8a7791.dtsi |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-    Yes, and all populated device slots are listed.
-
-> 	Arnd
-
-WBR, Sergei
-
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -507,6 +507,32 @@
+ 		status = "disabled";
+ 	};
+ 
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7791";
++		reg = <0 0xe6590100 0 0x100>;
++		#phy-cells = <2>;
++		clocks = <&mstp7_clks R8A7791_CLK_HSUSB>;
++		clock-names = "usbhs";
++		status = "disabled";
++
++		usb-phy@0,0 {
++			renesas,phy-select = <0 0>;
++			renesas,ugctrl2-masks = <0x00000030 0x00000010>;
++		};
++		usb-phy@0,1 {
++			renesas,phy-select = <0 1>;
++			renesas,ugctrl2-masks = <0x00000030 0x00000030>;
++		};
++		usb-phy@1,0 {
++			renesas,phy-select = <1 0>;
++			renesas,ugctrl2-masks = <0x80000000 0x00000000>;
++		};
++		usb-phy@1,1 {
++			renesas,phy-select = <1 1>;
++			renesas,ugctrl2-masks = <0x80000000 0x80000000>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
