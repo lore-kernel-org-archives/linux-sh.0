@@ -1,60 +1,35 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 19 May 2014 21:53:47 +0000
-Subject: [PATCH v2 2/3] ARM: shmobile: koelsch: enable internal PCI
-Message-Id: <201405200153.48335.sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 May 2014 22:38:01 +0000
+Subject: [PATCH v2 2/3] ARM: shmobile: koelsch: enable USB PHY
+Message-Id: <201405240238.02279.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405200148.28683.sergei.shtylyov@cogentembedded.com>
+References: <201405240234.47303.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201405240234.47303.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
-them.
+Enable USB PHY device for the Koelsch board.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
 Changes in version 2:
+- fixed the wrong board name in the changelog;
 - refreshed the patch.
 
- arch/arm/boot/dts/r8a7791-koelsch.dts |   22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
+ 1 file changed, 4 insertions(+)
 
 Index: renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
 =================================--- renesas.orig/arch/arm/boot/dts/r8a7791-koelsch.dts
 +++ renesas/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -293,6 +293,16 @@
- 				 "msiof0_tx";
- 		renesas,function = "msiof0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
- };
- 
- &ether {
-@@ -408,3 +418,15 @@
- 		spi-cpha;
- 	};
+@@ -430,3 +430,7 @@
+ 	pinctrl-0 = <&usb1_pins>;
+ 	pinctrl-names = "default";
  };
 +
-+&pci0 {
++&usbphy {
 +	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
 +};
