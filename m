@@ -1,7 +1,7 @@
 From: Jean Delvare <jdelvare@suse.de>
-Date: Fri, 23 May 2014 08:08:08 +0000
+Date: Fri, 23 May 2014 08:23:46 +0000
 Subject: Re: R-CAR's arch
-Message-Id: <1400832488.4451.1.camel@chaos.site>
+Message-Id: <1400833426.4451.17.camel@chaos.site>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140522101938.51fec16f@endymion.delvare>
 In-Reply-To: <20140522101938.51fec16f@endymion.delvare>
@@ -10,29 +10,79 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Salut Laurent,
 
-Le Friday 23 May 2014 à 09:37 +0900, Simon Horman a écrit :
-> On Fri, May 23, 2014 at 12:55:07AM +0200, Laurent Pinchart wrote:
-> > On Thursday 22 May 2014 10:19:38 Jean Delvare wrote:
-> > > I admit I don't really understand how SHMOBILE relates to ARM and
-> > > SUPERH (which so far I thought were two different and totally
-> > > independent architectures, but apparently I was wrong?)
+Le Friday 23 May 2014 à 00:55 +0200, Laurent Pinchart a écrit :
+> Hi Jean,
+> 
+> On Thursday 22 May 2014 10:19:38 Jean Delvare wrote:
+> > Hi Simon and all,
 > > 
-> > CONFIG_SUPERH is defined for arch/sh only, and CONFIG_ARCH_SHMOBILE for 
-> > arch/arm/mach-shmobile.
+> > I am in the process of cleaning up dependencies for hardware-specific
+> > linux drivers. I'm looking into R-CAR drivers now and I have to admit I
+> > am confused. Some drivers (drm, gpio) depend on ARM, some (i2c, gen2
+> > pci, thermal, sata) depend on ARCH_SHMOBILE, sound depends on SUPERH ||
+> > ARCH_SHMOBILE, gen2 usb depends on ARCH_R8A7790 || ARCH_R8A7791, while
+> > gen1 usb and video-in have no architecture/platform dependency at all.
+> > 
+> > Shouldn't all these drivers have the same architecture/platform
+> > dependency? If so, what would the correct one be?
+> > 
+> > I admit I don't really understand how SHMOBILE relates to ARM and
+> > SUPERH (which so far I thought were two different and totally
+> > independent architectures, but apparently I was wrong?)
 > 
-> For Jean's benefit:
+> CONFIG_SUPERH is defined for arch/sh only, and CONFIG_ARCH_SHMOBILE for 
+> arch/arm/mach-shmobile.
 > 
-> SUPERH is an architecture.
-> SHMOBILE is the in-kernel name for ARM based SoCs from Renesas.
+> The Kconfig dependencies for Renesas drivers currently model two different 
+> things, which are what the driver requires in order to compile and which 
+> architecture(s) the driver can run on.
 > 
-> Some IP blocks are shared between both.
-> Or more to the point SHMOBILE makes use of some (e.g. driver)
-> code that was originally developed for use with SUPERH.
+> There's no question regarding the former. If a driver can only be compiled on 
+> arch/sh it must list CONFIG_SUPERH as a dependency. Ditto for CONFIG_ARM or 
+> CONFIG_ARCH_SHMOBILE. However, this should be a pretty uncommon case, as most 
+> drivers should have no compile dependency on a specific architecture (the 
+> exception here is when a driver uses an API not available on all architectures 
+> for which no specific Kconfig symbol exists).
 
-OK, I thought it was something like that, thanks for the confirmation.
+Yes, I am aware of and agree on that.
 
+> The latter is more debatable. We've started by listing platforms on which the 
+> hardware is known to exist as dependencies to avoid cluttering the kernel 
+> configuration with useless options. However, this excludes drivers for 
+> automated builds that can be very useful to report compilation bugs early. 
+> We've thus started moving to adding a || COMPILE_TEST dependency to enable 
+> driver compilation even on architectures where the device isn't available 
+> (only when the driver is expected to compile properly of course).
+> 
+> We've decided to split dependencies on two (or more) lines, one for the 
+> runtime dependencies and one or more for the compile time dependencies. A good 
+> example of that is the SPI MSIOF driver.
+> 
+> config SPI_SH_MSIOF
+>         tristate "SuperH MSIOF SPI controller"
+>         depends on HAVE_CLK
+>         depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
+>         help
+>           SPI driver for SuperH and SH Mobile MSIOF blocks.
+> 
+> The first "depends on" line states that the driver requires the clock API to 
+> compile, and the second line states that the device is available on SUPERH and 
+> ARCH_SHMOBILE only, but can be compiled on other architectures when 
+> COMPILE_TEST is enabled.
+>
+> I'd like to generalize this pattern, please feel free to help :-)
+
+This is an interesting approach, I like it. I'll stick to it for my
+future patches, starting with CONFIG_USB_RCAR_PHY and
+CONFIG_VIDEO_RCAR_VIN.
+
+For USB PHY the dependencies are clear. For VIN I'm not so sure, does
+anybody know? I'd got for ARCH_SHMOBILE || COMPILE_TEST but I don't know
+if SUPERH should be listed too.
+
+Thanks,
 -- 
 Jean Delvare
 SUSE L3 Support
