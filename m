@@ -1,127 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 22 May 2014 23:08:04 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 23 May 2014 06:55:23 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7779 dtsi: Correct #address-cells/#size-cells for clocks
-Message-Id: <155646478.xj0lyDQ1cd@avalon>
+Message-Id: <CAMuHMdUTe5AfGPNZeVApzBr-6xNofutA_BOfQG+xN3aQeZvWPA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1400761997-13512-1-git-send-email-geert+renesas@glider.be>
  <1400761997-13512-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400761997-13512-2-git-send-email-geert+renesas@glider.be>
+ <155646478.xj0lyDQ1cd@avalon>
+In-Reply-To: <155646478.xj0lyDQ1cd@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Laurent,
 
-Thank you for the patch.
-
-On Thursday 22 May 2014 14:33:16 Geert Uytterhoeven wrote:
-> Warning (ranges_format): /clocks has empty "ranges" property but its
-> #address-cells (2) differs from / (1) Warning (ranges_format): /clocks has
-> empty "ranges" property but its #size-cells (2) differs from / (1)
-> 
-> As r8a7779 doesn't support LPAE, change #address-cells and #size-cells from
-> "<2>" to "<1>" to fix this.
-> 
-> Also correct the unit-address for the cpg_clocks node, and add missing
-> unit-addresses for the mstp*_clks nodes.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Fri, May 23, 2014 at 1:08 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+>> -             cpg_clocks: cpg_clocks@0xe6150000 {
+>> +             cpg_clocks: cpg_clocks@0xffc80000 {
 >
-> ---
-> Is it correct that r8a7779 doesn't support LPAE? I don't have the datasheet,
-> but the similar r8a7778 doesn't.
-> 
->  arch/arm/boot/dts/r8a7779.dtsi | 20 ++++++++++----------
->  1 file changed, 10 insertions(+), 10 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> index 038c16a18373..dc624e0d7506 100644
-> --- a/arch/arm/boot/dts/r8a7779.dtsi
-> +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> @@ -284,8 +284,8 @@
->  	};
-> 
->  	clocks {
-> -		#address-cells = <2>;
-> -		#size-cells = <2>;
-> +		#address-cells = <1>;
-> +		#size-cells = <1>;
+> No need for a 0x prefix.
 
-This looks good to me.
+Thanks, missed that one.
 
->  		ranges;
-> 
->  		/* External root clock */
-> @@ -298,9 +298,9 @@
->  		};
-> 
->  		/* Special CPG clocks */
-> -		cpg_clocks: cpg_clocks@0xe6150000 {
-> +		cpg_clocks: cpg_clocks@0xffc80000 {
+>>                       compatible = "renesas,r8a7779-cpg-clocks";
+>> -                     reg = <0 0xffc80000 0 0x30>;
+>> +                     reg = <0xffc80000 0x30>;
+>
+> This looks good.
+>
+>>                       clocks = <&extal_clk>;
+>>                       #clock-cells = <1>;
+>>                       clock-output-names = "plla", "z", "zs", "s",
+>> @@ -342,10 +342,10 @@
+>>               };
+>>
+>>               /* Gate clocks */
+>> -             mstp0_clks: mstp0_clks {
+>> +             mstp0_clks: mstp0_clks@ffc80030 {
+>
+> The @address is only mandatory to differentiate between nodes with identical
+> names. As the node name is supposed to describe the device function, maybe we
+> could rename it to clocks@ffc80030 ? As you modify the CPG node address above
+> it might make sense to rename it to clocks@ffc80000 too.
 
-No need for a 0x prefix.
+Sounds good!
 
->  			compatible = "renesas,r8a7779-cpg-clocks";
-> -			reg = <0 0xffc80000 0 0x30>;
-> +			reg = <0xffc80000 0x30>;
+> I'm not advocating for a rename now, but as your patch touches the names, I
+> think they should be fixed properly (or not at all).
 
-This looks good.
+In hindsight, I should have separated the fix and the "obvious small things",
+as the latter are subject to bike-shedding ;-)
 
->  			clocks = <&extal_clk>;
->  			#clock-cells = <1>;
->  			clock-output-names = "plla", "z", "zs", "s",
-> @@ -342,10 +342,10 @@
->  		};
-> 
->  		/* Gate clocks */
-> -		mstp0_clks: mstp0_clks {
-> +		mstp0_clks: mstp0_clks@ffc80030 {
+Gr{oetje,eeting}s,
 
-The @address is only mandatory to differentiate between nodes with identical 
-names. As the node name is supposed to describe the device function, maybe we 
-could rename it to clocks@ffc80030 ? As you modify the CPG node address above 
-it might make sense to rename it to clocks@ffc80000 too.
+                        Geert
 
-I'm not advocating for a rename now, but as your patch touches the names, I 
-think they should be fixed properly (or not at all).
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
->  			compatible = "renesas,r8a7779-mstp-clocks",
->  			             "renesas,cpg-mstp-clocks";
-> -			reg = <0 0xffc80030 0 4>;
-> +			reg = <0xffc80030 4>;
->  			clocks = <&cpg_clocks R8A7779_CLK_S>,
->  			         <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_P>,
-> @@ -379,10 +379,10 @@
->  				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
->  				"i2c0";
->  		};
-> -		mstp1_clks: mstp1_clks {
-> +		mstp1_clks: mstp1_clks@ffc80034 {
->  			compatible = "renesas,r8a7779-mstp-clocks",
->  			             "renesas,cpg-mstp-clocks";
-> -			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
-> +			reg = <0xffc80034 4>, <0xffc80044 4>;
->  			clocks = <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_P>,
->  				 <&cpg_clocks R8A7779_CLK_S>,
-> @@ -408,10 +408,10 @@
->  				"ether", "sata",
->  				"pcie", "vin3";
->  		};
-> -		mstp3_clks: mstp3_clks {
-> +		mstp3_clks: mstp3_clks@ffc8003c {
->  			compatible = "renesas,r8a7779-mstp-clocks",
->  			             "renesas,cpg-mstp-clocks";
-> -			reg = <0 0xffc8003c 0 4>;
-> +			reg = <0xffc8003c 4>;
->  			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
->  				 <&s4_clk>, <&s4_clk>;
->  			#clock-cells = <1>;
-
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
