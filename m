@@ -1,124 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 May 2014 07:42:05 +0000
-Subject: [PATCH] drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI
-Message-Id: <3c90c55dcde745bed81f6447f24ba96bda43d984.1399966519.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 23 May 2014 07:46:20 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: r8a7779 dtsi: Update unit-addresses for clocks
+Message-Id: <1400831180-20409-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1399966519.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1399966519.git.horms+renesas@verge.net.au>
+References: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <paul.mundt@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Ben Dooks <ben.dooks@codethink.co.uk>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+  - Correct the unit-address for the "cpg_clocks" node,
+  - Add missing unit-addresses for the "mstp*_clks" nodes,
+  - Rename "cpg_clocks" and "mstp*_clks" nodes to the more generic
+    "clocks".
 
-If the kernel is built to support multi-ARM configuration with shmobile
-support built in, then drivers/sh is not built. This contains the PM
-runtime code in drivers/sh/pm_runtime.c, which implicitly enables the
-module clocks for all devices, and thus is quite essential.
-Without this, the state of clocks depends on implicit reset state, or on
-the bootloader.
-
-If ARCH_SHMOBILE_MULTI then build the drivers/sh directory, but ensure that
-bits that may conflict (drivers/sh/clk if the common clock framework is
-enabled) or are not used (drivers/sh/intc), are not built.
-Also, only enable the PM runtime code when actually running on a shmobile
-SoCs that needs it.
-
-ARCH_SHMOBILE_MULTI was added a while ago by commit
-efacfce5f8a523457e9419a25d52fe39db00b26a ("ARM: shmobile: Introduce
-ARCH_SHMOBILE_MULTI"), but drivers/sh was compiled for both
-ARCH_SHMOBILE_LEGACY and ARCH_SHMOBILE_MULTI until commit
-bf98c1eac1d4a6bcf00532e4fa41d8126cd6c187 ("ARM: Rename ARCH_SHMOBILE to
-ARCH_SHMOBILE_LEGACY").
-
-Inspired by a patch from Ben Dooks <ben.dooks@codethink.co.uk>.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- drivers/Makefile        |  2 +-
- drivers/sh/Makefile     | 14 ++++++++------
- drivers/sh/pm_runtime.c | 20 +++++++++++++++++++-
- 3 files changed, 28 insertions(+), 8 deletions(-)
+v2:
+  - Spun-off from "ARM: shmobile: r8a7779 dtsi: Correct #address-cells/
+    #size-cells for clocks".
+  - Removed "0x" prefix from cpg_clocks unit-address,
+  - Renamed cpg_clocks and mstp*_clks nodes to the more generic "clocks".
 
-diff --git a/drivers/Makefile b/drivers/Makefile
-index e3ced91..c033798 100644
---- a/drivers/Makefile
-+++ b/drivers/Makefile
-@@ -119,7 +119,7 @@ obj-$(CONFIG_SGI_SN)		+= sn/
- obj-y				+= firmware/
- obj-$(CONFIG_CRYPTO)		+= crypto/
- obj-$(CONFIG_SUPERH)		+= sh/
--obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= sh/
-+obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
- ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
- obj-y				+= clocksource/
- endif
-diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
-index fc67f56..788ed9b 100644
---- a/drivers/sh/Makefile
-+++ b/drivers/sh/Makefile
-@@ -1,10 +1,12 @@
- #
- # Makefile for the SuperH specific drivers.
- #
--obj-y	:= intc/
-+obj-$(CONFIG_SUPERH)			+= intc/
-+obj-$(CONFIG_ARCH_SHMOBILE_LEGACY)	+= intc/
-+ifneq ($(CONFIG_COMMON_CLK),y)
-+obj-$(CONFIG_HAVE_CLK)			+= clk/
-+endif
-+obj-$(CONFIG_MAPLE)			+= maple/
-+obj-$(CONFIG_SUPERHYWAY)		+= superhyway/
+ arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 395a611e2b5a..61d08f42456c 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -298,7 +298,7 @@
+ 		};
  
--obj-$(CONFIG_HAVE_CLK)		+= clk/
--obj-$(CONFIG_MAPLE)		+= maple/
--obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
--
--obj-y				+= pm_runtime.o
-+obj-y					+= pm_runtime.o
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 8afa5a4..10c65eb 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -50,8 +50,25 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
- 	.con_ids = { NULL, },
- };
+ 		/* Special CPG clocks */
+-		cpg_clocks: cpg_clocks@0xe6150000 {
++		cpg_clocks: clocks@ffc80000 {
+ 			compatible = "renesas,r8a7779-cpg-clocks";
+ 			reg = <0xffc80000 0x30>;
+ 			clocks = <&extal_clk>;
+@@ -342,7 +342,7 @@
+ 		};
  
-+static bool default_pm_on;
-+
- static int __init sh_pm_runtime_init(void)
- {
-+	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
-+		if (!of_machine_is_compatible("renesas,emev2") &&
-+		    !of_machine_is_compatible("renesas,r7s72100") &&
-+		    !of_machine_is_compatible("renesas,r8a73a4") &&
-+		    !of_machine_is_compatible("renesas,r8a7740") &&
-+		    !of_machine_is_compatible("renesas,r8a7778") &&
-+		    !of_machine_is_compatible("renesas,r8a7779") &&
-+		    !of_machine_is_compatible("renesas,r8a7790") &&
-+		    !of_machine_is_compatible("renesas,r8a7791") &&
-+		    !of_machine_is_compatible("renesas,sh7372") &&
-+		    !of_machine_is_compatible("renesas,sh73a0"))
-+			return 0;
-+	}
-+
-+	default_pm_on = true;
- 	pm_clk_add_notifier(&platform_bus_type, &platform_bus_notifier);
- 	return 0;
- }
-@@ -59,7 +76,8 @@ core_initcall(sh_pm_runtime_init);
- 
- static int __init sh_pm_runtime_late_init(void)
- {
--	pm_genpd_poweroff_unused();
-+	if (default_pm_on)
-+		pm_genpd_poweroff_unused();
- 	return 0;
- }
- late_initcall(sh_pm_runtime_late_init);
+ 		/* Gate clocks */
+-		mstp0_clks: mstp0_clks {
++		mstp0_clks: clocks@ffc80030 {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+ 			reg = <0xffc80030 4>;
+@@ -379,7 +379,7 @@
+ 				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
+ 				"i2c0";
+ 		};
+-		mstp1_clks: mstp1_clks {
++		mstp1_clks: clocks@ffc80034 {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+ 			reg = <0xffc80034 4>, <0xffc80044 4>;
+@@ -408,7 +408,7 @@
+ 				"ether", "sata",
+ 				"pcie", "vin3";
+ 		};
+-		mstp3_clks: mstp3_clks {
++		mstp3_clks: clocks@ffc8003c {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+ 			reg = <0xffc8003c 4>;
 -- 
-1.8.5.2
+1.9.1
 
