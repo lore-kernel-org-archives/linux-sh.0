@@ -1,33 +1,83 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 May 2014 01:56:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: Fix device node reference leakage in shmobile_init_delay
-Message-Id: <20140526015631.GJ31096@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 23 May 2014 07:46:19 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7779 dtsi: Correct #address-cells/#size-cells for clocks
+Message-Id: <1400831180-20409-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400679065-17287-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1400679065-17287-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 22, 2014 at 08:35:51PM +0900, Magnus Damm wrote:
-> Hi Laurent,
-> 
-> On Wed, May 21, 2014 at 10:31 PM, Laurent Pinchart
-> <laurent.pinchart+renesas@ideasonboard.com> wrote:
-> > The of_find_compatible_node() function returns a new reference to the
-> > found node. Instead of just adding of_node_put() calls, simplify the
-> > code by moving the CPU identification logic inside the loop over cpu
-> > nodes, in order to lower complexity from O(n) to O(1) by replacing
-> > of_find_compatible_node() calls with of_device_is_compatible().
-> >
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> >  arch/arm/mach-shmobile/timer.c | 50 ++++++++++++++++++++++++------------------
-> >  1 file changed, 29 insertions(+), 21 deletions(-)
-> 
-> Thanks for fixing this! Looks good to me.
-> 
-> Acked-by: Magnus Damm <damm+renesas@opensource.se>
+Warning (ranges_format): /clocks has empty "ranges" property but its #address-cells (2) differs from / (1)
+Warning (ranges_format): /clocks has empty "ranges" property but its #size-cells (2) differs from / (1)
 
-Thanks, I have queued this up.
+As r8a7779 doesn't support LPAE, change #address-cells and #size-cells from
+"<2>" to "<1>", and update the affected "reg" properties to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Is it correct that r8a7779 doesn't support LPAE? I don't have the datasheet,
+but the similar r8a7778 doesn't.
+
+v2:
+  - Spin off unit-addresses updates into a separate patch.
+
+ arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 038c16a18373..395a611e2b5a 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -284,8 +284,8 @@
+ 	};
+ 
+ 	clocks {
+-		#address-cells = <2>;
+-		#size-cells = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
+ 		ranges;
+ 
+ 		/* External root clock */
+@@ -300,7 +300,7 @@
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@0xe6150000 {
+ 			compatible = "renesas,r8a7779-cpg-clocks";
+-			reg = <0 0xffc80000 0 0x30>;
++			reg = <0xffc80000 0x30>;
+ 			clocks = <&extal_clk>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "plla", "z", "zs", "s",
+@@ -345,7 +345,7 @@
+ 		mstp0_clks: mstp0_clks {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+-			reg = <0 0xffc80030 0 4>;
++			reg = <0xffc80030 4>;
+ 			clocks = <&cpg_clocks R8A7779_CLK_S>,
+ 			         <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+@@ -382,7 +382,7 @@
+ 		mstp1_clks: mstp1_clks {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+-			reg = <0 0xffc80034 0 4>, <0 0xffc80044 0 4>;
++			reg = <0xffc80034 4>, <0xffc80044 4>;
+ 			clocks = <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_P>,
+ 				 <&cpg_clocks R8A7779_CLK_S>,
+@@ -411,7 +411,7 @@
+ 		mstp3_clks: mstp3_clks {
+ 			compatible = "renesas,r8a7779-mstp-clocks",
+ 			             "renesas,cpg-mstp-clocks";
+-			reg = <0 0xffc8003c 0 4>;
++			reg = <0xffc8003c 4>;
+ 			clocks = <&s4_clk>, <&s4_clk>, <&s4_clk>, <&s4_clk>,
+ 				 <&s4_clk>, <&s4_clk>;
+ 			#clock-cells = <1>;
+-- 
+1.9.1
+
