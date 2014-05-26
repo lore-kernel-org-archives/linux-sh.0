@@ -1,43 +1,74 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 27 May 2014 08:38:31 +0000
-Subject: Re: Build regressions/improvements in v3.15-rc7
-Message-Id: <alpine.DEB.2.02.1405271035420.13614@ayla.of.borg>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 26 May 2014 22:18:28 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7791: link PCI USB devices to USB PHY
+Message-Id: <201405270218.30040.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1405271035140.13584@ayla.of.borg>
-In-Reply-To: <alpine.DEB.2.02.1405271035140.13584@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Kernel Development <linux-kernel@vger.kernel.org>
-Cc: Linux/PPC Development <linuxppc-dev@lists.ozlabs.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 27 May 2014, Geert Uytterhoeven wrote:
-> JFYI, when comparing v3.15-rc7[1]  to v3.15-rc6[3], the summaries are:
->   - build errors: +4/-1
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
 
-  + /scratch/kisskb/src/drivers/tty/serial/nwpserial.c: error: implicit declaration of function 'udelay' [-Werror=implicit-function-declaration]:  => 53:3
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-powerpc-randconfig
+---
+This patch is against 'renesas-devel-v3.15-rc7-20140526' tag of Simon Horman's
+'renesas.git' repo plus R8A7791/Koelsch/Henninger PCI and USB PHY support
+patches posted before.  The patch requires the internal PCI DT support, USB PHY
+driver, and USB HCD generic PHY support (also already posted) in order to work.
 
-  + error: No rule to make target drivers/scsi/aic7xxx/aicasm/*.[chyl]:  => N/A
+Changes in version 2:
+- renamed the PCI OHCI/EHCI device nodes to comply with the PCI binding;
+- changed the PHY specifier in the PCI#1 node to reflect that channel #1 support
+  was dropped;
+- resolved rejects.
 
-i386-randconfig
+ arch/arm/boot/dts/r8a7791.dtsi |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-  + error: ion.c: undefined reference to `vm_insert_pfn':  => .text+0x66f4c4)
-  + error: ion.c: undefined reference to `zap_page_range':  => .text+0x672794)
-
-sh-randconfig
-
-> [1] http://kisskb.ellerman.id.au/kisskb/head/7506/ (all 119 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/7497/ (all 119 configs)
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -923,6 +923,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 			      	 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 			      	 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 0 0>;
++			phy-names = "usb";
++		};
+ 	};
+ 
+ 	pci1: pci@ee0d0000 {
+@@ -941,5 +955,19 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 			      	 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 			      	 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 1 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usbphy 1 0>;
++			phy-names = "usb";
++		};
+ 	};
+ };
