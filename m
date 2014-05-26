@@ -1,53 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 May 2014 09:58:23 +0000
-Subject: Re: [PATCH 3/7] ARM: shmobile: Disable DVS support for r8a7790
-Message-Id: <CAMuHMdUw2So803-+auFnvptasG92O5tA3pUMa=K+VJB3L0qPTQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 26 May 2014 12:50:01 +0000
+Subject: Re: [PATCH usb: phy: add run-time dependencies to R-Car driver
+Message-Id: <2252714.CbdvSBxGFE@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5386E66D.3020502@bp.renesas.com>
-In-Reply-To: <5386E66D.3020502@bp.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-(CC Benoit)
+Hi Jean,
 
-On Thu, May 29, 2014 at 9:49 AM, Gaku Inami
-<gaku.inami.xw@bp.renesas.com> wrote:
-> Since range of VDD is narrow, there is no effect of power consumption
-> by DVS. So, DVS is disabled in R-CAR Gen2 series.
->
-> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Thank you for the patch.
+
+On Friday 23 May 2014 10:36:22 Jean Delvare wrote:
+> The Renesas R-Car USB PHY driver only supports the R8A7778 and
+> R8A7779, it isn't useful on other systems unless build testing.
+> 
+> Signed-off-by: Jean Delvare <jdelvare@suse.de>
+> Cc: Felipe Balbi <balbi@ti.com>
+> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+Could you please CC the linux-sh mailing list for similar patches in the 
+future ?
+
+Sergei, any opinion on this ?
+
 > ---
->  arch/arm/boot/dts/r8a7790-lager.dts |    4 ----
->  1 file changed, 4 deletions(-)
->
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index ab73ed0..9becef7 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -317,7 +317,3 @@
->         cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
->         status = "okay";
->  };
-> -
-> -&cpu0 {
-> -       cpu0-supply = <&vdd_dvfs>;
-> -};
+>  drivers/usb/phy/Kconfig |    1 +
+>  1 file changed, 1 insertion(+)
+> 
+> --- linux-3.15-rc6.orig/drivers/usb/phy/Kconfig	2014-04-14
+> 09:42:31.481112766 +0200 +++
+> linux-3.15-rc6/drivers/usb/phy/Kconfig	2014-05-23 10:11:59.979813625 +0200
+> @@ -208,6 +208,7 @@ config USB_MXS_PHY
+>  config USB_RCAR_PHY
+>  	tristate "Renesas R-Car USB PHY support"
+>  	depends on USB || USB_GADGET
+> +	depends on ARCH_R8A7778 || ARCH_R8A7779 || COMPILE_TEST
+>  	select USB_PHY
+>  	help
+>  	  Say Y here to add support for the Renesas R-Car USB common PHY driver.
 
-The role of the DT is to describe the hardware.
-Not using DVS because the effect of power consumption is low or non-existent
-is a software policy.
+-- 
+Regards,
 
-So perhaps it should be kept?
+Laurent Pinchart
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
