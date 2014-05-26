@@ -1,77 +1,43 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 02 May 2014 19:15:14 +0000
-Subject: [PATCH v2 08/10] i2c: sh_mobile: bail out on errors when initializing
-Message-Id: <1399058116-7721-9-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 26 May 2014 00:41:27 +0000
+Subject: [PATCH v3 REPOST] serial: sh-sci: Add device tree support for r8a7779
+Message-Id: <20140526004127.GB31096@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1399058116-7721-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1399058116-7721-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa+renesas-jBu1N2QxHDJrcw3mvpCnnVaTQe2KTcn/@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Simply document a new compat string.
+There appears to be no need for a driver updates.
 
-sh_mobile_i2c_init() could detect wrong settings, but didn't bail out,
-so it would continue unconfigured. Fix this.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 12 +++++++-----
- 1 file changed, 7 insertions(+), 5 deletions(-)
+v3
+* Keep lists sorted by SoC number
+* Added Ack from Laurent Pinchart
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 9a5b693454e1..9f02013eaeeb 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -228,7 +228,7 @@ static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, u32 tf)
- 	return (((count_khz * (tHIGH + tf)) + 5000) / 10000);
- }
+v2
+* Do not update the driver to set SCSCR_CKE1.
+  Instead DT may provide the P clock as the clock for the SCIF devices.
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 53e6c17..64fd7de 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -4,6 +4,7 @@ Required properties:
  
--static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
-+static int sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- {
- 	unsigned long i2c_clk_khz;
- 	u32 tHIGH, tLOW, tf;
-@@ -236,6 +236,7 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- 	/* Get clock rate after clock is enabled */
- 	clk_prepare_enable(pd->clk);
- 	i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
-+	clk_disable_unprepare(pd->clk);
- 	i2c_clk_khz /= pd->clks_per_count;
+   - compatible: Must contain one of the following:
  
- 	if (pd->bus_speed = STANDARD_MODE) {
-@@ -249,7 +250,7 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- 	} else {
- 		dev_err(pd->dev, "unrecognized bus speed %lu Hz\n",
- 			pd->bus_speed);
--		goto out;
-+		return -EINVAL;
- 	}
- 
- 	pd->iccl = sh_mobile_i2c_iccl(i2c_clk_khz, tLOW, tf);
-@@ -266,8 +267,7 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- 	else
- 		pd->icic &= ~ICIC_ICCHB8;
- 
--out:
--	clk_disable_unprepare(pd->clk);
-+	return 0;
- }
- 
- static void activate_ch(struct sh_mobile_i2c_data *pd)
-@@ -677,7 +677,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	if (resource_size(res) > 0x17)
- 		pd->flags |= IIC_FLAG_HAS_ICIC67;
- 
--	sh_mobile_i2c_init(pd);
-+	ret = sh_mobile_i2c_init(pd);
-+	if (ret)
-+		return ret;
- 
- 	/* Enable Runtime PM for this device.
- 	 *
++    - "renesas,scif-r8a7779" for R8A7779 (R-Car H1) SCIF compatible UART.
+     - "renesas,scif-r8a7790" for R8A7790 (R-Car H2) SCIF compatible UART.
+     - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
 -- 
-1.9.2
+1.8.5.2
 
