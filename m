@@ -1,298 +1,44 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 30 May 2014 13:53:09 +0000
-Subject: [PATCH v4] usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <53888D45.5000202@renesas.com>
+From: HUSAM AL SAYED <Husamalsayed@asia.com>
+Date: Mon, 26 May 2014 18:00:48 +0000
+Subject: Your Urgent reply.
+Message-Id: <CAKFyHyqE-jAV0G8GqYW7H_3cUYv2iXVQm5a6-m1VNZWRhKVXAg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-The R-Car H2 and M2 SoCs come with an xHCI controller that requires
-some specific initializations related to the firmware downloading and
-some specific registers. This patch adds the support for this special
-configuration as an xHCI quirk executed during probe and start.
+Dear Friend,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/host/Kconfig     |    8 +++
- drivers/usb/host/Makefile    |    3 +
- drivers/usb/host/xhci-plat.c |   19 ++++++
- drivers/usb/host/xhci-rcar.c |  148 ++++++++++++++++++++++++++++++++++++++++++
- drivers/usb/host/xhci-rcar.h |   27 ++++++++
- 5 files changed, 205 insertions(+)
- create mode 100644 drivers/usb/host/xhci-rcar.c
- create mode 100644 drivers/usb/host/xhci-rcar.h
 
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index 61b7817..537d9e1 100644
---- a/drivers/usb/host/Kconfig
-+++ b/drivers/usb/host/Kconfig
-@@ -37,6 +37,14 @@ config USB_XHCI_MVEBU
- 	  Say 'Y' to enable the support for the xHCI host controller
- 	  found in Marvell Armada 375/38x ARM SOCs.
+Compliments of the day.This mail May be a surprise to you Because you
+did not give me the permission to do so and Neither do you know me but
+before I tell you about myself I want you to please forgive me for
+sending this mail without your permission I have been in search of
+someone with this last name so when I saw you online, I was pushed to
+contact you and see how best we can assist each other. I am Mr. Husam
+Al Sayed, a Bank Officer here in U.A.E. I believe it is the wish of
+God for me to come across you now. I am having an important business
+discussion I wish to share with you which I  believe will interest
+you, because it is in connection with your last name and you are going
+to benefit from it.
 
-+config USB_XHCI_RCAR
-+	tristate "xHCI support for Renesas R-Car SoCs"
-+	select USB_XHCI_PLATFORM
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
-+	---help---
-+	  Say 'Y' to enable the support for the xHCI host controller
-+	  found in Renesas R-Car ARM SoCs.
-+
- endif # USB_XHCI_HCD
+One Late peter who was among the death victims in the May 27 2006
+Earthquake disaster in Java, Indonesia that killed over 5,000 people.
+He was in Indonesia on a business trip and that was how he met his
+end. My bank management is yet to know about his death, I knew about
+it because he was my friend and I am his account officer.he did not
+mention any Next of Kin/ Heir when the account was opened, and he was
+not married and no children. Last week my Bank Management requested
+that he should give instructions on what to do about his funds,I know
+this will happen and that is why I have been looking for a means to
+handle the situation,
 
- config USB_EHCI_HCD
-diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
-index af89a90..144c038 100644
---- a/drivers/usb/host/Makefile
-+++ b/drivers/usb/host/Makefile
-@@ -22,6 +22,9 @@ ifneq ($(CONFIG_USB_XHCI_PLATFORM), )
- ifneq ($(CONFIG_USB_XHCI_MVEBU), )
- 	xhci-hcd-y		+= xhci-mvebu.o
- endif
-+ifneq ($(CONFIG_USB_XHCI_RCAR), )
-+	xhci-hcd-y		+= xhci-rcar.o
-+endif
- endif
+If you are interested send me your private Email Address so that i can
+send you more details of the transaction,
+Thanks for your understanding
 
- obj-$(CONFIG_USB_WHCI_HCD)	+= whci/
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 29d8adb..b6f2b6b 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -20,6 +20,7 @@
+I am waiting for your reply.
 
- #include "xhci.h"
- #include "xhci-mvebu.h"
-+#include "xhci-rcar.h"
+Best regards,
 
- static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
- {
-@@ -34,11 +35,27 @@ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
- /* called during probe() after chip reset completes */
- static int xhci_plat_setup(struct usb_hcd *hcd)
- {
-+	struct device_node *of_node = hcd->self.controller->of_node;
-+	int ret;
-+
-+	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
-+	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791")) {
-+		ret = xhci_rcar_init_quirk(hcd);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	return xhci_gen_setup(hcd, xhci_plat_quirks);
- }
-
- static int xhci_plat_start(struct usb_hcd *hcd)
- {
-+	struct device_node *of_node = hcd->self.controller->of_node;
-+
-+	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
-+	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791"))
-+		xhci_rcar_start(hcd);
-+
- 	return xhci_run(hcd);
- }
-
-@@ -270,6 +287,8 @@ static const struct of_device_id usb_xhci_of_match[] = {
- 	{ .compatible = "xhci-platform" },
- 	{ .compatible = "marvell,armada-375-xhci"},
- 	{ .compatible = "marvell,armada-380-xhci"},
-+	{ .compatible = "renesas,xhci-r8a7790"},
-+	{ .compatible = "renesas,xhci-r8a7791"},
- 	{ },
- };
- MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
-diff --git a/drivers/usb/host/xhci-rcar.c b/drivers/usb/host/xhci-rcar.c
-new file mode 100644
-index 0000000..d94cb72
---- /dev/null
-+++ b/drivers/usb/host/xhci-rcar.c
-@@ -0,0 +1,148 @@
-+/*
-+ * xHCI host controller driver for R-Car SoCs
-+ *
-+ * Copyright (C) 2014 Renesas Electronics Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * version 2 as published by the Free Software Foundation.
-+ */
-+
-+#include <linux/firmware.h>
-+#include <linux/module.h>
-+#include <linux/platform_device.h>
-+#include <linux/usb/phy.h>
-+
-+#include "xhci.h"
-+#include "xhci-rcar.h"
-+
-+#define FIRMWARE_NAME		"r8a779x_usb3_v1.dlmem"
-+MODULE_FIRMWARE(FIRMWARE_NAME);
-+
-+/*** Register Offset ***/
-+#define RCAR_USB3_INT_ENA	0x224	/* Interrupt Enable */
-+#define RCAR_USB3_DL_CTRL	0x250	/* FW Download Control & Status */
-+#define RCAR_USB3_FW_DATA0	0x258	/* FW Data0 */
-+
-+#define RCAR_USB3_LCLK		0xa44	/* LCLK Select */
-+#define RCAR_USB3_CONF1		0xa48	/* USB3.0 Configuration1 */
-+#define RCAR_USB3_CONF2		0xa5c	/* USB3.0 Configuration2 */
-+#define RCAR_USB3_CONF3		0xaa8	/* USB3.0 Configuration3 */
-+#define RCAR_USB3_RX_POL	0xab0	/* USB3.0 RX Polarity */
-+#define RCAR_USB3_TX_POL	0xab8	/* USB3.0 TX Polarity */
-+
-+/*** Register Settings ***/
-+/* Interrupt Enable */
-+#define RCAR_USB3_INT_XHC_ENA	0x00000001
-+#define RCAR_USB3_INT_PME_ENA	0x00000002
-+#define RCAR_USB3_INT_HSE_ENA	0x00000004
-+#define RCAR_USB3_INT_ENA_VAL	(RCAR_USB3_INT_XHC_ENA | \
-+				RCAR_USB3_INT_PME_ENA | RCAR_USB3_INT_HSE_ENA)
-+
-+/* FW Download Control & Status */
-+#define RCAR_USB3_DL_CTRL_ENABLE	0x00000001
-+#define RCAR_USB3_DL_CTRL_FW_SUCCESS	0x00000010
-+#define RCAR_USB3_DL_CTRL_FW_SET_DATA0	0x00000100
-+
-+/* LCLK Select */
-+#define RCAR_USB3_LCLK_ENA_VAL	0x01030001
-+
-+/* USB3.0 Configuration */
-+#define RCAR_USB3_CONF1_VAL	0x00030204
-+#define RCAR_USB3_CONF2_VAL	0x00030300
-+#define RCAR_USB3_CONF3_VAL	0x13802007
-+
-+/* USB3.0 Polarity */
-+#define RCAR_USB3_RX_POL_VAL	0x00020000
-+#define RCAR_USB3_TX_POL_VAL	0x00000010
-+
-+void xhci_rcar_start(struct usb_hcd *hcd)
-+{
-+	u32 temp;
-+
-+	if (hcd->regs != NULL) {
-+		/* Interrupt Enable */
-+		temp = readl(hcd->regs + RCAR_USB3_INT_ENA);
-+		temp |= RCAR_USB3_INT_ENA_VAL;
-+		writel(temp, hcd->regs + RCAR_USB3_INT_ENA);
-+		/* LCLK Select */
-+		writel(RCAR_USB3_LCLK_ENA_VAL, hcd->regs + RCAR_USB3_LCLK);
-+		/* USB3.0 Configuration */
-+		writel(RCAR_USB3_CONF1_VAL, hcd->regs + RCAR_USB3_CONF1);
-+		writel(RCAR_USB3_CONF2_VAL, hcd->regs + RCAR_USB3_CONF2);
-+		writel(RCAR_USB3_CONF3_VAL, hcd->regs + RCAR_USB3_CONF3);
-+		/* USB3.0 Polarity */
-+		writel(RCAR_USB3_RX_POL_VAL, hcd->regs + RCAR_USB3_RX_POL);
-+		writel(RCAR_USB3_TX_POL_VAL, hcd->regs + RCAR_USB3_TX_POL);
-+	}
-+}
-+
-+static int xhci_rcar_download_firmware(struct device *dev, void __iomem *regs)
-+{
-+	const struct firmware *fw;
-+	int retval, index, j, time;
-+	int timeout = 10000;
-+	u32 data, val, temp;
-+
-+	/* request R-Car USB3.0 firmware */
-+	retval = request_firmware(&fw, FIRMWARE_NAME, dev);
-+	if (retval)
-+		return retval;
-+
-+	/* download R-Car USB3.0 firmware */
-+	temp = readl(regs + RCAR_USB3_DL_CTRL);
-+	temp |= RCAR_USB3_DL_CTRL_ENABLE;
-+	writel(temp, regs + RCAR_USB3_DL_CTRL);
-+
-+	for (index = 0; index < fw->size; index += 4) {
-+		/* to avoid reading beyond the end of the buffer */
-+		for (data = 0, j = 3; j >= 0; j--) {
-+			if ((j + index) < fw->size)
-+				data |= fw->data[index + j] << (8 * j);
-+		}
-+		writel(data, regs + RCAR_USB3_FW_DATA0);
-+		temp = readl(regs + RCAR_USB3_DL_CTRL);
-+		temp |= RCAR_USB3_DL_CTRL_FW_SET_DATA0;
-+		writel(temp, regs + RCAR_USB3_DL_CTRL);
-+
-+		for (time = 0; time < timeout; time++) {
-+			val = readl(regs + RCAR_USB3_DL_CTRL);
-+			if ((val & RCAR_USB3_DL_CTRL_FW_SET_DATA0) = 0)
-+				break;
-+			udelay(1);
-+		}
-+		if (time = timeout) {
-+			retval = -ETIMEDOUT;
-+			break;
-+		}
-+	}
-+
-+	temp = readl(regs + RCAR_USB3_DL_CTRL);
-+	temp &= ~RCAR_USB3_DL_CTRL_ENABLE;
-+	writel(temp, regs + RCAR_USB3_DL_CTRL);
-+
-+	for (time = 0; time < timeout; time++) {
-+		val = readl(regs + RCAR_USB3_DL_CTRL);
-+		if (val & RCAR_USB3_DL_CTRL_FW_SUCCESS) {
-+			retval = 0;
-+			break;
-+		}
-+		udelay(1);
-+	}
-+	if (time = timeout)
-+		retval = -ETIMEDOUT;
-+
-+	release_firmware(fw);
-+
-+	return retval;
-+}
-+
-+/* This function needs to initialize a "phy" of usb before */
-+int xhci_rcar_init_quirk(struct usb_hcd *hcd)
-+{
-+	/* If hcd->regs is NULL, we don't just call the following function */
-+	if (!hcd->regs)
-+		return 0;
-+
-+	return xhci_rcar_download_firmware(hcd->self.controller, hcd->regs);
-+}
-diff --git a/drivers/usb/host/xhci-rcar.h b/drivers/usb/host/xhci-rcar.h
-new file mode 100644
-index 0000000..5850125
---- /dev/null
-+++ b/drivers/usb/host/xhci-rcar.h
-@@ -0,0 +1,27 @@
-+/*
-+ * drivers/usb/host/xhci-rcar.h
-+ *
-+ * Copyright (C) 2014 Renesas Electronics Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * version 2 as published by the Free Software Foundation.
-+ */
-+
-+#ifndef _XHCI_RCAR_H
-+#define _XHCI_RCAR_H
-+
-+#if IS_ENABLED(CONFIG_USB_XHCI_RCAR)
-+void xhci_rcar_start(struct usb_hcd *hcd);
-+int xhci_rcar_init_quirk(struct usb_hcd *hcd);
-+#else
-+static inline void xhci_rcar_start(struct usb_hcd *hcd)
-+{
-+}
-+
-+static inline int xhci_rcar_init_quirk(struct usb_hcd *hcd)
-+{
-+	return 0;
-+}
-+#endif
-+#endif /* _XHCI_RCAR_H */
--- 
-1.7.9.5
+Mr. Husam Al Sayed
