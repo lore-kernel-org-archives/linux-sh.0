@@ -1,37 +1,47 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 May 2014 06:23:25 +0000
-Subject: Re: [PATCH v2 04/05] staging: board: Initial board staging support
-Message-Id: <CANqRtoThLHgsbU-zbmpAtYq+mYuD126Shm3ZiVdZzm84XD2WZg@mail.gmail.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 27 May 2014 09:31:42 +0000
+Subject: Re: [PATCH v6 1/2] clk: shmobile: r8a7779: Add clocks support
+Message-Id: <201405271131.42301.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140529131650.2329.3197.sendpatchset@w520>
-	<20140529131732.2329.50630.sendpatchset@w520>
-	<20140529132034.GB15585@mwanda>
-	<CANqRtoTzOn5d9qB85sXvmLYhoTDMDtbjSkLbz9V4FRmzFM3ycQ@mail.gmail.com>
-	<CANqRtoQDQLsWOyRSbQmtbmJc_qO=5X3ZMK12ZuwZ-FSR1iWCog@mail.gmail.com>
-	<1401372183.25908.3.camel@x220>
-In-Reply-To: <1401372183.25908.3.camel@x220>
+References: <1397775951-30992-1-git-send-email-horms+renesas@verge.net.au>
+ <1397775951-30992-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1397775951-30992-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Bolle <pebolle@tiscali.nl>
-Cc: Dan Carpenter <dan.carpenter@oracle.com>, linux-kernel <linux-kernel@vger.kernel.org>, devel <devel@driverdev.osuosl.org>, SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Olof Johansson <olof@lixom.net>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 29, 2014 at 11:03 PM, Paul Bolle <pebolle@tiscali.nl> wrote:
-> On Thu, 2014-05-29 at 22:53 +0900, Magnus Damm wrote:
->> --- 0011/drivers/staging/board/Kconfig
->> +++ work/drivers/staging/board/Kconfig    2014-05-29 22:32:39.000000000 +0900
->> @@ -1,5 +1,6 @@
->>  config STAGING_BOARD
->>      boolean "Staging Board Support"
->> +    depends on OF && OF_ADDRESS
->
-> I have no idea what this is all about, but wouldn't just OF_ADDRESS be
-> enough here (as OF_ADDRESS depends on OF)?
+On Friday 18 April 2014, Simon Horman wrote:
+> diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
+> new file mode 100644
+> index 0000000..652ecac
+> --- /dev/null
+> +++ b/drivers/clk/shmobile/clk-r8a7779.c
+> @@ -0,0 +1,180 @@
+> +/*
+> + * r8a7779 Core CPG Clocks
+> + *
+> + * Copyright (C) 2013, 2014 Horms Solutions Ltd.
+> + *
+> + * Contact: Simon Horman <horms@verge.net.au>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; version 2 of the License.
+> + */
+> +
+> +#include <linux/clk-provider.h>
+> +#include <linux/clkdev.h>
+> +#include <linux/clk/shmobile.h>
+> +#include <linux/init.h>
+> +#include <linux/kernel.h>
+> +#include <linux/of.h>
+> +#include <linux/of_address.h>
+> +#include <linux/spinlock.h>
+> +
+> +#include <dt-bindings/clock/r8a7779-clock.h>
 
-Yeah, that makes sense. I am also considering stubbing in the missing
-function prototypes in the header files to be able to get rid of this
-dependency.
+This currently causes a build error in Linux-next, since the header file has not
+been merged along with the driver.
 
-Cheers,
-
-/ magnus
+	Arnd
