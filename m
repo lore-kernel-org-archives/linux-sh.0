@@ -1,42 +1,55 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 09 May 2014 06:59:12 +0000
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Tue, 27 May 2014 22:54:22 +0000
 Subject: Re: [PATCH] pci: rcar host needs OF
-Message-Id: <13437915.HeCZ0zGaLk@wuerfel>
+Message-Id: <20140527225422.GE11907@google.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1399560433-1402630-1-git-send-email-arnd@arndb.de>
- <CAMuHMdWBzBneDqyDxK5HU3Bt_5CyRfTM_f_6YGJHokG_v17_sw@mail.gmail.com>
- <9614403.Lyniq7F3TJ@wuerfel>
-In-Reply-To: <9614403.Lyniq7F3TJ@wuerfel>
+ <1399560990-1402858-1-git-send-email-arnd@arndb.de>
+ <1399560990-1402858-14-git-send-email-arnd@arndb.de>
+In-Reply-To: <1399560990-1402858-14-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 08 May 2014 17:21:54 Arnd Bergmann wrote:
-> On Thursday 08 May 2014 17:16:32 Geert Uytterhoeven wrote:
-> > On Thu, May 8, 2014 at 5:06 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> > >> @@ -27,7 +27,7 @@ config PCI_TEGRA
-> > >>
-> > >>   config PCI_RCAR_GEN2
-> > >>         bool "Renesas R-Car Gen2 Internal PCI controller"
-> > >> -       depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
-> > >> +       depends on ARCH_SHMOBILE || (ARM && OF && COMPILE_TEST)
-> > >>         help
-> > >>           Say Y here if you want internal PCI support on R-Car Gen2 SoC.
-> > >>           There are 3 internal PCI controllers available with a single
-> > >>
-> > >
-> > > This driver /should/ be able to be built for just the platform case
-> > > so it sounds like f8f2fe7355fb stopped this but no-one has yet to
-> > > notice.
-> > 
-> > You mean include/linux/of_pci.h should provide a dummy version of
-> > of_irq_parse_and_map_pci() returning 0 in case OF=n?
+On Thu, May 08, 2014 at 04:56:25PM +0200, Arnd Bergmann wrote:
+> The pci-rcar driver is enabled for compile tests, and this has
+> now shown that the driver cannot build without CONFIG_OF,
+> following the inclusion of f8f2fe7355fb "PCI: rcar: Use new OF
+> interrupt mapping when possible":
 > 
-> Good idea, I'll give this patch some testing in the randconfig builder,
-> replacing the one above.
+> drivers/built-in.o: In function `rcar_pci_map_irq':
+> :(.text+0x1cc7c): undefined reference to `of_irq_parse_and_map_pci'
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> Cc: Bjorn Helgaas <bhelgaas@google.com>
+> Cc: Magnus Damm <damm@opensource.se>
+> Cc: linux-pci@vger.kernel.org
+> Cc: linux-sh@vger.kernel.org
 
-The first version was flawed, I submitted a new patch "[PATCH] of/irq:
-provide int of_irq_parse_and_map_pci wrapper" now.
+If I understand correctly, this patch was superceded by this one:
 
-	Arnd
+    "[PATCH] of/irq: provide int of_irq_parse_and_map_pci wrapper"
+
+and you aren't expecting me to do anything.  Let me know if otherwise.
+
+> ---
+>  drivers/pci/host/Kconfig | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
+> index fbbef0b..4675f47 100644
+> --- a/drivers/pci/host/Kconfig
+> +++ b/drivers/pci/host/Kconfig
+> @@ -27,7 +27,7 @@ config PCI_TEGRA
+>  
+>  config PCI_RCAR_GEN2
+>  	bool "Renesas R-Car Gen2 Internal PCI controller"
+> -	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
+> +	depends on ARCH_SHMOBILE || (ARM && OF && COMPILE_TEST)
+>  	help
+>  	  Say Y here if you want internal PCI support on R-Car Gen2 SoC.
+>  	  There are 3 internal PCI controllers available with a single
+> -- 
+> 1.8.3.2
+> 
