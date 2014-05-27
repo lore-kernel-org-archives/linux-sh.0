@@ -1,179 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 13 May 2014 08:03:38 +0000
-Subject: [PATCH 11/15] ARM: shmobile: r8a7740: Switch to new style TMU device
-Message-Id: <8ec72e46067d237dd60a08582e6427159c3f4b5f.1399967755.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 27 May 2014 12:17:32 +0000
+Subject: [PATCH 2/2] i2c: sh_mobile: add compatibles for additional SoC
+Message-Id: <1401193052-8582-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1399967755.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1399967755.git.horms+renesas@verge.net.au>
+References: <1401193052-8582-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1401193052-8582-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-The TMU (Timer Unit) driver implements a new style of platform data that
-handles the timer as a single device with multiple channel. Switch from
-the old-style platform data to the new-style platform data.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |  8 +--
- arch/arm/mach-shmobile/setup-r8a7740.c | 97 +++++-----------------------------
- 2 files changed, 15 insertions(+), 90 deletions(-)
+ drivers/i2c/busses/i2c-sh_mobile.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index cdb303c..2c1044a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -548,15 +548,9 @@ static struct clk_lookup lookups[] = {
- 
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0",	&mstp_clks[MSTP100]),
--	CLKDEV_DEV_ID("sh_tmu.3",		&mstp_clks[MSTP111]),
--	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
--	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("fff20000.i2c",		&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
--	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
--	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
--	CLKDEV_DEV_ID("sh_tmu.2",		&mstp_clks[MSTP125]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
- 
-@@ -603,6 +597,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6870000.sd",		&mstp_clks[MSTP415]),
- 
- 	/* ICK */
-+	CLKDEV_ICK_ID("fck",	"sh-tmu.1",		&mstp_clks[MSTP111]),
-+	CLKDEV_ICK_ID("fck",	"sh-tmu.0",		&mstp_clks[MSTP125]),
- 	CLKDEV_ICK_ID("fck",	"sh-cmt-48.1",		&mstp_clks[MSTP329]),
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
- 	CLKDEV_ICK_ID("func",	"renesas_usbhs",	&mstp_clks[MSTP407]),
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 495e9bd..b7a09bb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -257,94 +257,25 @@ static struct platform_device cmt1_device = {
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index c29be2bba6ea..8b5e79cb4468 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -634,6 +634,9 @@ static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
+ 	{ .compatible = "renesas,rmobile-iic", .data = &default_dt_config },
+ 	{ .compatible = "renesas,iic-r8a7790", .data = &rcar_gen2_dt_config },
+ 	{ .compatible = "renesas,iic-r8a7791", .data = &rcar_gen2_dt_config },
++	{ .compatible = "renesas,iic-r8a7792", .data = &rcar_gen2_dt_config },
++	{ .compatible = "renesas,iic-r8a7793", .data = &rcar_gen2_dt_config },
++	{ .compatible = "renesas,iic-r8a7794", .data = &rcar_gen2_dt_config },
+ 	{},
  };
- 
- /* TMU */
--static struct sh_timer_config tmu00_platform_data = {
--	.name = "TMU00",
--	.channel_offset = 0x4,
--	.timer_bit = 0,
--	.clockevent_rating = 200,
-+static struct sh_timer_config tmu0_platform_data = {
-+	.channels_mask = 7,
- };
- 
--static struct resource tmu00_resources[] = {
--	[0] = {
--		.name	= "TMU00",
--		.start	= 0xfff80008,
--		.end	= 0xfff80014 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(198),
--		.flags	= IORESOURCE_IRQ,
--	},
-+static struct resource tmu0_resources[] = {
-+	DEFINE_RES_MEM(0xfff80000, 0x2c),
-+	DEFINE_RES_IRQ(gic_spi(198)),
-+	DEFINE_RES_IRQ(gic_spi(199)),
-+	DEFINE_RES_IRQ(gic_spi(200)),
- };
- 
--static struct platform_device tmu00_device = {
--	.name		= "sh_tmu",
-+static struct platform_device tmu0_device = {
-+	.name		= "sh-tmu",
- 	.id		= 0,
- 	.dev = {
--		.platform_data	= &tmu00_platform_data,
--	},
--	.resource	= tmu00_resources,
--	.num_resources	= ARRAY_SIZE(tmu00_resources),
--};
--
--static struct sh_timer_config tmu01_platform_data = {
--	.name = "TMU01",
--	.channel_offset = 0x10,
--	.timer_bit = 1,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu01_resources[] = {
--	[0] = {
--		.name	= "TMU01",
--		.start	= 0xfff80014,
--		.end	= 0xfff80020 - 1,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(199),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu01_device = {
--	.name		= "sh_tmu",
--	.id		= 1,
--	.dev = {
--		.platform_data	= &tmu01_platform_data,
--	},
--	.resource	= tmu01_resources,
--	.num_resources	= ARRAY_SIZE(tmu01_resources),
--};
--
--static struct sh_timer_config tmu02_platform_data = {
--	.name = "TMU02",
--	.channel_offset = 0x1C,
--	.timer_bit = 2,
--	.clocksource_rating = 200,
--};
--
--static struct resource tmu02_resources[] = {
--	[0] = {
--		.name	= "TMU02",
--		.start	= 0xfff80020,
--		.end	= 0xfff8002C - 1,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(200),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device tmu02_device = {
--	.name		= "sh_tmu",
--	.id		= 2,
--	.dev = {
--		.platform_data	= &tmu02_platform_data,
-+		.platform_data	= &tmu0_platform_data,
- 	},
--	.resource	= tmu02_resources,
--	.num_resources	= ARRAY_SIZE(tmu02_resources),
-+	.resource	= tmu0_resources,
-+	.num_resources	= ARRAY_SIZE(tmu0_resources),
- };
- 
- /* IPMMUI (an IPMMU module for ICB/LMB) */
-@@ -396,9 +327,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&irqpin1_device,
- 	&irqpin2_device,
- 	&irqpin3_device,
--	&tmu00_device,
--	&tmu01_device,
--	&tmu02_device,
-+	&tmu0_device,
- 	&ipmmu_device,
- };
- 
+ MODULE_DEVICE_TABLE(of, sh_mobile_i2c_dt_ids);
 -- 
-1.8.5.2
+2.0.0.rc2
 
