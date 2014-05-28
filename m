@@ -1,43 +1,56 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 14 May 2014 01:10:07 +0000
-Subject: [PATCH v6 03/12] ARM: shmobile: r7s72100: genmai: populate nodes for external clocks
-Message-Id: <1400029816-24028-4-git-send-email-wsa@the-dreams.de>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 28 May 2014 07:23:57 +0000
+Subject: [PATCH 2/8] ARM: shmobile: r8a7791: Add PCIe clock device tree nodes
+Message-Id: <1401261843-6964-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This patch adds the device tree clock nodes for PCIe
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 6 ++++--
+ include/dt-bindings/clock/r8a7791-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-index e664611a47c8..941e72ce7c82 100644
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-@@ -30,6 +30,14 @@
- 	};
- };
- 
-+&extal_clk {
-+	clock-frequency = <13330000>;
-+};
-+
-+&usb_x1_clk {
-+	clock-frequency = <48000000>;
-+};
-+
- &i2c2 {
- 	status = "okay";
- 	clock-frequency = <400000>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffae..d22acd5 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -758,15 +758,17 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+-				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+ 				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
++				R8A7791_CLK_PCIE
+ 			>;
+ 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
+-				"mmcif0", "i2c7", "i2c8", "cmt1";
++				"mmcif0", "i2c7", "i2c8", "cmt1",
++				"pcie";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index b050d18..16bc1fc 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -53,6 +53,7 @@
+ #define R8A7791_CLK_SDHI0		14
+ #define R8A7791_CLK_MMCIF0		15
+ #define R8A7791_CLK_IIC0		18
++#define R8A7791_CLK_PCIE		19
+ #define R8A7791_CLK_IIC1		23
+ #define R8A7791_CLK_SSUSB		28
+ #define R8A7791_CLK_CMT1		29
 -- 
-1.9.2
+1.9.3
 
