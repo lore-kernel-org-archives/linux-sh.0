@@ -1,82 +1,115 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 21 May 2014 11:00:19 +0000
-Subject: Re: [PATCH] i2c: sh_mobile: Don't start transfers when suspending
-Message-Id: <20140521110019.GS2708@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="0blaZc+aUkVqY8MO"
+Date: Wed, 28 May 2014 07:44:43 +0000
+Subject: [PATCH 08/11] i2c: rcar: remove spinlock
+Message-Id: <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360862257-10807-1-git-send-email-hechtb+renesas@gmail.com>
- <CANqRtoSzyAj=pDmtDy1gh=Pxrom644tM07z15b4S=DX4Cby=MQ@mail.gmail.com>
- <CABYn4szejurs2gBVOx_+geOxw13r9KvoShfRiM7OOF5wVvDPLA@mail.gmail.com>
- <20130221091434.GA22806@the-dreams.de>
- <CABYn4swuDgTvvyigjnabcg46rcze-DnGhv2Rh7WEFdwkXcHR4Q@mail.gmail.com>
-In-Reply-To: <CABYn4swuDgTvvyigjnabcg46rcze-DnGhv2Rh7WEFdwkXcHR4Q@mail.gmail.com>
-To: Bastian Hecht <hechtb@gmail.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-i2c@vger.kernel.org
+References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
---0blaZc+aUkVqY8MO
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The i2c core has per-adapter locks, so no need to protect again.
 
-On Thu, Feb 21, 2013 at 08:54:06AM -0600, Bastian Hecht wrote:
-> Hi Wolfram,
->=20
-> oh yes I can gladly do so. To make a realistic estimation it might
-> take a few weeks until I find time for it though. If we can wait so
-> long, count on me.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 22 ----------------------
+ 1 file changed, 22 deletions(-)
 
-Ping. Still interested?
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index e82d64b5acef..4b088e67f2fd 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -36,7 +36,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+-#include <linux/spinlock.h>
+ 
+ /* register offsets */
+ #define ICSCR	0x00	/* slave ctrl */
+@@ -110,7 +109,6 @@ struct rcar_i2c_priv {
+ 	struct i2c_msg	*msg;
+ 	struct clk *clk;
+ 
+-	spinlock_t lock;
+ 	wait_queue_head_t wait;
+ 
+ 	int pos;
+@@ -394,9 +392,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	struct device *dev = rcar_i2c_priv_to_dev(priv);
+ 	u32 msr;
+ 
+-	/*-------------- spin lock -----------------*/
+-	spin_lock(&priv->lock);
+-
+ 	msr = rcar_i2c_read(priv, ICMSR);
+ 
+ 	/*
+@@ -450,9 +445,6 @@ out:
+ 		wake_up(&priv->wait);
+ 	}
+ 
+-	spin_unlock(&priv->lock);
+-	/*-------------- spin unlock -----------------*/
+-
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -462,21 +454,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ {
+ 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
+ 	struct device *dev = rcar_i2c_priv_to_dev(priv);
+-	unsigned long flags;
+ 	int i, ret, timeout;
+ 
+ 	pm_runtime_get_sync(dev);
+ 
+-	/*-------------- spin lock -----------------*/
+-	spin_lock_irqsave(&priv->lock, flags);
+-
+ 	rcar_i2c_init(priv);
+ 	/* start clock */
+ 	rcar_i2c_write(priv, ICCCR, priv->icccr);
+ 
+-	spin_unlock_irqrestore(&priv->lock, flags);
+-	/*-------------- spin unlock -----------------*/
+-
+ 	ret = rcar_i2c_bus_barrier(priv);
+ 	if (ret < 0)
+ 		goto out;
+@@ -488,9 +473,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 			break;
+ 		}
+ 
+-		/*-------------- spin lock -----------------*/
+-		spin_lock_irqsave(&priv->lock, flags);
+-
+ 		/* init each data */
+ 		priv->msg	= &msgs[i];
+ 		priv->pos	= 0;
+@@ -500,9 +482,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ 		ret = rcar_i2c_prepare_msg(priv);
+ 
+-		spin_unlock_irqrestore(&priv->lock, flags);
+-		/*-------------- spin unlock -----------------*/
+-
+ 		if (ret < 0)
+ 			break;
+ 
+@@ -611,7 +590,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+-	spin_lock_init(&priv->lock);
+ 
+ 	adap			= &priv->adap;
+ 	adap->nr		= pdev->id;
+-- 
+2.0.0.rc2
 
->=20
-> Best,
->=20
->  Bastian
->=20
-> 2013/2/21 Wolfram Sang <wsa@the-dreams.de>:
-> > Hi Bastian,
-> >
-> >> > Also, do you know the reason why this isn't handled in the i2c layer
-> >> > by default? I ask because your comment mentions that i2c-tegra.c does
-> >> > the same thing and I can't see anything in this patch that is actual=
-ly
-> >> > related to our I2C hardware.
-> >>
-> >> Yes, many drivers have a similar scheme and to me it more looked like
-> >> all drivers need to take care about this case unrelated to different
-> >> hardware. So the question arises if this can't be handled in the core
-> >> - or if I get something wrong here.
-> >
-> > I don't see any reason why this couldn't be handled in the core. If you
-> > want to have a take on this issue (after the other bug is fixed), this
-> > will be highly appreciated.
-> >
-> > Thanks,
-> >
-> >    Wolfram
-> >
-
---0blaZc+aUkVqY8MO
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTfIdDAAoJEBQN5MwUoCm2ABsP/1CHLgithUJ+bvOdv1kMdpcD
-ZlaxnxNLK69Vw5us2yWE6UR1yl50pH7Z/V1IazTfSYr2owt6wbBZrfvug6ypcd1H
-9okqJIiOGYReaN/QXiywqyCKfUHYHzQI7Jl5dfGNsgJdljoQDDTrVSUfY3FY60q2
-MW/ijbZmVpQT+Gt3+Jp+hKi4kOT6Zw3Z8bNT6pUE+6Owogo/Jr1YPjrH7XRFt+wT
-X7oT4eN3cGhOILF0OQcyl7Jyx7JA3CHwZpP/0i+cDjgpE5cUBJG5DoEWgn4pNHDc
-Z/1Ojb4q5CRdFhudapWP9t/BEEDP8wHu0/RYIARjtZmpiN2ldDHqB3cqwW4NeefJ
-MXOUhxKcOHnZeYoc59XFsqhNr01CW66z2LKGxwzJjhzgkdg3DR6EgzdadTan8K5P
-9b4vwHDK0pv+OGp2yo52PVNlP0zLM8/oTb+YurVNJnZLuF33nKAIZG1kJtB2LH2X
-ch2kDGpHy6OsnrlAJEbCsC8nGKrAz+X8Gb2ylmK116ewkSWukBgFblB/2FFGT5JM
-iQpiPvvs7GGAyzJQcBlyydwgPOYELyXeUv7UmkfHKqexi29gbvAe54B/88Pd2xrL
-kwlY9pVpnkwCziySvf3Fn6V9Z2qYJ+Fb5L+LbJvazTbiTgO+F7vqMGsJEvPlOnQD
-qBLxiTngqVVOmdiNMDw8
-=ZbWS
------END PGP SIGNATURE-----
-
---0blaZc+aUkVqY8MO--
