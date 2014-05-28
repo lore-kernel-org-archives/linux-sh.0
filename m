@@ -1,33 +1,47 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 05 May 2014 20:42:21 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v3.16
-Message-Id: <20140505204221.GB27961@quad.lixom.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 28 May 2014 02:57:16 +0000
+Subject: [PATCH] ARM: shmobile: armadillo800eva: fixup HDMI sound flags setting
+Message-Id: <877g56wqye.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627278.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627278.git.horms+renesas@verge.net.au>
+References: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fw7w38mf.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Apr 16, 2014 at 03:03:05PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig updates for v3.16.
-> 
-> 
-> The following changes since commit c9eaa447e77efe77b7fa4c953bd62de8297fd6c5:
-> 
->   Linux 3.15-rc1 (2014-04-13 14:18:35 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.16
-> 
-> for you to fetch changes up to 1d59eb190e3dc575c7bbee4a163c3facd0de2ed9:
-> 
->   ARM: shmobile: Enable USB [EO]HCI HCD support in shmobile_defconfig (2014-04-14 11:23:55 +0900)
+c7a507eea1db1430476289f525f9c853d5d485e8
+(ASoC: fsi: fixup SND_SOC_DAIFMT_CBx_CFx flags)
+fixuped FSI driver's behavior
+which didn't match to ALSA flags.
 
-Merged, thanks.
+But, it didn't care about armadillo800eva HDMI sound flags.
+This patch fixed it.
 
--Olof
+Reported-by: Bui Duc Phuc(Fukuda) <bd-phuc@jinso.co.jp>
+Reported-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Simon
+
+This patch is needed on latest linus/master tree
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 92d24a4..deb3b38 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1051,7 +1051,7 @@ static struct asoc_simple_card_info fsi2_hdmi_info = {
+ 	.platform	= "sh_fsi2",
+ 	.cpu_dai = {
+ 		.name	= "fsib-dai",
+-		.fmt	= SND_SOC_DAIFMT_CBM_CFM,
++		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name = "sh_mobile_hdmi-hifi",
+-- 
+1.7.9.5
+
