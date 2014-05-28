@@ -1,48 +1,124 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 28 May 2014 11:22:58 +0000
-Subject: [PATCH v2 1/3] usb: host: xhci-plat: add xhci_plat_start()
-Message-Id: <5385C712.8090405@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 28 May 2014 07:44:38 +0000
+Subject: [PATCH 03/11] i2c: rcar: refactor bus state machine
+Message-Id: <1401263086-13720-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1401263086-13720-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-Some platforms (such as the Renesas R-Car) need to initialize some specific
-registers after xhci driver calls usb_add_hcd() and before the driver calls
-xhci_run(). So, this patch adds the xhci_plat_start() function.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Remove the seperate functions and use designated constants. As readable
+but less overhead.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/usb/host/xhci-plat.c |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ drivers/i2c/busses/i2c-rcar.c | 37 ++++++++++---------------------------
+ 1 file changed, 10 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 9b645ae..1389370 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -38,6 +38,11 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
- 	return xhci_gen_setup(hcd, xhci_plat_quirks);
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 88efbf29a182..e0cdab488cc5 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -79,11 +79,9 @@
+ #define MATE	(1 << 0)	/* address sent irq en */
+ 
+ 
+-enum {
+-	RCAR_BUS_PHASE_ADDR,
+-	RCAR_BUS_PHASE_DATA,
+-	RCAR_BUS_PHASE_STOP,
+-};
++#define RCAR_BUS_PHASE_START	(MDBS | MIE | ESG)
++#define RCAR_BUS_PHASE_DATA	(MDBS | MIE)
++#define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
+ 
+ enum {
+ 	RCAR_IRQ_CLOSE,
+@@ -204,21 +202,6 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
+ 	return -EBUSY;
  }
-
-+static int xhci_plat_start(struct usb_hcd *hcd)
-+{
-+	return xhci_run(hcd);
-+}
-+
- static const struct hc_driver xhci_plat_xhci_driver = {
- 	.description =		"xhci-hcd",
- 	.product_desc =		"xHCI Host Controller",
-@@ -53,7 +58,7 @@ static const struct hc_driver xhci_plat_xhci_driver = {
- 	 * basic lifecycle operations
+ 
+-static void rcar_i2c_bus_phase(struct rcar_i2c_priv *priv, int phase)
+-{
+-	switch (phase) {
+-	case RCAR_BUS_PHASE_ADDR:
+-		rcar_i2c_write(priv, ICMCR, MDBS | MIE | ESG);
+-		break;
+-	case RCAR_BUS_PHASE_DATA:
+-		rcar_i2c_write(priv, ICMCR, MDBS | MIE);
+-		break;
+-	case RCAR_BUS_PHASE_STOP:
+-		rcar_i2c_write(priv, ICMCR, MDBS | MIE | FSB);
+-		break;
+-	}
+-}
+-
+ /*
+  *		clock function
+  */
+@@ -328,7 +311,7 @@ static int rcar_i2c_recv(struct rcar_i2c_priv *priv)
+ {
+ 	rcar_i2c_set_addr(priv, 1);
+ 	rcar_i2c_status_clear(priv);
+-	rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_ADDR);
++	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+ 	rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_RECV);
+ 
+ 	return 0;
+@@ -347,7 +330,7 @@ static int rcar_i2c_send(struct rcar_i2c_priv *priv)
+ 
+ 	rcar_i2c_set_addr(priv, 0);
+ 	rcar_i2c_status_clear(priv);
+-	rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_ADDR);
++	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+ 	rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_SEND);
+ 
+ 	return 0;
+@@ -376,7 +359,7 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
+ 	 * goto data phase.
  	 */
- 	.reset =		xhci_plat_setup,
--	.start =		xhci_run,
-+	.start =		xhci_plat_start,
- 	.stop =			xhci_stop,
- 	.shutdown =		xhci_shutdown,
-
+ 	if (msr & MAT)
+-		rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_DATA);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 
+ 	if (priv->pos < msg->len) {
+ 		/*
+@@ -404,7 +387,7 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
+ 			 * prepare stop condition here.
+ 			 * ID_DONE will be set on STOP irq.
+ 			 */
+-			rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_STOP);
++			rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+ 		else
+ 			/*
+ 			 * If current msg is _NOT_ last msg,
+@@ -452,9 +435,9 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 	 * otherwise, go to DATA phase.
+ 	 */
+ 	if (priv->pos + 1 >= msg->len)
+-		rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_STOP);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+ 	else
+-		rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_DATA);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 
+ 	rcar_i2c_recv_restart(priv);
+ 
+@@ -502,7 +485,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 		dev_dbg(dev, "Nack\n");
+ 
+ 		/* go to stop phase */
+-		rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_STOP);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+ 		rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_STOP);
+ 		rcar_i2c_flags_set(priv, ID_NACK);
+ 		goto out;
 -- 
-1.7.9.5
+2.0.0.rc2
+
