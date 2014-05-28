@@ -1,34 +1,19 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 28 May 2014 08:11:25 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 28 May 2014 08:26:38 +0000
 Subject: Re: [PATCH 00/11] i2c: rcar: cleanup series
-Message-Id: <87tx8auxuc.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <CAMuHMdUq5YxL+JfSuAzPtd4bHkPJXACqMAG+Fc0AFv7TkUDHDg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1401263086-13720-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
+Hi Wolfram,
 
-Hi
-
-> Here are some patches to let the rcar driver have a diet without losing
-> functionality. IMO the code becomes more readable, too, although mileages may
-> vary about this or that change. Bus-free handling is improved, too. Tested with
-> renesas-devel-v3.15-rc7-20140526 on a Lager and Koelsch board. The git tree can
-> be found here, including one proof-of-concept enablement patch:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/rcar-cleanup
-> 
-> Please test, review, comment.
-> 
-> Thanks,
-> 
->    Wolfram
-> 
-> 
+On Wed, May 28, 2014 at 9:44 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
 > Wolfram Sang (11):
 >   i2c: rcar: not everything needs to be a function
 >   i2c: rcar: no need to store irq number
@@ -41,17 +26,16 @@ Hi
 >   i2c: rcar: reuse status bits as enable bits
 >   i2c: rcar: janitorial cleanup after refactoring
 >   i2c: rcar: update copyright and license information
-> 
->  drivers/i2c/busses/i2c-rcar.c | 252 ++++++++----------------------------------
->  1 file changed, 48 insertions(+), 204 deletions(-)
 
-For all patches
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Gr{oetje,eeting}s,
 
+                        Geert
 
-My small opinion is that keeping comment of "Arbitration lost"
-(= "When arbitration lost, device become _slave_ mode")
-is helpful for non-renesas freak.
-I forgot detail, but, this behavior is not documented (?)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
