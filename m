@@ -1,56 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 May 2014 01:24:51 +0000
-Subject: [PATCH 2/5] ARM: shmobile: genmai-reference: Remove legacy clock support
-Message-Id: <88351216f595786a24ff6cb7df7b101811981c78.1400289483.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 28 May 2014 07:23:56 +0000
+Subject: [PATCH 1/8] ARM: shmobile: r8a7790: Add PCIe clock device tree nodes
+Message-Id: <1401261843-6964-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400289483.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This patch adds the device tree clock nodes for PCIe
 
-genmai-reference is now only built for multiplatform which means that
-CCF comes with the package. Remove unused legacy code ifdefs to clean up
-the code.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/board-genmai-reference.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 6 +++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 33015e5..968bbba 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -26,7 +26,6 @@
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
--#ifdef CONFIG_COMMON_CLK
- /*
-  * This is a really crude hack to provide clkdev support to platform
-  * devices until they get moved to DT.
-@@ -34,15 +33,10 @@
- static const struct clk_name clk_names[] = {
- 	{ "mtu2", "fck", "sh-mtu2" },
- };
--#endif
- 
- static void __init genmai_add_standard_devices(void)
- {
--#ifdef CONFIG_COMMON_CLK
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), true);
--#else
--	r7s72100_clock_init();
--#endif
- 	r7s72100_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7ff2960..ae7d3da 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -754,17 +754,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&hp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&hp_clk>, <&rclk_clk>, <&mp_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+-				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_CMT1
++				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_CMT1 R8A7790_CLK_PCIE
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "iic1", "cmt1";
++				"iic0", "iic1", "cmt1", "pcie";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 1118f7a..e0a6e38 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -59,6 +59,7 @@
+ #define R8A7790_CLK_SDHI0		14
+ #define R8A7790_CLK_MMCIF0		15
+ #define R8A7790_CLK_IIC0		18
++#define R8A7790_CLK_PCIE		19
+ #define R8A7790_CLK_IIC1		23
+ #define R8A7790_CLK_SSUSB		28
+ #define R8A7790_CLK_CMT1		29
 -- 
-1.8.4
+1.9.3
 
