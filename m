@@ -1,49 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 19 May 2014 23:37:42 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Remove unused r8a7790_init_early()
-Message-Id: <20140519233742.10496.54331.sendpatchset@w520>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 28 May 2014 07:24:03 +0000
+Subject: [PATCH 8/8] ARM: shmobile: henninger: Add dummy PCIe bus clock
+Message-Id: <1401261843-6964-9-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140519233714.10496.31390.sendpatchset@w520>
-In-Reply-To: <20140519233714.10496.31390.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Since the CPU's dtsi refers to pcie_bus_clock, we need an entry in
+the board's dts, even if we aren't using PCIe.
 
-Remove the now unused r8a7790_init_early() function.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
+ arch/arm/boot/dts/r8a7791-henninger.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
- arch/arm/mach-shmobile/include/mach/r8a7790.h |    1 -
- arch/arm/mach-shmobile/setup-r8a7790.c        |    7 -------
- 2 files changed, 8 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index cc6d992..6e5d779 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -78,6 +78,16 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	clocks {
++		/* External PCIe bus clock - not used */
++		pcie_bus_clk: pcie_bus_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "pcie_bus";
++		};
++	};
+ };
+ 
+ &extal_clk {
+-- 
+1.9.3
 
---- 0001/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a7790.h	2014-05-19 22:26:16.000000000 +0900
-@@ -33,7 +33,6 @@ void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_pm_init(void);
--void r8a7790_init_early(void);
- extern struct smp_operations r8a7790_smp_ops;
- 
- #endif /* __ASM_R8A7790_H__ */
---- 0003/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-05-19 22:25:49.000000000 +0900
-@@ -307,13 +307,6 @@ void __init r8a7790_add_standard_devices
- 	r8a7790_register_audio_dmac(1);
- }
- 
--void __init r8a7790_init_early(void)
--{
--#ifndef CONFIG_ARM_ARCH_TIMER
--	shmobile_setup_delay(1300, 2, 4); /* Cortex-A15 @ 1300MHz */
--#endif
--}
--
- #ifdef CONFIG_USE_OF
- 
- static const char * const r8a7790_boards_compat_dt[] __initconst = {
