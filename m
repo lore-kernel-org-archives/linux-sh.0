@@ -1,41 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 09 May 2014 11:50:00 +0000
-Subject: Re: [PATCH 0/2] Add VSP1 devices to R8A779[01] DT
-Message-Id: <15728378.0mYCvNLXzQ@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 28 May 2014 07:44:37 +0000
+Subject: [PATCH 02/11] i2c: rcar: no need to store irq number
+Message-Id: <1401263086-13720-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Simon,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tuesday 08 April 2014 18:35:55 Laurent Pinchart wrote:
-> Hello,
-> 
-> This patch series adds VSP1 nodes to the R8A7790 and R8A7791 .dtsi files. It
-> is based on top of the "[PATCH 0/2] Fix VSP1 clock names in r8a779[01]
-> .dtsi" series that has been sent to the linux-sh mailing list, as well as
-> the "[PATCH] v4l: vsp1: Remove unexisting rt clocks" patch and "[PATCH 0/6]
-> VSP1 Blend/ROP Unit and DT support" series sent to the linux-media mailing
-> list.
-> 
-> The VSP1 DT bindings are still pending an ack, please don't apply this
-> series yet.
+We use devm, so irq number is only needed during probe.
 
-The DT bindings have been pulled into the media tree and will be merged in 
-v3.16. Could you please merge these two patches in your tree ?
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-> Laurent Pinchart (2):
->   ARM: shmobile: r8a7790: Add VSP1 devices to DT
->   ARM: shmobile: r8a7791: Add VSP1 devices to DT
-> 
->  arch/arm/boot/dts/r8a7790.dtsi | 51 +++++++++++++++++++++++++++++++++++++++
->  arch/arm/boot/dts/r8a7791.dtsi | 39 ++++++++++++++++++++++++++++++++
-> 2 files changed, 90 insertions(+)
-
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 32df4e1f3738..88efbf29a182 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -116,7 +116,6 @@ struct rcar_i2c_priv {
+ 	wait_queue_head_t wait;
+ 
+ 	int pos;
+-	int irq;
+ 	u32 icccr;
+ 	u32 flags;
+ 	enum rcar_i2c_type	devtype;
+@@ -650,7 +649,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	struct device *dev = &pdev->dev;
+ 	u32 bus_speed;
+-	int ret;
++	int irq, ret;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(struct rcar_i2c_priv), GFP_KERNEL);
+ 	if (!priv) {
+@@ -684,7 +683,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
+-	priv->irq = platform_get_irq(pdev, 0);
++	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+ 	spin_lock_init(&priv->lock);
+ 
+@@ -698,10 +697,10 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	i2c_set_adapdata(adap, priv);
+ 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
+ 
+-	ret = devm_request_irq(dev, priv->irq, rcar_i2c_irq, 0,
++	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
+ 			       dev_name(dev), priv);
+ 	if (ret < 0) {
+-		dev_err(dev, "cannot get irq %d\n", priv->irq);
++		dev_err(dev, "cannot get irq %d\n", irq);
+ 		return ret;
+ 	}
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+2.0.0.rc2
 
