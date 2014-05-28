@@ -1,34 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:32:04 +0000
-Subject: [PATCH v6 09/17] ARM: shmobile: r8a7779: Do not include sh_clk.h in r8a7779.h
-Message-Id: <1400153532-23675-10-git-send-email-horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 28 May 2014 07:24:01 +0000
+Subject: [PATCH 6/8] ARM: shmobile: koelsch: Add PCIe bus clock and enable PCIe device
+Message-Id: <1401261843-6964-7-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Do not include sh_clk.h in r8a7779.h as it is not necessary.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index d5ba2d8..757b903 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -1,7 +1,6 @@
- #ifndef __ASM_R8A7779_H__
- #define __ASM_R8A7779_H__
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 05d44f9..9ece88c 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -209,6 +209,16 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	clocks {
++		/* External PCIe bus clock */
++		pcie_bus_clk: pcie_bus_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <100000000>;
++			clock-output-names = "pcie_bus";
++		};
++	};
+ };
  
--#include <linux/sh_clk.h>
- #include <linux/pm_domain.h>
- #include <mach/pm-rcar.h>
- 
+ &extal_clk {
+@@ -408,3 +418,7 @@
+ 		spi-cpha;
+ 	};
+ };
++
++&pcie {
++	status = "okay";
++};
 -- 
-1.8.5.2
+1.9.3
 
