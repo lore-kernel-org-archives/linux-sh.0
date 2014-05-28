@@ -1,39 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:49 +0000
-Subject: [PATCH 8/9] ARM: shmobile: Use shmobile_init_late() on r8a7740
-Message-Id: <34b9fa401eeef4e388bb7563110733c73c452c80.1400200838.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 28 May 2014 11:22:58 +0000
+Subject: [PATCH v2 1/3] usb: host: xhci-plat: add xhci_plat_start()
+Message-Id: <5385C712.8090405@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200838.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200838.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Some platforms (such as the Renesas R-Car) need to initialize some specific
+registers after xhci driver calls usb_add_hcd() and before the driver calls
+xhci_run(). So, this patch adds the xhci_plat_start() function.
 
-Hook up ->init_late for r8a7740 to initialize Suspend-to-RAM
-and CPUIdle in case of C-code less board support for r8a7740.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/usb/host/xhci-plat.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index eaec043..7bdc51c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -933,6 +933,7 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
- 	.init_machine	= r8a7740_generic_init,
-+	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a7740_boards_compat_dt,
- MACHINE_END
- 
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 9b645ae..1389370 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -38,6 +38,11 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
+ 	return xhci_gen_setup(hcd, xhci_plat_quirks);
+ }
+
++static int xhci_plat_start(struct usb_hcd *hcd)
++{
++	return xhci_run(hcd);
++}
++
+ static const struct hc_driver xhci_plat_xhci_driver = {
+ 	.description =		"xhci-hcd",
+ 	.product_desc =		"xHCI Host Controller",
+@@ -53,7 +58,7 @@ static const struct hc_driver xhci_plat_xhci_driver = {
+ 	 * basic lifecycle operations
+ 	 */
+ 	.reset =		xhci_plat_setup,
+-	.start =		xhci_run,
++	.start =		xhci_plat_start,
+ 	.stop =			xhci_stop,
+ 	.shutdown =		xhci_shutdown,
+
 -- 
-1.8.5.2
-
+1.7.9.5
