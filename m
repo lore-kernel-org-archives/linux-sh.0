@@ -1,45 +1,42 @@
-From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
-Date: Mon, 19 May 2014 20:42:42 +0000
-Subject: [PATCHv2 resend 11/11] backlight: pwm_bl: retrieve configured pwm period
-Message-Id: <1400532162-29483-12-git-send-email-alexandre.belloni@free-electrons.com>
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Wed, 28 May 2014 22:57:32 +0000
+Subject: [PATCH] SH: annotate code after BUG() as unreachable
+Message-Id: <1401317852-32386-1-git-send-email-computersforpeace@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
-In-Reply-To: <1400532162-29483-1-git-send-email-alexandre.belloni@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux Kernel <linux-kernel@vger.kernel.org>
+Cc: Brian Norris <computersforpeace@gmail.com>, linux-sh@vger.kernel.org
 
-The PWM core is now able to initialize the PWM period from platform_data. Use it
-and if it is not configured, use the supplied pwm_period_ns.
+This squashes some warnings:
 
-Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+  CC      mm/bootmem.o
+mm/bootmem.c: In function 'mark_bootmem':
+mm/bootmem.c:379:1: warning: control reaches end of non-void function [-Wreturn-type]
+
+  CC      kernel/sched/core.o
+kernel/sched/core.c: In function 'pick_next_task':
+kernel/sched/core.c:2610:1: warning: control reaches end of non-void function [-Wreturn-type]
+
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Cc: linux-sh@vger.kernel.org
 ---
- drivers/video/backlight/pwm_bl.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ arch/sh/include/asm/bug.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
-index b75201ff46f6..1bb8a69062c5 100644
---- a/drivers/video/backlight/pwm_bl.c
-+++ b/drivers/video/backlight/pwm_bl.c
-@@ -304,12 +304,14 @@ static int pwm_backlight_probe(struct platform_device *pdev)
- 	/*
- 	 * The DT case will set the pwm_period_ns field to 0 and store the
- 	 * period, parsed from the DT, in the PWM device. For the non-DT case,
--	 * set the period from platform data.
-+	 * set the period from platform data if it is not already set.
- 	 */
--	if (data->pwm_period_ns > 0)
-+	pb->period = pwm_get_period(pb->pwm);
-+	if (!pb->period && (data->pwm_period_ns > 0)) {
-+		pb->period = data->pwm_period_ns;
- 		pwm_set_period(pb->pwm, data->pwm_period_ns);
-+	}
+diff --git a/arch/sh/include/asm/bug.h b/arch/sh/include/asm/bug.h
+index dcf278075429..1ae948f309f2 100644
+--- a/arch/sh/include/asm/bug.h
++++ b/arch/sh/include/asm/bug.h
+@@ -48,6 +48,7 @@ do {							\
+ 		   "i" (__FILE__),			\
+ 		   "i" (__LINE__), "i" (0),		\
+ 		   "i" (sizeof(struct bug_entry)));	\
++	unreachable();					\
+ } while (0)
  
--	pb->period = pwm_get_period(pb->pwm);
- 	pb->lth_brightness = data->lth_brightness * (pb->period / pb->scale);
- 
- 	memset(&props, 0, sizeof(struct backlight_properties));
+ #define __WARN_TAINT(taint)				\
 -- 
 1.9.1
 
