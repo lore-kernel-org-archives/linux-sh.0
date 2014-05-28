@@ -1,95 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:32 +0000
-Subject: [PATCH 07/12] ARM: shmobile: r7s72100: add i2c clocks to dtsi
-Message-Id: <d165566b8dc425e52a4f2c19c27c63d9807128b2.1400201383.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 28 May 2014 11:23:26 +0000
+Subject: [PATCH v2 3/3] Documentation: dt-bindings: update xhci-platform DT binding for R-Car H2 and M2
+Message-Id: <5385C72E.2050309@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400201383.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400201383.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This commit extends the compatible string list of the xhci-platform
+binding with the new "renesas,xhci-r8a7790" and "renesas,xhci-r8a7791"
+compatible strings. It is used to describe the xHCI controller which
+is available in the R-Car H2 and M2 SoCs.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 15 +++++++++++++++
- include/dt-bindings/clock/r7s72100-clock.h |  6 ++++++
- 2 files changed, 21 insertions(+)
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index a4a6738..afce2e3 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -110,6 +110,17 @@
- 			>;
- 			clock-output-names = "scif0", "scif1", "scif2", "scif3", "scif4", "scif5", "scif6", "scif7";
- 		};
-+
-+		mstp9_clks: mstp9_clks@fcfe0438 {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe0438 4>;
-+			clocks = <&p0_clk>, <&p0_clk>, <&p0_clk>, <&p0_clk>;
-+			clock-indices = <
-+				R7S72100_CLK_I2C0 R7S72100_CLK_I2C1 R7S72100_CLK_I2C2 R7S72100_CLK_I2C3
-+			>;
-+			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
-+		};
- 	};
- 
- 	cpus {
-@@ -145,6 +156,7 @@
- 			     <0 162 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 163 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -162,6 +174,7 @@
- 			     <0 170 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 171 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -179,6 +192,7 @@
- 			     <0 178 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 179 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-@@ -196,6 +210,7 @@
- 			     <0 186 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 187 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
- 		clock-frequency = <100000>;
- 		status = "disabled";
- 	};
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-index c756f1c..ff84e0b 100644
---- a/include/dt-bindings/clock/r7s72100-clock.h
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -25,4 +25,10 @@
- #define R7S72100_CLK_SCIF6	1
- #define R7S72100_CLK_SCIF7	0
- 
-+/* MSTP9 */
-+#define R7S72100_CLK_I2C0	7
-+#define R7S72100_CLK_I2C1	6
-+#define R7S72100_CLK_I2C2	5
-+#define R7S72100_CLK_I2C3	4
-+
- #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 999be5c..5a79377 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -2,7 +2,8 @@ USB xHCI controllers
+
+ Required properties:
+   - compatible: should be one of "generic-xhci",
+-    "marvell,armada-375-xhci", "marvell,armada-380-xhci" (deprecated:
++    "marvell,armada-375-xhci", "marvell,armada-380-xhci",
++    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791" (deprecated:
+     "xhci-platform").
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
 -- 
-1.8.5.2
-
+1.7.9.5
