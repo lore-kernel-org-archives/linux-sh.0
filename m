@@ -1,106 +1,32 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 14 May 2014 01:10:13 +0000
-Subject: [PATCH v6 09/12] ARM: shmobile: r7s72100: add spi clocks to dtsi
-Message-Id: <1400029816-24028-10-git-send-email-wsa@the-dreams.de>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 29 May 2014 07:24:52 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7791: Support Core-Standby for Suspend to RAM
+Message-Id: <5386E0C4.1090208@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1400029816-24028-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add r8a7791 Core-Standby state for Suspend to RAM support.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- arch/arm/boot/dts/r7s72100.dtsi            | 18 ++++++++++++++++++
- include/dt-bindings/clock/r7s72100-clock.h |  7 +++++++
- 2 files changed, 25 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7791.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index afce2e344c7a..f50fbc8f3bd9 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -121,6 +121,19 @@
- 			>;
- 			clock-output-names = "i2c0", "i2c1", "i2c2", "i2c3";
- 		};
-+
-+		mstp10_clks: mstp10_clks@fcfe043c {
-+			#clock-cells = <1>;
-+			compatible = "renesas,r7s72100-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0xfcfe043c 4>;
-+			clocks = <&p1_clk>, <&p1_clk>, <&p1_clk>, <&p1_clk>,
-+				 <&p1_clk>;
-+			clock-indices = <
-+				R7S72100_CLK_SPI0 R7S72100_CLK_SPI1 R7S72100_CLK_SPI2 R7S72100_CLK_SPI3
-+				R7S72100_CLK_SPI4
-+			>;
-+			clock-output-names = "spi0", "spi1", "spi2", "spi3", "spi4";
-+		};
- 	};
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index ddccef6..6b42c16 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -52,6 +52,7 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	iounmap(p);
  
- 	cpus {
-@@ -318,6 +331,7 @@
- 			     <0 239 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI0>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -331,6 +345,7 @@
- 			     <0 242 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI1>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -344,6 +359,7 @@
- 			     <0 245 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI2>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -357,6 +373,7 @@
- 			     <0 248 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI3>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -370,6 +387,7 @@
- 			     <0 251 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
-+		clocks = <&mstp10_clks R7S72100_CLK_SPI4>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-diff --git a/include/dt-bindings/clock/r7s72100-clock.h b/include/dt-bindings/clock/r7s72100-clock.h
-index ff84e0bafd7b..5128f4d94f44 100644
---- a/include/dt-bindings/clock/r7s72100-clock.h
-+++ b/include/dt-bindings/clock/r7s72100-clock.h
-@@ -31,4 +31,11 @@
- #define R7S72100_CLK_I2C2	5
- #define R7S72100_CLK_I2C3	4
+ 	r8a7791_pm_init();
++	shmobile_smp_apmu_suspend_init();
+ }
  
-+/* MSTP10 */
-+#define R7S72100_CLK_SPI0	7
-+#define R7S72100_CLK_SPI1	6
-+#define R7S72100_CLK_SPI2	5
-+#define R7S72100_CLK_SPI3	4
-+#define R7S72100_CLK_SPI4	3
-+
- #endif /* __DT_BINDINGS_CLOCK_R7S72100_H__ */
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
 -- 
-1.9.2
+1.7.9.5
 
