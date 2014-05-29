@@ -1,163 +1,150 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 May 2014 11:32:11 +0000
-Subject: [PATCH v6 16/17] ARM: shmobile: Remove Marzen reference DTS
-Message-Id: <1400153532-23675-17-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 29 May 2014 13:17:12 +0000
+Subject: [PATCH v2 02/05] staging: emxx_udc: I/O memory and IRQ resource support
+Message-Id: <20140529131712.2329.80344.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1400153532-23675-1-git-send-email-horms+renesas@verge.net.au>
+References: <20140529131650.2329.3197.sendpatchset@w520>
+In-Reply-To: <20140529131650.2329.3197.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
-Now that the DTS file r8a7779-marzen.dts can be used with
-board-marzen.c and board-marzen-reference.c, proceed with removing
-r8a7779-marzen-reference.dts.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Based on work for the Koelsch board by Laurent Pinchart.
+Adjust the emxx_udc driver to make use of the standard
+driver model to pass I/O memory and IRQ as resources
+instead of hard coding those things in the driver.
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Needs more work - the VBUS signal is yet not handled.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v6
-* Rebase
 
-v5
-* As suggested by Magnus Damm
-  - Refer to r8a7779 instead of r8a7790 in the changelog
----
- arch/arm/boot/dts/r8a7779-marzen-reference.dts | 121 -------------------------
- 1 file changed, 121 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
+ Changes since V1:
+ - None
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-deleted file mode 100644
-index b27c637..0000000
---- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
-+++ /dev/null
-@@ -1,121 +0,0 @@
--/*
-- * Reference Device Tree Source for the Marzen board
-- *
-- * Copyright (C) 2013 Renesas Solutions Corp.
-- * Copyright (C) 2013 Simon Horman
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r8a7779.dtsi"
--#include <dt-bindings/gpio/gpio.h>
--#include <dt-bindings/interrupt-controller/irq.h>
--
--/ {
--	model = "marzen";
--	compatible = "renesas,marzen-reference", "renesas,r8a7779";
--
--	chosen {
--		bootargs = "console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on rw";
--	};
--
--	memory {
--		device_type = "memory";
--		reg = <0x60000000 0x40000000>;
--	};
--
--	fixedregulator3v3: fixedregulator@0 {
--		compatible = "regulator-fixed";
--		regulator-name = "fixed-3.3V";
--		regulator-min-microvolt = <3300000>;
--		regulator-max-microvolt = <3300000>;
--		regulator-boot-on;
--		regulator-always-on;
--	};
--
--	lan0@18000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x18000000 0x100>;
--		pinctrl-0 = <&lan0_pins>;
--		pinctrl-names = "default";
--
--		phy-mode = "mii";
--		interrupt-parent = <&irqpin0>;
--		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
--		smsc,irq-push-pull;
--		reg-io-width = <4>;
--		vddvario-supply = <&fixedregulator3v3>;
--		vdd33a-supply = <&fixedregulator3v3>;
--	};
--
--	leds {
--		compatible = "gpio-leds";
--		led2 {
--			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
--		};
--		led3 {
--			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
--		};
--		led4 {
--			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
--		};
--	};
--};
--
--&irqpin0 {
--	status = "okay";
--};
--
--&pfc {
--	pinctrl-0 = <&scif2_pins &scif4_pins>;
--	pinctrl-names = "default";
--
--	lan0_pins: lan0 {
--		intc {
--			renesas,groups = "intc_irq1_b";
--			renesas,function = "intc";
--		};
--		lbsc {
--			renesas,groups = "lbsc_ex_cs0";
--			renesas,function = "lbsc";
--		};
--	};
--
--	scif2_pins: serial2 {
--		renesas,groups = "scif2_data_c";
--		renesas,function = "scif2";
--	};
--
--	scif4_pins: serial4 {
--		renesas,groups = "scif4_data";
--		renesas,function = "scif4";
--	};
--
--	sdhi0_pins: sd0 {
--		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
--		renesas,function = "sdhi0";
--	};
--
--	hspi0_pins: hspi0 {
--		renesas,groups = "hspi0";
--		renesas,function = "hspi0";
--	};
--};
--
--&sdhi0 {
--	pinctrl-0 = <&sdhi0_pins>;
--	pinctrl-names = "default";
--
--	vmmc-supply = <&fixedregulator3v3>;
--	bus-width = <4>;
--	status = "okay";
--};
--
--&hspi0 {
--	pinctrl-0 = <&hspi0_pins>;
--	pinctrl-names = "default";
--	status = "okay";
--};
--- 
-1.8.5.2
+ drivers/staging/emxx_udc/emxx_udc.c |   57 +++++++++++------------------------
+ drivers/staging/emxx_udc/emxx_udc.h |    9 -----
+ 2 files changed, 18 insertions(+), 48 deletions(-)
 
+--- 0002/drivers/staging/emxx_udc/emxx_udc.c
++++ work/drivers/staging/emxx_udc/emxx_udc.c	2014-05-22 16:20:02.000000000 +0900
+@@ -3356,37 +3356,38 @@ static int nbu2ss_drv_probe(struct platf
+ {
+ 	int	status = -ENODEV;
+ 	struct nbu2ss_udc	*udc;
++	struct resource *r;
++	int irq;
++	void __iomem *mmio_base;
+ 
+ 	udc = &udc_controller;
+ 	memset(udc, 0, sizeof(struct nbu2ss_udc));
+ 
+ 	platform_set_drvdata(pdev, udc);
+ 
+-	/* IO Memory Region */
+-	if (!request_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE
+-				, driver_name)) {
++	/* require I/O memory and IRQ to be provided as resources */
++	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	mmio_base = devm_request_and_ioremap(&pdev->dev, r);
++	if (IS_ERR(mmio_base)) {
++		dev_err(&pdev->dev, "failed to map I/O memory\n");
++		return PTR_ERR(mmio_base);
++	}
+ 
+-		ERR("request_mem_region failed\n");
+-		return -EBUSY;
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "failed to get IRQ\n");
++		return irq;
+ 	}
++	status = devm_request_irq(&pdev->dev, irq, _nbu2ss_udc_irq,
++				  0, driver_name, udc);
+ 
+ 	/* IO Memory */
+-	udc->p_regs = (PT_FC_REGS)ioremap(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-	if (!udc->p_regs) {
+-		ERR("request_io_mem failed\n");
+-		goto cleanup3;
+-	}
++	udc->p_regs = (PT_FC_REGS)mmio_base;
+ 
+ 	/* USB Function Controller Interrupt */
+-	status = request_irq(USB_UDC_IRQ_1,
+-				_nbu2ss_udc_irq,
+-				IRQF_DISABLED,
+-				driver_name,
+-				udc);
+-
+ 	if (status != 0) {
+ 		ERR("request_irq(USB_UDC_IRQ_1) failed\n");
+-		goto cleanup2;
++		goto cleanup1;
+ 	}
+ 
+ 	/* Driver Initialization */
+@@ -3412,18 +3413,6 @@ static int nbu2ss_drv_probe(struct platf
+ 	return status;
+ 
+ cleanup1:
+-	/* Interrupt Handler - Release */
+-	free_irq(USB_UDC_IRQ_1, udc);
+-
+-cleanup2:
+-	/* IO Memory - Release */
+-	if (udc->p_regs)
+-		iounmap(udc->p_regs);
+-
+-cleanup3:
+-	/* IO Memory Region - Release */
+-	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-
+ 	return status;
+ }
+ 
+@@ -3456,18 +3445,8 @@ static int __exit nbu2ss_drv_remove(stru
+ 	}
+ 
+ 	/* Interrupt Handler - Release */
+-	free_irq(USB_UDC_IRQ_1, udc);
+-
+-	/* Interrupt Handler - Release */
+ 	free_irq(INT_VBUS, udc);
+ 
+-	/* IO Memory - Release */
+-	if (udc->p_regs)
+-		iounmap(udc->p_regs);
+-
+-	/* IO Memory Region - Release */
+-	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-
+ 	return 0;
+ }
+ 
+--- 0002/drivers/staging/emxx_udc/emxx_udc.h
++++ work/drivers/staging/emxx_udc/emxx_udc.h	2014-05-22 16:20:02.000000000 +0900
+@@ -47,20 +47,11 @@
+ 
+ 
+ /*------------ Board dependence(Resource) */
+-#define USB_BASE_ADDRESS	EMXX_USBS1_BASE
+-#define USB_BASE_SIZE		0x2000
+-
+-#define USB_UDC_IRQ_0		INT_USBF0
+-#define USB_UDC_IRQ_1		INT_USBF1
+ #define	VBUS_VALUE		GPIO_VBUS
+ 
+ /* below hacked up for staging integration */
+ #define GPIO_VBUS 0 /* GPIO_P153 on KZM9D */
+ #define INT_VBUS 0 /* IRQ for GPIO_P153 */
+-#define INT_USBF0 158
+-#define INT_USBF1 159
+-#define EMXX_USBS0_BASE 0xe2700000
+-#define EMXX_USBS1_BASE 0xe2800000
+ 
+ /*------------ Board dependence(Wait) */
+ 
