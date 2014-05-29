@@ -1,87 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 May 2014 00:44:19 +0000
-Subject: Re: [PATCH v2 2/2] ARM: shmobile: r8a7779 dtsi: Update unit-addresses for clocks
-Message-Id: <20140526004419.GC31096@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 29 May 2014 11:05:53 +0000
+Subject: [PATCH 1/2] arm: shmobile: r8a7791: add USB3.0 clocks to device tree
+Message-Id: <53871491.1000109@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400831180-20409-1-git-send-email-geert+renesas@glider.be>
- <1400831180-20409-3-git-send-email-geert+renesas@glider.be>
- <11119685.9RVVTTLT6z@avalon>
-In-Reply-To: <11119685.9RVVTTLT6z@avalon>
+References: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201310310218.37578.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 23, 2014 at 11:36:51AM +0200, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> Thank you for the patch.
-> 
-> On Friday 23 May 2014 09:46:20 Geert Uytterhoeven wrote:
-> >   - Correct the unit-address for the "cpg_clocks" node,
-> >   - Add missing unit-addresses for the "mstp*_clks" nodes,
-> >   - Rename "cpg_clocks" and "mstp*_clks" nodes to the more generic
-> >     "clocks".
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Thanks, I will queue this up.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index ede8b7f..c2b5b38 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -784,15 +784,15 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+-				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&rclk_clk>;
++				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 R8A7791_CLK_SDHI0
+-				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_CMT1
++				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 R8A7791_CLK_SSUSB R8A7791_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
+-				"mmcif0", "i2c7", "i2c8", "cmt1";
++				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.7.9.5
 
-> > ---
-> > v2:
-> >   - Spun-off from "ARM: shmobile: r8a7779 dtsi: Correct #address-cells/
-> >     #size-cells for clocks".
-> >   - Removed "0x" prefix from cpg_clocks unit-address,
-> >   - Renamed cpg_clocks and mstp*_clks nodes to the more generic "clocks".
-> > 
-> >  arch/arm/boot/dts/r8a7779.dtsi | 8 ++++----
-> >  1 file changed, 4 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> > index 395a611e2b5a..61d08f42456c 100644
-> > --- a/arch/arm/boot/dts/r8a7779.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> > @@ -298,7 +298,7 @@
-> >  		};
-> > 
-> >  		/* Special CPG clocks */
-> > -		cpg_clocks: cpg_clocks@0xe6150000 {
-> > +		cpg_clocks: clocks@ffc80000 {
-> >  			compatible = "renesas,r8a7779-cpg-clocks";
-> >  			reg = <0xffc80000 0x30>;
-> >  			clocks = <&extal_clk>;
-> > @@ -342,7 +342,7 @@
-> >  		};
-> > 
-> >  		/* Gate clocks */
-> > -		mstp0_clks: mstp0_clks {
-> > +		mstp0_clks: clocks@ffc80030 {
-> >  			compatible = "renesas,r8a7779-mstp-clocks",
-> >  			             "renesas,cpg-mstp-clocks";
-> >  			reg = <0xffc80030 4>;
-> > @@ -379,7 +379,7 @@
-> >  				"scif1", "scif0", "i2c3", "i2c2", "i2c1",
-> >  				"i2c0";
-> >  		};
-> > -		mstp1_clks: mstp1_clks {
-> > +		mstp1_clks: clocks@ffc80034 {
-> >  			compatible = "renesas,r8a7779-mstp-clocks",
-> >  			             "renesas,cpg-mstp-clocks";
-> >  			reg = <0xffc80034 4>, <0xffc80044 4>;
-> > @@ -408,7 +408,7 @@
-> >  				"ether", "sata",
-> >  				"pcie", "vin3";
-> >  		};
-> > -		mstp3_clks: mstp3_clks {
-> > +		mstp3_clks: clocks@ffc8003c {
-> >  			compatible = "renesas,r8a7779-mstp-clocks",
-> >  			             "renesas,cpg-mstp-clocks";
-> >  			reg = <0xffc8003c 4>;
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
