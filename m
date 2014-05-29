@@ -1,81 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 20 May 2014 20:14:06 +0000
-Subject: [PATCH v3 2/2] ARM: shmobile: lager: enable internal PCI
-Message-Id: <201405210014.07278.sergei.shtylyov@cogentembedded.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Thu, 29 May 2014 07:48:27 +0000
+Subject: [PATCH 0/7] ARM: shmobile: Enable CPU FREQ support
+Message-Id: <5386E64B.7060202@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201405210008.15145.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+This patch series is initial support for CPU FREQ.
 
-Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
-them.
+Based on : renesas-devel-v3.15-rc7-20140528
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Reviewed-by: Ian Molton <ian.molton@codethink.co.uk>
-[Sergei: enabled PCI0]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Support :
+ [CPU]
+ - Coretex A15( Z clock) : Supported
+ - Coretex A7 (Z2 clock) : Not supported
+ [HW]
+ - R-CAR H2 : Supported
+ - R-CAR M2 : Supported
+ - Other HW : Not supported
+ [DVFS feature]
+ - DFS : Supported
+ - DVS : Not supported
 
----
-Changes in version 3:
-- refreshed the patch.
+Benoit Cousson (2):
+  ARM: dts: r8a7790-lager: Add DVFS parameters into cpu0 node for
+    r8a7790
+  ARM: shmobile: Make r8a77900 CPUFreq capable
 
-Changes in version 2:
-- enabled PCI0 device;
-- reworded summary and changelog;
-- refreshed the patch.
+Gaku Inami (5):
+  ARM: shmobile: Disable DVS support for r8a7790
+  ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
+  ARM: dts: r8a7791-koelsch: Add DVFS parameters into cpu0 node for
+    r8a7791
+  ARM: shmobile: Make r8a7791 CPUFreq capable
+  ARM: shmobile: Enable CPUFREQ configuration
 
- arch/arm/boot/dts/r8a7790-lager.dts |   33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi               |   11 +++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi               |   11 +++++++++++
+ arch/arm/configs/shmobile_defconfig          |   12 ++++++++++++
+ arch/arm/mach-shmobile/Kconfig               |    4 ++++
+ arch/arm/mach-shmobile/Makefile              |    1 +
+ arch/arm/mach-shmobile/cpufreq.c             |   21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    7 +++++++
+ 7 files changed, 67 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/cpufreq.c
 
-Index: renesas/arch/arm/boot/dts/r8a7790-lager.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790-lager.dts
-+++ renesas/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -204,6 +204,21 @@
- 				 "msiof1_tx";
- 		renesas,function = "msiof1";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	usb2_pins: usb2 {
-+		renesas,groups = "usb2";
-+		renesas,function = "usb2";
-+	};
- };
- 
- &ether {
-@@ -317,3 +332,21 @@
- 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
- 	status = "okay";
- };
-+
-+&pci0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci2 {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
+-- 
+1.7.9.5
+
