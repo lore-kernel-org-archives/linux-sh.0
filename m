@@ -1,31 +1,43 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 15 May 2014 06:53:00 +0000
-Subject: Re: [PATCH v3 1/2] ARM: shmobile: koelsch-reference: Remove workarounds for core clock issues
-Message-Id: <CAMuHMdWu=g6+-djdumXn8=5OJ9wvHwvoSkr4pf7Q3vHGOrE0hA@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 29 May 2014 10:59:59 +0000
+Subject: [PATCH 1/2] arm: shmobile: r8a7790: add USB3.0 clocks to device tree
+Message-Id: <5387132F.5060600@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400078866-5694-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1400078866-5694-1-git-send-email-geert+renesas@glider.be>
+References: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1368173119-27345-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-On Thu, May 15, 2014 at 8:51 AM, Simon Horman <horms@verge.net.au> wrote:
->> I'll see about queuing it up.
->
-> I have now done so.
-
-Thanks a lot!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index cd8b7cc..e06c486 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -780,17 +780,17 @@
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+ 			clocks = <&hp_clk>, <&cp_clk>, <&mmc1_clk>, <&sd3_clk>,
+ 				 <&sd2_clk>, <&cpg_clocks R8A7790_CLK_SD1>, <&cpg_clocks R8A7790_CLK_SD0>, <&mmc0_clk>,
+-				 <&hp_clk>, <&hp_clk>, <&rclk_clk>;
++				 <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_IIC2 R8A7790_CLK_TPU0 R8A7790_CLK_MMCIF1 R8A7790_CLK_SDHI3
+ 				R8A7790_CLK_SDHI2 R8A7790_CLK_SDHI1 R8A7790_CLK_SDHI0 R8A7790_CLK_MMCIF0
+-				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_CMT1
++				R8A7790_CLK_IIC0 R8A7790_CLK_IIC1 R8A7790_CLK_SSUSB R8A7790_CLK_CMT1
+ 			>;
+ 			clock-output-names  				"iic2", "tpu0", "mmcif1", "sdhi3",
+ 				"sdhi2", "sdhi1", "sdhi0", "mmcif0",
+-				"iic0", "iic1", "cmt1";
++				"iic0", "iic1", "ssusb", "cmt1";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+1.7.9.5
