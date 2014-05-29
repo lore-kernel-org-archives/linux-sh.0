@@ -1,102 +1,154 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 17 Apr 2014 10:33:25 +0000
-Subject: [PATCH v2 3/5] iommu/ipmmu-vmsa: Add device tree support
-Message-Id: <1397730807-5993-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 29 May 2014 13:17:32 +0000
+Subject: [PATCH v2 04/05] staging: board: Initial board staging support
+Message-Id: <20140529131732.2329.50630.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1397730807-5993-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20140529131650.2329.3197.sendpatchset@w520>
+In-Reply-To: <20140529131650.2329.3197.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
-Make platform data optional when the device is instantiated from DT and
-look up the micro-TLB number in the bus master DT node.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add staging board base support to allow continuous upstream
+in-tree development and integration of platform devices.
+
+Helps developers integrate devices as platform devices for
+device drivers that only provide platform device bindings.
+This in turn allows for incremental development of both
+hardware feature support and DT binding work in parallel.
+
+Two separate pieces of board staging functionality is
+provided to ease per-board staging board support:
+ - The board_staging() macro allows easy per-board callbacks
+ - The board_staging_dt_node_available() provides DT node checking
+
+Tested on the KZM9D board with the emxx_udc staging driver.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/iommu/ipmmu-vmsa.c | 39 +++++++++++++++++++++++++++++++--------
- 1 file changed, 31 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 49e00f7..d277bde 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -16,6 +16,7 @@
- #include <linux/io.h>
- #include <linux/iommu.h>
- #include <linux/module.h>
+ Changes since V1:
+ - New broken out staging board base support
+ - Added the function board_staging_dt_node_available()
+ - Added a TODO file
+
+ drivers/staging/Kconfig        |    2 +
+ drivers/staging/Makefile       |    1 
+ drivers/staging/board/Kconfig  |    7 ++++++
+ drivers/staging/board/Makefile |    1 
+ drivers/staging/board/TODO     |    2 +
+ drivers/staging/board/board.c  |   41 ++++++++++++++++++++++++++++++++++++++++
+ drivers/staging/board/board.h  |   20 +++++++++++++++++++
+ 7 files changed, 74 insertions(+)
+
+--- 0008/drivers/staging/Kconfig
++++ work/drivers/staging/Kconfig	2014-05-29 21:40:40.000000000 +0900
+@@ -112,6 +112,8 @@ source "drivers/staging/media/Kconfig"
+ 
+ source "drivers/staging/android/Kconfig"
+ 
++source "drivers/staging/board/Kconfig"
++
+ source "drivers/staging/ozwpan/Kconfig"
+ 
+ source "drivers/staging/gdm72xx/Kconfig"
+--- 0008/drivers/staging/Makefile
++++ work/drivers/staging/Makefile	2014-05-29 21:40:40.000000000 +0900
+@@ -49,6 +49,7 @@ obj-$(CONFIG_TOUCHSCREEN_CLEARPAD_TM1217
+ obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4)	+= ste_rmi4/
+ obj-$(CONFIG_MFD_NVEC)		+= nvec/
+ obj-$(CONFIG_ANDROID)		+= android/
++obj-$(CONFIG_STAGING_BOARD)	+= board/
+ obj-$(CONFIG_USB_WPAN_HCD)	+= ozwpan/
+ obj-$(CONFIG_WIMAX_GDM72XX)	+= gdm72xx/
+ obj-$(CONFIG_LTE_GDM724X)	+= gdm724x/
+--- /dev/null
++++ work/drivers/staging/board/Kconfig	2014-05-29 21:40:41.000000000 +0900
+@@ -0,0 +1,7 @@
++config STAGING_BOARD
++	boolean "Staging Board Support"
++	help
++	  Select to enable per-board staging support code.
++
++	  If in doubt, say N here.
++
+--- /dev/null
++++ work/drivers/staging/board/Makefile	2014-05-29 21:40:41.000000000 +0900
+@@ -0,0 +1 @@
++obj-y	:= board.o
+--- /dev/null
++++ work/drivers/staging/board/TODO	2014-05-29 21:40:41.000000000 +0900
+@@ -0,0 +1,2 @@
++* replace platform device code with DT nodes once the driver supports DT
++* remove staging board code when no more platform devices are needed
+--- /dev/null
++++ work/drivers/staging/board/board.c	2014-05-29 21:46:32.000000000 +0900
+@@ -0,0 +1,41 @@
++#include <linux/init.h>
++#include <linux/device.h>
++#include <linux/kernel.h>
 +#include <linux/of.h>
- #include <linux/platform_data/ipmmu-vmsa.h>
- #include <linux/platform_device.h>
- #include <linux/sizes.h>
-@@ -828,16 +829,33 @@ static phys_addr_t ipmmu_iova_to_phys(struct iommu_domain *io_domain,
- 
- static int ipmmu_find_utlb(struct ipmmu_vmsa_device *mmu, struct device *dev)
- {
--	const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
--	const char *devname = dev_name(dev);
--	unsigned int i;
-+	struct of_phandle_args args;
-+	int ret;
++#include <linux/of_address.h>
++#include "board.h"
 +
-+	if (mmu->pdata) {
-+		const struct ipmmu_vmsa_master *master = mmu->pdata->masters;
-+		const char *devname = dev_name(dev);
-+		unsigned int i;
- 
--	for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
--		if (strcmp(master->name, devname) = 0)
--			return master->utlb;
-+		for (i = 0; i < mmu->pdata->num_masters; ++i, ++master) {
-+			if (strcmp(master->name, devname) = 0)
-+				return master->utlb;
++static bool find_by_address(u64 base_address)
++{
++	struct device_node *dn = of_find_all_nodes(NULL);
++	struct resource res;
++
++	while (dn) {
++		if (of_can_translate_address(dn)
++		    && !of_address_to_resource(dn, 0, &res)) {
++			if (res.start = base_address) {
++				of_node_put(dn);
++				return true;
++			}
 +		}
++		dn = of_find_all_nodes(dn);
++	}
 +
-+		return -1;
- 	}
- 
--	return -1;
-+	ret = of_parse_phandle_with_fixed_args(dev->of_node, "iommus",
-+					       1, 0, &args);
-+	if (ret < 0)
-+		return -1;
++	return false;
++}
 +
-+	of_node_put(args.np);
++bool __init board_staging_dt_node_available(const struct resource *resource,
++					    unsigned int num_resources)
++{
++	unsigned int i;
 +
-+	if (args.np != mmu->dev->of_node)
-+		return -1;
++	for (i = 0; i < num_resources; i++) {
++		const struct resource *r = resource + i;
 +
-+	return args.args[0];
- }
- 
- static int ipmmu_add_device(struct device *dev)
-@@ -980,7 +998,7 @@ static int ipmmu_probe(struct platform_device *pdev)
- 	int irq;
- 	int ret;
- 
--	if (!pdev->dev.platform_data) {
-+	if (!IS_ENABLED(CONFIG_OF) && !pdev->dev.platform_data) {
- 		dev_err(&pdev->dev, "missing platform data\n");
- 		return -EINVAL;
- 	}
-@@ -1046,10 +1064,15 @@ static int ipmmu_remove(struct platform_device *pdev)
- 	return 0;
- }
- 
-+static const struct of_device_id ipmmu_of_ids[] = {
-+	{ .compatible = "renesas,ipmmu-vmsa", },
-+};
++		if (resource_type(r) = IORESOURCE_MEM)
++			if (find_by_address(r->start))
++				return true; /* DT node available */
++	}
 +
- static struct platform_driver ipmmu_driver = {
- 	.driver = {
- 		.owner = THIS_MODULE,
- 		.name = "ipmmu-vmsa",
-+		.of_match_table = of_match_ptr(ipmmu_of_ids),
- 	},
- 	.probe = ipmmu_probe,
- 	.remove	= ipmmu_remove,
--- 
-1.8.3.2
-
++	return false; /* Nothing found */
++}
+--- /dev/null
++++ work/drivers/staging/board/board.h	2014-05-29 21:40:41.000000000 +0900
+@@ -0,0 +1,20 @@
++#ifndef __BOARD_H__
++#define __BOARD_H__
++#include <linux/init.h>
++#include <linux/of.h>
++
++bool board_staging_dt_node_available(const struct resource *resource,
++				     unsigned int num_resources);
++
++#define board_staging(str, fn)			\
++static int __init runtime_board_check(void)	\
++{						\
++	if (of_machine_is_compatible(str))	\
++		fn();				\
++						\
++	return 0;				\
++}						\
++						\
++late_initcall(runtime_board_check)
++
++#endif /* __BOARD_H__ */
