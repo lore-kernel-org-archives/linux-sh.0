@@ -1,184 +1,114 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 08 May 2014 11:36:26 +0000
-Subject: Re: [PATCH v2 3/5] sh/PCI: Pass GAPSPCI_DMA_BASE CPU address to dma_declare_coherent_memory()
-Message-Id: <7530420.5q1IGMpiC3@wuerfel>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 29 May 2014 07:10:44 +0000
+Subject: [PATCH] ARM: shmobile: r8a7791 SYSC setup code
+Message-Id: <5386DD74.3000202@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140506223250.17968.27054.stgit@bhelgaas-glaptop.roam.corp.google.com> <4271645.KYLAoYxC5v@wuerfel> <20140507231822.GA4951@google.com>
-In-Reply-To: <20140507231822.GA4951@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: linux-doc@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Joerg Roedel <joro@8bytes.org>, Randy Dunlap <rdunlap@infradead.org>, Liviu Dudau <Liviu.Dudau@arm.com>, linux-kernel@vger.kernel.org, James Bottomley <jbottomley@parallels.com>, linux-pci@vger.kernel.org, David Woodhouse <dwmw2@infradead.org>, Magnus Damm <damm@opensource.se>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Wednesday 07 May 2014 17:18:22 Bjorn Helgaas wrote:
-> [+cc Magnus, linux-sh (sorry, I forgot to tell stgit to cc you)]
-> 
-> On Wed, May 07, 2014 at 10:15:10AM +0200, Arnd Bergmann wrote:
-> > On Wednesday 07 May 2014 09:55:16 Arnd Bergmann wrote:
-> > > On Tuesday 06 May 2014 16:48:33 Bjorn Helgaas wrote:
-> > > > @@ -51,8 +53,12 @@ static void gapspci_fixup_resources(struct pci_dev *dev)
-> > > >                 /*
-> > > >                  * Redirect dma memory allocations to special memory window.
-> > > >                  */
-> > > > +               region.start = GAPSPCI_DMA_BASE;
-> > > > +               region.end = GAPSPCI_DMA_BASE + GAPSPCI_DMA_SIZE - 1;
-> > > > +               res.flags = IORESOURCE_MEM;
-> > > > +               pcibios_bus_to_resource(dev->bus, &res, &region);
-> > > >                 BUG_ON(!dma_declare_coherent_memory(&dev->dev,
-> > > > -                                               GAPSPCI_DMA_BASE,
-> > > > +                                               res->start,
-> > > >                                                 GAPSPCI_DMA_BASE,
-> > > >                                                 GAPSPCI_DMA_SIZE,
-> > > >                                                 DMA_MEMORY_MAP |
-> > > 
-> > > Not sure if this is an improvement. I understand the intention, but
-> > > it's actually possible for the offset to be different both ways:
-> > > 
-> > > Your patch applies the outbound mem_offset that was provided when
-> > > registering the MMIO resource for the PCI host bridge. What the driver
-> > > needs instead is the inbound DMA offset that gets applied by some
-> > > host bridges that don't have a 1:1 mapping but also don't have an
-> > > IOMMU.
-> 
-> I don't understand where the inbound DMA offset comes into play.  As I
-> understand it, we're talking about a region of memory on the PCI bus,
-> not in system RAM, and there are two ways to access it: (1) the CPU
-> makes MMIO accesses to it, and (2) the device makes DMA accesses to
-> it.
+Add r8a7791 SYSC power management support.
 
-I was actually assuming that it's in system RAM but happens to have
-some property that lets PCI devices access it coherently.
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/mach-shmobile/Makefile               |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 +
+ arch/arm/mach-shmobile/pm-r8a7791.c           |   47 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7791.c          |    2 ++
+ 4 files changed, 51 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7791.c
 
-Your explanation also seems plausible, I have no idea which one is
-true.
-
-> The CPU accesses go through the host bridge MMIO aperture and will
-> have the outbound mem_offset applied to them.  The DMA accesses are
-> handled by the device itself and there's no host bridge or IOMMU or
-> inbound DMA offset involved.
-> 
-> I think there are two reasonable ways a PCI driver could use
-> dma_declare_coherent_memory():
-> 
->   1) The bus address of the region might be in a BAR.  In that case,
->   it should pass pci_resource_start() (the CPU phys_addr_t) as the
->   first address, and pci_bus_address(pci_resource_start()) (the bus
->   dma_addr_t) as the second.
-> 
->   2) The bus address of the region might be discovered from the device
->   in some non-standard way.  In this case, the driver reads the bus
->   address dma_addr_t directly from the device, and it should use
->   something like the pcibios_bus_to_resource() code I proposed to find
->   the CPU phys_addr_t.
-> 
-> For this platform, all the addresses are hard-coded and there is no
-> outbound MMIO offset, so we can't tell which to use and in this
-> system, it doesn't matter if we do anything at all.
-
-Based on your initial assumption, this all is correct.
-
-> The only reason I would make a change here is because the current code
-> cannot be safely copied (another driver might be used in systems where
-> the host bridge does have an outbound MMIO offset).  If we make this
-> code use either strategy, it would be a clue to future users that they
-> should not assume the physical address is the same as the bus address.
-> 
-> I changed the patch (below) to add a comment and to use the first
-> strategy (though there isn't an actual BAR, so we can't do it exactly
-> that way).
-
-Ok.
-
-> > > We know that on this particular platform, both are zero, so
-> > > the original code works and it will keep working with your change,
-> > > but I think it's a mistake anyway. I have seen both kinds of offsets
-> > > in the past on real machines, but I am not aware of any where they
-> > > are both nonzero and have the same value.
-> > 
-> > Hmm, looking at it again, it seem even weirder: the address we register
-> > for DMA allocations is the same that gets passed into the PCI host
-> > for MMIO resources. Something is very strange here. Still, I'd rather
-> > not touch it at all, whatever it does.
-> 
-> It's definitely strange.  It looks to me like the memory on the device
-> takes up the entire 32KB host bridge MMIO aperture.  I don't know what
-> driver uses this, but the device must be programmed via I/O ports,
-> which sort of makes sense given the previous lines in this quirk that
-> set the BAR1 resource to be in the I/O aperture.
-
-From what I can tell, the only device on the PCI bus is an ethernet
-adapter with the 8139too configured into MMIO mode (the driver as well
-as the hardware supports both PIO and MMIO modes).
-
-The gapspci_fixup_resources() in arch/sh/drivers/pci/fixups-dreamcast.c
-seems to manually adjust MMIO BAR to point to the correct place, which
-is probably required because the MMIO aperture provided is fake.
-
-
-> sh/PCI: Pass GAPSPCI_DMA_BASE CPU & bus address to dma_declare_coherent_memory()
-> 
-> From: Bjorn Helgaas <bhelgaas@google.com>
-> 
-> dma_declare_coherent_memory() needs both the CPU physical address and the
-> bus address of the device memory.  They are the same on this platform, but
-> in general we should use pcibios_resource_to_bus() to account for any
-> address translation done by the PCI host bridge.
-> 
-> This makes no difference on Dreamcast, but is safer if the usage is copied
-> to future drivers.
-> 
-> Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
-> CC: Magnus Damm <damm@opensource.se>
-> CC: linux-sh@vger.kernel.org
-
-Unless Magnus or someone else is able to clarify where GAPSPCI_DMA_BASE
-actually is in the system (on the CPU bus or the PCI bus), your patch
-does help anyone copying this code to a driver that needs it for coherent
-memory on the PCI bus.
-
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-
-> ---
->  arch/sh/drivers/pci/fixups-dreamcast.c |   18 +++++++++++++++---
->  1 file changed, 15 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/sh/drivers/pci/fixups-dreamcast.c b/arch/sh/drivers/pci/fixups-dreamcast.c
-> index d6cde700e316..f22127f966ce 100644
-> --- a/arch/sh/drivers/pci/fixups-dreamcast.c
-> +++ b/arch/sh/drivers/pci/fixups-dreamcast.c
-> @@ -31,6 +31,8 @@
->  static void gapspci_fixup_resources(struct pci_dev *dev)
->  {
->  	struct pci_channel *p = dev->sysdata;
-> +	struct resource res;
-> +	struct pci_bus_region region;
->  
->  	printk(KERN_NOTICE "PCI: Fixing up device %s\n", pci_name(dev));
->  
-> @@ -50,11 +52,21 @@ static void gapspci_fixup_resources(struct pci_dev *dev)
->  
->  		/*
->  		 * Redirect dma memory allocations to special memory window.
-> +		 *
-> +		 * If this GAPSPCI region were mapped by a BAR, the CPU
-> +		 * phys_addr_t would be pci_resource_start(), and the bus
-> +		 * address would be pci_bus_address(pci_resource_start()).
-> +		 * But apparently there's no BAR mapping it, so we just
-> +		 * "know" its CPU address is GAPSPCI_DMA_BASE.
->  		 */
-> +		res.start = GAPSPCI_DMA_BASE;
-> +		res.end = GAPSPCI_DMA_BASE + GAPSPCI_DMA_SIZE - 1;
-> +		res.flags = IORESOURCE_MEM;
-> +		pcibios_resource_to_bus(dev, &region, &resource);
->  		BUG_ON(!dma_declare_coherent_memory(&dev->dev,
-> -						GAPSPCI_DMA_BASE,
-> -						GAPSPCI_DMA_BASE,
-> -						GAPSPCI_DMA_SIZE,
-> +						res.start,
-> +						region.start,
-> +						resource_size(&res),
->  						DMA_MEMORY_MAP |
->  						DMA_MEMORY_EXCLUSIVE));
->  		break;
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 0d6a04c..29034aa 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+ 
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 664274c..86eae7b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -5,6 +5,7 @@ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
++void r8a7791_pm_init(void);
+ extern struct smp_operations r8a7791_smp_ops;
+ 
+ #endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+new file mode 100644
+index 0000000..657918a
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -0,0 +1,47 @@
++/*
++ * r8a7791 Power management support
++ *
++ * Copyright (C) 2013  Renesas Electronics Corporation
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/kernel.h>
++#include <asm/io.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7791.h>
++
++/* SYSC */
++#define SYSCIER 0x0c
++#define SYSCIMR 0x10
++
++#if defined(CONFIG_SMP)
++
++static void __init r8a7791_sysc_init(void)
++{
++	void __iomem *base = rcar_sysc_init(0xe6180000);
++
++	/* enable all interrupt sources, but do not use interrupt handler */
++	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0, base + SYSCIMR);
++}
++
++#else /* CONFIG_SMP */
++
++static inline void r8a7791_sysc_init(void) {}
++
++#endif /* CONFIG_SMP */
++
++void __init r8a7791_pm_init(void)
++{
++	static int once;
++
++	if (once++)
++		return;
++
++	r8a7791_sysc_init();
++}
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index ec97952..ddccef6 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -50,6 +50,8 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
+ 		       p + CA15RESCNT);
+ 	iounmap(p);
++
++	r8a7791_pm_init();
+ }
+ 
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
+-- 
+1.7.9.5
 
