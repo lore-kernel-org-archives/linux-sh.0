@@ -1,79 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 16 May 2014 00:58:12 +0000
-Subject: [PATCH 03/11] ARM: shmobile: henninger: add QSPI DT support
-Message-Id: <f59838d448356feb4f0ce70785a49045d842c9c3.1400200395.git.horms+renesas@verge.net.au>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Thu, 29 May 2014 07:49:45 +0000
+Subject: [PATCH 7/7] ARM: shmobile: Enable CPUFREQ configuration
+Message-Id: <5386E699.2000107@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400200395.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400200395.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This changes of configuration is multiplatform build only for r8a7790/r8a7791.
 
-Define the Henninger board dependent part of the QSPI device node.
-Add device nodes for Spansion S25FL512S SPI flash and MTD partitions on it.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 38 +++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ arch/arm/configs/shmobile_defconfig |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index 2e45c06..1d715a3 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -109,6 +109,11 @@
- 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
- 	};
-+
-+	qspi_pins: spi0 {
-+		renesas,groups = "qspi_ctrl", "qspi_data4";
-+		renesas,function = "qspi";
-+	};
- };
- 
- &scif0 {
-@@ -158,3 +163,36 @@
- 	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
- 	status = "okay";
- };
-+
-+&qspi {
-+	pinctrl-0 = <&qspi_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+
-+	flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl512s";
-+		reg = <0>;
-+		spi-max-frequency = <30000000>;
-+		spi-tx-bus-width = <4>;
-+		spi-rx-bus-width = <4>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "loader_prg";
-+			reg = <0x00000000 0x00040000>;
-+			read-only;
-+		};
-+		partition@40000 {
-+			label = "user_prg";
-+			reg = <0x00040000 0x00400000>;
-+			read-only;
-+		};
-+		partition@440000 {
-+			label = "flash_fs";
-+			reg = <0x00440000 0x03bc0000>;
-+		};
-+	};
-+};
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 94d7736..5360c2a 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -147,3 +147,15 @@ CONFIG_NLS_ISO8859_1=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_GOV_COMMON=y
++CONFIG_CPU_FREQ_STAT=y
++CONFIG_CPU_FREQ_STAT_DETAILS=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
++CONFIG_CPU_THERMAL=y
++CONFIG_GENERIC_CPUFREQ_CPU0=y
 -- 
-1.8.5.2
+1.7.9.5
 
