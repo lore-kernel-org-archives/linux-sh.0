@@ -1,39 +1,53 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 29 May 2014 11:00:08 +0000
-Subject: [PATCH 2/2] arm: shmobile: r8a7790: add USB3.0 node to r8a7790.dtsi
-Message-Id: <53871338.8050606@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 29 May 2014 16:08:30 +0000
+Subject: Re: [PATCH 2/2] arm: shmobile: r8a7790: add USB3.0 node to r8a7790.dtsi
+Message-Id: <53875B7E.5010104@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
-In-Reply-To: <c223d986b953a4686f2540091f82e44030a50daa.1377652063.git.horms+renesas@verge.net.au>
+References: <53871338.8050606@renesas.com>
+In-Reply-To: <53871338.8050606@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+Hello.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e06c486..e6b04f2 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -902,4 +902,14 @@
- 		#size-cells = <0>;
- 		status = "disabled";
- 	};
-+
-+	xhci: xhci@ee000000 {
-+		compatible = "renesas,xhci-r8a7790";
-+		reg = <0 0xee000000 0 0xc00>;
-+		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
-+		phys = <&usbphy 1 1>;
-+		phy-names = "usb";
-+		status = "disabled";
-+	};
- };
--- 
-1.7.9.5
+On 05/29/2014 03:00 PM, Yoshihiro Shimoda wrote:
+
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>   arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+>   1 file changed, 10 insertions(+)
+
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index e06c486..e6b04f2 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -902,4 +902,14 @@
+>   		#size-cells = <0>;
+>   		status = "disabled";
+>   	};
+> +
+> +	xhci: xhci@ee000000 {
+
+    The node name should be "usb@ee000000", according to section 2.2.2 of the 
+ePAPR standard [1]:
+
+> +		compatible = "renesas,xhci-r8a7790";
+> +		reg = <0 0xee000000 0 0xc00>;
+> +		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
+> +		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
+> +		phys = <&usbphy 1 1>;
+
+    This part is dependent on the generic PHY support in the USB HCD in order 
+to work.
+
+> +		phy-names = "usb";
+> +		status = "disabled";
+> +	};
+>   };
+
+[1] http://www.power.org/resources/downloads/Power_ePAPR_APPROVED_v1.0.pdf
+
+WBR, Sergei
 
