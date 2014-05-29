@@ -1,52 +1,43 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Thu, 29 May 2014 07:48:27 +0000
-Subject: [PATCH 0/7] ARM: shmobile: Enable CPU FREQ support
-Message-Id: <5386E64B.7060202@bp.renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 May 2014 08:09:17 +0000
+Subject: Re: [PATCH 0/7] ARM: shmobile: Enable CPU FREQ support
+Message-Id: <87y4xlc8gj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5386E64B.7060202@bp.renesas.com>
+In-Reply-To: <5386E64B.7060202@bp.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch series is initial support for CPU FREQ.
 
-Based on : renesas-devel-v3.15-rc7-20140528
+Hi Inami-san
 
-Support :
- [CPU]
- - Coretex A15( Z clock) : Supported
- - Coretex A7 (Z2 clock) : Not supported
- [HW]
- - R-CAR H2 : Supported
- - R-CAR M2 : Supported
- - Other HW : Not supported
- [DVFS feature]
- - DFS : Supported
- - DVS : Not supported
+> Benoit Cousson (2):
+>   ARM: dts: r8a7790-lager: Add DVFS parameters into cpu0 node for
+>     r8a7790
+>   ARM: shmobile: Make r8a77900 CPUFreq capable
 
-Benoit Cousson (2):
-  ARM: dts: r8a7790-lager: Add DVFS parameters into cpu0 node for
-    r8a7790
-  ARM: shmobile: Make r8a77900 CPUFreq capable
+According to this, [1/7] [2/7] patches were
+created by Benoit ?
 
-Gaku Inami (5):
-  ARM: shmobile: Disable DVS support for r8a7790
-  ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
-  ARM: dts: r8a7791-koelsch: Add DVFS parameters into cpu0 node for
-    r8a7791
-  ARM: shmobile: Make r8a7791 CPUFreq capable
-  ARM: shmobile: Enable CPUFREQ configuration
+Maybe you want to add extra "From" to these patches,
+and I guess you want to add your Signed-off-by also ?
+Otherwise, patch author will be you instead of Benoit
 
- arch/arm/boot/dts/r8a7790.dtsi               |   11 +++++++++++
- arch/arm/boot/dts/r8a7791.dtsi               |   11 +++++++++++
- arch/arm/configs/shmobile_defconfig          |   12 ++++++++++++
- arch/arm/mach-shmobile/Kconfig               |    4 ++++
- arch/arm/mach-shmobile/Makefile              |    1 +
- arch/arm/mach-shmobile/cpufreq.c             |   21 +++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    7 +++++++
- 7 files changed, 67 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/cpufreq.c
+like this ?
 
--- 
-1.7.9.5
+-----------------------
+    From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+    Subject: [PATCH 2/7] ARM: shmobile: Make r8a77900 CPUFreq capable
+
+=>  From: Benoit Cousson <bcousson@baylibre.com>
+
+    Mark r8a77900 platform as CPUFreq capable
+    on multiplatform build only.
+
+=>  Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+    Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+    ---
+    ...
 
