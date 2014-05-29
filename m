@@ -1,331 +1,59 @@
-From: Christoph Lameter <cl@linux.com>
-Date: Thu, 08 May 2014 18:11:26 +0000
-Subject: Re: sh: Replace __get_cpu_var uses
-Message-Id: <alpine.DEB.2.10.1405081310300.25380@gentwo.org>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Thu, 29 May 2014 07:49:21 +0000
+Subject: [PATCH 5/7] ARM: dts: r8a7791-koelsch: Add DVFS parameters into cpu0 node for r8a7791
+Message-Id: <5386E681.4070107@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.10.1405051144420.28592@gentwo.org>
-In-Reply-To: <alpine.DEB.2.10.1405051144420.28592@gentwo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, 6 May 2014, Geert Uytterhoeven wrote:
-
-> >> > Could you see if this compiles and works?
-> >>
-> >> shx3_defconfig (one of the SMP defconfigs) still compiles fine.
-> >
-> > Could you merge the patch?
->
-> SH is orphan. Please send to akpm.
-
-Andrew here is the patch:
-
-
-Subject: sh: Replace __get_cpu_var uses
-
-__get_cpu_var() is used for multiple purposes in the kernel source. One of
-them is address calculation via the form &__get_cpu_var(x).  This calculates
-the address for the instance of the percpu variable of the current processor
-based on an offset.
-
-Other use cases are for storing and retrieving data from the current
-processors percpu area.  __get_cpu_var() can be used as an lvalue when
-writing data or on the right side of an assignment.
-
-__get_cpu_var() is defined as :
-
-
-#define __get_cpu_var(var) (*this_cpu_ptr(&(var)))
-
-
-
-__get_cpu_var() always only does an address determination. However, store
-and retrieve operations could use a segment prefix (or global register on
-other platforms) to avoid the address calculation.
-
-this_cpu_write() and this_cpu_read() can directly take an offset into a
-percpu area and use optimized assembly code to read and write per cpu
-variables.
-
-
-This patch converts __get_cpu_var into either an explicit address
-calculation using this_cpu_ptr() or into a use of this_cpu operations that
-use the offset.  Thereby address calculations are avoided and less registers
-are used when code is generated.
-
-At the end of the patch set all uses of __get_cpu_var have been removed so
-the macro is removed too.
-
-The patch set includes passes over all arches as well. Once these operations
-are used throughout then specialized macros can be defined in non -x86
-arches as well in order to optimize per cpu access by f.e.  using a global
-register that may be set to the per cpu base.
-
-
-
-
-Transformations done to __get_cpu_var()
-
-
-1. Determine the address of the percpu instance of the current processor.
-
-	DEFINE_PER_CPU(int, y);
-	int *x = &__get_cpu_var(y);
-
-    Converts to
-
-	int *x = this_cpu_ptr(&y);
-
-
-2. Same as #1 but this time an array structure is involved.
-
-	DEFINE_PER_CPU(int, y[20]);
-	int *x = __get_cpu_var(y);
-
-    Converts to
-
-	int *x = this_cpu_ptr(y);
-
-
-3. Retrieve the content of the current processors instance of a per cpu
-variable.
-
-	DEFINE_PER_CPU(int, y);
-	int x = __get_cpu_var(y)
-
-   Converts to
-
-	int x = __this_cpu_read(y);
-
-
-4. Retrieve the content of a percpu struct
-
-	DEFINE_PER_CPU(struct mystruct, y);
-	struct mystruct x = __get_cpu_var(y);
-
-   Converts to
-
-	memcpy(&x, this_cpu_ptr(&y), sizeof(x));
-
-
-5. Assignment to a per cpu variable
-
-	DEFINE_PER_CPU(int, y)
-	__get_cpu_var(y) = x;
-
-   Converts to
-
-	__this_cpu_write(y, x);
-
-
-6. Increment/Decrement etc of a per cpu variable
-
-	DEFINE_PER_CPU(int, y);
-	__get_cpu_var(y)++
-
-   Converts to
-
-	__this_cpu_inc(y)
-
-Cc: Paul Mundt <lethal@linux-sh.org>
-CC: linux-sh@vger.kernel.org
-Compile-Tested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Christoph Lameter <cl@linux.com>
-
-Index: linux/arch/sh/kernel/hw_breakpoint.c
-=================================--- linux.orig/arch/sh/kernel/hw_breakpoint.c	2014-02-25 13:26:10.850735155 -0600
-+++ linux/arch/sh/kernel/hw_breakpoint.c	2014-02-25 13:26:10.850735155 -0600
-@@ -52,7 +52,7 @@
- 	int i;
-
- 	for (i = 0; i < sh_ubc->num_events; i++) {
--		struct perf_event **slot = &__get_cpu_var(bp_per_reg[i]);
-+		struct perf_event **slot = this_cpu_ptr(&bp_per_reg[i]);
-
- 		if (!*slot) {
- 			*slot = bp;
-@@ -84,7 +84,7 @@
- 	int i;
-
- 	for (i = 0; i < sh_ubc->num_events; i++) {
--		struct perf_event **slot = &__get_cpu_var(bp_per_reg[i]);
-+		struct perf_event **slot = this_cpu_ptr(&bp_per_reg[i]);
-
- 		if (*slot = bp) {
- 			*slot = NULL;
-Index: linux/arch/sh/kernel/kprobes.c
-=================================--- linux.orig/arch/sh/kernel/kprobes.c	2014-02-25 13:26:10.850735155 -0600
-+++ linux/arch/sh/kernel/kprobes.c	2014-02-25 13:26:10.850735155 -0600
-@@ -102,7 +102,7 @@
-
- void __kprobes arch_remove_kprobe(struct kprobe *p)
- {
--	struct kprobe *saved = &__get_cpu_var(saved_next_opcode);
-+	struct kprobe *saved = this_cpu_ptr(&saved_next_opcode);
-
- 	if (saved->addr) {
- 		arch_disarm_kprobe(p);
-@@ -111,7 +111,7 @@
- 		saved->addr = NULL;
- 		saved->opcode = 0;
-
--		saved = &__get_cpu_var(saved_next_opcode2);
-+		saved = this_cpu_ptr(&saved_next_opcode2);
- 		if (saved->addr) {
- 			arch_disarm_kprobe(saved);
-
-@@ -129,14 +129,14 @@
-
- static void __kprobes restore_previous_kprobe(struct kprobe_ctlblk *kcb)
- {
--	__get_cpu_var(current_kprobe) = kcb->prev_kprobe.kp;
-+	__this_cpu_write(current_kprobe, kcb->prev_kprobe.kp);
- 	kcb->kprobe_status = kcb->prev_kprobe.status;
- }
-
- static void __kprobes set_current_kprobe(struct kprobe *p, struct pt_regs *regs,
- 					 struct kprobe_ctlblk *kcb)
- {
--	__get_cpu_var(current_kprobe) = p;
-+	__this_cpu_write(current_kprobe, p);
- }
-
- /*
-@@ -146,15 +146,15 @@
-  */
- static void __kprobes prepare_singlestep(struct kprobe *p, struct pt_regs *regs)
- {
--	__get_cpu_var(saved_current_opcode).addr = (kprobe_opcode_t *)regs->pc;
-+	__this_cpu_write(saved_current_opcode.addr, (kprobe_opcode_t *)regs->pc);
-
- 	if (p != NULL) {
- 		struct kprobe *op1, *op2;
-
- 		arch_disarm_kprobe(p);
-
--		op1 = &__get_cpu_var(saved_next_opcode);
--		op2 = &__get_cpu_var(saved_next_opcode2);
-+		op1 = this_cpu_ptr(&saved_next_opcode);
-+		op2 = this_cpu_ptr(&saved_next_opcode2);
-
- 		if (OPCODE_JSR(p->opcode) || OPCODE_JMP(p->opcode)) {
- 			unsigned int reg_nr = ((p->opcode >> 8) & 0x000F);
-@@ -249,7 +249,7 @@
- 			kcb->kprobe_status = KPROBE_REENTER;
- 			return 1;
- 		} else {
--			p = __get_cpu_var(current_kprobe);
-+			p = __this_cpu_read(current_kprobe);
- 			if (p->break_handler && p->break_handler(p, regs)) {
- 				goto ss_probe;
- 			}
-@@ -336,9 +336,9 @@
- 			continue;
-
- 		if (ri->rp && ri->rp->handler) {
--			__get_cpu_var(current_kprobe) = &ri->rp->kp;
-+			__this_cpu_write(current_kprobe, &ri->rp->kp);
- 			ri->rp->handler(ri, regs);
--			__get_cpu_var(current_kprobe) = NULL;
-+			__this_cpu_write(current_kprobe, NULL);
- 		}
-
- 		orig_ret_address = (unsigned long)ri->ret_addr;
-@@ -383,19 +383,19 @@
- 		cur->post_handler(cur, regs, 0);
- 	}
-
--	p = &__get_cpu_var(saved_next_opcode);
-+	p = this_cpu_ptr(&saved_next_opcode);
- 	if (p->addr) {
- 		arch_disarm_kprobe(p);
- 		p->addr = NULL;
- 		p->opcode = 0;
-
--		addr = __get_cpu_var(saved_current_opcode).addr;
--		__get_cpu_var(saved_current_opcode).addr = NULL;
-+		addr = __this_cpu_read(saved_current_opcode.addr);
-+		__this_cpu_write(saved_current_opcode.addr, NULL);
-
- 		p = get_kprobe(addr);
- 		arch_arm_kprobe(p);
-
--		p = &__get_cpu_var(saved_next_opcode2);
-+		p = this_cpu_ptr(&saved_next_opcode2);
- 		if (p->addr) {
- 			arch_disarm_kprobe(p);
- 			p->addr = NULL;
-@@ -511,7 +511,7 @@
- 				if (kprobe_handler(args->regs)) {
- 					ret = NOTIFY_STOP;
- 				} else {
--					p = __get_cpu_var(current_kprobe);
-+					p = __this_cpu_read(current_kprobe);
- 					if (p->break_handler &&
- 					    p->break_handler(p, args->regs))
- 						ret = NOTIFY_STOP;
-Index: linux/arch/sh/kernel/localtimer.c
-=================================--- linux.orig/arch/sh/kernel/localtimer.c	2014-02-25 13:26:10.850735155 -0600
-+++ linux/arch/sh/kernel/localtimer.c	2014-02-25 13:26:10.850735155 -0600
-@@ -32,7 +32,7 @@
-  */
- void local_timer_interrupt(void)
- {
--	struct clock_event_device *clk = &__get_cpu_var(local_clockevent);
-+	struct clock_event_device *clk = this_cpu_ptr(&local_clockevent);
-
- 	irq_enter();
- 	clk->event_handler(clk);
-Index: linux/arch/sh/kernel/perf_event.c
-=================================--- linux.orig/arch/sh/kernel/perf_event.c	2014-02-25 13:26:10.850735155 -0600
-+++ linux/arch/sh/kernel/perf_event.c	2014-02-25 13:26:10.850735155 -0600
-@@ -227,7 +227,7 @@
-
- static void sh_pmu_stop(struct perf_event *event, int flags)
- {
--	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
-+	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
- 	struct hw_perf_event *hwc = &event->hw;
- 	int idx = hwc->idx;
-
-@@ -245,7 +245,7 @@
-
- static void sh_pmu_start(struct perf_event *event, int flags)
- {
--	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
-+	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
- 	struct hw_perf_event *hwc = &event->hw;
- 	int idx = hwc->idx;
-
-@@ -262,7 +262,7 @@
-
- static void sh_pmu_del(struct perf_event *event, int flags)
- {
--	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
-+	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
-
- 	sh_pmu_stop(event, PERF_EF_UPDATE);
- 	__clear_bit(event->hw.idx, cpuc->used_mask);
-@@ -272,7 +272,7 @@
-
- static int sh_pmu_add(struct perf_event *event, int flags)
- {
--	struct cpu_hw_events *cpuc = &__get_cpu_var(cpu_hw_events);
-+	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
- 	struct hw_perf_event *hwc = &event->hw;
- 	int idx = hwc->idx;
- 	int ret = -EAGAIN;
-Index: linux/arch/sh/kernel/smp.c
-=================================--- linux.orig/arch/sh/kernel/smp.c	2014-02-25 13:26:10.850735155 -0600
-+++ linux/arch/sh/kernel/smp.c	2014-02-25 13:26:10.850735155 -0600
-@@ -111,7 +111,7 @@
- 	irq_ctx_exit(raw_smp_processor_id());
- 	mb();
-
--	__get_cpu_var(cpu_state) = CPU_DEAD;
-+	__this_cpu_write(cpu_state, CPU_DEAD);
- 	local_irq_disable();
- }
+Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
+
+- voltage-tolerance = 1%
+  It reflects the tolerance for the CPU voltage defined inside the OPP
+  table. Due to the lack of proper OPP definition, use an arbitrary safe
+  value.
+- clock-latency = 300 us
+  Approximate worst-case latency to do a full DVFS transition for every
+  OPPs. Due to the lack of HW information, use an arbitrary safe value.
+  Note: The term transition-latency will be more accurate to define this
+  value since the clock transition latency is not the only parameter that
+  will define the overall DVFS transition.
+- operating-points = < kHz - uV >
+  List of 6 operating points. All of them are using the same voltage
+  since DVS is not supported in R-CAR Gen2.
+- clocks
+  phandle to the CPU clock source. This clock source is used for all the
+  2 CortexA15 located inside the same cluster.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffae..b9b3c74 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -45,6 +45,17 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
++			voltage-tolerance = <1>; /* 1% */
++			clocks = <&cpg_clocks R8A7791_CLK_Z>;
++			clock-latency = <300000>; /* 300 us */
++
++			/* kHz - uV - OPPs unknown yet */
++			operating-points = <1500000 1000000>,
++					   <1312500 1000000>,
++					   <1125000 1000000>,
++					   < 937500 1000000>,
++					   < 750000 1000000>,
++					   < 375000 1000000>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+-- 
+1.7.9.5
 
