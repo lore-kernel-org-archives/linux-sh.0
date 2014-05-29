@@ -1,94 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 May 2014 01:24:54 +0000
-Subject: [PATCH 5/5] ARM: shmobile: Remove Genmai reference DTS
-Message-Id: <a5176e0d9de31a54e08468f21c15dc08e006857f.1400289483.git.horms+renesas@verge.net.au>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 29 May 2014 07:23:53 +0000
+Subject: [PATCH 0/3] ARM: shmobile: Add Core-Standby-state for Suspend to RAM
+Message-Id: <5386E089.3050003@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400289483.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+These patches add Core-Standby-state for Suspend to RAM support to the
+r8a7790/r8a7791 SoC. This patch series depend on previously posted patch.
+	[PATCH] ARM: shmobile: r8a7791: SYSC setup code.
 
-Now that the DTS file r7s72100-genmai.dts can be used with
-board-genmai.c and board-genmai-reference.c, proceed with removing
-r7s72100-genmai-reference.dts.
+This patch series is based on renesas-devel-v3.15-rc7-20140526 tag
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r7s72100-genmai-reference.dts | 59 -------------------------
- 1 file changed, 59 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r7s72100-genmai-reference.dts
+Keita Kobayashi (3):
+  ARM: shmobile: APMU: Add Core-Standby-state for Suspend to RAM
+  ARM: shmobile: r8a7790: Support Core-Standby for Suspend to RAM
+  ARM: shmobile: r8a7791: Support Core-Standby for Suspend to RAM
 
-diff --git a/arch/arm/boot/dts/r7s72100-genmai-reference.dts b/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-deleted file mode 100644
-index ca88458..0000000
---- a/arch/arm/boot/dts/r7s72100-genmai-reference.dts
-+++ /dev/null
-@@ -1,59 +0,0 @@
--/*
-- * Device Tree Source for the Genmai board
-- *
-- * Copyright (C) 2013-14 Renesas Solutions Corp.
-- * Copyright (C) 2014 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-- *
-- * This file is licensed under the terms of the GNU General Public License
-- * version 2.  This program is licensed "as is" without any warranty of any
-- * kind, whether express or implied.
-- */
--
--/dts-v1/;
--#include "r7s72100.dtsi"
--
--/ {
--	model = "Genmai";
--	compatible = "renesas,genmai-reference", "renesas,r7s72100";
--
--	aliases {
--		serial2 = &scif2;
--	};
--
--	chosen {
--		bootargs = "console=ttySC2,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
--	};
--
--	memory {
--		device_type = "memory";
--		reg = <0x08000000 0x08000000>;
--	};
--
--	lbsc {
--		#address-cells = <1>;
--		#size-cells = <1>;
--	};
--};
--
--&extal_clk {
--	clock-frequency = <13330000>;
--};
--
--&usb_x1_clk {
--	clock-frequency = <48000000>;
--};
--
--&i2c2 {
--	status = "okay";
--	clock-frequency = <400000>;
--
--	eeprom@50 {
--		compatible = "renesas,24c128";
--		reg = <0x50>;
--		pagesize = <64>;
--	};
--};
--
--&scif2 {
--	status = "okay";
--};
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +
+ arch/arm/mach-shmobile/platsmp-apmu.c        |   60 ++++++++++++++++++++++++--
+ arch/arm/mach-shmobile/smp-r8a7790.c         |    1 +
+ arch/arm/mach-shmobile/smp-r8a7791.c         |    1 +
+ 4 files changed, 60 insertions(+), 4 deletions(-)
+
 -- 
-1.8.4
+1.7.9.5
 
