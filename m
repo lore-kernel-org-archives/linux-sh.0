@@ -1,40 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 12 May 2014 23:02:13 +0000
-Subject: [PATCH 3/6] DMA: sudmac: Keep #include sorted alphabetically
-Message-Id: <1399935736-16854-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 29 May 2014 13:17:41 +0000
+Subject: [PATCH v2 05/05] staging: board: kzm9d: Board staging support for emxx_udc
+Message-Id: <20140529131741.2329.37943.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140529131650.2329.3197.sendpatchset@w520>
+In-Reply-To: <20140529131650.2329.3197.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
-This helps detecting duplicate includes.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add staging board support for the KZM9D board and add
+an emxx_udc platform device to allow in-tree continous 
+development of the driver on the KZM9D board.
+
+When DT bindings are ready for the emxx_udc driver then
+the platform device in the KZM9D staging board code can
+easily be removed. Until then we use platform devices
+to continously improve the driver and integration code.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/dma/sh/sudmac.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-index 4e7df43..b5b7e54 100644
---- a/drivers/dma/sh/sudmac.c
-+++ b/drivers/dma/sh/sudmac.c
-@@ -14,12 +14,12 @@
-  * published by the Free Software Foundation.
-  */
- 
-+#include <linux/dmaengine.h>
- #include <linux/init.h>
--#include <linux/module.h>
--#include <linux/slab.h>
- #include <linux/interrupt.h>
--#include <linux/dmaengine.h>
-+#include <linux/module.h>
- #include <linux/platform_device.h>
-+#include <linux/slab.h>
- #include <linux/sudmac.h>
- 
- struct sudmac_chan {
--- 
-1.8.5.5
+ Changes since V1:
+ - Broke out staging board base patch
+ - Compile in if CONFIG_ARCH_EMEV2 is selected
+ - Make use of board_staging_dt_node_available()
 
+ drivers/staging/board/Makefile |    1 +
+ drivers/staging/board/kzm9d.c  |   19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
+
+--- 0011/drivers/staging/board/Makefile
++++ work/drivers/staging/board/Makefile	2014-05-29 21:40:49.000000000 +0900
+@@ -1 +1,2 @@
+ obj-y	:= board.o
++obj-$(CONFIG_ARCH_EMEV2)      += kzm9d.o
+--- /dev/null
++++ work/drivers/staging/board/kzm9d.c	2014-05-29 21:42:34.000000000 +0900
+@@ -0,0 +1,19 @@
++/* Staging board support for KZM9D. Enable not-yet-DT-capable devices here. */
++
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include "board.h"
++
++static const struct resource usbs1_res[] __initconst = {
++	DEFINE_RES_MEM(0xe2800000, 0x2000),
++	DEFINE_RES_IRQ(159),
++};
++
++static void __init kzm9d_init(void)
++{
++	if (!board_staging_dt_node_available(usbs1_res, ARRAY_SIZE(usbs1_res)))
++		platform_device_register_simple("emxx_udc", -1, usbs1_res,
++						ARRAY_SIZE(usbs1_res));
++}
++
++board_staging("renesas,kzm9d", kzm9d_init);
