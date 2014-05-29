@@ -1,32 +1,33 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 29 May 2014 07:24:39 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7790: Support Core-Standby for Suspend to RAM
-Message-Id: <5386E0B7.6090303@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 29 May 2014 13:17:21 +0000
+Subject: [PATCH v2 03/05] staging: emxx_udc: Add TODO file
+Message-Id: <20140529131721.2329.87388.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140529131650.2329.3197.sendpatchset@w520>
+In-Reply-To: <20140529131650.2329.3197.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
-Add r8a7790 Core-Standby state for Suspend to RAM support.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Add a TODO file for emxx_udc to show what is left to do.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/smp-r8a7790.c |    1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index 5910527..1193f1e 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -69,6 +69,7 @@ static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
- 
- 	/* turn on power to SCU */
- 	r8a7790_pm_init();
-+	shmobile_smp_apmu_suspend_init();
- 	rcar_sysc_power_up(&r8a7790_ca15_scu);
- 	rcar_sysc_power_up(&r8a7790_ca7_scu);
- }
--- 
-1.7.9.5
+ Changes since V1:
+ - New patch
 
+ drivers/staging/emxx_udc/TODO |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- /dev/null
++++ work/drivers/staging/emxx_udc/TODO	2014-05-29 18:08:58.000000000 +0900
+@@ -0,0 +1,4 @@
++* add clock framework support (platform device with CCF needs special care)
++* break out board-specific VBUS GPIO to work with multiplatform
++* DT bindings
++* move driver into drivers/usb/gadget/
