@@ -1,118 +1,32 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Fri, 30 May 2014 05:18:48 +0000
-Subject: [PATCH v2] ARM: shmobile: r8a7791 SYSC setup code
-Message-Id: <538814B8.1060406@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 30 May 2014 06:13:59 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: r8a7791 SYSC setup code
+Message-Id: <CANqRtoRvkxAUnZWcyv7D88SHxeydokD9dbw8-QMSRadM2wOYNA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <538814B8.1060406@renesas.com>
+In-Reply-To: <538814B8.1060406@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add r8a7791 SYSC power management support.
+On Fri, May 30, 2014 at 2:18 PM, keita kobayashi
+<keita.kobayashi.ym@renesas.com> wrote:
+> Add r8a7791 SYSC power management support.
+>
+> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+> ---
+>
+> Changes since v2:
+> - Fix typo
+> - Fix in alphabetical order
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
+Hi Kobayashi-san,
 
-Changes since v2:
-- Fix typo
-- Fix in alphabetical order
+Thanks for cooking up a v2. This one looks fine to me.
 
- arch/arm/mach-shmobile/Makefile               |    1 +
- arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 +
- arch/arm/mach-shmobile/pm-r8a7791.c           |   47 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/smp-r8a7791.c          |    2 ++
- 4 files changed, 51 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/pm-r8a7791.c
+Acked-by: Magnus Damm <damm+renesas@opensource.se>
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 0d6a04c..29034aa 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
- obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
-+obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+Cheers,
 
- # Board objects
- ifdef CONFIG_ARCH_SHMOBILE_MULTI
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 664274c..86eae7b 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -5,6 +5,7 @@ void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
- void r8a7791_pinmux_init(void);
-+void r8a7791_pm_init(void);
- extern struct smp_operations r8a7791_smp_ops;
-
- #endif /* __ASM_R8A7791_H__ */
-diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
-new file mode 100644
-index 0000000..fa651d6
---- /dev/null
-+++ b/arch/arm/mach-shmobile/pm-r8a7791.c
-@@ -0,0 +1,47 @@
-+/*
-+ * r8a7791 Power management support
-+ *
-+ * Copyright (C) 2014  Renesas Electronics Corporation
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <asm/io.h>
-+#include <linux/kernel.h>
-+#include <mach/pm-rcar.h>
-+#include <mach/r8a7791.h>
-+
-+/* SYSC */
-+#define SYSCIER 0x0c
-+#define SYSCIMR 0x10
-+
-+#if defined(CONFIG_SMP)
-+
-+static void __init r8a7791_sysc_init(void)
-+{
-+	void __iomem *base = rcar_sysc_init(0xe6180000);
-+
-+	/* enable all interrupt sources, but do not use interrupt handler */
-+	iowrite32(0x0131000e, base + SYSCIER);
-+	iowrite32(0, base + SYSCIMR);
-+}
-+
-+#else /* CONFIG_SMP */
-+
-+static inline void r8a7791_sysc_init(void) {}
-+
-+#endif /* CONFIG_SMP */
-+
-+void __init r8a7791_pm_init(void)
-+{
-+	static int once;
-+
-+	if (once++)
-+		return;
-+
-+	r8a7791_sysc_init();
-+}
-diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-index ec97952..ddccef6 100644
---- a/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-@@ -50,6 +50,8 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
- 	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
- 		       p + CA15RESCNT);
- 	iounmap(p);
-+
-+	r8a7791_pm_init();
- }
-
- static int r8a7791_smp_boot_secondary(unsigned int cpu,
--- 
-1.7.9.5
+/ magnus
