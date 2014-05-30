@@ -1,60 +1,28 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 May 2014 11:39:15 +0000
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Fri, 30 May 2014 15:48:59 +0000
 Subject: Re: [PATCH 2/2] gpio: gpiolib: set gpiochip_remove retval to void
-Message-Id: <CAMuHMdV6AtjD2aqO3buzj8Eo7A7xc_+ROYnxEi2sdjMaqFiAuA@mail.gmail.com>
+Message-Id: <20140530154859.GK17197@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140530094025.3b78301e@canb.auug.org.au>
  <1401449454-30895-1-git-send-email-berthe.ab@gmail.com>
  <1401449454-30895-2-git-send-email-berthe.ab@gmail.com>
-In-Reply-To: <1401449454-30895-2-git-send-email-berthe.ab@gmail.com>
+ <CAMuHMdV6AtjD2aqO3buzj8Eo7A7xc_+ROYnxEi2sdjMaqFiAuA@mail.gmail.com>
+In-Reply-To: <CAMuHMdV6AtjD2aqO3buzj8Eo7A7xc_+ROYnxEi2sdjMaqFiAuA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 30, 2014 at 1:30 PM, abdoulaye berthe <berthe.ab@gmail.com> wrote:
-> --- a/drivers/gpio/gpiolib.c
-> +++ b/drivers/gpio/gpiolib.c
-> @@ -1263,10 +1263,9 @@ static void gpiochip_irqchip_remove(struct gpio_chip *gpiochip);
->   *
->   * A gpio_chip with any GPIOs still requested may not be removed.
->   */
-> -int gpiochip_remove(struct gpio_chip *chip)
-> +void gpiochip_remove(struct gpio_chip *chip)
->  {
->         unsigned long   flags;
-> -       int             status = 0;
->         unsigned        id;
->
->         acpi_gpiochip_remove(chip);
-> @@ -1278,24 +1277,15 @@ int gpiochip_remove(struct gpio_chip *chip)
->         of_gpiochip_remove(chip);
->
->         for (id = 0; id < chip->ngpio; id++) {
-> -               if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags)) {
-> -                       status = -EBUSY;
-> -                       break;
-> -               }
-> -       }
-> -       if (status = 0) {
-> -               for (id = 0; id < chip->ngpio; id++)
-> -                       chip->desc[id].chip = NULL;
-> -
-> -               list_del(&chip->list);
-> +               if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags))
-> +                       panic("gpio: removing gpiochip with gpios still requested\n");
+On Fri, May 30, 2014 at 01:39:15PM +0200, Geert Uytterhoeven wrote:
 
-panic?
+> > +               if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags))
+> > +                       panic("gpio: removing gpiochip with gpios still requested\n");
+> 
+> panic?
+> 
+> Is this likely to happen?
 
-Is this likely to happen?
+And while we're at it - panic() is going to add a \n itself so don't pass a
+string ending in \n to panic().
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+  Ralf
