@@ -1,66 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 22 May 2014 05:42:48 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC r7s72100-ccf Updates for v3.16
-Message-Id: <20140522054246.GA6307@verge.net.au>
+From: abdoulaye berthe <berthe.ab@gmail.com>
+Date: Fri, 30 May 2014 11:30:54 +0000
+Subject: [PATCH 2/2] gpio: gpiolib: set gpiochip_remove retval to void
+Message-Id: <1401449454-30895-2-git-send-email-berthe.ab@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400289483.git.horms+renesas@verge.net.au>
- <20140522050840.GA32618@quad.lixom.net>
-In-Reply-To: <20140522050840.GA32618@quad.lixom.net>
+References: <20140530094025.3b78301e@canb.auug.org.au>
+ <1401449454-30895-1-git-send-email-berthe.ab@gmail.com>
+In-Reply-To: <1401449454-30895-1-git-send-email-berthe.ab@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 21, 2014 at 10:08:40PM -0700, Olof Johansson wrote:
-> On Sat, May 17, 2014 at 10:24:53AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Second Round of
-> > Renesas ARM Based SoC r7s72100 CCF Updates for v3.16.
-> > 
-> > This pull request is based on the previous round of
-> > such requests, tagged as renesas-r7s72100-ccf-for-v3.16,
-> > which I have already sent a pull-request for.
-> > 
-> > This comprehensively addresses an oversight in patches included in
-> > the pull request that it depends on, specifically leaving broken
-> > non-multiplatform support in place for genmai-reference.
-> > 
-> > This pull request has some minor conflicts with other DT changes which I
-> > have previously sent pull requests for. These conflicts are in
-> > arch/arm/boot/dts/Makefile. A resolution can be found in the
-> > renesas-next-v3.15-rc1-20140517 tag if my renesas tree. In words:
-> > 
-> >     CONFIG_ARCH_SHMOBILE_LEGACY hunk:
-> >     * Remove emev2-kzm9d.dtb
-> >     * Remove r7s72100-genmai-reference.dtb
-> >     * Keep r7s72100-genmai.dtb
-> > 
-> 
-> Are you sure? Shouldn't the genmai board be covered by multi now? Or
-> are both multi and legacy driven by the same DTS now? Just making sure.
+This avoids handling gpiochip remove error in device
+remove handler.
 
-Both multi and legacy are driven by the same DTS, r7s72100-genmai.dtb.
+Signed-off-by: abdoulaye berthe <berthe.ab@gmail.com>
+---
+ drivers/gpio/gpiolib.c      | 24 +++++++-----------------
+ include/linux/gpio/driver.h |  2 +-
+ 2 files changed, 8 insertions(+), 18 deletions(-)
 
-> > The following changes since commit 9fbb1ae01b878e2cce9626fa6fdc9e5dcefeb6b5:
-> > 
-> >   ARM: shmobile: r7s72100: use workaround for non DT-clocks (2014-05-14 11:42:55 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r7s72100-ccf2-for-v3.16
-> > 
-> > for you to fetch changes up to a5176e0d9de31a54e08468f21c15dc08e006857f:
-> > 
-> >   ARM: shmobile: Remove Genmai reference DTS (2014-05-17 09:06:29 +0900)
-> > 
-> 
-> Pulled, thanks.
-> 
-> 
-> -Olof
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
+index f48817d..022543f 100644
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -1263,10 +1263,9 @@ static void gpiochip_irqchip_remove(struct gpio_chip *gpiochip);
+  *
+  * A gpio_chip with any GPIOs still requested may not be removed.
+  */
+-int gpiochip_remove(struct gpio_chip *chip)
++void gpiochip_remove(struct gpio_chip *chip)
+ {
+ 	unsigned long	flags;
+-	int		status = 0;
+ 	unsigned	id;
+ 
+ 	acpi_gpiochip_remove(chip);
+@@ -1278,24 +1277,15 @@ int gpiochip_remove(struct gpio_chip *chip)
+ 	of_gpiochip_remove(chip);
+ 
+ 	for (id = 0; id < chip->ngpio; id++) {
+-		if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags)) {
+-			status = -EBUSY;
+-			break;
+-		}
+-	}
+-	if (status = 0) {
+-		for (id = 0; id < chip->ngpio; id++)
+-			chip->desc[id].chip = NULL;
+-
+-		list_del(&chip->list);
++		if (test_bit(FLAG_REQUESTED, &chip->desc[id].flags))
++			panic("gpio: removing gpiochip with gpios still requested\n");
+ 	}
++	for (id = 0; id < chip->ngpio; id++)
++		chip->desc[id].chip = NULL;
+ 
++	list_del(&chip->list);
+ 	spin_unlock_irqrestore(&gpio_lock, flags);
+-
+-	if (status = 0)
+-		gpiochip_unexport(chip);
+-
+-	return status;
++	gpiochip_unexport(chip);
+ }
+ EXPORT_SYMBOL_GPL(gpiochip_remove);
+ 
+diff --git a/include/linux/gpio/driver.h b/include/linux/gpio/driver.h
+index 1827b43..72ed256 100644
+--- a/include/linux/gpio/driver.h
++++ b/include/linux/gpio/driver.h
+@@ -138,7 +138,7 @@ extern const char *gpiochip_is_requested(struct gpio_chip *chip,
+ 
+ /* add/remove chips */
+ extern int gpiochip_add(struct gpio_chip *chip);
+-extern int __must_check gpiochip_remove(struct gpio_chip *chip);
++void gpiochip_remove(struct gpio_chip *chip);
+ extern struct gpio_chip *gpiochip_find(void *data,
+ 			      int (*match)(struct gpio_chip *chip, void *data));
+ 
+-- 
+1.8.3.2
+
