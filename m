@@ -1,115 +1,127 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 28 May 2014 07:44:43 +0000
-Subject: [PATCH 08/11] i2c: rcar: remove spinlock
-Message-Id: <1401263086-13720-9-git-send-email-wsa@the-dreams.de>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 30 May 2014 14:12:44 +0000
+Subject: [PATCH v3] usb: hcd: add generic PHY support
+Message-Id: <538891DC.605@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401263086-13720-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-The i2c core has per-adapter locks, so no need to protect again.
+Add the generic PHY support, analogous to the USB PHY support. Intended it to be
+used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 22 ----------------------
- 1 file changed, 22 deletions(-)
+This patch is against the 'usb-next' branch of Greg KH's 'usb.git' repo.
+(commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index e82d64b5acef..4b088e67f2fd 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -36,7 +36,6 @@
- #include <linux/platform_device.h>
+Changes in version 3:
+ - rebased the current usb-next.
+ - I tested this patch on my R-Car H2 USB 3.0 driver (not merged yet)
+
+ drivers/usb/core/hcd.c  |   42 ++++++++++++++++++++++++++++++++++++++++--
+ include/linux/usb/hcd.h |    3 ++-
+ 2 files changed, 42 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index bec31e2..2841149 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -42,6 +42,7 @@
  #include <linux/pm_runtime.h>
- #include <linux/slab.h>
--#include <linux/spinlock.h>
- 
- /* register offsets */
- #define ICSCR	0x00	/* slave ctrl */
-@@ -110,7 +109,6 @@ struct rcar_i2c_priv {
- 	struct i2c_msg	*msg;
- 	struct clk *clk;
- 
--	spinlock_t lock;
- 	wait_queue_head_t wait;
- 
- 	int pos;
-@@ -394,9 +392,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 	struct device *dev = rcar_i2c_priv_to_dev(priv);
- 	u32 msr;
- 
--	/*-------------- spin lock -----------------*/
--	spin_lock(&priv->lock);
--
- 	msr = rcar_i2c_read(priv, ICMSR);
- 
- 	/*
-@@ -450,9 +445,6 @@ out:
- 		wake_up(&priv->wait);
- 	}
- 
--	spin_unlock(&priv->lock);
--	/*-------------- spin unlock -----------------*/
--
- 	return IRQ_HANDLED;
- }
- 
-@@ -462,21 +454,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- {
- 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
- 	struct device *dev = rcar_i2c_priv_to_dev(priv);
--	unsigned long flags;
- 	int i, ret, timeout;
- 
- 	pm_runtime_get_sync(dev);
- 
--	/*-------------- spin lock -----------------*/
--	spin_lock_irqsave(&priv->lock, flags);
--
- 	rcar_i2c_init(priv);
- 	/* start clock */
- 	rcar_i2c_write(priv, ICCCR, priv->icccr);
- 
--	spin_unlock_irqrestore(&priv->lock, flags);
--	/*-------------- spin unlock -----------------*/
--
- 	ret = rcar_i2c_bus_barrier(priv);
- 	if (ret < 0)
- 		goto out;
-@@ -488,9 +473,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 			break;
+ #include <linux/types.h>
+
++#include <linux/phy/phy.h>
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
+ #include <linux/usb/phy.h>
+@@ -2649,6 +2650,29 @@ int usb_add_hcd(struct usb_hcd *hcd,
  		}
- 
--		/*-------------- spin lock -----------------*/
--		spin_lock_irqsave(&priv->lock, flags);
--
- 		/* init each data */
- 		priv->msg	= &msgs[i];
- 		priv->pos	= 0;
-@@ -500,9 +482,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 
- 		ret = rcar_i2c_prepare_msg(priv);
- 
--		spin_unlock_irqrestore(&priv->lock, flags);
--		/*-------------- spin unlock -----------------*/
--
- 		if (ret < 0)
- 			break;
- 
-@@ -611,7 +590,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 
- 	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
--	spin_lock_init(&priv->lock);
- 
- 	adap			= &priv->adap;
- 	adap->nr		= pdev->id;
+ 	}
+
++	if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
++		struct phy *phy = phy_get(hcd->self.controller, "usb");
++
++		if (IS_ERR(phy)) {
++			retval = PTR_ERR(phy);
++			if (retval = -EPROBE_DEFER)
++				goto err_phy;
++		} else {
++			retval = phy_init(phy);
++			if (retval) {
++				phy_put(phy);
++				goto err_phy;
++			}
++			retval = phy_power_on(phy);
++			if (retval) {
++				phy_exit(phy);
++				phy_put(phy);
++				goto err_phy;
++			}
++			hcd->gen_phy = phy;
++		}
++	}
++
+ 	dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
+
+ 	/* Keep old behaviour if authorized_default is not in [0, 1]. */
+@@ -2664,7 +2688,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
+ 	 */
+ 	if ((retval = hcd_buffer_create(hcd)) != 0) {
+ 		dev_dbg(hcd->self.controller, "pool alloc failed\n");
+-		goto err_remove_phy;
++		goto err_create_buf;
+ 	}
+
+ 	if ((retval = usb_register_bus(&hcd->self)) < 0)
+@@ -2791,7 +2815,14 @@ err_allocate_root_hub:
+ 	usb_deregister_bus(&hcd->self);
+ err_register_bus:
+ 	hcd_buffer_destroy(hcd);
+-err_remove_phy:
++err_create_buf:
++	if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->gen_phy) {
++		phy_power_off(hcd->gen_phy);
++		phy_exit(hcd->gen_phy);
++		phy_put(hcd->gen_phy);
++		hcd->gen_phy = NULL;
++	}
++err_phy:
+ 	if (hcd->remove_phy && hcd->phy) {
+ 		usb_phy_shutdown(hcd->phy);
+ 		usb_put_phy(hcd->phy);
+@@ -2868,6 +2899,13 @@ void usb_remove_hcd(struct usb_hcd *hcd)
+
+ 	usb_deregister_bus(&hcd->self);
+ 	hcd_buffer_destroy(hcd);
++
++	if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->gen_phy) {
++		phy_power_off(hcd->gen_phy);
++		phy_exit(hcd->gen_phy);
++		phy_put(hcd->gen_phy);
++		hcd->gen_phy = NULL;
++	}
+ 	if (hcd->remove_phy && hcd->phy) {
+ 		usb_phy_shutdown(hcd->phy);
+ 		usb_put_phy(hcd->phy);
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index 485cd5e..2aefbcc 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -106,7 +106,8 @@ struct usb_hcd {
+ 	 * OTG and some Host controllers need software interaction with phys;
+ 	 * other external phys should be software-transparent
+ 	 */
+-	struct usb_phy	*phy;
++	struct usb_phy		*phy;
++	struct phy		*gen_phy;
+
+ 	/* Flags that need to be manipulated atomically because they can
+ 	 * change while the host controller is running.  Always use
 -- 
-2.0.0.rc2
+1.7.9.5
 
