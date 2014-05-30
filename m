@@ -1,53 +1,86 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 17 May 2014 01:24:53 +0000
-Subject: [PATCH 4/5] ARM: shmobile: Let Genmai multiplatform boot with Genmai DTB
-Message-Id: <23f679fa6de3b3f7e1d9e1d8eaeafa5167a55a17.1400289483.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 30 May 2014 10:40:56 +0000
+Subject: [PATCH 3/3] mmc: tmio: care about DMA tx/rx addr offset
+Message-Id: <87lhtjpn0o.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1400289483.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1400289483.git.horms+renesas@verge.net.au>
+References: <87ppivpn25.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ppivpn25.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Let the multiplatform Genmai support boot with the unified DTS.
+Basically, SD_BUF0 Tx/Rx addresses are same
+in normal TMIO controller,
+but, it is different on Renesas R-Car SDHI controller
+if it uses DMAC
+(Rx address needs to add 0x2000 to Tx address)
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This patch adds new .dma_rx_offset and cares it
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/Makefile                      | 2 +-
- arch/arm/mach-shmobile/board-genmai-reference.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |    3 +++
+ drivers/mmc/host/tmio_mmc_dma.c   |    2 +-
+ include/linux/mfd/tmio.h          |    1 +
+ 3 files changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 4ede75e..1329d4d 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -320,7 +320,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += emev2-kzm9d.dtb \
- 	r8a73a4-ape6evm-reference.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
--	r7s72100-genmai-reference.dtb \
-+	r7s72100-genmai.dtb \
- 	r8a7791-koelsch.dtb \
- 	r8a7790-lager.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index 968bbba..2ff6ad6 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -42,7 +42,7 @@ static void __init genmai_add_standard_devices(void)
- }
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index b3baa83..91c6399 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -39,6 +39,7 @@ struct sh_mobile_sdhi_of_data {
+ 	unsigned long tmio_flags;
+ 	unsigned long capabilities;
+ 	unsigned long capabilities2;
++	dma_addr_t dma_rx_offset;
+ };
  
- static const char * const genmai_boards_compat_dt[] __initconst = {
--	"renesas,genmai-reference",
-+	"renesas,genmai",
- 	NULL,
+ static const struct sh_mobile_sdhi_of_data sh_mobile_sdhi_of_cfg[] = {
+@@ -56,6 +57,7 @@ static const struct sh_mobile_sdhi_of_data of_rcar_gen2_compatible = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
+ 	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.capabilities2	= MMC_CAP2_NO_2BLKS_READ,
++	.dma_rx_offset	= 0x2000,
+ };
+ 
+ static const struct of_device_id sh_mobile_sdhi_of_match[] = {
+@@ -228,6 +230,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		mmc_data->flags |= of_data->tmio_flags;
+ 		mmc_data->capabilities |= of_data->capabilities;
+ 		mmc_data->capabilities2 |= of_data->capabilities2;
++		dma_priv->dma_rx_offset = of_data->dma_rx_offset;
+ 	}
+ 
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 03e7b28..1925170 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -311,7 +311,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (pdata->dma->chan_priv_rx)
+ 			cfg.slave_id = pdata->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+-		cfg.src_addr = cfg.dst_addr;
++		cfg.src_addr = cfg.dst_addr + pdata->dma->dma_rx_offset;
+ 		cfg.dst_addr = 0;
+ 		ret = dmaengine_slave_config(host->chan_rx, &cfg);
+ 		if (ret < 0)
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index 8f6f2e9..777e29b 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -96,6 +96,7 @@ struct tmio_mmc_dma {
+ 	int slave_id_tx;
+ 	int slave_id_rx;
+ 	int alignment_shift;
++	dma_addr_t dma_rx_offset;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
  };
  
 -- 
-1.8.4
+1.7.9.5
 
