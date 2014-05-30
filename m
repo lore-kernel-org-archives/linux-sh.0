@@ -1,90 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 22 May 2014 09:29:50 +0000
-Subject: Re: [PATCH 03/03] staging: board: kzm9d: Board staging support for emxx_udc
-Message-Id: <CANqRtoTeGe_fGjGQ_3NJA=rSbjzY4G+Mv=ekdtAx4FEyTd=U7w@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 30 May 2014 10:40:41 +0000
+Subject: [PATCH 1/3] mmc: block: add block number limitation flag for lultiple block read
+Message-Id: <87oayfpn14.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140522085339.26279.83340.sendpatchset@w520>
-	<20140522085409.26279.64965.sendpatchset@w520>
-	<CAMuHMdWyCN7UJ89xjpAj-X7rTHo_r0U6XJJwMOxGnXAeeYZXHQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWyCN7UJ89xjpAj-X7rTHo_r0U6XJJwMOxGnXAeeYZXHQ@mail.gmail.com>
+References: <87ppivpn25.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ppivpn25.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, driverdevel <devel@driverdev.osuosl.org>, Linux-sh list <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Olof Johansson <olof@lixom.net>
+To: Chris Ball <cjb@laptop.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-mmc@vger.kernel.org
 
-Hi Geert,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Thu, May 22, 2014 at 6:19 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Magnus,
->
-> On Thu, May 22, 2014 at 10:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> Add staging board support for the KZM9D board and add
->> an emxx_udc platform device to allow in-tree continous
->> development of the driver on the KZM9D board.
->>
->> When DT bindings are ready for the emxx_udc driver then
->> the platform device in the KZM9D staging board code can
->> easily be removed. Until then we use platform devices
->> to continously improve the driver and integration code.
->
-> Nice!
+In some controllers, when performing a multiple block read of
+one or two blocks, depending on the timing with which the
+response register is read, the response value may not
+be read properly.
+Use single block read for this HW bug
 
-Thanks, I hope it can turn into something useful!
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/mmc/card/block.c |   19 +++++++++++++++++--
+ include/linux/mmc/host.h |    3 +++
+ 2 files changed, 20 insertions(+), 2 deletions(-)
 
->>  drivers/staging/Kconfig        |    2 ++
->>  drivers/staging/Makefile       |    1 +
->>  drivers/staging/board/Kconfig  |    7 +++++++
->>  drivers/staging/board/Makefile |    1 +
->>  drivers/staging/board/board.h  |   17 +++++++++++++++++
->>  drivers/staging/board/kzm9d.c  |   18 ++++++++++++++++++
->>  6 files changed, 46 insertions(+)
->
-> As you're adding infrastructure and a first user, I think this should
-> be split in two patches:
->   - Introduction of drivers/staging/board infrastructure,
->   - Addition of kzm9d board support.
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index 452782b..f3cbe37 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1400,8 +1400,23 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
+ 
+ 		/* Some controllers can't do multiblock reads due to hw bugs */
+ 		if (card->host->caps2 & MMC_CAP2_NO_MULTI_READ &&
+-		    rq_data_dir(req) = READ)
+-			brq->data.blocks = 1;
++		    rq_data_dir(req) = READ) {
++
++			if (card->host->caps2 & MMC_CAP2_2BLKS_LIMIT) {
++				/*
++				 * In some controllers, when performing a
++				 * multiple block read of one or two blocks,
++				 * depending on the timing with which the
++				 * response register is read, the response
++				 * value may not be read properly.
++				 * Use single block read for this HW bug
++				 */
++				if (brq->data.blocks = 2)
++					brq->data.blocks = 1;
++			} else {
++				brq->data.blocks = 1;
++			}
++		}
+ 	}
+ 
+ 	if (brq->data.blocks > 1 || do_rel_wr) {
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index cb61ea4..5429cd7 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -266,6 +266,9 @@ struct mmc_host {
+ #define MMC_CAP2_BOOTPART_NOACC	(1 << 0)	/* Boot partition no access */
+ #define MMC_CAP2_FULL_PWR_CYCLE	(1 << 2)	/* Can do full power cycle */
+ #define MMC_CAP2_NO_MULTI_READ	(1 << 3)	/* Multiblock reads don't work */
++#define MMC_CAP2_2BLKS_LIMIT	(1 << 4)	/* 2 blocks limit for multi read */
++#define MMC_CAP2_NO_2BLKS_READ	(MMC_CAP2_NO_MULTI_READ | \
++				 MMC_CAP2_2BLKS_LIMIT)
+ #define MMC_CAP2_HS200_1_8V_SDR	(1 << 5)        /* can support */
+ #define MMC_CAP2_HS200_1_2V_SDR	(1 << 6)        /* can support */
+ #define MMC_CAP2_HS200		(MMC_CAP2_HS200_1_8V_SDR | \
+-- 
+1.7.9.5
 
-I agree!
-
->> --- /dev/null
->> +++ work/drivers/staging/board/Kconfig  2014-05-22 15:31:58.000000000 +0900
->> @@ -0,0 +1,7 @@
->> +config STAGING_BOARD
->> +       boolean "Staging Board Support"
->> +       help
->> +         Select to enable per-board staging support code.
->> +
->> +         If in doubt, say N here.
->> +
->
-> No board-specific Kconfig symbols, so the actual individual board
-> support itself is
-> always compiled-in (but see below)?
-
-Yes, the user has a single switch to flip at this point.
-
->> --- /dev/null
->> +++ work/drivers/staging/board/Makefile 2014-05-22 15:31:58.000000000 +0900
->> @@ -0,0 +1 @@
->> +obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += kzm9d.o
->
-> Ah, it's included in all shmobile multi-platform kernels.
-
-Correct!
-
-> What about testing for CONFIG_ARCH_EMEV2 instead of
-> CONFIG_ARCH_SHMOBILE_MULTI?
-
-That is quite fine with me.
-
-> Or adding a KZM9D-specific Kconfig symbol to .../board/Kconfig?
-
-Yeah, we could do that but my gut feeling is that it is better and
-easier to just keep it simple. I'm happy to adjust in any direction
-here though, so whatever makes people happy...!
-
-Thanks for your feedback!
-
-/ magnus
