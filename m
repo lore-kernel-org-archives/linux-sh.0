@@ -1,44 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 22 May 2014 18:00:06 +0000
-Subject: [PATCH v4 3/3] drivers: sh: Restrict INTC_USERIMASK to SH4A
-Message-Id: <1400781606-18601-4-git-send-email-geert@linux-m68k.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 30 May 2014 13:53:00 +0000
+Subject: [PATCH v4] add support for the R-Car H2 and M2 xHCI controllers
+Message-Id: <53888D3C.5020003@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "mathias.nyman@intel.com" <mathias.nyman@intel.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch adds the USB xHCI support for the R-Car H2 and M2 SoCs.
+These SoCs use an xHCI but still need specific initialization, mainly
+to setup the firmware downloading and the specific registers.
 
-register_intc_userimask() is called from sh4a code only.
+This patch set is based on the usb-next branch of Greg usb.git tree.
+(commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
----
-v4:
-  - No changes
-v3:
-  - No changes
-v2:
-  - Add Reviewed-by, Tested-by
----
- drivers/sh/intc/Kconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changes since v3:
+ - Remove a general phy driver calling in xhci-plat.c
+ - Change xhci_rcar_init_quirk() calling into xhci_plat_setup(). Because of
+   usb_add_hcd() will call a generic phy driver calling.
+ - Modify xhci_rcar_init_quirk()
 
-diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
-index f7d90617c9d9..60228fae943f 100644
---- a/drivers/sh/intc/Kconfig
-+++ b/drivers/sh/intc/Kconfig
-@@ -6,7 +6,7 @@ comment "Interrupt controller options"
- 
- config INTC_USERIMASK
- 	bool "Userspace interrupt masking support"
--	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
-+	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
- 	help
- 	  This enables support for hardware-assisted userspace hardirq
- 	  masking.
+Changes since v2:
+ - Fix goto direction in patch 1.
+ - Remove some unnecessary checks in patch 1.
+ - Add MODULE_FIRMWARE() in patch 2.
+ - Add a comment about xhci_rcar_init_quirk() in patch 2.
+
+Changes since v1 (about patch 2 only because patch 1 and 3 ware applied):
+ - Fix some typos in patch 2.
+ - Remove duplicated #define in patch 2.
+ - Remove usb_phy framework calling in patch 2.
+ - Change prototype of xhci_rcar_start() in patch 2.
+ - Change compatible strings from "renesas,r8a779[01]-xhci" to
+   "renesas,xhci-r8a779[01]" in patch 2. Because of Renesas SoC
+   maintainer's comment:
+    http://marc.info/?l=linux-sh&m0109049002958&w=2
+
+ - Rewrite the custom get_unaligned_le32() and add comment about it in patch 2.
+
+
+Yoshihiro Shimoda (1):
+  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
+    controllers
+
+ drivers/usb/host/Kconfig     |    8 +++
+ drivers/usb/host/Makefile    |    3 +
+ drivers/usb/host/xhci-plat.c |   19 ++++++
+ drivers/usb/host/xhci-rcar.c |  148 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/usb/host/xhci-rcar.h |   27 ++++++++
+ 5 files changed, 205 insertions(+)
+ create mode 100644 drivers/usb/host/xhci-rcar.c
+ create mode 100644 drivers/usb/host/xhci-rcar.h
+
 -- 
-1.9.1
-
+1.7.9.5
