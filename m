@@ -1,131 +1,118 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 12 May 2014 12:40:28 +0000
-Subject: Re: [PATCH v5 06/15] ARM: shmobile: r8a7790: Switch to new style CMT device
-Message-Id: <2010359.2Ko53VDNYm@avalon>
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 30 May 2014 05:18:48 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7791 SYSC setup code
+Message-Id: <538814B8.1060406@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1398251722-31667-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1398251722-31667-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Add r8a7791 SYSC power management support.
 
-On Sunday 11 May 2014 20:46:54 Simon Horman wrote:
-> On Wed, Apr 23, 2014 at 01:15:13PM +0200, Laurent Pinchart wrote:
-> > The CMT (Compare Match Timer) driver implements a new style of platform
-> > data that handles the timer as a single device with multiple channel.
-> > Switch from the old-style platform data to the new-style platform data.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Hi Laurent,
-> 
-> I have queued up the following after updating the
-> board-lager-reference.c portion of the patch to use clk_name.
-> 
-> Please check to see that what I have is correct.
-> 
-> 
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> ARM: shmobile: r8a7790: Switch to new style CMT device
-> 
-> The CMT (Compare Match Timer) driver implements a new style of platform
-> data that handles the timer as a single device with multiple channel.
-> Switch from the old-style platform data to the new-style platform data.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> [horms+renesas@verge.net.au resolved conflict: use clk_names]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
 
-This looks good to me, thank you.
+Changes since v2:
+- Fix typo
+- Fix in alphabetical order
 
-> ---
->  arch/arm/mach-shmobile/board-lager-reference.c |  2 +-
->  arch/arm/mach-shmobile/clock-r8a7790.c         |  2 +-
->  arch/arm/mach-shmobile/setup-r8a7790.c         | 17 +++++++----------
->  3 files changed, 9 insertions(+), 12 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-lager-reference.c
-> b/arch/arm/mach-shmobile/board-lager-reference.c index 1eb48cf..1bca2748
-> 100644
-> --- a/arch/arm/mach-shmobile/board-lager-reference.c
-> +++ b/arch/arm/mach-shmobile/board-lager-reference.c
-> @@ -90,7 +90,7 @@ static void __init lager_add_du_device(void)
->   * devices until they get moved to DT.
->   */
->  static const struct clk_name clk_names[] __initconst = {
-> -	{ "cmt0", NULL, "sh_cmt.0" },
-> +	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
->  	{ "scifa0", NULL, "sh-sci.0" },
->  	{ "scifa1", NULL, "sh-sci.1" },
->  	{ "scifb0", NULL, "sh-sci.2" },
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7790.c
-> b/arch/arm/mach-shmobile/clock-r8a7790.c index a936ae7..296a057 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7790.c
-> @@ -357,7 +357,6 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP312]),
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP311]),
->  	CLKDEV_DEV_ID("sh_mmcif.1", &mstp_clks[MSTP305]),
-> -	CLKDEV_DEV_ID("sh_cmt.0", &mstp_clks[MSTP124]),
->  	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
->  	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP704]),
->  	CLKDEV_DEV_ID("pci-rcar-gen2.0", &mstp_clks[MSTP703]),
-> @@ -367,6 +366,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sata-r8a7790.1", &mstp_clks[MSTP814]),
-> 
->  	/* ICK */
-> +	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
->  	CLKDEV_ICK_ID("usbhs", "usb_phy_rcar_gen2", &mstp_clks[MSTP704]),
->  	CLKDEV_ICK_ID("lvds.0", "rcar-du-r8a7790", &mstp_clks[MSTP726]),
->  	CLKDEV_ICK_ID("lvds.1", "rcar-du-r8a7790", &mstp_clks[MSTP725]),
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c
-> b/arch/arm/mach-shmobile/setup-r8a7790.c index c4616f0..87327f3 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-> @@ -269,20 +269,17 @@ static const struct resource thermal_resources[]
-> __initconst = { thermal_resources,		\
->  					ARRAY_SIZE(thermal_resources))
-> 
-> -static const struct sh_timer_config cmt00_platform_data __initconst = {
-> -	.name = "CMT00",
-> -	.timer_bit = 0,
-> -	.clockevent_rating = 80,
-> +static struct sh_timer_config cmt0_platform_data = {
-> +	.channels_mask = 0x60,
->  };
-> 
-> -static const struct resource cmt00_resources[] __initconst = {
-> -	DEFINE_RES_MEM(0xffca0510, 0x0c),
-> -	DEFINE_RES_MEM(0xffca0500, 0x04),
-> -	DEFINE_RES_IRQ(gic_spi(142)), /* CMT0_0 */
-> +static struct resource cmt0_resources[] = {
-> +	DEFINE_RES_MEM(0xffca0000, 0x1004),
-> +	DEFINE_RES_IRQ(gic_spi(142)),
->  };
-> 
->  #define r8a7790_register_cmt(idx)					\
-> -	platform_device_register_resndata(&platform_bus, "sh_cmt",	\
-> +	platform_device_register_resndata(&platform_bus, "sh-cmt-48-gen2", \
->  					  idx, cmt##idx##_resources,	\
->  					  ARRAY_SIZE(cmt##idx##_resources), \
->  					  &cmt##idx##_platform_data,	\
-> @@ -300,7 +297,7 @@ void __init r8a7790_add_dt_devices(void)
->  	r8a7790_register_scif(7);
->  	r8a7790_register_scif(8);
->  	r8a7790_register_scif(9);
-> -	r8a7790_register_cmt(00);
-> +	r8a7790_register_cmt(0);
->  }
-> 
->  void __init r8a7790_add_standard_devices(void)
+ arch/arm/mach-shmobile/Makefile               |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |    1 +
+ arch/arm/mach-shmobile/pm-r8a7791.c           |   47 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/smp-r8a7791.c          |    2 ++
+ 4 files changed, 51 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7791.c
 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 0d6a04c..29034aa 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 664274c..86eae7b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -5,6 +5,7 @@ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+ void r8a7791_pinmux_init(void);
++void r8a7791_pm_init(void);
+ extern struct smp_operations r8a7791_smp_ops;
+
+ #endif /* __ASM_R8A7791_H__ */
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+new file mode 100644
+index 0000000..fa651d6
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -0,0 +1,47 @@
++/*
++ * r8a7791 Power management support
++ *
++ * Copyright (C) 2014  Renesas Electronics Corporation
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <asm/io.h>
++#include <linux/kernel.h>
++#include <mach/pm-rcar.h>
++#include <mach/r8a7791.h>
++
++/* SYSC */
++#define SYSCIER 0x0c
++#define SYSCIMR 0x10
++
++#if defined(CONFIG_SMP)
++
++static void __init r8a7791_sysc_init(void)
++{
++	void __iomem *base = rcar_sysc_init(0xe6180000);
++
++	/* enable all interrupt sources, but do not use interrupt handler */
++	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0, base + SYSCIMR);
++}
++
++#else /* CONFIG_SMP */
++
++static inline void r8a7791_sysc_init(void) {}
++
++#endif /* CONFIG_SMP */
++
++void __init r8a7791_pm_init(void)
++{
++	static int once;
++
++	if (once++)
++		return;
++
++	r8a7791_sysc_init();
++}
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index ec97952..ddccef6 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -50,6 +50,8 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ 	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
+ 		       p + CA15RESCNT);
+ 	iounmap(p);
++
++	r8a7791_pm_init();
+ }
+
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
 -- 
-Regards,
-
-Laurent Pinchart
-
+1.7.9.5
