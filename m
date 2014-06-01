@@ -1,185 +1,56 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:26 +0000
-Subject: [PATCH v3 04/19] clocksource: sh_tmu: Drop support for legacy platform data
-Message-Id: <1402763021-4067-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 01 Jun 2014 03:39:36 +0000
+Subject: [PATCH 17/18] v4l: vsp1: bru: Support non-premultiplied colors at the BRU output
+Message-Id: <1401593977-30660-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Now that all platforms have switched to the new-style platform data,
-drop support for the legacy version.
+The BRU outputs premultiplied colors, enable color data normalization
+when the format configured at the output of the pipeline isn't
+premultiplied.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_tmu.c | 82 ++++++++------------------------------------
- 1 file changed, 15 insertions(+), 67 deletions(-)
+ drivers/media/platform/vsp1/vsp1_bru.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index ec34095..4363eb7 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -32,7 +32,6 @@
- #include <linux/spinlock.h>
+diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
+index d8d49fb..86b32bc 100644
+--- a/drivers/media/platform/vsp1/vsp1_bru.c
++++ b/drivers/media/platform/vsp1/vsp1_bru.c
+@@ -43,8 +43,10 @@ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
  
- enum sh_tmu_model {
--	SH_TMU_LEGACY,
- 	SH_TMU,
- 	SH_TMU_SH3,
- };
-@@ -91,8 +90,6 @@ static inline unsigned long sh_tmu_read(struct sh_tmu_channel *ch, int reg_nr)
- 
- 	if (reg_nr = TSTR) {
- 		switch (ch->tmu->model) {
--		case SH_TMU_LEGACY:
--			return ioread8(ch->tmu->mapbase);
- 		case SH_TMU_SH3:
- 			return ioread8(ch->tmu->mapbase + 2);
- 		case SH_TMU:
-@@ -115,8 +112,6 @@ static inline void sh_tmu_write(struct sh_tmu_channel *ch, int reg_nr,
- 
- 	if (reg_nr = TSTR) {
- 		switch (ch->tmu->model) {
--		case SH_TMU_LEGACY:
--			return iowrite8(value, ch->tmu->mapbase);
- 		case SH_TMU_SH3:
- 			return iowrite8(value, ch->tmu->mapbase + 2);
- 		case SH_TMU:
-@@ -476,27 +471,12 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
- 		return 0;
- 
- 	ch->tmu = tmu;
-+	ch->index = index;
- 
--	if (tmu->model = SH_TMU_LEGACY) {
--		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
--
--		/*
--		 * The SH3 variant (SH770x, SH7705, SH7710 and SH7720) maps
--		 * channel registers blocks at base + 2 + 12 * index, while all
--		 * other variants map them at base + 4 + 12 * index. We can
--		 * compute the index by just dividing by 12, the 2 bytes or 4
--		 * bytes offset being hidden by the integer division.
--		 */
--		ch->index = cfg->channel_offset / 12;
--		ch->base = tmu->mapbase + cfg->channel_offset;
--	} else {
--		ch->index = index;
--
--		if (tmu->model = SH_TMU_SH3)
--			ch->base = tmu->mapbase + 4 + ch->index * 12;
--		else
--			ch->base = tmu->mapbase + 8 + ch->index * 12;
--	}
-+	if (tmu->model = SH_TMU_SH3)
-+		ch->base = tmu->mapbase + 4 + ch->index * 12;
-+	else
-+		ch->base = tmu->mapbase + 8 + ch->index * 12;
- 
- 	ch->irq = platform_get_irq(tmu->pdev, index);
- 	if (ch->irq < 0) {
-@@ -526,28 +506,9 @@ static int sh_tmu_map_memory(struct sh_tmu_device *tmu)
- 	if (tmu->mapbase = NULL)
- 		return -ENXIO;
- 
--	/*
--	 * In legacy platform device configuration (with one device per channel)
--	 * the resource points to the channel base address.
--	 */
--	if (tmu->model = SH_TMU_LEGACY) {
--		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
--		tmu->mapbase -= cfg->channel_offset;
--	}
--
- 	return 0;
- }
- 
--static void sh_tmu_unmap_memory(struct sh_tmu_device *tmu)
--{
--	if (tmu->model = SH_TMU_LEGACY) {
--		struct sh_timer_config *cfg = tmu->pdev->dev.platform_data;
--		tmu->mapbase += cfg->channel_offset;
--	}
--
--	iounmap(tmu->mapbase);
--}
--
- static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
  {
- 	struct sh_timer_config *cfg = pdev->dev.platform_data;
-@@ -564,8 +525,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	tmu->model = id->driver_data;
++	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&subdev->entity);
+ 	struct vsp1_bru *bru = to_bru(subdev);
+ 	struct v4l2_mbus_framefmt *format;
++	unsigned int flags;
+ 	unsigned int i;
  
- 	/* Get hold of clock. */
--	tmu->clk = clk_get(&tmu->pdev->dev,
--			   tmu->model = SH_TMU_LEGACY ? "tmu_fck" : "fck");
-+	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
- 		dev_err(&tmu->pdev->dev, "cannot get clock\n");
- 		return PTR_ERR(tmu->clk);
-@@ -583,10 +543,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	}
+ 	if (!enable)
+@@ -58,8 +60,13 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ 	 * to sane default values for now.
+ 	 */
  
- 	/* Allocate and setup the channels. */
--	if (tmu->model = SH_TMU_LEGACY)
--		tmu->num_channels = 1;
--	else
--		tmu->num_channels = hweight8(cfg->channels_mask);
-+	tmu->num_channels = hweight8(cfg->channels_mask);
- 
- 	tmu->channels = kzalloc(sizeof(*tmu->channels) * tmu->num_channels,
- 				GFP_KERNEL);
-@@ -595,23 +552,15 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 		goto err_unmap;
- 	}
- 
--	if (tmu->model = SH_TMU_LEGACY) {
--		ret = sh_tmu_channel_setup(&tmu->channels[0], 0,
--					   cfg->clockevent_rating != 0,
--					   cfg->clocksource_rating != 0, tmu);
-+	/*
-+	 * Use the first channel as a clock event device and the second channel
-+	 * as a clock source.
+-	/* Disable both color data normalization and dithering. */
+-	vsp1_bru_write(bru, VI6_BRU_INCTRL, 0);
++	/* Disable dithering and enable color data normalization unless the
++	 * format at the pipeline output is premultiplied.
 +	 */
-+	for (i = 0; i < tmu->num_channels; ++i) {
-+		ret = sh_tmu_channel_setup(&tmu->channels[i], i,
-+					   i = 0, i = 1, tmu);
- 		if (ret < 0)
- 			goto err_unmap;
--	} else {
--		/*
--		 * Use the first channel as a clock event device and the second
--		 * channel as a clock source.
--		 */
--		for (i = 0; i < tmu->num_channels; ++i) {
--			ret = sh_tmu_channel_setup(&tmu->channels[i], i,
--						   i = 0, i = 1, tmu);
--			if (ret < 0)
--				goto err_unmap;
--		}
- 	}
++	flags = pipe->output ? pipe->output->video.format.flags : 0;
++	vsp1_bru_write(bru, VI6_BRU_INCTRL,
++		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
++		       0 : VI6_BRU_INCTRL_NRM);
  
- 	platform_set_drvdata(pdev, tmu);
-@@ -620,7 +569,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 
- err_unmap:
- 	kfree(tmu->channels);
--	sh_tmu_unmap_memory(tmu);
-+	iounmap(tmu->mapbase);
- err_clk_unprepare:
- 	clk_unprepare(tmu->clk);
- err_clk_put:
-@@ -673,7 +622,6 @@ static int sh_tmu_remove(struct platform_device *pdev)
- }
- 
- static const struct platform_device_id sh_tmu_id_table[] = {
--	{ "sh_tmu", SH_TMU_LEGACY },
- 	{ "sh-tmu", SH_TMU },
- 	{ "sh-tmu-sh3", SH_TMU_SH3 },
- 	{ }
+ 	/* Set the background position to cover the whole output image and
+ 	 * set its color to opaque black.
 -- 
 1.8.5.5
 
