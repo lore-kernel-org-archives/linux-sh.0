@@ -1,98 +1,97 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 12 Jun 2014 09:42:48 +0000
-Subject: [PATCH v2 05/07] ARM: shmobile: Lager SYS-DMAC and SDHI prototype
-Message-Id: <20140612094248.4132.48805.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 01 Jun 2014 03:39:24 +0000
+Subject: [PATCH 05/18] v4l: vsp1: Fix typos
+Message-Id: <1401593977-30660-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Several macros were mistakenly prefixed with VPS1 instead of VSP1. Fix
+them.
 
-Hook up SYS-DMAC prototype support for SDHI on Lager.
-
-Local platform device version of SYS-DMAC and local slave IDs
-are used together with AUXDATA. CD and WP pins, regulators
-and clocks are provided via DT.
-
-Only the DT reference case is covered. Not for upstream merge.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/media/platform/vsp1/vsp1.h       | 12 ++++++------
+ drivers/media/platform/vsp1/vsp1_drv.c   |  6 +++---
+ drivers/media/platform/vsp1/vsp1_video.h |  2 +-
+ 3 files changed, 10 insertions(+), 10 deletions(-)
 
- Changes since V1:
- - None
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 6ca2cf2..3cfa393 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -36,9 +36,9 @@ struct vsp1_rwpf;
+ struct vsp1_sru;
+ struct vsp1_uds;
+ 
+-#define VPS1_MAX_RPF		5
+-#define VPS1_MAX_UDS		3
+-#define VPS1_MAX_WPF		4
++#define VSP1_MAX_RPF		5
++#define VSP1_MAX_UDS		3
++#define VSP1_MAX_WPF		4
+ 
+ struct vsp1_device {
+ 	struct device *dev;
+@@ -55,10 +55,10 @@ struct vsp1_device {
+ 	struct vsp1_hsit *hst;
+ 	struct vsp1_lif *lif;
+ 	struct vsp1_lut *lut;
+-	struct vsp1_rwpf *rpf[VPS1_MAX_RPF];
++	struct vsp1_rwpf *rpf[VSP1_MAX_RPF];
+ 	struct vsp1_sru *sru;
+-	struct vsp1_uds *uds[VPS1_MAX_UDS];
+-	struct vsp1_rwpf *wpf[VPS1_MAX_WPF];
++	struct vsp1_uds *uds[VSP1_MAX_UDS];
++	struct vsp1_rwpf *wpf[VSP1_MAX_WPF];
+ 
+ 	struct list_head entities;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index c69ee06..0c5e74c 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -440,19 +440,19 @@ static int vsp1_validate_platform_data(struct platform_device *pdev,
+ 		return -EINVAL;
+ 	}
+ 
+-	if (pdata->rpf_count <= 0 || pdata->rpf_count > VPS1_MAX_RPF) {
++	if (pdata->rpf_count <= 0 || pdata->rpf_count > VSP1_MAX_RPF) {
+ 		dev_err(&pdev->dev, "invalid number of RPF (%u)\n",
+ 			pdata->rpf_count);
+ 		return -EINVAL;
+ 	}
+ 
+-	if (pdata->uds_count <= 0 || pdata->uds_count > VPS1_MAX_UDS) {
++	if (pdata->uds_count <= 0 || pdata->uds_count > VSP1_MAX_UDS) {
+ 		dev_err(&pdev->dev, "invalid number of UDS (%u)\n",
+ 			pdata->uds_count);
+ 		return -EINVAL;
+ 	}
+ 
+-	if (pdata->wpf_count <= 0 || pdata->wpf_count > VPS1_MAX_WPF) {
++	if (pdata->wpf_count <= 0 || pdata->wpf_count > VSP1_MAX_WPF) {
+ 		dev_err(&pdev->dev, "invalid number of WPF (%u)\n",
+ 			pdata->wpf_count);
+ 		return -EINVAL;
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index 7284320..cb5d9ef 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -73,7 +73,7 @@ struct vsp1_pipeline {
+ 
+ 	unsigned int num_video;
+ 	unsigned int num_inputs;
+-	struct vsp1_rwpf *inputs[VPS1_MAX_RPF];
++	struct vsp1_rwpf *inputs[VSP1_MAX_RPF];
+ 	struct vsp1_rwpf *output;
+ 	struct vsp1_entity *bru;
+ 	struct vsp1_entity *lif;
+-- 
+1.8.5.5
 
- arch/arm/mach-shmobile/board-lager-reference.c |   36 ++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
---- 0006/arch/arm/mach-shmobile/board-lager-reference.c
-+++ work/arch/arm/mach-shmobile/board-lager-reference.c	2014-06-10 22:00:10.000000000 +0900
-@@ -74,6 +74,8 @@ static const struct resource du_resource
- #include <mach/dma-register.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
-+#include <linux/mfd/tmio.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- 
- /* Local DMA slave IDs */
- enum {
-@@ -82,6 +84,10 @@ enum {
- 	SYS_DMAC_SLAVE_MMCIF0_RX,
- 	SYS_DMAC_SLAVE_MMCIF1_TX,
- 	SYS_DMAC_SLAVE_MMCIF1_RX,
-+	SYS_DMAC_SLAVE_SDHI0_TX,
-+	SYS_DMAC_SLAVE_SDHI0_RX,
-+	SYS_DMAC_SLAVE_SDHI2_TX,
-+	SYS_DMAC_SLAVE_SDHI2_RX,
- };
- 
- #define DMAE_CHANNEL(a, b)			\
-@@ -109,6 +115,8 @@ enum {
- static const struct sh_dmae_slave_config r8a7790_sys_dmac_slaves[] = {
- 	SYS_DMAC_SLAVE(MMCIF0, 32, 0xee200000, 0x34, 0x34, 0xd1, 0xd2),
- 	SYS_DMAC_SLAVE(MMCIF1, 32, 0xee220000, 0x34, 0x34, 0xe1, 0xe2),
-+	SYS_DMAC_SLAVE(SDHI0, 16, 0xee100000, 0x60, 0x2060, 0xcd, 0xce),
-+	SYS_DMAC_SLAVE(SDHI2, 16, 0xee140000, 0x30, 0x2030, 0xc1, 0xc2),
- };
- 
- static const struct sh_dmae_channel r8a7790_sys_dmac_channels[] = {
-@@ -178,9 +186,37 @@ static struct sh_mmcif_plat_data mmcif1_
- 	.slave_id_rx	= SYS_DMAC_SLAVE_MMCIF1_RX,
- };
- 
-+static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
-+	.dma_slave_tx   = SYS_DMAC_SLAVE_SDHI0_TX,
-+	.dma_slave_rx   = SYS_DMAC_SLAVE_SDHI0_RX,
-+	.dma_rx_offset  = 0x2000,
-+
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
-+	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+			  TMIO_MMC_WRPROTECT_DISABLE,
-+};
-+
-+static struct sh_mobile_sdhi_info sdhi2_info __initdata = {
-+	.dma_slave_tx   = SYS_DMAC_SLAVE_SDHI2_TX,
-+	.dma_slave_rx   = SYS_DMAC_SLAVE_SDHI2_RX,
-+	.dma_rx_offset  = 0x2000,
-+
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
-+	.tmio_caps2	= MMC_CAP2_NO_MULTI_READ,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-+			  TMIO_MMC_WRPROTECT_DISABLE,
-+};
-+
- static struct of_dev_auxdata lager_auxdata_lookup[] __initdata = {
- 	OF_DEV_AUXDATA("renesas,mmcif-r8a7790", 0xee220000, "sh_mmcif",
- 			&mmcif1_pdata),
-+	OF_DEV_AUXDATA("renesas,sdhi-r8a7790", 0xee100000, "sdhi0",
-+			&sdhi0_info),
-+	OF_DEV_AUXDATA("renesas,sdhi-r8a7790", 0xee140000, "sdhi2",
-+			&sdhi2_info),
- 	{},
- };
- 
