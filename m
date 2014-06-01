@@ -1,49 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 17 Jun 2014 12:21:41 +0000
-Subject: Re: [PATCH v2 00/08] ARM: shmobile: Rework include path V2
-Message-Id: <20140617122138.GA20368@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 01 Jun 2014 03:39:30 +0000
+Subject: [PATCH 11/18] v4l: vsp1: wpf: Simplify cast to pipeline structure
+Message-Id: <1401593977-30660-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140617074658.30008.53021.sendpatchset@w520>
-In-Reply-To: <20140617074658.30008.53021.sendpatchset@w520>
+References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Tue, Jun 17, 2014 at 04:46:58PM +0900, Magnus Damm wrote:
-> ARM: shmobile: Rework include path V2
-> 
-> [PATCH v2 01/08] ARM: shmobile: Move intc.h, cleanup sh_intc.h usage
-> [PATCH v2 02/08] ARM: shmobile: Move dma-register.h
-> [PATCH v2 03/08] ARM: shmobile: Move clock.h
-> [PATCH v2 04/08] ARM: shmobile: Move most of irqs.h, keep some for pinctl
-> [PATCH v2 05/08] ARM: shmobile: Move common.h
-> [PATCH v2 06/08] ARM: shmobile: Move pm-rmobile.h, cleanup sh73xx.h
-> [PATCH v2 07/08] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
-> [PATCH v2 08/08] ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case
-> 
-> Olof, here my latest take on the header move that you requested earlier.
-> 
-> This particular series hopefully follows your proposed way and moves the
-> most common shared header files for mach-shmobile from <mach/foobar.h>
-> to "foobar.h" without any workaround. Left are still per-SoC header files
-> that will be moved once I know you are comformatble with this format.
-> 
-> Please note that these are only lightly compile tested with a handful
-> of defconfigs, but any potential issue should be trivial to fix.
-> 
-> Also, there are certain bits of arch/arm/mach-shmobile/include/mach/
-> get included from places like arch/arm/boot/compressed/ (booting
-> legacy kernel directly from reset vector) and also from SoC specific
-> legacy code under drivers/pinctrl. My proposal is to keep those users
-> as-is until we phase out legacy board support (2-3 kernels?), let me
-> know if you would like to get rid of "include/mach" sooner!
-> 
-> Simon, can you please this pick up and include in your rebase to v3.16-rc1?
-> 
-> Changes since V1:
-> - rebased to v3.16-rc1
-> 
-> Thanks to Geert and Arnd for review support!
+USe the subdev pointer directly to_vsp1_pipeline() macro instead of
+casting from the subdev to the wpf object and back to the subdev.
 
-Thanks Magnus, I have queued this up.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/media/platform/vsp1/vsp1_wpf.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 36c4793..591f09c 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -44,9 +44,8 @@ static inline void vsp1_wpf_write(struct vsp1_rwpf *wpf, u32 reg, u32 data)
+ 
+ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
+ {
++	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&subdev->entity);
+ 	struct vsp1_rwpf *wpf = to_rwpf(subdev);
+-	struct vsp1_pipeline *pipe -		to_vsp1_pipeline(&wpf->entity.subdev.entity);
+ 	struct vsp1_device *vsp1 = wpf->entity.vsp1;
+ 	const struct v4l2_rect *crop = &wpf->crop;
+ 	unsigned int i;
+-- 
+1.8.5.5
+
