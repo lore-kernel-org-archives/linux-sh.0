@@ -1,209 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:55:50 +0000
-Subject: [PATCH 04/12] ASoC: fsi: use SNDRV_DMA_TYPE_DEV for sound buffer
-Message-Id: <877g4ezje0.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 01 Jun 2014 03:39:31 +0000
+Subject: [PATCH 12/18] v4l: vsp1: wpf: Clear RPF to WPF association at stream off time
+Message-Id: <1401593977-30660-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The VSP1 stores the video pipelines' input (RPF) to output (WPF)
+mappings in a WPF register. An RPF must never be associated with
+multiple WPFs, even if all of those WPFs but one are unused, otherwise
+the hardware won't function properly.
 
-Current fsi driver is using SNDRV_DMA_TYPE_CONTINUOUS
-for snd_pcm_lib_preallocate_pages_for_all().
-But, it came from original dma-sh7760.c,
-and no longer needed.
-This patch exchange its parameter, and removed
-original dma mapping and un-needed
-dma_sync_single_xxx() from driver.
+The driver doesn't ensure this correctly as it never clears the
+mappings. An RPF used with one WPF and later with a different WPF will
+lead to malfunction, as it will be associated with two WPFs. Clear the
+mappings at stream off time to fix this.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reported-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    4 +++
- arch/arm/mach-shmobile/board-kzm9g.c           |    2 ++
- arch/arm/mach-shmobile/board-mackerel.c        |    4 +++
- arch/sh/boards/mach-ecovec24/setup.c           |    2 ++
- sound/soc/sh/fsi.c                             |   42 +++---------------------
- 5 files changed, 17 insertions(+), 37 deletions(-)
+ drivers/media/platform/vsp1/vsp1_wpf.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 395638d..4afe6ae 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1032,6 +1032,8 @@ static struct platform_device fsi_wm8978_device = {
- 	.id	= 0,
- 	.dev	= {
- 		.platform_data	= &fsi_wm8978_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_wm8978_device.dev.coherent_dma_mask,
- 	},
- };
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 591f09c..d330865 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -54,6 +54,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
  
-@@ -1055,6 +1057,8 @@ static struct platform_device fsi_hdmi_device = {
- 	.id	= 1,
- 	.dev	= {
- 		.platform_data	= &fsi2_hdmi_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_hdmi_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index fff330f..bd60fba 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -603,6 +603,8 @@ static struct platform_device fsi_ak4648_device = {
- 	.name	= "asoc-simple-card",
- 	.dev	= {
- 		.platform_data	= &fsi2_ak4648_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_ak4648_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0ece865..fa5e3eb 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -521,6 +521,8 @@ static struct platform_device fsi_hdmi_device = {
- 	.id	= 1,
- 	.dev	= {
- 		.platform_data	= &fsi2_hdmi_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_hdmi_device.dev.coherent_dma_mask,
- 	},
- };
- 
-@@ -917,6 +919,8 @@ static struct platform_device fsi_ak4643_device = {
- 	.name	= "asoc-simple-card",
- 	.dev	= {
- 		.platform_data	= &fsi2_ak4643_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_ak4643_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 85d5255..0d30492 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -874,6 +874,8 @@ static struct platform_device fsi_da7210_device = {
- 	.name	= "asoc-simple-card",
- 	.dev	= {
- 		.platform_data	= &fsi_da7210_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.dma_mask = &fsi_da7210_device.dev.coherent_dma_mask,
- 	},
- };
- 
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index 710a079..7a6b632 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -233,7 +233,6 @@ struct fsi_stream {
- 	 */
- 	struct dma_chan		*chan;
- 	struct work_struct	work;
--	dma_addr_t		dma;
- 	int			dma_id;
- 	int			loop_cnt;
- 	int			additional_pos;
-@@ -1279,11 +1278,6 @@ static irqreturn_t fsi_interrupt(int irq, void *data)
-  */
- static int fsi_dma_init(struct fsi_priv *fsi, struct fsi_stream *io)
- {
--	struct snd_pcm_runtime *runtime = io->substream->runtime;
--	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
--	enum dma_data_direction dir = fsi_stream_is_play(fsi, io) ?
--				DMA_TO_DEVICE : DMA_FROM_DEVICE;
--
- 	/*
- 	 * 24bit data : 24bit bus / package in back
- 	 * 16bit data : 16bit bus / stream mode
-@@ -1293,19 +1287,7 @@ static int fsi_dma_init(struct fsi_priv *fsi, struct fsi_stream *io)
- 
- 	io->loop_cnt = 2; /* push 1st, 2nd period first, then 3rd, 4th... */
- 	io->additional_pos = 0;
--	io->dma = dma_map_single(dai->dev, runtime->dma_area,
--				 snd_pcm_lib_buffer_bytes(io->substream), dir);
--	return 0;
--}
--
--static int fsi_dma_quit(struct fsi_priv *fsi, struct fsi_stream *io)
--{
--	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
--	enum dma_data_direction dir = fsi_stream_is_play(fsi, io) ?
--		DMA_TO_DEVICE : DMA_FROM_DEVICE;
- 
--	dma_unmap_single(dai->dev, io->dma,
--			 snd_pcm_lib_buffer_bytes(io->substream), dir);
- 	return 0;
- }
- 
-@@ -1317,7 +1299,8 @@ static dma_addr_t fsi_dma_get_area(struct fsi_stream *io, int additional)
- 	if (period >= runtime->periods)
- 		period = 0;
- 
--	return io->dma + samples_to_bytes(runtime, period * io->period_samples);
-+	return runtime->dma_addr +
-+		samples_to_bytes(runtime, period * io->period_samples);
- }
- 
- static void fsi_dma_complete(void *data)
-@@ -1325,12 +1308,6 @@ static void fsi_dma_complete(void *data)
- 	struct fsi_stream *io = (struct fsi_stream *)data;
- 	struct fsi_priv *fsi = fsi_stream_to_priv(io);
- 	struct snd_pcm_runtime *runtime = io->substream->runtime;
--	struct snd_soc_dai *dai = fsi_get_dai(io->substream);
--	enum dma_data_direction dir = fsi_stream_is_play(fsi, io) ?
--		DMA_TO_DEVICE : DMA_FROM_DEVICE;
--
--	dma_sync_single_for_cpu(dai->dev, fsi_dma_get_area(io, 0),
--			samples_to_bytes(runtime, io->period_samples), dir);
- 
- 	io->buff_sample_pos += io->period_samples;
- 	io->period_pos++;
-@@ -1369,8 +1346,6 @@ static void fsi_dma_do_work(struct work_struct *work)
- 	for (i = 0; i < io->loop_cnt; i++) {
- 		buf	= fsi_dma_get_area(io, io->additional_pos);
- 
--		dma_sync_single_for_device(dai->dev, buf, len, dir);
--
- 		desc = dmaengine_prep_slave_single(io->chan, buf, len, dir,
- 					DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 		if (!desc) {
-@@ -1495,7 +1470,6 @@ static int fsi_dma_remove(struct fsi_priv *fsi, struct fsi_stream *io)
- 
- static struct fsi_stream_handler fsi_dma_push_handler = {
- 	.init		= fsi_dma_init,
--	.quit		= fsi_dma_quit,
- 	.probe		= fsi_dma_probe,
- 	.transfer	= fsi_dma_transfer,
- 	.remove		= fsi_dma_remove,
-@@ -1850,16 +1824,10 @@ static void fsi_pcm_free(struct snd_pcm *pcm)
- 
- static int fsi_pcm_new(struct snd_soc_pcm_runtime *rtd)
- {
--	struct snd_pcm *pcm = rtd->pcm;
--
--	/*
--	 * dont use SNDRV_DMA_TYPE_DEV, since it will oops the SH kernel
--	 * in MMAP mode (i.e. aplay -M)
--	 */
- 	return snd_pcm_lib_preallocate_pages_for_all(
--		pcm,
--		SNDRV_DMA_TYPE_CONTINUOUS,
--		snd_dma_continuous_data(GFP_KERNEL),
-+		rtd->pcm,
-+		SNDRV_DMA_TYPE_DEV,
-+		rtd->card->snd_card->dev,
- 		PREALLOC_BUFFER, PREALLOC_BUFFER_MAX);
- }
+ 	if (!enable) {
+ 		vsp1_write(vsp1, VI6_WPF_IRQ_ENB(wpf->entity.index), 0);
++		vsp1_wpf_write(wpf, VI6_WPF_SRCRPF, 0);
+ 		return 0;
+ 	}
  
 -- 
-1.7.9.5
+1.8.5.5
 
