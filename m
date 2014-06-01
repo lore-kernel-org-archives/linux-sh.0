@@ -1,40 +1,89 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 25 Jun 2014 00:40:35 +0000
-Subject: [PATCH 01/05] serial: sh-sci: Allow AUXDATA DMAC parameters
-Message-Id: <20140625004035.18295.42356.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 01 Jun 2014 03:39:32 +0000
+Subject: [PATCH 13/18] v4l: vsp1: Switch to XRGB formats
+Message-Id: <1401593977-30660-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The driver ignores the alpha component on output video nodes and
+hardcodes the alpha component to 0 on capture video nodes. Make this
+explicit by exposing XRGB formats.
 
-Allow passing platform data also in the case of DT. With
-this in place it is possible to use AUXDATA together with
-platform data to specify DMA channel configuration.
+Compatibility with existing userspace applications is handled by
+selecting the XRGB format corresponding to the requested old RGB format.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/media/platform/vsp1/vsp1_video.c | 26 ++++++++++++++++++++++----
+ 1 file changed, 22 insertions(+), 4 deletions(-)
 
- drivers/tty/serial/sh-sci.c |    8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index b5bce10..415989c 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -51,11 +51,11 @@ static const struct vsp1_format_info vsp1_video_formats[] = {
+ 	  VI6_FMT_RGB_332, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
+ 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
+ 	  1, { 8, 0, 0 }, false, false, 1, 1 },
+-	{ V4L2_PIX_FMT_RGB444, V4L2_MBUS_FMT_ARGB8888_1X32,
++	{ V4L2_PIX_FMT_XRGB444, V4L2_MBUS_FMT_ARGB8888_1X32,
+ 	  VI6_FMT_XRGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
+ 	  VI6_RPF_DSWAP_P_WDS,
+ 	  1, { 16, 0, 0 }, false, false, 1, 1 },
+-	{ V4L2_PIX_FMT_RGB555, V4L2_MBUS_FMT_ARGB8888_1X32,
++	{ V4L2_PIX_FMT_XRGB555, V4L2_MBUS_FMT_ARGB8888_1X32,
+ 	  VI6_FMT_XRGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
+ 	  VI6_RPF_DSWAP_P_WDS,
+ 	  1, { 16, 0, 0 }, false, false, 1, 1 },
+@@ -71,10 +71,10 @@ static const struct vsp1_format_info vsp1_video_formats[] = {
+ 	  VI6_FMT_RGB_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
+ 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
+ 	  1, { 24, 0, 0 }, false, false, 1, 1 },
+-	{ V4L2_PIX_FMT_BGR32, V4L2_MBUS_FMT_ARGB8888_1X32,
++	{ V4L2_PIX_FMT_XBGR32, V4L2_MBUS_FMT_ARGB8888_1X32,
+ 	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
+ 	  1, { 32, 0, 0 }, false, false, 1, 1 },
+-	{ V4L2_PIX_FMT_RGB32, V4L2_MBUS_FMT_ARGB8888_1X32,
++	{ V4L2_PIX_FMT_XRGB32, V4L2_MBUS_FMT_ARGB8888_1X32,
+ 	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
+ 	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
+ 	  1, { 32, 0, 0 }, false, false, 1, 1 },
+@@ -181,11 +181,29 @@ static int __vsp1_video_try_format(struct vsp1_video *video,
+ 				   struct v4l2_pix_format_mplane *pix,
+ 				   const struct vsp1_format_info **fmtinfo)
+ {
++	static const u32 xrgb_formats[][2] = {
++		{ V4L2_PIX_FMT_RGB444, V4L2_PIX_FMT_XRGB444 },
++		{ V4L2_PIX_FMT_RGB555, V4L2_PIX_FMT_XRGB555 },
++		{ V4L2_PIX_FMT_BGR32, V4L2_PIX_FMT_XBGR32 },
++		{ V4L2_PIX_FMT_RGB32, V4L2_PIX_FMT_XRGB32 },
++	};
++
+ 	const struct vsp1_format_info *info;
+ 	unsigned int width = pix->width;
+ 	unsigned int height = pix->height;
+ 	unsigned int i;
+ 
++	/* Backward compatibility: replace deprecated RGB formats by their XRGB
++	 * equivalent. This selects the format older userspace applications want
++	 * while still exposing the new format.
++	 */
++	for (i = 0; i < ARRAY_SIZE(xrgb_formats); ++i) {
++		if (xrgb_formats[i][0] = pix->pixelformat) {
++			pix->pixelformat = xrgb_formats[i][1];
++			break;
++		}
++	}
++
+ 	/* Retrieve format information and select the default format if the
+ 	 * requested format isn't supported.
+ 	 */
+-- 
+1.8.5.5
 
---- 0001/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2014-06-25 08:11:20.000000000 +0900
-@@ -2470,9 +2470,13 @@ sci_parse_dt(struct platform_device *pde
- 
- 	info = match->data;
- 
--	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
-+	if (pdev->dev.platform_data)
-+		p = pdev->dev.platform_data;
-+	else
-+		p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port),
-+				 GFP_KERNEL);
- 	if (!p) {
--		dev_err(&pdev->dev, "failed to allocate DT config data\n");
-+		dev_err(&pdev->dev, "failed to get DT config data\n");
- 		return NULL;
- 	}
- 
