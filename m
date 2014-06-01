@@ -1,99 +1,101 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:11:09 +0000
-Subject: [PROTOTYPE 6/8] ARM: shmobile: r8a7790: add audio dmac node
-Message-Id: <87egymy441.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 01 Jun 2014 03:39:26 +0000
+Subject: [PATCH 07/18] v4l: vsp1: Propagate vsp1_device_get errors to the callers
+Message-Id: <1401593977-30660-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+Modify the vsp1_device_get() function to return an error code instead of
+a pointer to the VSP1 device, and use the return value in the callers.
 
-Add initial audio dmac node and resources.
-
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi |   66 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+ drivers/media/platform/vsp1/vsp1.h       |  2 +-
+ drivers/media/platform/vsp1/vsp1_drv.c   | 16 ++++++----------
+ drivers/media/platform/vsp1/vsp1_video.c |  4 ++--
+ 3 files changed, 9 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index d681c84..df59707 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -179,6 +179,72 @@
- 		};
- 	};
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 3cfa393..1246719 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -66,7 +66,7 @@ struct vsp1_device {
+ 	struct media_device media_dev;
+ };
  
-+	dma1: dma-mux@1 {
-+		compatible = "renesas,shdma-mux";
-+		#dma-cells = <2>;
-+		dma-channels = <20>;
-+		dma-requests = <256>;
-+		#address-cells = <2>;
-+		#size-cells = <2>;
-+		ranges;
-+
-+		audiodma0: dma-contorller@ec700000 {
-+			compatible = "renesas,shdma-r8a7790";
-+			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
-+			dma-channels = <13>;
-+			status = "disabled";
-+			reg = <0 0xec700020 0 0xffc0>;
-+
-+			interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH>, /* error */
-+					<0 320 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
-+					<0 321 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 322 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 323 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 324 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 325 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 326 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 327 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 328 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 329 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 330 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 331 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 332 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12";
-+		};
-+
-+		audiodma1: dma-controller@ec720000 {
-+			compatible = "renesas,shdma-r8a7790";
-+			clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
-+			dma-channels = <13>;
-+			status = "disabled";
-+			reg = <0 0xec720020 0 0xffc0>;
-+
-+			interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH>, /* error */
-+					<0 333 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
-+					<0 334 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 335 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 336 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 337 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 338 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 339 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 340 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 341 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 342 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 343 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 344 IRQ_TYPE_LEVEL_HIGH>,
-+					<0 345 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12";
-+		};
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,cortex-a15-gic";
- 		#interrupt-cells = <3>;
+-struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1);
++int vsp1_device_get(struct vsp1_device *vsp1);
+ void vsp1_device_put(struct vsp1_device *vsp1);
+ 
+ static inline u32 vsp1_read(struct vsp1_device *vsp1, u32 reg)
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 0c5e74c..3e6601b 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -345,36 +345,32 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
+  * Increment the VSP1 reference count and initialize the device if the first
+  * reference is taken.
+  *
+- * Return a pointer to the VSP1 device or NULL if an error occurred.
++ * Return 0 on success or a negative error code otherwise.
+  */
+-struct vsp1_device *vsp1_device_get(struct vsp1_device *vsp1)
++int vsp1_device_get(struct vsp1_device *vsp1)
+ {
+-	struct vsp1_device *__vsp1 = vsp1;
+-	int ret;
++	int ret = 0;
+ 
+ 	mutex_lock(&vsp1->lock);
+ 	if (vsp1->ref_count > 0)
+ 		goto done;
+ 
+ 	ret = clk_prepare_enable(vsp1->clock);
+-	if (ret < 0) {
+-		__vsp1 = NULL;
++	if (ret < 0)
+ 		goto done;
+-	}
+ 
+ 	ret = vsp1_device_init(vsp1);
+ 	if (ret < 0) {
+ 		clk_disable_unprepare(vsp1->clock);
+-		__vsp1 = NULL;
+ 		goto done;
+ 	}
+ 
+ done:
+-	if (__vsp1)
++	if (!ret)
+ 		vsp1->ref_count++;
+ 
+ 	mutex_unlock(&vsp1->lock);
+-	return __vsp1;
++	return ret;
+ }
+ 
+ /*
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 677e3aa..b5bce10 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -948,8 +948,8 @@ static int vsp1_video_open(struct file *file)
+ 
+ 	file->private_data = vfh;
+ 
+-	if (!vsp1_device_get(video->vsp1)) {
+-		ret = -EBUSY;
++	ret = vsp1_device_get(video->vsp1);
++	if (ret < 0) {
+ 		v4l2_fh_del(vfh);
+ 		kfree(vfh);
+ 	}
 -- 
-1.7.9.5
+1.8.5.5
 
