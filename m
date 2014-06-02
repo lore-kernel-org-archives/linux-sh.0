@@ -1,35 +1,46 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:13:16 +0000
-Subject: Re: [PROTOTYPE 0/18]: ARM: shmobile: lager: sound support via DT
-Message-Id: <87a99ay40i.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:40:20 +0000
+Subject: [PATCH 0/4] ARM: shmobile: koelsch legacy: Enable DMA for QSPI
+Message-Id: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87oaxqy4i1.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87oaxqy4i1.wl%kuninori.morimoto.gx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+This patch series enables DMA support for QSPI on r8a7791/koelsch legacy.
+It's independent from the series "ARM: shmobile: koelsch reference: Enable
+DMA for QSPI".
 
-Hi all
+[2/4] was written by Morimoto-san for LTSI 3.10, and forward ported by me.
 
-These are PROTOTYPE.
+This was tested on r8a7791/koelsch.
 
->> Simon
+Performance figures for reading from a QSPI FLASH driven at 24.375 MHz are:
+  - Single:  1.1 Mbps PIO, 23 Mbps DMA
+  - Dual  : 12.7 Mbps PIO, 48 Mbps DMA
+  - Quad  : 13   Mbps PIO, 70 Mbps DMA
 
-#1 #2 can be applied
-please consider
+Thanks for your comments!
 
-> Kuninori Morimoto (11):
->       Ben's bug fix
->       ARM: shmobile: r8a7790: add DVC support on DTSI
->       ARM: shmobile: r8a7791: add DVC support on DTSI
->       ARM: shmobile: r8a7790: add Audio DMAC entry for sound on DTSI
->       ARM: shmobile: r8a7790: add Audio DMAC peri peri support on DTSI
->       ARM: shmobile: lager: Sound PIO support on DTS
->       ARM: shmobile: lager: Sound DMA support on DTS
->       ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
->       ARM: shmobile: lager: Sound DMA support via SRC on DTS
->       ARM: shmobile: lager: Sound DMA support via DVC on DTS
->       ARM: shmobile: multiplatform: add Audo DMAC peri peri support on defconfig
+  [1/4] ARM: shmobile: r8a7791: Add SYS-DMAC clocks
+  [2/4] ARM: shmobile: r8a7791: Add SYS-DMAC support
+  [3/4] ARM: shmobile: r8a7791: Add QSPI DMA support
+  [4/4] ARM: shmobile: koelsch legacy: Enable DMA for QSPI
 
+ arch/arm/mach-shmobile/board-koelsch.c        |  2 +
+ arch/arm/mach-shmobile/clock-r8a7791.c        |  6 +-
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |  7 +++
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 82 +++++++++++++++++++++++++++
+ 4 files changed, 96 insertions(+), 1 deletion(-)
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
