@@ -1,46 +1,52 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:40:23 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7791: Add QSPI DMA support
-Message-Id: <1401716424-29740-4-git-send-email-geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:42:07 +0000
+Subject: [PATCH v2 3/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
+Message-Id: <1401716531-29794-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
+References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
+
+Cfr. the r8a7790 version by Ben Dooks.
+
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7791.h | 2 ++
- arch/arm/mach-shmobile/setup-r8a7791.c        | 1 +
- 2 files changed, 3 insertions(+)
+v2:
+  - No changes
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 533999916e73..c4582df76139 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -4,6 +4,8 @@
- /* DMA slave IDs */
- enum {
- 	RCAR_DMA_SLAVE_INVALID,
-+	SYS_DMAC_SLAVE_QSPI_TX,
-+	SYS_DMAC_SLAVE_QSPI_RX,
- };
- 
- void r8a7791_add_standard_devices(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 77e1bc2b2870..8dbdb17ffe51 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -57,6 +57,7 @@
- }
- 
- static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
-+	SYS_DMAC_SLAVE(QSPI,   8, 0xe6b10000, 0x04, 0x04,   0x17, 0x18),
- };
- 
- static const struct sh_dmae_channel r8a7791_sys_dmac_channels[] = {
+ arch/arm/boot/dts/r8a7791.dtsi | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffaeff6e0..e5c35d784ec8 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -743,16 +743,19 @@
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>,
++				 <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7791_CLK_SCIFA2 R8A7791_CLK_SCIFA1 R8A7791_CLK_SCIFA0
+ 				R8A7791_CLK_MSIOF2 R8A7791_CLK_SCIFB0 R8A7791_CLK_SCIFB1
+ 				R8A7791_CLK_MSIOF1 R8A7791_CLK_SCIFB2
++				R8A7791_CLK_SYS_DMAC1 R8A7791_CLK_SYS_DMAC0
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "scifb2";
++				"scifb1", "msiof1", "scifb2",
++				"sys-dmac1", "sys-dmac0";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
 1.9.1
 
