@@ -1,57 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Jun 2014 14:55:14 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 02 Jun 2014 16:28:57 +0000
 Subject: Re: [PATCH 09/18] spi: rspi: SPI DMA core needs both RX and TX DMA to function
-Message-Id: <CAMuHMdXra=NjAy6WuQBf1Rm3iHv8J2qYubTpq3scxGq8+wK_tg@mail.gmail.com>
+Message-Id: <20140602162857.GN31751@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="dPW7zu3hTOhZvCDO"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
-	<1401716301-29612-10-git-send-email-geert+renesas@glider.be>
-	<20140602144221.GI31751@sirena.org.uk>
-In-Reply-To: <20140602144221.GI31751@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+ <1401716301-29612-10-git-send-email-geert+renesas@glider.be>
+ <20140602144221.GI31751@sirena.org.uk>
+ <CAMuHMdXra=NjAy6WuQBf1Rm3iHv8J2qYubTpq3scxGq8+wK_tg@mail.gmail.com>
+In-Reply-To: <CAMuHMdXra=NjAy6WuQBf1Rm3iHv8J2qYubTpq3scxGq8+wK_tg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi Mark,
 
-On Mon, Jun 2, 2014 at 4:42 PM, Mark Brown <broonie@kernel.org> wrote:
-> On Mon, Jun 02, 2014 at 03:38:11PM +0200, Geert Uytterhoeven wrote:
->> The SPI DMA core framework needs both RX and TX DMA to function.  As a
->> preparation for converting the driver to use this framework, fall back to
->> PIO if no DMA channel or only one DMA channel is available.
->
->> This affects only RSPI, which could do DMA transfers for TX-only before.
+--dPW7zu3hTOhZvCDO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Perhaps my wording was not so clear: "could do DMA transfers for TX-only"
-does not mean "could only do DMA transfers for TX (and not RX)".
+On Mon, Jun 02, 2014 at 04:55:14PM +0200, Geert Uytterhoeven wrote:
+> On Mon, Jun 2, 2014 at 4:42 PM, Mark Brown <broonie@kernel.org> wrote:
 
->> RSPI-RZ and QSPI (at least for Single SPI Transfers) will need both RX and
->> TX DMA anyway.
->
-> Hrm, was this error handling or is it a hardware limitation that it can
-> only do DMA in one direction?  Perhaps the core ought to be changed to
-> support that if it's a hardware limit, I honestly hadn't considered that
-> possibility when I wrote the code.
+> > Hrm, was this error handling or is it a hardware limitation that it can
+> > only do DMA in one direction?  Perhaps the core ought to be changed to
+> > support that if it's a hardware limit, I honestly hadn't considered that
+> > possibility when I wrote the code.
 
-So it's not a hardware limitation, but a software optimization ;-)
-If there's no data to receive, RSPI on SH can do transmit only.
-If there's data to receive, it must do both transmit and receive.
+> So it's not a hardware limitation, but a software optimization ;-)
+> If there's no data to receive, RSPI on SH can do transmit only.
+> If there's data to receive, it must do both transmit and receive.
 
-Later RSPI variants cannot do TX-only, they always do both transmit and
-receive (except for Dual/Quad, which are unidirectional by design).
+...
 
-Hence if only one DMA channel is available, RSPI on SH could still do DMA TX
-before. I don't know whether anyone ever used this, as there were no in-tree
-users of RSPI DMA.
+> Hence if only one DMA channel is available, RSPI on SH could still do DMA TX
+> before. I don't know whether anyone ever used this, as there were no in-tree
+> users of RSPI DMA.
 
-Gr{oetje,eeting}s,
+OK, that is quite common I guess in hardware where the number of DMA
+channels is limited (which does exist).  We should probably support it
+at some point.
 
-                        Geert
+--dPW7zu3hTOhZvCDO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+iQIcBAEBAgAGBQJTjKZGAAoJELSic+t+oim9P6IQAIuABbgztMDuvHAy3satVWHT
+SUJkpywVwjImkS6pZKrAk6nb70hwNc8eUldAL95p5ibTYSibeczSEDrL/eteADv5
+KojW07b7y6iziA4qxE6d0vtwPiOepOgN7d7PJZ8jhOFLIXApCxK+hull/xae+8X3
+rxI7Yzj8oQ6FVUaf2K777NDEYkZwjPLyt4QkUtLcfCBOE+ltFDOZ2B9L3jzwp5Jw
++zadUThd6fuakdcjVe2PYSKnvzZuPgBTQCvGFnXxq77IwfJOENZAO+IgRodsHzn5
+E1D/95eFpP9m1M/3a9AeVdf8ziINVAtfASzZHZV0gH1ma1nvkDgyGv8GQAo7eER9
+STmdV0qZxm21RACnHF64qDr6YaAjklEE4E1k6Mj1mgMcm1rlYZHpcFaw8q8k+AYp
+Vy+ub89KaVXVeY53pFjczMqGaJGPdheg40SGKeB4qpUZIm/yVjZMxsTVVcdB0cU7
+h+Jne2r5DtiM/QxtNWZIlp63vhxbccSRaOANmIEQChQ7qhWZ7VxuCXYb2pcQQ3Ks
+VYPx8R4VizBCHSL15GwdjEU944rbqJYksloG59DDjMbz15MO8wgjxP7Vwl2qq/Gz
+jYhovxI5Mq6XJQVh1lNgkeILxIk27f6tSFYtnBI8J2Bzq54cAOWm3PulmTEv4+x1
+V4R/+nQiH7Ayd1LXmDil
+=iDmm
+-----END PGP SIGNATURE-----
+
+--dPW7zu3hTOhZvCDO--
