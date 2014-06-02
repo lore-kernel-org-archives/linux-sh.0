@@ -1,39 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:30 +0000
-Subject: [PATCH v3 08/19] clocksource: shmobile: Remove unused sh_timer_config members
-Message-Id: <1402763021-4067-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:16 +0000
+Subject: [PATCH 14/18] spi: rspi: Absorb rspi_rz_transfer_out_in() into rspi_rz_transfer_one()
+Message-Id: <1401716301-29612-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The name, channel_offset, timer_bit, clockevent_rating and
-clocksource_rating members are unused. Remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- include/linux/sh_timer.h | 5 -----
- 1 file changed, 5 deletions(-)
+ drivers/spi/spi-rspi.c | 15 ++++-----------
+ 1 file changed, 4 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/sh_timer.h b/include/linux/sh_timer.h
-index 8e1e036..64638b0 100644
---- a/include/linux/sh_timer.h
-+++ b/include/linux/sh_timer.h
-@@ -2,11 +2,6 @@
- #define __SH_TIMER_H__
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index c77cfe654b0e..b7f8be81423b 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -616,9 +616,11 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
+ 	return 0;
+ }
  
- struct sh_timer_config {
--	char *name;
--	long channel_offset;
--	int timer_bit;
--	unsigned long clockevent_rating;
--	unsigned long clocksource_rating;
- 	unsigned int channels_mask;
- };
+-static int rspi_rz_transfer_out_in(struct rspi_data *rspi,
+-				   struct spi_transfer *xfer)
++static int rspi_rz_transfer_one(struct spi_master *master,
++				struct spi_device *spi,
++				struct spi_transfer *xfer)
+ {
++	struct rspi_data *rspi = spi_master_get_devdata(master);
+ 	int ret;
  
+ 	rspi_rz_receive_init(rspi);
+@@ -633,15 +635,6 @@ static int rspi_rz_transfer_out_in(struct rspi_data *rspi,
+ 	return 0;
+ }
+ 
+-static int rspi_rz_transfer_one(struct spi_master *master,
+-				struct spi_device *spi,
+-				struct spi_transfer *xfer)
+-{
+-	struct rspi_data *rspi = spi_master_get_devdata(master);
+-
+-	return rspi_rz_transfer_out_in(rspi, xfer);
+-}
+-
+ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 				struct spi_transfer *xfer)
+ {
 -- 
-1.8.5.5
+1.9.1
 
