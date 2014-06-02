@@ -1,20 +1,88 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 12 Jun 2014 02:46:15 +0000
-Subject: Re: [PATCH 2/3 v3] ARM: shmobile: r8a7790: add R-Car sound support on DTSI
-Message-Id: <20140612024613.GF22273@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:11 +0000
+Subject: [PATCH 09/18] spi: rspi: SPI DMA core needs both RX and TX DMA to function
+Message-Id: <1401716301-29612-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bnu0j5rn.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bnu0j5rn.wl%kuninori.morimoto.gx@renesas.com>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Jun 10, 2014 at 11:53:54PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch support PIO transfer only at this point
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The SPI DMA core framework needs both RX and TX DMA to function.  As a
+preparation for converting the driver to use this framework, fall back to
+PIO if no DMA channel or only one DMA channel is available.
 
-Thanks, I will queue this up.
+This affects only RSPI, which could do DMA transfers for TX-only before.
+RSPI-RZ and QSPI (at least for Single SPI Transfers) will need both RX and
+TX DMA anyway.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-rspi.c | 36 ++++++++++++++----------------------
+ 1 file changed, 14 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 1ec51cb00203..7b993f75a3cf 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -640,10 +640,6 @@ end_tx_mapped:
+ 
+ static int rspi_is_dma(const struct rspi_data *rspi, struct spi_transfer *t)
+ {
+-	/* If the module receives data by DMAC, it also needs TX DMAC */
+-	if (t->rx_buf)
+-		return rspi->chan_tx && rspi->chan_rx;
+-
+ 	if (rspi->chan_tx)
+ 		return 1;
+ 
+@@ -985,29 +981,25 @@ static int rspi_request_dma(struct device *dev, struct rspi_data *rspi,
+ {
+ 	const struct rspi_plat_data *rspi_pd = dev_get_platdata(dev);
+ 
+-	if (!rspi_pd)
++	if (!rspi_pd || !rspi_pd->dma_rx_id || !rspi_pd->dma_tx_id)
+ 		return 0;	/* The driver assumes no error. */
+ 
+-	/* If the module receives data by DMAC, it also needs TX DMAC */
+-	if (rspi_pd->dma_rx_id && rspi_pd->dma_tx_id) {
+-		rspi->chan_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM,
+-						      rspi_pd->dma_rx_id,
+-						      res->start + RSPI_SPDR);
+-		if (!rspi->chan_rx)
+-			return -ENODEV;
++	rspi->chan_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM,
++					      rspi_pd->dma_rx_id,
++					      res->start + RSPI_SPDR);
++	if (!rspi->chan_rx)
++		return -ENODEV;
+ 
+-		dev_info(dev, "Use DMA when rx.\n");
+-	}
+-	if (rspi_pd->dma_tx_id) {
+-		rspi->chan_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV,
+-						      rspi_pd->dma_tx_id,
+-						      res->start + RSPI_SPDR);
+-		if (!rspi->chan_tx)
+-			return -ENODEV;
+-
+-		dev_info(dev, "Use DMA when tx\n");
++	rspi->chan_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV,
++					      rspi_pd->dma_tx_id,
++					      res->start + RSPI_SPDR);
++	if (!rspi->chan_tx) {
++		dma_release_channel(rspi->chan_rx);
++		rspi->chan_rx = NULL;
++		return -ENODEV;
+ 	}
+ 
++	dev_info(dev, "DMA available");
+ 	return 0;
+ }
+ 
+-- 
+1.9.1
+
