@@ -1,209 +1,136 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:25:03 +0000
-Subject: [PATCH 7/8] ARM: shmobile: Move pm-rcar.h, cleanup r8a7779 case
-Message-Id: <585c09df3738d4f72cee36eb0b975351fd9a339a.1403487267.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:09 +0000
+Subject: [PATCH 07/18] spi: rspi: Extract rspi_request_dma_chan()
+Message-Id: <1401716301-29612-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487267.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487267.git.horms+renesas@verge.net.au>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Setup of the receive and transmit DMA channels is very similar, so let's
+consolidate.
 
-Change location of pm-rcar.h so it can be used as #include "pm-rcar.h"
-instead of the old style #include <mach/pm-rcar.h>. Also clean up
-the r8a7779 case to move some unused header file cruft into a C
-file.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/include/mach/pm-rcar.h | 15 ---------------
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 12 ------------
- arch/arm/mach-shmobile/pm-r8a7779.c           | 13 ++++++++++++-
- arch/arm/mach-shmobile/pm-r8a7790.c           |  2 +-
- arch/arm/mach-shmobile/pm-rcar.c              |  2 +-
- arch/arm/mach-shmobile/pm-rcar.h              | 15 +++++++++++++++
- arch/arm/mach-shmobile/smp-r8a7779.c          |  2 +-
- arch/arm/mach-shmobile/smp-r8a7790.c          |  2 +-
- 8 files changed, 31 insertions(+), 32 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/pm-rcar.h
- create mode 100644 arch/arm/mach-shmobile/pm-rcar.h
+ drivers/spi/spi-rspi.c | 89 +++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 55 insertions(+), 34 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/pm-rcar.h b/arch/arm/mach-shmobile/include/mach/pm-rcar.h
-deleted file mode 100644
-index ef3a1ef..0000000
---- a/arch/arm/mach-shmobile/include/mach/pm-rcar.h
-+++ /dev/null
-@@ -1,15 +0,0 @@
--#ifndef PM_RCAR_H
--#define PM_RCAR_H
--
--struct rcar_sysc_ch {
--	unsigned long chan_offs;
--	unsigned int chan_bit;
--	unsigned int isr_bit;
--};
--
--int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
--int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
--bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
--void __iomem *rcar_sysc_init(phys_addr_t base);
--
--#endif /* PM_RCAR_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 88eecea..def10a2 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -2,8 +2,6 @@
- #define __ASM_R8A7779_H__
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 94a99ec7d989..0a7a2d618f0f 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -942,52 +942,73 @@ static irqreturn_t rspi_irq_tx(int irq, void *_sr)
+ 	return 0;
+ }
  
- #include <linux/sh_clk.h>
--#include <linux/pm_domain.h>
--#include <mach/pm-rcar.h>
+-static int rspi_request_dma(struct rspi_data *rspi,
+-				      struct platform_device *pdev)
++static struct dma_chan *rspi_request_dma_chan(struct device *dev,
++					      enum dma_transfer_direction dir,
++					      unsigned int id,
++					      dma_addr_t port_addr)
+ {
+-	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
+-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	dma_cap_mask_t mask;
++	struct dma_chan *chan;
+ 	struct dma_slave_config cfg;
+ 	int ret;
  
- /* HPB-DMA slave IDs */
- enum {
-@@ -12,16 +10,6 @@ enum {
- 	HPBDMA_SLAVE_SDHI0_RX,
- };
- 
--struct r8a7779_pm_domain {
--	struct generic_pm_domain genpd;
--	struct rcar_sysc_ch ch;
--};
--
--static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
--{
--	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
--}
--
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq_extpin(int irlm);
- extern void r8a7779_init_irq_extpin_dt(int irlm);
-diff --git a/arch/arm/mach-shmobile/pm-r8a7779.c b/arch/arm/mach-shmobile/pm-r8a7779.c
-index 2b79bac..f0f36cb 100644
---- a/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7779.c
-@@ -13,20 +13,31 @@
- #include <linux/suspend.h>
- #include <linux/err.h>
- #include <linux/pm_clock.h>
-+#include <linux/pm_domain.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
- #include <linux/console.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7779.h>
- #include "common.h"
-+#include "pm-rcar.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
- #define SYSCIMR 0x10
- 
-+struct r8a7779_pm_domain {
-+	struct generic_pm_domain genpd;
-+	struct rcar_sysc_ch ch;
-+};
++	dma_cap_zero(mask);
++	dma_cap_set(DMA_SLAVE, mask);
 +
-+static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
-+{
-+	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
++	chan = dma_request_channel(mask, shdma_chan_filter,
++				   (void *)(unsigned long)id);
++	if (!chan) {
++		dev_warn(dev, "dma_request_channel failed\n");
++		return NULL;
++	}
++
++	memset(&cfg, 0, sizeof(cfg));
++	cfg.slave_id = id;
++	cfg.direction = dir;
++	if (dir = DMA_MEM_TO_DEV)
++		cfg.dst_addr = port_addr;
++	else
++		cfg.src_addr = port_addr;
++
++	ret = dmaengine_slave_config(chan, &cfg);
++	if (ret) {
++		dev_warn(dev, "dmaengine_slave_config failed %d\n", ret);
++		dma_release_channel(chan);
++		return NULL;
++	}
++
++	return chan;
 +}
 +
- #if defined(CONFIG_PM) || defined(CONFIG_SMP)
- 
- static void __init r8a7779_sysc_init(void)
-diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
-index fc82839..0f1090d8 100644
---- a/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-@@ -12,8 +12,8 @@
- 
- #include <linux/kernel.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7790.h>
-+#include "pm-rcar.h"
- 
- /* SYSC */
- #define SYSCIER 0x0c
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index 1f465a1..34b8a56 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -13,7 +13,7 @@
- #include <linux/mm.h>
- #include <linux/spinlock.h>
- #include <asm/io.h>
--#include <mach/pm-rcar.h>
-+#include "pm-rcar.h"
- 
- /* SYSC */
- #define SYSCSR 0x00
-diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
-new file mode 100644
-index 0000000..ef3a1ef
---- /dev/null
-+++ b/arch/arm/mach-shmobile/pm-rcar.h
-@@ -0,0 +1,15 @@
-+#ifndef PM_RCAR_H
-+#define PM_RCAR_H
++static int rspi_request_dma(struct rspi_data *rspi,
++			    struct platform_device *pdev)
++{
++	const struct rspi_plat_data *rspi_pd = dev_get_platdata(&pdev->dev);
++	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +
-+struct rcar_sysc_ch {
-+	unsigned long chan_offs;
-+	unsigned int chan_bit;
-+	unsigned int isr_bit;
-+};
-+
-+int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
-+int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
-+bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
-+void __iomem *rcar_sysc_init(phys_addr_t base);
-+
-+#endif /* PM_RCAR_H */
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index e063cd2..c230fc0 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -23,13 +23,13 @@
- #include <linux/spinlock.h>
- #include <linux/io.h>
- #include <linux/delay.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7779.h>
- #include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
- #include <asm/smp_twd.h>
- #include "common.h"
-+#include "pm-rcar.h"
+ 	if (!res || !rspi_pd)
+ 		return 0;	/* The driver assumes no error. */
  
- #define AVECR IOMEM(0xfe700040)
- #define R8A7779_SCU_BASE 0xf0000000
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index fea53d5..a8ace58 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -18,9 +18,9 @@
- #include <linux/smp.h>
- #include <linux/io.h>
- #include <asm/smp_plat.h>
--#include <mach/pm-rcar.h>
- #include <mach/r8a7790.h>
- #include "common.h"
-+#include "pm-rcar.h"
+ 	/* If the module receives data by DMAC, it also needs TX DMAC */
+ 	if (rspi_pd->dma_rx_id && rspi_pd->dma_tx_id) {
+-		dma_cap_zero(mask);
+-		dma_cap_set(DMA_SLAVE, mask);
+-		rspi->chan_rx = dma_request_channel(mask, shdma_chan_filter,
+-						    (void *)rspi_pd->dma_rx_id);
+-		if (rspi->chan_rx) {
+-			cfg.slave_id = rspi_pd->dma_rx_id;
+-			cfg.direction = DMA_DEV_TO_MEM;
+-			cfg.dst_addr = 0;
+-			cfg.src_addr = res->start + RSPI_SPDR;
+-			ret = dmaengine_slave_config(rspi->chan_rx, &cfg);
+-			if (!ret)
+-				dev_info(&pdev->dev, "Use DMA when rx.\n");
+-			else
+-				return ret;
+-		}
++		rspi->chan_rx = rspi_request_dma_chan(&pdev->dev,
++						      DMA_DEV_TO_MEM,
++						      rspi_pd->dma_rx_id,
++						      res->start + RSPI_SPDR);
++		if (!rspi->chan_rx)
++			return -ENODEV;
++
++		dev_info(&pdev->dev, "Use DMA when rx.\n");
+ 	}
+ 	if (rspi_pd->dma_tx_id) {
+-		dma_cap_zero(mask);
+-		dma_cap_set(DMA_SLAVE, mask);
+-		rspi->chan_tx = dma_request_channel(mask, shdma_chan_filter,
+-						    (void *)rspi_pd->dma_tx_id);
+-		if (rspi->chan_tx) {
+-			cfg.slave_id = rspi_pd->dma_tx_id;
+-			cfg.direction = DMA_MEM_TO_DEV;
+-			cfg.dst_addr = res->start + RSPI_SPDR;
+-			cfg.src_addr = 0;
+-			ret = dmaengine_slave_config(rspi->chan_tx, &cfg);
+-			if (!ret)
+-				dev_info(&pdev->dev, "Use DMA when tx\n");
+-			else
+-				return ret;
+-		}
++		rspi->chan_tx = rspi_request_dma_chan(&pdev->dev,
++						      DMA_MEM_TO_DEV,
++						      rspi_pd->dma_tx_id,
++						      res->start + RSPI_SPDR);
++		if (!rspi->chan_tx)
++			return -ENODEV;
++
++		dev_info(&pdev->dev, "Use DMA when tx\n");
+ 	}
  
- #define RST		0xe6160000
- #define CA15BAR		0x0020
+ 	return 0;
 -- 
-2.0.0.rc2
+1.9.1
 
