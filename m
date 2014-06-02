@@ -1,65 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 18 Jun 2014 14:55:52 +0000
-Subject: Re: [PATCH v2 04/08] ARM: shmobile: Move most of irqs.h, keep some for pinctl
-Message-Id: <20140618145549.GA16873@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:42:04 +0000
+Subject: [PATCH v2 0/7] ARM: shmobile: koelsch reference: Enable DMA for QSPI
+Message-Id: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140617074729.30008.55742.sendpatchset@w520>
-In-Reply-To: <20140617074729.30008.55742.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jun 17, 2014 at 04:47:29PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Move most of irqs.h so it can be used as #include "irqs.h"
-> instead of the old style #include <mach/irqs.h>.
-> 
-> Legacy code in drivers/pinctrl needs more work to get rid
-> of the "mach" portion of the include path, so some part
-> is left in the original location.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
-> ---
-> 
->  Changes since V1:
->  - rebased to v3.16-rc1
+This patch series enables DMA support for QSPI on r8a7791/koelsch
+reference.  It's independent from the series "ARM: shmobile: koelsch
+legacy: Enable DMA for QSPI", but it depends on the SHDMA work for r8a7790
+by Ben Dooks (cfr. "[PATCH v2 0/9] Updates Renesas OF-DMA code").
 
-[snip]
+Changes Compared to previous submission ("[PATCH/RFC 0/7] ARM: shmobile:
+r8a7791: Add preliminary DMA support"):
+  - "[6/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF" was dropped,
+  - 2/7 was added,
+  - 7/7 was changed (see changelog in individual patch).
 
-> --- 0001/arch/arm/mach-shmobile/include/mach/irqs.h
-> +++ work/arch/arm/mach-shmobile/include/mach/irqs.h	2014-06-17 16:03:57.000000000 +0900
-> @@ -1,24 +1,11 @@
->  #ifndef __ASM_MACH_IRQS_H
->  #define __ASM_MACH_IRQS_H
->  
-> -#include <linux/sh_intc.h>
-> -
-> -/* GIC */
-> -#define gic_spi(nr)		((nr) + 32)
-> -#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
-> -
-> -/* INTCS */
-> -#define INTCS_VECT_BASE		0x3400
-> -#define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
-> -#define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
-> +/* Stuck here until drivers/pinctl/sh-pfc gets rid of legacy code */
->  
->  /* External IRQ pins */
->  #define IRQPIN_BASE		2000
->  #define irq_pin(nr)		((nr) + IRQPIN_BASE)
->  
-> -/* GPIO IRQ */
-> -#define _GPIO_IRQ_BASE		2500
-> -#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
-> -#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
-> -
->  #endif /* __ASM_MACH_IRQS_H */
-> +
+This was tested on r8a7791/koelsch.
 
-I removed the trailing blank line this patch adds here.
+Performance figures for reading from a QSPI FLASH driven at 24.375 MHz are:
+  - Single:  1.1 Mbps PIO, 23 Mbps DMA
+  - Dual  : 12.7 Mbps PIO, 48 Mbps DMA
+  - Quad  : 13   Mbps PIO, 70 Mbps DMA
 
-[snip]
+Thanks for your comments!
+
+  [1/7] DMA: shdma: Add r8a7791 support
+  [2/7] DMA: shdma: Spelling s/controll/control/
+  [3/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
+  [4/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for bindings
+  [5/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
+  [6/7] ARM: shmobile: koelsch dts: Enable sysdma0 and sysdma1
+  [7/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+
+ Documentation/devicetree/bindings/dma/shdma.txt |   7 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts           |   8 ++
+ arch/arm/boot/dts/r8a7791.dtsi                  |  79 ++++++++++++++++-
+ drivers/dma/sh/shdmac.c                         |   1 +
+ include/dt-bindings/dma/r8a7791-dma.h           | 111 ++++++++++++++++++++++++
+ 5 files changed, 201 insertions(+), 5 deletions(-)
+ create mode 100644 include/dt-bindings/dma/r8a7791-dma.h
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
