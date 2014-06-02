@@ -1,46 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Jun 2014 06:47:46 +0000
-Subject: [PATCH 02/03] ARM: shmobile: Use shmobile_init_delay() on Genmai boards
-Message-Id: <20140605064746.14469.26102.sendpatchset@w520>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:42:11 +0000
+Subject: [PATCH v2 7/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
+Message-Id: <1401716531-29794-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140224072956.3522.60446.sendpatchset@w520>
-In-Reply-To: <20140224072956.3522.60446.sendpatchset@w520>
+References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add a DMA property to the QSPI node
 
-Adjust Genmai board support to use shmobile_init_delay() together
-with r7s72100 CPU Frequency settings from the DTS.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+v2:
+  - QSPI needs to use 8-bit accesses for DMA, not 32-bit,
+  - Reorder: TX first, RX second.
 
- arch/arm/mach-shmobile/board-genmai-reference.c |    2 +-
- arch/arm/mach-shmobile/board-genmai.c           |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
---- 0001/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2014-05-29 17:50:54.000000000 +0900
-@@ -47,7 +47,7 @@ static const char * const genmai_boards_
- };
- 
- DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
---- 0001/arch/arm/mach-shmobile/board-genmai.c
-+++ work/arch/arm/mach-shmobile/board-genmai.c	2014-05-29 17:50:39.000000000 +0900
-@@ -154,7 +154,7 @@ static const char * const genmai_boards_
- };
- 
- DT_MACHINE_START(GENMAI_DT, "genmai")
--	.init_early	= r7s72100_init_early,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= genmai_add_standard_devices,
- 	.dt_compat	= genmai_boards_compat_dt,
- MACHINE_END
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 37685ef32ea0..6c285ffc46cb 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -917,6 +917,9 @@
+ 		reg = <0 0xe6b10000 0 0x2c>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD>;
++		dmas = <&dma0 R8A7791_DMA_QSPI_TX CHCR_TX_8BIT>,
++		       <&dma0 R8A7791_DMA_QSPI_RX CHCR_RX_8BIT>;
++		dma-names = "tx", "rx";
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.9.1
+
