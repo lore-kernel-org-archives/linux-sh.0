@@ -1,42 +1,40 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 11 Jun 2014 11:05:51 +0000
-Subject: [PATCH v2 5/7] ARM: shmobile: r8a7791: Add default PCIe bus clock
-Message-Id: <1402484753-7471-6-git-send-email-phil.edworthy@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:08 +0000
+Subject: [PATCH 06/18] spi: rspi: Don't consider DMA configuration failures fatal
+Message-Id: <1401716301-29612-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch adds a default PCIe bus clock node.
+Fall back to PIO if DMA configuration failed.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2:
- - Use a default PCIe bus clock in the device's dtsi
+ drivers/spi/spi-rspi.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
- arch/arm/boot/dts/r8a7791.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 1e644eb..4cff7bb 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -532,6 +532,14 @@
- 			clock-output-names = "extal";
- 		};
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index fdbd46d0c570..94a99ec7d989 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -1190,10 +1190,8 @@ static int rspi_probe(struct platform_device *pdev)
+ 	}
  
-+		/* External PCIe clock - can be overridden by the board */
-+		pcie_bus_clk: pcie_bus_clk {
-+			compatible = "fixed-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <100000000>;
-+			clock-output-names = "pcie_bus";
-+		};
-+
- 		/* Special CPG clocks */
- 		cpg_clocks: cpg_clocks@e6150000 {
- 			compatible = "renesas,r8a7791-cpg-clocks",
+ 	ret = rspi_request_dma(rspi, pdev);
+-	if (ret < 0) {
+-		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
+-		goto error3;
+-	}
++	if (ret < 0)
++		dev_warn(&pdev->dev, "DMA not available, using PIO\n");
+ 
+ 	ret = devm_spi_register_master(&pdev->dev, master);
+ 	if (ret < 0) {
 -- 
-2.0.0
+1.9.1
 
