@@ -1,82 +1,51 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Mon, 30 Jun 2014 04:55:22 +0000
-Subject: Re: [PATCH] cpufreq: make table sentinal macros unsigned to match use
-Message-Id: <CAKohpo=qB3nB+ZNKE4Y94m6gPWZZ4YZEU_WOA=s5DB8apxUQGQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:40:21 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7791: Add SYS-DMAC clocks
+Message-Id: <1401716424-29740-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140627210939.GB24604@oc3347516403.ibm.com>
-In-Reply-To: <20140627210939.GB24604@oc3347516403.ibm.com>
+References: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Brian W Hart <hartb@linux.vnet.ibm.com>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Stratos Karafotis <stratosk@semaphore.gr>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On 28 June 2014 02:39, Brian W Hart <hartb@linux.vnet.ibm.com> wrote:
-> Commit 5eeaf1f18973 (cpufreq: Fix build error on some platforms that
-> use cpufreq_for_each_*) moved function cpufreq_next_valid() to a public
-> header.  Warnings are now generated when objects including that header
-> are built with -Wsign-compare (as an out-of-tree module might be):
->
-> .../include/linux/cpufreq.h: In function ‘cpufreq_next_valid’:
-> .../include/linux/cpufreq.h:519:27: warning: comparison between signed
-> and unsigned integer expressions [-Wsign-compare]
->   while ((*pos)->frequency != CPUFREQ_TABLE_END)
->                            ^
-> .../include/linux/cpufreq.h:520:25: warning: comparison between signed
-> and unsigned integer expressions [-Wsign-compare]
->    if ((*pos)->frequency != CPUFREQ_ENTRY_INVALID)
->                          ^
->
-> Constants CPUFREQ_ENTRY_INVALID and CPUFREQ_TABLE_END are signed, but
-> are used with unsigned member 'frequency' of cpufreq_frequency_table.
-> Update the macro definitions to be explicitly unsigned to match their
-> use.
->
-> This also corrects potentially wrong behavior of clk_rate_table_iter()
-> if unsigned long is wider than usigned int.
->
-> Signed-off-by: Brian W Hart <hartb@linux.vnet.ibm.com>
-> ---
-> These macros are fairly broadly used in the kernel so I was bit leery
-> of changing them, but after inspection I think it's fine.  I found 102
-> uses of the macros, of which:
->
-> 99 are uses with cpufreq_frequency_table.frequency (95) or with local
->    variables of the same type as frequency (4).  These should be just
->    fine with this change--we're just making explicit a conversion that
->    was previously implicit.
->
->  2 are uses with a local variable of different type (unsigned long) than
->    'frequency' (in drivers/sh/clk/core.c).  One of these uses is safe;
->    the other (in clk_rate_table_iter()) is broken if unsigned long
->    is wider than unsigned int.  As a side-effect, this patch corrects
->    the potential misbehavior there.
->
->  1 is a use in macro cpufreq_for_each_entry() with what _should_ be the
->    frequency member of a cpufreq_frequency_table, provided the caller it
->    well-behaved.  There are 18 callers of this macro; all are well-behaved.
->    So these should also be safe.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/clock-r8a7791.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-I would have moved some of it to logs, they look good.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7791.c b/arch/arm/mach-shmobile/clock-r8a7791.c
+index e2fdfcc14436..b0b2294513e2 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7791.c
++++ b/arch/arm/mach-shmobile/clock-r8a7791.c
+@@ -178,7 +178,7 @@ enum {
+ 	MSTP719, MSTP718, MSTP715, MSTP714,
+ 	MSTP522,
+ 	MSTP314, MSTP312, MSTP311,
+-	MSTP216, MSTP207, MSTP206,
++	MSTP219, MSTP218, MSTP216, MSTP207, MSTP206,
+ 	MSTP204, MSTP203, MSTP202,
+ 	MSTP124,
+ 	MSTP_NR
+@@ -215,6 +215,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP312] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD1], SMSTPCR3, 12, MSTPSR3, 0), /* SDHI1 */
+ 	[MSTP311] = SH_CLK_MSTP32_STS(&div6_clks[DIV6_SD2], SMSTPCR3, 11, MSTPSR3, 0), /* SDHI2 */
+ 	[MSTP216] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 16, MSTPSR2, 0), /* SCIFB2 */
++	[MSTP219] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 19, MSTPSR2, 0), /* SYS-DMAC0 */
++	[MSTP218] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 18, MSTPSR2, 0), /* SYS-DMAC1 */
+ 	[MSTP207] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 7, MSTPSR2, 0), /* SCIFB1 */
+ 	[MSTP206] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 6, MSTPSR2, 0), /* SCIFB0 */
+ 	[MSTP204] = SH_CLK_MSTP32_STS(&mp_clk, SMSTPCR2, 4, MSTPSR2, 0), /* SCIFA0 */
+@@ -267,6 +269,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("fck", "sh-cmt-48-gen2.0", &mstp_clks[MSTP124]),
+ 	CLKDEV_DEV_ID("qspi.0", &mstp_clks[MSTP917]),
+ 	CLKDEV_DEV_ID("rcar_thermal", &mstp_clks[MSTP522]),
++	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP219]),
++	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.0", &mstp_clks[MSTP931]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.1", &mstp_clks[MSTP930]),
+ 	CLKDEV_DEV_ID("i2c-rcar_gen2.2", &mstp_clks[MSTP929]),
+-- 
+1.9.1
 
->  include/linux/cpufreq.h |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/include/linux/cpufreq.h b/include/linux/cpufreq.h
-> index ec4112d..8f8ae95 100644
-> --- a/include/linux/cpufreq.h
-> +++ b/include/linux/cpufreq.h
-> @@ -482,8 +482,8 @@ extern struct cpufreq_governor cpufreq_gov_conservative;
->   *********************************************************************/
->
->  /* Special Values of .frequency field */
-> -#define CPUFREQ_ENTRY_INVALID  ~0
-> -#define CPUFREQ_TABLE_END      ~1
-> +#define CPUFREQ_ENTRY_INVALID  ~0u
-> +#define CPUFREQ_TABLE_END      ~1u
->  /* Special Values of .flags field */
->  #define CPUFREQ_BOOST_FREQ     (1 << 0)
-
-Thanks.
-
-Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
