@@ -1,89 +1,153 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 25 Jun 2014 07:35:24 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Updates for v3.17
-Message-Id: <cover.1403681315.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:40:22 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Add SYS-DMAC support
+Message-Id: <1401716424-29740-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
+References: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Please consider these Renesas ARM based SoC updates for v3.17.
+This patch enables SYS-DMAC0 (= Low), it doesn't support
+SYS-DMAC1 (= HI) today.
+Because, SYS-DMAC HI/Low interrupt mapping is not
+good match to SH-DMAC driver.
 
-This pull request is based on 'Renesas ARM Based SoC Header Cleanup for v3.=
-17',
-tagged as header-cleanup-for-v3.17, which I have already sent a
-pull-request for.=20
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+[Geert: Rebased]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7791.h |  5 ++
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 81 +++++++++++++++++++++++++++
+ 2 files changed, 86 insertions(+)
 
-The following changes since commit 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 86eae7bceb6f..533999916e73 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -1,6 +1,11 @@
+ #ifndef __ASM_R8A7791_H__
+ #define __ASM_R8A7791_H__
+ 
++/* DMA slave IDs */
++enum {
++	RCAR_DMA_SLAVE_INVALID,
++};
++
+ void r8a7791_add_standard_devices(void);
+ void r8a7791_add_dt_devices(void);
+ void r8a7791_clock_init(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 04a96ddb3224..77e1bc2b2870 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -25,13 +25,93 @@
+ #include <linux/platform_data/gpio-rcar.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
+ #include <linux/serial_sci.h>
++#include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <mach/common.h>
++#include <mach/dma-register.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
+ #include <asm/mach/arch.h>
+ 
++#define DMAE_CHANNEL(a, b)			\
++{						\
++	.offset		= (a) - 0x20,		\
++	.dmars		= (a) - 0x20 + 0x40,	\
++	.chclr_bit	= (b),			\
++	.chclr_offset	= 0x80 - 0x20,		\
++}
++
++/* Sys-DMAC */
++#define SYS_DMAC_SLAVE(_id, _bit, _addr, toffset, roffset, t, r)\
++{								\
++	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
++	.addr		= _addr + toffset,			\
++	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
++	.mid_rid	= t,					\
++}, {								\
++	.slave_id	= SYS_DMAC_SLAVE_## _id ##_RX,		\
++	.addr		= _addr + roffset,			\
++	.chcr		= CHCR_RX(XMIT_SZ_## _bit ##BIT),	\
++	.mid_rid	= r,					\
++}
++
++static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
++};
++
++static const struct sh_dmae_channel r8a7791_sys_dmac_channels[] = {
++	DMAE_CHANNEL(0x8000, 0),
++	DMAE_CHANNEL(0x8080, 1),
++	DMAE_CHANNEL(0x8100, 2),
++	DMAE_CHANNEL(0x8180, 3),
++	DMAE_CHANNEL(0x8200, 4),
++	DMAE_CHANNEL(0x8280, 5),
++	DMAE_CHANNEL(0x8300, 6),
++	DMAE_CHANNEL(0x8380, 7),
++	DMAE_CHANNEL(0x8400, 8),
++	DMAE_CHANNEL(0x8480, 9),
++	DMAE_CHANNEL(0x8500, 10),
++	DMAE_CHANNEL(0x8580, 11),
++	DMAE_CHANNEL(0x8600, 12),
++	DMAE_CHANNEL(0x8680, 13),
++	DMAE_CHANNEL(0x8700, 14),
++};
++
++static struct sh_dmae_pdata r8a7791_sys_dmac_platform_data = {
++	.slave		= r8a7791_sys_dmac_slaves,
++	.slave_num	= ARRAY_SIZE(r8a7791_sys_dmac_slaves),
++	.channel	= r8a7791_sys_dmac_channels,
++	.channel_num	= ARRAY_SIZE(r8a7791_sys_dmac_channels),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
++	.dmaor_init	= DMAOR_DME,
++	.chclr_present	= 1,
++	.chclr_bitwise	= 1,
++};
++
++static struct resource r8a7791_sys_dmac_resources[] = {
++	/* Channel registers and DMAOR for low */
++	DEFINE_RES_MEM(0xe6700020, 0x8763 - 0x20),
++	DEFINE_RES_IRQ(gic_spi(197)),
++	DEFINE_RES_NAMED(gic_spi(200), 15, NULL, IORESOURCE_IRQ),
++
++	/*
++	 * HI is not supported
++	 * since IRQ has strange mapping
++	 */
++};
++
++#define r8a7791_register_sys_dmac(id)				\
++	platform_device_register_resndata(			\
++		&platform_bus, "sh-dma-engine", id,		\
++		&r8a7791_sys_dmac_resources[id * 3],	3,	\
++		&r8a7791_sys_dmac_platform_data,		\
++		sizeof(r8a7791_sys_dmac_platform_data))
++
+ static const struct resource pfc_resources[] __initconst = {
+ 	DEFINE_RES_MEM(0xe6060000, 0x250),
+ };
+@@ -205,6 +285,7 @@ void __init r8a7791_add_standard_devices(void)
+ 	r8a7791_add_dt_devices();
+ 	r8a7791_register_irqc(0);
+ 	r8a7791_register_thermal();
++	r8a7791_register_sys_dmac(0);
+ }
+ 
+ #ifdef CONFIG_USE_OF
+-- 
+1.9.1
 
-  ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:4=
-0 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-s=
-oc-for-v3.17
-
-for you to fetch changes up to 3ed66ec5ced8b801cb851b2b8548301df94f8f54:
-
-  ARM: shmobile: Remove ARCH_HAS_CPUFREQ config for shmobile (2014-06-23 09=
-:53:55 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Updates for v3.17
-
-* Use shmobile_init_late on r8a7791 and r8a7790 whien booting using DT-only
-* Support Core-Standby for Suspend to RAM on r8a7791 and r8a7790 SoCs
-* Shared CMA reservation for R-Car Gen2 SoCs
-* Add r8a7791 SYSC power management support
-
-----------------------------------------------------------------
-Benoit Cousson (1):
-      ARM: shmobile: Mark all SoCs in shmobile as CPUFreq, capable
-
-Gaku Inami (1):
-      ARM: shmobile: Remove ARCH_HAS_CPUFREQ config for shmobile
-
-Geert Uytterhoeven (3):
-      ARM: shmobile: rcar-gen2: Update for of_get_flat_dt_prop() update
-      ARM: shmobile: rcar-gen2: Use "1ULL" instead of "(u64)1"
-      ARM: shmobile: rcar-gen2: Remove useless copied section for LongTrail
-
-Magnus Damm (3):
-      ARM: shmobile: Use shmobile_init_late() on r8a7790 DT-only
-      ARM: shmobile: Use shmobile_init_late() on r8a7791 DT-only
-      ARM: shmobile: Add shared R-Car Gen2 CMA reservation code
-
-Simon Horman (1):
-      ARM: shmobile: rcar-gen2: correct return value of shmobile_smp_apmu_s=
-uspend_init
-
-Vincent Stehl=C3=A9 (1):
-      ARM: shmobile: rcar-gen2: update call to dma_contiguous_reserve_area
-
-keita kobayashi (4):
-      ARM: shmobile: r8a7791 SYSC setup code
-      ARM: shmobile: APMU: Add Core-Standby-state for Suspend to RAM
-      ARM: shmobile: r8a7790: Support Core-Standby for Suspend to RAM
-      ARM: shmobile: r8a7791: Support Core-Standby for Suspend to RAM
-
- arch/arm/mach-shmobile/Kconfig                |  1 +
- arch/arm/mach-shmobile/Makefile               |  1 +
- arch/arm/mach-shmobile/common.h               |  2 +
- arch/arm/mach-shmobile/include/mach/r8a7791.h |  1 +
- arch/arm/mach-shmobile/platsmp-apmu.c         | 60 ++++++++++++++++++++--
- arch/arm/mach-shmobile/pm-r8a7791.c           | 47 +++++++++++++++++
- arch/arm/mach-shmobile/rcar-gen2.h            |  1 +
- arch/arm/mach-shmobile/setup-r8a7790.c        |  2 +
- arch/arm/mach-shmobile/setup-r8a7791.c        |  2 +
- arch/arm/mach-shmobile/setup-rcar-gen2.c      | 72 +++++++++++++++++++++++=
-++++
- arch/arm/mach-shmobile/smp-r8a7790.c          |  1 +
- arch/arm/mach-shmobile/smp-r8a7791.c          |  3 ++
- 12 files changed, 189 insertions(+), 4 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/pm-r8a7791.c
