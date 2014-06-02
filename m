@@ -1,78 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 25 Jun 2014 07:35:33 +0000
-Subject: [PATCH 3/5] ARM: shmobile: armadillo800eva legacy: Add LED support
-Message-Id: <111bcc1360235ad1cdab4bc27f5ccca943ca8af5.1403681531.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:17 +0000
+Subject: [PATCH 15/18] spi: rspi: Add DMA support for QSPI on R-Car Gen2
+Message-Id: <1401716301-29612-16-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403681531.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403681531.git.horms+renesas@verge.net.au>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Enable DMA support for QSPI on R-Car Gen2, for Single, Dual, and Quad SPI
+Transfers.
 
-Cfr. r8a7740-armadillo800eva-reference.dts
+Performance figures for reading from a QSPI FLASH driven at 24.375 MHz
+on r8a7791/koelsch:
+  - Single:  1.1 Mbps PIO, 23 Mbps DMA
+  - Dual  : 12.7 Mbps PIO, 48 Mbps DMA
+  - Quad  : 13   Mbps PIO, 70 Mbps DMA
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 35 ++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+ drivers/spi/spi-rspi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 53d03e8..395638d 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -578,6 +578,40 @@ static struct platform_device hdmi_lcdc_device = {
- 	},
- };
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index b7f8be81423b..bec81470dd9c 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -642,6 +642,9 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
  
-+/* LEDS */
-+static struct gpio_led gpio_leds[] = {
-+	{
-+		.name		= "LED3",
-+		.gpio		= 102,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "LED4",
-+		.gpio		= 111,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "LED5",
-+		.gpio		= 110,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	}, {
-+		.name		= "LED6",
-+		.gpio		= 177,
-+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
-+	},
-+};
+ 	qspi_receive_init(rspi);
+ 
++	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
++		return rspi_dma_transfer(rspi, &xfer->tx_sg, &xfer->rx_sg);
 +
-+static struct gpio_led_platform_data leds_gpio_info = {
-+	.leds		= gpio_leds,
-+	.num_leds	= ARRAY_SIZE(gpio_leds),
-+};
+ 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
+ 	if (ret < 0)
+ 		return ret;
+@@ -656,6 +659,9 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ {
+ 	int ret;
+ 
++	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
++		return rspi_dma_transfer(rspi, &xfer->tx_sg, NULL);
 +
-+static struct platform_device leds_gpio_device = {
-+	.name   = "leds-gpio",
-+	.id     = -1,
-+	.dev    = {
-+		.platform_data  = &leds_gpio_info,
-+	},
-+};
+ 	ret = rspi_pio_transfer(rspi, xfer->tx_buf, NULL, xfer->len);
+ 	if (ret < 0)
+ 		return ret;
+@@ -668,6 +674,9 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ 
+ static int qspi_transfer_in(struct rspi_data *rspi, struct spi_transfer *xfer)
+ {
++	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer))
++		return rspi_dma_transfer(rspi, NULL, &xfer->rx_sg);
 +
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d, ...) \
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
-@@ -1069,6 +1103,7 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&lcdc0_device,
- 	&pwm_device,
- 	&pwm_backlight_device,
-+	&leds_gpio_device,
- 	&gpio_keys_device,
- 	&sh_eth_device,
- 	&vcc_sdhi0,
+ 	return rspi_pio_transfer(rspi, NULL, xfer->rx_buf, xfer->len);
+ }
+ 
 -- 
-2.0.0.rc2
+1.9.1
 
