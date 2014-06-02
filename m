@@ -1,48 +1,78 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 10 Jun 2014 15:39:39 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: lager: add sound support on DT
-Message-Id: <539726BB.7090904@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:02 +0000
+Subject: [PATCH 00/18] spi: rspi: Add DMA support for QSPI on R-Car Gen2
+Message-Id: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sindcx1v.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sindcx1v.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 06/10/2014 06:34 AM, Kuninori Morimoto wrote:
+This patch series refactors the Renesas SPI driver and adds DMA support
+using the SPI DMA framework for QSPI on R-Car Gen2, for Single, Dual, and
+Quad SPI Transfers.
+It also adds DMA support for RZ/A1H, but this was untested.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Apart from refactorings that don't change behavior:
+  - [02/18] reverts a (harmless?) behavioral change for RSPI on SH,
+  - [03/18] removes 16-bit DMA support, which has no in-tree users.
+	    16-bit DMA support requires using a double-sized buffer to
+	    accomodate the interleaved data format.
+	    If there's a strong requirement to keep this, I think it's best
+	    to re-add support after this series.
+  - [09/18] drops the ability of RSPI on SH to work with a single DMA
+	    channel, as the SPI DMA framework needs both RX and TX DMA
+	    to function,
+  - [15/18] Adds DMA support for QSPI on R-Car Gen2,
+  - [16/18] Adds DMA support for RSPI on RZ/A1H,
+  - [18/18] adds DT preliminary DT support, as the format of the DMA
+	    specifiers depends on the DT bindings for SHDMA, which are still
+	    under development.
 
-> It supports PIO transfer at this point
+This was tested on r8a7791/koelsch (PIO and DMA), and r7s72100/genmai (PIO
+only).
 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->   arch/arm/boot/dts/r8a7790-lager.dts |   70 +++++++++++++++++++++++++++++++++++
->   arch/arm/mach-shmobile/Kconfig      |    1 +
->   2 files changed, 71 insertions(+)
+Performance figures for reading from a QSPI FLASH driven at 24.375 MHz
+on r8a7791/koelsch are:
+  - Single:  1.1 Mbps PIO, 23 Mbps DMA
+  - Dual  : 12.7 Mbps PIO, 48 Mbps DMA
+  - Quad  : 13   Mbps PIO, 70 Mbps DMA
 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index 295a60e..51a3e41 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-[...]
-> @@ -372,3 +410,35 @@
->   &i2c3	{
->   	status = "ok";
->   };
-> +
-> +&i2c2 {
-> +	status = "okay";
-> +	snd_codec: ak4643 {
-> +		#sound-dai-cells = <0>;
-> +		compatible = "asahi-kasei,ak4643";
+Thanks for your comments!
 
-    Oh, and according to 
-Documentation/devicetree/bindings/vendor-prefixes.txt, the vendor prefix 
-should be "ak", not "asahi-kasei"...
+  [01/18] spi: rspi: Extract rspi_wait_for_{tx_empty,rx_full}()
+  [02/18] spi: rspi: Do not call rspi_receive_init() for TX-only
+  [03/18] [RFC] spi: rspi: Remove unused 16-bit DMA support
+  [04/18] spi: rspi: Use core SPI_MASTER_MUST_[RT]X handling
+  [05/18] spi: rspi: Extract rspi_pio_transfer()
+  [06/18] spi: rspi: Don't consider DMA configuration failures fatal
+  [07/18] spi: rspi: Extract rspi_request_dma_chan()
+  [08/18] spi: rspi: Remove unneeded resource test in DMA setup
+  [09/18] spi: rspi: SPI DMA core needs both RX and TX DMA to function
+  [10/18] spi: rspi: Use SPI core DMA mapping framework
+  [11/18] spi: rspi: Move RSPI-specific setup out of DMA routines
+  [12/18] spi: rspi: Pass sg_tables instead of spi_tranfer to rspi_*_dma()
+  [13/18] spi: rspi: Merge rspi_*_dma() into rspi_dma_transfer()
+  [14/18] spi: rspi: Absorb rspi_rz_transfer_out_in() into 
+          spi_rz_transfer_one()
+  [15/18] spi: rspi: Add DMA support for QSPI on R-Car Gen2
+  [16/18] spi: rspi: Add DMA support for RSPI on RZ/A1H
+  [17/18] spi: rspi: Extract rspi_common_transfer()
+  [18/18] [RFC] spi: rspi: Add DT support to DMA setup
 
-[...]
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |   6 +
+ drivers/spi/spi-rspi.c                             | 604 ++++++++-------------
+ include/linux/spi/rspi.h                           |   2 -
+ 3 files changed, 228 insertions(+), 384 deletions(-)
 
-WBR, Sergei
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
