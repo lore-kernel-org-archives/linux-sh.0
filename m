@@ -1,67 +1,188 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 08:56:28 +0000
-Subject: [PATCH 08/12] ASoC: rsnd: enable DVC when capture
-Message-Id: <871tumzjcy.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:07 +0000
+Subject: [PATCH 05/18] spi: rspi: Extract rspi_pio_transfer()
+Message-Id: <1401716301-29612-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The various PIO loops are very similar. Consolidate into a single
+function rspi_pio_transfer().
 
-Current DVC can be enabled only when playback,
-but, this came from misunderstanding.
-It is not correct.
+Both buffer pointers can be NULL, as RSPI supports TX-only mode, and
+Dual/Quad SPI Transfers are unidirectional.
 
-DVC <-> DMA relationship is...
-
-Playback: MEM -> DMAC  -> SRC -> DVC -> DMACp -> SSI
-Capture:  SSI -> DMACp -> SRC -> DVC -> DMAC  -> MEM
-
-DVC can be used for both Playback/Capture
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- sound/soc/sh/rcar/dvc.c |   12 ++++--------
- 1 file changed, 4 insertions(+), 8 deletions(-)
+ drivers/spi/spi-rspi.c | 95 ++++++++++++++++++--------------------------------
+ 1 file changed, 33 insertions(+), 62 deletions(-)
 
-diff --git a/sound/soc/sh/rcar/dvc.c b/sound/soc/sh/rcar/dvc.c
-index ed00070..deef310 100644
---- a/sound/soc/sh/rcar/dvc.c
-+++ b/sound/soc/sh/rcar/dvc.c
-@@ -191,24 +191,20 @@ static int rsnd_dvc_pcm_new(struct rsnd_mod *mod,
- 			    struct snd_soc_pcm_runtime *rtd)
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index ece8f6037943..fdbd46d0c570 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -438,15 +438,24 @@ static int rspi_data_in(struct rspi_data *rspi)
+ 	return data;
+ }
+ 
+-static int rspi_data_out_in(struct rspi_data *rspi, u8 data)
++static int rspi_pio_transfer(struct rspi_data *rspi, const u8 *tx, u8 *rx,
++			     unsigned int n)
  {
- 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
--	struct rsnd_priv *priv = rsnd_mod_to_priv(mod);
--	struct device *dev = rsnd_priv_to_dev(priv);
- 	struct snd_card *card = rtd->card->snd_card;
- 	struct snd_kcontrol *kctrl;
- 	static struct snd_kcontrol_new knew = {
- 		.iface		= SNDRV_CTL_ELEM_IFACE_MIXER,
--		.name		= "Playback Volume",
- 		.info		= rsnd_dvc_volume_info,
- 		.get		= rsnd_dvc_volume_get,
- 		.put		= rsnd_dvc_volume_put,
- 	};
+-	int ret;
+-
+-	ret = rspi_data_out(rspi, data);
+-	if (ret < 0)
+-		return ret;
++	while (n-- > 0) {
++		if (tx) {
++			int ret = rspi_data_out(rspi, *tx++);
++			if (ret < 0)
++				return ret;
++		}
++		if (rx) {
++			int ret = rspi_data_in(rspi);
++			if (ret < 0)
++				return ret;
++			*rx++ = ret;
++		}
++	}
+ 
+-	return rspi_data_in(rspi);
++	return 0;
+ }
+ 
+ static void rspi_dma_complete(void *arg)
+@@ -644,13 +653,11 @@ static int rspi_is_dma(const struct rspi_data *rspi, struct spi_transfer *t)
+ static int rspi_transfer_out_in(struct rspi_data *rspi,
+ 				struct spi_transfer *xfer)
+ {
+-	int remain = xfer->len, ret;
+-	const u8 *tx_buf = xfer->tx_buf;
+-	u8 *rx_buf = xfer->rx_buf;
+ 	u8 spcr;
++	int ret;
+ 
+ 	spcr = rspi_read8(rspi, RSPI_SPCR);
+-	if (rx_buf) {
++	if (xfer->rx_buf) {
+ 		rspi_receive_init(rspi);
+ 		spcr &= ~SPCR_TXMD;
+ 	} else {
+@@ -658,18 +665,9 @@ static int rspi_transfer_out_in(struct rspi_data *rspi,
+ 	}
+ 	rspi_write8(rspi, spcr, RSPI_SPCR);
+ 
+-	while (remain > 0) {
+-		ret = rspi_data_out(rspi, *tx_buf++);
+-		if (ret < 0)
+-			return ret;
+-		if (rx_buf) {
+-			ret = rspi_data_in(rspi);
+-			if (ret < 0)
+-				return ret;
+-			*rx_buf++ = ret;
+-		}
+-		remain--;
+-	}
++	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
++	if (ret < 0)
++		return ret;
+ 
+ 	/* Wait for the last transmission */
+ 	rspi_wait_for_tx_empty(rspi);
+@@ -694,19 +692,13 @@ static int rspi_transfer_one(struct spi_master *master, struct spi_device *spi,
+ static int rspi_rz_transfer_out_in(struct rspi_data *rspi,
+ 				   struct spi_transfer *xfer)
+ {
+-	int remain = xfer->len, ret;
+-	const u8 *tx_buf = xfer->tx_buf;
+-	u8 *rx_buf = xfer->rx_buf;
++	int ret;
+ 
+ 	rspi_rz_receive_init(rspi);
+ 
+-	while (remain > 0) {
+-		ret = rspi_data_out_in(rspi, *tx_buf++);
+-		if (ret < 0)
+-			return ret;
+-		*rx_buf++ = ret;
+-		remain--;
+-	}
++	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
++	if (ret < 0)
++		return ret;
+ 
+ 	/* Wait for the last transmission */
+ 	rspi_wait_for_tx_empty(rspi);
+@@ -726,19 +718,13 @@ static int rspi_rz_transfer_one(struct spi_master *master,
+ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 				struct spi_transfer *xfer)
+ {
+-	int remain = xfer->len, ret;
+-	const u8 *tx_buf = xfer->tx_buf;
+-	u8 *rx_buf = xfer->rx_buf;
++	int ret;
+ 
+ 	qspi_receive_init(rspi);
+ 
+-	while (remain > 0) {
+-		ret = rspi_data_out_in(rspi, *tx_buf++);
+-		if (ret < 0)
+-			return ret;
+-		*rx_buf++ = ret;
+-		remain--;
+-	}
++	ret = rspi_pio_transfer(rspi, xfer->tx_buf, xfer->rx_buf, xfer->len);
++	if (ret < 0)
++		return ret;
+ 
+ 	/* Wait for the last transmission */
+ 	rspi_wait_for_tx_empty(rspi);
+@@ -748,15 +734,11 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 
+ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ {
+-	const u8 *buf = xfer->tx_buf;
+-	unsigned int i;
  	int ret;
  
--	if (!rsnd_dai_is_play(rdai, io)) {
--		dev_err(dev, "DVC%d is connected to Capture DAI\n",
--			rsnd_mod_id(mod));
--		return -EINVAL;
+-	for (i = 0; i < xfer->len; i++) {
+-		ret = rspi_data_out(rspi, *buf++);
+-		if (ret < 0)
+-			return ret;
 -	}
-+	if (rsnd_dai_is_play(rdai, io))
-+		knew.name = "Playback Volume";
-+	else
-+		knew.name = "Capture Volume";
++	ret = rspi_pio_transfer(rspi, xfer->tx_buf, NULL, xfer->len);
++	if (ret < 0)
++		return ret;
  
- 	kctrl = snd_ctl_new1(&knew, mod);
- 	if (!kctrl)
+ 	/* Wait for the last transmission */
+ 	rspi_wait_for_tx_empty(rspi);
+@@ -766,18 +748,7 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ 
+ static int qspi_transfer_in(struct rspi_data *rspi, struct spi_transfer *xfer)
+ {
+-	u8 *buf = xfer->rx_buf;
+-	unsigned int i;
+-	int ret;
+-
+-	for (i = 0; i < xfer->len; i++) {
+-		ret = rspi_data_in(rspi);
+-		if (ret < 0)
+-			return ret;
+-		*buf++ = ret;
+-	}
+-
+-	return 0;
++	return rspi_pio_transfer(rspi, NULL, xfer->rx_buf, xfer->len);
+ }
+ 
+ static int qspi_transfer_one(struct spi_master *master, struct spi_device *spi,
 -- 
-1.7.9.5
+1.9.1
 
