@@ -1,39 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:30 +0000
-Subject: [PATCH 17/24] ARM: shmobile: marzen-reference: Use DT CPU Frequency
-Message-Id: <17ed9efd8afdd8c38f19ff72f08e71c1fd2376e3.1403487423.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:40:24 +0000
+Subject: [PATCH 4/4] ARM: shmobile: koelsch legacy: Enable DMA for QSPI
+Message-Id: <1401716424-29740-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
+References: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Convert the Marzen DT reference board support to use shmobile_init_delay()
-to be able to migrate away from per-SoC delay setup functions.
-
-Based on work for the Armadillo800 EVA board by Magnus Damm.
-
-Cc: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/board-marzen-reference.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-koelsch.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-index 1b63686..bb2df32 100644
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-@@ -66,7 +66,7 @@ static const char *marzen_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(MARZEN, "marzen")
- 	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
--	.init_early	= r8a7779_init_delay,
-+	.init_early	= shmobile_init_delay,
- 	.init_time	= marzen_init_timer,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
+diff --git a/arch/arm/mach-shmobile/board-koelsch.c b/arch/arm/mach-shmobile/board-koelsch.c
+index c6c68892caa3..171ce3ea162a 100644
+--- a/arch/arm/mach-shmobile/board-koelsch.c
++++ b/arch/arm/mach-shmobile/board-koelsch.c
+@@ -182,6 +182,8 @@ static const struct resource qspi_resources[] __initconst = {
+ 
+ static const struct rspi_plat_data qspi_pdata __initconst = {
+ 	.num_chipselect = 1,
++	.dma_tx_id	= SYS_DMAC_SLAVE_QSPI_TX,
++	.dma_rx_id	= SYS_DMAC_SLAVE_QSPI_RX,
+ };
+ 
+ /* SPI Flash memory (Spansion S25FL512SAGMFIG11 64 MiB) */
 -- 
-2.0.0.rc2
+1.9.1
 
