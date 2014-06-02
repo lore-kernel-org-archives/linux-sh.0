@@ -1,23 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Jun 2014 23:54:30 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: r8a779x: add DVC support for sound node on DTSI
-Message-Id: <20140627235428.GB27128@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:40:23 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7791: Add QSPI DMA support
+Message-Id: <1401716424-29740-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wqc4o5mu.wl%kuninori.morimoto.gx@gmail.com>
-In-Reply-To: <87wqc4o5mu.wl%kuninori.morimoto.gx@gmail.com>
+References: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 25, 2014 at 05:50:53PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> These patches adds DVC support on sound node
-> 
-> Kuninori Morimoto (2):
->       ARM: shmobile: r8a7790: add DVC support for sound node on DTSI
->       ARM: shmobile: r8a7791: add DVC support for sound node on DTSI
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7791.h | 2 ++
+ arch/arm/mach-shmobile/setup-r8a7791.c        | 1 +
+ 2 files changed, 3 insertions(+)
 
-Thanks, I have queued these up.
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+index 533999916e73..c4582df76139 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
+@@ -4,6 +4,8 @@
+ /* DMA slave IDs */
+ enum {
+ 	RCAR_DMA_SLAVE_INVALID,
++	SYS_DMAC_SLAVE_QSPI_TX,
++	SYS_DMAC_SLAVE_QSPI_RX,
+ };
+ 
+ void r8a7791_add_standard_devices(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index 77e1bc2b2870..8dbdb17ffe51 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -57,6 +57,7 @@
+ }
+ 
+ static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
++	SYS_DMAC_SLAVE(QSPI,   8, 0xe6b10000, 0x04, 0x04,   0x17, 0x18),
+ };
+ 
+ static const struct sh_dmae_channel r8a7791_sys_dmac_channels[] = {
+-- 
+1.9.1
+
