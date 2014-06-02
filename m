@@ -1,29 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Jun 2014 23:56:56 +0000
-Subject: Re: [PATCH v5 0/2] Add R8A7790/Lager board PCI USB DT support
-Message-Id: <20140627235656.GB29865@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:42:05 +0000
+Subject: [PATCH v2 1/7] DMA: shdma: Add r8a7791 support
+Message-Id: <1401716531-29794-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406242157.05973.sergei.shtylyov@cogentembedded.com>
- <20140627235622.GA29865@verge.net.au>
-In-Reply-To: <20140627235622.GA29865@verge.net.au>
+References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jun 28, 2014 at 08:56:22AM +0900, Simon Horman wrote:
-> On Tue, Jun 24, 2014 at 09:57:04PM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> >    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
-> > 'renesas-devel-v3.16-rc2-20140623' tag. Here we add PCI USB device tree support
-> > for the R8A7790-based Lager board. As the 'pci-rcar-gen2' driver device tree
-> > support has been merged for 3.16, this patchset can now be merged too...
-> > 
-> > [1/2] ARM: shmobile: r8a7790: add internal PCI bridge nodes
-> > [2/2] ARM: shmobile: lager: enable internal PCI
-> 
-> Thanks, I will queue these up with
-> Shimoda-san's Tested-by.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - No changes
 
-And Arnd's Ack
+ Documentation/devicetree/bindings/dma/shdma.txt | 5 +++--
+ drivers/dma/sh/shdmac.c                         | 1 +
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/dma/shdma.txt b/Documentation/devicetree/bindings/dma/shdma.txt
+index 86d5c509594b..d26b7065ae94 100644
+--- a/Documentation/devicetree/bindings/dma/shdma.txt
++++ b/Documentation/devicetree/bindings/dma/shdma.txt
+@@ -24,8 +24,9 @@ Optional properties (currently unused):
+ Required properties:
+ - compatible:	should be of the form "renesas,shdma-<soc>", where <soc> should
+ 		be replaced with the desired SoC model, e.g.
+-		"renesas,shdma-r8a73a4" for the system DMAC on r8a73a4 SoC
+-		"renesas,shdma-r8a7790" for the DMAC on the R8A7790.
++		"renesas,shdma-r8a73a4" for the system DMAC on r8a73a4 SoC,
++		"renesas,shdma-r8a7790" for the DMAC on the R8A7790,
++		"renesas,shdma-r8a7791" for the DMAC on the R8A7791.
+ 
+ Example:
+ 	dmac: dma-multiplexer@0 {
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index 91b3f744d7b2..cdbc68e72ca1 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -691,6 +691,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
+ static const struct of_device_id sh_dmae_of_match[] = {
+ 	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
+ 	{ .compatible = "renesas,shdma-r8a7790", .data = &shdma_arm_info },
++	{ .compatible = "renesas,shdma-r8a7791", .data = &shdma_arm_info },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
+-- 
+1.9.1
+
