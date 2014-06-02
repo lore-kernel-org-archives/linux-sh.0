@@ -1,66 +1,109 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 11 Jun 2014 00:01:18 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: henninger: add I2C2 DT support
-Message-Id: <20140611000118.GB19789@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:20 +0000
+Subject: [PATCH 18/18] [RFC] spi: rspi: Add DT support to DMA setup
+Message-Id: <1401716301-29612-19-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406110245.22692.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201406110245.22692.sergei.shtylyov@cogentembedded.com>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Wed, Jun 11, 2014 at 02:45:21AM +0400, Sergei Shtylyov wrote:
-> Define the Henninger board dependent part of the I2C2 device node.
-> 
-> Based on the Koelsch I2C2 device tree patch by Wolfram Sang.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+The format of the DMA specifiers depends on the DT bindings for SHDMA,
+which are still under development.
+---
+ Documentation/devicetree/bindings/spi/spi-rspi.txt |  6 ++++
+ drivers/spi/spi-rspi.c                             | 37 ++++++++++++++--------
+ 2 files changed, 29 insertions(+), 14 deletions(-)
 
-Thanks, I will queue this up.
+diff --git a/Documentation/devicetree/bindings/spi/spi-rspi.txt b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+index d57d82a74054..a274073bd41d 100644
+--- a/Documentation/devicetree/bindings/spi/spi-rspi.txt
++++ b/Documentation/devicetree/bindings/spi/spi-rspi.txt
+@@ -30,6 +30,9 @@ Required properties:
+ 
+ Optional properties:
+ - clocks           : Must contain a reference to the functional clock.
++- dmas             : Must contain a list of two references to DMA specifiers,
++		     one for transmission, and one for reception.
++- dma-names        : Must contain a list of two DMA names, "tx" and "rx".
+ 
+ Pinctrl properties might be needed, too.  See
+ Documentation/devicetree/bindings/pinctrl/renesas,*.
+@@ -58,4 +61,7 @@ Examples:
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		dmas = <&dma0 R8A7791_DMA_QSPI_TX CHCR_TX_8BIT>,
++		       <&dma0 R8A7791_DMA_QSPI_RX CHCR_RX_8BIT>;
++		dma-names = "tx", "rx";
+ 	};
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 10112745bb17..16de9ad60d74 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -874,10 +874,11 @@ static struct dma_chan *rspi_request_dma_chan(struct device *dev,
+ 	dma_cap_zero(mask);
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+-	chan = dma_request_channel(mask, shdma_chan_filter,
+-				   (void *)(unsigned long)id);
++	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
++				(void *)(unsigned long)id, dev,
++				dir = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 	if (!chan) {
+-		dev_warn(dev, "dma_request_channel failed\n");
++		dev_warn(dev, "dma_request_slave_channel_compat failed\n");
+ 		return NULL;
+ 	}
+ 
+@@ -903,22 +904,30 @@ static int rspi_request_dma(struct device *dev, struct spi_master *master,
+ 			    const struct resource *res)
+ {
+ 	const struct rspi_plat_data *rspi_pd = dev_get_platdata(dev);
++	unsigned int dma_tx_id, dma_rx_id;
++
++	if (dev->of_node) {
++		/* In the OF case we will get the slave IDs from the DT */
++		dma_tx_id = 0;
++		dma_rx_id = 0;
++	} else if (rspi_pd && rspi_pd->dma_tx_id && rspi_pd->dma_rx_id) {
++		dma_tx_id = rspi_pd->dma_tx_id;
++		dma_rx_id = rspi_pd->dma_rx_id;
++	} else {
++		/* The driver assumes no error. */
++		return 0;
++	}
+ 
+-	if (!rspi_pd || !rspi_pd->dma_rx_id || !rspi_pd->dma_tx_id)
+-		return 0;	/* The driver assumes no error. */
+-
+-	master->dma_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM,
+-					       rspi_pd->dma_rx_id,
++	master->dma_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV, dma_tx_id,
+ 					       res->start + RSPI_SPDR);
+-	if (!master->dma_rx)
++	if (!master->dma_tx)
+ 		return -ENODEV;
+ 
+-	master->dma_tx = rspi_request_dma_chan(dev, DMA_MEM_TO_DEV,
+-					       rspi_pd->dma_tx_id,
++	master->dma_rx = rspi_request_dma_chan(dev, DMA_DEV_TO_MEM, dma_rx_id,
+ 					       res->start + RSPI_SPDR);
+-	if (!master->dma_tx) {
+-		dma_release_channel(master->dma_rx);
+-		master->dma_rx = NULL;
++	if (!master->dma_rx) {
++		dma_release_channel(master->dma_tx);
++		master->dma_tx = NULL;
+ 		return -ENODEV;
+ 	}
+ 
+-- 
+1.9.1
 
-> ---
-> This patch is against 'renesas-devel-v3.15-20140610' tag of Simon Horman's
-> 'renesas.git' repo.
-> 
-> Changes in version 2:
-> - removed I2C devices, to be added by separate patches.
-> 
->  arch/arm/boot/dts/r8a7791-henninger.dts |   13 +++++++++++++
->  1 file changed, 13 insertions(+)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7791-henninger.dts
-> +++ renesas/arch/arm/boot/dts/r8a7791-henninger.dts
-> @@ -110,6 +110,11 @@
->  		renesas,function = "sdhi2";
->  	};
->  
-> +	i2c2_pins: i2c2 {
-> +		renesas,groups = "i2c2";
-> +		renesas,function = "i2c2";
-> +	};
-> +
->  	qspi_pins: spi0 {
->  		renesas,groups = "qspi_ctrl", "qspi_data4";
->  		renesas,function = "qspi";
-> @@ -170,6 +175,14 @@
->  	status = "okay";
->  };
->  
-> +&i2c2 {
-> +	pinctrl-0 = <&i2c2_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	status = "okay";
-> +	clock-frequency = <400000>;
-> +};
-> +
->  &qspi {
->  	pinctrl-0 = <&qspi_pins>;
->  	pinctrl-names = "default";
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
