@@ -1,70 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:17 +0000
-Subject: [PATCH 08/29] ARM: shmobile: koelsch dts: Add VDD MPU regulator for DVFS
-Message-Id: <1d41f36a68c0f4e9b01d563ce33bab5201858b54.1403487225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 02 Jun 2014 13:38:03 +0000
+Subject: [PATCH 01/18] spi: rspi: Extract rspi_wait_for_{tx_empty,rx_full}()
+Message-Id: <1401716301-29612-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1401716301-29612-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-
-The CA15 cluster is capable of voltage scaling. Add the regulator
-in the i2c6 node, to allow the generic CPUFreq driver to use it.
-
-Enable the i2c6 pin mux and the device node as well since the
-da9210 is connected to that bus.
-
-Note: In R-CAR Gen2, each frequency is using the same voltage,
-and DVS control is not used. Therefore, this patch set the
-voltage(Vmin/Vmax) to 1000mv.
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ drivers/spi/spi-rspi.c | 29 +++++++++++++++++++++--------
+ 1 file changed, 21 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 05d44f9..95331d7 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -293,6 +293,11 @@
- 				 "msiof0_tx";
- 		renesas,function = "msiof0";
- 	};
-+
-+	i2c6_pins: i2c6 {
-+		renesas,groups = "i2c6";
-+		renesas,function = "i2c6";
-+	};
- };
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 5639f9529e0b..d04a4acce231 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -405,11 +405,22 @@ static int rspi_wait_for_interrupt(struct rspi_data *rspi, u8 wait_mask,
+ 	return 0;
+ }
  
- &ether {
-@@ -408,3 +413,19 @@
- 		spi-cpha;
- 	};
- };
++static inline int rspi_wait_for_tx_empty(struct rspi_data *rspi)
++{
++	return rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
++}
 +
-+&i2c6 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&i2c6_pins>;
-+	status = "okay";
++static inline int rspi_wait_for_rx_full(struct rspi_data *rspi)
++{
++	return rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE);
++}
 +
-+	vdd_dvfs: regulator@68 {
-+		compatible = "diasemi,da9210";
-+		reg = <0x68>;
-+
-+		regulator-min-microvolt = <1000000>;
-+		regulator-max-microvolt = <1000000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+};
+ static int rspi_data_out(struct rspi_data *rspi, u8 data)
+ {
+-	if (rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE) < 0) {
++	int error = rspi_wait_for_tx_empty(rspi);
++	if (error < 0) {
+ 		dev_err(&rspi->master->dev, "transmit timeout\n");
+-		return -ETIMEDOUT;
++		return error;
+ 	}
+ 	rspi_write_data(rspi, data);
+ 	return 0;
+@@ -417,11 +428,13 @@ static int rspi_data_out(struct rspi_data *rspi, u8 data)
+ 
+ static int rspi_data_in(struct rspi_data *rspi)
+ {
++	int error;
+ 	u8 data;
+ 
+-	if (rspi_wait_for_interrupt(rspi, SPSR_SPRF, SPCR_SPRIE) < 0) {
++	error = rspi_wait_for_rx_full(rspi);
++	if (error < 0) {
+ 		dev_err(&rspi->master->dev, "receive timeout\n");
+-		return -ETIMEDOUT;
++		return error;
+ 	}
+ 	data = rspi_read_data(rspi);
+ 	return data;
+@@ -737,7 +750,7 @@ static int rspi_transfer_out_in(struct rspi_data *rspi,
+ 	}
+ 
+ 	/* Wait for the last transmission */
+-	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
++	rspi_wait_for_tx_empty(rspi);
+ 
+ 	return 0;
+ }
+@@ -783,7 +796,7 @@ static int rspi_rz_transfer_out_in(struct rspi_data *rspi,
+ 	}
+ 
+ 	/* Wait for the last transmission */
+-	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
++	rspi_wait_for_tx_empty(rspi);
+ 
+ 	return 0;
+ }
+@@ -818,7 +831,7 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 	}
+ 
+ 	/* Wait for the last transmission */
+-	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
++	rspi_wait_for_tx_empty(rspi);
+ 
+ 	return 0;
+ }
+@@ -836,7 +849,7 @@ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+ 	}
+ 
+ 	/* Wait for the last transmission */
+-	rspi_wait_for_interrupt(rspi, SPSR_SPTEF, SPCR_SPTIE);
++	rspi_wait_for_tx_empty(rspi);
+ 
+ 	return 0;
+ }
 -- 
-2.0.0.rc2
+1.9.1
 
