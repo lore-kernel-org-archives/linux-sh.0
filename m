@@ -1,38 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
-Date: Thu, 19 Jun 2014 00:54:03 +0000
-Subject: Re: [PATCH 09/12] ASoC: rsnd: enable SRC setting via DT
-Message-Id: <87r42l90sz.wl%kuninori.morimoto.gx@gmail.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:03:34 +0000
+Subject: [PATCH v2 8/8] ARM: shmobile: Enable CPUFREQ configuration
+Message-Id: <538DB996.3050101@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
-	<87zjhay4s6.wl%kuninori.morimoto.gx@renesas.com>
-	<53A1A022.1020801@cogentembedded.com>
-In-Reply-To: <53A1A022.1020801@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+This changes of configuration is multiplatform build only for r8a7790/r8a7791.
 
-Hi Sergei
-
-> > @@ -640,6 +640,16 @@ static void rsnd_of_parse_src(struct platform_device *pdev,
-> >   	info->src_info		= src_info;
-> >   	info->src_info_nr	= nr;
-> >
-> > +	i = 0;
-> > +	for_each_child_of_node(src_node, np) {
-> > +		src_info = info->src_info + i;
-> > +
-> > +		of_property_read_u32(src_node, "convert-rate",
-> 
->     Are you sure it's 'src_node' here, not 'np'?
-
-Grr..
-Nice catch !
-Thank you for pointing it.
-I will fix it in v2
-
-Best regards
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 ---
-Kuninori Morimoto
+
+Changes since version 1:
+- added CONFIG_REGULATOR_DA9210
+
+ arch/arm/configs/shmobile_defconfig |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 94d7736..c4b72aa 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -147,3 +147,16 @@ CONFIG_NLS_ISO8859_1=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_GOV_COMMON=y
++CONFIG_CPU_FREQ_STAT=y
++CONFIG_CPU_FREQ_STAT_DETAILS=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
++CONFIG_CPU_THERMAL=y
++CONFIG_GENERIC_CPUFREQ_CPU0=y
++CONFIG_REGULATOR_DA9210=y
+-- 
+1.7.9.5
+
