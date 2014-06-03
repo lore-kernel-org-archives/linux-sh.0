@@ -1,52 +1,57 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 28 Jun 2014 13:41:36 +0000
-Subject: Re: [PATCH 06/10 v2] ASoC: rsnd: enable DVC when capture
-Message-Id: <20140628134136.GX2520@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="VBg0eA7b+gOCQW/G"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 03 Jun 2014 19:42:26 +0000
+Subject: [PATCH] sh_eth: fix SH7619/771x support
+Message-Id: <201406032342.27160.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
- <8761jstphc.wl%kuninori.morimoto.gx@gmail.com>
- <87wqc8sasb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wqc8sasb.wl%kuninori.morimoto.gx@renesas.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, yoshihiro.shimoda.uh@renesas.com
 
+Commit 4a55530f38e4 (net: sh_eth: modify the definitions of register) managed
+to leave out the E-DMAC register entries in sh_eth_offset_fast_sh3_sh2[], thus
+totally breaking SH7619/771x support.  Add the missing entries using  the data
+from before that commit.
 
---VBg0eA7b+gOCQW/G
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Sun, Jun 22, 2014 at 05:57:04PM -0700, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> Current DVC can be enabled only when playback,
-> but, this came from misunderstanding.
-> It is not correct.
+---
+The patch is against Dave Miller's 'net.git' repo.
+Although there have been no complaints during 3+ years of this being broken, I
+think it's probably worth queuing the patch for the stable trees...
 
-Applied up to here, thanks.
+ drivers/net/ethernet/renesas/sh_eth.c |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
---VBg0eA7b+gOCQW/G
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTrsYNAAoJELSic+t+oim9xlIP/j3rtjF/AfgU5d1AJbbxgZ8e
-/+PQ3ZpTiK1nI9/s/lLc17bhhpEX7tq3ReSJWJwFVtwoMAABXxiKO5Z1wkugtkUM
-2wytNgSiBs7gFw5oZkEIY+esfnC/ErcBoHNMOAXowK5umqbrg3qkZ53ahhyG/gJm
-LryCTFSOvoBRlHStbvy1Aq5blguWssM4G7Hn2T9/uqviABUPVajsfVd/AETGV3/M
-HmmYao9YZofhUeTLXiOH7ik/OqM3iUVg7tdtTGzmuJGoG/8fs53CHM5TcE0R2ZcS
-h3vUgXhkej5WK5DhnhR9K6xEDdYdzs8n7ylmZOcTksySMWtmX2qx9jrZ0aIVV/35
-NCdxfGImCql+QG3d1/BMTwkrFLwwuRSyMKBpBikwdNoSY0nd7vR25z2jg7g1wnYB
-ivoPzMPdJ1UnNSSgOX4IghvXKM1f0HG5dGFe2NY+Vn4V3TxBHUmjpy86tWSZOM2a
-T0kM272uNZGx0V/5nCprDiDWswpoZfSSNQzhhFSHw2JOl35Qk4SxyEzKhkkO7/ku
-/WidXg+lCJsJ4HKVulI+4mDT+ZAZWEOe9BMr8Fq06QZHjD5BuMTdsX5caNf3RQC1
-1sHztXxd3FZWE7q9CaMk9Rz2YpLj3trQH//7S6i5htHnunTAKuRG/JORDP0YGWcg
-vZWEVjAi+l3OFyMe9In7
-=q/rY
------END PGP SIGNATURE-----
-
---VBg0eA7b+gOCQW/G--
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -307,6 +307,27 @@ static const u16 sh_eth_offset_fast_sh4[
+ };
+ 
+ static const u16 sh_eth_offset_fast_sh3_sh2[SH_ETH_MAX_REGISTER_OFFSET] = {
++	[EDMR]		= 0x0000,
++	[EDTRR]		= 0x0004,
++	[EDRRR]		= 0x0008,
++	[TDLAR]		= 0x000c,
++	[RDLAR]		= 0x0010,
++	[EESR]		= 0x0014,
++	[EESIPR]	= 0x0018,
++	[TRSCER]	= 0x001c,
++	[RMFCR]		= 0x0020,
++	[TFTR]		= 0x0024,
++	[FDR]		= 0x0028,
++	[RMCR]		= 0x002c,
++	[EDOCR]		= 0x0030,
++	[FCFTR]		= 0x0034,
++	[RPADIR]	= 0x0038,
++	[TRIMD]		= 0x003c,
++	[RBWAR]		= 0x0040,
++	[RDFAR]		= 0x0044,
++	[TBRAR]		= 0x004c,
++	[TDFAR]		= 0x0050,
++
+ 	[ECMR]		= 0x0160,
+ 	[ECSR]		= 0x0164,
+ 	[ECSIPR]	= 0x0168,
