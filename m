@@ -1,74 +1,83 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 17 Jun 2014 09:57:24 +0000
-Subject: Re: [PATCH 1/2] I2C: EMMA Mobile I2C master driver
-Message-Id: <20140617095724.GJ2638@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="T4IYkFBVPN84tP7K"
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:02:24 +0000
+Subject: [PATCH v2 2/8] ARM: shmobile: r8a7790/lager dts: Add DVFS parameters into cpu0 node for r8a7790
+Message-Id: <538DB950.6070203@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1377688911-10911-1-git-send-email-ian.molton@codethink.co.uk>
- <1378226969-18722-1-git-send-email-ian.molton@codethink.co.uk>
- <1378226969-18722-2-git-send-email-ian.molton@codethink.co.uk>
- <20140218173843.GB18768@katana>
-In-Reply-To: <20140218173843.GB18768@katana>
-To: Ian Molton <ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
-Cc: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, rob.herring-bsGFqQB8/DxBDgjK7y7TUQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+From: Benoit Cousson <bcousson@baylibre.com>
 
---T4IYkFBVPN84tP7K
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
 
-On Tue, Feb 18, 2014 at 06:38:43PM +0100, Wolfram Sang wrote:
-> On Tue, Sep 03, 2013 at 05:49:29PM +0100, Ian Molton wrote:
-> > Add a driver for the EMMA mobile I2C block.
-> >=20
-> > The driver supports low and high-speed interrupt driven PIO transfers.
-> >=20
-> > Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
->=20
-> > --- a/drivers/i2c/busses/Kconfig
-> > +++ b/drivers/i2c/busses/Kconfig
-> > @@ -777,6 +777,16 @@ config I2C_RCAR
-> >  	  This driver can also be built as a module.  If so, the module
-> >  	  will be called i2c-rcar.
-> > =20
-> > +config I2C_EM
-> > +	tristate "EMMA Mobile series I2C adapter"
-> > +	depends on I2C && HAVE_CLK
-> > +	help
-> > +	  If you say yes to this option, support will be included for the
-> > +	  I2C interface on the Renesas Electronics EM/EV family of processors.
-> > +
-> > +	  This driver can also be built as a module.  If so, the module
-> > +	  will be called i2c-em
-> > +
->=20
-> Please keep it sorted.
+- voltage-tolerance = 1%
+  It reflects the tolerance for the CPU voltage defined inside the OPP
+  table. Due to the lack of proper OPP definition, use an arbitrary safe
+  value.
+- clock-latency = 300 us
+  Approximate worst-case latency to do a full DVFS transition for every
+  OPPs. Due to the lack of HW information, use an arbitrary safe value.
+  Note: The term transition-latency will be more accurate to define this
+  value since the clock transition latency is not the only parameter that
+  will define the overall DVFS transition.
+- operating-points = < kHz - uV >
+  List of 6 operating points. All of them are using the same voltage
+  since the valid Vmin voltage is not documented in the HW spec.
+- clocks
+  phandle to the CPU clock source. This clock source is used for all the
+  4 CortexA15 located inside the same cluster.
 
-Ping. Still any interest in this one?
+Signed-off-by: Benoit Cousson <bcousson+renesas@baylibre.com>
+[gaku.inami.xw@bp.renesas.com: Change the setting of OPPs for ES2.0]
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
 
+Changes since version 1:
+- changed "Signed-off-by" and "From" correctly.
+- added the setting of VDD.
+- changed the setting of OPPs for ES2.0
+- fixed subject.
 
---T4IYkFBVPN84tP7K
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ arch/arm/boot/dts/r8a7790-lager.dts |    4 ++++
+ arch/arm/boot/dts/r8a7790.dtsi      |   11 +++++++++++
+ 2 files changed, 15 insertions(+)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 8428204..b9cbeda 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -338,3 +338,7 @@
+ 		regulator-always-on;
+ 	};
+ };
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++};
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 7ff2960..30f7104 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -44,6 +44,17 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+ 			clock-frequency = <1300000000>;
++			voltage-tolerance = <1>; /* 1% */
++			clocks = <&cpg_clocks R8A7790_CLK_Z>;
++			clock-latency = <300000>; /* 300 us */
++
++			/* kHz - uV - OPPs unknown yet */
++			operating-points = <1400000 1000000>,
++					   <1225000 1000000>,
++					   <1050000 1000000>,
++					   < 875000 1000000>,
++					   < 700000 1000000>,
++					   < 350000 1000000>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+-- 
+1.7.9.5
 
-iQIcBAEBAgAGBQJToBEEAAoJEBQN5MwUoCm2SUwP/1EErRQhPdkB7QcsPQ3yCiI4
-SCWyY+LsZVRUOT2VMz+i35TXXMSZM1klfSsf7JFAo1FBjKD+nHT64JKPxnNFPhd+
-01om1iaabNQN2tIhI+udayvyqfsKgUhIEiRcZMKCo7NGoGFfBYTxzEXCikehTOLc
-yxLJHaaUkAMbQi1AXlfm+4acFmjEUVVroF2PP9gr0JssOQs6umztzOfSlVfc7rix
-eQ42Kfrofr9yIfFXqZggqLulzO5gNjlKa/EoKCPU5khz5hIUrEllsF3gKps/gRmC
-Cs8ckfm/5cQHHKIcjD7nxZhdGDBjfiTJcRH2dpSybWobYOBxb1fg4G90erlUenV9
-ODLCA45Y3+rIhu+8vqA4p1aLCawfpaZsG1245uqL5/DOGez9csGFIzJ3PPpsLl5o
-W8WkVMDlro+0/VdshD1LO3zoIrY+63nDsX28+k+wAk5WxOaTiik5heks+jg6wpuP
-RWg9sics9yLDxJyIRMZnWuwuFMjJSTfZmuaZ3B8sJv3f26WrdBc3F069l/EJ9VU8
-np8G+5p+Pabg0RjOGaf3kzwBQ/k4mvXIbO+Ve9bHh9EmP0bv5GBLNpzR9NPoZ14a
-4kMztFutj62aoBvS8+HwkbYsufSAwYyS2iWCKGxug3cU1QoRo0J2fYKDPJ8Kh36v
-Ast0lUpdmFSzwZdTV0Ls
-=QnXc
------END PGP SIGNATURE-----
-
---T4IYkFBVPN84tP7K--
