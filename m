@@ -1,52 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:49 +0000
-Subject: [PATCH 2/9] ARM: shmobile: Use shmobile_init_delay() on EMEV2
-Message-Id: <ef9026e6879da358376b58fc63fe7a82f07404ad.1403487831.git.horms+renesas@verge.net.au>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:02:35 +0000
+Subject: [PATCH v2 3/8] ARM: shmobile: Make r8a7790 CPUFreq capable
+Message-Id: <538DB95B.9030407@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487831.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487831.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Benoit Cousson <bcousson@baylibre.com>
 
-Adjust EMEV2 to use shmobile_init_delay() together with
-CPU Frequency settings from the DTS.
+Mark r8a7790 platform as CPUFreq capable
+on multiplatform build only.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 ---
- arch/arm/mach-shmobile/setup-emev2.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 6e4ffa7..e10d34e 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -42,11 +42,6 @@ static void __init emev2_map_io(void)
- 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
- }
+Changes since version 1:
+- changed "Signed-off-by" and "From" correctly.
+- fixed typo.
+
+ arch/arm/mach-shmobile/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2a7712b..a0b2b7f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -35,6 +35,8 @@ config ARCH_R8A7790
+ 	bool "R-Car H2 (R8A77900)"
+ 	select RENESAS_IRQC
+ 	select SYS_SUPPORTS_SH_CMT
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
  
--static void __init emev2_init_delay(void)
--{
--	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
--}
--
- static void __init emev2_add_standard_devices_dt(void)
- {
- 	of_clk_init(NULL);
-@@ -63,7 +58,7 @@ extern struct smp_operations emev2_smp_ops;
- DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
--	.init_early	= emev2_init_delay,
-+	.init_early	= shmobile_init_delay,
- 	.init_machine	= emev2_add_standard_devices_dt,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= emev2_boards_compat_dt,
+ config ARCH_R8A7791
+ 	bool "R-Car M2 (R8A77910)"
 -- 
-2.0.0.rc2
+1.7.9.5
 
