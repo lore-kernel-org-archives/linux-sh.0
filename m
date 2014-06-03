@@ -1,32 +1,27 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Thu, 05 Jun 2014 17:24:39 +0000
-Subject: Re: RFC/FYI - shdmac dma support
-Message-Id: <5390A7D7.2030701@codethink.co.uk>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 03 Jun 2014 06:54:08 +0000
+Subject: [PATCH v2 0/2] arm: shmobile: add USB 3.0 DT for r8a7790
+Message-Id: <538D7110.3090201@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401898455-31064-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1401898455-31064-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 04/06/14 17:14, Ben Dooks wrote:
-> Laurent asked for a current state, so this is the series as I
-> currently have which is in the middle of being re-worked for
-> submission.
-> 
-> It is also available at:
-> 
-> 	http://git.codethink.co.uk/linux.git bjdooks/shdma-dev1
+This patch series is based on the renesas-devel-v3.15-rc7-20140530
+in renesas.git.
 
-I've pushed out  bjdooks/shdma-dev4 with the comments that have
-been made on the first branch sorted out.
+Changes from v1:
+ - Change node name to "usb@ee000000" in patch 2.
+ - Add comment in the change log of patch 2 about a generic phy.
 
-- Fixed dmac0/dmac1 compatible name
-- Sorted out mux driver use of driver private data
-- Fixed ordering of dmac clocks
-- Fixed missing set_slave call
+Yoshihiro Shimoda (2):
+  arm: shmobile: r8a7790: add USB3.0 clocks to device tree
+  arm: shmobile: r8a7790: add USB3.0 node to r8a7790.dtsi
+
+ arch/arm/boot/dts/r8a7790.dtsi |   16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
 -- 
-Ben Dooks				http://www.codethink.co.uk/
-Senior Engineer				Codethink - Providing Genius
+1.7.9.5
+
