@@ -1,43 +1,73 @@
 From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Wed, 25 Jun 2014 00:41:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
-Message-Id: <53AA1ABA.8070601@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:02:12 +0000
+Subject: [PATCH v2 1/8] ARM: shmobile: lager: Add VDD MPU regulator for DVFS
+Message-Id: <538DB944.4060000@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487159.git.horms+renesas@verge.net.au>
- <06e32c91dbce3c24ccbe84e3af2a35199662bca0.1403487159.git.horms+renesas@verge.net.au>
- <CAOh2x=kngDNSJNLpOTcA0PqP5ZiiKXUuAHpW_ZMmEOSQEst0bA@mail.gmail.com>
- <20140623120811.GA2795@verge.net.au>
-In-Reply-To: <20140623120811.GA2795@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
+From: Benoit Cousson <bcousson@baylibre.com>
 
-(2014/06/23 21:08), Simon Horman wrote:
-> On Mon, Jun 23, 2014 at 09:38:09AM +0530, Viresh Kumar wrote:
->> On Mon, Jun 23, 2014 at 7:55 AM, Simon Horman
->> <horms+renesas@verge.net.au> wrote:
->>> diff --git a/arch/arm/mach-shmobile/cpufreq.c b/arch/arm/mach-shmobile/cpufreq.c
->>> +int __init shmobile_cpufreq_init(void)
->>> +{
->>> +       struct device_node *np;
->>> +
->>> +       np = of_cpu_device_node_get(0);
->>> +       if (np = NULL) {
->>> +               pr_err("failed to find cpu0 node\n");
->>> +               return 0;
->>> +       }
->>> +
->>> +       if (of_get_property(np, "operating-points", NULL))
->> Probably you don't need any of above checks as these are done from
->> cpufreq-cpu0 probe as well.. So, simply create a platform device and
->> let cpufreq-cpu0 driver decide its fate.
-> Thanks.
->
-> Inami-san, could you look into this and make an incremental
-> patch as appropriate?
+The CA15 cluster is capable of voltage scaling. Add the regulator
+in the i2c3 node, to allow the generic CPUFreq driver to use it.
 
-Thank you for your feedback.
-I will make an incremental patch based on renesas-devel-v3.16-rc2-20140623.
+Enable the i2c3 pin mux and the device node as well since the
+da9210 is connected to that bus.
+
+Note: In R-CAR Gen2, each frequency is using the same voltage,
+and DVS control is not used. Therefore, this patch set the
+voltage(Vmin/Vmax) to 1000mv.
+
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+[gaku.inami.xw@bp.renesas.com: Changes Vmin for disabling DVS]
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
+
+Changes since version 1:
+- added this patch for enabling da9210 regulator.
+- fixed subject.
+
+ arch/arm/boot/dts/r8a7790-lager.dts |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 9becef7..8428204 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -204,6 +204,11 @@
+ 				 "msiof1_tx";
+ 		renesas,function = "msiof1";
+ 	};
++
++	i2c3_pins: i2c3 {
++		renesas,groups = "i2c3";
++		renesas,function = "i2c3";
++	};
+ };
+ 
+ &ether {
+@@ -317,3 +322,19 @@
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ };
++
++&i2c3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c3_pins>;
++	status = "okay";
++
++	vdd_dvfs: regulator@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
+-- 
+1.7.9.5
 
