@@ -1,50 +1,69 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 18 Jun 2014 10:07:21 +0000
-Subject: Re: [PATCH 02/12] ASoC: rsnd: fixup loop exit timing of dma name search
-Message-Id: <20140618100721.GG5099@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="bTOTzYPbFKguSNQN"
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:02:59 +0000
+Subject: [PATCH v2 5/8] ARM: shmobile: koelsch dts: Add VDD MPU regulator for DVFS
+Message-Id: <538DB973.9020803@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d2e6zjhf.wl%kuninori.morimoto.gx@gmail.com>
- <87a99azjf6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a99azjf6.wl%kuninori.morimoto.gx@renesas.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+The CA15 cluster is capable of voltage scaling. Add the regulator
+in the i2c6 node, to allow the generic CPUFreq driver to use it.
 
---bTOTzYPbFKguSNQN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Enable the i2c6 pin mux and the device node as well since the
+da9210 is connected to that bus.
 
-On Wed, Jun 18, 2014 at 05:55:09PM +0900, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> Current dma name search loop didn't care about SSI index
-> This patch fixes it.
+Note: In R-CAR Gen2, each frequency is using the same voltage,
+and DVS control is not used. Therefore, this patch set the
+voltage(Vmin/Vmax) to 1000mv.
 
-Applied, thanks.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
 
---bTOTzYPbFKguSNQN
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Changes since version 1:
+- added this patch for enabling da9210 regulator.
+- fixed subject.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+ arch/arm/boot/dts/r8a7791-koelsch.dts |   21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-iQIcBAEBAgAGBQJToWTWAAoJELSic+t+oim94r4P/2/Vel6Mx7nQdXsNkgUJFuVi
-zBZ+SnBOqjOUVk27AdFgdnwi5KfZ1Fek3dW07zaeSrfh2PBETF9FO9Zpu0nUalcF
-15gWI6ND1Yfqze9l5d/ozqLR7gkGltZ59h+/87KFumTgwgz8PlVJAiLJp4D4RPLh
-eY7ujz+LBosz4KABe02zIQQDlS8R8hwvO4nTp/L8wrXTyWmWj21K0aBoZiPBW0Oy
-9GyILa10dvD3rARkchkaNZrRjlpSzWFoVQJjA53Y9aNg04G7DSq0s2W9BtxcQhyk
-0PMtQ+PjRvAu6Tbq9X4JDrsKvp/xRBAjBvxxVsjVZ75ANpZh/ZOcu+N5ARYfjM0a
-CVvXCLXDpSIwA7efdumDn+X4I56UoCNT0ZDJf4lw0+6BvzFM+ETi/703qJcFU6Qp
-aP4zBABcby9iMdwiOMBMqOElMzeu6r01FOOr9kReuDPJmMwPTQ/3I36D1TmRaSME
-I05F1m2+MeWWctsbunA/l7hMI0gGwkuy3FWmOwB4TYvRzcuh+GXiWymT+odKRdgK
-A+8ws2nEDp2durP3Q15zZRCjIb7PmyiQMIbZAsd9XraUrCTazWtSakLTNcCwF6H+
-2pc0LHW0pIPypHW50MqrkHWFUWP4b0sHRqifSxrtHTC979bp3MabkWOrHb+Qhyye
-bU1krIlXPb1Gcg37583m
-=3FR3
------END PGP SIGNATURE-----
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 05d44f9..95331d7 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -293,6 +293,11 @@
+ 				 "msiof0_tx";
+ 		renesas,function = "msiof0";
+ 	};
++
++	i2c6_pins: i2c6 {
++		renesas,groups = "i2c6";
++		renesas,function = "i2c6";
++	};
+ };
+ 
+ &ether {
+@@ -408,3 +413,19 @@
+ 		spi-cpha;
+ 	};
+ };
++
++&i2c6 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c6_pins>;
++	status = "okay";
++
++	vdd_dvfs: regulator@68 {
++		compatible = "diasemi,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
+-- 
+1.7.9.5
 
---bTOTzYPbFKguSNQN--
