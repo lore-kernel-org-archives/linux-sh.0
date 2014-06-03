@@ -1,169 +1,104 @@
-From: Vivek Gautam <gautam.vivek@samsung.com>
-Date: Wed, 25 Jun 2014 10:44:30 +0000
-Subject: Re: [PATCH v3] usb: hcd: add generic PHY support
-Message-Id: <CAFp+6iF8+w7zdovneJiczR5j0h11c9ieppeKRSx8L2V0nnPfmw@mail.gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 03 Jun 2014 21:42:26 +0000
+Subject: Re: [alsa-devel] r8a7790 only has audio when clock is forced on
+Message-Id: <20140603214226.GA2520@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="mYCpIKhGyMATD0i+"
 List-Id: <linux-sh.vger.kernel.org>
-References: <538891DC.605@renesas.com>
-In-Reply-To: <538891DC.605@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
-Hi Sergei,
+References: <538E0487.1010700@codethink.co.uk>
+In-Reply-To: <538E0487.1010700@codethink.co.uk>
+To: Violeta Menendez Gonzalez <violeta.menendez@codethink.co.uk>
+Cc: linux-sh@vger.kernel.org, linux-kernel@lists.codethink.co.uk, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 
-On Fri, May 30, 2014 at 7:42 PM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> From Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
-> Add the generic PHY support, analogous to the USB PHY support. Intended it to be
-> used with the PCI EHCI/OHCI drivers and the xHCI platform driver.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
-> This patch is against the 'usb-next' branch of Greg KH's 'usb.git' repo.
-> (commit id = 70d2f61fc7559df3d5be32a9d01efdb9ee1b11d8)
->
-> Changes in version 3:
->  - rebased the current usb-next.
->  - I tested this patch on my R-Car H2 USB 3.0 driver (not merged yet)
->
->  drivers/usb/core/hcd.c  |   42 ++++++++++++++++++++++++++++++++++++++++--
->  include/linux/usb/hcd.h |    3 ++-
->  2 files changed, 42 insertions(+), 3 deletions(-)
->
-> diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
-> index bec31e2..2841149 100644
-> --- a/drivers/usb/core/hcd.c
-> +++ b/drivers/usb/core/hcd.c
-> @@ -42,6 +42,7 @@
->  #include <linux/pm_runtime.h>
->  #include <linux/types.h>
->
-> +#include <linux/phy/phy.h>
->  #include <linux/usb.h>
->  #include <linux/usb/hcd.h>
->  #include <linux/usb/phy.h>
-> @@ -2649,6 +2650,29 @@ int usb_add_hcd(struct usb_hcd *hcd,
->                 }
->         }
->
-> +       if (IS_ENABLED(CONFIG_GENERIC_PHY)) {
-> +               struct phy *phy = phy_get(hcd->self.controller, "usb");
+--mYCpIKhGyMATD0i+
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-The xHCI host controller is going to have two controllers (main and
-shared) USB2 controller and
-USB3 controller. So they will have two different PHYs.
-For example, the DWC3, which has a xHCI controller, has to have 2
-different phys -- usb2-phy and usb3-phy.
+On Tue, Jun 03, 2014 at 06:23:19PM +0100, Violeta Menendez Gonzalez wrote:
+> Hi all,
+>=20
+> We have a problem where audio on r8a7790 is not working due to it not
+> sending interrupts.
 
-So, how the two 'hcd's' will be able to differentiate and get two separate PHYs.
-Unfortunately, the xHCI with DWC3 doesn't have a device node too, so
-it needs to have
-a way out to look up the PHYs (in a way suggested by Heikki :
-    usb: dwc3: host: convey the PHYs to xhci
-    (https://lkml.org/lkml/2014/6/5/585) and related patch series.
-But this also has an issue, since we need to have two separate
-constant strings to distinguish between the two PHYs,
-while creating the lookup table.
+Adding Morimoto-san who does most of the work on those drivers upstream
+- it's always best to CC relevant maintainers/developers on kernel stuff
+as things only on the lists are easily missed.  Not deleting context so
+he sees it.
 
-So how do you suggest me to get link the two PHYs in DWC3 with the
-XHCI host controller, the issue which i am
-facing currently while working with the patch:
-usb: host: xhci-plat: Add support to get PHYs    and the related patch
-series, since we need to handle PHY from the hcd.
+> We've verified that the pins and the clocks are working and correctly
+> configured. The codec is starting and producing correct bit and word clock
+> signals
+>=20
+> We've made a hack to force /mstp10_clks /on that makes the audio work.
+> Further investigation showed that it's only needed to force SSI(ALL) on,
+> but, as far as we know, the manual doesn't say anything about it having to
+> be kept on.
+>=20
+> We've also debugged this hack and saw that the registers have correct
+> values. These are some of the debugging messages we have when the audio
+> fails:
+>=20
+>=20
+> Playing WAVE '../audio/r.wav' : Signed 16 bit Little Endian, Rate 44100 H=
+z,
+> Stereo
+> cpg_mstp_clock_endisable: index 5, enable 1
+> cpg_mstp_clock_endisable: index 5, value read from group->smstpcr 0002ffe0
+> cpg_mstp_clock_endisable: index 5, value write in group->smstpcr 0002ffc0
+> cpg_mstp_clock_endisable: index 15, enable 1
+> cpg_mstp_clock_endisable: index 15, value read from group->smstpcr 0002ff=
+c0
+> cpg_mstp_clock_endisable: index 15, value written in group->smstpcr 00027=
+fc0
+> aplay: pcm_writecpg_mstp_clock_endisable: index 15, enable 0
+> cpg_mstp_clock_endisable: index 15, value read from group->smstpcr 00027f=
+c0
+> cpg_mstp_clock_endisable: index 15, value write in group->smstpcr 0002ffc0
+> :1710: write errcpg_mstp_clock_endisable: index 5, enable 0
+> cpg_mstp_clock_endisable: index 5, value read from group->smstpcr 0002ffc0
+> cpg_mstp_clock_endisable: index 5, value write in group->smstpcr 0002ffe0
+> or: Input/output error
+>=20
+> This shows that the SSI (ALL) clock in bit 5 being enabled before the SSI0
+> and that it is also disabled in the reverse sequence as expected.
+>=20
+> Not sure what to do next or what the problem could be.
+> Any new ideas are welcome,
+>=20
+> Thanks!
+>=20
+> --=20
+> Violeta Men=E9ndez Gonz=E1lez	http://www.codethink.co.uk/
+> Software Engineer		Codethink - Providing Genius
+>=20
+> _______________________________________________
+> Alsa-devel mailing list
+> Alsa-devel@alsa-project.org
+> http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
+>=20
 
-> +
-> +               if (IS_ERR(phy)) {
-> +                       retval = PTR_ERR(phy);
-> +                       if (retval = -EPROBE_DEFER)
-> +                               goto err_phy;
-> +               } else {
-> +                       retval = phy_init(phy);
-> +                       if (retval) {
-> +                               phy_put(phy);
-> +                               goto err_phy;
-> +                       }
-> +                       retval = phy_power_on(phy);
-> +                       if (retval) {
-> +                               phy_exit(phy);
-> +                               phy_put(phy);
-> +                               goto err_phy;
-> +                       }
-> +                       hcd->gen_phy = phy;
-> +               }
-> +       }
-> +
->         dev_info(hcd->self.controller, "%s\n", hcd->product_desc);
->
->         /* Keep old behaviour if authorized_default is not in [0, 1]. */
-> @@ -2664,7 +2688,7 @@ int usb_add_hcd(struct usb_hcd *hcd,
->          */
->         if ((retval = hcd_buffer_create(hcd)) != 0) {
->                 dev_dbg(hcd->self.controller, "pool alloc failed\n");
-> -               goto err_remove_phy;
-> +               goto err_create_buf;
->         }
->
->         if ((retval = usb_register_bus(&hcd->self)) < 0)
-> @@ -2791,7 +2815,14 @@ err_allocate_root_hub:
->         usb_deregister_bus(&hcd->self);
->  err_register_bus:
->         hcd_buffer_destroy(hcd);
-> -err_remove_phy:
-> +err_create_buf:
-> +       if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->gen_phy) {
-> +               phy_power_off(hcd->gen_phy);
-> +               phy_exit(hcd->gen_phy);
-> +               phy_put(hcd->gen_phy);
-> +               hcd->gen_phy = NULL;
-> +       }
-> +err_phy:
->         if (hcd->remove_phy && hcd->phy) {
->                 usb_phy_shutdown(hcd->phy);
->                 usb_put_phy(hcd->phy);
-> @@ -2868,6 +2899,13 @@ void usb_remove_hcd(struct usb_hcd *hcd)
->
->         usb_deregister_bus(&hcd->self);
->         hcd_buffer_destroy(hcd);
-> +
-> +       if (IS_ENABLED(CONFIG_GENERIC_PHY) && hcd->gen_phy) {
-> +               phy_power_off(hcd->gen_phy);
-> +               phy_exit(hcd->gen_phy);
-> +               phy_put(hcd->gen_phy);
-> +               hcd->gen_phy = NULL;
-> +       }
->         if (hcd->remove_phy && hcd->phy) {
->                 usb_phy_shutdown(hcd->phy);
->                 usb_put_phy(hcd->phy);
-> diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
-> index 485cd5e..2aefbcc 100644
-> --- a/include/linux/usb/hcd.h
-> +++ b/include/linux/usb/hcd.h
-> @@ -106,7 +106,8 @@ struct usb_hcd {
->          * OTG and some Host controllers need software interaction with phys;
->          * other external phys should be software-transparent
->          */
-> -       struct usb_phy  *phy;
-> +       struct usb_phy          *phy;
-> +       struct phy              *gen_phy;
->
->         /* Flags that need to be manipulated atomically because they can
->          * change while the host controller is running.  Always use
-> --
-> 1.7.9.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-usb" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--mYCpIKhGyMATD0i+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
+iQIcBAEBAgAGBQJTjkE4AAoJELSic+t+oim9Zb4P+wf053OLqooQ3AJ4C+nxjeZt
+9rvPr0WlKxUvca3bB6/xTjHrQKtmZ9kDW1a9Yb4wfIDnJJfym/Hxjj3iJhZUpVSi
+m91n8cVk0yhldToQlxWVVdACeANWkwycypp3Q/7zF5kQbvZcSVeW25kQZVa3kdze
+/xWMUyTR/EMO8G0mKQ7P3maPaOa/kh3dRdccgZzgtvuYjIVCtYyss4xBEOfj5OAt
+N/hLEeiJOCp+sPVvP4aCU5CRetpHhkV6SJR42UL0xEA7utH0+0TlCcusdO7h/+X3
+SzbKcGn+Cui739KdR9lj8cehrnDBaNaPDeDKiBvO+frBNL94vkKeDuJ/IKqliJDQ
+a1WRkbah4+GhNv58UHD8CbNQSRGLYu+5JS4vpN+PiRVDbG6KJBegXY8XgsKcdVNb
+5/OTdOjZPurY2Mf8Zm9P8otL6ESSHTCJ/yjx9iGD2Y3sjexs6X7/+LJV4C/Pb3P1
+yY65gCw6e2ftiNlTsTG6J1DWx7O9zqKUp3iF2BbAfKKU/o1FW6G9vPl7bm1L9OYt
+6wrBryHF+QY+7WEFUgfoCRVUZc9wTa1So3Xe0V72avLb4Ro3+r0JgKNTRAsCUhKq
+C2USeDNx+ZJyr42eJytkIb5tFm+ar3L0sUej+I2XjmAVew9ugLbAzyyyfrr0Br5c
+k75vwHMbK9BueIyMmKdr
+=zB70
+-----END PGP SIGNATURE-----
 
--- 
-Best Regards
-Vivek Gautam
-Samsung R&D Institute, Bangalore
-India
+--mYCpIKhGyMATD0i+--
