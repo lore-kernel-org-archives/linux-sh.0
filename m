@@ -1,47 +1,103 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 21 Jun 2014 10:21:01 +0000
-Subject: Re: [PATCH/RFC 0/2] spi: sh-msiof: Add DT DMA support on r8a7791
-Message-Id: <20140621102101.GN5099@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="6F8T1i0Ve2X0M5tc"
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:02:45 +0000
+Subject: [PATCH v2 4/8] ARM: shmobile: add cpufreq-cpu0 driver for common SH-Mobile
+Message-Id: <538DB965.7030806@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403259638-13774-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403259638-13774-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+I add a new file(cpufreq.c) for the following reasons.
+- Registration of platform_device must be unified in SH-Mobile.
+- We can't create a node of cpufreq drivers into device tree.
+  (Because cpufreq driver is virtual device.)
 
---6F8T1i0Ve2X0M5tc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
 
-On Fri, Jun 20, 2014 at 12:20:36PM +0200, Geert Uytterhoeven wrote:
-> This preliminary patch series add DT support to the Renesas MSIOF SPI
-> driver, and enables DMA support for MSIOF on r8a7791.
+Changes since version 1:
+- changed the method of checking the device tree.
 
-These look good, can you please resend when the dependencies are
-resolved.
+ arch/arm/mach-shmobile/Makefile              |    1 +
+ arch/arm/mach-shmobile/cpufreq.c             |   31 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    7 ++++++
+ 3 files changed, 39 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/cpufreq.c
 
---6F8T1i0Ve2X0M5tc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 29034aa..ccb0563 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -48,6 +48,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
++obj-$(CONFIG_CPU_FREQ)		+= cpufreq.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+diff --git a/arch/arm/mach-shmobile/cpufreq.c b/arch/arm/mach-shmobile/cpufreq.c
+new file mode 100644
+index 0000000..e2c868f
+--- /dev/null
++++ b/arch/arm/mach-shmobile/cpufreq.c
+@@ -0,0 +1,31 @@
++/*
++ * CPUFreq support code for SH-Mobile ARM
++ *
++ *  Copyright (C) 2014 Gaku Inami
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/platform_device.h>
++
++int __init shmobile_cpufreq_init(void)
++{
++	struct device_node *np;
++
++	np = of_cpu_device_node_get(0);
++	if (np = NULL) {
++		pr_err("failed to find cpu0 node\n");
++		return 0;
++	}
++
++	if (of_get_property(np, "operating-points", NULL))
++		platform_device_register_simple("cpufreq-cpu0", -1, NULL, 0);
++
++	of_node_put(np);
++
++	return 0;
++}
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 8f0cd57..ab5a9b2 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -47,12 +47,19 @@ int shmobile_cpuidle_init(void);
+ static inline int shmobile_cpuidle_init(void) { return 0; }
+ #endif
+ 
++#ifdef CONFIG_CPU_FREQ
++int shmobile_cpufreq_init(void);
++#else
++static inline int shmobile_cpufreq_init(void) { return 0; }
++#endif
++
+ extern void __iomem *shmobile_scu_base;
+ 
+ static inline void __init shmobile_init_late(void)
+ {
+ 	shmobile_suspend_init();
+ 	shmobile_cpuidle_init();
++	shmobile_cpufreq_init();
+ }
+ 
+ #endif /* __ARCH_MACH_COMMON_H */
+-- 
+1.7.9.5
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJTpVyKAAoJELSic+t+oim9/McP+QFIc5DIignVH+qhtUu5R7jT
-oEEQ12roY/cMEmEAH2QznRhVAzlp8Pfbc7tmTK5O8bWWLbJ/AKGugz8X0dokQwio
-rz5gxuzdR0rX6T4aTkUL21Zr+6+wi1bsfD7ofueyTqy6GdI+zp1lpcyOH6OkMMxS
-dfyX228QBYWwQYp+RwaSXP8xiszj2hoqNc35GN23yvDAhZGxuuAZbulskwGg5k3l
-huhZB4FBkvNe+Qtj5+g/jKA7/xpxfqxJmq/NxHdRCwDH7oE1co+QfWEaPUdPyiC2
-tRwQag1PueULmKRhakEAW9hJ9eb62x9iPuSNym/QRgCqt/YP6IncD6JZoHNcG0/J
-5CjNdRDS0VlvKkOwll4WhM7hIMdRbTAxXjPJqDRAflzE0GAlul15x1efjjHYaW7N
-ol2Ju8/j56M3W+x5l1elt4V5T7Jyt2wGGkE58BvEhufVcdHrj/yps7L57fSCfcUD
-iSSoqMG1oKA4n3rI4LHoBqOaZ7dc8uAtt+i26LhasSZ8ThYfTPXP5aDmdVS3fjvw
-GFp1RgYoDl7m7IAlI9bidGkX7ocVWJyggSKlmDOlPNhgJLSmYQfKtTXomMkOxSHt
-7vyI6D5PVA+TBDzIMSLvP3kIyEf1yYSZZyok2Q09+irf35kr1WnzdMo3aQ1ctN/v
-+kfkAQwh/6z5bl+AEi2Y
-=ZjSn
------END PGP SIGNATURE-----
-
---6F8T1i0Ve2X0M5tc--
