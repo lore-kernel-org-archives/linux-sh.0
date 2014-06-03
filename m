@@ -1,79 +1,77 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 07:36:27 +0000
-Subject: Re: [PATCH 00/08] ARM: shmobile: Suspend on non-SMP update for r8a7790
-Message-Id: <CANqRtoSsfAQ8_ywX6ot27YDa2An4hGF+39ormc=C18NPBdUa-w@mail.gmail.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Jun 2014 12:03:10 +0000
+Subject: [PATCH v2 6/8] ARM: shmobile: r8a7791/koelsch dts: Add DVFS parameters into cpu0 node for r8a7791
+Message-Id: <538DB97E.1060004@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140605051505.18075.76727.sendpatchset@w520>
-In-Reply-To: <20140605051505.18075.76727.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
 
-On Fri, Jun 6, 2014 at 4:08 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> Hi Magnus,
->
-> On Fri, Jun 6, 2014 at 8:49 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> To try to improve the situation I'm considering adding a single setup
->> function for mach-shmobile. I was playing around with a similar
->> approach earlier but I could at that time not get any positive
->> comments about setting up the smp_ops dynamically. In general I think
->> it makes sense to setup a lot of similar callbacks from C instead of
->> explicitly adding them to each and every SoC and board mach vector.
->> Perhaps we could also deal with UP vs SMP at the same time?
->>
->> The idea with the code below would be to allow passing two pointers to
->> the setup code:
->> 1) function pointer for UP case
->> 2) smp_ops pointer for SMP setup case
->>
->> The setup function (shmobile_init_cpus() below) would be responsible
->> for the following:
->> - if running as smp then register the smp_ops
->> - if running as up then call the function pointer for setup
->> - execute shmobile_init_delay()
->> - install shmobile_init_late in the machine vector
->>
->> For the common case every machine vector we would only need dt_compat
->> and init_early.
->>
->> What do you think?
->
-> Sounds reasonable.
->
-> However, I had a quick look at the code, and am no longer that positive
-> about it:
->   - .init_late() is too late to register the SMP ops, that's why there's a
->     .smp pointer, which is used much earlier (see setup_arch()),
+- voltage-tolerance = 1%
+  It reflects the tolerance for the CPU voltage defined inside the OPP
+  table. Due to the lack of proper OPP definition, use an arbitrary safe
+  value.
+- clock-latency = 300 us
+  Approximate worst-case latency to do a full DVFS transition for every
+  OPPs. Due to the lack of HW information, use an arbitrary safe value.
+  Note: The term transition-latency will be more accurate to define this
+  value since the clock transition latency is not the only parameter that
+  will define the overall DVFS transition.
+- operating-points = < kHz - uV >
+  List of 6 operating points. All of them are using the same voltage
+  since DVS is not supported in R-CAR Gen2.
+- clocks
+  phandle to the CPU clock source. This clock source is used for all the
+  2 CortexA15 located inside the same cluster.
 
-Yes, ->smp_init() and smp_ops->smp_init_cpus() may get called early
-on. We do however not rely on those for any of our SMP code.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
 
->   - The machine vector is const, so you cannot install a handler later,
+Changes since version 1:
+- added the setting of VDD.
+- fixed subject.
 
-Ah, right, the smp_ops portion is handled as a special case. So
-installing other callbacks seems unlikely.
+ arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
+ arch/arm/boot/dts/r8a7791.dtsi        |   11 +++++++++++
+ 2 files changed, 15 insertions(+)
 
->   - In the end, you would basically replace the current machine vector
->     callback scheme (which is data) by setup functions (which are code),
->     which is moving away from what the machine vector was originally
->     intended for?
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 95331d7..b2e6616 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -429,3 +429,7 @@
+ 		regulator-always-on;
+ 	};
+ };
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8d7ffae..b9b3c74 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -45,6 +45,17 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
++			voltage-tolerance = <1>; /* 1% */
++			clocks = <&cpg_clocks R8A7791_CLK_Z>;
++			clock-latency = <300000>; /* 300 us */
++
++			/* kHz - uV - OPPs unknown yet */
++			operating-points = <1500000 1000000>,
++					   <1312500 1000000>,
++					   <1125000 1000000>,
++					   < 937500 1000000>,
++					   < 750000 1000000>,
++					   < 375000 1000000>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+-- 
+1.7.9.5
 
-Well, I've noticed a trend which is removing stuff from the machine
-vector and replacing with run time installation. Good or bad.
-
-smp_set_ops() is one such case. set_handle_irq() is another.
-
-> Anyway, if you want to go this way, it needs discussion on the ARM kernel
-> mailing list.
-
-I agree, but I was hoping for something more short term... Just simply
-trying to fix things that are broken take ages unfortunately. This
-means we have to hold off for a couple of months at least
-dependency-wise.
-
-Cheers,
-
-/ magnus
