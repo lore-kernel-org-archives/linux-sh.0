@@ -1,39 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 17 Jun 2014 23:20:37 +0000
-Subject: Re: [PATCH v2 02/10] iommu/ipmmu-vmsa: Cleanup failures of ARM mapping creation or attachment
-Message-Id: <5430380.Ocpv7sA44O@avalon>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 03 Jun 2014 06:54:28 +0000
+Subject: [PATCH v2 2/2] arm: shmobile: r8a7790: add USB3.0 node to r8a7790.dtsi
+Message-Id: <538D7124.60709@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1400150451-13469-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <9405311.lnqBdrCsyu@avalon> <20140616151142.GE18986@8bytes.org>
-In-Reply-To: <20140616151142.GE18986@8bytes.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Joerg,
+This node depends on a generic phy driver of usb.
 
-On Monday 16 June 2014 17:11:42 Joerg Roedel wrote:
-> On Mon, May 26, 2014 at 12:08:37PM +0200, Laurent Pinchart wrote:
-> > > Skipped this one because it didn't apply. The others are applied.
-> > 
-> > Thank you. I'll rebase the patch on top of your tree as soon as you
-> > publish the related branch and resubmit.
-> 
-> What happened to this patch?
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-It looks like it slipped through the cracks :-/ Should I submit it as a fix 
-for v3.16 or wait until v3.17 ?
-
-> And how about the other iommu_domain changes requested. Will you submit them
-> for 3.17?
-
-I plan to work on that, but I'm not sure whether I'll be able to finish the 
-work for v3.17, as I need to concentrate on a DMA engine driver right now, and 
-will then need to finish the DT bindings for the IPMMU driver (which may 
-result in fixes for some of the iommu_domain-related problems).
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e06c486..985c253 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -902,4 +902,14 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	xhci: usb@ee000000 {
++		compatible = "renesas,xhci-r8a7790";
++		reg = <0 0xee000000 0 0xc00>;
++		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
++		phys = <&usbphy 1 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
+ };
 -- 
-Regards,
+1.7.9.5
 
-Laurent Pinchart
