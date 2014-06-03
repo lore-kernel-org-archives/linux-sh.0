@@ -1,76 +1,36 @@
-From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
-Date: Tue, 03 Jun 2014 04:36:33 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 03 Jun 2014 07:05:42 +0000
 Subject: Re: [PATCH v2 0/7] ARM: shmobile: koelsch reference: Enable DMA for QSPI
-Message-Id: <538D50D1.7010900@renesas.com>
+Message-Id: <CAMuHMdVnmsjf29X4KF0co+WwUh9i0DQe6hE0hNFMCv-+GeHP_w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
+ <538D50D1.7010900@renesas.com>
+In-Reply-To: <538D50D1.7010900@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+On Tue, Jun 3, 2014 at 6:36 AM, Khiem Nguyen
+<khiem.nguyen.xt@renesas.com> wrote:
+> I think this patch series should be divided into 2 parts,
+> one for DMA in general and one for DMA supporting QSPI.
+>
+> How do you think about it ?
 
-Thanks for the patches.
+I don't think it's worth splitting off just the last patch into a separate
+series.
 
-I think this patch series should be divided into 2 parts,
-one for DMA in general and one for DMA supporting QSPI.
+This is a series, not a single patch. The applyer can always drop some
+patches.
 
-How do you think about it ?
+Gr{oetje,eeting}s,
 
-Best regards,
-KHIEM Nguyen
+                        Geert
 
-On 6/2/2014 10:42 PM, Geert Uytterhoeven wrote:
-> This patch series enables DMA support for QSPI on r8a7791/koelsch
-> reference.  It's independent from the series "ARM: shmobile: koelsch
-> legacy: Enable DMA for QSPI", but it depends on the SHDMA work for r8a7790
-> by Ben Dooks (cfr. "[PATCH v2 0/9] Updates Renesas OF-DMA code").
->
-> Changes Compared to previous submission ("[PATCH/RFC 0/7] ARM: shmobile:
-> r8a7791: Add preliminary DMA support"):
->    - "[6/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for MSIOF" was dropped,
->    - 2/7 was added,
->    - 7/7 was changed (see changelog in individual patch).
->
-> This was tested on r8a7791/koelsch.
->
-> Performance figures for reading from a QSPI FLASH driven at 24.375 MHz are:
->    - Single:  1.1 Mbps PIO, 23 Mbps DMA
->    - Dual  : 12.7 Mbps PIO, 48 Mbps DMA
->    - Quad  : 13   Mbps PIO, 70 Mbps DMA
->
-> Thanks for your comments!
->
->    [1/7] DMA: shdma: Add r8a7791 support
->    [2/7] DMA: shdma: Spelling s/controll/control/
->    [3/7] ARM: shmobile: r8a7791 dtsi: add SYS-DMAC clocks
->    [4/7] ARM: shmobile: r8a7791: Add SYS-DMAC channel definitions for bindings
->    [5/7] ARM: shmobile: r8a7791 dtsi: Add SYS-DMAC0 and SYS-DMAC1 nodes
->    [6/7] ARM: shmobile: koelsch dts: Enable sysdma0 and sysdma1
->    [7/7] ARM: shmobile: r8a7791 dtsi: Enable DMA for QSPI
->
->   Documentation/devicetree/bindings/dma/shdma.txt |   7 +-
->   arch/arm/boot/dts/r8a7791-koelsch.dts           |   8 ++
->   arch/arm/boot/dts/r8a7791.dtsi                  |  79 ++++++++++++++++-
->   drivers/dma/sh/shdmac.c                         |   1 +
->   include/dt-bindings/dma/r8a7791-dma.h           | 111 ++++++++++++++++++++++++
->   5 files changed, 201 insertions(+), 5 deletions(-)
->   create mode 100644 include/dt-bindings/dma/r8a7791-dma.h
->
-> Gr{oetje,eeting}s,
->
-> 						Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
