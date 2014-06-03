@@ -1,139 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:15 +0000
-Subject: [PATCH 02/24] ARM: shmobile: Sync Marzen DTS with Marzen reference DTS
-Message-Id: <bedd672409d68c98e717ac79f58b0ba155879275.1403487423.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 03 Jun 2014 22:32:55 +0000
+Subject: [PATCH 00/03] ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
+Message-Id: <20140603223255.2193.42153.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Copy the device nodes from Marzen reference into the Marzen device tree
-file. This will allow us to use a single DTS file regardless of kernel
-configuration. In case of legacy C board code the device nodes may or
-may not be used, but in the multiplatform case all the DT device nodes
-will be used.
+ARM: shmobile: Lager SYS-DMAC and MMCIF prototype
 
-Based on a similar change for the Lager board by Laurent Pinchart.
+[PATCH 01/03] ARM: shmobile: r8a7790: SYS-DMAC prototype
+[PATCH 02/03] ARM: shmobile: r8a7790: SYS-DMAC and MMCIF prototype
+[PATCH 03/03] ARM: shmobile: Lager DT reference MMCIF DMAC prototype
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+These patches add DMAC prototype support for the MMCIF on Lager.
+Written to show how to make use of platform devices for DMA support
+until the DT bindings for the DMA hardware have been stabilized.
+
+Not for upstream merge. More-than-32-bit physical addresses are not
+handled by this code - LPAE is not supported.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 94 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 94 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index a7af2c2..ddf9b9e 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -11,6 +11,8 @@
- 
- /dts-v1/;
- #include "r8a7779.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
- 	model = "marzen";
-@@ -24,4 +26,96 @@
- 		device_type = "memory";
- 		reg = <0x60000000 0x40000000>;
- 	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+
-+	lan0@18000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18000000 0x100>;
-+		pinctrl-0 = <&lan0_pins>;
-+		pinctrl-names = "default";
-+
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
-+		smsc,irq-push-pull;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led2 {
-+			gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-+		};
-+		led3 {
-+			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
-+		};
-+		led4 {
-+			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+};
-+
-+&irqpin0 {
-+	status = "okay";
-+};
-+
-+&pfc {
-+	pinctrl-0 = <&scif2_pins &scif4_pins>;
-+	pinctrl-names = "default";
-+
-+	lan0_pins: lan0 {
-+		intc {
-+			renesas,groups = "intc_irq1_b";
-+			renesas,function = "intc";
-+		};
-+		lbsc {
-+			renesas,groups = "lbsc_ex_cs0";
-+			renesas,function = "lbsc";
-+		};
-+	};
-+
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_data_c";
-+		renesas,function = "scif2";
-+	};
-+
-+	scif4_pins: serial4 {
-+		renesas,groups = "scif4_data";
-+		renesas,function = "scif4";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	hspi0_pins: hspi0 {
-+		renesas,groups = "hspi0";
-+		renesas,function = "hspi0";
-+	};
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
-+};
-+
-+&hspi0 {
-+	pinctrl-0 = <&hspi0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
- };
--- 
-2.0.0.rc2
+ Written on top of renesas-devel-v3.15-rc7-20140530
 
+ arch/arm/mach-shmobile/board-lager-reference.c |   20 +++++
+ arch/arm/mach-shmobile/include/mach/r8a7790.h  |    4 +
+ arch/arm/mach-shmobile/setup-r8a7790.c         |   91 +++++++++++++++++++++---
+ 3 files changed, 105 insertions(+), 10 deletions(-)
