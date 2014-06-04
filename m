@@ -1,153 +1,117 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 02 Jun 2014 13:40:22 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Add SYS-DMAC support
-Message-Id: <1401716424-29740-3-git-send-email-geert+renesas@glider.be>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 04 Jun 2014 16:14:08 +0000
+Subject: [PATCH 1/8] shdma: fdt: allow moving of the shdma_slave_used fields
+Message-Id: <1401898455-31064-2-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716424-29740-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The shdma_slave_used is used to track the DMA hardware channels that are
+claimed by clients. This works when the system has a global number space
+as used by the platform clients, however when we are using fdt possible
+space is much bigger (if we used phandle+hwid).
 
-This patch enables SYS-DMAC0 (= Low), it doesn't support
-SYS-DMAC1 (= HI) today.
-Because, SYS-DMAC HI/Low interrupt mapping is not
-good match to SH-DMAC driver.
+It is much easier for the OF case to change to using the hwid of the
+channel and make the allocation bitmap part of the mux device that holds
+all the dma controllers that can access the set of hwids that need
+protecting. So change the code to make it that each sdev points to an
+bitmap that can be allocated via the shdma-of.c when needed.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-[Geert: Rebased]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7791.h |  5 ++
- arch/arm/mach-shmobile/setup-r8a7791.c        | 81 +++++++++++++++++++++++++++
- 2 files changed, 86 insertions(+)
+ drivers/dma/sh/shdma-base.c | 17 +++++++++--------
+ include/linux/shdma-base.h  |  1 +
+ 2 files changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7791.h b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-index 86eae7bceb6f..533999916e73 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7791.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7791.h
-@@ -1,6 +1,11 @@
- #ifndef __ASM_R8A7791_H__
- #define __ASM_R8A7791_H__
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index b35007e..5b18c88 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -49,7 +49,7 @@ static unsigned int slave_num = 256;
+ module_param(slave_num, uint, 0444);
  
-+/* DMA slave IDs */
-+enum {
-+	RCAR_DMA_SLAVE_INVALID,
-+};
-+
- void r8a7791_add_standard_devices(void);
- void r8a7791_add_dt_devices(void);
- void r8a7791_clock_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
-index 04a96ddb3224..77e1bc2b2870 100644
---- a/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7791.c
-@@ -25,13 +25,93 @@
- #include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
- #include <mach/common.h>
-+#include <mach/dma-register.h>
- #include <mach/irqs.h>
- #include <mach/r8a7791.h>
- #include <mach/rcar-gen2.h>
- #include <asm/mach/arch.h>
+ /* A bitmask with slave_num bits */
+-static unsigned long *shdma_slave_used;
++static unsigned long *shdma_global_slave_used;
  
-+#define DMAE_CHANNEL(a, b)			\
-+{						\
-+	.offset		= (a) - 0x20,		\
-+	.dmars		= (a) - 0x20 + 0x40,	\
-+	.chclr_bit	= (b),			\
-+	.chclr_offset	= 0x80 - 0x20,		\
-+}
-+
-+/* Sys-DMAC */
-+#define SYS_DMAC_SLAVE(_id, _bit, _addr, toffset, roffset, t, r)\
-+{								\
-+	.slave_id	= SYS_DMAC_SLAVE_## _id ##_TX,		\
-+	.addr		= _addr + toffset,			\
-+	.chcr		= CHCR_TX(XMIT_SZ_## _bit ##BIT),	\
-+	.mid_rid	= t,					\
-+}, {								\
-+	.slave_id	= SYS_DMAC_SLAVE_## _id ##_RX,		\
-+	.addr		= _addr + roffset,			\
-+	.chcr		= CHCR_RX(XMIT_SZ_## _bit ##BIT),	\
-+	.mid_rid	= r,					\
-+}
-+
-+static const struct sh_dmae_slave_config r8a7791_sys_dmac_slaves[] = {
-+};
-+
-+static const struct sh_dmae_channel r8a7791_sys_dmac_channels[] = {
-+	DMAE_CHANNEL(0x8000, 0),
-+	DMAE_CHANNEL(0x8080, 1),
-+	DMAE_CHANNEL(0x8100, 2),
-+	DMAE_CHANNEL(0x8180, 3),
-+	DMAE_CHANNEL(0x8200, 4),
-+	DMAE_CHANNEL(0x8280, 5),
-+	DMAE_CHANNEL(0x8300, 6),
-+	DMAE_CHANNEL(0x8380, 7),
-+	DMAE_CHANNEL(0x8400, 8),
-+	DMAE_CHANNEL(0x8480, 9),
-+	DMAE_CHANNEL(0x8500, 10),
-+	DMAE_CHANNEL(0x8580, 11),
-+	DMAE_CHANNEL(0x8600, 12),
-+	DMAE_CHANNEL(0x8680, 13),
-+	DMAE_CHANNEL(0x8700, 14),
-+};
-+
-+static struct sh_dmae_pdata r8a7791_sys_dmac_platform_data = {
-+	.slave		= r8a7791_sys_dmac_slaves,
-+	.slave_num	= ARRAY_SIZE(r8a7791_sys_dmac_slaves),
-+	.channel	= r8a7791_sys_dmac_channels,
-+	.channel_num	= ARRAY_SIZE(r8a7791_sys_dmac_channels),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+	.chclr_present	= 1,
-+	.chclr_bitwise	= 1,
-+};
-+
-+static struct resource r8a7791_sys_dmac_resources[] = {
-+	/* Channel registers and DMAOR for low */
-+	DEFINE_RES_MEM(0xe6700020, 0x8763 - 0x20),
-+	DEFINE_RES_IRQ(gic_spi(197)),
-+	DEFINE_RES_NAMED(gic_spi(200), 15, NULL, IORESOURCE_IRQ),
-+
-+	/*
-+	 * HI is not supported
-+	 * since IRQ has strange mapping
-+	 */
-+};
-+
-+#define r8a7791_register_sys_dmac(id)				\
-+	platform_device_register_resndata(			\
-+		&platform_bus, "sh-dma-engine", id,		\
-+		&r8a7791_sys_dmac_resources[id * 3],	3,	\
-+		&r8a7791_sys_dmac_platform_data,		\
-+		sizeof(r8a7791_sys_dmac_platform_data))
-+
- static const struct resource pfc_resources[] __initconst = {
- 	DEFINE_RES_MEM(0xe6060000, 0x250),
- };
-@@ -205,6 +285,7 @@ void __init r8a7791_add_standard_devices(void)
- 	r8a7791_add_dt_devices();
- 	r8a7791_register_irqc(0);
- 	r8a7791_register_thermal();
-+	r8a7791_register_sys_dmac(0);
+ /* Called under spin_lock_irq(&schan->chan_lock") */
+ static void shdma_chan_xfer_ld_queue(struct shdma_chan *schan)
+@@ -192,12 +192,12 @@ static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
+ 	if (slave_id < 0 || slave_id >= slave_num)
+ 		return -EINVAL;
+ 
+-	if (test_and_set_bit(slave_id, shdma_slave_used))
++	if (test_and_set_bit(slave_id, sdev->slave_used))
+ 		return -EBUSY;
+ 
+ 	ret = ops->set_slave(schan, match, slave_addr, false);
+ 	if (ret < 0) {
+-		clear_bit(slave_id, shdma_slave_used);
++		clear_bit(slave_id, sdev->slave_used);
+ 		return ret;
+ 	}
+ 
+@@ -290,7 +290,7 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ edescalloc:
+ 	if (slave)
+ esetslave:
+-		clear_bit(slave->slave_id, shdma_slave_used);
++		clear_bit(slave->slave_id, sdev->slave_used);
+ 	chan->private = NULL;
+ 	return ret;
  }
+@@ -440,7 +440,7 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
  
- #ifdef CONFIG_USE_OF
+ 	if (schan->slave_id >= 0) {
+ 		/* The caller is holding dma_list_mutex */
+-		clear_bit(schan->slave_id, shdma_slave_used);
++		clear_bit(schan->slave_id, sdev->slave_used);
+ 		chan->private = NULL;
+ 	}
+ 
+@@ -984,6 +984,7 @@ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 	dma_dev->device_control = shdma_control;
+ 
+ 	dma_dev->dev = dev;
++	sdev->slave_used = shdma_global_slave_used;
+ 
+ 	return 0;
+ }
+@@ -997,9 +998,9 @@ EXPORT_SYMBOL(shdma_cleanup);
+ 
+ static int __init shdma_enter(void)
+ {
+-	shdma_slave_used = kzalloc(DIV_ROUND_UP(slave_num, BITS_PER_LONG) *
++	shdma_global_slave_used = kzalloc(DIV_ROUND_UP(slave_num, BITS_PER_LONG) *
+ 				    sizeof(long), GFP_KERNEL);
+-	if (!shdma_slave_used)
++	if (!shdma_global_slave_used)
+ 		return -ENOMEM;
+ 	return 0;
+ }
+@@ -1007,7 +1008,7 @@ module_init(shdma_enter);
+ 
+ static void __exit shdma_exit(void)
+ {
+-	kfree(shdma_slave_used);
++	kfree(shdma_global_slave_used);
+ }
+ module_exit(shdma_exit);
+ 
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index abdf1f2..6966593 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -106,6 +106,7 @@ struct shdma_ops {
+ };
+ 
+ struct shdma_dev {
++	unsigned long *slave_used;	/* bitmap of slave ids used */
+ 	struct dma_device dma_dev;
+ 	struct shdma_chan **schan;
+ 	const struct shdma_ops *ops;
 -- 
-1.9.1
+2.0.0.rc2
 
