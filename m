@@ -1,69 +1,113 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 26 Jun 2014 00:19:55 +0000
-Subject: Re: [PATCH 08/14] ARM: shmobile: Add shared R-Car Gen2 CMA reservation code
-Message-Id: <20140626001955.GA557@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 04 Jun 2014 16:14:14 +0000
+Subject: [PATCH 7/8] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
+Message-Id: <1401898455-31064-8-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403681315.git.horms+renesas@verge.net.au>
- <f8e819352d12f1b7d109d846e9bf1c07e006469a.1403681315.git.horms+renesas@verge.net.au>
- <53AAE831.3040003@cogentembedded.com>
- <20140625234708.GD7130@verge.net.au>
-In-Reply-To: <20140625234708.GD7130@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-[Cc Olof]
+Add nodes for the SYS-DMA controllers, SYS-DMAC0 and SYS-DMAC1. These
+both share the same device sources, so are wrapped in the shdma-mux
+node to allow both to be used.
 
-On Thu, Jun 26, 2014 at 08:47:08AM +0900, Simon Horman wrote:
-> On Wed, Jun 25, 2014 at 07:18:09PM +0400, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 06/25/2014 11:35 AM, Simon Horman wrote:
-> > 
-> > >From: Magnus Damm <damm+renesas@opensource.se>
-> > 
-> > >Add R-Car Gen2 CMA memory reservation code that can be
-> > >shared between multiple SoCs and boards. At this point
-> > >r8a7790 and r8a7791 are supported.
-> > 
-> > >The top 256MiB of the legacy 32-bit physical memory space
-> > >is assigned to a separate CMA area that may be assigned
-> > >to various devices later on.
-> > 
-> > >Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > >[horms+renesas@verge.net.au: rebased]
-> > >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > [...]
-> > 
-> > >diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> > >index fdc714e..544b9bf 100644
-> > >--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> > >+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> > >@@ -20,8 +20,11 @@
-> > >
-> > >  #include <linux/clk/shmobile.h>
-> > >  #include <linux/clocksource.h>
-> > >+#include <linux/device.h>
-> > >+#include <linux/dma-contiguous.h>
-> > >  #include <linux/io.h>
-> > >  #include <linux/kernel.h>
-> > >+#include <linux/of_fdt.h>
-> > >  #include <asm/mach/arch.h>
-> > >  #include "common.h"
-> > >  #include "rcar-gen2.h"
-> > 
-> >    Hm, this part looks incomplete. I thought you were going to add CMA code here?
-> 
-> Thanks, something does indeed seem to have gone wrong there.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
 
-I suspect that this is the result of an error on my part when I rebased
-the code on top of v3.16-rc1 before making it available to next.
+---
+v2:
+	- fix indentation
+	- remove extra channel on dmac1
+v3:
+	- fix issues with naming in dt
+	- remove mapping of chcr data, will be in driver
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 72 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
-The missing code appears to lie in "ARM: shmobile: rcar-gen2: Update for
-of_get_flat_dt_prop() update".
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e8ca55d..c63d915 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -87,6 +87,78 @@
+ 		};
+ 	};
+ 
++	dma0: dma-mux@0 {
++		compatible = "renesas,shdma-mux";
++		#dma-cells = <1>;
++		dma-channels = <30>;
++		dma-requests = <256>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		sysdma0: dma-controller@e6700020 {
++			compatible = "renesas,dma-r8a7790", "renesas,dma-arm";
++			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
++			dma-channels = <15>;
++			status = "disabled";
++			reg = <0 0xe6700020 0 0xffc0>;
++			interrupt-parent = <&gic>;
++
++			interrupts =	<0 197 IRQ_TYPE_LEVEL_HIGH>, /* error */
++					<0 200 IRQ_TYPE_LEVEL_HIGH>, /* ch0 */
++					<0 201 IRQ_TYPE_LEVEL_HIGH>,
++					<0 202 IRQ_TYPE_LEVEL_HIGH>,
++					<0 203 IRQ_TYPE_LEVEL_HIGH>,
++					<0 204 IRQ_TYPE_LEVEL_HIGH>,
++					<0 205 IRQ_TYPE_LEVEL_HIGH>,
++					<0 206 IRQ_TYPE_LEVEL_HIGH>,
++					<0 207 IRQ_TYPE_LEVEL_HIGH>,
++					<0 208 IRQ_TYPE_LEVEL_HIGH>,
++					<0 209 IRQ_TYPE_LEVEL_HIGH>,
++					<0 210 IRQ_TYPE_LEVEL_HIGH>,
++					<0 211 IRQ_TYPE_LEVEL_HIGH>,
++					<0 212 IRQ_TYPE_LEVEL_HIGH>,
++					<0 213 IRQ_TYPE_LEVEL_HIGH>,
++					<0 214 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14";
++		};
++
++		sysdma1: dma-controller@e6720020 {
++			compatible = "renesas,dma-r8a7790";
++			clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
++			dma-channels = <15>;
++			reg = <0 0xe6720020 0 0xffc0>;
++			status = "disabled";
++
++			interrupt-parent = <&gic>;
++			interrupts =  <0 220 IRQ_TYPE_LEVEL_HIGH>,
++					<0 216 IRQ_TYPE_LEVEL_HIGH>,
++					<0 217 IRQ_TYPE_LEVEL_HIGH>,
++					<0 218 IRQ_TYPE_LEVEL_HIGH>,
++					<0 219 IRQ_TYPE_LEVEL_HIGH>,
++					<0 308 IRQ_TYPE_LEVEL_HIGH>,
++					<0 309 IRQ_TYPE_LEVEL_HIGH>,
++					<0 310 IRQ_TYPE_LEVEL_HIGH>,
++					<0 311 IRQ_TYPE_LEVEL_HIGH>,
++					<0 312 IRQ_TYPE_LEVEL_HIGH>,
++					<0 313 IRQ_TYPE_LEVEL_HIGH>,
++					<0 314 IRQ_TYPE_LEVEL_HIGH>,
++					<0 315 IRQ_TYPE_LEVEL_HIGH>,
++					<0 316 IRQ_TYPE_LEVEL_HIGH>,
++					<0 317 IRQ_TYPE_LEVEL_HIGH>,
++					<0 318 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14";
++		};
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
+-- 
+2.0.0.rc2
 
-
-Olof, I'd prefer not to rebase my branches in next. But if you'd like
-me to do so to clean up this problem then let me know.
