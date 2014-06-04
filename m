@@ -1,71 +1,113 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 10 Jun 2014 01:56:54 +0000
-Subject: Re: [PATCH v2 04/05] staging: board: Initial board staging support
-Message-Id: <20140610015650.GG30874@verge.net.au>
+From: Tony Breeds <tony@bakeyournoodle.com>
+Date: Wed, 04 Jun 2014 04:12:35 +0000
+Subject: Re: [net-next:master 182/183] filter.c:undefined reference to `__fpscr_values'
+Message-Id: <20140604041235.GB10379@thor.bakeyournoodle.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="s9fJI615cBHmzTOP"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20140529131650.2329.3197.sendpatchset@w520>
- <20140529131732.2329.50630.sendpatchset@w520>
- <20140529132034.GB15585@mwanda>
- <CANqRtoTzOn5d9qB85sXvmLYhoTDMDtbjSkLbz9V4FRmzFM3ycQ@mail.gmail.com>
- <20140529231001.GC2353@verge.net.au>
- <CANqRtoTLznzU1mJRJMjNgr0pAY8fY__-12qE77Dz97n47FekhQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTLznzU1mJRJMjNgr0pAY8fY__-12qE77Dz97n47FekhQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Dan Carpenter <dan.carpenter@oracle.com>, linux-kernel <linux-kernel@vger.kernel.org>, devel <devel@driverdev.osuosl.org>, SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Olof Johansson <olof@lixom.net>
+To: linux-sh@vger.kernel.org
 
-On Fri, Jun 06, 2014 at 09:07:44PM +0900, Magnus Damm wrote:
-> On Fri, May 30, 2014 at 8:10 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, May 29, 2014 at 10:27:30PM +0900, Magnus Damm wrote:
-> >> Hi Dan,
-> >>
-> >> On Thu, May 29, 2014 at 10:20 PM, Dan Carpenter
-> >> <dan.carpenter@oracle.com> wrote:
-> >> > On Thu, May 29, 2014 at 10:17:32PM +0900, Magnus Damm wrote:
-> >> >> --- /dev/null
-> >> >> +++ work/drivers/staging/board/Kconfig        2014-05-29 21:40:41.000000000 +0900
-> >> >> @@ -0,0 +1,7 @@
-> >> >> +config STAGING_BOARD
-> >> >> +     boolean "Staging Board Support"
-> >> >> +     help
-> >> >> +       Select to enable per-board staging support code.
-> >> >> +
-> >> >> +       If in doubt, say N here.
-> >> >> +
-> >> >
-> >> > Actually, you're probably going to need to add a bunch of dependencies
-> >> > here or it will break "make randconfig" right away.  Sorry that I forgot
-> >> > about this in the first review.
-> >>
-> >> Good point, thanks for checking. I will have a look at this and add
-> >> dependencies to make sure it builds on a wide range of platforms.
-> >
-> > Hi Magnus,
-> >
-> > let me know if you would like me to perform some build-testing.
-> 
-> Hey Simon,
-> 
-> Thanks for the offer. When you have time, can you please feed V3 into
-> your build test setup?
-> 
-> [PATCH v3 00/05] staging: Emma Mobile USB driver and KZM9D board code V3
-> [PATCH v3 01/05] staging: emxx_udc: Add Emma Mobile USB Gadget driver
-> [PATCH v3 02/05] staging: emxx_udc: I/O memory and IRQ resource support
-> [PATCH v3 03/05] staging: emxx_udc: Add TODO file
-> [PATCH v3 04/05] staging: board: Initial board staging support
-> [PATCH v3 05/05] staging: board: kzm9d: Board staging support for emxx_udc
 
-Hi Magnus,
+--s9fJI615cBHmzTOP
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-my test was less exciting as I had hoped as STAGING is not widely
-enabled in defconfigs.
+On Thu, May 22, 2014 at 11:03:40AM +0800, Fengguang Wu wrote:
 
-I compiled v3.15-rc8 with the patches above applied using
-the defconfigs and allmodconfigs for a wide range of architectures.
-The result was that all of the configs that built for v3.15-rc8
-also built with your patches applied.
+> Got it, thanks! I use Tony's pre-built gcc binaries here:
+>=20
+>         https://www.kernel.org/pub/tools/crosstool/
+>=20
+> CC tony. Hopefully he can add the "--with-multilib-list=3Dm2a,m2a-nofpu"
+> configure option in future crosstool builds.
 
-In other words, I did not find a problem.
+So I updated the mutlilib-list as requested however now I'm getting:
+
+---
+Adding multilib support to Makefile in /home/tony/buildall/src/gcc/libgcc
+multidirs=3Dm2a m2a-nofpu
+with_multisubdir=3D
+Running configure in multilib subdirs m2a m2a-nofpu
+pwd: /home/tony/buildall/sh4/gcc0/sh4-linux/libgcc
+Running configure in multilib subdir m2a
+pwd: /home/tony/buildall/sh4/gcc0/sh4-linux
+mkdir m2a
+configure: creating cache ./config.cache
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... sh4-unknown-linux-gnu
+checking for --enable-version-specific-runtime-libs... no
+checking for a BSD-compatible install... /usr/bin/install -c
+checking for gawk... gawk
+xgcc: error: SH2a does not support little-endian
+checking for sh4-linux-ar... /opt/cross/gcc-4.9.0-nolibc/sh4-linux/sh4-linu=
+x/bin/ar
+checking for sh4-linux-lipo... sh4-linux-lipo
+checking for sh4-linux-nm... /home/tony/buildall/sh4/gcc0/./gcc/nm
+checking for sh4-linux-ranlib... /opt/cross/gcc-4.9.0-nolibc/sh4-linux/sh4-=
+linux/bin/ranlib
+checking for sh4-linux-strip... /opt/cross/gcc-4.9.0-nolibc/sh4-linux/sh4-l=
+inux/bin/strip
+checking whether ln -s works... yes
+checking for sh4-linux-gcc... /home/tony/buildall/sh4/gcc0/./gcc/xgcc -B/ho=
+me/tony/buildall/sh4/gcc0/./gcc/ -B/opt/cross/gcc-4.9.0-nolibc/sh4-linux/sh=
+4-linux/bin/ -B/opt/cross/gcc-4.9.0-nolibc/sh4-linux/sh4-linux/lib/ -isyste=
+m /opt/cross/gcc-4.9.0-nolibc/sh4-linux/sh4-linux/include -isystem /opt/cro=
+ss/gcc-4.9.0-nolibc/sh4-linux/sh4-linux/sys-include  -m2a
+checking for suffix of object files... configure: error: in `/home/tony/bui=
+ldall/sh4/gcc0/sh4-linux/m2a/libgcc':
+configure: error: cannot compute suffix of object files: cannot compile
+See `config.log' for more details.
+---
+
+I think the "xgcc: error: SH2a does not support little-endian" is a
+pretty string indication I'm doign something silly.
+
+Here are my binutils and gcc configures (binutils 2.24 and gcc 4.9.0)
+
+=3D=3D> log-binutils-configure <=3D=3D
+/home/tony/buildall/src/binutils/configure --host=3Dx86_64-linux-gnu --buil=
+d=3Dx86_64-linux-gnu --target=3Dsh4-linux --prefix=3D/opt/cross/gcc-4.9.0-n=
+olibc/sh4-linux/ --enable-64-bit-bfd --disable-nls --disable-werror --with-=
+sysroot=3D/opt/cross/gcc-4.9.0-nolibc/sh4-linux/=20
+
+=3D=3D> log-gcc0-configure <=3D=3D
+/home/tony/buildall/src/gcc/configure --target=3Dsh4-linux --host=3Dx86_64-=
+linux-gnu --build=3Dx86_64-linux-gnu --enable-targets=3Dall --prefix=3D/opt=
+/cross/gcc-4.9.0-nolibc/sh4-linux/ --enable-languages=3Dc --with-newlib --w=
+ithout-headers --disable-nls --disable-threads --disable-shared --disable-l=
+ibmudflap --disable-libssp --disable-libgomp --disable-decimal-float --enab=
+le-checking=3Drelease --with-multilib-list=3Dm2a,m2a-nofpu --with-mpfr=3D/h=
+ome/tony/buildall/src/sys-x86_64 --with-gmp=3D/home/tony/buildall/src/sys-x=
+86_64 --disable-bootstrap --disable-libquadmath --disable-libatomic=20
+
+I did a little googling and found https://gcc.gnu.org/bugzilla/show_bug.cgi=
+?id=3D40428
+but that doesn't seem to help.
+
+Help?
+
+Yours Tony
+
+--s9fJI615cBHmzTOP
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCAAGBQJTjpyyAAoJEPvNNsFAAoTB+wsQANLhTAoHemWeNQd0F3yBFm3Q
+hn7Y4kX2dINISqIWpvogDU416FEPEEG/3l+BYK8ssU1Mbtm1QfT4uIKY+Dw7GPAg
+8EaSMyx+3IrwGnOee09sCKpqh4yXDQh7xiv9435YZxWIKwCuxQrCHRpH1fYj4oIc
+Su9ZWoaNKkpOl53jIXXygV92VgvofpauQiPx0XLJq7xLWu2rZMyqf95F+VukOZJZ
+9zRB0w0ZWKszZVLrXr7dBsAQHCYj101Xelf2LxnwgRDOH2/dAU/DsCbmz68aF084
+wZSmYsDRsURrjlWuAUbVv1ck5dVW+LaGS5tbmcekByUS8vvd7/nVg35Jcf8jCtQ2
+Ex8xFIaX8UL9FcKsyXjWfvb+P2jfhwhd13Xym/5sCf7z2cFdmz9KffLV5KyR0HWK
+JKxfppvhAtumZDoOa64/pQrDpmDApJ7mRPXSODZLVhkT3nF6DrNJgMiSJotUHjn9
+8WlMnxxzViOfC7itqdUsYdC8KA4/NxTEWsGPgoXlEEMjXGLhniSUKPIQPWAkeoQ6
+U2V19WnXa6LBgTeAo5M22iOno69IWVAUMf0RPCrAlDwnNwtWMLLUInN982dWgrKc
+eXfkGzDNcgGgXN8Juf21fCwW6UBisp11+46zp4zNySCruSw9NEElpkGDBbwVcsuY
+ghTv16uYSL5UZFzCf6GG
+=/CkU
+-----END PGP SIGNATURE-----
+
+--s9fJI615cBHmzTOP--
