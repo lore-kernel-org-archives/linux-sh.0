@@ -1,56 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 16 Jun 2014 12:29:09 +0000
-Subject: Re: [PATCH 1/9] ARM: lager: enable i2c devices
-Message-Id: <539EE315.8040903@cogentembedded.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 04 Jun 2014 16:04:45 +0000
+Subject: Re: [PATCH v2 3/9] ARM: shmobile: r8a7790: add dmac0 dmac1 nodes
+Message-Id: <538F439D.1000001@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk> <1402862194-17743-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1402862194-17743-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>	<1397511312-4845-4-git-send-email-ben.dooks@codethink.co.uk> <CAMuHMdUNAFJEFWYe5cpKaZqoZFhRA1s0YBntT5ZVJaieSj8ovQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdUNAFJEFWYe5cpKaZqoZFhRA1s0YBntT5ZVJaieSj8ovQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>, linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
-Cc: robert.jarzmik@free.fr, g.liakhovetski@gmx.de, magnus.damm@opensource.se, horms@verge.net.au, ian.molton@codethink.co.uk, william.towle@codethink.co.uk
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Dan Williams <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, magnus.damm-yzvPICuk2ACczHhG9Qg4qA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hello.
+On 13/05/14 13:00, Geert Uytterhoeven wrote:
+> Hi Ben,
+> 
+> On Mon, Apr 14, 2014 at 11:35 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>> --- a/arch/arm/boot/dts/r8a7790.dtsi
+>> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+>> @@ -86,6 +88,76 @@
+>>                 };
+>>         };
+>>
+>> +       dma0: dma-mux@0 {
+>> +               compatible = "renesas,shdma-mux";
+>> +               #dma-cells = <2>;
+>> +               dma-channels = <20>;
+> 
+> Shouldn't this be 30, i.e. the sum of the properties in the child nodes?
 
-On 06/15/2014 11:56 PM, Ben Dooks wrote:
+Thanks, fixed.
 
-> Add i2c0, i2c1, i2c2 and i2c3 nodes to the Lager reference device tree as
-> these busses all have devices on them that can be probed even if they
-> are no drivers yet.
 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->   arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
->   1 file changed, 16 insertions(+)
-
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-> index dd2fe46..8617755 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -317,3 +317,19 @@
->   	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
->   	status = "okay";
->   };
-> +
-> +&i2c0	{
-> +	status = "ok";
-> +};
-> +
-> +&i2c1	{
-> +	status = "ok";
-> +};
-> +
-> +&i2c2	{
-> +	status = "ok";
-> +};
-> +
-> +&i2c3	{
-> +	status = "ok";
-> +};
-
-    Against which tree is this patch? It has been merged to Simon's 'devel' 
-branch on my request already.
-
-WBR, Sergei
-
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
