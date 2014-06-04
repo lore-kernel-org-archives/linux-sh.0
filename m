@@ -1,23 +1,55 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 20 Jun 2014 20:44:50 +0000
-Subject: [PATCH v3 0/3] Add R8A7791/Koelsch/Henninger board PCI DT support
-Message-Id: <201406210044.51620.sergei.shtylyov@cogentembedded.com>
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Wed, 04 Jun 2014 09:07:51 +0000
+Subject: [PATCH 1/10] sh: use safer test on the result of find_first_zero_bit
+Message-Id: <1401872880-23685-2-git-send-email-Julia.Lawall@lip6.fr>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1401872880-23685-1-git-send-email-Julia.Lawall@lip6.fr>
+In-Reply-To: <1401872880-23685-1-git-send-email-Julia.Lawall@lip6.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Cc: kernel-janitors@vger.kernel.org, Paul Mackerras <paulus@samba.org>, Ingo Molnar <mingo@redhat.com>, Arnaldo Carvalho de Melo <acme@kernel.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hello.
+From: Julia Lawall <Julia.Lawall@lip6.fr>
 
-   Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-v3.16-rc1-20140618' tag. Here we add PCI USB device tree support
-for the R8A7791-based Koelsch and Henninger boards. As the 'pci-rcar-gen2'
-driver device tree support has been merged for 3.16, this patchset can now be
-merged too... 
+Find_first_zero_bit considers BITS_PER_LONG bits at a time, and thus may
+return a larger number than the maximum position argument if that position
+is not a multiple of BITS_PER_LONG.
 
-[1/3] ARM: shmobile: r8a7791: add internal PCI bridge nodes
-[2/3] ARM: shmobile: koelsch: enable internal PCI
-[3/3] ARM: shmobile: henninger: enable internal PCI
+The semantic match that finds this problem is as follows:
+(http://coccinelle.lip6.fr/)
 
-WBR, Sergei
+// <smpl>
+@@
+expression e1,e2,e3;
+statement S1,S2;
+@@
+
+e1 = find_first_zero_bit(e2,e3)
+...
+if (e1 
+- =
++ >  e3)
+S1 else S2
+// </smpl>
+
+Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+
+---
+ arch/sh/kernel/perf_event.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff -u -p a/arch/sh/kernel/perf_event.c b/arch/sh/kernel/perf_event.c
+--- a/arch/sh/kernel/perf_event.c
++++ b/arch/sh/kernel/perf_event.c
+@@ -281,7 +281,7 @@ static int sh_pmu_add(struct perf_event
+ 
+ 	if (__test_and_set_bit(idx, cpuc->used_mask)) {
+ 		idx = find_first_zero_bit(cpuc->used_mask, sh_pmu->num_events);
+-		if (idx = sh_pmu->num_events)
++		if (idx >= sh_pmu->num_events)
+ 			goto out;
+ 
+ 		__set_bit(idx, cpuc->used_mask);
+
