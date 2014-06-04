@@ -1,63 +1,26 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 03 Jun 2014 17:59:17 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 04 Jun 2014 01:06:02 +0000
 Subject: Re: [PATCH v2 1/2] arm: shmobile: r8a7791: add USB3.0 clocks to device tree
-Message-Id: <3639732.t6IJBqd63T@avalon>
+Message-Id: <20140604010601.GB25936@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <538D71C1.3010900@renesas.com>
-In-Reply-To: <538D71C1.3010900@renesas.com>
+ <3639732.t6IJBqd63T@avalon>
+In-Reply-To: <3639732.t6IJBqd63T@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Shimoda-san,
-
-Thank you for the patch.
-
-On Tuesday 03 June 2014 15:57:05 Yoshihiro Shimoda wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-Apart for the parent clock that I can't verify due to lack of documentation,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi |    6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+On Tue, Jun 03, 2014 at 07:59:17PM +0200, Laurent Pinchart wrote:
+> Hi Shimoda-san,
 > 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index ede8b7f..c2b5b38 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -784,15 +784,15 @@
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
->  			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks
-> R8A7791_CLK_SD0>, -				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, 
-<&rclk_clk>;
-> +				 <&mmc0_clk>, <&hp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>;
->  			#clock-cells = <1>;
->  			renesas,clock-indices = <
->  				R8A7791_CLK_TPU0 R8A7791_CLK_SDHI2 R8A7791_CLK_SDHI1 
-R8A7791_CLK_SDHI0
-> -				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 
-R8A7791_CLK_CMT1
-> +				R8A7791_CLK_MMCIF0 R8A7791_CLK_IIC0 R8A7791_CLK_IIC1 
-R8A7791_CLK_SSUSB
-> R8A7791_CLK_CMT1
->  			>;
+> Thank you for the patch.
 > 
->  			clock-output-names >  				"tpu0", "sdhi2", "sdhi1", "sdhi0",
-> -				"mmcif0", "i2c7", "i2c8", "cmt1";
-> +				"mmcif0", "i2c7", "i2c8", "ssusb", "cmt1";
->  		};
->  		mstp5_clks: mstp5_clks@e6150144 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-
-clocks";
+> On Tuesday 03 June 2014 15:57:05 Yoshihiro Shimoda wrote:
+> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> 
+> Apart for the parent clock that I can't verify due to lack of documentation,
+> 
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks, I have queued this up.
