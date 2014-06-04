@@ -1,135 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Jun 2014 07:16:38 +0000
-Subject: Re: [PATCH 2/2] ARM: lager: add i2c1, i2c2 pins
-Message-Id: <20140606071638.GA20042@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 04 Jun 2014 15:54:26 +0000
+Subject: Re: [PATCH v2 8/9] DMA: shdma: initial of common code
+Message-Id: <538F4132.4030204@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
+References: <1397511312-4845-1-git-send-email-ben.dooks@codethink.co.uk>	<1397511312-4845-9-git-send-email-ben.dooks@codethink.co.uk>	<4431489.B0PGdfS6ct@wuerfel>	<534D01EB.3080702@codethink.co.uk> <CAMuHMdU-FEnAjjcACaFt_-5i4EFDnj=uqrM_ew+nz7n9+ndbSQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdU-FEnAjjcACaFt_-5i4EFDnj=uqrM_ew+nz7n9+ndbSQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-kernel@lists.codethink.co.uk, dmaengine@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Linux-sh list <linux-sh@vger.kernel.org>, magnus.damm@opensource.se, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On Thu, Jun 05, 2014 at 09:49:22PM +0400, Sergei Shtylyov wrote:
-> Hello.
+On 21/05/14 21:14, Geert Uytterhoeven wrote:
+> Hi Ben,
 > 
-> On 06/05/2014 08:30 PM, Ben Dooks wrote:
+> On Tue, Apr 15, 2014 at 11:54 AM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
+>>>>   static struct dma_chan *shdma_of_xlate(struct of_phandle_args
+>>>> *dma_spec,
+>>>>                                        struct of_dma *ofdma)
+>>>>   {
+>>>> +       struct platform_device *pdev = ofdma->of_dma_data;
+>>>>         u32 id = dma_spec->args[0];
+>>>>         dma_cap_mask_t mask;
+>>>>         struct dma_chan *chan;
+>>>>
+>>>> -       if (dma_spec->args_count != 1)
+>>>> +       if (dma_spec->args_count = 2) {
+>>>> +               struct shdma_of_state *state >>>> platform_get_drvdata(pdev);
+>>>> +               struct shdma_of_client *client;
+>>>> +
+>>>> +               client = shdma_of_find_client(state, id);
+>>>> +               if (!client) {
+>>>> +                       client = devm_kzalloc(&pdev->dev,
+>>>> sizeof(*client),
+>>>> +                                             GFP_KERNEL);
+>>>> +                       if (!client)
+>>>> +                               return NULL;
+>>>> +
+>>>> +                       client->index >>>> atomic_inc_return(&of_slave_index);
+>>>> +                       client->cfg.slave_id = id;
+>>>> +                       client->cfg.mid_rid = id;
+>>>> +                       client->cfg.chcr = dma_spec->args[1];
+>>>
+>>>
+>>> Can you explain the purpose of setting the chcr in DT? For all I can
+>>> tell, this should come from the device driver when that calls the
+>>> dma_slave_config function, unlike the mid_rid value.
+>>
+>>
+>> See previous note about transfer-widths and register-sizes not always
+>> matching. I also do not have any idea about other SoCs in the series
+>> if there are any differences between channel settings.
 > 
-> >>>>Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
-> >>>>to ensure these are setup correctly at initialisation time. The i2c0
-> >>>>and i2c3 busses are connected to single function pins.
+> If you look for sh_dmae_slave_config in arch/arm arch/sh, you find the values
+> for the existing board support.
 > 
-> >>>>Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> >>>>---
-> >>>>   arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
-> >>>>   1 file changed, 14 insertions(+)
+> The same device always seem to use the same value, i.e. MMC always uses
+> 32-bit, SCIF uses 8-bit, SDHI uses 16-bit. So I think it could be hardcoded
+> in the device driver (passed via enum dma_slave_buswidth {src,dst}_addr_width
+> in dma_slave_config?), and you can drop the field in the bindings.
 > 
-> >>>I have queued up the following.
-> 
-> >>>There was some fuzz when applying this patch, please check that the
-> >>>following is correct.
-> 
-> >>>From: Ben Dooks <ben.dooks@codethink.co.uk>
-> 
-> >>>[PATCH] ARM: shmobile: lager: add i2c1, i2c2 pins
-> 
-> >>>Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
-> >>>to ensure these are setup correctly at initialisation time. The i2c0
-> >>>and i2c3 busses are connected to single function pins.
-> 
-> >>>Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> >>>[horms+renesas@verge.net.au: Added shmobile to patch title]
-> >>>Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >>>---
-> >>>   arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
-> >>>   1 file changed, 14 insertions(+)
-> 
-> >>>diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> >>>b/arch/arm/boot/dts/r8a7790-lager.dts
-> >>>index ee80788..e33ed0d 100644
-> >>>--- a/arch/arm/boot/dts/r8a7790-lager.dts
-> >>>+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> >>>@@ -139,6 +139,16 @@
-> >>>           states = <3300000 1
-> >>>                 1800000 0>;
-> >>>       };
-> >>>+
-> >>>+    i2c1_pins: i2c1 {
-> >>>+        renesas,groups = "i2c1";
-> >>>+        renesas,function = "i2c1";
-> >>>+    };
-> >>>+
-> >>>+    i2c2_pins: i2c2 {
-> >>>+        renesas,groups = "i2c2";
-> >>>+        renesas,function = "i2c2";
-> >>>+    };
-> 
-> >>    These subnodes ended up added to a wrong node, they should have been
-> >>added to the PFC node below.
-> 
-> >Thanks, it is not obvious from just looking at them.
-> 
->    It was obvious from the context, actually.
+> Notes:
+>   - RSPI is special: on SH, it's 16-bit, while QSPI on R-Car uses 8-bit.
+>   - SDHI uses 32-bit according to the R-Car docs, but the (working) code
+>     uses 16-bit?
 
-Thanks for pointing out my error.
+I will move to using the configuration passed when the slave is used
+instead of the one in the slave table.
 
-I plan to queue up the following to resolve this problem.
-
-From: Simon Horman <horms+renesas@verge.net.au>
-
-[PATCH] ARM: shmobile: lager: Move i2c[12]_pins nodes to pfc node
-
-Due to an error when resolving conflicts df40f256b18300e1 ("ARM: shmobile:
-lager: add i2c1, i2c2 pins") added the i2c[12]_pins nodes to the wrong
-node.
-
-This patch moves them to their correct location in the pfc node.
-
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index e33ed0d..2bb42bc 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -139,16 +139,6 @@
- 		states = <3300000 1
- 			  1800000 0>;
- 	};
--
--	i2c1_pins: i2c1 {
--		renesas,groups = "i2c1";
--		renesas,function = "i2c1";
--	};
--
--	i2c2_pins: i2c2 {
--		renesas,groups = "i2c2";
--		renesas,function = "i2c2";
--	};
- };
- 
- &extal_clk {
-@@ -210,6 +200,16 @@
- 		renesas,function = "msiof1";
- 	};
- 
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
-+
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
-+
- 	i2c3_pins: i2c3 {
- 		renesas,groups = "i2c3";
- 		renesas,function = "i2c3";
 -- 
-2.0.0.rc2
-
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
