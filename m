@@ -1,131 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:28 +0000
-Subject: [PATCH v2 22/23] v4l: vsp1: bru: Make the background color configurable
-Message-Id: <1403567669-18539-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Wed, 04 Jun 2014 16:14:13 +0000
+Subject: [PATCH 6/8] ARM: shmobile: r8a7790: add dmac0,dmac1 clocks
+Message-Id: <1401898455-31064-7-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Expose the background color to userspace through the V4L2_CID_BG_COLOR
-control.
+Add clocks for the SYS-DMAC0 and SYS-DMAC1 hardware blocks.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+
 ---
- drivers/media/platform/vsp1/vsp1_bru.c | 51 ++++++++++++++++++++++++++++++----
- drivers/media/platform/vsp1/vsp1_bru.h |  3 ++
- 2 files changed, 49 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index 86b32bc..a0c1984 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -38,6 +38,32 @@ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
- }
- 
- /* -----------------------------------------------------------------------------
-+ * Controls
-+ */
-+
-+static int bru_s_ctrl(struct v4l2_ctrl *ctrl)
-+{
-+	struct vsp1_bru *bru +		container_of(ctrl->handler, struct vsp1_bru, ctrls);
-+
-+	if (!vsp1_entity_is_streaming(&bru->entity))
-+		return 0;
-+
-+	switch (ctrl->id) {
-+	case V4L2_CID_BG_COLOR:
-+		vsp1_bru_write(bru, VI6_BRU_VIRRPF_COL, ctrl->val |
-+			       (0xff << VI6_BRU_VIRRPF_COL_A_SHIFT));
-+		break;
-+	}
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_ctrl_ops bru_ctrl_ops = {
-+	.s_ctrl = bru_s_ctrl,
-+};
-+
-+/* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Core Operations
-  */
- 
-@@ -48,6 +74,11 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	struct v4l2_mbus_framefmt *format;
- 	unsigned int flags;
- 	unsigned int i;
-+	int ret;
-+
-+	ret = vsp1_entity_set_streaming(&bru->entity, enable);
-+	if (ret < 0)
-+		return ret;
- 
- 	if (!enable)
- 		return 0;
-@@ -68,15 +99,11 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
- 		       0 : VI6_BRU_INCTRL_NRM);
- 
--	/* Set the background position to cover the whole output image and
--	 * set its color to opaque black.
--	 */
-+	/* Set the background position to cover the whole output image. */
- 	vsp1_bru_write(bru, VI6_BRU_VIRRPF_SIZE,
- 		       (format->width << VI6_BRU_VIRRPF_SIZE_HSIZE_SHIFT) |
- 		       (format->height << VI6_BRU_VIRRPF_SIZE_VSIZE_SHIFT));
- 	vsp1_bru_write(bru, VI6_BRU_VIRRPF_LOC, 0);
--	vsp1_bru_write(bru, VI6_BRU_VIRRPF_COL,
--		       0xff << VI6_BRU_VIRRPF_COL_A_SHIFT);
- 
- 	/* Route BRU input 1 as SRC input to the ROP unit and configure the ROP
- 	 * unit with a NOP operation to make BRU input 1 available as the
-@@ -407,5 +434,19 @@ struct vsp1_bru *vsp1_bru_create(struct vsp1_device *vsp1)
- 
- 	vsp1_entity_init_formats(subdev, NULL);
- 
-+	/* Initialize the control handler. */
-+	v4l2_ctrl_handler_init(&bru->ctrls, 1);
-+	v4l2_ctrl_new_std(&bru->ctrls, &bru_ctrl_ops, V4L2_CID_BG_COLOR,
-+			  0, 0xffffff, 1, 0);
-+
-+	bru->entity.subdev.ctrl_handler = &bru->ctrls;
-+
-+	if (bru->ctrls.error) {
-+		dev_err(vsp1->dev, "bru: failed to initialize controls\n");
-+		ret = bru->ctrls.error;
-+		vsp1_entity_destroy(&bru->entity);
-+		return ERR_PTR(ret);
-+	}
-+
- 	return bru;
- }
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.h b/drivers/media/platform/vsp1/vsp1_bru.h
-index 5b03479..16b1c65 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.h
-+++ b/drivers/media/platform/vsp1/vsp1_bru.h
-@@ -14,6 +14,7 @@
- #define __VSP1_BRU_H__
- 
- #include <media/media-entity.h>
-+#include <media/v4l2-ctrls.h>
- #include <media/v4l2-subdev.h>
- 
- #include "vsp1_entity.h"
-@@ -27,6 +28,8 @@ struct vsp1_rwpf;
- struct vsp1_bru {
- 	struct vsp1_entity entity;
- 
-+	struct v4l2_ctrl_handler ctrls;
-+
- 	struct {
- 		struct vsp1_rwpf *rpf;
- 		struct v4l2_rect compose;
+Fixes since initial submission:
+
+	- Add sys- to front of the DMA name
+	- Use zs_clk for parent of the dmac clocks
+	- Re-order to DMAC1/DMAC0
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 618e5b5..e8ca55d 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -683,16 +683,17 @@
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
+-				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>;
++				 <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			renesas,clock-indices = <
+ 				R8A7790_CLK_SCIFA2 R8A7790_CLK_SCIFA1 R8A7790_CLK_SCIFA0
+ 				R8A7790_CLK_MSIOF2 R8A7790_CLK_SCIFB0 R8A7790_CLK_SCIFB1
+ 				R8A7790_CLK_MSIOF1 R8A7790_CLK_MSIOF3 R8A7790_CLK_SCIFB2
++				R8A7790_CLK_SYS_DMAC1 R8A7790_CLK_SYS_DMAC0
+ 			>;
+ 			clock-output-names  				"scifa2", "scifa1", "scifa0", "msiof2", "scifb0",
+-				"scifb1", "msiof1", "msiof3", "scifb2";
++				"scifb1", "msiof1", "msiof3", "scifb2", "sys-dmac1", "sys-dmac0";
+ 		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
 -- 
-1.8.5.5
+2.0.0.rc2
 
