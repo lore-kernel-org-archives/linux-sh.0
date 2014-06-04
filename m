@@ -1,154 +1,40 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 12 Jun 2014 09:42:24 +0000
-Subject: [PATCH v2 02/07] DMA: shdma: 40-bit address prototype
-Message-Id: <20140612094224.4132.43639.sendpatchset@w520>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 04 Jun 2014 22:45:30 +0000
+Subject: Re: [PATCH v3 3/7] r8a7790.dtsi: add vin[0-3] nodes
+Message-Id: <538FA18A.4040505@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hello.
 
-Hack up 40-bit address support via the FIXSAR and FIXDAR
-addresses provided by the SYS-DMAC hardware in R-Car Gen2.
+On 04/14/2014 02:36 PM, Ben Dooks wrote:
 
-The data sheet says that auto increment overflow from SAR
-to FIXSAR and DAR to FIXDAR does not happen, so based on
-that limit size of DMA transactions that try to cross the
-32-bit boundary.
+> Add nodes for the four video input channels on the R8A7790.
 
-Not for upstream merge.
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+>   arch/arm/boot/dts/r8a7790.dtsi | 36 ++++++++++++++++++++++++++++++++++++
+>   1 file changed, 36 insertions(+)
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+    It looks like I've overlooked something while reviewing this patch back in 
+April...
 
- Changes since V1:
- - Fix transfer length truncation calculation - thanks Geert!
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index a1e7c39..de0e53e 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+[...]
+> @@ -395,6 +399,38 @@
+>   		status = "disabled";
+>   	};
+>
+> +	vin0: vin@0xe6ef0000 {
 
- drivers/dma/sh/shdma.h  |    4 ++--
- drivers/dma/sh/shdmac.c |   46 ++++++++++++++++++++++++++++++++++++++++------
- include/linux/sh_dma.h  |    2 ++
- 3 files changed, 44 insertions(+), 8 deletions(-)
+    Drop "0x" form the unit-address please. Also, name should probably be 
+"video", more in line with the ePAPR standard...
 
---- 0001/drivers/dma/sh/shdma.h
-+++ work/drivers/dma/sh/shdma.h	2014-06-10 23:10:51.000000000 +0900
-@@ -46,8 +46,8 @@ struct sh_dmae_device {
- };
- 
- struct sh_dmae_regs {
--	u32 sar; /* SAR / source address */
--	u32 dar; /* DAR / destination address */
-+	dma_addr_t sar; /* SAR / source address */
-+	dma_addr_t dar; /* DAR / destination address */
- 	u32 tcr; /* TCR / transfer count */
- };
- 
---- 0001/drivers/dma/sh/shdmac.c
-+++ work/drivers/dma/sh/shdmac.c	2014-06-12 12:41:40.000000000 +0900
-@@ -42,6 +42,8 @@
- #define DAR	0x04
- #define TCR	0x08
- #define CHCR	0x0C
-+#define FIXSAR  0x10
-+#define FIXDAR  0x14
- #define DMAOR	0x40
- 
- #define TEND	0x18 /* USB-DMAC */
-@@ -217,8 +219,16 @@ static u32 log2size_to_chcr(struct sh_dm
- 
- static void dmae_set_reg(struct sh_dmae_chan *sh_chan, struct sh_dmae_regs *hw)
- {
--	sh_dmae_writel(sh_chan, hw->sar, SAR);
--	sh_dmae_writel(sh_chan, hw->dar, DAR);
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
-+
-+#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
-+	if (shdev->pdata->fourty_bits_addr) {
-+		sh_dmae_writel(sh_chan, hw->sar >> 32, FIXSAR);
-+		sh_dmae_writel(sh_chan, hw->dar >> 32, FIXDAR);
-+	}
-+#endif
-+	sh_dmae_writel(sh_chan, hw->sar & 0xffffffff, SAR);
-+	sh_dmae_writel(sh_chan, hw->dar & 0xffffffff, DAR);
- 	sh_dmae_writel(sh_chan, hw->tcr >> sh_chan->xmit_shift, TCR);
- }
- 
-@@ -290,9 +300,9 @@ static void sh_dmae_start_xfer(struct sh
- 						    shdma_chan);
- 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
- 					struct sh_dmae_desc, shdma_desc);
--	dev_dbg(sh_chan->shdma_chan.dev, "Queue #%d to %d: %u@%x -> %x\n",
-+	dev_dbg(sh_chan->shdma_chan.dev, "Queue #%d to %d: %u@%pad-> %pad\n",
- 		sdesc->async_tx.cookie, sh_chan->shdma_chan.id,
--		sh_desc->hw.tcr, sh_desc->hw.sar, sh_desc->hw.dar);
-+		sh_desc->hw.tcr, &sh_desc->hw.sar, &sh_desc->hw.dar);
- 	/* Get the ld start address from ld_queue */
- 	dmae_set_reg(sh_chan, &sh_desc->hw);
- 	dmae_start(sh_chan);
-@@ -382,12 +392,28 @@ static int sh_dmae_desc_setup(struct shd
- 			      struct shdma_desc *sdesc,
- 			      dma_addr_t src, dma_addr_t dst, size_t *len)
- {
-+	struct sh_dmae_chan *sh_chan = container_of(schan,
-+					struct sh_dmae_chan, shdma_chan);
- 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
- 					struct sh_dmae_desc, shdma_desc);
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
- 
- 	if (*len > schan->max_xfer_len)
- 		*len = schan->max_xfer_len;
- 
-+#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
-+	/* disable transfer across 32-bit boundary */
-+	if (shdev->pdata->fourty_bits_addr) {
-+		dma_addr_t four_gigs = 1ULL << 32;
-+
-+		if ((src >> 32) != ((src + *len - 1) >> 32))
-+			*len = four_gigs - (src & (four_gigs - 1));
-+
-+		if ((dst >> 32) != ((dst + *len - 1) >> 32))
-+			*len = four_gigs - (dst & (four_gigs - 1));
-+	}
-+#endif
-+
- 	sh_desc->hw.sar = src;
- 	sh_desc->hw.dar = dst;
- 	sh_desc->hw.tcr = *len;
-@@ -463,8 +489,16 @@ static bool sh_dmae_desc_completed(struc
- 					struct sh_dmae_chan, shdma_chan);
- 	struct sh_dmae_desc *sh_desc = container_of(sdesc,
- 					struct sh_dmae_desc, shdma_desc);
--	u32 sar_buf = sh_dmae_readl(sh_chan, SAR);
--	u32 dar_buf = sh_dmae_readl(sh_chan, DAR);
-+	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
-+	dma_addr_t sar_buf = sh_dmae_readl(sh_chan, SAR);
-+	dma_addr_t dar_buf = sh_dmae_readl(sh_chan, DAR);
-+
-+#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
-+	if (shdev->pdata->fourty_bits_addr) {
-+		sar_buf |= (dma_addr_t)sh_dmae_readl(sh_chan, FIXSAR) << 32;
-+		dar_buf |= (dma_addr_t)sh_dmae_readl(sh_chan, FIXDAR) << 32;
-+	}
-+#endif
- 
- 	return	(sdesc->direction = DMA_DEV_TO_MEM &&
- 		 (sh_desc->hw.dar + sh_desc->hw.tcr) = dar_buf) ||
---- 0001/include/linux/sh_dma.h
-+++ work/include/linux/sh_dma.h	2014-06-10 23:10:51.000000000 +0900
-@@ -70,6 +70,7 @@ struct sh_dmae_channel {
-  * @chclr_present:	DMAC has one or several CHCLR registers
-  * @chclr_bitwise:	channel CHCLR registers are bitwise
-  * @slave_only:		DMAC cannot be used for MEMCPY
-+ * @fourty_bits_addr:	Hardware support dealing with 40 bit addresses
-  */
- struct sh_dmae_pdata {
- 	const struct sh_dmae_slave_config *slave;
-@@ -92,6 +93,7 @@ struct sh_dmae_pdata {
- 	unsigned int chclr_present:1;
- 	unsigned int chclr_bitwise:1;
- 	unsigned int slave_only:1;
-+	unsigned int fourty_bits_addr:1;
- };
- 
- /* DMAOR definitions */
+WBR, Sergei
+
