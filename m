@@ -1,71 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 04 Jun 2014 11:29:53 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 04 Jun 2014 11:39:17 +0000
 Subject: Re: [PATCH v2 1/7] DMA: shdma: Add r8a7791 support
-Message-Id: <2461508.0gZiIUPGHB@avalon>
+Message-Id: <CAMuHMdXUt912Gkavn8ibw2yej7WGeULZTqG1wmmgLz1PDReJWg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1401716531-29794-1-git-send-email-geert+renesas@glider.be>
  <1401716531-29794-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401716531-29794-2-git-send-email-geert+renesas@glider.be>
+ <2461508.0gZiIUPGHB@avalon>
+In-Reply-To: <2461508.0gZiIUPGHB@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+On Wed, Jun 4, 2014 at 1:29 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Monday 02 June 2014 15:42:05 Geert Uytterhoeven wrote:
+>
+> Missing commit message ?
 
-Thank you for the patch.
+I didn't have anything more to say than the one-liner ;-)
 
-On Monday 02 June 2014 15:42:05 Geert Uytterhoeven wrote:
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>> v2:
+>>   - No changes
+>>
+>>  Documentation/devicetree/bindings/dma/shdma.txt | 5 +++--
+>>  drivers/dma/sh/shdmac.c                         | 1 +
+>>  2 files changed, 4 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/Documentation/devicetree/bindings/dma/shdma.txt
+>> b/Documentation/devicetree/bindings/dma/shdma.txt index
+>> 86d5c509594b..d26b7065ae94 100644
+>> --- a/Documentation/devicetree/bindings/dma/shdma.txt
+>> +++ b/Documentation/devicetree/bindings/dma/shdma.txt
+>> @@ -24,8 +24,9 @@ Optional properties (currently unused):
+>>  Required properties:
+>>  - compatible:        should be of the form "renesas,shdma-<soc>", where <soc>
+>> should be replaced with the desired SoC model, e.g.
+>> -             "renesas,shdma-r8a73a4" for the system DMAC on r8a73a4 SoC
+>> -             "renesas,shdma-r8a7790" for the DMAC on the R8A7790.
+>> +             "renesas,shdma-r8a73a4" for the system DMAC on r8a73a4 SoC,
+>> +             "renesas,shdma-r8a7790" for the DMAC on the R8A7790,
+>> +             "renesas,shdma-r8a7791" for the DMAC on the R8A7791.
+>
+> I would just remove the commas and full stop to avoid modifying unrelated
+> lines in future patches.
+>
+> The R8A7791 has several DMACs (LBSC, SYS, RT, Audio, 2D, USBHS). It would thus
+> make sense to explicitly state which DMACs the bindings cover.
 
-Missing commit message ?
+Good point. That also applies to the r8a7790.
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v2:
->   - No changes
-> 
->  Documentation/devicetree/bindings/dma/shdma.txt | 5 +++--
->  drivers/dma/sh/shdmac.c                         | 1 +
->  2 files changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/dma/shdma.txt
-> b/Documentation/devicetree/bindings/dma/shdma.txt index
-> 86d5c509594b..d26b7065ae94 100644
-> --- a/Documentation/devicetree/bindings/dma/shdma.txt
-> +++ b/Documentation/devicetree/bindings/dma/shdma.txt
-> @@ -24,8 +24,9 @@ Optional properties (currently unused):
->  Required properties:
->  - compatible:	should be of the form "renesas,shdma-<soc>", where <soc>
-> should be replaced with the desired SoC model, e.g.
-> -		"renesas,shdma-r8a73a4" for the system DMAC on r8a73a4 SoC
-> -		"renesas,shdma-r8a7790" for the DMAC on the R8A7790.
-> +		"renesas,shdma-r8a73a4" for the system DMAC on r8a73a4 SoC,
-> +		"renesas,shdma-r8a7790" for the DMAC on the R8A7790,
-> +		"renesas,shdma-r8a7791" for the DMAC on the R8A7791.
+Gr{oetje,eeting}s,
 
-I would just remove the commas and full stop to avoid modifying unrelated 
-lines in future patches.
+                        Geert
 
-The R8A7791 has several DMACs (LBSC, SYS, RT, Audio, 2D, USBHS). It would thus 
-make sense to explicitly state which DMACs the bindings cover.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
->  Example:
->  	dmac: dma-multiplexer@0 {
-> diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-> index 91b3f744d7b2..cdbc68e72ca1 100644
-> --- a/drivers/dma/sh/shdmac.c
-> +++ b/drivers/dma/sh/shdmac.c
-> @@ -691,6 +691,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
->  static const struct of_device_id sh_dmae_of_match[] = {
->  	{ .compatible = "renesas,shdma-r8a73a4", .data = r8a73a4_shdma_devid },
->  	{ .compatible = "renesas,shdma-r8a7790", .data = &shdma_arm_info },
-> +	{ .compatible = "renesas,shdma-r8a7791", .data = &shdma_arm_info },
->  	{}
->  };
->  MODULE_DEVICE_TABLE(of, sh_dmae_of_match);
-
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
