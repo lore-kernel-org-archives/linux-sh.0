@@ -1,93 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:25:19 +0000
-Subject: [PATCH] ARM: shmobile: Fix device node reference leakage in shmobile_init_delay
-Message-Id: <edc8fb1d6ebdfc4efa009073586d3567c3368475.1403487071.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:32:12 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
+Message-Id: <20140605053212.19066.45533.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487071.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487071.git.horms+renesas@verge.net.au>
+References: <20140213082628.30630.3186.sendpatchset@w520>
+In-Reply-To: <20140213082628.30630.3186.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-The of_find_compatible_node() function returns a new reference to the
-found node. Instead of just adding of_node_put() calls, simplify the
-code by moving the CPU identification logic inside the loop over cpu
-nodes, in order to lower complexity from O(n) to O(1) by replacing
-of_find_compatible_node() calls with of_device_is_compatible().
+Update the EMEV2 specific SoC callbacks to get rid
+of the calls to of_clk_init() and of_platform_populate().
+Those calls are by default executed by the functions in
+the shared ARM code in case the SoC specific mach
+callbacks are NULL.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/timer.c | 50 ++++++++++++++++++++++++------------------
- 1 file changed, 29 insertions(+), 21 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index 68bc0b8..942efdc 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -59,29 +59,37 @@ void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- 
- void __init shmobile_init_delay(void)
- {
--	struct device_node *np, *parent;
--	u32 max_freq, freq;
--
--	max_freq = 0;
--
--	parent = of_find_node_by_path("/cpus");
--	if (parent) {
--		for_each_child_of_node(parent, np) {
--			if (!of_property_read_u32(np, "clock-frequency", &freq))
--				max_freq = max(max_freq, freq);
--		}
--		of_node_put(parent);
--	}
-+	struct device_node *np, *cpus;
-+	bool is_a8_a9 = false;
-+	bool is_a15 = false;
-+	u32 max_freq = 0;
-+
-+	cpus = of_find_node_by_path("/cpus");
-+	if (!cpus)
-+		return;
-+
-+	for_each_child_of_node(cpus, np) {
-+		u32 freq;
-+
-+		if (!of_property_read_u32(np, "clock-frequency", &freq))
-+			max_freq = max(max_freq, freq);
- 
--	if (max_freq) {
--		if (of_find_compatible_node(NULL, NULL, "arm,cortex-a8"))
--			shmobile_setup_delay_hz(max_freq, 1, 3);
--		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a9"))
--			shmobile_setup_delay_hz(max_freq, 1, 3);
--		else if (of_find_compatible_node(NULL, NULL, "arm,cortex-a15"))
--			if (!IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
--				shmobile_setup_delay_hz(max_freq, 2, 4);
-+		if (of_device_is_compatible(np, "arm,cortex-a8") ||
-+		    of_device_is_compatible(np, "arm,cortex-a9"))
-+			is_a8_a9 = true;
-+		else if (of_device_is_compatible(np, "arm,cortex-a15"))
-+			is_a15 = true;
- 	}
-+
-+	of_node_put(cpus);
-+
-+	if (!max_freq)
-+		return;
-+
-+	if (is_a8_a9)
-+		shmobile_setup_delay_hz(max_freq, 1, 3);
-+	else if (is_a15 && !IS_ENABLED(CONFIG_ARM_ARCH_TIMER))
-+		shmobile_setup_delay_hz(max_freq, 2, 4);
+ arch/arm/mach-shmobile/setup-emev2.c |   10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+--- 0003/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-05-29 17:15:54.000000000 +0900
+@@ -16,10 +16,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+-#include <linux/clk-provider.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/of_platform.h>
++#include <linux/mm.h>
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -42,12 +41,6 @@ static void __init emev2_map_io(void)
+ 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
  }
  
- static void __init shmobile_late_time_init(void)
--- 
-2.0.0.rc2
-
+-static void __init emev2_add_standard_devices_dt(void)
+-{
+-	of_clk_init(NULL);
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+ static const char *emev2_boards_compat_dt[] __initconst = {
+ 	"renesas,emev2",
+ 	NULL,
+@@ -59,7 +52,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+ 	.init_early	= shmobile_init_delay,
+-	.init_machine	= emev2_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
+ MACHINE_END
