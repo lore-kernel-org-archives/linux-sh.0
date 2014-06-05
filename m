@@ -1,44 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 23 Jun 2014 23:54:22 +0000
-Subject: [PATCH v2 16/23] v4l: vsp1: wpf: Clear RPF to WPF association at stream off time
-Message-Id: <1403567669-18539-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:15:44 +0000
+Subject: [PATCH 05/08] ARM: shmobile: Use __init for APMU suspend init function
+Message-Id: <20140605051544.18075.12659.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1403567669-18539-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The VSP1 stores the video pipelines' input (RPF) to output (WPF)
-mappings in a WPF register. An RPF must never be associated with
-multiple WPFs, even if all of those WPFs but one are unused, otherwise
-the hardware won't function properly.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-The driver doesn't ensure this correctly as it never clears the
-mappings. An RPF used with one WPF and later with a different WPF will
-lead to malfunction, as it will be associated with two WPFs. Clear the
-mappings at stream off time to fix this.
+The function shmobile_smp_apmu_suspend_init() should
+be put into the init section to not trigger section
+mismatch warnings.
 
-Reported-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/vsp1/vsp1_wpf.c | 1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 591f09c..d330865 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -54,6 +54,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 
- 	if (!enable) {
- 		vsp1_write(vsp1, VI6_WPF_IRQ_ENB(wpf->entity.index), 0);
-+		vsp1_wpf_write(wpf, VI6_WPF_SRCRPF, 0);
- 		return 0;
- 	}
- 
--- 
-1.8.5.5
+ arch/arm/mach-shmobile/platsmp-apmu.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+--- 0003/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 12:51:33.000000000 +0900
+@@ -240,7 +240,7 @@ static int shmobile_smp_apmu_enter_suspe
+ 	return 0;
+ }
+ 
+-void shmobile_smp_apmu_suspend_init(void)
++void __init shmobile_smp_apmu_suspend_init(void)
+ {
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ }
