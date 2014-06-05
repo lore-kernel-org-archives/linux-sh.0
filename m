@@ -1,30 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Jun 2014 05:31:49 +0000
-Subject: [PATCH 00/03] ARM: shmobile: EMEV2 init delay update
-Message-Id: <20140605053149.19066.90593.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 05 Jun 2014 08:15:15 +0000
+Subject: Re: [PATCH 00/03] ARM: shmobile: EMEV2 init delay update
+Message-Id: <CAMuHMdXf5TkNDQ1dU8CzF2xJ3i=azOZZRosQ-cozKQtbpnetmA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140605053149.19066.90593.sendpatchset@w520>
+In-Reply-To: <20140605053149.19066.90593.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ARM: shmobile: EMEV2 init delay update
+Hi Magnus,
 
-[PATCH 01/03] ARM: shmobile: Update EMEV2 DTS to include CPU frequency
-[PATCH 02/03] ARM: shmobile: Use shmobile_init_delay() on EMEV2
-[PATCH 03/03] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
+On Thu, Jun 5, 2014 at 7:31 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> ARM: shmobile: EMEV2 init delay update
+>
+> [PATCH 01/03] ARM: shmobile: Update EMEV2 DTS to include CPU frequency
+> [PATCH 02/03] ARM: shmobile: Use shmobile_init_delay() on EMEV2
+> [PATCH 03/03] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
+>
+> These patches clean up the EMEV2 SoC code. The CPU Frequency is put into
+> DTS, code is adjusted to read out the frequency from DTS, and the EMEV2
+> SoC callbacks are cleaned up slightly.
+>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
-These patches clean up the EMEV2 SoC code. The CPU Frequency is put into
-DTS, code is adjusted to read out the frequency from DTS, and the EMEV2
-SoC callbacks are cleaned up slightly.
+Thanks, looks fine to me.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
- Written last week on top of renesas-devel-v3.15-rc7-20140528 but
- applies cleanly on top of renesas-devel-v3.15-rc8-20140605.
+Gr{oetje,eeting}s,
 
- arch/arm/boot/dts/emev2.dtsi         |    2 ++
- arch/arm/mach-shmobile/setup-emev2.c |   17 ++---------------
- 2 files changed, 4 insertions(+), 15 deletions(-)
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
