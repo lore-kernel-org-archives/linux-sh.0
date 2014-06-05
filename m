@@ -1,40 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:29 +0000
-Subject: [PATCH 16/24] ARM: shmobile: r8a7779: Use DT CPU Frequency in common case
-Message-Id: <0157b62674aa3db1fc574bb65e6b0e30bb0683d7.1403487423.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:15:36 +0000
+Subject: [PATCH 04/08] ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
+Message-Id: <20140605051536.18075.24742.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Convert the common C-code-less r8a7779 DT board support
-to use shmobile_init_delay() to be able to migrate away
-from per-SoC delay setup functions.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Based on work by Magnus dam for the r8a7740 SoC.
+Build the APMU for r8a7790 even though SMP is
+disabled in the kernel config. Also initialize
+Suspend-to-RAM from pm-r8a7790.c to in the futre
+cover both UP and SMP use cases of the APMU.
 
-Cc: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 15f533b..706832f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -773,7 +773,7 @@ static const char *r8a7779_compat_dt[] __initdata = {
+ arch/arm/mach-shmobile/Makefile      |    5 +++--
+ arch/arm/mach-shmobile/pm-r8a7790.c  |    1 +
+ arch/arm/mach-shmobile/smp-r8a7790.c |    1 -
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+--- 0002/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-06-05 11:59:50.000000000 +0900
+@@ -36,12 +36,13 @@ endif
  
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
- 	.map_io		= r8a7779_map_io,
--	.init_early	= r8a7779_init_delay,
-+	.init_early	= shmobile_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_machine	= r8a7779_add_standard_devices_dt,
--- 
-2.0.0.rc2
-
+ # CPU reset vector handling objects
+ cpu-y				:= platsmp.o headsmp.o
++cpu-$(CONFIG_ARCH_R8A7790)	+= platsmp-apmu.o
+ 
+ # SMP objects
+ smp-y				:= $(cpu-y)
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+-smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
++smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
+ smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ 
+@@ -53,7 +54,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o pm-rmobile.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o pm-rcar.o
+-obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
++obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o $(cpu-y)
+ obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+ 
+ # IRQ objects
+--- 0004/arch/arm/mach-shmobile/pm-r8a7790.c
++++ work/arch/arm/mach-shmobile/pm-r8a7790.c	2014-06-05 11:43:02.000000000 +0900
+@@ -78,4 +78,5 @@ void __init r8a7790_pm_init(void)
+ 	iounmap(p);
+ 
+ 	r8a7790_sysc_init();
++	shmobile_smp_apmu_suspend_init();
+ }
+--- 0004/arch/arm/mach-shmobile/smp-r8a7790.c
++++ work/arch/arm/mach-shmobile/smp-r8a7790.c	2014-06-05 11:42:49.000000000 +0900
+@@ -39,7 +39,6 @@ static void __init r8a7790_smp_prepare_c
+ 
+ 	/* turn on power to SCU */
+ 	r8a7790_pm_init();
+-	shmobile_smp_apmu_suspend_init();
+ 	rcar_sysc_power_up(&r8a7790_ca15_scu);
+ 	rcar_sysc_power_up(&r8a7790_ca7_scu);
+ }
