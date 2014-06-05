@@ -1,67 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 16 Jun 2014 14:38:47 +0000
-Subject: Re: [PATCH v3 12/19] ARM: shmobile: r8a7790: Add CMT devices to DT
-Message-Id: <7796272.K4ZeEadym2@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:32:04 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Use shmobile_init_delay() on EMEV2
+Message-Id: <20140605053204.19066.73736.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1402763021-4067-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <539C7E2D.9060807@cogentembedded.com>
-In-Reply-To: <539C7E2D.9060807@cogentembedded.com>
+References: <20140224072956.3522.60446.sendpatchset@w520>
+In-Reply-To: <20140224072956.3522.60446.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Saturday 14 June 2014 20:54:05 Sergei Shtylyov wrote:
-> On 06/14/2014 08:23 PM, Laurent Pinchart wrote:
-> > Add the CMT0 and CMT1 counters to the r8a7790 device tree and make them
-> > disabled by default.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >   arch/arm/boot/dts/r8a7790.dtsi | 34 ++++++++++++++++++++++++++++++++++
-> >   1 file changed, 34 insertions(+)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi
-> > b/arch/arm/boot/dts/r8a7790.dtsi index 29907c9..cc32ac5 100644
-> > --- a/arch/arm/boot/dts/r8a7790.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> > @@ -206,6 +206,40 @@
-> >   			     <1 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
-> >   	};
-> > 
-> > +	cmt0: timer@ffca0000 {
-> > +		compatible = "renesas,cmt-48-gen2";
-> > +		reg = <0 0xffca0000 0 0x1004>;
-> > +		interrupt-parent = <&gic>;
-> 
-> This prop is inherited from the root node, so unneeded here.
+Adjust EMEV2 to use shmobile_init_delay() together with
+CPU Frequency settings from the DTS.
 
-Thank you, I'll fix that. Same for patch 13/19.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-> > +		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
-> > +			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-> > +		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
-> > +		clock-names = "fck";
-> > +
-> > +		renesas,channels-mask = <0x60>;
-> > +
-> > +		status = "disabled";
-> > +	};
-> > +
-> > +	cmt1: timer@e6130000 {
-> > +		compatible = "renesas,cmt-48-gen2";
-> > +		reg = <0 0xe6130000 0 0x1004>;
-> > +		interrupt-parent = <&gic>;
-> 
-> Likewise.
+ arch/arm/mach-shmobile/setup-emev2.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0001/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-05-29 17:08:51.000000000 +0900
+@@ -42,11 +42,6 @@ static void __init emev2_map_io(void)
+ 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
+ }
+ 
+-static void __init emev2_init_delay(void)
+-{
+-	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
+-}
+-
+ static void __init emev2_add_standard_devices_dt(void)
+ {
+ 	of_clk_init(NULL);
+@@ -63,7 +58,7 @@ extern struct smp_operations emev2_smp_o
+ DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
+ 	.smp		= smp_ops(emev2_smp_ops),
+ 	.map_io		= emev2_map_io,
+-	.init_early	= emev2_init_delay,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= emev2_add_standard_devices_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= emev2_boards_compat_dt,
