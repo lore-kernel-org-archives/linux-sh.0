@@ -1,35 +1,81 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 27 Jun 2014 04:52:48 +0000
-Subject: Re: [PATCH RFC 3/3] spi: rspi: Add support for new R-Car Gen2 SoCs
-Message-Id: <CANqRtoT8T4nin3JSPxy0G+BR_LWhmOtA2AeGh-yAi-m1h+gmHg@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Jun 2014 00:32:54 +0000
+Subject: Re: [PATCH 2/2] ARM: lager: add i2c1, i2c2 pins
+Message-Id: <20140605003254.GC10759@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401198311-21268-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1401198311-21268-4-git-send-email-geert+renesas@glider.be>
+References: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1392224674-5328-2-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert,
+On Wed, Feb 12, 2014 at 05:04:34PM +0000, Ben Dooks wrote:
+> Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
+> to ensure these are setup correctly at initialisation time. The i2c0
+> and i2c3 busses are connected to single function pins.
+> 
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+>  arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
+>  1 file changed, 14 insertions(+)
 
-On Thu, Jun 26, 2014 at 6:31 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Tue, May 27, 2014 at 3:45 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> Add support for QSPI in:
->>   - r8a7792 (R-Car V2H)
->>   - r8a7793 (R-Car M2-N)
->>   - r8a7794 (R-Car E2)
->>
->> r8a7791 is now called "R-Car M2-W".
->
-> Has anyone tried this on one of the new SoCs?
+I have queued up the following.
 
-Thanks for extending the compatible strings.
+There was some fuzz when applying this patch, please check that the
+following is correct.
 
-I'm not aware of anyone trying it out. I think r8a7794 is not that far
-away though.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Cheers,
+[PATCH] ARM: shmobile: lager: add i2c1, i2c2 pins
 
-/ magnus
+Add pinctrl definitions for i2c1 and i2c2 busses on the Lager board
+to ensure these are setup correctly at initialisation time. The i2c0
+and i2c3 busses are connected to single function pins.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+[horms+renesas@verge.net.au: Added shmobile to patch title]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index ee80788..e33ed0d 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -139,6 +139,16 @@
+ 		states = <3300000 1
+ 			  1800000 0>;
+ 	};
++
++	i2c1_pins: i2c1 {
++		renesas,groups = "i2c1";
++		renesas,function = "i2c1";
++	};
++
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2";
++		renesas,function = "i2c2";
++	};
+ };
+ 
+ &extal_clk {
+@@ -331,10 +341,14 @@
+ 
+ &i2c1	{
+ 	status = "ok";
++	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
+ };
+ 
+ &i2c2	{
+ 	status = "ok";
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "default";
+ };
+ 
+ &i2c3	{
+-- 
+2.0.0.rc2
+
