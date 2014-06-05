@@ -1,56 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 01 Jun 2014 03:39:36 +0000
-Subject: [PATCH 17/18] v4l: vsp1: bru: Support non-premultiplied colors at the BRU output
-Message-Id: <1401593977-30660-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:15:20 +0000
+Subject: [PATCH 02/08] ARM: shmobile: Adjust APMU code to build for non-SMP
+Message-Id: <20140605051520.18075.77930.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1401593977-30660-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The BRU outputs premultiplied colors, enable color data normalization
-when the format configured at the output of the pipeline isn't
-premultiplied.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Adjust the APMU code to allow build when CONFIG_SMP=n.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index d8d49fb..86b32bc 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -43,8 +43,10 @@ static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
+ arch/arm/mach-shmobile/platsmp-apmu.c |   11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 11:20:35.000000000 +0900
+@@ -15,6 +15,7 @@
+ #include <linux/of_address.h>
+ #include <linux/smp.h>
+ #include <linux/suspend.h>
++#include <linux/threads.h>
+ #include <asm/cacheflush.h>
+ #include <asm/cp15.h>
+ #include <asm/proc-fns.h>
+@@ -25,13 +26,13 @@
+ static struct {
+ 	void __iomem *iomem;
+ 	int bit;
+-} apmu_cpus[CONFIG_NR_CPUS];
++} apmu_cpus[NR_CPUS];
  
- static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
+ #define WUPCR_OFFS 0x10
+ #define PSTR_OFFS 0x40
+ #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
+ 
+-static int apmu_power_on(void __iomem *p, int bit)
++static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
  {
-+	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&subdev->entity);
- 	struct vsp1_bru *bru = to_bru(subdev);
- 	struct v4l2_mbus_framefmt *format;
-+	unsigned int flags;
- 	unsigned int i;
+ 	/* request power on */
+ 	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
+@@ -50,7 +51,7 @@ static int apmu_power_off(void __iomem *
+ 	return 0;
+ }
  
- 	if (!enable)
-@@ -58,8 +60,13 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	 * to sane default values for now.
- 	 */
+-static int apmu_power_off_poll(void __iomem *p, int bit)
++static int __maybe_unused apmu_power_off_poll(void __iomem *p, int bit)
+ {
+ 	int k;
  
--	/* Disable both color data normalization and dithering. */
--	vsp1_bru_write(bru, VI6_BRU_INCTRL, 0);
-+	/* Disable dithering and enable color data normalization unless the
-+	 * format at the pipeline output is premultiplied.
-+	 */
-+	flags = pipe->output ? pipe->output->video.format.flags : 0;
-+	vsp1_bru_write(bru, VI6_BRU_INCTRL,
-+		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
-+		       0 : VI6_BRU_INCTRL_NRM);
+@@ -73,7 +74,7 @@ static int apmu_wrap(int cpu, int (*fn)(
  
- 	/* Set the background position to cover the whole output image and
- 	 * set its color to opaque black.
--- 
-1.8.5.5
-
+ static void apmu_init_cpu(struct resource *res, int cpu, int bit)
+ {
+-	if (apmu_cpus[cpu].iomem)
++	if ((cpu >= ARRAY_SIZE(apmu_cpus)) || apmu_cpus[cpu].iomem)
+ 		return;
+ 
+ 	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
+@@ -137,6 +138,7 @@ void __init shmobile_smp_apmu_prepare_cp
+ 	apmu_parse_cfg(apmu_init_cpu);
+ }
+ 
++#ifdef CONFIG_SMP
+ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+ 	/* For this particular CPU register boot vector */
+@@ -144,6 +146,7 @@ int shmobile_smp_apmu_boot_secondary(uns
+ 
+ 	return apmu_wrap(cpu, apmu_power_on);
+ }
++#endif
+ 
+ #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
+ /* nicked from arch/arm/mach-exynos/hotplug.c */
