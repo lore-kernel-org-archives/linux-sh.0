@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 05 Jun 2014 05:32:12 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
-Message-Id: <20140605053212.19066.45533.sendpatchset@w520>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 05 Jun 2014 08:13:56 +0000
+Subject: Re: [PATCH 03/03] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
+Message-Id: <CAMuHMdU=B7K2nWx281zK7w6K7cPRFFaWtkrDKMza8pUQLkhUUQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20140213082628.30630.3186.sendpatchset@w520>
 In-Reply-To: <20140213082628.30630.3186.sendpatchset@w520>
@@ -10,52 +10,36 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hi Magnus,
 
-Update the EMEV2 specific SoC callbacks to get rid
-of the calls to of_clk_init() and of_platform_populate().
-Those calls are by default executed by the functions in
-the shared ARM code in case the SoC specific mach
-callbacks are NULL.
+On Thu, Jun 5, 2014 at 7:32 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> --- 0003/arch/arm/mach-shmobile/setup-emev2.c
+> +++ work/arch/arm/mach-shmobile/setup-emev2.c   2014-05-29 17:15:54.000000000 +0900
+> @@ -16,10 +16,9 @@
+>   * along with this program; if not, write to the Free Software
+>   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+>   */
+> -#include <linux/clk-provider.h>
+>  #include <linux/kernel.h>
+>  #include <linux/init.h>
+> -#include <linux/of_platform.h>
+> +#include <linux/mm.h>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Why is <linux/mm.h> needed?
 
- arch/arm/mach-shmobile/setup-emev2.c |   10 +---------
- 1 file changed, 1 insertion(+), 9 deletions(-)
+Ah, arch/arm/mach-shmobile/include/mach/common.h lacks a forward
+declaration of "struct task_struct;".
 
---- 0003/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2014-05-29 17:15:54.000000000 +0900
-@@ -16,10 +16,9 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
--#include <linux/clk-provider.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
--#include <linux/of_platform.h>
-+#include <linux/mm.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -42,12 +41,6 @@ static void __init emev2_map_io(void)
- 	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
- }
- 
--static void __init emev2_add_standard_devices_dt(void)
--{
--	of_clk_init(NULL);
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
- static const char *emev2_boards_compat_dt[] __initconst = {
- 	"renesas,emev2",
- 	NULL,
-@@ -59,7 +52,6 @@ DT_MACHINE_START(EMEV2_DT, "Generic Emma
- 	.smp		= smp_ops(emev2_smp_ops),
- 	.map_io		= emev2_map_io,
- 	.init_early	= shmobile_init_delay,
--	.init_machine	= emev2_add_standard_devices_dt,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= emev2_boards_compat_dt,
- MACHINE_END
+And then you still need to add "#include <asm/page.h>" for PAGE_SHIFT,
+as <asm/memory.h> uses that in __phys_to_pfn().
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
