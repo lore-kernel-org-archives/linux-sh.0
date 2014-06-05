@@ -1,30 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 17 Jun 2014 12:22:43 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7791: add R-Car sound support on DTSI
-Message-Id: <20140617122241.GB20368@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 05 Jun 2014 23:03:53 +0000
+Subject: Re: [PATCH v3 2/7] adv7180: add of match table
+Message-Id: <5390F759.300@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k38menyv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k38menyv.wl%kuninori.morimoto.gx@renesas.com>
+References: <1397471802-27216-3-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397471802-27216-3-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jun 17, 2014 at 03:10:44AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > sorry for my confusion.
-> > 
-> > I have re-marked this patch as "Under Review" in patchwork and
-> > I intend to apply it once I have finished attending rebasing
-> > the tree now that v3.16-rc1 has been released.
-> 
-> Thank you for your help !
-> 
-> > Please ping me if I have not queued up this patch by the
-> > the end of this week.
-> 
-> will do
+Hello.
 
-I have queued it up.
+On 04/14/2014 02:36 PM, Ben Dooks wrote:
+
+> Add a proper of match id for use when the device is being bound via
+> device tree, to avoid having to use the i2c old-style binding of the
+> device.
+
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+>   drivers/media/i2c/adv7180.c | 11 +++++++++++
+>   1 file changed, 11 insertions(+)
+
+> diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
+> index 215afa0..687d97b 100644
+> --- a/drivers/media/i2c/adv7180.c
+> +++ b/drivers/media/i2c/adv7180.c
+[...]
+> @@ -695,11 +696,21 @@ static SIMPLE_DEV_PM_OPS(adv7180_pm_ops, adv7180_suspend, adv7180_resume);
+>
+>   MODULE_DEVICE_TABLE(i2c, adv7180_id);
+>
+> +#ifdef CONFIG_OF
+> +static const struct of_device_id adv7180_of_id[] = {
+> +	{ .compatible = "adi,adv7180", },
+> +	{ },
+> +};
+> +
+> +MODULE_DEVICE_TABLE(of, adv7180_of_id)
+> +#endif
+> +
+>   static struct i2c_driver adv7180_driver = {
+>   	.driver = {
+>   		   .owner = THIS_MODULE,
+>   		   .name = KBUILD_MODNAME,
+>   		   .pm = ADV7180_PM_OPS,
+> +		   .of_match = of_match_ptr(adv7180_of_id),
+
+    Duh, this doesn't even compile: the field is called 'of_match_table' actually.
+
+WBR, Sergei
+
