@@ -1,97 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:36 +0000
-Subject: [PATCH 23/24] ARM: shmobile: marzen: Initialise SCIF devices using DT
-Message-Id: <6d4abd79c80742629477479b01077bb92eccdd53.1403487423.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:15:53 +0000
+Subject: [PATCH 06/08] ARM: shmobile: Setup APMU for suspend in non-SMP case
+Message-Id: <20140605051553.18075.47511.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Initialise SCIF devices using DT when booting marzen
-using multiplatform.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Extend the APMU specific Suspend-to-RAM code to initialize
+the APMU when SMP is disabled in the kernel config.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts   | 22 +++++++++++++++++++---
- arch/arm/mach-shmobile/setup-r8a7779.c |  8 ++++----
- 2 files changed, 23 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 3212908..20b1768 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -18,6 +18,11 @@
- 	model = "marzen";
- 	compatible = "renesas,marzen", "renesas,r8a7779";
+ arch/arm/mach-shmobile/platsmp-apmu.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- 0006/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 12:52:50.000000000 +0900
+@@ -242,6 +242,10 @@ static int shmobile_smp_apmu_enter_suspe
  
-+	aliases {
-+		serial2 = &scif2;
-+		serial4 = &scif4;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
- 	};
-@@ -74,9 +79,6 @@
- };
- 
- &pfc {
--	pinctrl-0 = <&scif2_pins &scif4_pins>;
--	pinctrl-names = "default";
--
- 	lan0_pins: lan0 {
- 		intc {
- 			renesas,groups = "intc_irq1_b";
-@@ -109,6 +111,20 @@
- 	};
- };
- 
-+&scif2 {
-+       pinctrl-0 = <&scif2_pins>;
-+       pinctrl-names = "default";
-+
-+       status = "okay";
-+};
-+
-+&scif4 {
-+       pinctrl-0 = <&scif4_pins>;
-+       pinctrl-names = "default";
-+
-+       status = "okay";
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index f96a304..2f59b99 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -640,16 +640,16 @@ static void __init r8a7779_register_hpb_dmae(void)
+ void __init shmobile_smp_apmu_suspend_init(void)
+ {
++#ifndef CONFIG_SMP
++	/* initialize APMU for non-SMP case */
++	shmobile_smp_apmu_prepare_cpus(1);
++#endif
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
  }
- 
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
-+	&tmu0_device,
-+};
-+
-+static struct platform_device *r8a7779_standard_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
- 	&scif3_device,
- 	&scif4_device,
- 	&scif5_device,
--	&tmu0_device,
--};
--
--static struct platform_device *r8a7779_standard_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
- 	&i2c2_device,
--- 
-2.0.0.rc2
-
+ #else
