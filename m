@@ -1,59 +1,30 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 04 Jun 2014 10:17:41 +0000
-Subject: Re: [PATCH v3] of/irq: provide more wrappers for !CONFIG_OF
-Message-Id: <27348137.JzbR0JR6FS@wuerfel>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:31:49 +0000
+Subject: [PATCH 00/03] ARM: shmobile: EMEV2 init delay update
+Message-Id: <20140605053149.19066.90593.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <16771871.sfJG2itVJN@wuerfel> <CAL_JsqJpP2sEkPC4DUFWTNutjFhUBiKZfNVSpiKHFPfsJzTf6w@mail.gmail.com> <538EEDB7.8050600@codethink.co.uk>
-In-Reply-To: <538EEDB7.8050600@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Dooks <ben.dooks@codethink.co.uk>
-Cc: Rob Herring <robherring2@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Grant Likely <grant.likely@linaro.org>, Lucas Stach <l.stach@pengutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Magnus Damm <damm@opensource.se>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wednesday 04 June 2014 10:58:15 Ben Dooks wrote:
-> On 03/06/14 16:40, Rob Herring wrote:
-> > On Tue, Jun 3, 2014 at 9:47 AM, Arnd Bergmann <arnd@arndb.de> wrote:
-> >> This replaces "[PATCH v2] of/irq: provide int of_irq_parse_and_map_pci
-> >> wrapper", since now the same driver requires additional interfaces.
-> >> We still want to be able to build the driver with CONFIG_OF disabled,
-> >> but now we need three functions instead of just one.
-> >>
-> >> Rob, Grant, can you apply this as a bug fix, or provide comments?
-> >>
-> >> diff --git a/include/linux/of.h b/include/linux/of.h
-> >> index 196b34c..7c29e6c 100644
-> >> --- a/include/linux/of.h
-> >> +++ b/include/linux/of.h
-> >> @@ -511,6 +511,9 @@ static inline struct device_node *of_get_cpu_node(int cpu,
-> >>         return NULL;
-> >>  }
-> >>
-> >> +static inline int of_n_addr_cells(struct device_node *np) { return 0; }
-> >> +static inline int of_n_size_cells(struct device_node *np) { return 0; }
-> > 
-> > I'm fine with the rest, but I think these should always be used within
-> > some higher level function.
-> > 
-> > I can't seem to find where this is used by rcar. BTW, why does rcar
-> > pci DT support fail to have any ranges property?
-> 
-> I think the driver provides all the necessary PCI information
-> internally as it started off as a platform-driver.
+ARM: shmobile: EMEV2 init delay update
 
-Actually it gets the memory resource from the 'reg' property instead
-of parsing the 'ranges' property, which of course is not compliant
-with the generic PCI binding.
+[PATCH 01/03] ARM: shmobile: Update EMEV2 DTS to include CPU frequency
+[PATCH 02/03] ARM: shmobile: Use shmobile_init_delay() on EMEV2
+[PATCH 03/03] ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
 
-It also sets up an I/O resource that is located at the same location
-as the memory resource, which is just a bug but might be used to
-work around problems of the PCI core when no I/O resource is present.
+These patches clean up the EMEV2 SoC code. The CPU Frequency is put into
+DTS, code is adjusted to read out the frequency from DTS, and the EMEV2
+SoC callbacks are cleaned up slightly.
 
-I think that should be fixed.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-I also see that the ranges parser in the pcie-rcar driver still gets
-I/O space wrong, we should probably move that to a common range
-parser once the arm64 pci implementation is in place and we can
-share more of the common helpers.
+ Written last week on top of renesas-devel-v3.15-rc7-20140528 but
+ applies cleanly on top of renesas-devel-v3.15-rc8-20140605.
 
-	Arnd
+ arch/arm/boot/dts/emev2.dtsi         |    2 ++
+ arch/arm/mach-shmobile/setup-emev2.c |   17 ++---------------
+ 2 files changed, 4 insertions(+), 15 deletions(-)
+
