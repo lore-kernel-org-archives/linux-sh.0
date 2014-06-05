@@ -1,74 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Jun 2014 15:07:17 +0000
-Subject: [PATCH v4 05/19] clocksource: sh_tmu: Replace global spinlock with a per-device spinlock
-Message-Id: <1402931251-22581-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 06:47:38 +0000
+Subject: [PATCH 01/03] ARM: shmobile: Update r7s72100 DTS to include CPU frequency
+Message-Id: <20140605064738.14469.26627.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The global spinlock is used to protect the shared start/stop register.
-Now that all TMU channels are handled by a single device instance, use a
-per-device spinlock.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Add CPU Frequency information to the r7s72100 DTS file. This
+will allow us to use the shared C code on r7s72100 and Genmai
+which reads out the clock frequency from DT and calculates the
+delay settings from there.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/clocksource/sh_tmu.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 4363eb7..ef8fb0b 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -61,6 +61,8 @@ struct sh_tmu_device {
- 
- 	enum sh_tmu_model model;
- 
-+	raw_spinlock_t lock; /* Protect the shared start/stop register */
-+
- 	struct sh_tmu_channel *channels;
- 	unsigned int num_channels;
- 
-@@ -68,8 +70,6 @@ struct sh_tmu_device {
- 	bool has_clocksource;
- };
- 
--static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
--
- #define TSTR -1 /* shared register */
- #define TCOR  0 /* channel register */
- #define TCNT 1 /* channel register */
-@@ -132,7 +132,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 	unsigned long flags, value;
- 
- 	/* start stop register shared by multiple timer channels */
--	raw_spin_lock_irqsave(&sh_tmu_lock, flags);
-+	raw_spin_lock_irqsave(&ch->tmu->lock, flags);
- 	value = sh_tmu_read(ch, TSTR);
- 
- 	if (start)
-@@ -141,7 +141,7 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
- 		value &= ~(1 << ch->index);
- 
- 	sh_tmu_write(ch, TSTR, value);
--	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
-+	raw_spin_unlock_irqrestore(&ch->tmu->lock, flags);
- }
- 
- static int __sh_tmu_enable(struct sh_tmu_channel *ch)
-@@ -524,6 +524,8 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	tmu->pdev = pdev;
- 	tmu->model = id->driver_data;
- 
-+	raw_spin_lock_init(&tmu->lock);
-+
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
--- 
-1.8.5.5
+ arch/arm/boot/dts/r7s72100.dtsi |    1 +
+ 1 file changed, 1 insertion(+)
 
+--- 0001/arch/arm/boot/dts/r7s72100.dtsi
++++ work/arch/arm/boot/dts/r7s72100.dtsi	2014-05-29 17:47:45.000000000 +0900
+@@ -144,6 +144,7 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <0>;
++			clock-frequency = <400000000>;
+ 		};
+ 	};
+ 
