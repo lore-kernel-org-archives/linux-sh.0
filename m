@@ -1,21 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 16 Jun 2014 00:56:39 +0000
-Subject: Re: [PATCH v3 0/8] ARM: shmobile: R-Car: Add PCIe clocks and DT nodes
-Message-Id: <20140616005639.GD11582@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 06:47:54 +0000
+Subject: [PATCH 03/03] ARM: shmobile: Use shmobile_init_delay() on r7s72100
+Message-Id: <20140605064754.14469.8292.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402652242-16604-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1402652242-16604-1-git-send-email-phil.edworthy@renesas.com>
+References: <20140224073006.3522.95891.sendpatchset@w520>
+In-Reply-To: <20140224073006.3522.95891.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 13, 2014 at 10:37:14AM +0100, Phil Edworthy wrote:
-> These patches add PCIe support to the R-Car H2/M2 devices and enable it on the
-> Koelsch board. They depend on the following commits in Linus's master branch:
-> 	c25da4778803b41e11fd82dd5576c35c09b5f0e0
-> 	290c1fb35860540223bef1be021944d02232889d
-> 	7869fc6e295cbb1f80e30555bebbc795abb5b9a7
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks Phil and all those who helped with this series,
-I have queued it up for v3.17.
+Adjust Genmai board support to use shmobile_init_delay() together
+with r7s72100 CPU Frequency settings from the DTS.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-genmai-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-genmai.c           |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-genmai-reference.c
++++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2014-05-29 17:50:54.000000000 +0900
+@@ -47,7 +47,7 @@ static const char * const genmai_boards_
+ };
+ 
+ DT_MACHINE_START(GENMAI_DT, "genmai")
+-	.init_early	= r7s72100_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= genmai_add_standard_devices,
+ 	.dt_compat	= genmai_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/board-genmai.c
++++ work/arch/arm/mach-shmobile/board-genmai.c	2014-05-29 17:50:39.000000000 +0900
+@@ -154,7 +154,7 @@ static const char * const genmai_boards_
+ };
+ 
+ DT_MACHINE_START(GENMAI_DT, "genmai")
+-	.init_early	= r7s72100_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= genmai_add_standard_devices,
+ 	.dt_compat	= genmai_boards_compat_dt,
+ MACHINE_END
