@@ -1,44 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 13 Jun 2014 07:51:33 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: rcar-gen2: rcar_gen2_scan_mem() updates
-Message-Id: <20140613075130.GE15286@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 05 Jun 2014 05:15:05 +0000
+Subject: [PATCH 00/08] ARM: shmobile: Suspend on non-SMP update for r8a7790
+Message-Id: <20140605051505.18075.76727.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402562544-4527-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1402562544-4527-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Jun 12, 2014 at 06:19:14PM +0900, Magnus Damm wrote:
-> Hi Geert,
-> 
-> On Thu, Jun 12, 2014 at 5:42 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
-> >         Hi Simon, Magnus,
-> >
-> > This is a small series with updates for rcar_gen2_scan_mem().
-> >
-> > The first one fixes compiler warnings due to commit
-> > 9d0c4dfedd96ee54fc075b16d02f82499c8cc3a6 ("of/fdt:
-> > update of_get_flat_dt_prop in prep for libfdt") landing in Linus' tree.
-> > Note that this commit is not in renesas-devel-v3.15-20140612.
-> >
-> > The other two are fixes for the remaining review comments I had.
-> > As I was touching the file anyway, I implemented them myself. Magnus, I
-> > hope you don't mind.
-> 
-> No, I certainly don't mind. Actually, quite the opposite - thanks a
-> lot for fixing up the code!
-> 
-> > Geert Uytterhoeven (3):
-> >   [1/3] ARM: shmobile: rcar-gen2: Update for of_get_flat_dt_prop() update
-> >   [2/3] ARM: shmobile: rcar-gen2: Use "1ULL" instead of "(u64)1"
-> >   [3/3] ARM: shmobile: rcar-gen2: Remove useless copied section for LongTrail
-> 
-> Acked-by: Magnus Damm <damm+renesas@opensource.se>
+ARM: shmobile: Suspend on non-SMP update for r8a7790
 
-Thanks, I particularly enjoyed the use of the word evil
-in one of the changelogs.
+[PATCH 01/08] ARM: shmobile: Allow use of boot code for non-SMP case
+[PATCH 02/08] ARM: shmobile: Adjust APMU code to build for non-SMP
+[PATCH 03/08] ARM: shmobile: Move r8a7790 reset code to pm-r8a7790.c
+[PATCH 04/08] ARM: shmobile: Allow r8a7790 to build non-SMP APMU code
+[PATCH 05/08] ARM: shmobile: Use __init for APMU suspend init function
+[PATCH 06/08] ARM: shmobile: Setup APMU for suspend in non-SMP case
+[PATCH 07/08] ARM: shmobile: Hook up r8a7790 PM code for Multiplatform
+[PATCH 08/08] ARM: shmobile: Use shmobile_init_late on r8a7790 DT-only
 
-I will queue up all three patches.
+These patches update mach-shmobile and r8a7790 to allow build of
+early boot code and APMU power management code in case of CONFIG_SMP=n.
+
+The reason for this change is to allow use of Suspend-to-RAM for recent
+SoCs like r8a7790 with simplified kernel configuration such as when
+SMP is disabled. Power management code like CPUFreq, CPUIdle and
+Suspend-to-RAM should work regardless of what kind of CONFIG_SMP
+setting the user decides.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written on top of renesas-devel-v3.15-rc7-20140605
+
+ arch/arm/mach-shmobile/Makefile        |   16 +++++++-----
+ arch/arm/mach-shmobile/headsmp.S       |   13 ++++++----
+ arch/arm/mach-shmobile/platsmp-apmu.c  |   17 +++++++++----
+ arch/arm/mach-shmobile/pm-r8a7790.c    |   41 ++++++++++++++++++++++++++++++--
+ arch/arm/mach-shmobile/setup-r8a7790.c |    8 ++++++
+ arch/arm/mach-shmobile/smp-r8a7790.c   |   31 ------------------------
+ 6 files changed, 77 insertions(+), 49 deletions(-)
