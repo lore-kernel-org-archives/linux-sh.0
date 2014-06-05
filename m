@@ -1,56 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 04 Jun 2014 17:29:02 +0000
-Subject: Re: [PATCH 1/8] shdma: fdt: allow moving of the shdma_slave_used fields
-Message-Id: <538F575E.3020802@cogentembedded.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Thu, 05 Jun 2014 03:49:44 +0000
+Subject: [PATCH v3] ARM: shmobile: Mark all SoCs in shmobile as CPUFreq, capable
+Message-Id: <538FE8D8.3050602@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401898455-31064-2-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1401898455-31064-2-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+From: Benoit Cousson <bcousson@baylibre.com>
 
-On 06/04/2014 08:14 PM, Ben Dooks wrote:
+Mark all SoCs in shmobile as CPUFreq capable
+on multiplatform build only.
 
-> The shdma_slave_used is used to track the DMA hardware channels that are
-> claimed by clients. This works when the system has a global number space
-> as used by the platform clients, however when we are using fdt possible
-> space is much bigger (if we used phandle+hwid).
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+[gaku.inami.xw@bp.renesas.com: Move the definition of cpufreq capable]
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+---
 
-> It is much easier for the OF case to change to using the hwid of the
-> channel and make the allocation bitmap part of the mux device that holds
-> all the dma controllers that can access the set of hwids that need
-> protecting. So change the code to make it that each sdev points to an
-> bitmap that can be allocated via the shdma-of.c when needed.
+Changes since version 1:
+- changed "Signed-off-by" and "From" correctly.
+- fixed typo.
 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
->   drivers/dma/sh/shdma-base.c | 17 +++++++++--------
->   include/linux/shdma-base.h  |  1 +
->   2 files changed, 10 insertions(+), 8 deletions(-)
+Changes since version 2:
+- moved the definition of cpufreq capable for shmobile.
+- reworked based on renesas-devel-v3.15-rc8-20140605.
 
-> diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-> index b35007e..5b18c88 100644
-> --- a/drivers/dma/sh/shdma-base.c
-> +++ b/drivers/dma/sh/shdma-base.c
-[...]
-> @@ -997,9 +998,9 @@ EXPORT_SYMBOL(shdma_cleanup);
->
->   static int __init shdma_enter(void)
->   {
-> -	shdma_slave_used = kzalloc(DIV_ROUND_UP(slave_num, BITS_PER_LONG) *
-> +	shdma_global_slave_used = kzalloc(DIV_ROUND_UP(slave_num, BITS_PER_LONG) *
->   				    sizeof(long), GFP_KERNEL);
+ arch/arm/mach-shmobile/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
-    kcalloc() seems more fitting here.
-
-> -	if (!shdma_slave_used)
-> +	if (!shdma_global_slave_used)
->   		return -ENOMEM;
->   	return 0;
->   }
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2a7712b..3b28bd8 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -13,6 +13,8 @@ config ARCH_SHMOBILE_MULTI
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
+ 
+ if ARCH_SHMOBILE_MULTI
+ 
+-- 
+1.7.9.5
 
