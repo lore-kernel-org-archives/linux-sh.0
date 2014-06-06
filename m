@@ -1,109 +1,166 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 16 Jun 2014 09:00:52 +0000
-Subject: Re: [PATCH v3 00/19] Renesas CMT, MTU2 and TMU timers DT support
-Message-Id: <20140616090052.GH11582@verge.net.au>
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 06 Jun 2014 10:36:56 +0000
+Subject: [PATCH] PM / OPP: Remove ARCH_HAS_OPP
+Message-Id: <1402051016-28853-1-git-send-email-broonie@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Jun 14, 2014 at 06:23:22PM +0200, Laurent Pinchart wrote:
-> Hello,
-> 
-> This patch set adds DT bindings to the Renesas CMT, MTU2 and TMU timers.
-> Patches 02/19 to 13/19, 16/19 and 17/19 have already been posted in the
-> previous version of this series. Patches 14/19, 15/19, 18/19 and 19/19 are
-> new.
-> 
-> Compared to v2 I've rebased the patches on top of Simon's latest devel branch.
-> 
-> Compared to v1 I've dropped the channel subnodes from the CMT DT bindings and
-> just use a channels mask, as I don't need to specify per-channel properties.
-> I'm slightly uncertain about this change though, as I can't easily predict
-> whether per-channel properties would be needed later for new hardware. It
-> won't be difficult to reintroduce channel subnodes then, so I'd rather not
-> clutter the DT bindings with channel subnodes now. Please feel free to
-> disagree.
-> 
-> The first 11 patches should go through the timers tree while the last 8
-> patches should go through the Renesas SoC tree. Patches 12/19 to 15/19 have
-> no build time or run time dependency on the drivers changes. Patches 16/19 to
-> 19/19 may have a run time dependency on the drivers changes depending on the
-> kernel configuration. Patches 16/19 and 17/19, for instance, require the
-> driver changes only when architected timer support isn't enabled in the
-> kernel.
-> 
-> Laurent Pinchart (19):
-> o clocksource: sh_tmu: Fix channel IRQ retrieval in legacy case
-> o clocksource: sh_cmt: Drop support for legacy platform data
-> o clocksource: sh_cmt: Replace global spinlock with a per-device
->     spinlock
-> o clocksource: sh_tmu: Drop support for legacy platform data
-> o clocksource: sh_tmu: Replace global spinlock with a per-device
->     spinlock
->   clocksource: sh_mtu2: Drop support for legacy platform data
->   clocksource: sh_mtu2: Replace global spinlock with a per-device
->     spinlock
-> o clocksource: shmobile: Remove unused sh_timer_config members
-> o clocksource: sh_cmt: Add DT support
->   clocksource: sh_tmu: Add DT support
->   clocksource: sh_mtu2: Add DT support
-> o ARM: shmobile: r8a7790: Add CMT devices to DT
-> o ARM: shmobile: r8a7791: Add CMT devices to DT
->   ARM: shmobile: r8a7779: Add TMU devices to DT
->   ARM: shmobile: r7s72100: Add MTU2 device to DT
-> o ARM: shmobile: lager-reference: Enable CMT0 in device tree
-> o ARM: shmobile: koelsch-reference: Enable CMT0 in device tree
->   ARM: shmobile: marzen-reference: Enable TMU0 in device tree
->   ARM: shmobile: genmai-reference: Enable MTU2 in device tree
+From: Mark Brown <broonie@linaro.org>
 
-For the patches marked with a 'o':
+Since the OPP layer is a kernel library which has been converted to be
+directly selectable by its callers rather than user selectable and
+requiring architectures to enable it explicitly the ARCH_HAS_OPP symbol
+has become redundant and can be removed. Do so.
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ Documentation/power/opp.txt    | 3 ---
+ arch/arm/mach-exynos/Kconfig   | 1 -
+ arch/arm/mach-highbank/Kconfig | 1 -
+ arch/arm/mach-imx/Kconfig      | 1 -
+ arch/arm/mach-omap2/Kconfig    | 1 -
+ arch/arm/mach-shmobile/Kconfig | 2 --
+ arch/arm/mach-vexpress/Kconfig | 1 -
+ arch/arm/mach-zynq/Kconfig     | 1 -
+ drivers/devfreq/Kconfig        | 1 -
+ kernel/power/Kconfig           | 3 ---
+ 10 files changed, 15 deletions(-)
 
->  .../devicetree/bindings/timer/renesas,cmt.txt      |  49 +++++
->  .../devicetree/bindings/timer/renesas,mtu2.txt     |  40 ++++
->  .../devicetree/bindings/timer/renesas,tmu.txt      |  40 ++++
->  arch/arm/boot/dts/r7s72100-genmai.dts              |   4 +
->  arch/arm/boot/dts/r7s72100.dtsi                    |  10 +
->  arch/arm/boot/dts/r8a7779-marzen.dts               |   4 +
->  arch/arm/boot/dts/r8a7779.dtsi                     |  42 ++++
->  arch/arm/boot/dts/r8a7790-lager.dts                |   4 +
->  arch/arm/boot/dts/r8a7790.dtsi                     |  34 +++
->  arch/arm/boot/dts/r8a7791-koelsch.dts              |   4 +
->  arch/arm/boot/dts/r8a7791.dtsi                     |  34 +++
->  arch/arm/mach-shmobile/board-genmai-reference.c    |  16 --
->  arch/arm/mach-shmobile/board-genmai.c              |  14 +-
->  arch/arm/mach-shmobile/board-koelsch-reference.c   |   2 -
->  arch/arm/mach-shmobile/board-lager-reference.c     |   2 -
->  arch/arm/mach-shmobile/board-marzen-reference.c    |  10 -
->  arch/arm/mach-shmobile/include/mach/r7s72100.h     |   1 -
->  arch/arm/mach-shmobile/include/mach/r8a7779.h      |   1 -
->  arch/arm/mach-shmobile/include/mach/r8a7790.h      |   1 -
->  arch/arm/mach-shmobile/include/mach/r8a7791.h      |   1 -
->  arch/arm/mach-shmobile/setup-r7s72100.c            |  21 --
->  arch/arm/mach-shmobile/setup-r8a7779.c             |  17 +-
->  arch/arm/mach-shmobile/setup-r8a7790.c             |   7 +-
->  arch/arm/mach-shmobile/setup-r8a7791.c             |   7 +-
->  drivers/clocksource/sh_cmt.c                       | 233 ++++++++-------------
->  drivers/clocksource/sh_mtu2.c                      | 146 ++++---------
->  drivers/clocksource/sh_tmu.c                       | 125 +++++------
->  include/linux/sh_timer.h                           |   5 -
->  28 files changed, 467 insertions(+), 407 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/timer/renesas,cmt.txt
->  create mode 100644 Documentation/devicetree/bindings/timer/renesas,mtu2.txt
->  create mode 100644 Documentation/devicetree/bindings/timer/renesas,tmu.txt
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/Documentation/power/opp.txt b/Documentation/power/opp.txt
+index a9adad8..c6279c2 100644
+--- a/Documentation/power/opp.txt
++++ b/Documentation/power/opp.txt
+@@ -51,9 +51,6 @@ Typical usage of the OPP library is as follows:
+ SoC framework	-> modifies on required cases certain OPPs	-> OPP layer
+ 		-> queries to search/retrieve information	->
+ 
+-Architectures that provide a SoC framework for OPP should select ARCH_HAS_OPP
+-to make the OPP layer available.
+-
+ OPP layer expects each domain to be represented by a unique device pointer. SoC
+ framework registers a set of initial OPPs per device with the OPP layer. This
+ list is expected to be an optimally small number typically around 5 per device.
+diff --git a/arch/arm/mach-exynos/Kconfig b/arch/arm/mach-exynos/Kconfig
+index d58995c9..3f78c45 100644
+--- a/arch/arm/mach-exynos/Kconfig
++++ b/arch/arm/mach-exynos/Kconfig
+@@ -103,7 +103,6 @@ config SOC_EXYNOS5440
+ 	default y
+ 	depends on ARCH_EXYNOS5
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+-	select ARCH_HAS_OPP
+ 	select HAVE_ARM_ARCH_TIMER
+ 	select AUTO_ZRELADDR
+ 	select MIGHT_HAVE_PCI
+diff --git a/arch/arm/mach-highbank/Kconfig b/arch/arm/mach-highbank/Kconfig
+index 830b76e..bef970f 100644
+--- a/arch/arm/mach-highbank/Kconfig
++++ b/arch/arm/mach-highbank/Kconfig
+@@ -3,7 +3,6 @@ config ARCH_HIGHBANK
+ 	select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+ 	select ARCH_HAS_CPUFREQ
+ 	select ARCH_HAS_HOLES_MEMORYMODEL
+-	select ARCH_HAS_OPP
+ 	select ARCH_SUPPORTS_BIG_ENDIAN
+ 	select ARM_AMBA
+ 	select ARM_ERRATA_764369 if SMP
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 4cce93d..95690e4 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -1,7 +1,6 @@
+ config ARCH_MXC
+ 	bool "Freescale i.MX family" if ARCH_MULTI_V4_V5 || ARCH_MULTI_V6_V7
+ 	select ARCH_HAS_CPUFREQ
+-	select ARCH_HAS_OPP
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select ARM_CPU_SUSPEND if PM
+ 	select CLKSRC_MMIO
+diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
+index 0ba4826..524b027 100644
+--- a/arch/arm/mach-omap2/Kconfig
++++ b/arch/arm/mach-omap2/Kconfig
+@@ -12,7 +12,6 @@ config ARCH_OMAP3
+ 	bool "TI OMAP3"
+ 	depends on ARCH_MULTI_V7
+ 	select ARCH_OMAP2PLUS
+-	select ARCH_HAS_OPP
+ 	select ARM_CPU_SUSPEND if PM
+ 	select OMAP_INTERCONNECT
+ 	select PM_OPP if PM
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index dbd954e..b51d142 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -86,7 +86,6 @@ config ARCH_R8A73A4
+ 	select SH_CLK_CPG
+ 	select RENESAS_IRQC
+ 	select ARCH_HAS_CPUFREQ
+-	select ARCH_HAS_OPP
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+@@ -265,7 +264,6 @@ config MACH_KZM9G
+ 	bool "KZM-A9-GT board"
+ 	depends on ARCH_SH73A0
+ 	select ARCH_HAS_CPUFREQ
+-	select ARCH_HAS_OPP
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+diff --git a/arch/arm/mach-vexpress/Kconfig b/arch/arm/mach-vexpress/Kconfig
+index 90249cf..71629fe 100644
+--- a/arch/arm/mach-vexpress/Kconfig
++++ b/arch/arm/mach-vexpress/Kconfig
+@@ -66,7 +66,6 @@ config ARCH_VEXPRESS_DCSCB
+ config ARCH_VEXPRESS_SPC
+ 	bool "Versatile Express Serial Power Controller (SPC)"
+ 	select ARCH_HAS_CPUFREQ
+-	select ARCH_HAS_OPP
+ 	select PM_OPP
+ 	help
+ 	  The TC2 (A15x2 A7x3) versatile express core tile integrates a logic
+diff --git a/arch/arm/mach-zynq/Kconfig b/arch/arm/mach-zynq/Kconfig
+index 573e0db..bc485f2 100644
+--- a/arch/arm/mach-zynq/Kconfig
++++ b/arch/arm/mach-zynq/Kconfig
+@@ -1,7 +1,6 @@
+ config ARCH_ZYNQ
+ 	bool "Xilinx Zynq ARM Cortex A9 Platform" if ARCH_MULTI_V7
+ 	select ARCH_HAS_CPUFREQ
+-	select ARCH_HAS_OPP
+ 	select ARCH_SUPPORTS_BIG_ENDIAN
+ 	select ARM_AMBA
+ 	select ARM_GIC
+diff --git a/drivers/devfreq/Kconfig b/drivers/devfreq/Kconfig
+index 49e74c1..3dced0a 100644
+--- a/drivers/devfreq/Kconfig
++++ b/drivers/devfreq/Kconfig
+@@ -68,7 +68,6 @@ comment "DEVFREQ Drivers"
+ config ARM_EXYNOS4_BUS_DEVFREQ
+ 	bool "ARM Exynos4210/4212/4412 Memory Bus DEVFREQ Driver"
+ 	depends on (CPU_EXYNOS4210 || SOC_EXYNOS4212 || SOC_EXYNOS4412) && !ARCH_MULTIPLATFORM
+-	select ARCH_HAS_OPP
+ 	select DEVFREQ_GOV_SIMPLE_ONDEMAND
+ 	select PM_OPP
+ 	help
+diff --git a/kernel/power/Kconfig b/kernel/power/Kconfig
+index 9a83d78..e4e4121 100644
+--- a/kernel/power/Kconfig
++++ b/kernel/power/Kconfig
+@@ -253,9 +253,6 @@ config APM_EMULATION
+ 	  anything, try disabling/enabling this option (or disabling/enabling
+ 	  APM in your BIOS).
+ 
+-config ARCH_HAS_OPP
+-	bool
+-
+ config PM_OPP
+ 	bool
+ 	---help---
+-- 
+2.0.0
+
