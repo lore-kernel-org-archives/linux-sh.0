@@ -1,92 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 06 Jun 2014 12:44:34 +0000
-Subject: [PATCH 3/4] drivers: sh: pm_runtime implementation needs to suspend and resume devices
-Message-Id: <8255fe169232364e5a01bd062e8037b8c1a9adec.1402058435.git.horms+renesas@verge.net.au>
+Date: Fri, 06 Jun 2014 12:44:31 +0000
+Subject: [GIT PULL] SH Driver Updates for v3.16
+Message-Id: <cover.1402058435.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1402058435.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1402058435.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Ben Dooks <ben.dooks@codethink.co.uk>
+Hi Linus,
 
-If we override the platform bus calls for pm_runtime then we end up
-with the calls to the devices' suspend and resume methods ignored
-in favour of the bus ones.
+Please consider these SH Driver Updates for v3.16
 
-Change to calling the pm_runtime calls to suspend and resume the
-devices specifically in the drivers/sh/pm_runtime.c implementation
-to allow any device that may want to run power management to do so.
+This pull request is based on the SH Driver Updates for v3.15,
+tagged as sh-drivers-for-v3.15, which you included in v3.15-rc6.
 
-Note, all the current sh driver implementations do not use their
-own power management code so this is not a major implementation
-issues.
 
-This also brings the implementation into line with the versions
-used by the Davinci and Keystone PM domain code, so once fully
-tested these implementations could be merged together.
+The following changes since commit 3c90c55dcde745bed81f6447f24ba96bda43d984:
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/sh/pm_runtime.c | 37 +++++++++++++++++++++++++++++++++++--
- 1 file changed, 35 insertions(+), 2 deletions(-)
+  drivers: sh: compile drivers/sh/pm_runtime.c if ARCH_SHMOBILE_MULTI (2014-05-12 16:05:01 +0900)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 00b82ec..25eafbe 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -21,10 +21,43 @@
- #include <linux/slab.h>
- 
- #ifdef CONFIG_PM_RUNTIME
-+static int sh_pm_runtime_suspend(struct device *dev)
-+{
-+	int ret;
-+
-+	ret = pm_generic_runtime_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend device\n");
-+		return ret;
-+	}
-+
-+	ret = pm_clk_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend clock\n");
-+		pm_generic_runtime_resume(dev);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static int sh_pm_runtime_resume(struct device *dev)
-+{
-+	int ret;
-+
-+	ret = pm_clk_resume(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to resume clock\n");
-+		return ret;
-+	}
-+
-+	return pm_generic_runtime_resume(dev);
-+}
-+
- static struct dev_pm_domain default_pm_domain = {
- 	.ops = {
--		.runtime_suspend = pm_clk_suspend,
--		.runtime_resume = pm_clk_resume,
-+		.runtime_suspend = sh_pm_runtime_suspend,
-+		.runtime_resume = sh_pm_runtime_resume,
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
--- 
-1.8.4
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v3.16
+
+for you to fetch changes up to 2f35fb3c8a6018a0a5fe4a7fb0948b853c157256:
+
+  drivers: sh: Enable PM runtime for new R-Car Gen2 SoCs (2014-06-05 09:50:11 +0900)
+
+----------------------------------------------------------------
+SH Driver Update for v3.16
+
+* PM Runtime enhancements targeted for use with
+  ARM-based Renesas R-Car Gen2 SoCs
+* Restrict INTC_USERIMASK to SH4A as it is only used there
+
+----------------------------------------------------------------
+Ben Dooks (2):
+      drivers: sh: pm_runtime does not need idle callback
+      drivers: sh: pm_runtime implementation needs to suspend and resume devices
+
+Geert Uytterhoeven (2):
+      drivers: sh: Restrict INTC_USERIMASK to SH4A
+      drivers: sh: Enable PM runtime for new R-Car Gen2 SoCs
+
+ drivers/sh/intc/Kconfig |  2 +-
+ drivers/sh/pm_runtime.c | 40 ++++++++++++++++++++++++++++++++++------
+ 2 files changed, 35 insertions(+), 7 deletions(-)
