@@ -1,83 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 04 Jun 2014 23:39:32 +0000
-Subject: Re: [PATCH v2 6/8] ARM: shmobile: r8a7791/koelsch dts: Add DVFS parameters into cpu0 node for r8a779
-Message-Id: <20140604233932.GE27080@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 06:13:47 +0000
+Subject: [PATCH v2] ARM: shmobile: Use shmobile_init_late() on r8a7790 DT-only
+Message-Id: <20140606061347.13388.53582.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <538DB97E.1060004@bp.renesas.com>
-In-Reply-To: <538DB97E.1060004@bp.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jun 03, 2014 at 09:03:10PM +0900, Gaku Inami wrote:
-> Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
-> 
-> - voltage-tolerance = 1%
->   It reflects the tolerance for the CPU voltage defined inside the OPP
->   table. Due to the lack of proper OPP definition, use an arbitrary safe
->   value.
-> - clock-latency = 300 us
->   Approximate worst-case latency to do a full DVFS transition for every
->   OPPs. Due to the lack of HW information, use an arbitrary safe value.
->   Note: The term transition-latency will be more accurate to define this
->   value since the clock transition latency is not the only parameter that
->   will define the overall DVFS transition.
-> - operating-points = < kHz - uV >
->   List of 6 operating points. All of them are using the same voltage
->   since DVS is not supported in R-CAR Gen2.
-> - clocks
->   phandle to the CPU clock source. This clock source is used for all the
->   2 CortexA15 located inside the same cluster.
-> 
-> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I have queued this up with Magnus's ack.
+Tie in shmobile_init_late for the DT-only r8a7790 SoC
+Multiplatform support code. This will make sure that
+Suspend-to-RAM, CPUIdle and CPUFreq get initialized.
 
-> ---
-> 
-> Changes since version 1:
-> - added the setting of VDD.
-> - fixed subject.
-> 
->  arch/arm/boot/dts/r8a7791-koelsch.dts |    4 ++++
->  arch/arm/boot/dts/r8a7791.dtsi        |   11 +++++++++++
->  2 files changed, 15 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> index 95331d7..b2e6616 100644
-> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> @@ -429,3 +429,7 @@
->  		regulator-always-on;
->  	};
->  };
-> +
-> +&cpu0 {
-> +	cpu0-supply = <&vdd_dvfs>;
-> +};
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 8d7ffae..b9b3c74 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -45,6 +45,17 @@
->  			compatible = "arm,cortex-a15";
->  			reg = <0>;
->  			clock-frequency = <1500000000>;
-> +			voltage-tolerance = <1>; /* 1% */
-> +			clocks = <&cpg_clocks R8A7791_CLK_Z>;
-> +			clock-latency = <300000>; /* 300 us */
-> +
-> +			/* kHz - uV - OPPs unknown yet */
-> +			operating-points = <1500000 1000000>,
-> +					   <1312500 1000000>,
-> +					   <1125000 1000000>,
-> +					   < 937500 1000000>,
-> +					   < 750000 1000000>,
-> +					   < 375000 1000000>;
->  		};
->  
->  		cpu1: cpu@1 {
-> -- 
-> 1.7.9.5
-> 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Changes since V1:
+ - Broke out patch from larger series
+
+ arch/arm/mach-shmobile/setup-r8a7790.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
++++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2014-06-06 14:39:09.000000000 +0900
+@@ -318,6 +318,7 @@ DT_MACHINE_START(R8A7790_DT, "Generic R8
+ 	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
++	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7790_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
