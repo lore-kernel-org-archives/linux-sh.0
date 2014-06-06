@@ -1,89 +1,114 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Sun, 15 Jun 2014 19:56:30 +0000
-Subject: [PATCH 5/9] rcar_vin: copy flags from pdata
-Message-Id: <1402862194-17743-6-git-send-email-ben.dooks@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 07:21:11 +0000
+Subject: [PATCH v2 06/07] ARM: shmobile: Move r8a7791 reset code to pm-r8a7791.c
+Message-Id: <20140606072111.14868.23305.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1402862194-17743-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, linux-media@vger.kernel.org
-Cc: robert.jarzmik@free.fr, g.liakhovetski@gmx.de, magnus.damm@opensource.se, horms@verge.net.au, ian.molton@codethink.co.uk, william.towle@codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-sh@vger.kernel.org
 
-The platform data is a single word, so simply copy
-it into the device's private data structure than
-keeping a copy of the pointer.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This will make changing to device-tree binding
-easier as it is one allocation instead of two.
+Move r8a7791 specific reset vector setup code from the
+SMP glue code to PM code. This makes the code one step
+closer to allow PM operations such as Suspend-to-RAM
+in the case when SMP is disabled in the kernel config.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/soc_camera/rcar_vin.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index e594230..7c4299d 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -126,13 +126,13 @@ struct rcar_vin_priv {
- 	int				sequence;
- 	/* State of the VIN module in capturing mode */
- 	enum rcar_vin_state		state;
--	struct rcar_vin_platform_data	*pdata;
- 	struct soc_camera_host		ici;
- 	struct list_head		capture;
- #define MAX_BUFFER_NUM			3
- 	struct vb2_buffer		*queue_buf[MAX_BUFFER_NUM];
- 	struct vb2_alloc_ctx		*alloc_ctx;
- 	enum v4l2_field			field;
-+	unsigned int			pdata_flags;
- 	unsigned int			vb_count;
- 	unsigned int			nr_hw_slots;
- 	bool				request_to_stop;
-@@ -275,12 +275,12 @@ static int rcar_vin_setup(struct rcar_vin_priv *priv)
- 		break;
- 	case V4L2_MBUS_FMT_YUYV8_2X8:
- 		/* BT.656 8bit YCbCr422 or BT.601 8bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV8_BT656 : VNMC_INF_YUV8_BT601;
- 		break;
- 	case V4L2_MBUS_FMT_YUYV10_2X10:
- 		/* BT.656 10bit YCbCr422 or BT.601 10bit YCbCr422 */
--		vnmc |= priv->pdata->flags & RCAR_VIN_BT656 ?
-+		vnmc |= priv->pdata_flags & RCAR_VIN_BT656 ?
- 			VNMC_INF_YUV10_BT656 : VNMC_INF_YUV10_BT601;
- 		break;
- 	default:
-@@ -797,7 +797,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
- 	/* Make choises, based on platform preferences */
- 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_HSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
-@@ -805,7 +805,7 @@ static int rcar_vin_set_bus_param(struct soc_camera_device *icd)
- 
- 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
--		if (priv->pdata->flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
-+		if (priv->pdata_flags & RCAR_VIN_VSYNC_ACTIVE_LOW)
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
-@@ -1445,7 +1445,7 @@ static int rcar_vin_probe(struct platform_device *pdev)
- 	priv->ici.drv_name = dev_name(&pdev->dev);
- 	priv->ici.ops = &rcar_vin_host_ops;
- 
--	priv->pdata = pdata;
-+	priv->pdata_flags = pdata->flags;
- 	priv->chip = pdev->id_entry->driver_data;
- 	spin_lock_init(&priv->lock);
- 	INIT_LIST_HEAD(&priv->capture);
--- 
-2.0.0
+ arch/arm/mach-shmobile/pm-r8a7791.c  |   28 ++++++++++++++++++++++++++--
+ arch/arm/mach-shmobile/smp-r8a7791.c |   24 ------------------------
+ 2 files changed, 26 insertions(+), 26 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/pm-r8a7791.c
++++ work/arch/arm/mach-shmobile/pm-r8a7791.c	2014-06-06 14:58:04.000000000 +0900
+@@ -9,12 +9,18 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-
+-#include <asm/io.h>
+ #include <linux/kernel.h>
++#include <linux/smp.h>
++#include <asm/io.h>
++#include <mach/common.h>
+ #include <mach/pm-rcar.h>
+ #include <mach/r8a7791.h>
+ 
++#define RST		0xe6160000
++#define CA15BAR		0x0020
++#define CA15RESCNT	0x0040
++#define RAM		0xe6300000
++
+ /* SYSC */
+ #define SYSCIER 0x0c
+ #define SYSCIMR 0x10
+@@ -38,10 +44,28 @@ static inline void r8a7791_sysc_init(voi
+ 
+ void __init r8a7791_pm_init(void)
+ {
++	void __iomem *p;
++	u32 bar;
+ 	static int once;
+ 
+ 	if (once++)
+ 		return;
+ 
++	/* RAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(RAM, shmobile_boot_size);
++	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
++	iounmap(p);
++
++	/* setup reset vectors */
++	p = ioremap_nocache(RST, 0x63);
++	bar = (RAM >> 8) & 0xfffffc00;
++	writel_relaxed(bar, p + CA15BAR);
++	writel_relaxed(bar | 0x10, p + CA15BAR);
++
++	/* enable clocks to all CPUs */
++	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
++		       p + CA15RESCNT);
++	iounmap(p);
++
+ 	r8a7791_sysc_init();
+ }
+--- 0001/arch/arm/mach-shmobile/smp-r8a7791.c
++++ work/arch/arm/mach-shmobile/smp-r8a7791.c	2014-06-06 14:58:20.000000000 +0900
+@@ -22,35 +22,11 @@
+ #include <mach/r8a7791.h>
+ #include <mach/rcar-gen2.h>
+ 
+-#define RST		0xe6160000
+-#define CA15BAR		0x0020
+-#define CA15RESCNT	0x0040
+-#define RAM		0xe6300000
+-
+ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	void __iomem *p;
+-	u32 bar;
+-
+ 	/* let APMU code install data related to shmobile_boot_vector */
+ 	shmobile_smp_apmu_prepare_cpus(max_cpus);
+ 
+-	/* RAM for jump stub, because BAR requires 256KB aligned address */
+-	p = ioremap_nocache(RAM, shmobile_boot_size);
+-	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
+-	iounmap(p);
+-
+-	/* setup reset vectors */
+-	p = ioremap_nocache(RST, 0x63);
+-	bar = (RAM >> 8) & 0xfffffc00;
+-	writel_relaxed(bar, p + CA15BAR);
+-	writel_relaxed(bar | 0x10, p + CA15BAR);
+-
+-	/* enable clocks to all CPUs */
+-	writel_relaxed((readl_relaxed(p + CA15RESCNT) & ~0x0f) | 0xa5a50000,
+-		       p + CA15RESCNT);
+-	iounmap(p);
+-
+ 	r8a7791_pm_init();
+ 	shmobile_smp_apmu_suspend_init();
+ }
