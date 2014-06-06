@@ -1,78 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:18 +0000
-Subject: [PATCH 09/29] ARM: shmobile: r8a7791/koelsch dts: Add DVFS parameters into cpu0 node for r8a7791
-Message-Id: <a57004eca542428a444025847098b2af4e52a81c.1403487225.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 06 Jun 2014 11:38:42 +0000
+Subject: [PATCH 1/2] spi: rspi: Remove unused variable in rspi_rz_transfer_one()
+Message-Id: <1402054723-30682-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
+References: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Introduced by commit 8b983e90ea1a3dd82070f96c062ad521a06b7cc0 ("spi: rspi:
+Extract rspi_common_transfer()"), which removed its users.
 
-Add needed information inside CPU0 for the generic cpufreq-cpu0 driver.
-
-- voltage-tolerance = 1%
-  It reflects the tolerance for the CPU voltage defined inside the OPP
-  table. Due to the lack of proper OPP definition, use an arbitrary safe
-  value.
-- clock-latency = 300 us
-  Approximate worst-case latency to do a full DVFS transition for every
-  OPPs. Due to the lack of HW information, use an arbitrary safe value.
-  Note: The term transition-latency will be more accurate to define this
-  value since the clock transition latency is not the only parameter that
-  will define the overall DVFS transition.
-- operating-points = < kHz - uV >
-  List of 6 operating points. All of them are using the same voltage
-  since DVS is not supported in R-CAR Gen2.
-- clocks
-  phandle to the CPU clock source. This clock source is used for all the
-  2 CortexA15 located inside the same cluster.
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts |  4 ++++
- arch/arm/boot/dts/r8a7791.dtsi        | 11 +++++++++++
- 2 files changed, 15 insertions(+)
+ drivers/spi/spi-rspi.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 95331d7..b2e6616 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -429,3 +429,7 @@
- 		regulator-always-on;
- 	};
- };
-+
-+&cpu0 {
-+	cpu0-supply = <&vdd_dvfs>;
-+};
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d683982..b639006 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -45,6 +45,17 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <0>;
- 			clock-frequency = <1500000000>;
-+			voltage-tolerance = <1>; /* 1% */
-+			clocks = <&cpg_clocks R8A7791_CLK_Z>;
-+			clock-latency = <300000>; /* 300 us */
-+
-+			/* kHz - uV - OPPs unknown yet */
-+			operating-points = <1500000 1000000>,
-+					   <1312500 1000000>,
-+					   <1125000 1000000>,
-+					   < 937500 1000000>,
-+					   < 750000 1000000>,
-+					   < 375000 1000000>;
- 		};
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 10112745bb17..ddee9df1547d 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -630,7 +630,6 @@ static int rspi_rz_transfer_one(struct spi_master *master,
+ 				struct spi_transfer *xfer)
+ {
+ 	struct rspi_data *rspi = spi_master_get_devdata(master);
+-	int ret;
  
- 		cpu1: cpu@1 {
+ 	rspi_rz_receive_init(rspi);
+ 
 -- 
-2.0.0.rc2
+1.9.1
 
