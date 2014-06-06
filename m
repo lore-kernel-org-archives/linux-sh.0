@@ -1,59 +1,172 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 06 Jun 2014 13:08:50 +0000
+From: Rob Herring <robh@kernel.org>
+Date: Fri, 06 Jun 2014 13:45:41 +0000
 Subject: Re: [PATCH] PM / OPP: Remove ARCH_HAS_OPP
-Message-Id: <20140606130850.GO2520@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="cU9XODsizZBnwgll"
+Message-Id: <CAL_JsqLskrFmXLnj0xndq0=cyQMTVvYGC9CZzJxZApAF9AqVUw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1402051016-28853-1-git-send-email-broonie@kernel.org>
- <20140606111411.GD25896@verge.net.au>
- <CANqRtoTy_LwSiZgRFEw5Ly4ojfinoCichxrX7cO6m2XB9JGoww@mail.gmail.com>
- <20140606125003.GA13332@verge.net.au>
-In-Reply-To: <20140606125003.GA13332@verge.net.au>
+In-Reply-To: <1402051016-28853-1-git-send-email-broonie@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Fri, Jun 6, 2014 at 5:36 AM, Mark Brown <broonie@kernel.org> wrote:
+> From: Mark Brown <broonie@linaro.org>
+>
+> Since the OPP layer is a kernel library which has been converted to be
+> directly selectable by its callers rather than user selectable and
+> requiring architectures to enable it explicitly the ARCH_HAS_OPP symbol
+> has become redundant and can be removed. Do so.
+>
+> Signed-off-by: Mark Brown <broonie@linaro.org>
 
---cU9XODsizZBnwgll
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Acked-by: Rob Herring <robh@kernel.org>
 
-On Fri, Jun 06, 2014 at 09:50:06PM +0900, Simon Horman wrote:
-> On Fri, Jun 06, 2014 at 09:14:01PM +0900, Magnus Damm wrote:
-
-> > I'm not sure about the expected merge order for this kind of change vs
-> > queued up stuff in the renesas git tree, but I believe the following
-> > patch selects ARCH_HAS_OPP:
-
-> > [PATCH v3] ARM: shmobile: Mark all SoCs in shmobile as CPUFreq, capable
-
-> I propose that we fix that up by adding an incremental patch to
-> mach-shmobile via my renesas tree once the dependency (assuming there is
-> one) is in Linus's tree.
-
-Yes, the conversion to make ARCH_HAS_OPP unused is in Raphael's tree for
-the merge window.  I'd expect this patch to end up going after the merge
-window (or at the end I guess).
-
---cU9XODsizZBnwgll
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTkb1fAAoJELSic+t+oim9ksoP+wUlNxCCTSQ9UrzvZfjNPynK
-oVQNuAvD0dlyrOaE/OnY3QuJOp/1FaVnWIr/kJO/N1KlSetg6Pz7n9I5W0/4zlQ/
-CtV50+Kj799fLTNAuFU5ftinugVHZCqccgqZuCGng/XR+/eJ4mq1PBSgQHVyrNxm
-PXyCXIjSlVIX84YW4zA+5en/Tts74zzH3w8R27AVj6oW0Au6VIgjKEoeBYlgWD/g
-b1j7ShJ9ykUlel8XtggfrddRo1u9UmLsyilFrWKEPFmpfbCPKCIwoAg/xsszLqgo
-6nUx7f4gRPLBcDGAyRmlH32LdKDnce3N0Bxxgiz9rfYyoOPJia/ZITMPnUyHiezZ
-vrQjrdx/V5A1GXSjXO9I/GdrJORmX+TmFajhyZGasCduxHT7TJhFjFEVtcaeVad1
-1jBhKKonWmLdiFq454UCFSStBW0JoGCoho19df/lGloUDHG8JQgd5Fm0izhPn0bC
-mTWmc3KuxYukXVY8sko0sdlu50wtBMSknxm/bYI3Q/LBrxRtTRIoBbxwFnyHUs+N
-ZRDyeym6iiu1MRECKOWJZ8jnrQei5v5pjmuOTpQyZTbOmecT/TEwz2mUQDir/5Wb
-Bda+Jrh+I4ut81r2vdE6FLzHvWxtW0ijkXvMtXVwhW4yYsmpvPc+YAW4VpcasxiG
-lzTDIush25LhobKeaccI
-=iMA5
------END PGP SIGNATURE-----
-
---cU9XODsizZBnwgll--
+> ---
+>  Documentation/power/opp.txt    | 3 ---
+>  arch/arm/mach-exynos/Kconfig   | 1 -
+>  arch/arm/mach-highbank/Kconfig | 1 -
+>  arch/arm/mach-imx/Kconfig      | 1 -
+>  arch/arm/mach-omap2/Kconfig    | 1 -
+>  arch/arm/mach-shmobile/Kconfig | 2 --
+>  arch/arm/mach-vexpress/Kconfig | 1 -
+>  arch/arm/mach-zynq/Kconfig     | 1 -
+>  drivers/devfreq/Kconfig        | 1 -
+>  kernel/power/Kconfig           | 3 ---
+>  10 files changed, 15 deletions(-)
+>
+> diff --git a/Documentation/power/opp.txt b/Documentation/power/opp.txt
+> index a9adad8..c6279c2 100644
+> --- a/Documentation/power/opp.txt
+> +++ b/Documentation/power/opp.txt
+> @@ -51,9 +51,6 @@ Typical usage of the OPP library is as follows:
+>  SoC framework  -> modifies on required cases certain OPPs      -> OPP layer
+>                 -> queries to search/retrieve information       ->
+>
+> -Architectures that provide a SoC framework for OPP should select ARCH_HAS_OPP
+> -to make the OPP layer available.
+> -
+>  OPP layer expects each domain to be represented by a unique device pointer. SoC
+>  framework registers a set of initial OPPs per device with the OPP layer. This
+>  list is expected to be an optimally small number typically around 5 per device.
+> diff --git a/arch/arm/mach-exynos/Kconfig b/arch/arm/mach-exynos/Kconfig
+> index d58995c9..3f78c45 100644
+> --- a/arch/arm/mach-exynos/Kconfig
+> +++ b/arch/arm/mach-exynos/Kconfig
+> @@ -103,7 +103,6 @@ config SOC_EXYNOS5440
+>         default y
+>         depends on ARCH_EXYNOS5
+>         select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+> -       select ARCH_HAS_OPP
+>         select HAVE_ARM_ARCH_TIMER
+>         select AUTO_ZRELADDR
+>         select MIGHT_HAVE_PCI
+> diff --git a/arch/arm/mach-highbank/Kconfig b/arch/arm/mach-highbank/Kconfig
+> index 830b76e..bef970f 100644
+> --- a/arch/arm/mach-highbank/Kconfig
+> +++ b/arch/arm/mach-highbank/Kconfig
+> @@ -3,7 +3,6 @@ config ARCH_HIGHBANK
+>         select ARCH_DMA_ADDR_T_64BIT if ARM_LPAE
+>         select ARCH_HAS_CPUFREQ
+>         select ARCH_HAS_HOLES_MEMORYMODEL
+> -       select ARCH_HAS_OPP
+>         select ARCH_SUPPORTS_BIG_ENDIAN
+>         select ARM_AMBA
+>         select ARM_ERRATA_764369 if SMP
+> diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+> index 4cce93d..95690e4 100644
+> --- a/arch/arm/mach-imx/Kconfig
+> +++ b/arch/arm/mach-imx/Kconfig
+> @@ -1,7 +1,6 @@
+>  config ARCH_MXC
+>         bool "Freescale i.MX family" if ARCH_MULTI_V4_V5 || ARCH_MULTI_V6_V7
+>         select ARCH_HAS_CPUFREQ
+> -       select ARCH_HAS_OPP
+>         select ARCH_REQUIRE_GPIOLIB
+>         select ARM_CPU_SUSPEND if PM
+>         select CLKSRC_MMIO
+> diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
+> index 0ba4826..524b027 100644
+> --- a/arch/arm/mach-omap2/Kconfig
+> +++ b/arch/arm/mach-omap2/Kconfig
+> @@ -12,7 +12,6 @@ config ARCH_OMAP3
+>         bool "TI OMAP3"
+>         depends on ARCH_MULTI_V7
+>         select ARCH_OMAP2PLUS
+> -       select ARCH_HAS_OPP
+>         select ARM_CPU_SUSPEND if PM
+>         select OMAP_INTERCONNECT
+>         select PM_OPP if PM
+> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+> index dbd954e..b51d142 100644
+> --- a/arch/arm/mach-shmobile/Kconfig
+> +++ b/arch/arm/mach-shmobile/Kconfig
+> @@ -86,7 +86,6 @@ config ARCH_R8A73A4
+>         select SH_CLK_CPG
+>         select RENESAS_IRQC
+>         select ARCH_HAS_CPUFREQ
+> -       select ARCH_HAS_OPP
+>         select SYS_SUPPORTS_SH_CMT
+>         select SYS_SUPPORTS_SH_TMU
+>
+> @@ -265,7 +264,6 @@ config MACH_KZM9G
+>         bool "KZM-A9-GT board"
+>         depends on ARCH_SH73A0
+>         select ARCH_HAS_CPUFREQ
+> -       select ARCH_HAS_OPP
+>         select ARCH_REQUIRE_GPIOLIB
+>         select REGULATOR_FIXED_VOLTAGE if REGULATOR
+>         select SND_SOC_AK4642 if SND_SIMPLE_CARD
+> diff --git a/arch/arm/mach-vexpress/Kconfig b/arch/arm/mach-vexpress/Kconfig
+> index 90249cf..71629fe 100644
+> --- a/arch/arm/mach-vexpress/Kconfig
+> +++ b/arch/arm/mach-vexpress/Kconfig
+> @@ -66,7 +66,6 @@ config ARCH_VEXPRESS_DCSCB
+>  config ARCH_VEXPRESS_SPC
+>         bool "Versatile Express Serial Power Controller (SPC)"
+>         select ARCH_HAS_CPUFREQ
+> -       select ARCH_HAS_OPP
+>         select PM_OPP
+>         help
+>           The TC2 (A15x2 A7x3) versatile express core tile integrates a logic
+> diff --git a/arch/arm/mach-zynq/Kconfig b/arch/arm/mach-zynq/Kconfig
+> index 573e0db..bc485f2 100644
+> --- a/arch/arm/mach-zynq/Kconfig
+> +++ b/arch/arm/mach-zynq/Kconfig
+> @@ -1,7 +1,6 @@
+>  config ARCH_ZYNQ
+>         bool "Xilinx Zynq ARM Cortex A9 Platform" if ARCH_MULTI_V7
+>         select ARCH_HAS_CPUFREQ
+> -       select ARCH_HAS_OPP
+>         select ARCH_SUPPORTS_BIG_ENDIAN
+>         select ARM_AMBA
+>         select ARM_GIC
+> diff --git a/drivers/devfreq/Kconfig b/drivers/devfreq/Kconfig
+> index 49e74c1..3dced0a 100644
+> --- a/drivers/devfreq/Kconfig
+> +++ b/drivers/devfreq/Kconfig
+> @@ -68,7 +68,6 @@ comment "DEVFREQ Drivers"
+>  config ARM_EXYNOS4_BUS_DEVFREQ
+>         bool "ARM Exynos4210/4212/4412 Memory Bus DEVFREQ Driver"
+>         depends on (CPU_EXYNOS4210 || SOC_EXYNOS4212 || SOC_EXYNOS4412) && !ARCH_MULTIPLATFORM
+> -       select ARCH_HAS_OPP
+>         select DEVFREQ_GOV_SIMPLE_ONDEMAND
+>         select PM_OPP
+>         help
+> diff --git a/kernel/power/Kconfig b/kernel/power/Kconfig
+> index 9a83d78..e4e4121 100644
+> --- a/kernel/power/Kconfig
+> +++ b/kernel/power/Kconfig
+> @@ -253,9 +253,6 @@ config APM_EMULATION
+>           anything, try disabling/enabling this option (or disabling/enabling
+>           APM in your BIOS).
+>
+> -config ARCH_HAS_OPP
+> -       bool
+> -
+>  config PM_OPP
+>         bool
+>         ---help---
+> --
+> 2.0.0
+>
