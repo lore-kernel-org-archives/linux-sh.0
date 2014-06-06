@@ -1,38 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:23 +0000
-Subject: [PATCH v3 01/19] clocksource: sh_tmu: Fix channel IRQ retrieval in legacy case
-Message-Id: <1402763021-4067-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 05:28:49 +0000
+Subject: [PATCH v2 01/03] ARM: shmobile: Update r7s72100 DTS to include CPU frequency
+Message-Id: <20140606052849.17594.52608.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-In the legacy platform data case each TMU platform device handles a
-single channel with a single IRQ for the platform device. Retrieve the
-IRQ using the logical channel number instead of the hardware channel
-number.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add CPU Frequency information to the r7s72100 DTS file. This
+will allow us to use the shared C code on r7s72100 and Genmai
+which reads out the clock frequency from DT and calculates the
+delay settings from there.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/clocksource/sh_tmu.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index 4ba2c0f..ec34095 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -498,7 +498,7 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
- 			ch->base = tmu->mapbase + 8 + ch->index * 12;
- 	}
+ arch/arm/boot/dts/r7s72100.dtsi |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0001/arch/arm/boot/dts/r7s72100.dtsi
++++ work/arch/arm/boot/dts/r7s72100.dtsi	2014-05-29 17:47:45.000000000 +0900
+@@ -144,6 +144,7 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <0>;
++			clock-frequency = <400000000>;
+ 		};
+ 	};
  
--	ch->irq = platform_get_irq(tmu->pdev, ch->index);
-+	ch->irq = platform_get_irq(tmu->pdev, index);
- 	if (ch->irq < 0) {
- 		dev_err(&tmu->pdev->dev, "ch%u: failed to get irq\n",
- 			ch->index);
--- 
-1.8.5.5
-
