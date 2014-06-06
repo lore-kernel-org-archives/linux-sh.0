@@ -1,67 +1,158 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Tue, 17 Jun 2014 15:14:54 +0000
-Subject: [PATCH 1/8] r8a66597-udc: use devm_request_and_ioremap() for registers
-Message-Id: <1403018101-11062-2-git-send-email-ben.dooks@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 10:44:43 +0000
+Subject: [PATCH v3 04/05] staging: board: Initial board staging support
+Message-Id: <20140606104443.4423.6161.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140606104408.4423.36098.sendpatchset@w520>
+In-Reply-To: <20140606104408.4423.36098.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, pebolle@tiscali.nl, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
+From: Magnus Damm <damm+renesas@opensource.se>
+
+Add staging board base support to allow continuous upstream
+in-tree development and integration of platform devices.
+
+Helps developers integrate devices as platform devices for
+device drivers that only provide platform device bindings.
+This in turn allows for incremental development of both
+hardware feature support and DT binding work in parallel.
+
+Two separate pieces of board staging functionality is
+provided to ease per-board staging board support:
+ - The board_staging() macro allows easy per-board callbacks
+ - The board_staging_dt_node_available() provides DT node checking
+
+Tested on the KZM9D board with the emxx_udc staging driver.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/usb/gadget/r8a66597-udc.c | 18 +++---------------
- 1 file changed, 3 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index aff0a67..7f3af74 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -1826,7 +1826,6 @@ static int __exit r8a66597_remove(struct platform_device *pdev)
- 
- 	usb_del_gadget_udc(&r8a66597->gadget);
- 	del_timer_sync(&r8a66597->timer);
--	iounmap(r8a66597->reg);
- 	if (r8a66597->pdata->sudmac)
- 		iounmap(r8a66597->sudmac_reg);
- 	free_irq(platform_get_irq(pdev, 0), r8a66597);
-@@ -1877,11 +1876,9 @@ static int __init r8a66597_probe(struct platform_device *pdev)
- 	unsigned long irq_trigger;
- 
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!res) {
--		ret = -ENODEV;
--		dev_err(&pdev->dev, "platform_get_resource error.\n");
--		goto clean_up;
--	}
-+	reg = devm_ioremap_resource(&pdev->dev, res);
-+	if (!reg)
-+		return -ENODEV;
- 
- 	ires = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
- 	irq = ires->start;
-@@ -1893,13 +1890,6 @@ static int __init r8a66597_probe(struct platform_device *pdev)
- 		goto clean_up;
- 	}
- 
--	reg = ioremap(res->start, resource_size(res));
--	if (reg = NULL) {
--		ret = -ENOMEM;
--		dev_err(&pdev->dev, "ioremap error.\n");
--		goto clean_up;
--	}
--
- 	/* initialize ucd */
- 	r8a66597 = kzalloc(sizeof(struct r8a66597), GFP_KERNEL);
- 	if (r8a66597 = NULL) {
-@@ -2008,8 +1998,6 @@ clean_up:
- 						r8a66597->ep0_req);
- 		kfree(r8a66597);
- 	}
--	if (reg)
--		iounmap(reg);
- 
- 	return ret;
- }
--- 
-2.0.0
+ Changes since V2:
+ - Added CONFIG_OF_ADDRESS dependency
 
+ Changes since V1:
+ - New broken out staging board base support
+ - Added the function board_staging_dt_node_available()
+ - Added a TODO file
+
+ drivers/staging/Kconfig        |    2 +
+ drivers/staging/Makefile       |    1 
+ drivers/staging/board/Kconfig  |    8 +++++++
+ drivers/staging/board/Makefile |    1 
+ drivers/staging/board/TODO     |    2 +
+ drivers/staging/board/board.c  |   41 ++++++++++++++++++++++++++++++++++++++++
+ drivers/staging/board/board.h  |   20 +++++++++++++++++++
+ 7 files changed, 75 insertions(+)
+
+--- 0001/drivers/staging/Kconfig
++++ work/drivers/staging/Kconfig	2014-06-06 18:50:38.000000000 +0900
+@@ -110,6 +110,8 @@ source "drivers/staging/media/Kconfig"
+ 
+ source "drivers/staging/android/Kconfig"
+ 
++source "drivers/staging/board/Kconfig"
++
+ source "drivers/staging/ozwpan/Kconfig"
+ 
+ source "drivers/staging/gdm72xx/Kconfig"
+--- 0001/drivers/staging/Makefile
++++ work/drivers/staging/Makefile	2014-06-06 18:50:38.000000000 +0900
+@@ -48,6 +48,7 @@ obj-$(CONFIG_TOUCHSCREEN_CLEARPAD_TM1217
+ obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4)	+= ste_rmi4/
+ obj-$(CONFIG_MFD_NVEC)		+= nvec/
+ obj-$(CONFIG_ANDROID)		+= android/
++obj-$(CONFIG_STAGING_BOARD)	+= board/
+ obj-$(CONFIG_USB_WPAN_HCD)	+= ozwpan/
+ obj-$(CONFIG_WIMAX_GDM72XX)	+= gdm72xx/
+ obj-$(CONFIG_LTE_GDM724X)	+= gdm724x/
+--- /dev/null
++++ work/drivers/staging/board/Kconfig	2014-06-06 19:25:24.000000000 +0900
+@@ -0,0 +1,8 @@
++config STAGING_BOARD
++	boolean "Staging Board Support"
++	depends on OF_ADDRESS
++	help
++	  Select to enable per-board staging support code.
++
++	  If in doubt, say N here.
++
+--- /dev/null
++++ work/drivers/staging/board/Makefile	2014-06-06 18:50:39.000000000 +0900
+@@ -0,0 +1 @@
++obj-y	:= board.o
+--- /dev/null
++++ work/drivers/staging/board/TODO	2014-06-06 18:50:39.000000000 +0900
+@@ -0,0 +1,2 @@
++* replace platform device code with DT nodes once the driver supports DT
++* remove staging board code when no more platform devices are needed
+--- /dev/null
++++ work/drivers/staging/board/board.c	2014-06-06 18:50:39.000000000 +0900
+@@ -0,0 +1,41 @@
++#include <linux/init.h>
++#include <linux/device.h>
++#include <linux/kernel.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include "board.h"
++
++static bool find_by_address(u64 base_address)
++{
++	struct device_node *dn = of_find_all_nodes(NULL);
++	struct resource res;
++
++	while (dn) {
++		if (of_can_translate_address(dn)
++		    && !of_address_to_resource(dn, 0, &res)) {
++			if (res.start = base_address) {
++				of_node_put(dn);
++				return true;
++			}
++		}
++		dn = of_find_all_nodes(dn);
++	}
++
++	return false;
++}
++
++bool __init board_staging_dt_node_available(const struct resource *resource,
++					    unsigned int num_resources)
++{
++	unsigned int i;
++
++	for (i = 0; i < num_resources; i++) {
++		const struct resource *r = resource + i;
++
++		if (resource_type(r) = IORESOURCE_MEM)
++			if (find_by_address(r->start))
++				return true; /* DT node available */
++	}
++
++	return false; /* Nothing found */
++}
+--- /dev/null
++++ work/drivers/staging/board/board.h	2014-06-06 18:50:39.000000000 +0900
+@@ -0,0 +1,20 @@
++#ifndef __BOARD_H__
++#define __BOARD_H__
++#include <linux/init.h>
++#include <linux/of.h>
++
++bool board_staging_dt_node_available(const struct resource *resource,
++				     unsigned int num_resources);
++
++#define board_staging(str, fn)			\
++static int __init runtime_board_check(void)	\
++{						\
++	if (of_machine_is_compatible(str))	\
++		fn();				\
++						\
++	return 0;				\
++}						\
++						\
++late_initcall(runtime_board_check)
++
++#endif /* __BOARD_H__ */
