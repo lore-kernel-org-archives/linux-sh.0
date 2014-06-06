@@ -1,39 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:28:37 +0000
-Subject: [PATCH 28/29] ARM: shmobile: henninger: Enable PCIe Controller & PCIe bus clock
-Message-Id: <485f3ce67c11ce086c322b2622db01d7e7c59a84.1403487225.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 05:28:56 +0000
+Subject: [PATCH v2 02/03] ARM: shmobile: Use shmobile_init_delay() on Genmai boards
+Message-Id: <20140606052856.17594.84193.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487225.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487225.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Adjust Genmai board support to use shmobile_init_delay() together
+with r7s72100 CPU Frequency settings from the DTS.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index c0c58ce..bc48bcc 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -230,3 +230,11 @@
- 		spi-cpha;
- 	};
+ arch/arm/mach-shmobile/board-genmai-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-genmai.c           |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-genmai-reference.c
++++ work/arch/arm/mach-shmobile/board-genmai-reference.c	2014-05-29 17:50:54.000000000 +0900
+@@ -47,7 +47,7 @@ static const char * const genmai_boards_
  };
-+
-+&pcie_bus_clk {
-+	status = "okay";
-+};
-+
-+&pciec {
-+	status = "okay";
-+};
--- 
-2.0.0.rc2
-
+ 
+ DT_MACHINE_START(GENMAI_DT, "genmai")
+-	.init_early	= r7s72100_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= genmai_add_standard_devices,
+ 	.dt_compat	= genmai_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/board-genmai.c
++++ work/arch/arm/mach-shmobile/board-genmai.c	2014-05-29 17:50:39.000000000 +0900
+@@ -154,7 +154,7 @@ static const char * const genmai_boards_
+ };
+ 
+ DT_MACHINE_START(GENMAI_DT, "genmai")
+-	.init_early	= r7s72100_init_early,
++	.init_early	= shmobile_init_delay,
+ 	.init_machine	= genmai_add_standard_devices,
+ 	.dt_compat	= genmai_boards_compat_dt,
+ MACHINE_END
