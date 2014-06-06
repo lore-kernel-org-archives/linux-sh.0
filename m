@@ -1,60 +1,153 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 04 Jun 2014 08:22:29 +0000
-Subject: [PATCH v5 0/1] add support for the R-Car H2 and M2 xHCI controllers
-Message-Id: <538ED745.5080106@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 10:44:26 +0000
+Subject: [PATCH v3 02/05] staging: emxx_udc: I/O memory and IRQ resource support
+Message-Id: <20140606104426.4423.54602.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20140606104408.4423.36098.sendpatchset@w520>
+In-Reply-To: <20140606104408.4423.36098.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <mathias.nyman-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, pebolle@tiscali.nl, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
-This patch adds the USB xHCI support for the R-Car H2 and M2 SoCs.
-These SoCs use an xHCI but still need specific initialization, mainly
-to setup the firmware downloading and the specific registers.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch set is based on the usb-next branch of Greg usb.git tree.
-(commit id = 4a95b1fce97756d0333f8232eb7ed6974e93b054)
+Adjust the emxx_udc driver to make use of the standard
+driver model to pass I/O memory and IRQ as resources
+instead of hard coding those things in the driver.
 
-Changes since v4:
- - Rebase the latest usb-next branch
+Needs more work - the VBUS signal is yet not handled.
 
-Changes since v3:
- - Remove a general phy driver calling in xhci-plat.c
- - Change xhci_rcar_init_quirk() calling into xhci_plat_setup(). Because of
-   usb_add_hcd() will call a generic phy driver calling.
- - Modify xhci_rcar_init_quirk()
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Changes since v2:
- - Fix goto direction in patch 1.
- - Remove some unnecessary checks in patch 1.
- - Add MODULE_FIRMWARE() in patch 2.
- - Add a comment about xhci_rcar_init_quirk() in patch 2.
+ Changes since V2:
+ - None
 
-Changes since v1 (about patch 2 only because patch 1 and 3 ware applied):
- - Fix some typos in patch 2.
- - Remove duplicated #define in patch 2.
- - Remove usb_phy framework calling in patch 2.
- - Change prototype of xhci_rcar_start() in patch 2.
- - Change compatible strings from "renesas,r8a779[01]-xhci" to
-   "renesas,xhci-r8a779[01]" in patch 2. Because of Renesas SoC
-   maintainer's comment:
-    http://marc.info/?l=linux-sh&m0109049002958&w=2
+ Changes since V1:
+ - None
 
- - Rewrite the custom get_unaligned_le32() and add comment about it in patch 2.
+ drivers/staging/emxx_udc/emxx_udc.c |   57 +++++++++++------------------------
+ drivers/staging/emxx_udc/emxx_udc.h |    9 -----
+ 2 files changed, 18 insertions(+), 48 deletions(-)
 
-Yoshihiro Shimoda (1):
-  usb: host: xhci-plat: add support for the R-Car H2 and M2 xHCI
-    controllers
-
- drivers/usb/host/Kconfig     |    8 +++
- drivers/usb/host/Makefile    |    3 +
- drivers/usb/host/xhci-plat.c |   19 ++++++
- drivers/usb/host/xhci-rcar.c |  148 ++++++++++++++++++++++++++++++++++++++++++
- drivers/usb/host/xhci-rcar.h |   27 ++++++++
- 5 files changed, 205 insertions(+)
- create mode 100644 drivers/usb/host/xhci-rcar.c
- create mode 100644 drivers/usb/host/xhci-rcar.h
-
--- 
-1.7.9.5
+--- 0002/drivers/staging/emxx_udc/emxx_udc.c
++++ work/drivers/staging/emxx_udc/emxx_udc.c	2014-05-22 16:20:02.000000000 +0900
+@@ -3356,37 +3356,38 @@ static int nbu2ss_drv_probe(struct platf
+ {
+ 	int	status = -ENODEV;
+ 	struct nbu2ss_udc	*udc;
++	struct resource *r;
++	int irq;
++	void __iomem *mmio_base;
+ 
+ 	udc = &udc_controller;
+ 	memset(udc, 0, sizeof(struct nbu2ss_udc));
+ 
+ 	platform_set_drvdata(pdev, udc);
+ 
+-	/* IO Memory Region */
+-	if (!request_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE
+-				, driver_name)) {
++	/* require I/O memory and IRQ to be provided as resources */
++	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	mmio_base = devm_request_and_ioremap(&pdev->dev, r);
++	if (IS_ERR(mmio_base)) {
++		dev_err(&pdev->dev, "failed to map I/O memory\n");
++		return PTR_ERR(mmio_base);
++	}
+ 
+-		ERR("request_mem_region failed\n");
+-		return -EBUSY;
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "failed to get IRQ\n");
++		return irq;
+ 	}
++	status = devm_request_irq(&pdev->dev, irq, _nbu2ss_udc_irq,
++				  0, driver_name, udc);
+ 
+ 	/* IO Memory */
+-	udc->p_regs = (PT_FC_REGS)ioremap(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-	if (!udc->p_regs) {
+-		ERR("request_io_mem failed\n");
+-		goto cleanup3;
+-	}
++	udc->p_regs = (PT_FC_REGS)mmio_base;
+ 
+ 	/* USB Function Controller Interrupt */
+-	status = request_irq(USB_UDC_IRQ_1,
+-				_nbu2ss_udc_irq,
+-				IRQF_DISABLED,
+-				driver_name,
+-				udc);
+-
+ 	if (status != 0) {
+ 		ERR("request_irq(USB_UDC_IRQ_1) failed\n");
+-		goto cleanup2;
++		goto cleanup1;
+ 	}
+ 
+ 	/* Driver Initialization */
+@@ -3412,18 +3413,6 @@ static int nbu2ss_drv_probe(struct platf
+ 	return status;
+ 
+ cleanup1:
+-	/* Interrupt Handler - Release */
+-	free_irq(USB_UDC_IRQ_1, udc);
+-
+-cleanup2:
+-	/* IO Memory - Release */
+-	if (udc->p_regs)
+-		iounmap(udc->p_regs);
+-
+-cleanup3:
+-	/* IO Memory Region - Release */
+-	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-
+ 	return status;
+ }
+ 
+@@ -3456,18 +3445,8 @@ static int __exit nbu2ss_drv_remove(stru
+ 	}
+ 
+ 	/* Interrupt Handler - Release */
+-	free_irq(USB_UDC_IRQ_1, udc);
+-
+-	/* Interrupt Handler - Release */
+ 	free_irq(INT_VBUS, udc);
+ 
+-	/* IO Memory - Release */
+-	if (udc->p_regs)
+-		iounmap(udc->p_regs);
+-
+-	/* IO Memory Region - Release */
+-	release_mem_region(USB_BASE_ADDRESS, USB_BASE_SIZE);
+-
+ 	return 0;
+ }
+ 
+--- 0002/drivers/staging/emxx_udc/emxx_udc.h
++++ work/drivers/staging/emxx_udc/emxx_udc.h	2014-05-22 16:20:02.000000000 +0900
+@@ -47,20 +47,11 @@
+ 
+ 
+ /*------------ Board dependence(Resource) */
+-#define USB_BASE_ADDRESS	EMXX_USBS1_BASE
+-#define USB_BASE_SIZE		0x2000
+-
+-#define USB_UDC_IRQ_0		INT_USBF0
+-#define USB_UDC_IRQ_1		INT_USBF1
+ #define	VBUS_VALUE		GPIO_VBUS
+ 
+ /* below hacked up for staging integration */
+ #define GPIO_VBUS 0 /* GPIO_P153 on KZM9D */
+ #define INT_VBUS 0 /* IRQ for GPIO_P153 */
+-#define INT_USBF0 158
+-#define INT_USBF1 159
+-#define EMXX_USBS0_BASE 0xe2700000
+-#define EMXX_USBS1_BASE 0xe2800000
+ 
+ /*------------ Board dependence(Wait) */
+ 
