@@ -1,103 +1,33 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Jun 2014 16:53:01 +0000
-Subject: [PATCH 1/9] ARM: shmobile: Move r7s72100.h
-Message-Id: <1403283189-21688-2-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 07:20:46 +0000
+Subject: [PATCH v2 03/07] ARM: shmobile: Use __init for APMU suspend init function
+Message-Id: <20140606072046.14868.48936.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1403283189-21688-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Change location of r7s72100.h so it can be included using "r7s72100.h"
-instead of the old style <mach/r7s72100.h>.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The function shmobile_smp_apmu_suspend_init() should
+be put into the init section to not trigger section
+mismatch warnings.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/board-genmai-reference.c      | 4 +++-
- arch/arm/mach-shmobile/board-genmai.c                | 4 +++-
- arch/arm/mach-shmobile/clock-r7s72100.c              | 3 ++-
- arch/arm/mach-shmobile/{include/mach => }/r7s72100.h | 0
- arch/arm/mach-shmobile/setup-r7s72100.c              | 4 +++-
- 5 files changed, 11 insertions(+), 4 deletions(-)
- rename arch/arm/mach-shmobile/{include/mach => }/r7s72100.h (100%)
 
-diff --git a/arch/arm/mach-shmobile/board-genmai-reference.c b/arch/arm/mach-shmobile/board-genmai-reference.c
-index c06dc5c12d1e..e5448f7b868a 100644
---- a/arch/arm/mach-shmobile/board-genmai-reference.c
-+++ b/arch/arm/mach-shmobile/board-genmai-reference.c
-@@ -20,11 +20,13 @@
- 
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
--#include <mach/r7s72100.h>
-+
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+
- #include "clock.h"
- #include "common.h"
-+#include "r7s72100.h"
- 
- /*
-  * This is a really crude hack to provide clkdev support to platform
-diff --git a/arch/arm/mach-shmobile/board-genmai.c b/arch/arm/mach-shmobile/board-genmai.c
-index a0994f36b348..e2a3ba4871c3 100644
---- a/arch/arm/mach-shmobile/board-genmai.c
-+++ b/arch/arm/mach-shmobile/board-genmai.c
-@@ -25,11 +25,13 @@
- #include <linux/sh_eth.h>
- #include <linux/spi/rspi.h>
- #include <linux/spi/spi.h>
--#include <mach/r7s72100.h>
-+
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+
- #include "common.h"
- #include "irqs.h"
-+#include "r7s72100.h"
- 
- /* Ether */
- static const struct sh_eth_plat_data ether_pdata __initconst = {
-diff --git a/arch/arm/mach-shmobile/clock-r7s72100.c b/arch/arm/mach-shmobile/clock-r7s72100.c
-index 457dab0f8fc9..3eb2ec401e0c 100644
---- a/arch/arm/mach-shmobile/clock-r7s72100.c
-+++ b/arch/arm/mach-shmobile/clock-r7s72100.c
-@@ -19,8 +19,9 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
--#include <mach/r7s72100.h>
-+
- #include "common.h"
-+#include "r7s72100.h"
- 
- /* Frequency Control Registers */
- #define FRQCR		0xfcfe0010
-diff --git a/arch/arm/mach-shmobile/include/mach/r7s72100.h b/arch/arm/mach-shmobile/r7s72100.h
-similarity index 100%
-rename from arch/arm/mach-shmobile/include/mach/r7s72100.h
-rename to arch/arm/mach-shmobile/r7s72100.h
-diff --git a/arch/arm/mach-shmobile/setup-r7s72100.c b/arch/arm/mach-shmobile/setup-r7s72100.c
-index a55d68d89e6e..4a98b232d316 100644
---- a/arch/arm/mach-shmobile/setup-r7s72100.c
-+++ b/arch/arm/mach-shmobile/setup-r7s72100.c
-@@ -22,10 +22,12 @@
- #include <linux/kernel.h>
- #include <linux/of_platform.h>
- #include <linux/sh_timer.h>
--#include <mach/r7s72100.h>
-+
- #include <asm/mach/arch.h>
-+
- #include "common.h"
- #include "irqs.h"
-+#include "r7s72100.h"
- 
- static struct resource mtu2_resources[] __initdata = {
- 	DEFINE_RES_MEM(0xfcff0000, 0x400),
--- 
-1.9.1
+ arch/arm/mach-shmobile/platsmp-apmu.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+--- 0003/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 12:51:33.000000000 +0900
+@@ -240,7 +240,7 @@ static int shmobile_smp_apmu_enter_suspe
+ 	return 0;
+ }
+ 
+-void shmobile_smp_apmu_suspend_init(void)
++void __init shmobile_smp_apmu_suspend_init(void)
+ {
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ }
