@@ -1,36 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Jun 2014 11:38:41 +0000
-Subject: [PATCH 0/2] spi: rspi: Misc Cleanups
-Message-Id: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 06 Jun 2014 11:43:27 +0000
+Subject: Re: [PATCH 0/2] spi: rspi: Misc Cleanups
+Message-Id: <20140606114327.GM2520@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="9+yvdhHLKXN64C4s"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
+References: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi Mark,
 
-Here are two small cleanups for the Renesas SPI driver.
+--9+yvdhHLKXN64C4s
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I've been hiding in a brown paper bag, as the first one fixes an unused
-variable warning introduced by me in last patch of the previous series.
+On Fri, Jun 06, 2014 at 01:38:41PM +0200, Geert Uytterhoeven wrote:
+> 	Hi Mark,
+>=20
+> Here are two small cleanups for the Renesas SPI driver.
+>=20
+> I've been hiding in a brown paper bag, as the first one fixes an unused
+> variable warning introduced by me in last patch of the previous series.
 
-  [1/2] spi: rspi: Remove unused variable in rspi_rz_transfer_one()
-  [2/2] spi: rspi: Pass spi_master pointer to rspi_release_dma()
+Applied both, thanks.
 
- drivers/spi/spi-rspi.c | 15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+--9+yvdhHLKXN64C4s
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Thanks for applying!
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-Gr{oetje,eeting}s,
+iQIcBAEBAgAGBQJTkalcAAoJELSic+t+oim9oO8QAJId+VAWHaVhl3n0ErSayTuU
+BAwAcEO7CljEdgIcN2WYFZal3upcQJeChpEZdZlRto0zh+L5lWM/I5ObajW32h/f
+HFnFXZDLMJ1tBdk2Yf0c41g0pzSwOhQKDP5f1QT7TF+d3nwmyNGrJbd+yr1XQTrw
+JV0lWObxxK0Iw0hfvxnhqsOt0DuXeRg0Hau+j5OL8rZ3tMsek8zEONMtBolqid8H
+bAB3o8fDKc45v0TE4VuH4UUq5mhU9urjxT08k2eUNeiNr1J/VFsXu3ycRrgmnP+2
+DtxPwl3ThoTAPjo3cRyvHhhsJp882t+Bd834Tmi5RiVEgbp8mcGorxgD+MdbKTsP
+l9kIPPPvTC3r3QgVy9nhI+pP4qVlFrLbc6cenbiyxUJo5giz+ToTCHHxdfHy+PhH
+b0RNDOJrAlEAt2MyApa7EO0E5mFyjzaOYX1Q/KC3oCwWdLO4+q6NZVOOebaC6WhI
+3Y8J6yuOQWOoqDQw/m6TnQb472Y9jaUzEMGHN2vh+OjPCKzknOcSZYwULFFm66hm
+PcZlKRiOPXMdqE6YqOvmpxZ6DA2szfIJGVThA2ueMHkUUaCyMvxNXRdzN/ZPTYvD
+nLOIL6Wb1iCKnqtkPyNDaG3KXnm7u0vPgoKnNdk0i7BNsGxuOPgmIW/gwrgVZUlX
+jrClFa41oFW1RTSUuo2A
+=sUFt
+-----END PGP SIGNATURE-----
 
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+--9+yvdhHLKXN64C4s--
