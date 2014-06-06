@@ -1,89 +1,103 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 06 Jun 2014 17:27:53 +0000
-Subject: Re: [PATCH v3 7/7] soc_camera: initial of code
-Message-Id: <5391FA19.7070903@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 07:20:10 +0000
+Subject: [PATCH v2 01/07] ARM: shmobile: Allow use of boot code for non-SMP case
+Message-Id: <20140606072010.14868.5474.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1397471802-27216-8-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1397471802-27216-8-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 04/14/2014 02:36 PM, Ben Dooks wrote:
+Allow build of platsmp.c and headsmp.S even though
+SMP is disabled in the kernel configuration. With
+this in place it is possible to share the reset
+vector setup code with power management code that
+needs to be built even though SMP is disabled.
 
-> Add initial support for OF based soc-camera devices that may be used
-> by any of the soc-camera drivers. The driver itself will need converting
-> to use OF.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-> These changes allow the soc-camera driver to do the connecting of any
-> async capable v4l2 device to the soc-camera driver. This has currently
-> been tested on the Renesas Lager board.
+ arch/arm/mach-shmobile/Makefile  |   11 +++++++----
+ arch/arm/mach-shmobile/headsmp.S |   13 ++++++++-----
+ 2 files changed, 15 insertions(+), 9 deletions(-)
 
-> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
-> ---
-> Changes since v1:
-
-> 	- Updated to make the i2c mclk name compatible with other
-> 	  drivers. The issue of having mclk which is not part of
-> 	  the drivers/clk interface is something that can be dealt
-> 	  with separately.
-> ---
->   drivers/media/platform/soc_camera/soc_camera.c | 117 ++++++++++++++++++++++++-
->   1 file changed, 116 insertions(+), 1 deletion(-)
-
-> diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
-> index 4b8c024..c50ec5c 100644
-> --- a/drivers/media/platform/soc_camera/soc_camera.c
-> +++ b/drivers/media/platform/soc_camera/soc_camera.c
-[...]
-> @@ -1579,6 +1580,118 @@ static void scan_async_host(struct soc_camera_host *ici)
->   #define scan_async_host(ici)		do {} while (0)
->   #endif
->
-> +#ifdef CONFIG_OF
-> +static int soc_of_bind(struct soc_camera_host *ici,
-> +		       struct device_node *ep,
-> +		       struct device_node *remote)
-> +{
-> +	struct soc_camera_device *icd;
-> +	struct soc_camera_desc sdesc = {.host_desc.bus_id = ici->nr,};
-> +	struct soc_camera_async_client *sasc;
-> +	struct soc_camera_async_subdev *sasd;
-> +	struct v4l2_async_subdev **asd_array;
-> +	struct i2c_client *client;
-> +	char clk_name[V4L2_SUBDEV_NAME_SIZE];
-> +	int ret;
-> +
-> +	/* alloacte a new subdev and add match info to it */
-
-    s/alloacte/allocate/
-
-> +	sasd = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasd), GFP_KERNEL);
-> +	if (!sasd)
-> +		return -ENOMEM;
-> +
-> +	asd_array = devm_kzalloc(ici->v4l2_dev.dev,
-> +				 sizeof(struct v4l2_async_subdev **),
-
-    Hm, is this a correct size indeed?
-
-
-
-> +	client = of_find_i2c_device_by_node(remote);
-> +
-
-    I don't think empty line is needed here...
-
-> +	if (client)
-> +		snprintf(clk_name, sizeof(clk_name), "%d-%04x",
-> +			 client->adapter->nr, client->addr);
-> +	else
-> +		snprintf(clk_name, sizeof(clk_name), "of-%s",
-> +			 of_node_full_name(remote));
-[...]
-
-WBR, Sergei
-
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2014-06-05 10:49:20.000000000 +0900
+@@ -34,17 +34,17 @@ obj-$(CONFIG_ARCH_R8A7791)	+= clock-r8a7
+ obj-$(CONFIG_ARCH_R7S72100)	+= clock-r7s72100.o
+ endif
+ 
++# CPU reset vector handling objects
++cpu-y				:= platsmp.o headsmp.o
++
+ # SMP objects
+-smp-y				:= platsmp.o headsmp.o
++smp-y				:= $(cpu-y)
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
+ smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o platsmp-apmu.o
+ smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+ 
+-# IRQ objects
+-obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
+-
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+@@ -56,6 +56,9 @@ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779
+ obj-$(CONFIG_ARCH_R8A7790)	+= pm-r8a7790.o pm-rcar.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= pm-r8a7791.o pm-rcar.o
+ 
++# IRQ objects
++obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.o
++
+ # Board objects
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_GENMAI)	+= board-genmai-reference.o
+--- 0001/arch/arm/mach-shmobile/headsmp.S
++++ work/arch/arm/mach-shmobile/headsmp.S	2014-06-05 10:48:14.000000000 +0900
+@@ -10,14 +10,17 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
+-#include <linux/linkage.h>
+ #include <linux/init.h>
++#include <linux/linkage.h>
++#include <linux/threads.h>
+ #include <asm/memory.h>
+ 
++#ifdef CONFIG_SMP
+ ENTRY(shmobile_invalidate_start)
+ 	bl	v7_invalidate_l1
+ 	b	secondary_startup
+ ENDPROC(shmobile_invalidate_start)
++#endif
+ 
+ /*
+  * Reset vector for secondary CPUs.
+@@ -68,7 +71,7 @@ shmobile_smp_boot_find_mpidr:
+ 
+ shmobile_smp_boot_next:
+ 	add	r1, r1, #1
+-	cmp	r1, #CONFIG_NR_CPUS
++	cmp	r1, #NR_CPUS
+ 	blo	shmobile_smp_boot_find_mpidr
+ 
+ 	b	shmobile_smp_sleep
+@@ -85,10 +88,10 @@ ENDPROC(shmobile_smp_sleep)
+ 
+ 	.globl	shmobile_smp_mpidr
+ shmobile_smp_mpidr:
+-1:	.space	CONFIG_NR_CPUS * 4
++1:	.space	NR_CPUS * 4
+ 	.globl	shmobile_smp_fn
+ shmobile_smp_fn:
+-2:	.space	CONFIG_NR_CPUS * 4
++2:	.space	NR_CPUS * 4
+ 	.globl	shmobile_smp_arg
+ shmobile_smp_arg:
+-3:	.space	CONFIG_NR_CPUS * 4
++3:	.space	NR_CPUS * 4
