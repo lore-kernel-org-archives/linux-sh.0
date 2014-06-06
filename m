@@ -1,65 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 28 Jun 2014 00:06:12 +0000
-Subject: Re: [PATCH] pcie-rcar: kill duplicate checks
-Message-Id: <20140628000612.GD27128@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 06 Jun 2014 17:27:53 +0000
+Subject: Re: [PATCH v3 7/7] soc_camera: initial of code
+Message-Id: <5391FA19.7070903@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201406271859.13626.sergei.shtylyov@cogentembedded.com>
- <b6f599bde2b347b6aae6dc638df16a21@HKXPR06MB168.apcprd06.prod.outlook.com>
-In-Reply-To: <b6f599bde2b347b6aae6dc638df16a21@HKXPR06MB168.apcprd06.prod.outlook.com>
+References: <1397471802-27216-8-git-send-email-ben.dooks@codethink.co.uk>
+In-Reply-To: <1397471802-27216-8-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "bhelgaas@google.com" <bhelgaas@google.com>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Fri, Jun 27, 2014 at 04:31:49PM +0000, Phil Edworthy wrote:
-> > The PCI core will have already checked the configuration register address
-> > before
-> > calling the {read|write}() methods, no need to check it again in these
-> > methods.
-> > 
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hello.
+
+On 04/14/2014 02:36 PM, Ben Dooks wrote:
+
+> Add initial support for OF based soc-camera devices that may be used
+> by any of the soc-camera drivers. The driver itself will need converting
+> to use OF.
+
+> These changes allow the soc-camera driver to do the connecting of any
+> async capable v4l2 device to the soc-camera driver. This has currently
+> been tested on the Renesas Lager board.
+
+> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+> ---
+> Changes since v1:
+
+> 	- Updated to make the i2c mclk name compatible with other
+> 	  drivers. The issue of having mclk which is not part of
+> 	  the drivers/clk interface is something that can be dealt
+> 	  with separately.
+> ---
+>   drivers/media/platform/soc_camera/soc_camera.c | 117 ++++++++++++++++++++++++-
+>   1 file changed, 116 insertions(+), 1 deletion(-)
+
+> diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+> index 4b8c024..c50ec5c 100644
+> --- a/drivers/media/platform/soc_camera/soc_camera.c
+> +++ b/drivers/media/platform/soc_camera/soc_camera.c
+[...]
+> @@ -1579,6 +1580,118 @@ static void scan_async_host(struct soc_camera_host *ici)
+>   #define scan_async_host(ici)		do {} while (0)
+>   #endif
 >
-> Acked-by: Phil Edworthy <phil.edworthy@renesas.com>
+> +#ifdef CONFIG_OF
+> +static int soc_of_bind(struct soc_camera_host *ici,
+> +		       struct device_node *ep,
+> +		       struct device_node *remote)
+> +{
+> +	struct soc_camera_device *icd;
+> +	struct soc_camera_desc sdesc = {.host_desc.bus_id = ici->nr,};
+> +	struct soc_camera_async_client *sasc;
+> +	struct soc_camera_async_subdev *sasd;
+> +	struct v4l2_async_subdev **asd_array;
+> +	struct i2c_client *client;
+> +	char clk_name[V4L2_SUBDEV_NAME_SIZE];
+> +	int ret;
+> +
+> +	/* alloacte a new subdev and add match info to it */
+
+    s/alloacte/allocate/
+
+> +	sasd = devm_kzalloc(ici->v4l2_dev.dev, sizeof(*sasd), GFP_KERNEL);
+> +	if (!sasd)
+> +		return -ENOMEM;
+> +
+> +	asd_array = devm_kzalloc(ici->v4l2_dev.dev,
+> +				 sizeof(struct v4l2_async_subdev **),
+
+    Hm, is this a correct size indeed?
 
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-> 
-> On 27 June 2014 15:59, Sergei wrote:
-> > 
-> > ---
-> > The patch is against the 'next' branch of Bjorn Helgaas' 'pci.git' repo.
-> > 
-> >  drivers/pci/host/pcie-rcar.c |   10 ----------
-> >  1 file changed, 10 deletions(-)
-> > 
-> > Index: pci/drivers/pci/host/pcie-rcar.c
-> > =============================
-> > ====> > --- pci.orig/drivers/pci/host/pcie-rcar.c
-> > +++ pci/drivers/pci/host/pcie-rcar.c
-> > @@ -260,11 +260,6 @@ static int rcar_pcie_read_conf(struct pc
-> >  	struct rcar_pcie *pcie = sys_to_pcie(bus->sysdata);
-> >  	int ret;
-> > 
-> > -	if ((size = 2) && (where & 1))
-> > -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> > -	else if ((size = 4) && (where & 3))
-> > -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> > -
-> >  	ret = rcar_pcie_config_access(pcie, PCI_ACCESS_READ,
-> >  				      bus, devfn, where, val);
-> >  	if (ret != PCIBIOS_SUCCESSFUL) {
-> > @@ -291,11 +286,6 @@ static int rcar_pcie_write_conf(struct p
-> >  	int shift, ret;
-> >  	u32 data;
-> > 
-> > -	if ((size = 2) && (where & 1))
-> > -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> > -	else if ((size = 4) && (where & 3))
-> > -		return PCIBIOS_BAD_REGISTER_NUMBER;
-> > -
-> >  	ret = rcar_pcie_config_access(pcie, PCI_ACCESS_READ,
-> >  				      bus, devfn, where, &data);
-> >  	if (ret != PCIBIOS_SUCCESSFUL)
-> 
+> +	client = of_find_i2c_device_by_node(remote);
+> +
+
+    I don't think empty line is needed here...
+
+> +	if (client)
+> +		snprintf(clk_name, sizeof(clk_name), "%d-%04x",
+> +			 client->adapter->nr, client->addr);
+> +	else
+> +		snprintf(clk_name, sizeof(clk_name), "of-%s",
+> +			 of_node_full_name(remote));
+[...]
+
+WBR, Sergei
+
