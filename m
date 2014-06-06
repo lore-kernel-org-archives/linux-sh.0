@@ -1,62 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 06 Jun 2014 13:01:05 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 06 Jun 2014 13:08:50 +0000
 Subject: Re: [PATCH] PM / OPP: Remove ARCH_HAS_OPP
-Message-Id: <CANqRtoRyUwqbWrFny0qpSUrkkNw7wGbdOU2UGxXRXvd-9z7Wmg@mail.gmail.com>
+Message-Id: <20140606130850.GO2520@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="cU9XODsizZBnwgll"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1402051016-28853-1-git-send-email-broonie@kernel.org>
  <20140606111411.GD25896@verge.net.au>
  <CANqRtoTy_LwSiZgRFEw5Ly4ojfinoCichxrX7cO6m2XB9JGoww@mail.gmail.com>
  <20140606125003.GA13332@verge.net.au>
 In-Reply-To: <20140606125003.GA13332@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jun 6, 2014 at 9:50 PM, Simon Horman <horms@verge.net.au> wrote:
+
+--cU9XODsizZBnwgll
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Jun 06, 2014 at 09:50:06PM +0900, Simon Horman wrote:
 > On Fri, Jun 06, 2014 at 09:14:01PM +0900, Magnus Damm wrote:
->> On Fri, Jun 6, 2014 at 8:14 PM, Simon Horman <horms@verge.net.au> wrote:
->> > On Fri, Jun 06, 2014 at 11:36:56AM +0100, Mark Brown wrote:
->> >> From: Mark Brown <broonie@linaro.org>
->> >>
->> >> Since the OPP layer is a kernel library which has been converted to be
->> >> directly selectable by its callers rather than user selectable and
->> >> requiring architectures to enable it explicitly the ARCH_HAS_OPP symbol
->> >> has become redundant and can be removed. Do so.
->> >>
->> >> Signed-off-by: Mark Brown <broonie@linaro.org>
->> >> ---
->> >>  Documentation/power/opp.txt    | 3 ---
->> >>  arch/arm/mach-exynos/Kconfig   | 1 -
->> >>  arch/arm/mach-highbank/Kconfig | 1 -
->> >>  arch/arm/mach-imx/Kconfig      | 1 -
->> >>  arch/arm/mach-omap2/Kconfig    | 1 -
->> >>  arch/arm/mach-shmobile/Kconfig | 2 --
->> >>  arch/arm/mach-vexpress/Kconfig | 1 -
->> >>  arch/arm/mach-zynq/Kconfig     | 1 -
->> >>  drivers/devfreq/Kconfig        | 1 -
->> >>  kernel/power/Kconfig           | 3 ---
->> >>  10 files changed, 15 deletions(-)
->> >
->> > shmobile portion:
->> >
->> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
->>
->> Hi Simon, Mark,
->>
->> Nice to see cleanups in this area. Reducing the number of Kconfig
->> symbols must be a good thing.
->>
->> I'm not sure about the expected merge order for this kind of change vs
->> queued up stuff in the renesas git tree, but I believe the following
->> patch selects ARCH_HAS_OPP:
->>
->> [PATCH v3] ARM: shmobile: Mark all SoCs in shmobile as CPUFreq, capable
->
+
+> > I'm not sure about the expected merge order for this kind of change vs
+> > queued up stuff in the renesas git tree, but I believe the following
+> > patch selects ARCH_HAS_OPP:
+
+> > [PATCH v3] ARM: shmobile: Mark all SoCs in shmobile as CPUFreq, capable
+
 > I propose that we fix that up by adding an incremental patch to
 > mach-shmobile via my renesas tree once the dependency (assuming there is
 > one) is in Linus's tree.
 
-Sounds good. Thanks!
+Yes, the conversion to make ARCH_HAS_OPP unused is in Raphael's tree for
+the merge window.  I'd expect this patch to end up going after the merge
+window (or at the end I guess).
 
-/ magnus
+--cU9XODsizZBnwgll
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTkb1fAAoJELSic+t+oim9ksoP+wUlNxCCTSQ9UrzvZfjNPynK
+oVQNuAvD0dlyrOaE/OnY3QuJOp/1FaVnWIr/kJO/N1KlSetg6Pz7n9I5W0/4zlQ/
+CtV50+Kj799fLTNAuFU5ftinugVHZCqccgqZuCGng/XR+/eJ4mq1PBSgQHVyrNxm
+PXyCXIjSlVIX84YW4zA+5en/Tts74zzH3w8R27AVj6oW0Au6VIgjKEoeBYlgWD/g
+b1j7ShJ9ykUlel8XtggfrddRo1u9UmLsyilFrWKEPFmpfbCPKCIwoAg/xsszLqgo
+6nUx7f4gRPLBcDGAyRmlH32LdKDnce3N0Bxxgiz9rfYyoOPJia/ZITMPnUyHiezZ
+vrQjrdx/V5A1GXSjXO9I/GdrJORmX+TmFajhyZGasCduxHT7TJhFjFEVtcaeVad1
+1jBhKKonWmLdiFq454UCFSStBW0JoGCoho19df/lGloUDHG8JQgd5Fm0izhPn0bC
+mTWmc3KuxYukXVY8sko0sdlu50wtBMSknxm/bYI3Q/LBrxRtTRIoBbxwFnyHUs+N
+ZRDyeym6iiu1MRECKOWJZ8jnrQei5v5pjmuOTpQyZTbOmecT/TEwz2mUQDir/5Wb
+Bda+Jrh+I4ut81r2vdE6FLzHvWxtW0ijkXvMtXVwhW4yYsmpvPc+YAW4VpcasxiG
+lzTDIush25LhobKeaccI
+=iMA5
+-----END PGP SIGNATURE-----
+
+--cU9XODsizZBnwgll--
