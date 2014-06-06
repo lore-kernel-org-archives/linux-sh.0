@@ -1,49 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 01 Jun 2014 20:24:55 +0000
-Subject: Re: [PATCH 1/2] i2c: rcar: add compatibles for additional SoC
-Message-Id: <20140601202455.GC3853@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="7qSK/uQB79J36Y4o"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 06 Jun 2014 12:44:33 +0000
+Subject: [PATCH 2/4] drivers: sh: Restrict INTC_USERIMASK to SH4A
+Message-Id: <39c5abbc54179998bf04368a11c561e19220d7d4.1402058435.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1401193052-8582-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1401193052-8582-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, devicetree@vger.kernel.org
+References: <cover.1402058435.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1402058435.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
---7qSK/uQB79J36Y4o
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+register_intc_userimask() is called from sh4a code only.
 
-On Tue, May 27, 2014 at 02:17:31PM +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa@sang-engineering.com>
->=20
-> Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> [r8a7779 legacy]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/sh/intc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Both applied to for-next.
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index f7d9061..60228fa 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -6,7 +6,7 @@ comment "Interrupt controller options"
+ 
+ config INTC_USERIMASK
+ 	bool "Userspace interrupt masking support"
+-	depends on ARCH_SHMOBILE || (SUPERH && CPU_SH4A) || COMPILE_TEST
++	depends on (SUPERH && CPU_SH4A) || COMPILE_TEST
+ 	help
+ 	  This enables support for hardware-assisted userspace hardirq
+ 	  masking.
+-- 
+1.8.4
 
-
---7qSK/uQB79J36Y4o
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJTi4wXAAoJEBQN5MwUoCm2Ri0P/3QtOvubPJbD4n9ZAmeLGtUQ
-zomMbjjUBq7XUYYTIC7G2xajn6+VnRCUOpHaTAlSpuXkeLasWRnOSvSNcKLUFo3/
-Akx1+K9flP0AnLe8SI01PWzR4Sem6fBTBdWyjHYBbFJACaKxlhM/bXvOw/7zkfAd
-44EjwugOA6igr4KQZ//fOUNDFj0nUDHWKuOrGzEZej4ETC4TxQLFETsBKD8QwhGC
-RmwXD6gf5yUY5BAiSguKZY39Zlf/sAt/ZYAmOFpFI8TxMlRa6J7GN093Hc0iIooB
-mvwbsO45KbPOQwHGigvkzWjIQWjpnOosf08p/yKwlHORoI3ULwmpRppXkP6zOIYA
-iPQjjV2clh5TB07FjwGK7XGBkvu1/UrjsKGIa4bZMylaCycO2WaqvGDUDofxAP82
-6+117cfT8q/xGoZypZTI1UrR4v0WTE6VLtGx6d8T6+PfjQOSB6wxkZEjTpd+8U7H
-B9msjvLPofB/v6KtCLvInff6BheKY+LZvo38u5yYHoQYFXZiIHwAINhdEr4Tf9Tf
-+k5DMJNf3ziTg7vmfehIS1eM1unFrSu8nbIlr7ktqUXUSMV+iQng+gVGEqImB3o9
-ZMFP26MTk8FOJjl/h47UnCepkAVwHvr63PpP8SHK06Vkb1j1XPmiHM+0VsThgs3/
-UH5o+i9C8U8QjvDkXf7N
-=ET+9
------END PGP SIGNATURE-----
-
---7qSK/uQB79J36Y4o--
