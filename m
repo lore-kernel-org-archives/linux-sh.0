@@ -1,64 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:54 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v3.17
-Message-Id: <cover.1403487831.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 05:28:41 +0000
+Subject: [PATCH v2 00/03] ARM: shmobile: r7s72100 / Genmai init delay update (V2)
+Message-Id: <20140606052841.17594.9846.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+ARM: shmobile: r7s72100 / Genmai init delay update (V2)
 
-Please consider these Renesas ARM based SoC Cleanup for v3.17.
+[PATCH v2 01/03] ARM: shmobile: Update r7s72100 DTS to include CPU frequency
+[PATCH v2 02/03] ARM: shmobile: Use shmobile_init_delay() on Genmai boards
+[PATCH v2 03/03] ARM: shmobile: Use shmobile_init_delay() on r7s72100
 
+These patches clean up the r7s72100 SoC and Genmai board code. The CPU
+Frequency is put into DTS followed by SoC and board code that gets
+adjusted to read out the frequency from DTS.
 
-This pull request is based on 'Renesas ARM Based SoC Header Cleanup for v3.17',
-tagged as header-cleanup-for-v3.17, which I have already sent a
-pull-request for.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
+ Written last week on top of renesas-devel-v3.15-rc7-20140528 but
+ applies cleanly on top of renesas-devel-v3.15-rc8-20140605.
 
-The following changes since commit 62872989bdbf1245d7239b9f4c05a8ee7c775ed5:
+ Changes since V1:
+ - Adjusted patch 3 to actually include the right code...
 
-  ARM: shmobile: Move rcar-gen2.h, cleanup r8a7790 case (2014-06-17 17:09:40 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-cleanup-for-v3.17
-
-for you to fetch changes up to d83fa4c9c27c4d8612e39e99506b5420fa05b58b:
-
-  ARM: shmobile: Remove unused r8a7790_init_early() (2014-06-17 19:50:35 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Cleanup for v3.17
-
-* Use shmobile_init_delay on r8a7790, r7s72100 and EMEV2 SoCs
-* Remove unused redundant callbacks on EMEV2 SoC
-
-----------------------------------------------------------------
-Magnus Damm (9):
-      ARM: shmobile: Update EMEV2 DTS to include CPU frequency
-      ARM: shmobile: Use shmobile_init_delay() on EMEV2
-      ARM: shmobile: Get rid of redundant EMEV2 mach callbacks
-      ARM: shmobile: Update r7s72100 DTS to include CPU frequency
-      ARM: shmobile: Use shmobile_init_delay() on Genmai boards
-      ARM: shmobile: Use shmobile_init_delay() on r7s72100
-      ARM: shmobile: Use r8a7790 DT CPU Frequency in common case
-      ARM: shmobile: Use r8a7790 DT CPU Frequency for Lager
-      ARM: shmobile: Remove unused r8a7790_init_early()
-
- arch/arm/boot/dts/emev2.dtsi                    |  2 ++
- arch/arm/boot/dts/r7s72100.dtsi                 |  1 +
- arch/arm/mach-shmobile/board-genmai-reference.c |  2 +-
- arch/arm/mach-shmobile/board-genmai.c           |  2 +-
- arch/arm/mach-shmobile/board-lager-reference.c  |  2 +-
- arch/arm/mach-shmobile/board-lager.c            |  2 +-
- arch/arm/mach-shmobile/include/mach/r7s72100.h  |  1 -
- arch/arm/mach-shmobile/include/mach/r8a7790.h   |  1 -
- arch/arm/mach-shmobile/setup-emev2.c            | 17 ++---------------
- arch/arm/mach-shmobile/setup-r7s72100.c         |  7 +------
- arch/arm/mach-shmobile/setup-r8a7790.c          |  9 +--------
- 11 files changed, 11 insertions(+), 35 deletions(-)
+ arch/arm/boot/dts/r7s72100.dtsi                 |    1 +
+ arch/arm/mach-shmobile/board-genmai-reference.c |    2 +-
+ arch/arm/mach-shmobile/board-genmai.c           |    2 +-
+ arch/arm/mach-shmobile/include/mach/r7s72100.h  |    1 -
+ arch/arm/mach-shmobile/setup-r7s72100.c         |    7 +------
+ 5 files changed, 4 insertions(+), 9 deletions(-)
