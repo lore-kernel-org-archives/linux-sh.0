@@ -1,99 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 14 Jun 2014 16:23:38 +0000
-Subject: [PATCH v3 16/19] ARM: shmobile: lager-reference: Enable CMT0 in device tree
-Message-Id: <1402763021-4067-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 06 Jun 2014 12:44:34 +0000
+Subject: [PATCH 3/4] drivers: sh: pm_runtime implementation needs to suspend and resume devices
+Message-Id: <8255fe169232364e5a01bd062e8037b8c1a9adec.1402058435.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402763021-4067-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1402058435.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1402058435.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Ben Dooks <ben.dooks@codethink.co.uk>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
 
-No more device needs to be added from platform code when booting the
-reference platform, remove the now empty r8a7790_add_dt_devices()
-function completely.
+From: Ben Dooks <ben.dooks@codethink.co.uk>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+If we override the platform bus calls for pm_runtime then we end up
+with the calls to the devices' suspend and resume methods ignored
+in favour of the bus ones.
+
+Change to calling the pm_runtime calls to suspend and resume the
+devices specifically in the drivers/sh/pm_runtime.c implementation
+to allow any device that may want to run power management to do so.
+
+Note, all the current sh driver implementations do not use their
+own power management code so this is not a major implementation
+issues.
+
+This also brings the implementation into line with the versions
+used by the Davinci and Keystone PM domain code, so once fully
+tested these implementations could be merged together.
+
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts            | 4 ++++
- arch/arm/mach-shmobile/board-lager-reference.c | 2 --
- arch/arm/mach-shmobile/include/mach/r8a7790.h  | 1 -
- arch/arm/mach-shmobile/setup-r8a7790.c         | 7 +------
- 4 files changed, 5 insertions(+), 9 deletions(-)
+ drivers/sh/pm_runtime.c | 37 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 35 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 850dff8..32a636f 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -237,6 +237,10 @@
- 	};
- };
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 00b82ec..25eafbe 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -21,10 +21,43 @@
+ #include <linux/slab.h>
  
-+&cmt0 {
-+	status = "ok";
-+};
+ #ifdef CONFIG_PM_RUNTIME
++static int sh_pm_runtime_suspend(struct device *dev)
++{
++	int ret;
 +
- &mmcif1 {
- 	pinctrl-0 = <&mmc1_pins>;
- 	pinctrl-names = "default";
-diff --git a/arch/arm/mach-shmobile/board-lager-reference.c b/arch/arm/mach-shmobile/board-lager-reference.c
-index 4393f12..ee6feb9 100644
---- a/arch/arm/mach-shmobile/board-lager-reference.c
-+++ b/arch/arm/mach-shmobile/board-lager-reference.c
-@@ -90,7 +90,6 @@ static void __init lager_add_du_device(void)
-  * devices until they get moved to DT.
-  */
- static const struct clk_name clk_names[] __initconst = {
--	{ "cmt0", "fck", "sh-cmt-48-gen2.0" },
- 	{ "du0", "du.0", "rcar-du-r8a7790" },
- 	{ "du1", "du.1", "rcar-du-r8a7790" },
- 	{ "du2", "du.2", "rcar-du-r8a7790" },
-@@ -101,7 +100,6 @@ static const struct clk_name clk_names[] __initconst = {
- static void __init lager_add_standard_devices(void)
- {
- 	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
--	r8a7790_add_dt_devices();
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	lager_add_du_device();
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7790.h b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-index 3ebc1f4..9684441 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7790.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7790.h
-@@ -29,7 +29,6 @@ enum {
++	ret = pm_generic_runtime_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend device\n");
++		return ret;
++	}
++
++	ret = pm_clk_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend clock\n");
++		pm_generic_runtime_resume(dev);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int sh_pm_runtime_resume(struct device *dev)
++{
++	int ret;
++
++	ret = pm_clk_resume(dev);
++	if (ret) {
++		dev_err(dev, "failed to resume clock\n");
++		return ret;
++	}
++
++	return pm_generic_runtime_resume(dev);
++}
++
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = pm_clk_suspend,
+-		.runtime_resume = pm_clk_resume,
++		.runtime_suspend = sh_pm_runtime_suspend,
++		.runtime_resume = sh_pm_runtime_resume,
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
  };
- 
- void r8a7790_add_standard_devices(void);
--void r8a7790_add_dt_devices(void);
- void r8a7790_clock_init(void);
- void r8a7790_pinmux_init(void);
- void r8a7790_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
-index 80af1d2..37d6eca 100644
---- a/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7790.c
-@@ -279,11 +279,6 @@ static struct resource cmt0_resources[] = {
- 					  &cmt##idx##_platform_data,	\
- 					  sizeof(struct sh_timer_config))
- 
--void __init r8a7790_add_dt_devices(void)
--{
--	r8a7790_register_cmt(0);
--}
--
- void __init r8a7790_add_standard_devices(void)
- {
- 	r8a7790_register_scif(0);
-@@ -296,7 +291,7 @@ void __init r8a7790_add_standard_devices(void)
- 	r8a7790_register_scif(7);
- 	r8a7790_register_scif(8);
- 	r8a7790_register_scif(9);
--	r8a7790_add_dt_devices();
-+	r8a7790_register_cmt(0);
- 	r8a7790_register_irqc(0);
- 	r8a7790_register_thermal();
- 	r8a7790_register_i2c(0);
 -- 
-1.8.5.5
+1.8.4
 
