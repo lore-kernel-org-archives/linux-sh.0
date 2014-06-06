@@ -1,91 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 23 Jun 2014 02:26:34 +0000
-Subject: [PATCH 21/24] ARM: shmobile: r8a7779: Add scif nodes to dtsi
-Message-Id: <fd953b89f44e541bc584a65ba046d1b4cf77840f.1403487423.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 07:20:18 +0000
+Subject: [PATCH v2 02/07] ARM: shmobile: Adjust APMU code to build for non-SMP
+Message-Id: <20140606072018.14868.50095.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1403487423.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1403487423.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Magnus Damm <damm+renesas@opensource.se>
+
+Adjust the APMU code to allow build when CONFIG_SMP=n.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 61d08f4..94e2fc8 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -196,6 +196,66 @@
- 		status = "disabled";
- 	};
+ arch/arm/mach-shmobile/platsmp-apmu.c |   11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
++++ work/arch/arm/mach-shmobile/platsmp-apmu.c	2014-06-05 11:20:35.000000000 +0900
+@@ -15,6 +15,7 @@
+ #include <linux/of_address.h>
+ #include <linux/smp.h>
+ #include <linux/suspend.h>
++#include <linux/threads.h>
+ #include <asm/cacheflush.h>
+ #include <asm/cp15.h>
+ #include <asm/proc-fns.h>
+@@ -25,13 +26,13 @@
+ static struct {
+ 	void __iomem *iomem;
+ 	int bit;
+-} apmu_cpus[CONFIG_NR_CPUS];
++} apmu_cpus[NR_CPUS];
  
-+	scif0: serial@ffe40000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe40000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif1: serial@ffe41000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe41000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif2: serial@ffe42000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe42000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@ffe43000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe43000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@ffe44000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe44000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@ffe45000 {
-+		compatible = "renesas,scif-r8a7779", "renesas,scif";
-+		reg = <0xffe45000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&cpg_clocks R8A7779_CLK_P>;
-+		clock-names = "sci_ick";
-+		status = "disabled";
-+	};
-+
- 	pfc: pfc@fffc0000 {
- 		compatible = "renesas,pfc-r8a7779";
- 		reg = <0xfffc0000 0x23c>;
--- 
-2.0.0.rc2
-
+ #define WUPCR_OFFS 0x10
+ #define PSTR_OFFS 0x40
+ #define CPUNCR_OFFS(n) (0x100 + (0x10 * (n)))
+ 
+-static int apmu_power_on(void __iomem *p, int bit)
++static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
+ {
+ 	/* request power on */
+ 	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
+@@ -50,7 +51,7 @@ static int apmu_power_off(void __iomem *
+ 	return 0;
+ }
+ 
+-static int apmu_power_off_poll(void __iomem *p, int bit)
++static int __maybe_unused apmu_power_off_poll(void __iomem *p, int bit)
+ {
+ 	int k;
+ 
+@@ -73,7 +74,7 @@ static int apmu_wrap(int cpu, int (*fn)(
+ 
+ static void apmu_init_cpu(struct resource *res, int cpu, int bit)
+ {
+-	if (apmu_cpus[cpu].iomem)
++	if ((cpu >= ARRAY_SIZE(apmu_cpus)) || apmu_cpus[cpu].iomem)
+ 		return;
+ 
+ 	apmu_cpus[cpu].iomem = ioremap_nocache(res->start, resource_size(res));
+@@ -137,6 +138,7 @@ void __init shmobile_smp_apmu_prepare_cp
+ 	apmu_parse_cfg(apmu_init_cpu);
+ }
+ 
++#ifdef CONFIG_SMP
+ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+ 	/* For this particular CPU register boot vector */
+@@ -144,6 +146,7 @@ int shmobile_smp_apmu_boot_secondary(uns
+ 
+ 	return apmu_wrap(cpu, apmu_power_on);
+ }
++#endif
+ 
+ #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
+ /* nicked from arch/arm/mach-exynos/hotplug.c */
