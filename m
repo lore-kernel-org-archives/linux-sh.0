@@ -1,145 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 17 Jun 2014 01:14:49 +0000
-Subject: Re: [PATCH v4 18/19] ARM: shmobile: marzen-reference: Enable TMU0 in device tree
-Message-Id: <20140617011449.GC32454@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Jun 2014 10:44:08 +0000
+Subject: [PATCH v3 00/05] staging: Emma Mobile USB driver and KZM9D board code V3
+Message-Id: <20140606104408.4423.36098.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402931251-22581-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1402931251-22581-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1402931251-22581-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: devel@driverdev.osuosl.org, pebolle@tiscali.nl, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.carpenter@oracle.com
 
-Thanks Laurent,
+staging: Emma Mobile USB driver and KZM9D board code V3
 
-On Mon, Jun 16, 2014 at 05:07:30PM +0200, Laurent Pinchart wrote:
-> No more device needs to be added from platform code when booting the
-> reference platform, remove the now empty
-> r8a7779_add_standard_devices_dt() function completely.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[PATCH v3 01/05] staging: emxx_udc: Add Emma Mobile USB Gadget driver
+[PATCH v3 02/05] staging: emxx_udc: I/O memory and IRQ resource support
+[PATCH v3 03/05] staging: emxx_udc: Add TODO file
+[PATCH v3 04/05] staging: board: Initial board staging support
+[PATCH v3 05/05] staging: board: kzm9d: Board staging support for emxx_udc
 
-Tested-by: Simon Horman <horms+renesas@verge.net.au>
+This patch series is V3 of the old USB Gadget driver for Emma Mobile
+that gets slightly adjusted to make use of the platform device interface
+which in turn is used to add USB Gadget support to the KZM9D board.
 
-> ---
->  arch/arm/boot/dts/r8a7779-marzen.dts            |  4 ++++
->  arch/arm/mach-shmobile/board-marzen-reference.c | 10 ----------
->  arch/arm/mach-shmobile/include/mach/r8a7779.h   |  1 -
->  arch/arm/mach-shmobile/setup-r8a7779.c          | 17 +++++------------
->  4 files changed, 9 insertions(+), 23 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-> index 20b1768..6025822 100644
-> --- a/arch/arm/boot/dts/r8a7779-marzen.dts
-> +++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-> @@ -78,6 +78,10 @@
->  	clock-frequency = <31250000>;
->  };
->  
-> +&tmu0 {
-> +	status = "okay";
-> +};
-> +
->  &pfc {
->  	lan0_pins: lan0 {
->  		intc {
-> diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-> index 670e48a..29bd384 100644
-> --- a/arch/arm/mach-shmobile/board-marzen-reference.c
-> +++ b/arch/arm/mach-shmobile/board-marzen-reference.c
-> @@ -35,18 +35,8 @@ static void __init marzen_init_timer(void)
->  	clocksource_of_init();
->  }
->  
-> -/*
-> - * This is a really crude hack to provide clkdev support to platform
-> - * devices until they get moved to DT.
-> - */
-> -static const struct clk_name clk_names[] __initconst = {
-> -	{ "tmu0", "fck", "sh-tmu.0" },
-> -};
-> -
->  static void __init marzen_init(void)
->  {
-> -	shmobile_clk_workaround(clk_names, ARRAY_SIZE(clk_names), false);
-> -	r8a7779_add_standard_devices_dt();
->  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->  	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
->  }
-> diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> index e443c54..9e8c68e 100644
-> --- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> +++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-> @@ -28,7 +28,6 @@ extern void r8a7779_map_io(void);
->  extern void r8a7779_earlytimer_init(void);
->  extern void r8a7779_add_early_devices(void);
->  extern void r8a7779_add_standard_devices(void);
-> -extern void r8a7779_add_standard_devices_dt(void);
->  extern void r8a7779_init_late(void);
->  extern u32 r8a7779_read_mode_pins(void);
->  extern void r8a7779_clock_init(void);
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> index e0050ab0..dcb8d18 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> @@ -639,7 +639,7 @@ static void __init r8a7779_register_hpb_dmae(void)
->  					  sizeof(dma_platform_data));
->  }
->  
-> -static struct platform_device *r8a7779_devices_dt[] __initdata = {
-> +static struct platform_device *r8a7779_early_devices[] __initdata = {
->  	&tmu0_device,
->  };
->  
-> @@ -667,8 +667,8 @@ void __init r8a7779_add_standard_devices(void)
->  
->  	r8a7779_init_pm_domains();
->  
-> -	platform_add_devices(r8a7779_devices_dt,
-> -			    ARRAY_SIZE(r8a7779_devices_dt));
-> +	platform_add_devices(r8a7779_early_devices,
-> +			    ARRAY_SIZE(r8a7779_early_devices));
->  	platform_add_devices(r8a7779_standard_devices,
->  			    ARRAY_SIZE(r8a7779_standard_devices));
->  	r8a7779_register_hpb_dmae();
-> @@ -676,8 +676,8 @@ void __init r8a7779_add_standard_devices(void)
->  
->  void __init r8a7779_add_early_devices(void)
->  {
-> -	early_platform_add_devices(r8a7779_devices_dt,
-> -				   ARRAY_SIZE(r8a7779_devices_dt));
-> +	early_platform_add_devices(r8a7779_early_devices,
-> +				   ARRAY_SIZE(r8a7779_early_devices));
->  
->  	/* Early serial console setup is not included here due to
->  	 * memory map collisions. The SCIF serial ports in r8a7779
-> @@ -737,12 +737,6 @@ void __init r8a7779_init_irq_dt(void)
->  	__raw_writel(0x003fee3f, INT2SMSKCR4);
->  }
->  
-> -void __init r8a7779_add_standard_devices_dt(void)
-> -{
-> -	platform_add_devices(r8a7779_devices_dt,
-> -			     ARRAY_SIZE(r8a7779_devices_dt));
-> -}
-> -
->  #define MODEMR		0xffcc0020
->  
->  u32 __init r8a7779_read_mode_pins(void)
-> @@ -771,7 +765,6 @@ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
->  	.init_early	= shmobile_init_delay,
->  	.nr_irqs	= NR_IRQS_LEGACY,
->  	.init_irq	= r8a7779_init_irq_dt,
-> -	.init_machine	= r8a7779_add_standard_devices_dt,
->  	.init_late	= r8a7779_init_late,
->  	.dt_compat	= r8a7779_compat_dt,
->  MACHINE_END
-> -- 
-> 1.8.5.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Two separate staging components are included in this series:
+1) the emxx_udc driver - from out-of-tree Android 2.6.35.7
+2) board staging support for KZM9D - platform device for DT-only KZM9D
+
+The two components above will be used to continously improve the driver
+and board integration code until the driver can be moved out of staging
+and/or DT bindings are available so the board staging platform device code
+can be replaced with a DT node.
+
+Changes since V2:
+- Added CONFIG_OF_ADDRESS dependency for the board staging bits
+
+Changes since V1:
+- Added TODO file for emxx_udc
+- Broke out board staging base support, included TODO file
+- Added code to avoid registering platform device if DT node exists
+- Modified KZM9D board code build condition to use SoC Kconfig entry
+
+Many thanks to Dan Carpenter, Geert Uytterhoeven, Greg KH and
+Paul Bolle for feedback!
+
+Please let me know if you would like me to rebase this code somehow.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written against renesas git repo at kernel.org using tag
+ renesas-devel-v3.15-rc8-20140606
+
+ drivers/staging/Kconfig             |    4 
+ drivers/staging/Makefile            |    2 
+ drivers/staging/board/Kconfig       |    8 
+ drivers/staging/board/Makefile      |    2 
+ drivers/staging/board/TODO          |    2 
+ drivers/staging/board/board.c       |   41 
+ drivers/staging/board/board.h       |   20 
+ drivers/staging/board/kzm9d.c       |   19 
+ drivers/staging/emxx_udc/Kconfig    |   10 
+ drivers/staging/emxx_udc/Makefile   |    1 
+ drivers/staging/emxx_udc/TODO       |    4 
+ drivers/staging/emxx_udc/emxx_udc.c | 3616 ++++++++++++++++++++++++++++++++++-
+ drivers/staging/emxx_udc/emxx_udc.h |  671 ++++++
+ 13 files changed, 4352 insertions(+), 48 deletions(-)
