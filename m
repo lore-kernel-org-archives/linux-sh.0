@@ -1,51 +1,52 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 06 Jun 2014 11:43:27 +0000
-Subject: Re: [PATCH 0/2] spi: rspi: Misc Cleanups
-Message-Id: <20140606114327.GM2520@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="9+yvdhHLKXN64C4s"
+From: "Sathish Kumar Balasubramaniam -ERS, HCL Tech"  <b-sathishkumar@hcl.com>
+Date: Sun, 08 Jun 2014 19:15:08 +0000
+Subject: [PATCH 3.14.6 1/1] pinctrl/sh-pfc: fix pfc-r8a7790 pin mux data for IPSR5 bug
+Message-Id: <5D833673AB94D9489A7F7F73E9E611C814AD9363@chn-hclt-mbs08.HCLT.CORP.HCL.IN>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1402054723-30682-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+
+From: Sathish Kumar Balasubramaniam <b-sathishkumar@hcl.com>
+
+This patch fixes a bug in the list of peripheral functions for the IPSR5 pin mux configuration of the PFC (Pin Function Controller) of the Renesas R-Car H2 SoC (R8A7790). There should be exactly 8 values listed for the IP5_23_21 peripheral function which is using 3 bits. But there are 9 values present in the list.
+
+This bug unexpectedly increases the internal position variable by 1 which is used by the PFC framework to identify the peripheral function. Due to this bug, peripheral function configuration from IP5_20_18 to IP5_2_0 may not work properly.
+
+This issue can be easily reproduced by setting the FN_I2C1_SDA ( IP5_9_6 [4] ) which has the function value of 9 but the actual function value is set as 10 due to this bug.
+
+-------------------------------------------------------------------------------
+--- linux-3.14.6/drivers/pinctrl/sh-pfc/pfc-r8a7790.c.original    2014-06-08 22:03:44.681669692 +0530
++++ linux-3.14.6/drivers/pinctrl/sh-pfc/pfc-r8a7790.c    2014-06-08 22:02:10.361673511 +0530
+@@ -4624,7 +4624,7 @@ static const struct pinmux_cfg_reg pinmu
+         /* IP5_23_21 [3] */
+         FN_WE1_N, FN_IERX, FN_CAN1_RX, FN_VI1_G4,
+         FN_VI1_G4_B, FN_VI2_R6, FN_SCIFA0_CTS_N_B,
+-        FN_IERX_C, 0,
++        FN_IERX_C,
+         /* IP5_20_18 [3] */
+         FN_WE0_N, FN_IECLK, FN_CAN_CLK,
+         FN_VI2_VSYNC_N, FN_SCIFA0_TXD_B, FN_VI2_VSYNC_N_B, 0, 0,
 
 
---9+yvdhHLKXN64C4s
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Sathish Kumar Balasubramaniam <b-sathishkumar@hcl.com>
 
-On Fri, Jun 06, 2014 at 01:38:41PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Mark,
->=20
-> Here are two small cleanups for the Renesas SPI driver.
->=20
-> I've been hiding in a brown paper bag, as the first one fixes an unused
-> variable warning introduced by me in last patch of the previous series.
 
-Applied both, thanks.
 
---9+yvdhHLKXN64C4s
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+::DISCLAIMER::
+----------------------------------------------------------------------------------------------------------------------------------------------------
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+The contents of this e-mail and any attachment(s) are confidential and intended for the named recipient(s) only.
+E-mail transmission is not guaranteed to be secure or error-free as information could be intercepted, corrupted,
+lost, destroyed, arrive late or incomplete, or may contain viruses in transmission. The e mail and its contents
+(with or without referred errors) shall therefore not attach any liability on the originator or HCL or its affiliates.
+Views or opinions, if any, presented in this email are solely those of the author and may not necessarily reflect the
+views or opinions of HCL or its affiliates. Any form of reproduction, dissemination, copying, disclosure, modification,
+distribution and / or publication of this message without the prior written consent of authorized representative of
+HCL is strictly prohibited. If you have received this email in error please delete it and notify the sender immediately.
+Before opening any email and/or attachments, please check them for viruses and other defects.
 
-iQIcBAEBAgAGBQJTkalcAAoJELSic+t+oim9oO8QAJId+VAWHaVhl3n0ErSayTuU
-BAwAcEO7CljEdgIcN2WYFZal3upcQJeChpEZdZlRto0zh+L5lWM/I5ObajW32h/f
-HFnFXZDLMJ1tBdk2Yf0c41g0pzSwOhQKDP5f1QT7TF+d3nwmyNGrJbd+yr1XQTrw
-JV0lWObxxK0Iw0hfvxnhqsOt0DuXeRg0Hau+j5OL8rZ3tMsek8zEONMtBolqid8H
-bAB3o8fDKc45v0TE4VuH4UUq5mhU9urjxT08k2eUNeiNr1J/VFsXu3ycRrgmnP+2
-DtxPwl3ThoTAPjo3cRyvHhhsJp882t+Bd834Tmi5RiVEgbp8mcGorxgD+MdbKTsP
-l9kIPPPvTC3r3QgVy9nhI+pP4qVlFrLbc6cenbiyxUJo5giz+ToTCHHxdfHy+PhH
-b0RNDOJrAlEAt2MyApa7EO0E5mFyjzaOYX1Q/KC3oCwWdLO4+q6NZVOOebaC6WhI
-3Y8J6yuOQWOoqDQw/m6TnQb472Y9jaUzEMGHN2vh+OjPCKzknOcSZYwULFFm66hm
-PcZlKRiOPXMdqE6YqOvmpxZ6DA2szfIJGVThA2ueMHkUUaCyMvxNXRdzN/ZPTYvD
-nLOIL6Wb1iCKnqtkPyNDaG3KXnm7u0vPgoKnNdk0i7BNsGxuOPgmIW/gwrgVZUlX
-jrClFa41oFW1RTSUuo2A
-=sUFt
------END PGP SIGNATURE-----
+----------------------------------------------------------------------------------------------------------------------------------------------------
 
---9+yvdhHLKXN64C4s--
