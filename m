@@ -1,84 +1,81 @@
-From: Ben Dooks <ben.dooks@codethink.co.uk>
-Date: Mon, 23 Jun 2014 21:10:32 +0000
-Subject: [PATCH 2/2] [PATCH v2] ARM: lager: add vin1 node
-Message-Id: <1403557832-32225-3-git-send-email-ben.dooks@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 09 Jun 2014 08:57:12 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: Remove duplicate i2c6 nodes
+Message-Id: <1402304232-24709-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1403557832-32225-1-git-send-email-ben.dooks@codethink.co.uk>
-In-Reply-To: <1403557832-32225-1-git-send-email-ben.dooks@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: magnus.damm@opensource.se, horms@verge.net.au, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: linux-arm-kernel@lists.infradead.org
 
-Add device-tree for vin1 (composite video in) on the
-lager board.
+A second i2c6 node was a added by
+05e234a187058ee ("ARM: shmobile: koelsch dts: Add VDD MPU regulator for
+DVFS"). Merge this into the existing node.
 
-Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+Also shuffle i2c nodes so they are all together.
+
+Cc: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 34 +++++++++++++++-------------------
+ 1 file changed, 15 insertions(+), 19 deletions(-)
 
-Fixes since v1:
-	- Whitespace fixes as suggested by Sergei
----
- arch/arm/boot/dts/r8a7790-lager.dts | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 4805c9f..e00543b 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -214,6 +214,11 @@
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
- 	};
-+
-+	vin1_pins: vin {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index d3a914c..82ae120 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -210,25 +210,6 @@
+ 	clock-frequency = <20000000>;
  };
  
- &ether {
-@@ -342,8 +347,39 @@
- 	status = "ok";
- 	pinctrl-0 = <&i2c2_pins>;
+-&i2c2 {
+-	pinctrl-0 = <&i2c2_pins>;
+-	pinctrl-names = "default";
+-
+-	status = "okay";
+-	clock-frequency = <400000>;
+-
+-	eeprom@50 {
+-		compatible = "renesas,24c02";
+-		reg = <0x50>;
+-		pagesize = <16>;
+-	};
+-};
+-
+-&i2c6 {
+-	status = "okay";
+-	clock-frequency = <100000>;
+-};
+-
+ &pfc {
+ 	pinctrl-0 = <&du_pins &scif0_pins &scif1_pins>;
  	pinctrl-names = "default";
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin1>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin1ep0>;
-+			};
-+		};
-+	};
+@@ -395,10 +376,25 @@
+ 	};
  };
  
- &i2c3	{
- 	status = "ok";
- };
-+
-+/* composite video input */
-+&vin1 {
-+	pinctrl-0 = <&vin1_pins>;
++&i2c2 {
++	pinctrl-0 = <&i2c2_pins>;
 +	pinctrl-names = "default";
 +
-+	status = "ok";
++	status = "okay";
++	clock-frequency = <400000>;
 +
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin1ep0: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
++	eeprom@50 {
++		compatible = "renesas,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
 +	};
 +};
++
+ &i2c6 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c6_pins>;
+ 	status = "okay";
++	clock-frequency = <100000>;
+ 
+ 	vdd_dvfs: regulator@68 {
+ 		compatible = "diasemi,da9210";
 -- 
-2.0.0
+2.0.0.rc2
 
