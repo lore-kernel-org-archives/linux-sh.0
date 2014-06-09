@@ -1,45 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Jun 2014 09:14:59 +0000
-Subject: [PROTOTYPE 07/10] ARM: shmobile: lager: Sound DMA support via BUSIF on DTS
-Message-Id: <87zjhawpd7.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Jun 2014 10:39:24 +0000
+Subject: [PATCH 2/2] net: sh_eth: Fix timing of RACT setting in sh_eth_rx()
+Message-Id: <53958EDC.1070307@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "netdev@vger.kernel.org" <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch fixes an issue that we cannot use nfs rootfs correctly
+on r8a7790 when the command below runs on a host PC.
 
-DMA transfer to/from SSIU
+ $ sudo ping -f -l 8 $BOARD_IP_ADDR
 
-     DMA
-[MEM] -> [SSIU] -> [SSI]
+Since the driver sets the RACT to 1 in the first while loop of
+sh_eth_rx(), the controller accepts a next frame into the next RX
+descriptor during the while loop. But, in the first while loop
+doesn't allocate a next skb. So, this patch removes the RACT setting
+in the first while loop of sh_eth_rx().
 
-     DMA
-[MEM] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    5 -----
- 1 file changed, 5 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |    1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index c37f820..8968060 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -427,12 +427,7 @@
- 	};
- };
- 
--&ssi0 {
--	no-busif;
--};
--
- &ssi1 {
--	no-busif;
- 	shared-pin;
- };
- 
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index ad0b5bd..2e1835f 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1460,7 +1460,6 @@ static int sh_eth_rx(struct net_device *ndev, u32 intr_status, int *quota)
+ 			ndev->stats.rx_packets++;
+ 			ndev->stats.rx_bytes += pkt_len;
+ 		}
+-		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
+ 		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
+ 		rxdesc = &mdp->rx_ring[entry];
+ 	}
 -- 
 1.7.9.5
 
